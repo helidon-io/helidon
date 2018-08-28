@@ -1,0 +1,63 @@
+#
+# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+box: maven:3.5.4-jdk-9
+
+copyright:
+  steps:
+    - script:
+        code: |
+            export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
+            rm -rf ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+            etc/scripts/copyright.sh
+
+checkstyle:
+  steps:
+    - script:
+        code: |
+            export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
+            rm -rf ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+            etc/scripts/checkstyle.sh
+
+build:
+  steps:
+    - script:
+        code: |
+            export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
+            rm -rf ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+            apt-get update && apt-get -y install graphviz
+            mvn clean install -Pjavadoc,spotbugs --fail-at-end
+            examples/archetypes/test-archetypes.sh
+
+promote:
+  steps:
+    - script:
+        code: |
+            export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
+            rm -rf ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+            echo "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
+            apt-get update && apt-get -y install graphviz
+            etc/scripts/release.sh --promoted release_build
+
+release:
+  steps:
+    - script:
+        code: |
+            export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
+            rm -rf ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+            echo "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
+            apt-get update && apt-get -y install graphviz
+            etc/scripts/release.sh release_build

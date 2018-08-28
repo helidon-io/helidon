@@ -1,0 +1,10 @@
+{
+    "oracle.com": {
+        "prop1": "val1",
+        "prop2": "val2"
+    },
+    "oracle": {
+        "com": "1",
+        "cz": "2"
+    }
+}

@@ -1,0 +1,1705 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:javadoc-base-url-api: {javadoc-base-url}?io/helidon/config
+
+= Advanced Configuration Topics
+:description: Helidon config advanced configuration
+:keywords: helidon, config
+
+== Directory Config Source
+
+It is possible to load configuration from directory on file system.
+All files placed directly in the directory are used.
+File name is used as config key and it's whole content as an `String` value.
+It is possible to parse individual files.
+See <<Config-Advanced-Sources-SuitableParser,Find suitable Config Parser>>
+ section.
+
+Let's say an application want to load files from `secrets` directory.
+(This could example of applications Kubernetes Secrets mounted on Pod filesystem.)
+Directory config source works as any other built-in config source including
+ listening on filesystem _changes_.
+
+Directory `conf/secrets` contains two files:
+
+[source]
+.File `secrets/username`
+----
+jose
+----
+
+[source]
+.File `secrets/password`
+----
+^ery$ecretP&ssword
+----
+
+And can be loaded using Config API:
+
+[source,java]
+.Using `directory` config source
+----
+Config secrets = Config.withSources(
+        ConfigSources.directory("conf/secrets")) // <1>
+        .disableEnvironmentVariablesSource()     // <2>
+        .disableSystemPropertiesSource()         // <2>
+        .build();
+
+assert secrets.get("username").asString()        // <3>
+        .equals("jose");
+assert secrets.get("password").asString()        // <4>
+        .equals("^ery$ecretP&ssword");
+----
+
+<1> Load all files from `conf/secrets` directory.
+<2> Do not use _environment variables_ and _system properties_ sources in final
+ `Config`.
+<3> Content of `username` file is `jose`.
+<4> Content of `password` file is `^ery$ecretP&ssword`.
+
+
+== Prefixed Config Source
+
+Let's say an application contains following two configuration files:
+
+[source,hocon]
+.File `app.conf`
+----
+greeting = "Hello"
+page-size = 20
+basic-range = [ -20, 20 ]
+
+----
+
+[source,hocon]
+.File `data.conf`
+----
+providers: [
+    {
+        name = "Provider1"
+        class = "this.is.my.Provider1"
+    },
+    {
+        name = "Provider2"
+        class = "this.is.my.Provider2"
+    }
+]
+
+----
+
+And these files should be loaded into single `Config` instance but to different
+ configuration _namespaces_, under dedicated keys.
+
+[source,java]
+.Using `prefixed` config source
+----
+Config config = Config.from(
+        ConfigSources.prefixed("app",                    // <1>
+                               classpath("app.conf")),   // <2>
+        ConfigSources.prefixed("data",                   // <3>
+                               classpath("data.conf"))); // <4>
+
+assert config.get("app.greeting").asString()             // <5>
+        .equals("Hello");
+
+assert config.get("data.providers.0.name").asString()    // <6>
+        .equals("Provider1");
+----
+
+<1> Whole content of `app.conf` file is placed under _namespace_ `app`.
+This _namespace_ is used as key prefix for each `app.conf` property.
+<2> The second parameter is any `ConfigSource` supplier, in this case file
+ `app.conf` loaded from `classpath`.
+<3> Whole content of `data.conf` file is placed under _namespace_ `data`.
+This _namespace_ is used as key prefix for each `data.conf` property.
+<4> File `app.conf` loaded from `classpath`.
+<5> Key `app.greeting` is combination of `app` prefix and `greeting` property from
+ `app.conf` file.
+<6> Key `data.providers.0.name` is combination of `data` prefix and
+ `providers.0.name` property from `data.conf` file.
+
+
+== In-memory Config Sources
+
+[source,java]
+.In-memory config sources example
+----
+Config anotherConfig = Config.from(classpath("application.conf"));
+
+Config config = Config.from(
+        ConfigSources.from(anotherConfig.get("data")),                            // <1>
+        ConfigSources.from(System.getProperties())                                // <2>
+                .lax(),                                                           // <3>
+        ConfigSources.from("app.greeting = Hi", "text/x-java-properties"),        // <4>
+        ConfigSources.from(Map.of("app.page-size", "20")),                        // <5>
+        ConfigSources.from(ObjectNode.builder()                                   // <6>
+                                   .addList("app.basic-range", ListNode.builder()
+                                           .addValue("-20")
+                                           .addValue("20")
+                                           .build())
+                                   .build()));
+
+assert config.get("app.greeting")                                                 // <7>
+        .asString().equals("Hi");
+assert config.get("app.page-size")                                                // <8>
+        .asInt() == 20;
+assert config.get("app.basic-range.0")                                            // <9>
+        .asInt() == -20;
+assert config.get("app.basic-range.1")                                            // <9>
+        .asInt() == 20;
+assert config.get("data.providers.0.name")                                        // <10>
+        .asString().equals("Provider1");
+assert config.get("user.name").asString()                                         // <11>
+        .equals(System.getProperty("user.name"));
+----
+
+<1> Existing `Config` instance can be used as a config source for building new
+ Config instance.
+In this case just `data` sub-node has been used.
+<2> Config source from `Properties` instance.
+<3> Config source from `Properties` or from `Map` returns
+ `ConfigSources.MapBuilder` instance.
+The builder allows to switches off strict mode to lax one.
+In lax mode it does not fail in case of properties overlap, just logs warning.
+Example of overlap properties are `app.port = 8080` and `app = app-name`.
+<4> Config source loaded from specified `String`.
+In this case `String` is in Java Properties format, `text/x-java-properties`.
+Built-in Java Properties parser (`ConfigParsers.properties()`)
+associated with specified media type (`text/x-java-properties`) is automatically
+ used.
+Also `java.lang.Readable` instance can be used instead of `String`.
+<5> Config source from `Map` instance.
+<6> It is possible to use `ConfigNode.ObjectNode` and `ConfigNode.ListNode` SPI
+ to build configuration structure
+usually used by `ConfigSource` or `ConfigParser` implementations.
+It is useful for testing purposes.
+<7> Property `app.greeting` loaded from a `String` source.
+<8> Property `app.page-size` loaded from a `Map` source.
+<9> Property `app.basic-range` loaded from a SPI `ObjectNode` source.
+<10> Property `data.providers` loaded from another `Config` instance.
+<11> Property `user.name` loaded from a `System.getProperties()` source.
+
+
+== Composite Config Source
+
+It has already been show that final `Config` instance is loaded from more than one
+ config source. Such config source list is wrapped by single composite config
+ source instance on background. It is also possible to explicitly create composite
+ config source using `ConfigSources.from(sources...)` method. The method returns
+ `ConfigSources.CompositeBuilder` instance. It is possible to programmatically
+add another source instances and customize `MergingStrategy`.
+Merging strategy allows a user to implement merging of list of root nodes loaded
+ by appropriate config sources into single node structure.
+
+Default implementation used by `CompositeBuilder` is fallback merging strategy.
+Configuration sources found earlier in the list are considered to have a higher
+ priority than the latter ones. I.e., when resolving a value of a key, the sources
+ are consulted in the order they have been provided and as soon as the value is
+ found in a configuration source, the value immediately is returned without
+ consulting any of the remaining configuration sources in the prioritized
+ collection.
+
+[source,java]
+.Composite config source example
+----
+Config config = Config.from(                                                 // <1>
+        ConfigSources.from(file("conf/dev.properties").optional(),           // <2>
+                           file("conf/config.properties").optional())        // <2>
+                .add(classpath("application.properties"))                    // <3>
+                .mergingStrategy(ConfigSources.MergingStrategy.fallback())); // <4>
+----
+
+<1> Create new `Config` instance from single composite config source.
+<2> Method `ConfigSources.from(sources...)` returns `CompositeBuilder` instance
+ initialized with two sources (from `dev.properties` and `config.properties`
+ files).
+<3> Programmatically add third config source (`application.properties` on
+ classpath) to `CompositeBuilder`.
+<4> Customize `mergingStrategy`. In this case it explicitly uses default fallback
+ merging strategy (`MergingStrategy.fallback()`).
+
+
+[[Config-Advanced-Sources-SuitableParser]]
+== Find suitable Config Parser
+
+Formatted document loaded from common config source (file, classpath, url, etc)
+needs to be parsed into internal node structure (`ConfigNode.ObjectNode`).
+I.e. config source implementation uses link:{javadoc-base-url-api}/spi/ConfigContext.html[ConfigContext]
+to find appropriate parser instance.
+
+Glue between formatted document and appropriate parser is media-type.
+Config source needs to know media type of loaded document. And `Config.Builder`
+ needs to provide parser instance for requested media type. If there is no
+ suitable `ConfigParser` instance then `ConfigException` is thrown during
+`Config` initialization. See <<Config-Advanced-Config-Builder,Config Builder>>
+ section for more information about Config initialization options, including
+ registering `ConfigParser` implementations.
+
+'''
+
+By default config source implementations use JDK
+ `java.nio.file.Files.probeContentType(Path)` API to guess source media type from
+ it's path. Usually it guesses media type from file extension. This approach is
+ extensible. A user can implement and register custom implementation of
+ `java.nio.file.spi.FileTypeDetector` SPI.
+(Similarly to Configuration library that registers file type detectors for all
+ supported formats: `.properties`, `.yaml`, `.json` and `.conf` extensions.)
+
+'''
+
+Almost all built-in config sources and override sources extend common
+link:{javadoc-base-url-api}/spi/AbstractSource.html[super class] and are usually
+ initialized by extension of common source
+ link:{javadoc-base-url-api}/spi/AbstractSource.Builder.html[Builder].
+It allows another options how to find appropriate parser instance.
+
+In case it is not possible to guess document media type from source path a user
+ can explicitly specify it using source Builder API.
+
+[source,java]
+.Specify `mediaType` for selected config source
+----
+Config config = Config.from(classpath("props")                             // <1>
+                                    .mediaType("text/x-java-properties")); // <2>
+----
+
+<1> It is not possible to guess media type for file `props` on classpath.
+<2> We know `props` file is in Java Properties format, i.e. we specify it's media
+ type (`text/x-java-properties`). Registered Java Properties parser will be used.
+
+[source,java]
+.Specify `parser` for selected config source
+----
+Config config = Config.from(classpath("props")                            // <1>
+                                    .parser(ConfigParsers.properties())); // <2>
+----
+
+<1> It is not possible to guess media type for file `props` on classpath.
+<2> We know `props` file is in Java Properties format, i.e. we specify concrete
+ parser instance to be used. In this case it is built-in Java Properties
+ implementation (`ConfigParsers.properties()`) that is usually used to parser
+ `text/x-java-properties` documents.
+
+'''
+
+It is even possible to apply config parser on any config leaf value node on
+ already parsed document. This is really advanced feature that can be useful in
+ specific use-case, e.g. a user wants to load YAML file and one of it's property
+ value is formatted JSON document. Config API allows to expand such leaf value
+ into rich object structure.
+
+[source,yaml]
+.YAML file with included JSON formated property
+----
+secrets:
+    username: "jose"
+    password: "^ery$ecretP&ssword"
+
+app: >                             # <1>
+    {
+        "greeting": "Hello",
+        "page-size": 20,
+        "basic-range": [ -20, 20 ]
+    }
+
+----
+
+<1> Property `app` is internally formatted as JSON document.
+
+[source,java]
+.JSON formatted property is loaded as leaf value by default
+----
+Config config = Config.from(classpath("application.yaml")); // <1>
+
+assert config.get("secrets.username").asString()            // <2>
+        .equals("jose");
+assert config.get("secrets.password").asString()            // <2>
+        .equals("^ery$ecretP&ssword");
+
+assert config.get("app").type() == Type.VALUE;              // <3>
+----
+
+<1> File `application.yaml` is loaded without any additional settings.
+<2> `secrets` properties are loaded as expected.
+<3> Property `app` is loaded as plain leaf value node.
+
+[source,java]
+.Specify JSON formatted property' media type
+----
+Config config = Config.from(
+        classpath("application.yaml")
+                .mediaTypeMapping(                          // <1>
+                        key -> "app".equals(key.toString()) // <2>
+                                ? "application/json"
+                                : null));
+
+assert config.get("secrets.username").asString()            // <3>
+        .equals("jose");
+assert config.get("secrets.password").asString()            // <3>
+        .equals("^ery$ecretP&ssword");
+
+assert config.get("app").type() == Type.OBJECT;             // <4>
+
+assert config.get("app.greeting")                           // <5>
+        .asString().equals("Hello");
+assert config.get("app.page-size")                          // <5>
+        .asInt() == 20;
+assert config.get("app.basic-range.0")                      // <5>
+        .asInt() == -20;
+assert config.get("app.basic-range.1")                      // <5>
+        .asInt() == 20;
+----
+
+<1> Method `mediaTypeMapping` accepts function that can return appropriate
+ media-type for selected config nodes (keys). If the functions return a media type
+ then appropriate parser is used to parse content of the config leaf value node.
+Parsed config object node then replaces original leaf value node. Returned `null`
+ value means _let a value node as is_.
+<2> In this case `app` property value is JSON document, it's media type is
+ `application/json`. Registered JSON parser will be automatically used.
+<3> `secrets` properties are loaded as expected.
+<4> Property `app` is now an structured object node.
+<5> And `app` properties are loaded as expected.
+
+[source,java]
+.Specify JSON formatted property' parser instance
+----
+Config config = Config.from(
+        classpath("application.yaml")
+                .parserMapping(                                           // <1>
+                        key -> "app".equals(key.toString())               // <2>
+                                ? HoconConfigParserBuilder.buildDefault()
+                                : null));
+----
+
+<1> Complementary option is to use `parserMapping` method
+that accepts function that can return appropriate parser instance for selected
+ config nodes (keys).
+Parsed config object node then replaces original leaf value node. Returned `null`
+ value means _let a value node as is_.
+<2> In this case `app` property value is JSON document and concrete JSON parser
+ instance is used. (HOCON config parser supports also JSON format because HOCON
+ is the JSON superset.)
+
+
+== Retry Policies
+
+The retry policy offers the user a way to configure how the failed remote call
+ will be handled. We provide two basic implementations
+
+[plantuml, config/RetryPolicies, png, title="io.helidon.config.RetryPolicies", align="center"]
+----
+class RetryPolicies {
+    {static} + justCall()
+    {static} + repeat(int retries)
+}
+----
+
+* link:{javadoc-base-url-api}/RetryPolicies.html#justCall--[RetryPolicies.justCall()]
+ - this implementation executes just one call - it is the default retry policy
+* link:{javadoc-base-url-api}/RetryPolicies.html#repeat-int-[RetryPolicies.repeat(int retries)]
+ - a basic implementation can be configured using several parameters -  see below
+
+
+[source,java]
+.Example how to use a default implementation
+----
+Config config = Config.from(
+        ConfigSources
+                .url(new URL("http://config-service/application.yaml"))
+                .retryPolicy(RetryPolicies.repeat(2)                         // <1>
+                                     .delay(Duration.ofMillis(100))          // <2>
+                                     .delayFactor(2)                         // <3>
+                                     .callTimeout(Duration.ofMillis(100))    // <4>
+                                     .overallTimeout(Duration.ofSeconds(1))) // <5>
+                .optional()
+                .build());
+----
+
+<1> A mandatory parameter says how many times at the most should be the call
+ repeated at maximum
+<2> An initial delay between the first and second call (the default value: 200ms)
+<3> The delay might be changed with every other round (the default value: 2.0)
+<4> Every call ha to be executed within this timeout (the default value: 500ms)
+<5> An overall timeout includes all delays and durations of all calls (the default
+ value: 2s)
+
+[TIP]
+=====
+For an information how to implement a custom retry policy see
+ <<config/07_extensions.adoc#Config-SPI-RetryPolicy, RetryPolicy SPI>>.
+=====
+
+
+[[Config-Advanced-Sources-MetaSource]]
+== Load Config Sources from meta-configuration
+
+// TODO [P2] javadoc links
+
+Configuration sources can be loaded from meta configuration. Meta configuration
+ is externalized configuration that describes ordered list of config sources to be
+ used to load target `Config` instance from.
+
+Such meta-configuration contains `sources` property that is array (ordered list)
+ of objects. Each object of an array describes single config source.
+
+A config source meta config should contain one of following top level properties:
+
+* `type` - specify type of loaded config source implementation.
+It can contain identification of one of built-in sources, or id of custom config
+ source implementation. See below for more details.
+* `class` - fully qualified class name of custom config source implementation, or
+ a builder class that has `build()` method returning `ConfigSource` instance.
+ `ConfigMapper` support is used to initialize the class instance.
+See <<config/04_property-mapping.adoc#Config-PropertyMapping-Generic,Implicit Custom Config Mapper>>
+ section for details about generic mapping support.
+* `properties` - object node of another properties used to initialize appropriate
+ config source instance from.
+
+Use exclusively `type` or `class` property. If used both, `class` is ignored.
+ There are following built-in config sources, i.e. supported `type` values:
+
+* `system-properties` - system properties config source, see
+ ConfigSources.systemProperties()`. No additional properties are supported.
+
+* `environment-variables` - environment variables config source, see
+ `ConfigSources.environmentVariables()`. No additional properties are supported.
+
+* `classpath` - classpath config source, see `ConfigSources.classpath(String)`.
++
+Mandatory properties:
++
+** `resource` - type `String`
++
+Optional properties: see `AbstractParsableConfigSource.Builder.init(Config)`.
+
+* `file` - file config source, see ConfigSources.file(String).
++
+Mandatory properties:
++
+** `path` - type `Path`
++
+Optional properties: see `AbstractParsableConfigSource.Builder.init(Config)`.
+
+* `directory` - directory config source, see `ConfigSources.directory(String)`.
++
+Mandatory properties:
++
+** `path` - type `Path`
++
+Optional properties: see `AbstractParsableConfigSource.Builder.init(Config).`
+
+* `url` - url config source, see `ConfigSources.url(URL)`.
++
+Mandatory properties:
++
+** `url` - type `URL`
++
+Optional properties: see `AbstractParsableConfigSource.Builder.init(Config)`.
+
+* `prefixed` - prefixed config source, see
+ `ConfigSources.prefixed(String, Supplier)`.
++
+Mandatory properties:
++
+** `key` - type `String`
+** `type` or `class` - type `String`. Specify any other config source discussed
+ in the current section.
+** `properties` - other config source properties used to initialize it.
+
+Example configuration in HOCON format:
+
+[source,hocon]
+.Meta-configuration `config-meta-all.conf` with all built-in sources available on classpath
+----
+sources = [
+    {
+        type = "environment-variables"
+    }
+    {
+        type = "system-properties"
+    }
+    {
+        type = "directory"
+        properties {
+            path = "conf/secrets"
+            media-type-mapping {
+                yaml = "application/x-yaml"
+                password = "application/base64"
+            }
+            polling-strategy {
+                type = "regular"
+                properties {
+                    interval = "PT15S"
+                }
+            }
+        }
+    }
+    {
+        type = "url"
+        properties {
+            url = "http://config-service/my-config"
+            media-type = "application/hocon"
+            optional = true
+            retry-policy {
+                type = "repeat"
+                properties {
+                    retries = 3
+                }
+            }
+        }
+    }
+    {
+        type = "file"
+        properties {
+            path = "conf/env.yaml"
+            polling-strategy {
+                type = "watch"
+            }
+        }
+    }
+    {
+        type = "prefixed"
+        properties {
+            key = "app"
+            type = "classpath"
+            properties {
+                resource = "app.conf"
+            }
+        }
+    }
+    {
+        type = "classpath"
+        properties {
+            resource = "application.conf"
+        }
+    }
+]
+----
+
+Example also demonstrates using of built-in `polling-strategy`-ies: `regular` and
+ `watch`. See below for details about all supported properties and custom
+ implementation support. Example also demonstrates using of built-in
+ `retry-policy` `repeat`. See below for details about all supported properties
+ and custom implementation support.
+
+Custom config source is represented by fully qualified `class` name, instead of
+ `type` attribute.
+Via `META-INF/resources/meta-config-sources.properties` file on classpath it is
+ possible to provide custom `type` values.
+File `meta-config-sources.properties` contains properties where a property key is
+ newly defined `type` and a property value is fully qualified `class` name of
+ custom config source implementation or its builder.
+
+For example, module `helidon-config-git` provides
+ `META-INF/resources/meta-config-sources.properties` file:
+
+[source]
+.Module `helidon-config-git` contains `META-INF/resources/meta-config-sources.properties`
+----
+git = io.helidon.config.git.GitConfigSourceBuilder
+----
+
+I.e. it is possible to configure Git config source using `type = "git"`:
+
+[source,hocon]
+----
+{
+    type = "git"
+    properties {
+        path = "application.conf"
+        directory = "/app-config"
+    }
+}
+----
+
+instead of `class = "io.helidon.config.git.GitConfigSourceBuilder"`:
+
+[source,hocon]
+----
+{
+    class = "io.helidon.config.git.GitConfigSourceBuilder"
+    properties {
+        path = "application.conf"
+        directory = "/app-config"
+    }
+}
+----
+
+[source,java]
+.Loading config source from meta-configuration file on classpath
+----
+ConfigSource loadedSource = ConfigSources.load(     // <1>
+        classpath("config-meta-all.conf")).build(); // <2>
+
+Config config = Config.from(loadedSource);          // <3>
+----
+
+<1> Method `ConfigSources.load` accepts meta-configuration(s) that will be used to
+ load `sources` array property.
+<2> Loading from `config-meta-etcd.yaml` file available on classpath.
+<3> Source `loadedSource` already contains all already merged sources described in
+ `config-meta-etcd.yaml` file.
+Such source can be used to initialize `Config` instance as usual.
+
+'''
+
+All built-in **polling strategies** are supported as well as custom
+ implementations of polling strategies. The support is tightly connected with
+ `AbstractSource` extensions and will not be automatically provided by any another
+config source implementations. Meta configuration property `polling-strategy` can
+ be configured using following properties:
+
+* `type` - specify type of loaded polling strategy implementation. It can contain
+ identification of one of built-in strategies.
+
+* `class` - fully qualified class name of custom polling strategy implementation,
+or a builder class that has `build()` method returning `PollingStrategy` instance.
+
+* `properties` - object node of another properties used to initialize appropriate
+ strategy instance from.
+
+Use exclusively `type` or `class` property. If used both, `class` is ignored.
+There are following built-in polling strategies, i.e. supported `type` values:
+
+* `regular` - regular scheduled polling strategy, see
+ PollingStrategies.regular(Duration).
++
+Mandatory properties:
++
+** `interval` - type `Duration`, e.g. `PT15S` means `15 seconds`
+
+* `watch` - filesystem watch polling strategy, see `PollingStrategies.watch(Path)`.
+Polling strategy can be used just with config sources built by
+ `AbstractSource.Builder` extension parameterized by `Path` for source target.
+ For example `classpath`, `file` or `directory` config sources. No additional
+ properties are supported.
+
+Custom polling strategy is represented by fully qualified `class` name.
+`io.helidon.config.ConfigMapper` support is used to initialize the class instance.
+ See <<config/04_property-mapping.adoc#Config-PropertyMapping-Generic,Implicit Custom Config Mapper>> section for
+ details about generic mapping support. Such polling strategy is applied as common
+ polling strategy. In case of _target_ specific implementation of polling strategy
+ (similar to `Path` specific filesystem watch polling strategy) an implementation
+ class must has public constructor with single parameter of target type.
+
+// TODO [P2] custom polling strategy configuration
+
+'''
+
+All built-in **retry policies** are supported as well as custom implementations of
+ retry policies. The support is tightly connected with `AbstractSource` extensions
+ and will not be automatically provided by any another config source
+ implementations. Meta configuration property `retry-policy` can be configured
+ using following properties:
+
+* `type` - specify type of loaded retry policy implementation. It can contain
+ identification of one of built-in policies.
+
+* `class` - fully qualified class name of custom retry policy implementation,
+or a builder class that has `build()` method returning `PollingStrategy` instance.
+
+* `properties` - object node of another properties used to initialize appropriate
+ retry policy instance from.
+
+Use exclusively `type` or `class` property. If used both, `class` is ignored.
+There are following built-in retry policies, i.e. supported `type` values:
+
+* `repeat` - regular scheduled retry policy, see `RetryPolicies.repeat(int)`.
++
+Mandatory properties:
++
+** `retries` - type `int`
++
+Optional properties:
+** `delay` - type `Duration`, see `RetryPolicies.Builder.delay(Duration)`
+** `delay-factor` - type `double`, see `RetryPolicies.Builder.delayFactor(double)`
+** `call-timeout` - type `Duration`, see
+ `RetryPolicies.Builder.callTimeout(Duration)`
+** `overall-timeout` - type `Duration`, see
+ `RetryPolicies.Builder.overallTimeout(Duration)`
+
+Custom retry policy is represented by fully qualified `class` name.
+`io.helidon.config.ConfigMapper` support is used to initialize the class instance.
+See <<config/04_property-mapping.adoc#Config-PropertyMapping-Generic,Implicit Custom Config Mapper>> section for
+ details about generic mapping support. Such retry policy is applied as common
+ retry policy.
+
+== Config Core Accessor Methods
+
+Basic `Config` accessor methods are:
+
+- `value()` - returns a `String` value of leaf `VALUE` node. Returned value is
+ wrapped by JDK `Optional`. I.e. in case of `MISSING` config node it returns
+ `Optional.empty()`. In case of `LIST` node or `OBJECT` node the method throws
+ `ConfigMappingException`.
+- `nodeList()` - returns a list of sub-nodes (`List<Config>`). No matter if the
+ node is a list node or an object node. For a `LIST` node it returns list items.
+ List index (start from `0`) is used as node name. For an `OBJECT` node it returns
+ object members. Returned `List` is wrapped by JDK `Optional`. I.e. in case of
+ `MISSING` config node it returns `Optional.empty()`. In case of leaf `VALUE` node
+ the method throws `ConfigMappingException`.
+
+All other accessor methods are based on these two methods together with associated
+ config mappers to be able convert original value(s) to requested target type.
+See complete set of accessor methods bellow.
+
+The last special accessor method is `node()`.
+Returns existing current config node as a `Optional` instance or
+ `Optional.empty()` in case of `MISSING` node.
+
+[source,java]
+.Using `Config.node()` method
+----
+// old school way
+if (config.get("data.providers").exists()) {             // <1>
+    processDataProviders(config.get("data.providers"));
+} else {
+    noDataProvidersFallback();
+}
+// using node()
+config.get("data.providers")
+        .node()                                          // <2>
+        .ifPresentOrElse(Main::processDataProviders,
+                         Main::noDataProvidersFallback);
+----
+
+<1> Process `data.providers` configuration (method `processDataProviders`) if
+ exists, otherwise do fallback (method `noDataProvidersFallback`).
+<2> This implements same behaviour but it is more functional style based on
+ `node()` method.
+
+Another from core accessor methods are `asMap()`, `asMap(default)` and
+ `asOptionalMap()`. Returned map contains all leaf values of current node. Fully
+ qualified key of config node is used as a key in returned Map.
+
+[source,java]
+.Using `Config.asMap()` method
+----
+Map<String, String> map = config.get("app").asMap(); // <1>
+
+assert map.size() == 4;                              // <2>
+assert map.get("app.greeting").equals("Hello");      // <2>
+assert map.get("app.page-size").equals("20");        // <2>
+assert map.get("app.basic-range.0").equals("-20");   // <2>
+assert map.get("app.basic-range.1").equals("20");    // <2>
+----
+
+<1> Get all `app` sub-leaf values as a `Map`.
+<2> Map contains 4 properties. Keys are still prefixed by `app.`.
+Each list item is a single map entry.
+
+
+[[Config-Advanced-Config-Accessors]]
+== All Config Accessor Methods
+
+Complete set of `Config` accessor methods.
+
+=== Common Accessor Methods
+
+.Config accessor methods to get a single value
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Generic `<T>` |`as(Class<T>)` |`as(Class<T>,T)` |`asOptional(Class<T>)`
+|`Boolean` |`asBoolean()` |`asBoolean(boolean)` |`asOptionalBoolean()`
+|`Double` |`asDouble()` |`asDouble(double)` |`asOptionalDouble()`
+|`Int` |`asInt()` |`asInt(int)` |`asOptionalInt()`
+|`Long` |`asLong()` |`asLong(long)` |`asOptionalLong()`
+|`Map` |`asMap()` |`asMap(Map<String,String>)` |`asOptionalMap()`
+|`String` |`asString()` |`asString(String)` |`asOptionalString()`
+|===
+
+.Config accessor methods to get a list of values
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Generic (`List<T>`) |`asList(Class<T>)` |`asList(Class<T>,List<T>)` |`asOptionalList(Class<T>)`
+|`List<Config>` |`asNodeList()` |`asNodeList(List<Config>)` |`asOptionalNodeList()`
+|`List<String>` |`asStringList()` |`asStringList(List<String>)` |`asOptionalStringList()`
+|===
+
+.Config accessor methods to map a single value
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Complex `ConfigMapper` (`T`) |`map(ConfigMapper<T>)` |`map(ConfigMapper<T>,T)` |`mapOptional(ConfigMapper<T>)`
+|Simple `Function` (`T`) |`map(Function<String,T>)` |`map(Function<String,T>,T)` |`mapOptional(Function<String,T>)`
+|===
+
+.Config accessor methods to map a list of values
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Complex `ConfigMapper` (`List<T>`) |`mapList(ConfigMapper<T>)` |`mapList(ConfigMapper<T>,List<T>)` |`mapOptionalList(ConfigMapper<T>)`
+|Simple `Function` (`List<T>`) |`mapList(Function<String,T>)` |`mapList(Function<String,T>,List<T>)` |`mapOptionalList(Function<String,T>)`
+|===
+
+=== Supplier Accessor Methods
+
+.Config accessor methods to get a single value
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Generic (`T`) |`asSupplier(Class<T>)` |`asSupplier(Class<T>,T)` |`asOptionalSupplier(Class<T>)`
+|`Boolean` |`asBooleanSupplier()` |`asBooleanSupplier(boolean)` |`asOptionalBooleanSupplier()`
+|`Double` |`asDoubleSupplier()` |`asDoubleSupplier(double)` |`asOptionalDoubleSupplier()`
+|`Int` |`asIntSupplier()` |`asIntSupplier(int)` |`asOptionalIntSupplier()`
+|`Long` |`asLongSupplier()` |`asLongSupplier(long)` |`asOptionalLongSupplier()`
+|`Map` |`asMapSupplier()` |`asMapSupplier(Map<String,String>)` |`asOptionalMapSupplier()`
+|`String` |`asStringSupplier()` |`asStringSupplier(String)` |`asOptionalStringSupplier()`
+|===
+
+.Config accessor methods to get a list of values
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Generic (`List<T>`) |`asListSupplier(Class<T>)` |`asListSupplier(Class<T>,List<T>)` |`asOptionalListSupplier(Class<T>)`
+|`List<Config>` |`asNodeListSupplier()` |`asNodeListSupplier(List<Config>)` |`asOptionalNodeListSupplier()`
+|`List<String>` |`asStringListSupplier()` |`asStringListSupplier(List<String>)` |`asOptionalStringListSupplier()`
+|===
+
+.Config accessor methods to map a single value
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Complex `ConfigMapper` (`T`) |`mapSupplier(ConfigMapper<T>)` |`mapSupplier(ConfigMapper<T>,T)` |`mapOptionalSupplier(ConfigMapper<T>)`
+|Simple `Function` (`T`) |`mapSupplier(Function<String,T>)` |`mapSupplier(Function<String,T>,T)` |`mapOptionalSupplier(Function<String,T>)`
+|===
+
+.Config accessor methods to map a list of values
+[width="99%",options="header"]
+|===
+|Type |Common |With Default |Optional
+|Complex `ConfigMapper` (`List<T>`) |`mapListSupplier(ConfigMapper<T>)` |`mapListSupplier(ConfigMapper<T>,List<T>)` |`mapOptionalListSupplier(ConfigMapper<T>)`
+|Simple `Function` (`List<T>`) |`mapListSupplier(Function<String,T>)` |`mapListSupplier(Function<String,T>,List<T>)` |`mapOptionalListSupplier(Function<String,T>)`
+|===
+
+
+
+== Config Key
+
+Configuration is loaded from config source into tree-like hierarchical structure.
+Each config node has it's name (or key token). And each config node has fully
+ qualified unique key. Root node's name and key is empty `String`.
+
+Whole key is a list of key tokens (node names) separated by "`.`" (dot character).
+Depending on context the key token is evaluated one by one:
+
+* in `OBJECT` node the token represents a **name of object member**;
+* in `LIST` node the token represents an zero-based **index of list element**,
+an unsigned base-10 integer value, leading zeros are not allowed.
+
+[source,abnf]
+.The ABNF syntax of config key
+----
+config-key = *1( key-token *( "." key-token ) )
+ key-token = *( unescaped / escaped )
+ unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
+           ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
+   escaped = "~" ( "0" / "1" )
+           ; representing '~' and '.', respectively
+----
+
+[IMPORTANT]
+=========
+To emphasize, dot character ("`.`") has special meaning. It is used as key token
+ separator.
+In case a dot character should be a part of node name it must be escaped by
+ "`~1`".
+=========
+
+Following configuration file contains two object nodes named `oracle` and
+ `oracle.com`.
+
+[source,json]
+.Example JSON configuration `application.json` with dot character in node name
+----
+{
+    "oracle" : {
+        "com" : true,
+        "cz" : false
+    },
+    "oracle.com" : {
+        "secured" : true
+    }
+}
+
+----
+
+[source,java]
+.Working with configuration with dot character in node name
+----
+Config config = Config.from(classpath("application.json"));
+
+// node `oracle`
+assert config.get("oracle.com").asBoolean() == true;                         // <1>
+assert config.get("oracle").get("com").asBoolean() == true;                  // <1>
+assert config.get("oracle.com").type() == Type.VALUE;                        // <2>
+assert config.get("oracle.com").name().equals("com");                        // <3>
+// node `oracle.com`
+assert config.get("oracle~1com.secured").asBoolean() == true;                // <4>
+assert config.get(Key.escapeName("oracle.com"))                              // <5>
+        .get("secured").asBoolean() == true;
+assert config.get(Key.escapeName("oracle.com")).type() == Type.OBJECT;       // <6>
+assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // <7>
+----
+
+<1> Work with the first `oracle` object as usual.
+It is possible to use fully-qualified key `oracle.com` or concatenate `get(key)`
+ calls to access `com` property value.
+<2> Config node `"oracle"` / `"com"` type is leaf `VALUE`.
+<3> Config node `"oracle"` / `"com"` name is same as the last key token `com`.
+<4> The second object name is `oracle.com`. Dot character is automatically escaped
+ during document parsing.
+I.e. on `Config` API we need to use escaped node name `oracle~1com`.
+<5> A user can use utility method `Config.Key.escapeName(name)` to escape original
+ node name `oracle.com`.
+<6> Config node `"oracle.com"` type is `OBJECT`.
+<7> Config node `"oracle.com"` name is original `oracle.com` (loaded from JSON file).
+
+'''
+
+Method `Config.key()` always returns fully-qualified key - whole node path.
+In some cases you do not want to show full context the configuration node has been
+ placed in. Method `Config.detach()` helps to hide the context. Returns new
+ instance of same Config node with _reset_ config key. Returned config's key is
+ empty string, i.e. it looks like _local_ root node. Original config node is not
+ affected.
+
+[source,java]
+.Using `Config.detach()` method
+----
+Config config = Config.from(classpath("application.conf"));
+
+Config root = config.get("app")
+        .detach();                                          // <1>
+
+assert root.name().equals("");                              // <2>
+assert root.key().name().equals("");                        // <2>
+assert root.key().toString().equals("");                    // <2>
+
+Map<String, String> map = root.asMap();                     // <3>
+
+assert map.size() == 4;                                     // <4>
+assert map.get("greeting").equals("Hello");                 // <4>
+assert map.get("page-size").equals("20");                   // <4>
+assert map.get("basic-range.0").equals("-20");              // <4>
+assert map.get("basic-range.1").equals("20");               // <4>
+----
+
+<1> This is modified `asMap` example. Get `app` config node and `detach` it from
+ original node structure.
+<2> Returned node is local root node, i.e. it's key and name is empty string.
+<3> Get all original `app` sub-leaf values as a `Map`.
+<4> Map contains 4 properties.
+The `root` is _local_ root node, i.e. there is no `app.` prefix in returned `Map`.
+
+
+[[Config-Advanced-Config-MetaConfig]]
+== Create Config from meta-configuration
+
+In <<config/01_introduction.adoc#Config-Basics-DefaultConfig,Access default configuration>> section the
+ `Config.create()` has been introduced. It creates `Config` instance from well
+ known configuration file, if available. It's functionality is little bit more
+ complex than already explained. The method also supports loading configuration
+ from well known <<Config-Advanced-Sources-MetaSource,meta-configuration>> file,
+if available.
+
+I.e. `Config.create()` creates `Config` instance from following sources, in order:
+
+. Tries to load configuration from meta one of following meta configuration files
+ on classpath, checked in order:
+.. `meta-config.yaml` - meta configuration file in YAML format
+.. `meta-config.conf` - meta configuration file in HOCON format
+.. `meta-config.json` - meta configuration file in JSON format
+.. `meta-config.properties` - meta configuration file in Java Properties format
+. Otherwise, configuration consists of:
+.. Environment variables
+.. Java System properties
+.. one of following files on classpath, checked in order:
+... `application.yaml` - configuration file in YAML format
+... `application.conf` - configuration file in HOCON format
+... `application.json` - configuration file in JSON format
+... `application.properties` - configuration file in Java Properties format
+
+It uses the first and only one file that exists and there is a `ConfigParser`
+ available that supports appropriate configuration file format (media type).
+Available parser means that the parser:
+
+. is loaded as a service using `java.util.ServiceLoader`;
+. or if it does not exist, a config core built-in parser is used, if exists.
+
+Every call of this method creates new object. Nor polling strategy neither retry
+ policy are applied on created configuration.
+
+'''
+
+It is also possible to specify custom meta-configuration file(s) to load
+ configuration from using method `Config.loadSourcesFrom(meta-sources)`.
+
+[source,java]
+.Load configuration from sources described in meta-configuration
+----
+Config config = Config.loadSourcesFrom(           // <1>
+        file("conf/meta-config.yaml").optional(), // <2>
+        classpath("meta-config.yaml"));           // <3>
+----
+
+<1> Method `loadSourcesFrom` accepts ordered list of meta configuration sources.
+<2> Load meta-configuration from file `conf/meta-config.yaml` on filesystem, if
+ available.
+<3> As a fallback meta-configuration can be loaded from `meta-config.yaml` file
+ that is always part of an example application.
+
+It is also possible to initialize `Builder` using meta-configuration file(s) via
+method `Config.loadSources(meta-sources)`, see below.
+
+[NOTE]
+=========
+Meta-configuration support is in detail described in dedicated
+<<Config-Advanced-Config-MetaConfig,Create Config from meta-configuration>>
+ section.
+=========
+
+
+[[Config-Advanced-Config-Builder]]
+== Config Builder
+
+Interface `Config.Builder` allows to fully customize `Config` instance
+ initialization.
+There are several options to create `Builder` instance.
+
+- `builder()` - Creates new instance of `Builder` to be used to bootstrap `Config`
+ instance.
+- `withSources(sources...)` - Creates new instance of `Builder` to be used to
+ bootstrap `Config` instance with specified ordered list of `ConfigSource`
+ instances.
+- `loadSources(meta-sources...)` - Creates new instance of `Builder` to be used
+ to bootstrap `Config` instance
+with ordered list of `ConfigSource` instances loaded from specified ordered list
+ of meta configurations.
+_This is extended variant of `Config.loadSourcesFrom(meta-sources...)` factory
+ method that returns `Builder` instead of `Config` instance._
+
+[plantuml, config/Config-Builder, png, title="Config Builder factory methods", align="center"]
+----
+interface Config {
+    {static} + Builder builder()
+    {static} + Builder withSources(sources...)
+    {static} + Builder loadSources(meta-sources...)
+    ..
+    {static} + Config empty()
+    {static} + Config create()
+    {static} + Config from(sources...)
+    {static} + Config loadSourcesFrom(meta-sources...)
+    ...
+}
+
+interface Builder {
+    + Builder overrides(OverrideSource)
+    + Builder disableKeyResolving()
+    ..
+    + Builder sources(List<ConfigSource>)
+    + Builder sources(source)
+    + Builder sources(source, source2)
+    + Builder sources(source, source2, source3)
+    ..
+    + Builder disableEnvironmentVariablesSource()
+    + Builder disableSystemPropertiesSource()
+    ..
+    + <T> Builder addMapper(Class<T>, ConfigMapper<T>)
+    + <T> Builder addMapper(Class<T>, Function<String, T>)
+    + Builder addMapper(ConfigMapperProvider)
+    + Builder disableMapperServices()
+    ..
+    + Builder addParser(ConfigParser)
+    + Builder disableParserServices()
+    ..
+    + Builder addFilter(ConfigFilter)
+    + Builder addFilter(Function<Config, ConfigFilter>)
+    + Builder disableCaching()
+    ..
+    + Builder changesExecutor(Executor)
+    + Builder changesMaxBuffer(int)
+    ..
+    + Config build()
+}
+----
+
+Builder API allows to configure following properties:
+
+- **overrides** - Instance of override source (`OverrideSource`).
+- **sources** - Instances of configuration source (`ConfigSource`).
+- **mappers** - Ordered list of configuration node mappers (`ConfigMapper`).
+It is also possible to disable (`disableMapperServices()`) loading of
+ `ConfigMapperProvider`-s as a service. Programmatically registered mappers or
+ mapper providers have higher priority over mapper providers loaded by
+ `java.util.ServiceLoader`.
+- **parsers** - ordered list of configuration content parsers (`ConfigParser`).
+It is also possible to disable (`disableParserServices()`) loading of
+ `ConfigParser`-s as a service. Programmatically registered parsers have higher
+ priority over parsers loaded by `java.util.ServiceLoader`.
+- **filters** - ordered list of configuration value filters (`ConfigFilter`).
+- **token reference resolving** - a resolving of reference tokens in a key can be
+ disabled (`disableKeyResolving()`).
+- **caching** - if can be elementary configuration value processed by filter
+ cached (`disableCaching`).
+
+[source,java]
+.Using aditional `Builder` methods
+----
+Config config = Config.withSources(ConfigSources.empty())
+        .disableMapperServices()                                    // <1>
+        .disableParserServices()                                    // <2>
+        .disableCaching()                                           // <3>
+        .disableKeyResolving()                                      // <4>
+        .addParser(new ConfigParser() {                             // <5>
+            @Override
+            public Set<String> getSupportedMediaTypes() {           // <6>
+                return Set.of("text/x-java-properties");
+            }
+            @Override
+            public ObjectNode parse(Content content)                // <7>
+                    throws ConfigParserException {
+                ObjectNode.Builder onb = ObjectNode.builder();
+                //... parse content and build ObjectNode
+                return onb.build();
+            }
+        })
+        .addFilter(new ConfigFilter() {                             // <8>
+            @Override
+            public String apply(Config.Key key, String value) {
+                return key.name().equals("level")
+                        ? value.toUpperCase()
+                        : value;
+            }
+        })
+        .addFilter(new Function<Config, ConfigFilter>() {           // <9>
+            @Override
+            public ConfigFilter apply(Config config) {
+                return initFilterUsingConfig(config);
+            }
+        })
+        .addMapper(Integer.class, new Function<String, Integer>() { // <10>
+            @Override
+            public Integer apply(String value) {
+                return Integer.parseInt(value) + 1;
+            }
+        })
+        .addMapper(new ConfigMapperProvider() {                     // <11>
+            @Override
+            public Map<Class<?>, ConfigMapper<?>> getMappers() {
+                return Map.of(
+                        Long.class, customLongMapper(),
+                        Double.class, customDoubleMapper());
+            }
+        })
+        .build();
+----
+
+<1> Do not automatically load and register mapper implementations available on
+ classpath or on module path.
+<2> Do not automatically load and register parser implementations available on
+ classpath or on module path.
+<3> Do not cache filtered values. It means filter can return different values in
+ time to a user.
+<4> Do not resolve references used in property keys.
+<5> Registering custom parser implementation with higher priority.
+<6> This is custom Java Properties parser that will be used instead of built-in
+ one.
+<7> Parser implementation loads `Readable Content.asReadable()` and using
+ `ObjectNode.Builder` builds `ObjectNode` instance.
+<8> Register simple filter. This filter will be called first.
+<9> Register another filter that will be called next.
+This a function that returns filter instance that can be initialized by already
+ loaded `Config` instance.
+<10> It is even possible to register mapper implementation for types with built-in
+ support.
+This `Integer` config mapper implementation has higher priority over built-in one.
+<11> Another option how to register custom config mapper implementations is to use
+ `ConfigMapperProvider` implementation.
+It allows to register more than config mapper implementation at once.
+
+
+== Config Context
+
+Interface `Config.Context` is config changes support foundation API.
+
+[plantuml, config/Config-Context, png, title="Config Context API", align="center"]
+----
+interface Context {
+    + Instant timestamp()
+    + Config last()
+    + Config reload()
+}
+----
+
+Context is accessible via `Config.context()` method. Context instance is
+ associated with specific `Config` node. The interface supports:
+
+- `timestamp()` - Returns timestamp of the last loaded configuration.
+It returns same value as the last loaded `Config.timestamp()`.
+- `last()` - Returns the last loaded instance of `Config` node
+related to same Config key as original config node used to get Context from
+ `node.context()`.
+If the configuration has not been reloaded yet it returns original Config node
+ instance.
+- `reload()` - Requests reloading of whole configuration and returns new instance
+ of Config node
+related to same Config key as original config node used to get Context from
+ `node.context()`.
+
+[source,properties]
+.Initial _filename_ content
+----
+app.greeting = Hi
+----
+
+[source,java]
+.Example of `Config.context()` use
+----
+Config greeting = Config.from(file(filename))
+        .get("app.greeting");                            // <1>
+Config.Context context = greeting.context();             // <2>
+
+assert greeting.asString().equals("Hi");                 // <3>
+assert greeting.timestamp().equals(context.timestamp()); // <4>
+assert greeting == context.last();                       // <5>
+----
+
+<1> Load configuration from _filename_ and get `greeting` sub-node.
+<2> Get `Context` instance related to `greeting` config node.
+<3> Initial `greeting` property value is `Hi`.
+<4> Timestamp of `greeting` config node is equal to `Context` timestamp because
+ config has not been reloaded yet.
+<5> Current `greeting` node is equal to `Context` last node because config has not
+ been reloaded yet.
+
+[source,properties]
+.Updated _filename_ content
+----
+app.greeting = Hello
+----
+
+[source,java]
+.Configuration programatically reloaded
+----
+context.reload();                                          // <1>
+
+assert greeting.asString().equals("Hi");                   // <2>
+assert greeting.timestamp().isBefore(context.timestamp()); // <3>
+assert greeting != context.last();                         // <4>
+assert context.last().asString().equals("Hello");          // <5>
+----
+
+<1> Programmatically `reload` configuration.
+<2> Previously loaded config node `greeting` is still `Hi`.
+Already loaded `Config` instances are not affected by configuration reloading.
+<3> Timestamp of previously loaded config node is older than the last loaded
+ configuration (`Config.timestamp()`).
+<4> Previously loaded config node `greeting` is different than the last loaded
+ one.
+<5> Newly loaded `greeting` property value (available through `Config.last()`) is
+ `Hello`.
+
+== Overrides
+
+Overrides is a feature that allow user to replace an original value with a new
+ one. This is similar behavior as a ConfigFilter, but the `overrides` definitions
+ are specified as a
+ link:{javadoc-base-url-api}/spi/OverrideSource.html[OverrideSource] with the
+ ability to poll new content. The overridden keys can be specified with wildcards,
+ where only existing config keys is affected (no config nodes will be created).
+Override definitions consist of pairs of the wildcard and the new value.
+ Definitions are in java properties format and the order is important. Every
+ wildcard/value pair is tested one by one in specified order and the first pair,
+matching the configuration key, specifies the new value.
+
+== Token reference resolving
+
+A token reference is a key token starting with `$` and can be enclosed between
+ `{` and `}`, i.e. `$ref`, `${ref}`. Even a key composed of more than one token
+ can be referenced in another key, i.e. `${env.ref}`.
+
+The token references may be used to declare the default values (see
+ `resolving-tokens.yaml` below), while the references may be resolved in another
+ config source, which identifies a current environment (see `env.yaml` examples
+ below).
+
+Overrides then can be shared for both environment `test` and `prod`. The
+ configuration in each environment is then overridden with a different values
+ using wildcards (see `overrides.properties` below).
+
+== Initialize Config with overrides
+
+Following code explicitly loads `Config` from a set of config sources and sets
+ overrides from `overrides.properties` file.
+
+[source,java]
+.Initialize `Config` with override definition from `overrides.properties` file
+----
+Config config = Config.builder()
+        .overrides(OverrideSources.file("conf/overrides.properties")) // <1>
+        .sources(file("conf/env.yaml"),                               // <2>
+                 classpath("resolving-tokens.yaml"))                  // <3>
+        .build();
+----
+
+<1> Specifying of _overrides_ source loaded from file on the filesystem.
+<2> A deployment specific environment configuration on the filesystem.
+<3> A default configuration with token references to the environment specific
+ configuration.
+
+`OverrideSources` provides factory methods for built-in implementations of
+ override sources. It is possible to load override definitions from file on
+ `classpath`, from specified `file` path on filesystem or from HTTP `url`.
+
+[plantuml, config/OverrideSources, png, title="io.helidon.config.OverrideSources", align="center"]
+----
+class OverrideSources {
+    {static} + classpath(String)
+    {static} + file(String)
+    {static} + url(URL)
+    ..
+    {static} + empty()
+    ..
+    {static} + from(Map<String, String>)
+}
+----
+
+See link:{javadoc-base-url-api}/OverrideSources.html[OverrideSources] javadoc for
+ more information.
+
+[source,properties]
+.Example `overrides.properties` file
+----
+# Override 'cert' for any _pod_ in `prod` environment    <1>
+prod.*.data.providers.*.cert = prod.crt
+
+# Override 'cert' for any _pod_ in `test` environment    <2>
+test.*.data.providers.*.cert = test.crt
+
+# Override 'cert' for any _pod_ in any other environment <3>
+*.*.data.providers.0.cert = another.crt
+----
+
+<1> This definition overrides any `providers` `cert` property in `prod` environment,
+originally defined in `resolving-tokens.yaml` file.
+<2> This definition overrides any `providers` `cert` property in `test` environment,
+originally defined in `resolving-tokens.yaml` file.
+<3> This definition is ignored on `test` environment, because the previous definition is taken.
+
+
+File `env.yaml` contains deployment deployment specific values.
+
+[source,yaml]
+.Example `env.yaml` file - `test` environment
+----
+env: test   # <1>
+pod: qwerty # <2>
+
+----
+
+<1> Example for testing environment.
+<2> And concrete id of current `pod` the application is running on.
+
+[source,yaml]
+.Example `env.yaml` file - `prod` environment
+----
+env: prod
+pod: asdfgh
+----
+
+Default application values are placed in `resolving-tokens.yaml` file on
+ classpath.
+
+[source,yaml]
+.Example `resolving-tokens.yaml` file
+----
+$env:                                           # <1>
+    $pod:                                       # <2>
+        data:
+            providers:
+                - name: "Provider1"
+                  class: "this.is.my.Provider1"
+                  cert: s2s.crt                 # <3>
+                - name: "Provider2"
+                  class: "this.is.my.Provider2"
+
+----
+
+<1> Token `$env` may be resolved in any config source (see `env.yaml`).
+<2> Token `$pod` may be resolved in any config source (see `env.yaml`).
+<3> This value is overridden by `overrides.properties` depends on the resolving
+ tokens `$env` and `$pod`.
+
+[source,java]
+.Access application properties - skip `$env.$pod` prefix
+----
+String env = config.get("env").asString(); // <1>
+String pod = config.get("pod").asString(); // <2>
+
+Config root = config.get(env).get(pod)     // <3>
+        .detach();                         // <4>
+
+assert root                                // <5>
+        .get("data.providers.0.cert")
+        .asString().equals("test.crt");    // <6>
+
+assert root
+        .get("data.providers.1.cert")
+        .exists() == false;                // <7>
+----
+
+<1> Read current environment id (`env`) used to resolve `$env` in key.
+<2> Read current pod instance id (`pod`) used to resolve `$pod` in key.
+<3> Get new configuration _root_ (for loaded `env` and `pod` value) to be used by
+ application later.
+<4> It is possible to `detach` new `root` from original configuration to reset
+ `$env.$pod` prefix from it's key.
+<5> Use new `root` configuration to load application config properties.
+<6> Value of `data.providers.0.cert` originated in `resolving-tokens.yaml`
+(where the key `$env.$pod.data.providers.0.cert` is defined as `s2s.crt` - a
+ default value for all environments and all pods),
+however a token reference resolving make in the current environment (see
+ `env.yaml`) the entry key looks like `test.qwerty.data.providers.0.cert`,
+ but `overrides.properties` overrides the value for all pods in test environment
+ to `test.crt`.
+<7> Value of `test.qwerty.data.providers.1.cert` does not exists, because it was
+ never defined, see `resolving-tokens.yaml`.
+
+
+<<config/05_mutability-support.adoc,Processing configuration changes>> is asynchronous
+ process.
+Each asynchronous task is executed using Java `java.util.concurrent.Executor` or
+ `java.util.concurrent.ScheduledExecutorService`. User can provide custom executor
+ instance for individual use-cases.
+
+
+=== Polling Strategy Custom Executor
+
+Scheduled polling strategy - method `PollingStrategies.regular(Duration)` returns
+link:{javadoc-base-url-api}/PollingStrategies.ScheduledBuilder.html[ScheduledBuilder].
+The builder allows to specify custom `ScheduledExecutorService` instance to be
+ used to schedule polling ticks on. By default it is a _new thread pool executor_
+ per polling strategy instance.
+
+Filesystem watch polling strategy - method `PollingStrategies.watch(Path)` returns
+link:{javadoc-base-url-api}/PollingStrategies.FilesystemWatchBuilder.html[FilesystemWatchBuilder].
+The builder allows to specify custom `ScheduledExecutorService` instance to be
+ used to watch filesystem changes on. By default it is a
+ _new single-threaded executor_ per polling strategy instance.
+
+[source,java]
+.Customize polling strategy executors
+----
+ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // <1>
+
+Config config = Config.from(
+        ConfigSources.file("conf/dev.properties")
+                .pollingStrategy(
+                        PollingStrategies.regular(Duration.ofSeconds(2)) // <2>
+                                .executor(executor)),                    // <3>
+        ConfigSources.file("conf/config.properties")
+                .pollingStrategy(
+                        path -> PollingStrategies.watch(path)            // <4>
+                                .executor(executor)));                   // <5>
+----
+
+<1> Prepared a thread pool executor with core pool size set `2` to be shared by
+ all polling strategies.
+<2> This is generic implementation of `PollingStrategy` that can be used with any
+ config source.
+<3> Source file `dev.properties` uses regular polling strategy with custom
+ `executor`.
+<4> This is config source specific implementation of `PollingStrategy`.
+In this case _file_ config source is customized by _Path_ to configuration file.
+This _path_ can be used by specific polling strategy implementation.
+In this case Java Filesystem `WatchService` is used to listen on set _Path_.
+<5> Source file `config.properties` uses filesystem watch polling strategy with
+ same custom `executor`.
+
+== Sources Custom Executor
+
+Almost all built-in config sources and override sources extend common
+link:{javadoc-base-url-api}/spi/AbstractSource.html[super class] and are usually
+ initialized by
+extension of common source link:{javadoc-base-url-api}/spi/AbstractSource.Builder.html[Builder].
+The builder allows to specify custom _observe-on_ `Executor` instance to be used
+ to deliver config or override source changes on.
+The Executor is also used to process reloading of source triggered by polling
+ strategy event.
+
+By default dedicated thread pool that creates new threads as needed, but
+will reuse previously constructed threads when they are available is used.
+The dedicated thread pool is shared by any source instance even by more Config
+ instances.
+
+Each source subscriber has dedicated buffer for _changes_ events. It is possible
+ to customize _maximum capacity of the buffer_.
+By default is `256`, see Java 9 `java.util.concurrent.Flow.DEFAULT_BUFFER_SIZE`
+ constant.
+
+[source,java]
+.Customize config and override sources' executors
+----
+Executor executor = Executors.newCachedThreadPool();               // <1>
+
+Config config = Config.builder()
+        .overrides(
+                OverrideSources.file("conf/overrides.properties")
+                        .pollingStrategy(PollingStrategies::watch)
+                        .changesExecutor(executor)                 // <2>
+                        .changesMaxBuffer(4))                      // <3>
+        .sources(
+                ConfigSources.file("conf/env.yaml")
+                        .pollingStrategy(PollingStrategies::watch)
+                        .changesExecutor(executor)                 // <4>
+                        .changesMaxBuffer(4))                      // <4>
+        .build();
+----
+
+<1> Prepared a thread pool executor to be shared by all sources.
+<2> Override source file `overrides.properties` process file reloading on custom
+ `executor`. Source subscribers are also notified about source changes using the
+ executor.
+<3> Subscriber's buffer is shorten to just `4` events. Not consumed events will be
+ dropped off.
+<4> Config source file `env.yaml` uses same `executor` as well as buffer capacity.
+
+
+=== Composite Config Source Executor
+
+In case a Config is built from a list of more than 1 config sources it is
+ automatically covered into composite config source.
+Composite config source listens on each aggregated config source changes to be
+ able to delegate a change event further.
+I.e. similar attributes as for common config source needs to be set.
+
+In such case a user needs to create instance of
+ link:{javadoc-base-url-api}/ConfigSources.CompositeBuilder.html[CompositeBuilder].
+The builder allows to specify custom `ScheduledExecutorService` instance to be
+ used to execute config source reloading on.
+By default dedicated thread pool is used. The pool is shared by each composite
+ source instance even by more Config instances.
+
+It is also possible to specifies de-bounce timeout for reloading composite config
+ source in case any of aggregated config sources has changed.
+De-bouncing reduces number of change events published by `ConfigSource.changes()`
+ because it aggregates series of particular sub-events into single one.
+Just in case there is no new sub-event during specified _debounce timeout_ the
+ reloading is processed and aggregated event is published. By default `100`
+ milliseconds is used.
+
+[source,java]
+.Customize composite source executors
+----
+ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);       // <1>
+
+Config config = Config.from(
+        ConfigSources.from(file("conf/dev.properties")                         // <2>
+                                   .pollingStrategy(PollingStrategies::watch),
+                           file("conf/config.properties")                      // <2>
+                                   .pollingStrategy(PollingStrategies::watch))
+                .changesExecutor(executor)                                     // <3>
+                .changesMaxBuffer(4)                                           // <4>
+                .changesDebounce(Duration.ofSeconds(1)));                      // <5>
+----
+
+<1> Prepared a thread pool executor.
+<2> Method `ConfigSources.from(Supplier<ConfigSource>...)` accepts list of
+ particular config source.
+In this case it create composite config source from two file sources
+ (`dev.properties` and `config.properties`).
+<3> Composite config source uses specified `executor` to process changes events
+ from `dev.properties` or `config.properties` on.
+<4> Subscriber's buffer is shorten to just `4` events. Not consumed events will be
+ dropped off.
+(Again, default buffer capacity is `256`.)
+<5> Changes event will not be fire more than one per a second.
+
+
+=== Config Custom Executor
+
+And finally Config instance is subscribed on appropriate override and/or config
+ sources changes.
+ A link:{javadoc-base-url-api}/Config.Builder.html[Config.Builder] it allows to
+ specify custom _observe-on_ `Executor` instance to be used to deliver config
+ changes events to a subscriber on. The Executor is also used to process changes
+ events form it's sources.
+
+By default dedicated thread pool that creates new threads as needed,
+but will reuse previously constructed threads when they are available is used.
+The dedicated thread pool is shared by any config instance.
+
+Each source subscriber has dedicated buffer for _changes_ events. It is possible
+ to customize _maximum capacity of the buffer_. By default is `256`, see Java 9
+ `java.util.concurrent.Flow.DEFAULT_BUFFER_SIZE` constant.
+
+[source,java]
+.Customize config executor
+----
+Executor executor = Executors.newCachedThreadPool();        // <1>
+
+Config config = Config.withSources(
+        file("conf/config.properties")
+                .pollingStrategy(PollingStrategies::watch))
+        .changesExecutor(executor)                          // <2>
+        .changesMaxBuffer(16)                               // <3>
+        .build();
+----
+
+<1> Prepared a thread pool executor.
+<2> Config uses specified `executor` to process changes events on as well as to
+ notify subscribers on.
+<3> Subscriber's buffer is shorten to just `16` events. Not consumed events will
+ be dropped off.
+
+=== Retry Policy Custom Executor
+
+The method `RetryPolicies.repeat(int retries)` returns
+ link:{javadoc-base-url-api}/RetryPolicies.Builder.html[RetryPolicies.Builder].
+The builder allows to specify a custom `ScheduledExecutorService` instance to be
+ used to schedule and execute delayed retries. By default it is a
+ _new thread pool executor_ per retry policy instance.
+
+[source,java]
+.Customize retry policy executors
+----
+ScheduledExecutorService executor = Executors.newScheduledThreadPool(2, myThreadFactory); // <1>
+
+Config config = Config.from(
+        ConfigSources.file("conf/dev.properties")                                         // <2>
+                .optional()                                                               // <3>
+                .retryPolicy(RetryPolicies.repeat(2)                                      // <4>
+                        .executor(executor)));                                            // <5>
+----
+
+<1> Prepared a thread pool executor with core pool size set `2` and custom
+ `java.util.concurrent.ThreadFactory`.
+<2> The built-in config source loading a content from file.
+<3> When the source is flagged as `optional()`, the loading attempt will be
+ repeated as the retry policy defines,
+but an overall fail does not lead to failing initial load (or polled when
+ configured).
+<4> This is a built-in implementation of `RetryPolicy` that can be used with any
+ config source, but typically for that ones where
+the repeating might help.
+<5> Source uses a retry policy with custom `executorService`.

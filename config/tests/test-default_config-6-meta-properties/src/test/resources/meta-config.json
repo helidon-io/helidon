@@ -1,0 +1,10 @@
+{
+    "sources": [
+        {
+            "type": "classpath",
+            "properties": {
+                "resource": "config.json"
+            }
+        }
+    ]
+}

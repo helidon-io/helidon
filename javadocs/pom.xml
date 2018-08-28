@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-project</artifactId>
+        <version>0.0.3-SNAPSHOT</version>
+    </parent>
+    <artifactId>helidon-javadocs</artifactId>
+    <name>Helidon Javadocs</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>javadoc-jar</id>
+                        <phase>pre-package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <doctitle>Helidon ${project.version} API Documentation</doctitle>
+                            <windowtitle>Helidon ${project.version} API</windowtitle>
+                            <bottom>
+                            <![CDATA[Copyright &#169; 2018,
+                                <a href="http://www.oracle.com">Oracle</a>
+                                and/or its affiliates.
+                                All Rights Reserved. Use is subject to license terms.]]>
+                            </bottom>
+                            <groups>
+                                <group>
+                                    <title>Microprofile</title>
+                                    <packages>io.helidon.microprofile*</packages>
+                                </group>
+                                <group>
+                                    <title>Common APIs</title>
+                                    <packages>io.helidon.common*:io.helidon.common.reactive*</packages>
+                                </group>
+                                <group>
+                                    <title>Configuration API</title>
+                                    <packages>io.helidon.config*</packages>
+                                </group>
+                                <group>
+                                    <title>Security API</title>
+                                    <packages>io.helidon.security*</packages>
+                                </group>
+                                <group>
+                                    <title>Reactive Web Server API</title>
+                                    <packages>io.helidon.webserver*</packages>
+                                </group>
+                            </groups>
+                            <verbose/>
+                            <maxmemory>256m</maxmemory>
+                            <links>
+                                <link>https://docs.oracle.com/javase/8/docs/api/</link>
+                            </links>
+                            <additionalJOptions>
+                                <JOption>-source</JOption>
+                                <JOption>8</JOption>
+                            </additionalJOptions>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                            <includeDependencySources>true</includeDependencySources>
+                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                            <dependencySourceIncludes>
+                                <dependencySourceInclude>io.helidon.*:*</dependencySourceInclude>
+                                <dependencySourceInclude>io.helidon*:*</dependencySourceInclude>
+                            </dependencySourceIncludes>
+                            <dependencySourceExcludes>
+                                <dependencySourceExclude>org.osgi:*</dependencySourceExclude>
+                                <dependencySourceExclude>com.typesafe:config-test-lib_*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.annotation:*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.interceptor:*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.enterprise.concurrent:*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.el:*</dependencySourceExclude>
+                            </dependencySourceExcludes>
+                            <sourceFileIncludes>
+                                <sourceFileInclude>io/helidon/**/*.java</sourceFileInclude>
+                            </sourceFileIncludes>
+                            <excludePackageNames>*.internal:*.internal.*:*.config.testing.*</excludePackageNames>
+                            <sourceFileExcludes>
+                                <sourceFileExclude>**/module-info.java</sourceFileExclude>
+                            </sourceFileExcludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- skip default execution for javadoc:jar -->
+                        <id>default-jar</id>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-netty</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-zipkin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-prometheus</artifactId>
+        </dependency>
+        <!-- config -->
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-bundle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-etcd</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-git</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-testing</artifactId>
+        </dependency>
+        <!-- security -->
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-tools-config</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for outbound security filtering -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-providers-common</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for Google access token -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-google-login</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-jwt</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Basic and digest authentication -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-http-auth</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Authentication provider supporting Signatures -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-http-signature</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Jersey integration -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-integration-jersey</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Web server integration -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-integration-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Integration annotations -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-integration-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Attribute based access control support -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-abac</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-abac-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-abac-role</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-abac-scope</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-abac-policy</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-abac-policy-el</artifactId>
+        </dependency>
+        <dependency>
+            <!-- JWT and JWK support -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-jwt</artifactId>
+        </dependency>
+        <dependency>
+            <!-- A full-bundle except integrations with containers -->
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-bundle</artifactId>
+        </dependency>
+        <!-- microprofile -->
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-1.2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile</groupId>
+            <artifactId>helidon-microprofile-security</artifactId>
+        </dependency>
+    </dependencies>
+</project>
