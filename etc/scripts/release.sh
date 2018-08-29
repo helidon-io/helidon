@@ -177,7 +177,6 @@ update_version(){
 
 inject_credentials(){
   # Add private_key from IDENTITY_FILE
-  # Only if none exist on the system
   if [ -n "${IDENTITY_FILE}" ] && [ ! -e ~/.ssh ]; then
     mkdir ~/.ssh/ 2>/dev/null || true
     echo "${IDENTITY_FILE}" > ~/.ssh/id_rsa
@@ -188,7 +187,6 @@ inject_credentials(){
   fi
 
   # Add docker config from DOCKER_CONFIG_FILE
-  # Only if none exist on the system
   if [ -n "${DOCKER_CONFIG_FILE}" ] && [ ! -e ~/.docker ]; then
     mkdir ~/.docker/ 2>/dev/null || true
     echo "${DOCKER_CONFIG_FILE}" > ~/.docker/config.json
@@ -196,14 +194,12 @@ inject_credentials(){
   fi
 
   # Add maven settings from MAVEN_SETTINGS_FILE
-  # Only if none exist on the system
   if [ -n "${MAVEN_SETTINGS_FILE}" ] && [ ! -e ~/.m2/settings.xml ]; then
     mkdir ~/.m2/ 2>/dev/null || true
     echo "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
   fi
 
   # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
-  # Only if none exist on the system
   if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] && [ ! -e ~/.m2/settings-security.xml ]; then
     mkdir ~/.m2/ 2>/dev/null || true
     echo "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
