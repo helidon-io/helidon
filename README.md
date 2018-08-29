@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://rawgit.com/oracle/helidon/add-readme-logo/etc/images/helidon_cloud_sticker.png"
+    <img src="./etc/images/helidon_cloud_sticker.png"
         height="250">
 </p>
 
