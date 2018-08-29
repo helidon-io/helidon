@@ -117,6 +117,11 @@ readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
 # Resolve FULL_VERSION
 if [ -z ${VERSION+x} ]; then
+    mvn -f ${WS_DIR}/pom.xml \
+        -Dexec.executable="echo" \
+        -Dexec.args="\${project.version}" \
+        --non-recursive \
+        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
 
     # get maven version
     MVN_VERSION=$(mvn \
