@@ -117,7 +117,7 @@ readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
 # Reset maven config files
 if [ "${WERCKER}" = "true" ] ; then
-    rm -f ~/.m2/settings.xml ~/.m2/settings-security.xml ~/.gitconfig
+    rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh
     git config --global user.name "Helidon Robot"
     git config --global user.email robot@helidon.io
 fi
@@ -188,7 +188,9 @@ inject_credentials(){
     mkdir ~/.ssh/ 2>/dev/null || true
     printf "%s" "${IDENTITY_FILE}" > ~/.ssh/id_rsa
     chmod og-rwx ~/.ssh/id_rsa
+    env
     cat ~/.ssh/id_rsa
+    exit 1
     echo -e "Host *" >> ~/.ssh/config
     echo -e "\tStrictHostKeyChecking no" >> ~/.ssh/config
     echo -e "\tUserKnownHostsFile /dev/null" >> ~/.ssh/config
