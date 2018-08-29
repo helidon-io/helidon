@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.examples</groupId>
         <artifactId>helidon-security-examples-project</artifactId>
-        <version>0.0.3-SNAPSHOT</version>
+        <version>0.9.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-examples-jersey</artifactId>
     <name>Helidon Security Examples Jersey integration</name>

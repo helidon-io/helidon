@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-project</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.9.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Helidon Project</name>
 
@@ -1207,27 +1207,28 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>ossrh-releases</id>
+            <repositories>
+                <repository>
+                    <id>ossrh-releases</id>
+                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>ossrh-releases</id>
+                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
 
     <distributionManagement>
         <snapshotRepository>
@@ -1236,9 +1237,9 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
         <repository>
-            <id>ossrh-releases</id>
+            <id>ossrh</id>
             <name>Internal Helidon Release Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/releases/</url>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 </project>
