@@ -13,7 +13,7 @@ Helidon supports two programming models:
 
 ## Documentation
 
-Helidon documentation and javadocs at <http://helidon.io>.
+Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
 
 ## Get Started
 
@@ -21,13 +21,12 @@ See Getting Started at <http://helidon.io>.
 
 ## Bugs and Feedback
 
-Issues are currently tracked in JIRA at <https://github.com/oracle/helidon/issues>
+Issues are currently tracked in Github, see <https://github.com/oracle/helidon/issues>
 
 ## Communication
 
-* Slack: [j4c-users] TBD
-* Twitter: TBD
-* http://helidon.io
+* Slack: [#helidon-users@helidon.slack.com](helidon.slack.com)
+* Twitter: [@HelidonIO](https://twitter.com/HelidonIO)
 
 ## Build
 
