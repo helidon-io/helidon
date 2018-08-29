@@ -123,12 +123,6 @@ fi
 # Resolve FULL_VERSION
 if [ -z ${VERSION+x} ]; then
 
-    mvn -f ${WS_DIR}/pom.xml \
-        -Dexec.executable="echo" \
-        -Dexec.args="\${project.version}" \
-        --non-recursive \
-        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
-
     # get maven version
     MVN_VERSION=$(mvn \
         -q \
@@ -208,14 +202,12 @@ inject_credentials(){
   if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
     mkdir ~/.m2/ 2>/dev/null || true
     printf "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
-    cat ~/.m2/settings.xml
   fi
 
   # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
   if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] ; then
     mkdir ~/.m2/ 2>/dev/null || true
     printf "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
-    cat  ~/.m2/settings-security.xml
   fi
 }
 

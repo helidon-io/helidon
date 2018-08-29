@@ -45,7 +45,7 @@ for _ex in ${EXAMPLES}; do
   if [ -f "${pom_file}" ]; then
       mvn -f "${pom_file}" \
         clean deploy -B -DskipTests \
-        -DaltDeploymentRepository=gf-internal-releases::default::https://oss.sonatype.org/service/local/staging/deploy/maven2/
+        -DaltDeploymentRepository=ossrh::default::https://oss.sonatype.org/service/local/staging/deploy/maven2/
   else
     echo "${pom_file} does not exist. Skipping."
   fi
