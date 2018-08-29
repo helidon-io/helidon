@@ -1,3 +1,8 @@
+<p align="center">
+    <img src="https://rawgit.com/oracle/helidon/add-readme-logo/etc/images/helidon_cloud_sticker.png"
+        height="250">
+</p>
+
 # Helidon: Java Libraries for Writing Microservices
 
 Project Helidon is a set of Java Libraries for writing microservices.
