@@ -201,6 +201,13 @@ inject_credentials(){
     mkdir ~/.m2/ 2>/dev/null || true
     echo "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
   fi
+
+  # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
+  # Only if none exist on the system
+  if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] && [ ! -e ~/.m2/settings-security.xml ]; then
+    mkdir ~/.m2/ 2>/dev/null || true
+    echo "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
+  fi
 }
 
 release_build(){
