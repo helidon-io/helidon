@@ -117,7 +117,7 @@ readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
 # Reset maven config files
 if [ "${WERCKER}" = "true" ] ; then
-    rm ~/.m2/settings.xml ~/.m2/settings-security.xml
+    rm -f ~/.m2/settings.xml ~/.m2/settings-security.xml
 fi
 
 # Resolve FULL_VERSION
