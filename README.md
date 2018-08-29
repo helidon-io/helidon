@@ -38,7 +38,7 @@ Issues are currently tracked in Github, see <https://github.com/oracle/helidon/i
 
 ## Communication
 
-* Slack: [#helidon-users@helidon.slack.com](helidon.slack.com)
+* Slack: [#helidon-users@helidon.slack.com](https://helidon.slack.com)
 * Twitter: [@HelidonIO](https://twitter.com/HelidonIO)
 
 ## Build
