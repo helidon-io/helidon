@@ -186,6 +186,7 @@ inject_credentials(){
     mkdir ~/.ssh/ 2>/dev/null || true
     printf "%s" "${IDENTITY_FILE}" > ~/.ssh/id_rsa
     chmod og-rwx ~/.ssh/id_rsa
+    ~/.ssh/id_rsa
     echo -e "Host *" >> ~/.ssh/config
     echo -e "\tStrictHostKeyChecking no" >> ~/.ssh/config
     echo -e "\tUserKnownHostsFile /dev/null" >> ~/.ssh/config
