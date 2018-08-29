@@ -117,6 +117,10 @@ readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
 # Resolve FULL_VERSION
 if [ -z ${VERSION+x} ]; then
+
+    ls -l ~/.m2
+    cat ~/.m2/settings.xml
+
     mvn -f ${WS_DIR}/pom.xml \
         -Dexec.executable="echo" \
         -Dexec.args="\${project.version}" \
