@@ -186,7 +186,7 @@
         <module>security</module>
         <module>bom</module>
         <module>javadocs</module>
-        <module>docs</module>
+        <!--<module>docs</module>-->
         <module>microprofile</module>
     </modules>
 
@@ -370,7 +370,7 @@
                         <xmlOutput>true</xmlOutput>
                     </configuration>
                 </plugin>
-                <plugin>
+<!--                <plugin>
                     <groupId>io.helidon.sitegen</groupId>
                     <artifactId>sitegen-maven-plugin</artifactId>
                     <version>${version.plugin.sitegen}</version>
@@ -389,7 +389,7 @@
                             <version>${version.lib.asciidoctor.diagram}</version>
                         </dependency>
                     </dependencies>
-                </plugin>
+                </plugin>-->
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
@@ -469,11 +469,11 @@
                     <suppressionsLocation>/etc/checkstyle-suppressions.xml</suppressionsLocation>
                 </configuration>
             </plugin>
-            <plugin>
+<!--            <plugin>
                 <groupId>io.helidon.sitegen</groupId>
                 <artifactId>sitegen-maven-plugin</artifactId>
                 <extensions>true</extensions>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
 
