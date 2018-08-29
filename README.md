@@ -3,13 +3,16 @@
 </p>
 <p align="center">
     <a href="https://github.com/oracle/helidon/tags">
-        <img src="https://img.shields.io/github/tag/oracle/helidon.svg?label=latest%20version" alt="latest version">
+        <img src="https://img.shields.io/github/tag/oracle/helidon.svg" alt="latest version">
+    </a>
+    <a href="https://github.com/oracle/helidon/issues">
+        <img src="https://img.shields.io/github/issues/oracle/helidon.svg" alt="latest version">
     </a>
     <a href="https://app.wercker.com/project/byKey/de00e8ec6178ba9a2db8ee863d5c568a">
         <img src="https://app.wercker.com/status/de00e8ec6178ba9a2db8ee863d5c568a/s/master" alt="build status">
     </a>
     <a href="https://helidon.slack.com">
-        <img src="https://img.shields.io/badge/style-flat-green.svg?longCache=true&style=flat&logo=slack" alt="chat on Slack">
+        <img src="https://img.shields.io/badge/style-flat-green.svg?longCache=true&slack=online&logo=slack" alt="chat on Slack">
     </a>
     <a href="https://twitter.com/intent/follow?screen_name=HelidonIO">
         <img src="https://img.shields.io/twitter/follow/helidon_io.svg?style=social&logo=twitter" alt="follow on Twitter">
