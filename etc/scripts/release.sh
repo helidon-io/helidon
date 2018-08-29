@@ -115,12 +115,13 @@ readonly PREPARE_HOOKS=( ${WS_DIR}/examples/archetypes/set-version.sh )
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
+# Reset maven config files
+if [ "${WERCKER}" = "true" ] ; then
+    rm ~/.m2/settings.xml ~/.m2/settings-security.xml
+fi
+
 # Resolve FULL_VERSION
 if [ -z ${VERSION+x} ]; then
-
-    ls -l ~/.m2
-    cat ~/.m2/settings.xml
-    env
 
     mvn -f ${WS_DIR}/pom.xml \
         -Dexec.executable="echo" \
@@ -189,7 +190,7 @@ inject_credentials(){
   # Add private_key from IDENTITY_FILE
   if [ -n "${IDENTITY_FILE}" ] && [ ! -e ~/.ssh ]; then
     mkdir ~/.ssh/ 2>/dev/null || true
-    echo "${IDENTITY_FILE}" > ~/.ssh/id_rsa
+    printf "${IDENTITY_FILE}" > ~/.ssh/id_rsa
     chmod og-rwx ~/.ssh/id_rsa
     echo -e "Host *" >> ~/.ssh/config
     echo -e "\tStrictHostKeyChecking no" >> ~/.ssh/config
@@ -199,21 +200,21 @@ inject_credentials(){
   # Add docker config from DOCKER_CONFIG_FILE
   if [ -n "${DOCKER_CONFIG_FILE}" ] && [ ! -e ~/.docker ]; then
     mkdir ~/.docker/ 2>/dev/null || true
-    echo "${DOCKER_CONFIG_FILE}" > ~/.docker/config.json
+    printf "${DOCKER_CONFIG_FILE}" > ~/.docker/config.json
     chmod og-rwx ~/.docker/config.json
   fi
 
   # Add maven settings from MAVEN_SETTINGS_FILE
   if [ -n "${MAVEN_SETTINGS_FILE}" ] ; then
     mkdir ~/.m2/ 2>/dev/null || true
-    echo "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
+    printf "${MAVEN_SETTINGS_FILE}" > ~/.m2/settings.xml
     cat ~/.m2/settings.xml
   fi
 
   # Add maven settings security from MAVEN_SETTINGS_SECURITY_FILE
   if [ -n "${MAVEN_SETTINGS_SECURITY_FILE}" ] ; then
     mkdir ~/.m2/ 2>/dev/null || true
-    echo "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
+    printf "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
     cat  ~/.m2/settings-security.xml
   fi
 }
