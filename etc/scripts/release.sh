@@ -190,7 +190,7 @@ inject_credentials(){
   # Add private_key from IDENTITY_FILE
   if [ -n "${IDENTITY_FILE}" ] && [ ! -e ~/.ssh ]; then
     mkdir ~/.ssh/ 2>/dev/null || true
-    printf "${IDENTITY_FILE}" > ~/.ssh/id_rsa
+    printf "%s" "${IDENTITY_FILE}" > ~/.ssh/id_rsa
     chmod og-rwx ~/.ssh/id_rsa
     echo -e "Host *" >> ~/.ssh/config
     echo -e "\tStrictHostKeyChecking no" >> ~/.ssh/config
