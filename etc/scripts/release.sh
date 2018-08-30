@@ -115,11 +115,9 @@ readonly PREPARE_HOOKS=( ${WS_DIR}/examples/archetypes/set-version.sh )
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
-# Reset maven config files
+# Reset generated config files
 if [ "${WERCKER}" = "true" ] ; then
     rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh
-    git config --global user.name "Helidon Robot"
-    git config --global user.email robot@helidon.io
 fi
 
 # Resolve FULL_VERSION
