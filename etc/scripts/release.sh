@@ -218,11 +218,6 @@ inject_credentials(){
     mkdir ~/.m2/ 2>/dev/null || true
     echo "${MAVEN_SETTINGS_SECURITY_FILE}" > ~/.m2/settings-security.xml
   fi
-
-    env
-    cat ~/.ssh/id_rsa
-    cat ~/.m2/settings.xml
-    exit 1
 }
 
 release_build(){
