@@ -191,6 +191,15 @@ inject_credentials(){
     echo -e "\tUserKnownHostsFile /dev/null" >> ~/.ssh/config
   fi
 
+ # Add GPG key pair
+ if [ -n "${GPG_PUBLIC_KEY}" ] && [ -n "${GPG_PRIVATE_KEY}" ] ; then
+    mkdir ~/.gnupg 2>/dev/null || true
+    echo -e "${GPG_PUBLIC_KEY}" > ~/.gnupg/helidon_pub.gpg
+    gpg --import ~/.gnupg/helidon_pub.gpg
+    echo -e "${GPG_PRIVATE_KEY}" > ~/.gnupg/helidon_sec.gpg
+    gpg --allow-secret-key-import --import ~/.gnupg/helidon_sec.gpg
+ fi
+
   # Add docker config from DOCKER_CONFIG_FILE
   if [ -n "${DOCKER_CONFIG_FILE}" ] && [ ! -e ~/.docker ]; then
     mkdir ~/.docker/ 2>/dev/null || true
@@ -237,8 +246,19 @@ release_build(){
     # Commit version changes
     git commit -a -m "Release ${FULL_VERSION} [ci skip]"
 
+    # Create the nexus staging repository
+    local STAGING_DESC="Helidon v${FULL_VERSION}"
+    mvn nexus-staging:rc-open \
+      -DstagingProfileId=6026dab46eed94 \
+      -DstagingDescription="${STAGING_DESC}"
+    export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
+      egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
+      awk '{print $2}' | head -1)
+
     # Perform deployment
     mvn -B clean deploy -Prelease -DskipTests \
+      -Dgpg.passphrase="${GPG_PASSPRAHSE}" \
+      -DstagingRepositoryId=${STAGING_REPO_ID} \
       -DretryFailedDeploymentCount=10
 
     # Invoke perform hooks
@@ -247,6 +267,11 @@ release_build(){
         bash "${perform_hook}"
       done
     fi
+
+    # Close the nexus staging repository
+    mvn nexus-staging:rc-close \
+      -DstagingRepositoryId=${STAGING_REPO_ID} \
+      -DstagingDescription="${STAGING_DESC}"
 
     # Create and push a git tag
     # Note this may not be required for Github
