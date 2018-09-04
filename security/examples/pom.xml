@@ -44,6 +44,7 @@
         <module>spi-examples</module>
         <module>attribute-based-access-control</module>
         <module>idcs-login</module>
+        <module>outbound-override</module>
     </modules>
 
     <build>

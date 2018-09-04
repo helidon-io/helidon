@@ -30,7 +30,7 @@ security:
   providers:
     # Security provider - basic authentication (supports roles) - default
     - http-basic-auth:
-        realm: "mic"
+        realm: "helidon"
         users:
           - login: "jack"
             password: "${CLEAR=password}"

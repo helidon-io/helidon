@@ -62,9 +62,10 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String BASIC_PREFIX = "basic ";
+
     private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
     private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
-    public static final char[] EMPTY_PASSWORD = new char[0];
+    private static final char[] EMPTY_PASSWORD = new char[0];
 
     private final UserStore userStore;
     private final String realm;
@@ -132,22 +133,13 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                                     EndpointConfig outboundEp) {
 
         // first resolve user to use
-        Optional<Object> username = outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_USER);
-        if (username.isPresent()) {
-            return toBasicAuthOutbound(new UserStore.User() {
-                @Override
-                public String getLogin() {
-                    return String.valueOf(username.get());
-                }
+        Optional<Object> maybeUsername = outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_USER);
+        if (maybeUsername.isPresent()) {
+            String username = maybeUsername.get().toString();
 
-                @Override
-                public char[] getPassword() {
-                    return outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
-                            .map(String::valueOf)
-                            .map(String::toCharArray)
-                            .orElse(EMPTY_PASSWORD);
-                }
-            });
+            UserStore.User user = userStore.getUser(username).orElseGet(() -> userFromEndpoint(username, outboundEp));
+
+            return toBasicAuthOutbound(user);
         }
 
         // and if not present, use the one from request
@@ -176,6 +168,23 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                     }
                 })
                 .orElseGet(OutboundSecurityResponse::abstain);
+    }
+
+    private UserStore.User userFromEndpoint(String username, EndpointConfig outboundEp) {
+        return new UserStore.User() {
+            @Override
+            public String getLogin() {
+                return username;
+            }
+
+            @Override
+            public char[] getPassword() {
+                return outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+                        .map(String::valueOf)
+                        .map(String::toCharArray)
+                        .orElse(EMPTY_PASSWORD);
+            }
+        };
     }
 
     @Override
