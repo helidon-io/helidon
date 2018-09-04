@@ -258,7 +258,7 @@ release_build(){
 
     # Perform deployment
     mvn -B clean deploy -Prelease -DskipTests \
-      -Dgpg.passphrase="${GPG_PASSPRHASE}" \
+      -Dgpg.passphrase="${GPG_PASSPHRASE}" \
       -DstagingRepositoryId=${STAGING_REPO_ID} \
       -DretryFailedDeploymentCount=10
 
