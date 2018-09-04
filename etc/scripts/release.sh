@@ -194,6 +194,7 @@ inject_credentials(){
  # Add GPG key pair
  if [ -n "${GPG_PUBLIC_KEY}" ] && [ -n "${GPG_PRIVATE_KEY}" ] ; then
     mkdir ~/.gnupg 2>/dev/null || true
+    chmod 700 ~/.gnupg
     echo -e "${GPG_PUBLIC_KEY}" > ~/.gnupg/helidon_pub.gpg
     gpg --import --no-tty --batch ~/.gnupg/helidon_pub.gpg
     echo -e "${GPG_PRIVATE_KEY}" > ~/.gnupg/helidon_sec.gpg
