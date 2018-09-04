@@ -51,7 +51,7 @@ for _ex in ${EXAMPLES}; do
   if [ -f "${pom_file}" ]; then
       mvn -f "${pom_file}" \
         clean deploy -B -DskipTests \
-        -DaltDeploymentRepository=ossrh::default::MAVEN_REPO_URL
+        -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}
   else
     echo "${pom_file} does not exist. Skipping."
   fi
