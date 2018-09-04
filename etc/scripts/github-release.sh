@@ -87,6 +87,7 @@ if [ -z "${GITHUB_API_KEY}" ] ; then
 fi
 
 readonly GITHUB_API_URL="https://api.github.com"
+readonly MEDIA_TYPE="application/vnd.github.v3+json"
 readonly GITHUB_OWNER="oracle"
 readonly REPO="helidon"
 
