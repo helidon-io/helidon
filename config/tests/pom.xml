@@ -30,6 +30,10 @@
     <packaging>pom</packaging>
     <name>Helidon Config Tests</name>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
     <modules>
         <module>integration-tests</module>
         <module>module-mappers-1-base</module>

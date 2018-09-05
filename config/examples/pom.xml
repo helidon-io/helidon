@@ -30,6 +30,10 @@
     <packaging>pom</packaging>
     <name>Helidon Config Examples</name>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
     <modules>
         <module>basics</module>
         <module>changes</module>

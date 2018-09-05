@@ -50,7 +50,8 @@ for _ex in ${EXAMPLES}; do
   pom_file="${EXAMPLE_DIR}/${_ex}/target/generated-sources/archetype/pom.xml"
   if [ -f "${pom_file}" ]; then
       mvn -f "${pom_file}" \
-        clean deploy -B -DskipTests \
+        clean verify gpg:sign deploy -B -DskipTests \
+        -Dgpg.passphase="${GPG_PASSPHRASE}"
         -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}
   else
     echo "${pom_file} does not exist. Skipping."
