@@ -11,18 +11,20 @@
     <a href="https://app.wercker.com/project/byKey/de00e8ec6178ba9a2db8ee863d5c568a">
         <img src="https://app.wercker.com/status/de00e8ec6178ba9a2db8ee863d5c568a/s/master" alt="build status">
     </a>
-    <a href="https://twitter.com/intent/follow?screen_name=HelidonIO">
-        <img src="https://img.shields.io/twitter/follow/helidon_io.svg?style=social&logo=twitter" alt="follow on Twitter">
+    <a href="https://twitter.com/intent/follow?screen_name=helidon_project">
+        <img src="https://img.shields.io/twitter/follow/helidon_project.svg?style=social&logo=twitter" alt="follow on Twitter">
     </a>
 </p>
 
-# Helidon: Java Libraries for Writing Microservices
+# Helidon: Java Libraries for Microservices
 
 Project Helidon is a set of Java Libraries for writing microservices.
 Helidon supports two programming models:
 
 * Helidon MP: MicroProfile 1.1 plus Health Check and Metrics
-* Helidon SE: a smaller more functional style API
+* Helidon SE: a small, functional style API
+
+In either case your applications is just a Java SE program.
 
 ## Documentation
 
@@ -34,12 +36,17 @@ See Getting Started at <http://helidon.io>.
 
 ## Bugs and Feedback
 
-Issues are currently tracked in Github, see <https://github.com/oracle/helidon/issues>
+Issues are currently tracked in GitHub, see <https://github.com/oracle/helidon/issues>
 
 ## Communication
 
-* Slack: [#helidon-users@helidon.slack.com](helidon.slack.com)
-* Twitter: [@HelidonIO](https://twitter.com/HelidonIO)
+* Slack: Coming soon
+* Twitter: [@helidon_project](https://twitter.com/helidon_project)
+
+## Downloads / Accessing Binaries
+
+There are no Helidon downloads. Just use our Maven releases (GroupID `io.helidon`).
+See Getting Started at <http://helidon.io>. 
 
 ## Build
 
@@ -47,7 +54,6 @@ You will need Java 9 and Maven 3.5 or newer.
 
 **Full build**
 ```bash
-$ cd helidon-main
 $ mvn install
 ```
 
@@ -72,18 +78,3 @@ $ mvn validate  -Pcopyright
 $ mvn verify  -Pspotbugs
 ```
 
-## License
-
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may
-not use this file except in compliance with the License. You may obtain
-a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-License for the specific language governing permissions and limitations
-under the License.
