@@ -24,7 +24,7 @@ Helidon supports two programming models:
 * Helidon MP: MicroProfile 1.1 plus Health Check and Metrics
 * Helidon SE: a small, functional style API
 
-In either case your applications is just a Java SE program.
+In either case your application is just a Java SE program.
 
 ## Documentation
 
