@@ -41,14 +41,18 @@ import io.opentracing.Span;
  * JAX-RS client filter propagating current context principal.
  * <p>
  * Only works as part of integration with Security component.
+ * This class is public to allow unit testing from providers (without invoking an HTTP request)
  */
 @Provider
 @ConstrainedTo(RuntimeType.CLIENT)
-class ClientSecurityFilter implements ClientRequestFilter {
+public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
 
-    ClientSecurityFilter() {
+    /**
+     * Create an instance of this filter (used by Jersey or for unit tests, do not use explicitly in your production code).
+     */
+    public ClientSecurityFilter() {
     }
 
     @Override

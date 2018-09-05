@@ -1001,9 +1001,20 @@
                         <artifactId>glassfish-copyright-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>run-copyright</id>
+                                <id>print-copyright</id>
                                 <goals>
                                     <goal>copyright</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <templateFile>${top.parent.basedir}/etc/copyright.txt</templateFile>
+                                    <excludeFile>${top.parent.basedir}/etc/copyright-exclude.txt</excludeFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>check-copyright</id>
+                                <goals>
+                                    <goal>check</goal>
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>

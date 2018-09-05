@@ -22,6 +22,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,11 +49,24 @@ import io.helidon.security.spi.SynchronousProvider;
  * Provides support for username and password authentication, with support for roles list.
  */
 public class HttpBasicAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+    /**
+     * Configure this for outbound requests to override user to use.
+     */
+    public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
+
+    /**
+     * Configure this for outbound requests to override password to use.
+     */
+    public static final String EP_PROPERTY_OUTBOUND_PASSWORD = "io.helidon.security.outbound.password";
+
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String BASIC_PREFIX = "basic ";
+
     private static final Logger LOGGER = Logger.getLogger(HttpBasicAuthProvider.class.getName());
     private static final Pattern CREDENTIAL_PATTERN = Pattern.compile("(.*):(.*)");
+    private static final char[] EMPTY_PASSWORD = new char[0];
+
     private final UserStore userStore;
     private final String realm;
     private final SubjectType subjectType;
@@ -96,6 +110,12 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outbondEnv,
                                        EndpointConfig outboundEp) {
+
+        // explicitly overridden username and/or password
+        if (outboundEp.getAttributeNames().contains(EP_PROPERTY_OUTBOUND_USER)) {
+            return true;
+        }
+
         SecurityContext secContext = providerRequest.getContext();
 
         boolean userSupported = secContext.getUser()
@@ -109,16 +129,62 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
     @Override
     protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outbondEnv,
+                                                    SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEp) {
+
+        // first resolve user to use
+        Optional<Object> maybeUsername = outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_USER);
+        if (maybeUsername.isPresent()) {
+            String username = maybeUsername.get().toString();
+
+            UserStore.User user = userStore.getUser(username).orElseGet(() -> userFromEndpoint(username, outboundEp));
+
+            return toBasicAuthOutbound(user);
+        }
+
+        // and if not present, use the one from request
         SecurityContext secContext = providerRequest.getContext();
 
         return OptionalHelper.from(secContext.getUser()
                                            .flatMap(user -> user.getPrivateCredential(UserStore.User.class)))
                 .or(() -> secContext.getService().flatMap(service -> service.getPrivateCredential(UserStore.User.class)))
                 .asOptional()
-                .map(HttpBasicAuthProvider::toBasicAuthOutbound)
+                .map(user -> {
+                    Optional<Object> password = outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_PASSWORD);
+                    if (password.isPresent()) {
+                        return toBasicAuthOutbound(new UserStore.User() {
+                            @Override
+                            public String getLogin() {
+                                return user.getLogin();
+                            }
+
+                            @Override
+                            public char[] getPassword() {
+                                return password.map(String::valueOf).map(String::toCharArray).orElse(EMPTY_PASSWORD);
+                            }
+                        });
+                    } else {
+                        return toBasicAuthOutbound(user);
+                    }
+                })
                 .orElseGet(OutboundSecurityResponse::abstain);
+    }
+
+    private UserStore.User userFromEndpoint(String username, EndpointConfig outboundEp) {
+        return new UserStore.User() {
+            @Override
+            public String getLogin() {
+                return username;
+            }
+
+            @Override
+            public char[] getPassword() {
+                return outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+                        .map(String::valueOf)
+                        .map(String::toCharArray)
+                        .orElse(EMPTY_PASSWORD);
+            }
+        };
     }
 
     @Override
