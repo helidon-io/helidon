@@ -46,11 +46,6 @@ Add the following snippet to your pom.xml file in order to import the Helidon BO
 </dependencyManagement>
 ----
 
-These artifacts are not available in
- https://search.maven.org/[Maven Central] yet, so you need to configure the
- internal Helidon repository, if you haven't already. See
- <<getting-started/01_prerequisites.adoc#maven-repo-configuration, Maven Repository Configuration>>.
-
 == Using Helidon Component Dependencies
 
 Once you have imported the BOM, you can declare dependencies on Helidon components
