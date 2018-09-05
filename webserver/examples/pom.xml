@@ -32,6 +32,10 @@
     <name>Helidon WebServer Examples Parent</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
     <modules>
         <module>basics</module>
         <module>tutorial</module>
@@ -50,6 +54,13 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>${mainClass}</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <configuration>
+                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
         </plugins>

@@ -35,6 +35,10 @@
         Examples of Helidon Security usage and integrations
     </description>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
     <modules>
         <module>nohttp-programmatic</module>
         <module>jersey</module>
@@ -62,6 +66,13 @@
                             <classpath/>
                             <argument>${example.main-class}</argument>
                         </arguments>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <configuration>
+                        <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                     </configuration>
                 </plugin>
             </plugins>
