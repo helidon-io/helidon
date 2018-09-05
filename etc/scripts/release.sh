@@ -256,6 +256,7 @@ release_build(){
     export STAGING_REPO_ID=$(mvn nexus-staging:rc-list | \
       egrep "^\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
       awk '{print $2}' | head -1)
+    echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
     # Perform deployment
     mvn -B clean deploy -Prelease -DskipTests \
