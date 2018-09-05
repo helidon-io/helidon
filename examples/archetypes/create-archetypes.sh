@@ -84,8 +84,67 @@ for _ex in ${EXAMPLES}; do
   echo "    ===== Generating archetype for ${_ex}"
   mvn -B ${EXTRA_MAVEN_OPTS} -f ${EXAMPLE_DIR}/${_ex}/pom.xml archetype:create-from-project -Darchetype.artifactId=${ex}  -Darchetype.properties="${TEMP_PROP_FILE}"
 
+  # Edit the pom to add more info
+  ARCHETYPE_DIR=${EXAMPLE_DIR}/${_ex}/target/generated-sources/archetype
+  mv ${ARCHETYPE_DIR}/pom.xml ${ARCHETYPE_DIR}/pom.xml.old
+  head -11 ${ARCHETYPE_DIR}/pom.xml.old > ${ARCHETYPE_DIR}/pom.xml
+  cat >> ${ARCHETYPE_DIR}/pom.xml << EOF
+  <description>Helidon Archetype</description>
+
+  <url>https://helidonm.io</url>
+
+  <organization>
+      <name>Oracle Corporation</name>
+      <url>http://www.oracle.com/</url>
+  </organization>
+
+  <licenses>
+      <license>
+          <name>Apache 2.0</name>
+          <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      </license>
+  </licenses>
+
+  <developers>
+      <developer>
+          <name>Tomas Langer</name>
+          <email>tomas.langer@oracle.com</email>
+          <organization>Oracle Corporation</organization>
+      </developer>
+      <developer>
+          <name>Tim Quinn</name>
+          <email>tim.quinn@oracle.com</email>
+          <organization>Oracle Corporation</organization>
+      </developer>
+      <developer>
+          <name>Romain Grecourt</name>
+          <email>romain.grecourt@oracle.com</email>
+          <organization>Oracle Corporation</organization>
+      </developer>
+      <developer>
+          <name>Laird Jarrett Nelson</name>
+          <email>laird.nelson@oracle.com</email>
+          <organization>Oracle Corporation</organization>
+      </developer>
+      <developer>
+          <name>Santiago Pericas-Geertsen</name>
+          <email>santiago.pericasgeertsen@oracle.com</email>
+          <organization>Oracle Corporation</organization>
+      </developer>
+  </developers>
+
+  <scm>
+      <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
+      <connection>scm:git:git@github.com:oracle/helidon.git</connection>
+      <tag>HEAD</tag>
+      <url>https://github.com/oracle/helidon</url>
+  </scm>
+EOF
+  tail -20 ${ARCHETYPE_DIR}/pom.xml.old >> ${ARCHETYPE_DIR}/pom.xml
+  rm -f ${ARCHETYPE_DIR}/pom.xml.old
+
   printf "\nBuilding archetype for ${_ex}\n\n"
-  mvn -B ${EXTRA_MAVEN_OPTS} -f ${EXAMPLE_DIR}/${_ex}/target/generated-sources/archetype/pom.xml install
+  mvn -B ${EXTRA_MAVEN_OPTS} -f ${ARCHETYPE_DIR}/pom.xml install
 
 done
 

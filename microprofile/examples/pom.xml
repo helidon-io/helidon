@@ -31,6 +31,13 @@
     <artifactId>examples-project</artifactId>
     <name>Helidon Microprofile Examples</name>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <modules>
         <module>hello-world-implicit</module>
         <module>hello-world-explicit</module>

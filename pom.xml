@@ -24,7 +24,12 @@
     <artifactId>helidon-project</artifactId>
     <version>0.9.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+
     <name>Helidon Project</name>
+
+    <description>Java libraries for writing microservices</description>
+
+    <url>https://helidonm.io</url>
 
     <organization>
         <name>Oracle Corporation</name>
@@ -69,9 +74,10 @@
     </developers>
 
     <scm>
-        <developerConnection>scm:git:git@gitlab-odx.oracledx.com:j4c/helidon-main.git</developerConnection>
-        <connection>scm:git:git@gitlab-odx.oracledx.com:j4c/helidon-main.git</connection>
+        <developerConnection>scm:git:git@github.com:oracle/helidon.git</developerConnection>
+        <connection>scm:git:git@github.com:oracle/helidon.git</connection>
         <tag>HEAD</tag>
+        <url>https://github.com/oracle/helidon</url>
     </scm>
 
     <properties>
@@ -158,11 +164,13 @@
         <version.plugin.exec>1.6.0</version.plugin.exec>
         <version.plugin.failsafe>2.19.1</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>1.48</version.plugin.glassfish-copyright>
+        <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.jacoco>0.7.9</version.plugin.jacoco>
         <version.plugin.jandex>1.0.5</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.0.0</version.plugin.javadoc>
         <version.plugin.license>1.16</version.plugin.license>
+        <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.0</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
@@ -365,6 +373,7 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${version.plugin.spotbugs}</version>
                     <configuration>
+                        <skip>${spotbugs.skip}</skip>
                         <threshold>${spotbugs.threshold}</threshold>
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
@@ -417,6 +426,16 @@
                         </dependency>
                     </dependencies>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${version.plugin.gpg}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>${version.plugin.nexus-staging}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -467,6 +486,18 @@
                 <configuration>
                     <configLocation>/etc/checkstyle.xml</configLocation>
                     <suppressionsLocation>/etc/checkstyle-suppressions.xml</suppressionsLocation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                    <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
 <!--            <plugin>
@@ -1178,6 +1209,19 @@
                                 <id>attach-javadocs</id>
                                 <goals>
                                     <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
                                 </goals>
                             </execution>
                         </executions>

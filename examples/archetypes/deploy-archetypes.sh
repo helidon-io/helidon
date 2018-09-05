@@ -37,6 +37,12 @@ EXAMPLES=" \
 # Create archetypes from example projects
 bash ${MY_DIR}/create-archetypes.sh 
 
+if [ -n "${STAGING_REPO_ID}" ] ; then
+    readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deployByRepositoryId/${STAGING_REPO_ID}/"
+else
+    readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+fi
+
 # Deploy the archetypes
 for _ex in ${EXAMPLES}; do
 
@@ -44,8 +50,9 @@ for _ex in ${EXAMPLES}; do
   pom_file="${EXAMPLE_DIR}/${_ex}/target/generated-sources/archetype/pom.xml"
   if [ -f "${pom_file}" ]; then
       mvn -f "${pom_file}" \
-        clean deploy -B -DskipTests \
-        -DaltDeploymentRepository=gf-internal-releases::default::https://oss.sonatype.org/service/local/staging/deploy/maven2/
+        clean verify gpg:sign deploy:deploy -B -DskipTests \
+        -Dgpg.passphase="${GPG_PASSPHRASE}" \
+        -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}
   else
     echo "${pom_file} does not exist. Skipping."
   fi

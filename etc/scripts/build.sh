@@ -37,19 +37,14 @@ fi
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
-
-readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
-
 source ${WS_DIR}/etc/scripts/wercker-env.sh
 
-die(){ echo "${1}" ; exit 1 ;}
+if [ "${WERCKER}" = "true" ] ; then
+  apt-get update && apt-get -y install graphviz
+fi
 
-mvn checkstyle:checkstyle-aggregate \
-    -f ${WS_DIR}/pom.xml \
-    -Dcheckstyle.output.format=plain \
-    -Dcheckstyle.output.file=${RESULT_FILE} \
-    -Pexamples > ${LOG_FILE} 2>&1 || (cat ${LOG_FILE} ; exit 1)
+mvn -f ${WS_DIR}/pom.xml \
+    clean install \
+    -Pjavadoc,spotbugs --fail-at-end
 
-grep "^\[ERROR\]" ${RESULT_FILE} \
-    && die "CHECKSTYLE ERROR" || echo "CHECKSTYLE OK"
+examples/archetypes/test-archetypes.sh
