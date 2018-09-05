@@ -51,7 +51,7 @@ for _ex in ${EXAMPLES}; do
   if [ -f "${pom_file}" ]; then
       mvn -f "${pom_file}" \
         clean verify gpg:sign deploy -B -DskipTests \
-        -Dgpg.passphase="${GPG_PASSPHRASE}"
+        -Dgpg.passphase="${GPG_PASSPHRASE}" \
         -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}
   else
     echo "${pom_file} does not exist. Skipping."
