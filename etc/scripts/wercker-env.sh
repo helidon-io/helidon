@@ -15,8 +15,8 @@
 # limitations under the License.
 #
 
-# Cleanup pipeline environment
-# Set the Maven repository to the cache
+# WERCKER=true when running inside a wercker pipeline
+
 if [ "${WERCKER}" = "true" ] ; then
     export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
     rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh ${WERCKER_CACHE_DIR}/local_repository/io/helidon
