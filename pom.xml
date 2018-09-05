@@ -15,14 +15,12 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 
--->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-project</artifactId>
-    <version>0.9.0-SNAPSHOT</version>
+    <version>0.9.0</version>
     <packaging>pom</packaging>
 
     <name>Helidon Project</name>
@@ -88,8 +86,8 @@
 
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF8</surefire.argLine>
         <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF8</failsafe.argLine>
-        <surefire.coverage.argline />
-        <failsafe.coverage.argline />
+        <surefire.coverage.argline/>
+        <failsafe.coverage.argline/>
 
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
@@ -196,7 +194,9 @@
         <module>javadocs</module>
         <!--<module>docs</module>-->
         <module>microprofile</module>
-    </modules>
+    <module>quickstart-se</module>
+    <module>quickstart-mp</module>
+  </modules>
 
     <build>
         <pluginManagement>

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-project</artifactId>
-        <version>0.9.0-SNAPSHOT</version>
+        <version>0.9.0</version>
     </parent>
     <artifactId>helidon-security-providers-project</artifactId>
     <name>Helidon Security Providers</name>
