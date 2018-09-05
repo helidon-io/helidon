@@ -65,16 +65,14 @@ $ mvn validate  -Pcheckstyle
 
 **Copyright**
 
-The copyright plugin does not fail the build so you will
-need to look for "Wrong copyright" or "No copyright" messages.
 ```bash
 # Cd to the component you want to check
 $ mvn validate  -Pcopyright
 ```
 
 **Spotbugs**
+
 ```bash
 # Cd to the component you want to check
 $ mvn verify  -Pspotbugs
 ```
-
