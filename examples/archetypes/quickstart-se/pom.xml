@@ -26,7 +26,7 @@
     <name>${project.artifactId}</name>
 
     <properties>
-        <helidon.version>0.0.3-SNAPSHOT</helidon.version>
+        <helidon.version>0.9.0-SNAPSHOT</helidon.version>
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
         <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
