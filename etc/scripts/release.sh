@@ -115,9 +115,10 @@ readonly PREPARE_HOOKS=( ${WS_DIR}/examples/archetypes/set-version.sh )
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
 
-# Reset generated config files
+source ${WS_DIR}/etc/scripts/wercker-env.sh
+
 if [ "${WERCKER}" = "true" ] ; then
-    rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh
+  apt-get update && apt-get -y install graphviz
 fi
 
 # Resolve FULL_VERSION

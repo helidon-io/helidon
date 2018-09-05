@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
 #
@@ -14,24 +15,9 @@
 # limitations under the License.
 #
 
-box: maven:3.5.4-jdk-9
-
-copyright:
-  steps:
-    - script:
-        code: etc/scripts/copyright.sh
-
-checkstyle:
-  steps:
-    - script:
-        code: etc/scripts/checkstyle.sh
-
-build:
-  steps:
-    - script:
-        code: etc/scripts/build.sh
-
-release:
-  steps:
-    - script:
-        code: etc/scripts/release.sh release_build
+# Cleanup pipeline environment
+# Set the Maven repository to the cache
+if [ "${WERCKER}" = "true" ] ; then
+    export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
+    rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+fi

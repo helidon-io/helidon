@@ -39,6 +39,8 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
+source ${WS_DIR}/etc/scripts/wercker-env.sh
+
 die(){ echo "${1}" ; exit 1 ;}
 
 mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
