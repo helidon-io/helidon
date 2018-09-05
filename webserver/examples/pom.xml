@@ -34,6 +34,9 @@
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
     <modules>
@@ -48,21 +51,16 @@
     </modules>
 
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>${mainClass}</mainClass>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <configuration>
-                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
-                </configuration>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <configuration>
+                        <mainClass>${mainClass}</mainClass>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>

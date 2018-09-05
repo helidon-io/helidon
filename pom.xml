@@ -373,6 +373,7 @@
                     <artifactId>spotbugs-maven-plugin</artifactId>
                     <version>${version.plugin.spotbugs}</version>
                     <configuration>
+                        <skip>${spotbugs.skip}</skip>
                         <threshold>${spotbugs.threshold}</threshold>
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
@@ -496,6 +497,7 @@
                     <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                     <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                    <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
 <!--            <plugin>
