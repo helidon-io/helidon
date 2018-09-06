@@ -224,10 +224,6 @@
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
                         <configuration>
                             <outputDirectory>${copied.libs.dir}</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>

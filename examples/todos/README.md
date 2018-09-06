@@ -12,10 +12,10 @@ providers:
 
 Build and start the applications:
 ```bash
-mvn clean install docker:build
-
-cd demo-backend/cassandra
-mvn generate-resources docker:build
+mvn clean install
+mvn -f demo-frontend/pom.xml  generate-resources docker:build
+mvn -f demo-backend/pom.xml  generate-resources docker:build
+mvn -f demo-backend/cassandra/pom.xml generate-resources docker:build
 ```
 and then
 ```bash
