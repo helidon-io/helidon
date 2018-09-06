@@ -259,6 +259,26 @@ release_build(){
       awk '{print $2}' | head -1)
     echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
 
+    printf "\n\n\n DEBUG START HERE\n\n\n"
+
+    printf "\n\n==find==\n\n"
+    find examples/
+    printf "\n\n===\n\n"
+
+    printf "\n\n==git status==\n\n"
+    git status examples
+    printf "\n\n===\n\n"
+
+    printf "\n\n==/pom.xml==\n\n"
+    cat pom.xml
+    printf "\n\n===\n\n"
+
+    printf "\n\n==/examples/pom.xml==\n\n"
+    cat examples/pom.xml
+    printf "\n\n===\n\n"
+
+    printf "\n\n\n DEBUG END HERE\n\n\n"
+
     # Perform deployment
     mvn -B clean deploy -Prelease,ossrh-releases -DskipTests \
       -Dgpg.passphrase="${GPG_PASSPHRASE}" \
