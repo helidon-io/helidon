@@ -41,7 +41,7 @@
                 <executions>
                     <execution>
                         <id>javadocs</id>
-                        <phase>pre-package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
