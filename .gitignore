@@ -17,3 +17,6 @@ user.txt
 nb-configuration.xml
 node_modules/
 node/
+*.swp
+.gradle/
+build/
