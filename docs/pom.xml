@@ -41,7 +41,7 @@
                 <executions>
                     <execution>
                         <id>javadocs</id>
-                        <phase>pre-package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>unpack</goal>
                         </goals>
@@ -51,7 +51,6 @@
                                     <groupId>io.helidon</groupId>
                                     <artifactId>helidon-javadocs</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>javadoc</classifier>
                                     <outputDirectory>${site.output.dir}/apidocs</outputDirectory>
                                     <excludes>META-INF/**</excludes>
                                 </artifactItem>
