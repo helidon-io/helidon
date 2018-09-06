@@ -50,7 +50,10 @@ See Getting Started at <http://helidon.io>.
 
 ## Build
 
-You will need Java 9 and Maven 3.5 or newer.
+You can build Helidon using JDK 8 or 9. Building with 9 results in jar
+files that are valid Java 9 modules containing Java 8 bytecodes.
+
+You also need Maven. We recommend 3.5 or newer.
 
 **Full build**
 ```bash
@@ -76,3 +79,22 @@ $ mvn validate  -Pcopyright
 # Cd to the component you want to check
 $ mvn verify  -Pspotbugs
 ```
+
+**Build Scripts**
+
+Build scripts are located in `etc/scripts`. These are primarily used by our pipeline,
+but a couple are handy to use on your desktop to verify your changes. 
+
+* `copyright.sh`: Run a full copyright check
+* `checkstyle.sh`: Run a full style check
+
+## Contributing
+
+We are just getting started, so bear with us while we get the project up and running.
+We'll have more details about contributing shortly. 
+
+We do know that for a pull request to be merged we need the contributor to sign the
+Oracle Contributor Agreement first. See
+http://www.oracle.com/technetwork/community/oca-486395.html
+for details.
+

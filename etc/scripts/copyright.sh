@@ -44,6 +44,7 @@ source ${WS_DIR}/etc/scripts/wercker-env.sh
 die(){ echo "${1}" ; exit 1 ;}
 
 mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+        -f ${WS_DIR}/pom.xml \
         -Dcopyright.exclude=${WS_DIR}/etc/copyright-exclude.txt \
         -Dcopyright.template=${WS_DIR}/etc/copyright.txt \
         -Dcopyright.scm=git \
