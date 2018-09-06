@@ -28,7 +28,7 @@ import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.security.jersey.ClientSecurityFeature;
-import io.helidon.security.provider.httpauth.HttpBasicAuthProvider;
+import io.helidon.security.provider.jwt.JwtProvider;
 import io.helidon.security.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -37,16 +37,22 @@ import io.helidon.webserver.WebServer;
 
 /**
  * Creates two services. First service invokes the second with outbound security. There are two endpoints - one that
- * does simple identity propagation and one that uses an explicit username and password.
+ * does simple identity propagation and one that uses an explicit username.
  *
- * Uses basic authentication both to authenticate users and to propagate identity.
+ * Uses basic authentication to authenticate users and JWT to propagate identity.
+ *
+ * The difference between this example and basic authentication example:
+ * <ul>
+ * <li>Configuration files (this example uses ones with -jwt.yaml suffix)</li>
+ * <li>Property name used in {@link #override(ServerRequest, ServerResponse)} method to override username</li>
+ * </ul>
  */
-public final class OutboundOverrideExample {
+public final class OutboundOverrideJwtExample {
     private static volatile int clientPort;
     private static volatile int servingPort;
     private static Client client;
 
-    private OutboundOverrideExample() {
+    private OutboundOverrideJwtExample() {
     }
 
     /**
@@ -74,12 +80,15 @@ public final class OutboundOverrideExample {
     }
 
     private static CompletionStage<Void> startServingService() {
-        Config config = createConfig("serving-service");
+        Config config = createConfig("serving-service-jwt");
 
         return startServer(Routing
                                    .builder()
                                    .register(WebSecurity.from(config))
                                    .get("/hello", (req, res) -> {
+                                       // This is the token. It should be bearer <signed JWT base64 encoded>
+                                       req.headers().first("Authorization")
+                                               .ifPresent(System.out::println);
                                        res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::getUser).map(
                                                Subject::getPrincipal).map(Principal::getName).orElse("Anonymous"));
                                    }),
@@ -87,13 +96,13 @@ public final class OutboundOverrideExample {
     }
 
     private static CompletionStage<Void> startClientService() {
-        Config config = createConfig("client-service");
+        Config config = createConfig("client-service-jwt");
 
         return startServer(Routing
                                    .builder()
                                    .register(WebSecurity.from(config))
-                                   .get("/override", OutboundOverrideExample::override)
-                                   .get("/propagate", OutboundOverrideExample::propagate),
+                                   .get("/override", OutboundOverrideJwtExample::override)
+                                   .get("/propagate", OutboundOverrideJwtExample::propagate),
                            server -> clientPort = server.port());
 
     }
@@ -102,8 +111,7 @@ public final class OutboundOverrideExample {
         SecurityContext context = getContext(req);
 
         String result = webTarget().request()
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "anotherPassword")
+                .property(JwtProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
                 .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
                 .get(String.class);
 

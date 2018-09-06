@@ -46,6 +46,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-jwt</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-bundle</artifactId>
             <version>${project.version}</version>

@@ -35,6 +35,7 @@ import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.jwt.Jwt;
@@ -60,9 +61,15 @@ import io.helidon.security.util.TokenHandler;
  * JWK files are expected (one for verification, one for signatures).
  */
 public class JwtProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+    /**
+     * Configure this for outbound requests to override user to use.
+     */
+    public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
+
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;
+    private final boolean allowImpersonation;
     private final SubjectType subjectType;
     private final TokenHandler atnTokenHandler;
     private final TokenHandler defaultTokenHandler;
@@ -77,6 +84,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         this.optional = builder.optional;
         this.authenticate = builder.authenticate;
         this.propagate = builder.propagate;
+        this.allowImpersonation = builder.allowImpersonation;
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
         this.outboundConfig = builder.outboundConfig;
@@ -127,7 +135,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
                     if (errors.isValid()) {
                         Jwt jwt = signedJwt.getJwt();
                         // verify the audience is correct
-                        Errors validate = jwt.validate(issuer, expectedAudience);
+                        Errors validate = jwt.validate(null, expectedAudience);
                         if (validate.isValid()) {
                             return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                         } else {
@@ -209,31 +217,62 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
     protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
-        // see issue security#35
 
-        Optional<Subject> maybeSubject;
-        if (subjectType == SubjectType.USER) {
-            maybeSubject = providerRequest.getContext().getUser();
-        } else {
-            maybeSubject = providerRequest.getContext().getService();
-        }
+        Optional<Object> maybeUsername = outboundEndpointConfig.getAttribute(EP_PROPERTY_OUTBOUND_USER);
+        return maybeUsername
+                .map(String::valueOf)
+                .flatMap(username -> {
+                    if (!allowImpersonation) {
+                        return Optional.of(OutboundSecurityResponse.builder()
+                                                   .description(
+                                                           "Attempting to impersonate a user, when impersonation is not allowed"
+                                                                   + " for JWT provider")
+                                                   .status(SecurityResponse.SecurityStatus.FAILURE)
+                                                   .build());
+                    }
 
-        return maybeSubject.flatMap(subject -> {
-            Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
+                    // TODO allow additional claims from config?
+                    Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
 
-            return maybeTarget.flatMap(target -> {
-                JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                    return maybeTarget.flatMap(target -> {
+                        JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
 
-                if (null == jwtOutboundTarget.jwkKid) {
-                    // just propagate existing token
-                    return subject.getPublicCredential(TokenCredential.class)
-                            .map(tokenCredential -> propagate(jwtOutboundTarget, tokenCredential.getToken()));
-                } else {
-                    // we do have kid - we are creating a new token of our own
-                    return Optional.of(propagate(jwtOutboundTarget, subject));
-                }
-            });
-        }).orElse(OutboundSecurityResponse.abstain());
+                        if (null == jwtOutboundTarget.jwkKid) {
+                            return Optional.of(OutboundSecurityResponse.builder()
+                                                       .description("Cannot do explicit user propagation if no kid is defined.")
+                                                       .status(SecurityResponse.SecurityStatus.FAILURE)
+                                                       .build());
+                        } else {
+                            // we do have kid - we are creating a new token of our own
+                            return Optional.of(impersonate(jwtOutboundTarget, username));
+                        }
+                    });
+                }).orElseGet(() -> {
+                    Optional<Subject> maybeSubject;
+                    if (subjectType == SubjectType.USER) {
+                        maybeSubject = providerRequest.getContext().getUser();
+                    } else {
+                        maybeSubject = providerRequest.getContext().getService();
+                    }
+
+                    return maybeSubject.flatMap(subject -> {
+                        Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
+
+                        return maybeTarget.flatMap(target -> {
+                            JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig
+                                    .computeIfAbsent(target, this::toOutboundTarget);
+
+                            if (null == jwtOutboundTarget.jwkKid) {
+                                // just propagate existing token
+                                return subject.getPublicCredential(TokenCredential.class)
+                                        .map(tokenCredential -> propagate(jwtOutboundTarget, tokenCredential.getToken()));
+                            } else {
+                                // we do have kid - we are creating a new token of our own
+                                return Optional.of(propagate(jwtOutboundTarget, subject));
+                            }
+                        });
+                    }).orElseGet(OutboundSecurityResponse::abstain);
+                });
     }
 
     private OutboundSecurityResponse propagate(JwtOutboundTarget outboundTarget, String token) {
@@ -261,6 +300,29 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
 
         builder.subject(principal.getId())
                 .preferredUsername(principal.getName())
+                .issuer(issuer)
+                .algorithm(jwk.getAlgorithm());
+
+        ot.update(builder);
+
+        Jwt jwt = builder.build();
+        SignedJwt signed = SignedJwt.sign(jwt, jwk);
+        ot.outboundHandler.setHeader(headers, signed.getTokenContent());
+
+        return OutboundSecurityResponse.withHeaders(headers);
+    }
+
+    private OutboundSecurityResponse impersonate(JwtOutboundTarget ot, String username) {
+        Map<String, List<String>> headers = new HashMap<>();
+        Jwk jwk = signKeys.forKeyId(ot.jwkKid)
+                .orElseThrow(() -> new JwtException("Signing JWK with kid: " + ot.jwkKid + " is not defined."));
+
+        Jwt.Builder builder = Jwt.builder();
+
+        builder.addPayloadClaim("name", username);
+
+        builder.subject(username)
+                .preferredUsername(username)
                 .issuer(issuer)
                 .algorithm(jwk.getAlgorithm());
 
@@ -370,6 +432,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         private boolean optional = false;
         private boolean authenticate = true;
         private boolean propagate = true;
+        private boolean allowImpersonation = false;
         private SubjectType subjectType = SubjectType.USER;
         private TokenHandler atnTokenHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
@@ -378,7 +441,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         private OutboundConfig outboundConfig;
         private JwkKeys verifyKeys;
         private JwkKeys signKeys;
-        private String issuer = "security.example.org";
+        private String issuer;
         private String expectedAudience;
 
         @Override
@@ -405,6 +468,19 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
          */
         public Builder authenticate(boolean authenticate) {
             this.authenticate = authenticate;
+            return this;
+        }
+
+        /**
+         * Whether to allow impersonation by explicitly overriding
+         * username from outbound requests using {@link #EP_PROPERTY_OUTBOUND_USER} property.
+         * By default this is not allowed and identity can only be propagated.
+         *
+         * @param allowImpersonation set to true to allow impersonation
+         * @return updated builder instance
+         */
+        public Builder allowImpersonation(boolean allowImpersonation) {
+            this.allowImpersonation = allowImpersonation;
             return this;
         }
 
@@ -509,6 +585,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
             config.get("optional").asOptional(Boolean.class).ifPresent(this::optional);
             config.get("authenticate").asOptional(Boolean.class).ifPresent(this::authenticate);
             config.get("propagate").asOptional(Boolean.class).ifPresent(this::propagate);
+            config.get("allow-impersonation").asOptionalBoolean().ifPresent(this::allowImpersonation);
             config.get("principal-type").asOptional(SubjectType.class).ifPresent(this::subjectType);
             config.get("atn-token.handler").asOptional(TokenHandler.class).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
