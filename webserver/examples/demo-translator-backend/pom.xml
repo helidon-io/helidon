@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.examples</groupId>
         <artifactId>helidon-webserver-examples-project</artifactId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>0.9.1</version>
     </parent>
     <artifactId>helidon-webserver-examples-translator-backend</artifactId>
     <name>Helidon WebServer Examples Translator Backend</name>
@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <helidon.version>0.9.1-SNAPSHOT</helidon.version>
+        <helidon.version>0.9.1</helidon.version>
         <mainClass>io.helidon.webserver.examples.translator.backend.Main</mainClass>
 
         <docker.image.name>${docker.registry}/skeppare/helidon/helidon-webserver-translator-backend:${project.version}</docker.image.name>
