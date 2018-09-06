@@ -43,9 +43,9 @@ if [ "${WERCKER}" = "true" ] ; then
   apt-get update && apt-get -y install graphviz
 fi
 
-#mvn -f ${WS_DIR}/pom.xml \
-#    clean install \
-#    -Pexamples,spotbugs,javadoc,docs,sources,ossrh-releases \
-#    --fail-at-end
-#
-#examples/archetypes/test-archetypes.sh
+mvn -f ${WS_DIR}/pom.xml \
+    clean install \
+    -Pexamples,spotbugs,javadoc,docs,sources,ossrh-releases \
+    --fail-at-end
+
+examples/archetypes/test-archetypes.sh
