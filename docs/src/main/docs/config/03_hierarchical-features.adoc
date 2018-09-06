@@ -124,7 +124,7 @@ link:{javadoc-base-url-api}/Config.Name.html[`name`],
  link:{javadoc-base-url-api}/Config.Type.html[`type`] of the
  node.
 
-== Access by Key
+== Access by Key [[accessByKey]]
 For many applications, accessing configuration values by key will be the simplest approach.
 If you write the code with a specific configuration structure in mind, your code can retrieve
 the value from a specific configuration node very easily.

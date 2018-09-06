@@ -83,7 +83,7 @@ content remains unchanged.
 
 Even so, the config system allows your application to learn when such underlying changes in the data occur and respond accordingly. The link:-5_mutability-support.html[mutability] section explains this in detail, and the link:{javadoc-base-url-api}/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations. You can, of course, write your own by implementing the link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 
-== Dealing with Loading Errors
+== Dealing with Loading Errors: Retry Policies
 Config sources, especially those that depend on fallible mechanisms such as the network or a shared file system, might fail to load during momentary outages. The config system allows you to build resiliency into your application's use of configuration that relies on such technologies. 
 
 When your application builds a `ConfigSource` it can specify a _retry policy_. When the config system needs to load data from that source it delegates the load operation to that retry policy. That policy is responsible not only for loading the data but also for detecting errors during loading and implementing the algorithm for deciding when and how many times to retry a failed load before reporting a failure back to your application.
