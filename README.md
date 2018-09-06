@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="./etc/images/Primary_logo_blue.png" height="250">
+    <img src="./etc/images/Primary_logo_blue.png" height="180">
 </p>
 <p align="center">
     <a href="https://github.com/oracle/helidon/tags">
