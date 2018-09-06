@@ -981,6 +981,13 @@
             </build>
         </profile>
         <profile>
+            <id>docs</id>
+            <modules>
+                <module>javadocs</module>
+                <module>docs</module>
+            </modules>
+        </profile>
+        <profile>
             <id>javadoc</id>
             <build>
                 <plugins>
