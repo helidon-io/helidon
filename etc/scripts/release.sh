@@ -285,8 +285,8 @@ release_build(){
     git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
     git remote set-url release "${GIT_REMOTE}"
 
-    git tag "${FULL_VERSION}"
-    git push release tag "${FULL_VERSION}"
+    git tag -f "${FULL_VERSION}"
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
 }
 
 # Invoke command
