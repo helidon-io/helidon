@@ -51,7 +51,6 @@
                                     <groupId>io.helidon</groupId>
                                     <artifactId>helidon-javadocs</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>javadoc</classifier>
                                     <outputDirectory>${site.output.dir}/apidocs</outputDirectory>
                                     <excludes>META-INF/**</excludes>
                                 </artifactItem>
