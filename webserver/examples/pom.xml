@@ -48,6 +48,7 @@
         <module>opentracing</module>
         <module>demo-translator-frontend</module>
         <module>demo-translator-backend</module>
+        <module>streaming</module>
     </modules>
 
     <build>
