@@ -33,7 +33,7 @@ A brief overview of the config system helps clarify its different parts
 and how they work together. Most applications will typically deal with more
 than one of these parts.
 
-image::overview.png["Configuration Overview",align="center"]
+image::config/overview.png["Configuration Overview",align="center"]
 
 The system reads configuration from a _config source_, a physical location (such as a file,
 a URL, or a `String`) which holds config data. Each config source works with a 
