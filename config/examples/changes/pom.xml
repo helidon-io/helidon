@@ -24,7 +24,7 @@
     <parent>
         <artifactId>helidon-config-examples-project</artifactId>
         <groupId>io.helidon.config.examples</groupId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>0.9.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-examples-changes</artifactId>
     <name>Helidon Config Examples Changes</name>
@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <helidon.version>0.9.1-SNAPSHOT</helidon.version>
+        <helidon.version>0.9.2-SNAPSHOT</helidon.version>
         <example.mainClass>io.helidon.config.examples.changes.Main</example.mainClass>
     </properties>
 
