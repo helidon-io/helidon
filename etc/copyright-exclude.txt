@@ -26,6 +26,7 @@ jaxb.index
 /LICENSE.txt
 /copyright.txt
 /3RD-PARTY-LICENSE.txt
+/3RD-PARTY.txt
 .pem
 .p8
 .pkcs8.pem
