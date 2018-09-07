@@ -32,7 +32,7 @@ Latest documentation and javadocs are available at <https://helidon.io/docs/late
 
 ## Get Started
 
-See Getting Started at <http://helidon.io>.
+See Getting Started at <https://helidon.io>.
 
 ## Bugs and Feedback
 
@@ -46,7 +46,7 @@ Issues are currently tracked in GitHub, see <https://github.com/oracle/helidon/i
 ## Downloads / Accessing Binaries
 
 There are no Helidon downloads. Just use our Maven releases (GroupID `io.helidon`).
-See Getting Started at <http://helidon.io>. 
+See Getting Started at <https://helidon.io>. 
 
 ## Build
 
@@ -95,6 +95,6 @@ We'll have more details about contributing shortly.
 
 We do know that for a pull request to be merged we need the contributor to sign the
 Oracle Contributor Agreement first. See
-http://www.oracle.com/technetwork/community/oca-486395.html
+https://www.oracle.com/technetwork/community/oca-486395.html
 for details.
 
