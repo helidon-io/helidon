@@ -86,7 +86,7 @@ which maps a single `String` config value to a type.
 
 The next example, and later 
 ones below showing complex type mapping, use the example 
-link:01_introduction.html#app-properties[`application.properties`] configuration 
+<<config/01_introduction.adoc#app-properties,`application.properties`>> configuration 
 from the config introduction. Part of that example includes this line:
 [source]
 ----
@@ -99,7 +99,7 @@ BigDecimal initialId = config.get("bl.initial-id").as(BigDecimal.class);
 
 == Converting Configuration to Complex Types
 
-The link:03_hierarchical-features.html[hierarchical features] section describes
+The <<config/03_hierarchical-features.adoc,hierarchical features>> section describes
 the tree structure used to represent config data. The config system can map subtrees
 of a config tree to complex Java types.
 
@@ -175,7 +175,7 @@ changing only the _registration_ of the mapper, not each use of it.
 
 ==== Continuing the `Web` Example
 The following examples build on the example configuration from the
-link:01_introduction.html#create-simple-config-props[`application.properties`]
+<<config/01_introduction.adoc#create-simple-config-props,`application.properties`>>
 example file in the introduction.
 
 

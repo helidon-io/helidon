@@ -301,7 +301,7 @@ Config config = Config.from(
 
 ==== Loading Meta-configuration via Etcd
 The config system can load information about config sources from 
-link:06_advanced-configuration.html#Config-Advanced-Config-MetaConfig[meta-configuration]
+<<config/06_advanced-configuration.adoc#Config-Advanced-Config-MetaConfig,meta-configuration>>
 rather than requiring your application to construct the builder. To read
 meta-configuration from an Etcd source set the following required properties
 for the source:
@@ -411,8 +411,8 @@ Config config = Config.from(
 
 You can also implemention your own polling strategy by implementing
 link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`]. See
-the link:-5_mutability-support.html[mutability support] and
-link:07_extensions.html#Config-SPI-PollingStrategy[polling strategy] discussions.
+the <<config/05_mutability-support.adoc,mutability support>> and
+<<config/07_extensions.adoc#Config-SPI-PollingStrategy,polling strategy>> discussions.
 
 ==== Loading Meta-configuration via git
 
