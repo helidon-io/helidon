@@ -28,7 +28,7 @@ In either case your application is just a Java SE program.
 
 ## Documentation
 
-Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
+Latest documentation and javadocs are available at <http://helidon.io/docs/latest>.
 
 ## Get Started
 
@@ -54,6 +54,10 @@ You can build Helidon using JDK 8 or 9. Building with 9 results in jar
 files that are valid Java 9 modules containing Java 8 bytecodes.
 
 You also need Maven. We recommend 3.5 or newer.
+
+Building the documentation requires the `dot` utility from Graphviz.
+This is included in many Linux distributions. For other platforms
+see <http://www.graphviz.org/>.
 
 **Full build**
 ```bash
