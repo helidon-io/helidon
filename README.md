@@ -28,11 +28,11 @@ In either case your application is just a Java SE program.
 
 ## Documentation
 
-Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
+Latest documentation and javadocs are available at <http://helidon.io/docs/latest>.
 
 ## Get Started
 
-See Getting Started at <http://helidon.io>.
+See Getting Started at <https://helidon.io>.
 
 ## Bugs and Feedback
 
@@ -46,7 +46,7 @@ Issues are currently tracked in GitHub, see <https://github.com/oracle/helidon/i
 ## Downloads / Accessing Binaries
 
 There are no Helidon downloads. Just use our Maven releases (GroupID `io.helidon`).
-See Getting Started at <http://helidon.io>. 
+See Getting Started at <https://helidon.io>. 
 
 ## Build
 
@@ -54,6 +54,10 @@ You can build Helidon using JDK 8 or 9. Building with 9 results in jar
 files that are valid Java 9 modules containing Java 8 bytecodes.
 
 You also need Maven. We recommend 3.5 or newer.
+
+Building the documentation requires the `dot` utility from Graphviz.
+This is included in many Linux distributions. For other platforms
+see <http://www.graphviz.org/>.
 
 **Full build**
 ```bash
@@ -95,6 +99,6 @@ We'll have more details about contributing shortly.
 
 We do know that for a pull request to be merged we need the contributor to sign the
 Oracle Contributor Agreement first. See
-http://www.oracle.com/technetwork/community/oca-486395.html
+https://www.oracle.com/technetwork/community/oca-486395.html
 for details.
 
