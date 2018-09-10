@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.security.oidc;
+package io.helidon.security.idcs.mapper;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -27,6 +28,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -34,45 +36,81 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
+import io.helidon.config.Config;
+import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
+import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.Subject;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.oidc.common.OidcConfig;
 import io.helidon.security.providers.EvictableCache;
+import io.helidon.security.spi.SecurityProvider;
+import io.helidon.security.spi.SubjectMappingProvider;
+
 
 /**
- * Utility to obtain roles from IDCS server for a user.
+ * {@link SubjectMappingProvider} to obtain roles from IDCS server for a user.
  */
-class IdcsRoles implements SubjectEnhancer {
-    private static final Logger LOGGER = Logger.getLogger(IdcsRoles.class.getName());
+public class IdcsRoleMapperProvider implements SubjectMappingProvider {
+    private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProvider.class.getName());
     private static final String ACCESS_TOKEN_KEY = "access_token";
 
-    private final OidcConfig config;
     private final EvictableCache<String, List<? extends Grant>> roleCache;
+    private final WebTarget assertEndpoint;
+    private final WebTarget tokenEndpoint;
 
     // caching application token (as that can be re-used for group requests)
     private volatile SignedJwt appToken;
     private volatile Jwt appJwt;
 
-    IdcsRoles(OidcConfig config) {
-        this.config = config;
-        // todo maybe allow control of timeouts?
-        this.roleCache = EvictableCache.create();
+    public IdcsRoleMapperProvider(Builder builder) {
+        this.roleCache = builder.roleCache;
+        OidcConfig oidcConfig = builder.oidcConfig;
+
+        this.assertEndpoint = oidcConfig.generalClient().target(oidcConfig.identityUri() + "/admin/v1/Asserter");
+        this.tokenEndpoint = oidcConfig.tokenEndpoint();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static SecurityProvider create(Config config) {
+        return builder().fromConfig(config).build();
     }
 
     @Override
-    public void enhance(Jwt currentUser, Subject.Builder subjectBuilder) {
-        getGrants(currentUser).forEach(subjectBuilder::addGrant);
+    public CompletionStage<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
+                                                       AuthenticationResponse previousResponse) {
+        // this only supports users
+        return previousResponse.getUser().map(subject -> enhance(subject, previousResponse))
+                .orElseGet(() -> CompletableFuture.completedFuture(previousResponse));
     }
 
-    private List<? extends Grant> getGrants(Jwt identityToken) {
-        return identityToken.getSubject()
-                // we have a subject, let's find the grants in cache, or from server
-                .map(subject -> roleCache.computeValue(subject, () -> getGrantsFromServer(subject))
-                        // we do not have a subject, no roles
-                        .orElse(CollectionsHelper.listOf())).orElse(CollectionsHelper.listOf());
+    private CompletionStage<AuthenticationResponse> enhance(Subject subject,
+                                                            AuthenticationResponse previousResponse) {
+        String username = subject.getPrincipal().getName();
 
+        List<? extends Grant> grants = roleCache.computeValue(username, () -> getGrantsFromServer(username))
+                .orElse(CollectionsHelper.listOf());
+
+        AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
+        previousResponse.getService().ifPresent(builder::service);
+        previousResponse.getDescription().ifPresent(builder::description);
+        builder.requestHeaders(previousResponse.getRequestHeaders());
+        builder.user(buildSubject(subject, grants));
+        return CompletableFuture.completedFuture(builder.build());
+    }
+
+    private Subject buildSubject(Subject originalSubject, List<? extends Grant> grants) {
+        Subject.Builder builder = Subject.builder();
+        builder.update(originalSubject);
+
+        grants.forEach(builder::addGrant);
+
+        return builder.build();
     }
 
     private Optional<List<? extends Grant>> getGrantsFromServer(String subject) {
@@ -84,8 +122,7 @@ class IdcsRoles implements SubjectEnhancer {
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
 
-            Response groupResponse = config.generalClient()
-                    .target(config.identityUri() + "/admin/v1/Asserter")
+            Response groupResponse = assertEndpoint
                     .request()
                     .header("Authorization", "Bearer " + appToken)
                     .post(Entity.json(requestBuilder.build()));
@@ -154,7 +191,7 @@ class IdcsRoles implements SubjectEnhancer {
         formData.putSingle("grant_type", "client_credentials");
         formData.putSingle("scope", "urn:opc:idm:__myscopes__");
 
-        Response tokenResponse = config.tokenEndpoint()
+        Response tokenResponse = tokenEndpoint
                 .request()
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.form(formData));
@@ -174,6 +211,36 @@ class IdcsRoles implements SubjectEnhancer {
                                   + " from IDCS. Response code: " + tokenResponse.getStatus() + ", entity: "
                                   + tokenResponse.readEntity(String.class));
             return Optional.empty();
+        }
+    }
+
+    public static class Builder implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
+        private OidcConfig oidcConfig;
+        // todo maybe allow control of timeouts?
+        // refactor to interface
+        // add a "NO_CACHE" implementation
+        // support loading from config (with support for no-cache)
+        private EvictableCache<String, List<? extends Grant>> roleCache;
+
+        @Override
+        public IdcsRoleMapperProvider build() {
+            return new IdcsRoleMapperProvider(this);
+        }
+
+        public Builder fromConfig(Config config) {
+            config.get("oidc-config").asOptional(OidcConfig.class).ifPresent(this::oidcConfig);
+            config.get("cache-config").asOptional(EvictableCache.class).ifPresent(this::roleCache);
+            return this;
+        }
+
+        public Builder oidcConfig(OidcConfig config) {
+            this.oidcConfig = config;
+            return this;
+        }
+
+        public Builder roleCache(EvictableCache<String, List<? extends Grant>> roleCache) {
+            this.roleCache = roleCache;
+            return this;
         }
     }
 }

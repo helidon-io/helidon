@@ -18,14 +18,12 @@ package io.helidon.security.providers;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import io.helidon.config.Config;
 
 /**
  * Generic cache with eviction and max size.
@@ -33,67 +31,28 @@ import java.util.function.Supplier;
  * @param <K> type of keys in this cache
  * @param <V> type of values in this cache
  */
-public final class EvictableCache<K, V> {
-    /**
-     * Number of threads in the scheduled thread pool to evict records.
-     */
-    public static final int EVICT_THREAD_COUNT = 1;
+public interface EvictableCache<K, V> {
     /**
      * Default timeout of records in minutes (inactivity timeout).
      */
-    public static final long CACHE_TIMEOUT_MINUTES = 60;
+    long CACHE_TIMEOUT_MINUTES = 60;
     /**
      * Default eviction period in minutes (how often to evict records).
      */
-    public static final long CACHE_EVICT_PERIOD_MINUTES = 5;
+    long CACHE_EVICT_PERIOD_MINUTES = 5;
     /**
      * Default eviction delay in minutes (how long to wait after the cache is started).
      */
-    public static final long CACHE_EVICT_DELAY_MINUTES = 1;
+    long CACHE_EVICT_DELAY_MINUTES = 1;
     /**
      * Maximal number of records in the cache.
      * If the cache is full, no caching is done and the supplier of value is called for every uncached value.
      */
-    public static final long CACHE_MAX_SIZE = 100_000;
+    long CACHE_MAX_SIZE = 100_000;
     /**
      * Parameter to {@link ConcurrentHashMap#forEachKey(long, Consumer)} used for eviction.
      */
-    public static final long EVICT_PARALLELISM_THRESHOLD = 10000;
-
-    private static final ScheduledThreadPoolExecutor EXECUTOR;
-
-    static {
-        ThreadFactory jf = new ThreadFactory() {
-            private final AtomicInteger counter = new AtomicInteger(1);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, getClass().getSimpleName() + "-cachePurge_" + counter.getAndIncrement());
-            }
-        };
-        EXECUTOR = new ScheduledThreadPoolExecutor(EVICT_THREAD_COUNT, jf);
-    }
-
-    private final ConcurrentHashMap<K, CacheRecord<K, V>> cacheMap = new ConcurrentHashMap<>();
-    private final long cacheTimoutNanos;
-    private final long cacheMaxSize;
-    private final long evictParallelismThreshold;
-    private final ScheduledFuture<?> evictionFuture;
-    private final BiFunction<K, V, Boolean> evictor;
-
-    private EvictableCache(Builder<K, V> builder) {
-        cacheMaxSize = builder.cacheMaxSize;
-        cacheTimoutNanos = TimeUnit.NANOSECONDS.convert(builder.cacheTimeout, builder.cacheTimeoutUnit);
-        evictParallelismThreshold = builder.parallelismThreshold;
-        evictor = builder.evictor;
-
-        evictionFuture = EXECUTOR.scheduleAtFixedRate(
-                this::evict,
-                builder.cacheEvictDelay,
-                builder.cacheEvictPeriod,
-                builder.cacheEvictTimeUnit);
-        EXECUTOR.setRemoveOnCancelPolicy(true);
-    }
+    long EVICT_PARALLELISM_THRESHOLD = 10000;
 
     /**
      * Create a new builder for a cache.
@@ -102,7 +61,7 @@ public final class EvictableCache<K, V> {
      * @param <V> type of values in the cache
      * @return a builder to build the cache
      */
-    public static <K, V> Builder<K, V> builder() {
+    static <K, V> Builder<K, V> builder() {
         return new Builder<>();
     }
 
@@ -113,23 +72,39 @@ public final class EvictableCache<K, V> {
      * @param <V> type of values in the cache
      * @return new cache built with default values
      */
-    public static <K, V> EvictableCache<K, V> create() {
+    static <K, V> EvictableCache<K, V> create() {
         Builder<K, V> builder = builder();
         return builder.build();
     }
 
-    void evict() {
-        cacheMap.forEachKey(evictParallelismThreshold, key -> cacheMap.compute(key, (key1, cacheRecord) -> {
-            if ((null == cacheRecord) || evictor.apply(cacheRecord.getKey(), cacheRecord.getValue())) {
-                return null;
-            } else {
-                if (cacheRecord.isValid(cacheTimoutNanos)) {
-                    return cacheRecord;
-                } else {
-                    return null;
-                }
-            }
-        }));
+    /**
+     * Create a new cache and configure it from the provided configuration.
+     * See {@link Builder#fromConfig(Config)} for the list of configuration keys.
+     *
+     * @param config config to read configuration of this cache from
+     * @param <K>    type of keys in the cache
+     * @param <V>    type of values in the cache
+     * @return new cache configured from config
+     */
+    static <K, V> EvictableCache<K, V> create(Config config) {
+        Builder<K, V> builder = builder();
+
+        return builder.fromConfig(config)
+                .build();
+    }
+
+    /**
+     * Create a new cache that is not a cache (e.g. never caches, delegates
+     * all calls to the {@link Supplier} in {@link #computeValue(Object, Supplier)}.
+     *
+     * @param <K> Type of keys
+     * @param <V> Type of values
+     * @return a new instance that is not caching
+     */
+    @SuppressWarnings("unchecked")
+    static <K, V> EvictableCache<K, V> noCache() {
+        // there is no support for restricted visibility in interface in current java version
+        return (EvictableCache<K, V>) EvictableCacheImpl.NO_CACHE;
     }
 
     /**
@@ -138,13 +113,8 @@ public final class EvictableCache<K, V> {
      * @param key key to remove
      * @return value if it was removed and valid, empty otherwise
      */
-    public Optional<V> remove(K key) {
-        CacheRecord<K, V> removed = cacheMap.remove(key);
-        if (null == removed) {
-            return Optional.empty();
-        }
-
-        return validate(removed).map(CacheRecord::getValue);
+    default Optional<V> remove(K key) {
+        return Optional.empty();
     }
 
     /**
@@ -153,15 +123,7 @@ public final class EvictableCache<K, V> {
      * @param key key to use
      * @return current value in the cache or empty if not present (or invalid)
      */
-    public Optional<V> get(K key) {
-        return getRecord(key).flatMap(this::validate).map(CacheRecord::getValue);
-    }
-
-    private Optional<CacheRecord<K, V>> validate(CacheRecord<K, V> record) {
-        if (record.isValid(cacheTimoutNanos) && !evictor.apply(record.getKey(), record.getValue())) {
-            return Optional.of(record);
-        }
-        cacheMap.remove(record.key);
+    default Optional<V> get(K key) {
         return Optional.empty();
     }
 
@@ -172,8 +134,8 @@ public final class EvictableCache<K, V> {
      *
      * @return current size of the cache (including valid and invalid - not yet evicted - values)
      */
-    public int size() {
-        return cacheMap.size();
+    default int size() {
+        return 0;
     }
 
     /**
@@ -183,75 +145,15 @@ public final class EvictableCache<K, V> {
      * @param valueSupplier supplier called if the value is not yet cached, or is invalid
      * @return current value from the cache, or computed value from the supplier
      */
-    public Optional<V> computeValue(K key, Supplier<Optional<V>> valueSupplier) {
-        try {
-            return doComputeValue(key, valueSupplier);
-        } catch (CacheFullException e) {
-            return valueSupplier.get();
-        }
+    default Optional<V> computeValue(K key, Supplier<Optional<V>> valueSupplier) {
+        return valueSupplier.get();
     }
 
     /**
      * Close this cache.
-     * Cancels eviction future and clears the cache.
+     * Carry out shutdown tasks (e.g. shutting down eviction thread).
      */
-    public void close() {
-        evictionFuture.cancel(true);
-        cacheMap.clear();
-    }
-
-    private Optional<V> doComputeValue(K key, Supplier<Optional<V>> valueSupplier) {
-        CacheRecord<K, V> record = cacheMap.compute(key, (s, cacheRecord) -> {
-            if ((null != cacheRecord) && cacheRecord.isValid(cacheTimoutNanos)) {
-                cacheRecord.accessed();
-                return cacheRecord;
-            }
-
-            if (cacheMap.size() >= cacheMaxSize) {
-                throw new CacheFullException();
-            }
-
-            return valueSupplier.get()
-                    .map(v -> new CacheRecord<>(key, v))
-                    .orElse(null);
-        });
-
-        if (null == record) {
-            return Optional.empty();
-        } else {
-            return Optional.of(record.value);
-        }
-    }
-
-    private Optional<CacheRecord<K, V>> getRecord(K key) {
-        return Optional.ofNullable(cacheMap.get(key));
-    }
-
-    private static final class CacheRecord<K, V> {
-        private final K key;
-        private final V value;
-        private volatile long lastAccess = System.nanoTime();
-
-        private CacheRecord(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        private void accessed() {
-            lastAccess = System.nanoTime();
-        }
-
-        private boolean isValid(long timeoutNanos) {
-            return (System.nanoTime() - lastAccess) < timeoutNanos;
-        }
-
-        private K getKey() {
-            return key;
-        }
-
-        private V getValue() {
-            return value;
-        }
+    default void close() {
     }
 
     /**
@@ -260,7 +162,8 @@ public final class EvictableCache<K, V> {
      * @param <K> types of keys used in the cache
      * @param <V> types of values used in the cache
      */
-    public static class Builder<K, V> {
+    class Builder<K, V> {
+        private boolean cacheEnabled = true;
         private long cacheTimeout = CACHE_TIMEOUT_MINUTES;
         private long cacheMaxSize = CACHE_MAX_SIZE;
         private TimeUnit cacheTimeoutUnit = TimeUnit.MINUTES;
@@ -271,15 +174,19 @@ public final class EvictableCache<K, V> {
         private BiFunction<K, V, Boolean> evictor = (key, value) -> false;
 
         /**
-         * Build a new instance of the cache configured from this builder.
+         * Build a new instance of the cache based on configuration of this builder.
          *
-         * @param <K> types of keys used in the cache
-         * @param <V> types of values used in the cache
-         * @return new cache instance
+         * @param <K> key type
+         * @param <V> value type
+         * @return a new instance of the cache
          */
         @SuppressWarnings("unchecked")
         public <K, V> EvictableCache<K, V> build() {
-            return new EvictableCache(this);
+            if (cacheEnabled) {
+                return new EvictableCacheImpl(this);
+            } else {
+                return noCache();
+            }
         }
 
         /**
@@ -345,10 +252,99 @@ public final class EvictableCache<K, V> {
             this.evictor = evictor;
             return this;
         }
-    }
 
-    private static final class CacheFullException extends RuntimeException {
-        private CacheFullException() {
+        /**
+         * If the cacheEnabled is set to false, no caching will be done.
+         * Otherwise (default behavior) evictable caching will be used.
+         *
+         * @param cacheEnabled whether to enable this cache or not (true - enabled by default)
+         * @return updated builder instance
+         */
+        public Builder<K, V> cacheEnabled(boolean cacheEnabled) {
+            this.cacheEnabled = cacheEnabled;
+            return this;
+        }
+
+        /**
+         * Update this builder from configuration.
+         *
+         * Options expected under the current config node:
+         * <table border="1">
+         * <caption>Configuration parameters</caption>
+         * <tr><th>key</th><th>default value</th><th>description</th></tr>
+         * <tr><td>cache-enabled</td><td>true</td><td>Set to false to fully disable caching (and ignore other parameters)
+         * </td></tr>
+         * <tr><td>cache-timeout-millis</td><td>{@value #CACHE_TIMEOUT_MINUTES} minutes</td><td>Timeout of records in the cache
+         * in milliseconds</td></tr>
+         * <tr><td>cache-evict-delay-millis</td><td>{@value #CACHE_EVICT_DELAY_MINUTES} minutes</td><td>How long to wait with
+         * eviction after the cache is created in milliseconds</td></tr>
+         * <tr><td>cache-evict-period-millis</td><td>{@value #CACHE_EVICT_PERIOD_MINUTES} minutes</td><td>How often to evict
+         * records from the cache in milliseconds</td></tr>
+         * <tr><td>parallelism-treshold</td><td>{@value #EVICT_PARALLELISM_THRESHOLD}</td><td>see
+         * {@link #parallelismThreshold(long)}</td></tr>
+         * <tr><td>evictor-class</td><td></td><td>A class that is instantiated and used as an evictor for this instance</td></tr>
+         * </table>
+         *
+         * @param config Config to use to load configuration options for this builder
+         * @return updated builder instance
+         */
+        public Builder<K, V> fromConfig(Config config) {
+            config.get("cache-enabled").asOptionalBoolean().ifPresent(this::cacheEnabled);
+            if (cacheEnabled) {
+                config.get("cache-timeout-millis").asOptionalLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
+                long evictDelay = config.get("cache-evict-delay-millis").asLong(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
+                long evictPeriod = config.get("cache-evict-period-millis").asLong(cacheEvictTimeUnit.toMillis(cacheEvictPeriod));
+                evictSchedule(evictDelay, evictPeriod, TimeUnit.MILLISECONDS);
+                config.get("parallelism-treshold").asOptionalLong().ifPresent(this::parallelismThreshold);
+                config.get("evictor-class").asOptional(Class.class).ifPresent(this::evictorClass);
+            }
+
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        private Builder<K, V> evictorClass(Class aClass) {
+            // attempt to create an instance
+            try {
+                aClass.getMethod("apply", Object.class, Object.class);
+                Object anObject = aClass.getConstructor().newInstance();
+                evictor((BiFunction<K, V, Boolean>) anObject);
+            } catch (ReflectiveOperationException e) {
+                throw new SecurityException("Failed to create an evictor instance. Configured class: " + aClass.getName(), e);
+            }
+            return this;
+        }
+
+        long cacheTimeout() {
+            return cacheTimeout;
+        }
+
+        long cacheMaxSize() {
+            return cacheMaxSize;
+        }
+
+        TimeUnit cacheTimeoutUnit() {
+            return cacheTimeoutUnit;
+        }
+
+        long cacheEvictDelay() {
+            return cacheEvictDelay;
+        }
+
+        long cacheEvictPeriod() {
+            return cacheEvictPeriod;
+        }
+
+        TimeUnit cacheEvictTimeUnit() {
+            return cacheEvictTimeUnit;
+        }
+
+        long parallelismThreshold() {
+            return parallelismThreshold;
+        }
+
+        BiFunction<K, V, Boolean> evictor() {
+            return evictor;
         }
     }
 }

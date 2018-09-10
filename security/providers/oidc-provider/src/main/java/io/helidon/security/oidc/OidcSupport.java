@@ -34,6 +34,7 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
+import io.helidon.security.oidc.common.OidcConfig;
 import io.helidon.security.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;

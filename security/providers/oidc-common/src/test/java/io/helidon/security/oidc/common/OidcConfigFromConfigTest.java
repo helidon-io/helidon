@@ -14,15 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.security.oidc;
+package io.helidon.security.oidc.common;
 
-import io.helidon.security.Subject;
-import io.helidon.security.jwt.Jwt;
+import io.helidon.config.Config;
 
 /**
- * Add something to the subject.
+ * Unit test for {@link OidcConfig}.
  */
-@FunctionalInterface
-interface SubjectEnhancer {
-    void enhance(Jwt currentUser, Subject.Builder subjectBuilder);
+class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
+    private OidcConfig oidcConfig;
+
+    OidcConfigFromConfigTest() {
+        Config config = Config.builder()
+                .disableSystemPropertiesSource()
+                .disableEnvironmentVariablesSource()
+                .build();
+
+        oidcConfig = OidcConfig.create(config.get("security.oidc-test"));
+    }
+
+    @Override
+    OidcConfig getConfig() {
+        return oidcConfig;
+    }
 }

@@ -22,7 +22,6 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +57,7 @@ import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.oidc.common.OidcConfig;
 import io.helidon.security.providers.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
@@ -83,7 +83,6 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     private final OidcConfig oidcConfig;
     private final TokenHandler paramHeaderHandler;
     private final BiConsumer<SignedJwt, Errors.Collector> jwtValidator;
-    private final List<SubjectEnhancer> enhancers = new LinkedList<>();
 
     private OidcProvider(OidcConfig oidcConfig) {
         this.oidcConfig = oidcConfig;
@@ -138,10 +137,6 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                                             .readEntity(String.class));
                 }
             };
-        }
-
-        if (oidcConfig.idcsRoles()) {
-            this.enhancers.add(new IdcsRoles(oidcConfig));
         }
     }
 
@@ -348,8 +343,6 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                                                                                                  .name(scope)
                                                                                                  .type("scope")
                                                                                                  .build())));
-
-        enhancers.forEach(enhancer -> enhancer.enhance(jwt, subjectBuilder));
 
         return subjectBuilder.build();
 

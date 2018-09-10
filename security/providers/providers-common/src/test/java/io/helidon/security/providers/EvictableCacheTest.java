@@ -19,8 +19,6 @@ package io.helidon.security.providers;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.security.providers.EvictableCache;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;

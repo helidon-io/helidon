@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.oidc;
+package io.helidon.security.oidc.common;
 
 import java.net.URI;
 
@@ -59,7 +59,6 @@ abstract class OidcConfigAbstractTest {
                   () -> assertThat("Redirect URI", config.redirectUri(), is("/oidc/redirect")),
                   () -> assertThat("Use Parameter", config.useParam(), is(OidcConfig.DEFAULT_PARAM_USE)),
                   () -> assertThat("Use Cookie", config.useCookie(), is(OidcConfig.DEFAULT_COOKIE_USE)),
-                  () -> assertThat("Get IDCS roles", config.idcsRoles(), is(OidcConfig.DEFAULT_IDCS_ROLES)),
                   () -> assertThat("Use Header", config.useHeader(), is(OidcConfig.DEFAULT_HEADER_USE)),
                   () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.DEFAULT_BASE_SCOPES)),
                   () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is("JSESSIONID=")),

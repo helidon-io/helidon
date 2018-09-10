@@ -39,5 +39,7 @@
         <module>jwt-provider</module>
         <module>abac-provider</module>
         <module>oidc-provider</module>
+        <module>idcs-mapper</module>
+        <module>oidc-common</module>
     </modules>
 </project>
