@@ -16,6 +16,7 @@
 
 package io.helidon.security;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.security.internal.SecurityAuditEvent;
@@ -45,21 +46,41 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
         return security.resolveAtnProvider(providerName)
                 .map(this::authenticate)
                 .orElseThrow(() -> new SecurityException("Could not find any authentication provider. Security is not "
-                                                                 + "configured"));
+                                                                 + "configured"))
+                .thenCompose(this::mapSubject);
 
+    }
+
+    private CompletionStage<AuthenticationResponse> mapSubject(AuthenticationResponse prevResponse) {
+        ProviderRequest providerRequest = new ProviderRequest(context,
+                                                              request.getResources(),
+                                                              request.getRequestEntity(),
+                                                              request.getResponseEntity());
+
+        if (prevResponse.getStatus() == SecurityResponse.SecurityStatus.SUCCESS) {
+            return security.getSubjectMapper()
+                    .map(mapper -> mapper.map(providerRequest, prevResponse))
+                    .orElseGet(() -> CompletableFuture.completedFuture(prevResponse));
+        } else {
+            return CompletableFuture.completedFuture(prevResponse);
+        }
     }
 
     private CompletionStage<AuthenticationResponse> authenticate(AuthenticationProvider providerInstance) {
         // prepare request to provider
-        ProviderRequest ac = new ProviderRequest(context,
-                                                 request.getResources(),
-                                                 request.getRequestEntity(),
-                                                 request.getResponseEntity());
+        ProviderRequest providerRequest = new ProviderRequest(context,
+                                                              request.getResources(),
+                                                              request.getRequestEntity(),
+                                                              request.getResponseEntity());
 
-        return providerInstance.authenticate(ac).thenApply(response -> {
+        return providerInstance.authenticate(providerRequest).thenApply(response -> {
             if (response.getStatus().isSuccess()) {
-                response.getUser().ifPresent(context::setUser);
-                response.getService().ifPresent(context::setService);
+                response.getUser()
+                        .ifPresent(context::setUser);
+
+                response.getService()
+                        .ifPresent(context::setService);
+
                 //Audit success
                 context.audit(SecurityAuditEvent
                                       .success(

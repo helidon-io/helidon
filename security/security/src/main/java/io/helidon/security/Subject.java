@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.security.util.AbacSupport;
 
@@ -126,7 +127,7 @@ public final class Subject implements AbacSupport {
      * @return list of grants of the specific type associated with this subject (may be empty)
      */
     public List<Grant> getGrantsByType(String grantType) {
-        return Collections.unmodifiableList(grantsByType.get(grantType));
+        return Collections.unmodifiableList(grantsByType.getOrDefault(grantType, CollectionsHelper.listOf()));
     }
 
     @Override
@@ -252,6 +253,7 @@ public final class Subject implements AbacSupport {
          * @return updated builder instance
          */
         public Builder update(Subject subject) {
+            principal = subject.principal;
             grants.addAll(subject.grants);
             principals.addAll(subject.principals);
             privateCredentials.putAll(subject.privateCredentials);
