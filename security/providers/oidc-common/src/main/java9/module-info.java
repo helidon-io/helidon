@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.security.oidc;
-
-import io.helidon.config.Config;
-
 /**
- * Unit test for {@link OidcConfig}.
+ * OIDC common classes.
  */
-class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
-    private OidcConfig oidcConfig;
+module io.helidon.security.oidc.common {
+    requires java.logging;
+    requires io.helidon.security.providers;
+    requires io.helidon.security.jwt;
+    requires jersey.client;
+    requires java.ws.rs;
 
-    OidcConfigFromConfigTest() {
-        Config config = Config.create();
-
-        oidcConfig = OidcConfig.create(config.get("security.oidc-test"));
-    }
-
-    @Override
-    OidcConfig getConfig() {
-        return oidcConfig;
-    }
+    exports io.helidon.security.oidc.common;
 }

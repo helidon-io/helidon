@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.oidc;
+package io.helidon.security.oidc.common;
 
 import java.net.URI;
 

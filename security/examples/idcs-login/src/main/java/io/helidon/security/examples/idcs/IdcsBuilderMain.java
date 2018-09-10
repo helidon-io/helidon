@@ -26,10 +26,11 @@ import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
+import io.helidon.security.idcs.mapper.IdcsRoleMapperProvider;
 import io.helidon.security.jersey.SecurityFeature;
-import io.helidon.security.oidc.OidcConfig;
 import io.helidon.security.oidc.OidcProvider;
 import io.helidon.security.oidc.OidcSupport;
+import io.helidon.security.oidc.common.OidcConfig;
 import io.helidon.security.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -52,7 +53,7 @@ public final class IdcsBuilderMain {
      * Start the example.
      *
      * @param args ignored
-     * @throws IOException          if logging configuration fails
+     * @throws IOException if logging configuration fails
      */
     public static void main(String[] args) throws IOException {
         // load logging configuration
@@ -67,12 +68,13 @@ public final class IdcsBuilderMain {
                         "https://idcs-tenant-id.identity.oracle.com"))
                 //.proxyHost("proxy.proxy.com")
                 .frontendUri("http://your.host:your.port")
-                // enable roles support (read groups from idcs)
-                .idcsRoles(true)
                 .build();
 
         Security security = Security.builder()
                 .addProvider(OidcProvider.create(oidcConfig))
+                .addProvider(IdcsRoleMapperProvider.builder()
+                                     .fromConfig(config)
+                                     .oidcConfig(oidcConfig))
                 .build();
 
         Routing.Builder routing = Routing.builder()

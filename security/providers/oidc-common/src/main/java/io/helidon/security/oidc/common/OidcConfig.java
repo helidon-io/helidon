@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.oidc;
+package io.helidon.security.oidc.common;
 
 import java.net.URI;
 import java.util.logging.Logger;
@@ -35,7 +35,8 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 /**
- * Configuration of OIDC usable both from {@link OidcProvider} and from WebServer extension {@link OidcSupport}.
+ * Configuration of OIDC usable from all resources that utilize OIDC specification, such as security provider, web server
+ * extension and IDCS connectivity.
  * <p>
  * Some of the configuration options below use "resource" type. The following configuration
  * can be used for a resource (example for oidc-metadata key):
@@ -109,8 +110,6 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * identity-uri/oauth2/v1/introspect</td><td>When validate-with-jwk is set to "false", this is the endpoint used</td></tr>
  * <tr><td>base-scopes</td><td>{@value DEFAULT_BASE_SCOPES}</td><td>Configure scopes to be requested by default. If the scope
  * has a qualifier, it must be included here</td></tr>
- * <tr><td>idcs-roles</td><td>{@value DEFAULT_IDCS_ROLES}</td><td>When set to true, IDCS will be called to get roles of the
- * current user</td></tr>
  * </table>
  */
 public final class OidcConfig {
@@ -129,10 +128,9 @@ public final class OidcConfig {
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
-    static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
+    public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
-    static final boolean DEFAULT_IDCS_ROLES = false;
 
     private final String redirectUri;
     private final boolean useCookie;
@@ -158,7 +156,6 @@ public final class OidcConfig {
     private final String audience;
     private final Client appClient;
     private final Client generalClient;
-    private final boolean idcsRoles;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -176,7 +173,6 @@ public final class OidcConfig {
         this.issuer = builder.issuer;
         this.audience = builder.audience;
         this.identityUri = builder.identityUri;
-        this.idcsRoles = builder.idcsRoles;
 
         if (null == builder.signJwk) {
             this.signJwk = JwkKeys.builder().build();
@@ -270,107 +266,102 @@ public final class OidcConfig {
                 .build();
     }
 
-    JwkKeys signJwk() {
+    public JwkKeys signJwk() {
         return signJwk;
     }
 
-    String redirectUri() {
+    public String redirectUri() {
         return redirectUri;
     }
 
-    WebTarget tokenEndpoint() {
+    public WebTarget tokenEndpoint() {
         return tokenEndpoint;
     }
 
-    boolean useParam() {
+    public boolean useParam() {
         return useParam;
     }
 
-    String paramName() {
+    public String paramName() {
         return paramName;
     }
 
-    boolean useCookie() {
+    public boolean useCookie() {
         return useCookie;
     }
 
-    String cookieName() {
+    public String cookieName() {
         return cookieName;
     }
 
-    String cookieOptions() {
+    public String cookieOptions() {
         return cookieOptions;
     }
 
-    boolean useHeader() {
+    public boolean useHeader() {
         return useHeader;
     }
 
-    TokenHandler headerHandler() {
+    public TokenHandler headerHandler() {
         return headerHandler;
     }
 
-    String cookieValuePrefix() {
+    public String cookieValuePrefix() {
         return cookieValuePrefix;
     }
 
-    String scopeAudience() {
+    public String scopeAudience() {
         return scopeAudience;
     }
 
-    String authorizationEndpointUri() {
+    public String authorizationEndpointUri() {
         return authorizationEndpointUri;
     }
 
-    String clientId() {
+    public String clientId() {
         return clientId;
     }
 
-    String redirectUriWithHost() {
+    public String redirectUriWithHost() {
         return redirectUriWithHost;
     }
 
-    String baseScopes() {
+    public String baseScopes() {
         return baseScopes;
     }
 
-    boolean validateJwtWithJwk() {
+    public boolean validateJwtWithJwk() {
         return validateJwtWithJwk;
     }
 
-    WebTarget introspectEndpoint() {
+    public WebTarget introspectEndpoint() {
         return introspectEndpoint;
     }
 
-    String issuer() {
+    public String issuer() {
         return issuer;
     }
 
-    String audience() {
+    public String audience() {
         return audience;
     }
 
-    URI identityUri() {
+    public URI identityUri() {
         return identityUri;
     }
 
-    Client generalClient() {
+    public Client generalClient() {
         return generalClient;
     }
 
-    Client appClient() {
+    public Client appClient() {
         return appClient;
-    }
-
-    boolean idcsRoles() {
-        return idcsRoles;
     }
 
     /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
-        private boolean idcsRoles = DEFAULT_IDCS_ROLES;
         private String issuer;
         private String audience;
         private String baseScopes = DEFAULT_BASE_SCOPES;
@@ -436,10 +427,6 @@ public final class OidcConfig {
 
             if (null == identityUri) {
                 collector.fatal("Identity URI must be configured  (\"identity-uri\" key in config)");
-            }
-
-            if (null == frontendUri) {
-                collector.fatal("Frontend URI must be configured (\"frontend-uri\" key in config");
             }
 
             // first set of validations
@@ -586,23 +573,7 @@ public final class OidcConfig {
             config.get("validate-with-jwk").asOptionalBoolean().ifPresent(this::validateJwtWithJwk);
             config.get("issuer").value().ifPresent(this::issuer);
             config.get("audience").value().ifPresent(this::audience);
-            config.get("idcs-roles").asOptionalBoolean().ifPresent(this::idcsRoles);
 
-            return this;
-        }
-
-        /**
-         * Set to true to retrieve roles from IDCS server.
-         * This is only for the case when the OIDC server configured is an IDCS instance.
-         *
-         * The role retrieval requires additional configuration of the trusted application - it must
-         * have a domain administrator right, otherwise the API is not available for it.
-         *
-         * @param idcsRoles true to retrieve groups (mapped to roles) from IDCS server for each user
-         * @return updated builder instance
-         */
-        public Builder idcsRoles(Boolean idcsRoles) {
-            this.idcsRoles = idcsRoles;
             return this;
         }
 
