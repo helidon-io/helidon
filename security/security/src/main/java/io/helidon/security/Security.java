@@ -50,6 +50,7 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.ProviderSelectionPolicy;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
+import io.helidon.security.spi.SubjectMappingProvider;
 
 import io.opentracing.Tracer;
 
@@ -85,6 +86,7 @@ public final class Security {
 
     private final Collection<Class<? extends Annotation>> annotations = new LinkedList<>();
     private final List<Consumer<AuditProvider.TracedAuditEvent>> auditors = new LinkedList<>();
+    private final Optional<SubjectMappingProvider> subjectMappingProvider;
     private final String instanceUuid;
     private final ProviderSelectionPolicy providerSelectionPolicy;
     private final Tracer securityTracer;
@@ -98,6 +100,7 @@ public final class Security {
         this.executorService = builder.executorService;
         this.annotations.addAll(SecurityUtil.getAnnotations(builder.allProviders));
         this.securityTracer = SecurityUtil.getTracer(builder.tracingEnabled, builder.tracer);
+        this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider);
 
         //providers
         List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();
@@ -336,6 +339,10 @@ public final class Security {
         return SecurityEnvironment.builder(serverTime);
     }
 
+    public Optional<SubjectMappingProvider> getSubjectMapper() {
+        return subjectMappingProvider;
+    }
+
     /**
      * Builder pattern class for helping create {@link Security} in a convenient way.
      */
@@ -348,6 +355,7 @@ public final class Security {
 
         private NamedProvider<AuthenticationProvider> authnProvider;
         private NamedProvider<AuthorizationProvider> authzProvider;
+        private SubjectMappingProvider subjectMappingProvider;
         private Config config = Config.empty();
         private Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy> providerSelectionPolicy =
                 FirstProviderSelectionPolicy::new;
@@ -469,6 +477,9 @@ public final class Security {
             }
             if (provider instanceof AuditProvider) {
                 addAuditProvider((AuditProvider) provider);
+            }
+            if (provider instanceof SubjectMappingProvider) {
+                subjectMappingProvider((SubjectMappingProvider) provider);
             }
 
             return this;
@@ -709,6 +720,12 @@ public final class Security {
             return this;
         }
 
+        public Builder subjectMappingProvider(SubjectMappingProvider provider) {
+            this.subjectMappingProvider = provider;
+            this.allProviders.put(provider, true);
+            return this;
+        }
+
         /**
          * Add an audit provider to this security runtime.
          * All configured audit providers are used.
@@ -813,6 +830,7 @@ public final class Security {
                 boolean isAuthz = pConf.get("is-authorization-provider").asBoolean(true);
                 boolean isClientSec = pConf.get("is-client-security-provider").asBoolean(true);
                 boolean isAudit = pConf.get("is-audit-provider").asBoolean(true);
+                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean(true);
 
                 SecurityProvider provider;
                 if (null == providerService) {
@@ -832,6 +850,9 @@ public final class Security {
                 }
                 if (isAudit && (provider instanceof AuditProvider)) {
                     addAuditProvider((AuditProvider) provider);
+                }
+                if (isSubjectMapper && (provider instanceof SubjectMappingProvider)) {
+                    subjectMappingProvider((SubjectMappingProvider) provider);
                 }
             });
 
