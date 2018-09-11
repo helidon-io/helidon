@@ -4,8 +4,8 @@ Streaming Example
 The **Streaming NIO** example.
 
 Uses NIO and data buffers to show the implementation of a simple streaming service. Files can be 
-uploaded and downloaded in a streaming fashion using `Subscriber<RequestChunk>` and 
-`Producer<ResponseChunk>`. As a result, service runs in constant space instead of proportional
+uploaded and downloaded in a streaming fashion using `Subscriber<DataChunk>` and 
+`Producer<DataChunk>`. As a result, service runs in constant space instead of proportional
 to the size of the file being uploaded or downloaded.
     
 Running the example

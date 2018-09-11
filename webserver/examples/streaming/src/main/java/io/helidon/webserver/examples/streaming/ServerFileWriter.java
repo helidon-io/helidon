@@ -23,8 +23,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.RequestChunk;
 import io.helidon.webserver.ServerResponse;
 
 /**
@@ -32,7 +32,7 @@ import io.helidon.webserver.ServerResponse;
  * writes them to a temporary file using NIO. For simplicity, this {@code
  * Subscriber} requests an unbounded number of chunks on its subscription.
  */
-public class ServerFileWriter implements Flow.Subscriber<RequestChunk> {
+public class ServerFileWriter implements Flow.Subscriber<DataChunk> {
     private static final Logger LOGGER = Logger.getLogger(ServerFileWriter.class.getName());
 
     private final FileChannel channel;
@@ -55,7 +55,7 @@ public class ServerFileWriter implements Flow.Subscriber<RequestChunk> {
     }
 
     @Override
-    public void onNext(RequestChunk chunk) {
+    public void onNext(DataChunk chunk) {
         try {
             channel.write(chunk.data());
             LOGGER.info(chunk.data().toString() + " " + Thread.currentThread());

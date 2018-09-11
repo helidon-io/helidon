@@ -23,14 +23,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.ResponseChunk;
 
 /**
  * Class ServerFileReader. Reads a file using NIO and produces data chunks for a
  * {@code Subscriber} to process.
  */
-public class ServerFileReader implements Flow.Publisher<ResponseChunk> {
+public class ServerFileReader implements Flow.Publisher<DataChunk> {
     private static final Logger LOGGER = Logger.getLogger(ServerFileReader.class.getName());
 
     static final int BUFFER_SIZE = 4096;
@@ -42,7 +42,7 @@ public class ServerFileReader implements Flow.Publisher<ResponseChunk> {
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super ResponseChunk> s) {
+    public void subscribe(Flow.Subscriber<? super DataChunk> s) {
         FileChannel channel;
         ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
 
@@ -66,7 +66,7 @@ public class ServerFileReader implements Flow.Publisher<ResponseChunk> {
                         if (bytes > 0) {
                             buffer.rewind();
                             LOGGER.info(buffer.toString());
-                            s.onNext(new ResponseChunk(false, buffer));
+                            s.onNext(DataChunk.create(buffer));
                             n--;
                         }
                     }
