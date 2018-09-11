@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.spi.BareRequest;
 
@@ -34,13 +35,14 @@ import reactor.core.publisher.Flux;
 
 import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.common.CollectionsHelper.mapOf;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -51,7 +53,7 @@ public class StringContentReaderTest {
 
     @Test
     public void invalidCharsetTest() throws Exception {
-        Flux<RequestChunk> flux = Flux.just("2010-01-02").map(s -> RequestChunk.from(s.getBytes()));
+        Flux<DataChunk> flux = Flux.just("2010-01-02").map(s -> DataChunk.create(s.getBytes()));
 
         CompletableFuture<? extends String> future =
                 new StringContentReader("invalid-charset-name")
@@ -77,7 +79,7 @@ public class StringContentReaderTest {
 
     @Test
     public void charsetTest() throws Exception {
-        Flux<RequestChunk> flux = Flux.just(RequestChunk.from(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
+        Flux<DataChunk> flux = Flux.just(DataChunk.create(new byte[] {(byte) 225, (byte) 226, (byte) 227}));
 
         CompletableFuture<? extends String> future =
                 new StringContentReader("cp1250")

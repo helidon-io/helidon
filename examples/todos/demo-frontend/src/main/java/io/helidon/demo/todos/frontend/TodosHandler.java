@@ -22,9 +22,9 @@ import java.util.function.Consumer;
 import javax.json.JsonObject;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.Http;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.security.SecurityContext;
-import io.helidon.webserver.Http;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -78,6 +78,7 @@ public final class TodosHandler implements Service {
 
     /**
      * Create a new {@code TodosHandler} instance.
+     *
      * @param bsc the {@code BackendServiceClient} to use
      */
     public TodosHandler(BackendServiceClient bsc) {
@@ -109,6 +110,7 @@ public final class TodosHandler implements Service {
 
     /**
      * Handler for {@code POST /todo}.
+     *
      * @param req the server request
      * @param res the server response
      */
@@ -116,12 +118,13 @@ public final class TodosHandler implements Service {
         secure(req, res, sc -> json(req, res, json -> {
             createCounter.inc();
             sendResponse(res, bsc.create(sc, req.spanContext(), json),
-                    Http.Status.INTERNAL_SERVER_ERROR_500);
+                         Http.Status.INTERNAL_SERVER_ERROR_500);
         }));
     }
 
     /**
      * Handler for {@code GET /todo}.
+     *
      * @param req the server request
      * @param res the server response
      */
@@ -131,6 +134,7 @@ public final class TodosHandler implements Service {
 
     /**
      * Handler for {@code PUT /todo/id}.
+     *
      * @param req the server request
      * @param res the server response
      */
@@ -139,12 +143,13 @@ public final class TodosHandler implements Service {
             updateCounter.inc();
             // example of asynchronous processing
             bsc.update(sc, req.spanContext(),
-                    req.path().param("id"), json, res);
+                       req.path().param("id"), json, res);
         }));
     }
 
     /**
      * Handler for {@code DELETE /todo/id}.
+     *
      * @param req the server request
      * @param res the server response
      */
@@ -152,28 +157,30 @@ public final class TodosHandler implements Service {
         secure(req, res, sc -> {
             deleteCounter.inc();
             sendResponse(res,
-                    bsc.deleteSingle(sc, req.spanContext(),
-                            req.path().param("id")),
-                    Http.Status.NOT_FOUND_404);
+                         bsc.deleteSingle(sc, req.spanContext(),
+                                          req.path().param("id")),
+                         Http.Status.NOT_FOUND_404);
         });
     }
 
     /**
      * Handler for {@code GET /todo/id}.
+     *
      * @param req the server request
      * @param res the server response
      */
     private void getSingle(final ServerRequest req, final ServerResponse res) {
         secure(req, res, sc -> {
             sendResponse(res,
-                    bsc.getSingle(sc, req.spanContext(),
-                            req.path().param("id")),
-                    Http.Status.NOT_FOUND_404);
+                         bsc.getSingle(sc, req.spanContext(),
+                                       req.path().param("id")),
+                         Http.Status.NOT_FOUND_404);
         });
     }
 
     /**
      * Send a response with a {@code 500} status code.
+     *
      * @param res the server response
      */
     private void noSecurityContext(final ServerResponse res) {
@@ -184,8 +191,9 @@ public final class TodosHandler implements Service {
     /**
      * Send the response entity if {@code jsonResponse} has a value, otherwise
      * sets the status to {@code failureStatus}.
-     * @param res the server response
-     * @param jsonResponse the response entity
+     *
+     * @param res           the server response
+     * @param jsonResponse  the response entity
      * @param failureStatus the status to use if {@code jsonResponse} is empty
      */
     private void sendResponse(final ServerResponse res,
@@ -200,8 +208,9 @@ public final class TodosHandler implements Service {
      * Reads a request entity as {@JsonObject}, and if successful invoke the
      * given consumer, otherwise terminate the request with a {@code 500}
      * status code.
-     * @param req the server request
-     * @param res the server response
+     *
+     * @param req  the server request
+     * @param res  the server response
      * @param json the {@code JsonObject} consumer
      */
     private void json(final ServerRequest req,
@@ -214,7 +223,7 @@ public final class TodosHandler implements Service {
                 .exceptionally(throwable -> {
                     res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
                     res.send(throwable.getClass().getName()
-                            + ": " + throwable.getMessage());
+                                     + ": " + throwable.getMessage());
                     return null;
                 });
     }
@@ -223,6 +232,7 @@ public final class TodosHandler implements Service {
      * Reads the request security context, and if successful invoke the given
      * consumer, otherwise terminate the request with a {@code 500}
      * status code.
+     *
      * @param req the server request
      * @param res the server response
      * @param ctx the {@code SecurityContext} consumer
@@ -232,7 +242,7 @@ public final class TodosHandler implements Service {
                         final Consumer<SecurityContext> ctx) {
 
         OptionalHelper.from(req.context()
-                .get(SecurityContext.class))
+                                    .get(SecurityContext.class))
                 .ifPresentOrElse(ctx, () -> noSecurityContext(res));
     }
 }

@@ -20,6 +20,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 
 import org.hamcrest.core.IsInstanceOf;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The ServerRequestReaderTest.
@@ -41,7 +42,7 @@ public class ServerRequestReaderTest {
 
     @Test
     public void test1() throws Exception {
-        ServerRequest.Reader<B> reader = (publisher, clazz) -> ReactiveStreamsAdapter.publisherFromFlow(publisher)
+        Reader<B> reader = (publisher, clazz) -> ReactiveStreamsAdapter.publisherFromFlow(publisher)
                                                                              .collectList()
                                                                              .toFuture()
                                                                              .thenApply(byteBuffers -> new B());

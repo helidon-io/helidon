@@ -32,42 +32,39 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import io.helidon.common.InputStreamHelper;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.BadRequestException;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.RequestChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testsupport.SocketHttpClient;
 
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
 import org.reactivestreams.Subscription;
-
 import reactor.core.publisher.BaseSubscriber;
 
 import static io.helidon.webserver.testsupport.SocketHttpClient.longData;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * The BytesReuseTest verifies whether the {@link RequestChunk} instances get released properly.
+ * The BytesReuseTest verifies whether the {@link DataChunk} instances get released properly.
  * <p>
- * Note that with {@link RequestChunk#finalize()} which calls {@link RequestChunk#release()},
+ * Note that with {@link DataChunk#finalize()} which calls {@link DataChunk#release()},
  * we no longer experience {@link OutOfMemoryError} exceptions in case the chunks aren't freed
- * as long as no references to the {@link RequestChunk} instances are kept.
+ * as long as no references to the {@link DataChunk} instances are kept.
  */
 public class BytesReuseTest {
 
@@ -75,7 +72,7 @@ public class BytesReuseTest {
 
     private static WebServer webServer;
 
-    private static Queue<RequestChunk> chunkReference = new ConcurrentLinkedQueue<>();
+    private static Queue<DataChunk> chunkReference = new ConcurrentLinkedQueue<>();
     private static ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r) {{
         setDaemon(true);
     }});
@@ -110,14 +107,14 @@ public class BytesReuseTest {
                        })
                        .post("/subscriber", (req, res) -> {
                            ReactiveStreamsAdapter.publisherFromFlow(req.content())
-                                         .subscribe(new BaseSubscriber<RequestChunk>() {
+                                   .subscribe(new BaseSubscriber<DataChunk>() {
                                              @Override
                                              protected void hookOnSubscribe(Subscription subscription) {
                                                  subscription.request(Long.MAX_VALUE);
                                              }
 
                                              @Override
-                                             protected void hookOnNext(RequestChunk chunk) {
+                                             protected void hookOnNext(DataChunk chunk) {
                                                  if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
                                                      chunk.release();
                                                  }
@@ -215,7 +212,7 @@ public class BytesReuseTest {
 
     private void assertChunkReferencesAreReleased() {
         LOGGER.info("Asserting that " + chunkReference.size() + " request chunks were released.");
-        for (RequestChunk chunk : chunkReference) {
+        for (DataChunk chunk : chunkReference) {
             assertTrue(chunk.isReleased(), "The chunk was not released: ID " + chunk.id());
         }
     }
@@ -224,7 +221,7 @@ public class BytesReuseTest {
     public void requestChunkDataRemainsWhenNotReleased() throws Exception {
         doSubscriberPostRequest(false);
 
-        for (RequestChunk chunk : chunkReference) {
+        for (DataChunk chunk : chunkReference) {
             assertFalse(chunk.isReleased(), "The chunk was released: ID " + chunk.id());
         }
         assertThat(new String(chunkReference.peek().bytes()), startsWith("myData"));
@@ -324,7 +321,7 @@ public class BytesReuseTest {
 
     /**
      * This test causes the WebServer to throw {@link OutOfMemoryError} by not releasing the
-     * {@link RequestChunk} instances.
+     * {@link DataChunk} instances.
      * It takes several seconds which is why it's disabled by default.
      * <p>
      * Note that since {@link ByteBufRequestChunk} releases the underlying {@link io.netty.buffer.ByteBuf} on
@@ -347,9 +344,9 @@ public class BytesReuseTest {
     }
 
     /**
-     * This test shows that even when the {@link RequestChunk#release()} isn't called, we don't get
-     * {@link OutOfMemoryError} thanks to {@link RequestChunk#finalize()} that calls
-     * {@link RequestChunk#release()} automatically. This test needs at least 1GB of heap.
+     * This test shows that even when the {@link DataChunk#release()} isn't called, we don't get
+     * {@link OutOfMemoryError} thanks to {@link DataChunk#finalize()} that calls
+     * {@link DataChunk#release()} automatically. This test needs at least 1GB of heap.
      * <p>
      * This feature is not guarantied though.
      *
@@ -363,7 +360,7 @@ public class BytesReuseTest {
     }
 
     /**
-     * This test shows that when the {@link RequestChunk#release()} is called, WebServer can run
+     * This test shows that when the {@link DataChunk#release()} is called, WebServer can run
      * indefinitely and it performs perfectly while operating with low amount of memory.
      * This test needs 128m of heap.
      *

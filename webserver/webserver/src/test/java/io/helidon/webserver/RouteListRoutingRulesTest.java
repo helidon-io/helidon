@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ package io.helidon.webserver;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.webserver.Http.Method.DELETE;
-import static io.helidon.webserver.Http.Method.GET;
-import static io.helidon.webserver.Http.Method.POST;
-import static io.helidon.webserver.Http.Method.PUT;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static io.helidon.common.http.Http.Method.DELETE;
+import static io.helidon.common.http.Http.Method.GET;
+import static io.helidon.common.http.Http.Method.POST;
+import static io.helidon.common.http.Http.Method.PUT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link RouteListRoutingRules}.

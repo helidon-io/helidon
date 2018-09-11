@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
-
 /**
- * This Builder should be implemented by all the builders in order to enable
- * seamless exchange between the builder itself and the objects it's
- * building when calling the methods. Such methods need to have overloads
- * with builder parameters as well as concrete instances.
- *
- * @param <T> the type this builder is building
+ * Helidon Common classes for HTTP server and client.
  */
-public interface Builder<T> {
+module io.helidon.common.http {
+    requires java.logging;
+    requires io.helidon.common;
+    requires io.helidon.common.reactive;
 
-    /**
-     * Builds the object.
-     *
-     * @return the built object
-     */
-    T build();
+    exports io.helidon.common.http;
 }

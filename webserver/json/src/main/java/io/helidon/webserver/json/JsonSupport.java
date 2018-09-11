@@ -32,14 +32,16 @@ import javax.json.JsonStructure;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 
+import io.helidon.common.http.Content;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
+import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.webserver.ContentReaders;
 import io.helidon.webserver.ContentWriters;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.MediaType;
-import io.helidon.webserver.Parameters;
-import io.helidon.webserver.ResponseChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -53,7 +55,7 @@ import io.helidon.webserver.WebServer;
  * as {@link javax.json.JsonObject JsonObject} or {@link javax.json.JsonArray JsonArray}. If registered on the
  * {@code Web Server} {@link Routing}, then all {@link Handler Handlers} can use
  * {@code ServerRequest.}{@link ServerRequest#content() content()}{@code .}
- * {@link ServerRequest.Content#as(java.lang.Class) as(...)} and
+ * {@link Content#as(java.lang.Class) as(...)} and
  * {@code ServerResponse.}{@link ServerResponse#send(Object) send()}
  * with {@link JsonStructure JSON} objects.
  *
@@ -234,7 +236,7 @@ public final class JsonSupport implements Service, Handler {
      *         might end exceptionally with a {@link IllegalArgumentException} in case of I/O error or
      *         a {@link javax.json.JsonException}
      */
-    public ServerRequest.Reader<JsonStructure> reader(Charset charset) {
+    public Reader<JsonStructure> reader(Charset charset) {
         return (publisher, clazz) ->
                 ContentReaders.byteArrayReader()
                               .apply(publisher)
@@ -259,18 +261,18 @@ public final class JsonSupport implements Service, Handler {
      *         might end exceptionally with a {@link IllegalArgumentException} in case of I/O error or
      *         a {@link javax.json.JsonException}
      */
-    public ServerRequest.Reader<JsonStructure> reader() {
+    public Reader<JsonStructure> reader() {
         return reader(null);
     }
 
     /**
      * Returns a function (writer) converting {@link JsonStructure} to the {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk}s.
+     * of {@link DataChunk}s.
      *
      * @param charset a charset to use or {@code null} for default charset
      * @return created function
      */
-    public Function<JsonStructure, Flow.Publisher<ResponseChunk>> writer(Charset charset) {
+    public Function<JsonStructure, Flow.Publisher<DataChunk>> writer(Charset charset) {
         return json -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             JsonWriter writer = (charset == null)
@@ -285,11 +287,11 @@ public final class JsonSupport implements Service, Handler {
 
     /**
      * Returns a function (writer) converting {@link JsonStructure} to the {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk}s.
+     * of {@link DataChunk}s.
      *
      * @return created function
      */
-    public Function<JsonStructure, Flow.Publisher<ResponseChunk>> writer() {
+    public Function<JsonStructure, Flow.Publisher<DataChunk>> writer() {
         return writer(null);
     }
 

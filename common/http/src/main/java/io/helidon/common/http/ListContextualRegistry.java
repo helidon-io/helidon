@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,6 +109,12 @@ class ListContextualRegistry implements ContextualRegistry {
         }
     }
 
+    private interface RegisteredItem<T> {
+        T get();
+
+        Class<T> getType();
+    }
+
     private static class ClassifiedRegistry {
         private final ReadWriteLock lock = new ReentrantReadWriteLock();
         private final List<RegisteredItem> content = new ArrayList<>();
@@ -160,11 +166,6 @@ class ListContextualRegistry implements ContextualRegistry {
             }
             return null;
         }
-    }
-
-    private interface RegisteredItem<T> {
-        T get();
-        Class<T> getType();
     }
 
     private static class RegisteredSupplier<T> implements RegisteredItem<T> {

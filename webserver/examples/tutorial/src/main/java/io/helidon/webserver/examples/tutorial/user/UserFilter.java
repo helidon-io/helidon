@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.examples.tutorial.user;
 
-import io.helidon.webserver.ContextualRegistry;
+import io.helidon.common.http.ContextualRegistry;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;

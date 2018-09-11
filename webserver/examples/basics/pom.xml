@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.examples</groupId>
         <artifactId>helidon-webserver-examples-project</artifactId>
-        <version>0.9.2-SNAPSHOT</version>
+        <version>0.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-webserver-examples-basics</artifactId>
     <name>Helidon WebServer Examples Basics</name>
@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <helidon.version>0.9.2-SNAPSHOT</helidon.version>
+        <helidon.version>0.10.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.webserver.examples.basics.Main</mainClass>
     </properties>
 

@@ -23,17 +23,17 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.ResponseChunk;
 
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 
 /**
- * A {@link ResponseChunk} collecting all chunks into a single {@code byte array} accessible using {@link #result()} method.
+ * A {@link DataChunk} collecting all chunks into a single {@code byte array} accessible using {@link #result()} method.
  */
-public class CollectingSubscriber extends BaseSubscriber<ResponseChunk> {
+public class CollectingSubscriber extends BaseSubscriber<DataChunk> {
 
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private final WritableByteChannel channel = Channels.newChannel(baos);
@@ -59,7 +59,7 @@ public class CollectingSubscriber extends BaseSubscriber<ResponseChunk> {
     }
 
     @Override
-    protected void hookOnNext(ResponseChunk item) {
+    protected void hookOnNext(DataChunk item) {
         onNextCounter++;
         if (requestedCounter < Long.MAX_VALUE) {
             requestedCounter--;
@@ -107,7 +107,7 @@ public class CollectingSubscriber extends BaseSubscriber<ResponseChunk> {
         return onNextCounter;
     }
 
-    public void subscribeOn(Flow.Publisher<ResponseChunk> publisher) {
+    public void subscribeOn(Flow.Publisher<DataChunk> publisher) {
         ReactiveStreamsAdapter.publisherFromFlow(publisher).subscribe(this);
     }
 

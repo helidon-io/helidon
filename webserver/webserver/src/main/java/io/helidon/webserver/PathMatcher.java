@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  * URI Path Matcher.
- * It is primary intended for use in {@link Routing} implementation.
+ * It is primary intended for use in Routing implementation.
  * <p>Matched URI path is always <b>decoded</b>, <b>{@link java.net.URI#normalize() normalized}</b> and
  * with <b>removed single ended slash</b> (if any).
  *

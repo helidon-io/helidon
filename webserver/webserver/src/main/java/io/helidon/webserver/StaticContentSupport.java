@@ -22,6 +22,9 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+
 /**
  * Serves 'static content' (files) from filesystem or using a classloader to the {@link WebServer WebServer}
  * {@link Routing}. It is possible to {@link Routing.Builder#register(Service...) register} it on the routing.
@@ -155,7 +158,7 @@ public class StaticContentSupport implements Service {
     /**
      * Fluent builder of the StaticContent detailed parameters.
      */
-    public static class Builder implements io.helidon.webserver.Builder {
+    public static class Builder implements io.helidon.common.Builder {
 
         private final Path fsRoot;
         private final String clRoot;

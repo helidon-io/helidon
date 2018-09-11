@@ -35,6 +35,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.spi.BareResponse;
@@ -59,7 +62,7 @@ abstract class Response implements ServerResponse {
     // Content related
     private final SendLockSupport sendLockSupport;
     private final ArrayList<Writer> writers;
-    private final ArrayList<Function<Flow.Publisher<ResponseChunk>, Flow.Publisher<ResponseChunk>>> filters;
+    private final ArrayList<Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>>> filters;
 
     /**
      * Creates new instance.
@@ -200,12 +203,12 @@ abstract class Response implements ServerResponse {
         Span writeSpan = createWriteSpan(content);
         try {
             sendLockSupport.execute(() -> {
-                Flow.Publisher<ResponseChunk> publisher = createPublisherUsingWriter(content);
+                Flow.Publisher<DataChunk> publisher = createPublisherUsingWriter(content);
                 if (publisher == null) {
                     throw new IllegalArgumentException("Cannot write! No registered writer for '"
                                                                + content.getClass().toString() + "'.");
                 }
-                Flow.Publisher<ResponseChunk> p = applyFilters(publisher, writeSpan);
+                Flow.Publisher<DataChunk> p = applyFilters(publisher, writeSpan);
                 sendLockSupport.contentSend = true;
                 p.subscribe(bareResponse);
             }, content == null);
@@ -217,14 +220,14 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public CompletionStage<ServerResponse> send(Flow.Publisher<ResponseChunk> content) {
+    public CompletionStage<ServerResponse> send(Flow.Publisher<DataChunk> content) {
         Span writeSpan = createWriteSpan(content);
         try {
-            Flow.Publisher<ResponseChunk> publisher = (content == null)
+            Flow.Publisher<DataChunk> publisher = (content == null)
                     ? ReactiveStreamsAdapter.publisherToFlow(Mono.empty())
                     : content;
             sendLockSupport.execute(() -> {
-                Flow.Publisher<ResponseChunk> p = applyFilters(publisher, writeSpan);
+                Flow.Publisher<DataChunk> p = applyFilters(publisher, writeSpan);
                 sendLockSupport.contentSend = true;
                 p.subscribe(bareResponse);
             }, content == null);
@@ -241,7 +244,7 @@ abstract class Response implements ServerResponse {
     }
 
     @SuppressWarnings("unchecked")
-    <T> Flow.Publisher<ResponseChunk> createPublisherUsingWriter(T content) {
+    <T> Flow.Publisher<DataChunk> createPublisherUsingWriter(T content) {
         if (content == null) {
             return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
         }
@@ -250,7 +253,7 @@ abstract class Response implements ServerResponse {
             for (int i = writers.size() - 1; i >= 0; i--) {
                 Writer<T> writer = writers.get(i);
                 if (writer.accept(content)) {
-                    Flow.Publisher<ResponseChunk> result = writer.function.apply(content);
+                    Flow.Publisher<DataChunk> result = writer.function.apply(content);
                     if (result == null) {
                         break;
                     } else {
@@ -263,42 +266,42 @@ abstract class Response implements ServerResponse {
     }
 
     @Override
-    public <T> Response registerWriter(Class<T> type, Function<T, Flow.Publisher<ResponseChunk>> function) {
+    public <T> Response registerWriter(Class<T> type, Function<T, Flow.Publisher<DataChunk>> function) {
         return registerWriter(type, null, function);
     }
 
     @Override
     public <T> Response registerWriter(Class<T> type,
                                        MediaType contentType,
-                                       Function<? extends T, Flow.Publisher<ResponseChunk>> function) {
+                                       Function<? extends T, Flow.Publisher<DataChunk>> function) {
         sendLockSupport.execute(() -> writers.add(new Writer<>(type, contentType, function)), false);
         return this;
     }
 
     @Override
-    public <T> Response registerWriter(Predicate<?> accept, Function<T, Flow.Publisher<ResponseChunk>> function) {
+    public <T> Response registerWriter(Predicate<?> accept, Function<T, Flow.Publisher<DataChunk>> function) {
         return registerWriter(accept, null, function);
     }
 
     @Override
     public <T> Response registerWriter(Predicate<?> accept,
                                        MediaType contentType,
-                                       Function<T, Flow.Publisher<ResponseChunk>> function) {
+                                       Function<T, Flow.Publisher<DataChunk>> function) {
         sendLockSupport.execute(() -> writers.add(new Writer<>(accept, contentType, function)), false);
         return this;
     }
 
     @Override
-    public Response registerFilter(Function<Flow.Publisher<ResponseChunk>, Flow.Publisher<ResponseChunk>> function) {
+    public Response registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function) {
         Objects.requireNonNull(function, "Parameter 'function' is null!");
         sendLockSupport.execute(() -> filters.add(function), false);
         return this;
     }
 
-    Flow.Publisher<ResponseChunk> applyFilters(Flow.Publisher<ResponseChunk> publisher, Span span) {
+    Flow.Publisher<DataChunk> applyFilters(Flow.Publisher<DataChunk> publisher, Span span) {
         Objects.requireNonNull(publisher, "Parameter 'publisher' is null!");
-        for (Function<Flow.Publisher<ResponseChunk>, Flow.Publisher<ResponseChunk>> filter : filters) {
-            Flow.Publisher<ResponseChunk> p = filter.apply(publisher);
+        for (Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> filter : filters) {
+            Flow.Publisher<DataChunk> p = filter.apply(publisher);
             if (p != null) {
                 publisher = p;
             }
@@ -314,16 +317,16 @@ abstract class Response implements ServerResponse {
     class Writer<T> {
         private final Predicate<Object> acceptPredicate;
         private final MediaType requestedContentType;
-        private final Function<T, Flow.Publisher<ResponseChunk>> function;
+        private final Function<T, Flow.Publisher<DataChunk>> function;
 
-        Writer(Predicate acceptPredicate, MediaType contentType, Function<T, Flow.Publisher<ResponseChunk>> function) {
+        Writer(Predicate acceptPredicate, MediaType contentType, Function<T, Flow.Publisher<DataChunk>> function) {
             Objects.requireNonNull(function, "Parameter function is null!");
             this.acceptPredicate = acceptPredicate == null ? o -> true : acceptPredicate;
             this.requestedContentType = contentType;
             this.function = function;
         }
 
-        Writer(Class<?> acceptType, MediaType contentType, Function<T, Flow.Publisher<ResponseChunk>> function) {
+        Writer(Class<?> acceptType, MediaType contentType, Function<T, Flow.Publisher<DataChunk>> function) {
             this(acceptType == null ? null : (Predicate) o -> acceptType.isAssignableFrom(o.getClass()),
                  contentType,
                  function);

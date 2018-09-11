@@ -20,7 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.webserver.Builder;
+import io.helidon.common.Builder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

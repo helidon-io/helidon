@@ -33,9 +33,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.InputStreamHelper;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.ResponseChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testsupport.LoggingTestUtils;
@@ -48,12 +48,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The ResponseOrderingTest tests whether http chunks were sent in a correct order which was reported as MIC-6419.
@@ -79,49 +79,49 @@ public class ResponseOrderingTest {
         LoggingTestUtils.initializeLogging();
 
         Routing routing = Routing.builder()
-                                 .any("/multi", (req, res) -> {
-                                     CompletionStage<? extends String> content = req.content().as(String.class);
+                .any("/multi", (req, res) -> {
+                    CompletionStage<? extends String> content = req.content().as(String.class);
 
-                                     content.whenComplete((o, throwable) -> {
-                                         queue.add(res.requestId());
+                    content.whenComplete((o, throwable) -> {
+                        queue.add(res.requestId());
 
-                                         res.status(201);
-                                         res.send("" + res.requestId())
-                                            .exceptionally(throwable1 -> {
-                                                errorQueue.add(throwable1);
-                                                return null;
-                                            });
-                                         System.out.println("Response sent: " + res.requestId() + " .. " + Thread.currentThread()
-                                                                                                                 .toString());
-                                     }).exceptionally(throwable -> {
-                                         throwable.printStackTrace();
-                                         res.status(500);
-                                         res.send(throwable.getMessage());
-                                         return null;
-                                     });
-                                 })
-                                 .any("/stream", (req, res) -> {
-                                     res.status(Http.Status.ACCEPTED_202);
+                        res.status(201);
+                        res.send("" + res.requestId())
+                                .exceptionally(throwable1 -> {
+                                    errorQueue.add(throwable1);
+                                    return null;
+                                });
+                        System.out.println("Response sent: " + res.requestId() + " .. " + Thread.currentThread()
+                                .toString());
+                    }).exceptionally(throwable -> {
+                        throwable.printStackTrace();
+                        res.status(500);
+                        res.send(throwable.getMessage());
+                        return null;
+                    });
+                })
+                .any("/stream", (req, res) -> {
+                    res.status(Http.Status.ACCEPTED_202);
 
-                                     Flux<ResponseChunk> flux =
-                                             ReactiveStreamsAdapter.publisherFromFlow(req.content())
-                                                           .map(chunk -> {
-                                                               return new ResponseChunk(false, chunk.data(), chunk::release);
-                                                           });
-                                     res.send(ReactiveStreamsAdapter.publisherToFlow(flux));
-                                 })
-                                 .error(Throwable.class, (req, res, ex) -> {
-                                     errorQueue.add(ex);
-                                     System.out.println("#### EXCEPTION: " + ex);
-                                     req.next(ex);
-                                 })
-                                 .build();
+                    Flux<DataChunk> flux =
+                            ReactiveStreamsAdapter.publisherFromFlow(req.content())
+                                    .map(chunk -> {
+                                        return DataChunk.create(false, chunk.data(), chunk::release);
+                                    });
+                    res.send(ReactiveStreamsAdapter.publisherToFlow(flux));
+                })
+                .error(Throwable.class, (req, res, ex) -> {
+                    errorQueue.add(ex);
+                    System.out.println("#### EXCEPTION: " + ex);
+                    req.next(ex);
+                })
+                .build();
 
         webServer = WebServer.create(routing);
         webServer.start()
-                 .thenRun(() -> System.out.println("UP and RUNNING!"))
-                 .toCompletableFuture()
-                 .get(10, TimeUnit.SECONDS);
+                .thenRun(() -> System.out.println("UP and RUNNING!"))
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
         webServer.whenShutdown().thenRun(() -> System.out.println("=============== SERVER IS DOWN ================!"));
     }
@@ -165,7 +165,7 @@ public class ResponseOrderingTest {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 10000; i++) {
             sb.append(i)
-              .append("\n");
+                    .append("\n");
         }
         ByteArrayInputStream inputStream = new ByteArrayInputStream(sb.toString().getBytes());
 

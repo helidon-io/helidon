@@ -18,7 +18,7 @@ package io.helidon.webserver.prometheus;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.webserver.Http;
+import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.TestClient;
 import io.helidon.webserver.testsupport.TestRequest;
@@ -27,14 +27,13 @@ import io.helidon.webserver.testsupport.TestResponse;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Counter;
 import org.hamcrest.core.StringStartsWith;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
-
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PrometheusSupportTest {
 

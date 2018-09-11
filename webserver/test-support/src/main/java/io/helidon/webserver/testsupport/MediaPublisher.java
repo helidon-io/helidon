@@ -21,17 +21,17 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.MediaType;
-import io.helidon.webserver.RequestChunk;
 
 import reactor.core.publisher.Flux;
 
 /**
  * Represents a {@link Flow.Publisher publisher} of specific media type.
  */
-public interface MediaPublisher extends Flow.Publisher<RequestChunk> {
+public interface MediaPublisher extends Flow.Publisher<DataChunk> {
 
     /**
      * Returns a media type of published data.
@@ -47,7 +47,7 @@ public interface MediaPublisher extends Flow.Publisher<RequestChunk> {
      * @param publisher a publisher.
      * @return new instance.
      */
-    static MediaPublisher of(MediaType publishedType, Flow.Publisher<RequestChunk> publisher) {
+    static MediaPublisher of(MediaType publishedType, Flow.Publisher<DataChunk> publisher) {
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {
@@ -55,7 +55,7 @@ public interface MediaPublisher extends Flow.Publisher<RequestChunk> {
             }
 
             @Override
-            public void subscribe(Flow.Subscriber<? super RequestChunk> subscriber) {
+            public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
                 publisher.subscribe(subscriber);
             }
         };
@@ -75,7 +75,7 @@ public interface MediaPublisher extends Flow.Publisher<RequestChunk> {
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());
-        Flow.Publisher<RequestChunk> publisher = ReactiveStreamsAdapter.publisherToFlow(Flux.just(RequestChunk.from(data)));
+        Flow.Publisher<DataChunk> publisher = ReactiveStreamsAdapter.publisherToFlow(Flux.just(DataChunk.create(data)));
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {
@@ -83,7 +83,7 @@ public interface MediaPublisher extends Flow.Publisher<RequestChunk> {
             }
 
             @Override
-            public void subscribe(Flow.Subscriber<? super RequestChunk> subscriber) {
+            public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
                 publisher.subscribe(subscriber);
             }
         };

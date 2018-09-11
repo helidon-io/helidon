@@ -21,12 +21,12 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder;
-import io.helidon.webserver.Http;
 import io.helidon.webserver.HttpException;
-import io.helidon.webserver.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;

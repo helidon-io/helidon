@@ -38,6 +38,8 @@ import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
@@ -55,9 +57,6 @@ import io.helidon.security.SecurityResponse;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.RequestChunk;
-import io.helidon.webserver.ResponseChunk;
 import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -598,18 +597,18 @@ public final class SecurityHandler implements Handler {
     private Entity toResponseMessage(ServerResponse res) {
         return filterFunction -> res.registerFilter(responseChunkPublisher -> {
             Flow.Publisher<ByteBuffer> bytesFromBizLogic =
-                    new ResponseProcessor<ResponseChunk, ByteBuffer>(responseChunkPublisher) {
+                    new ResponseProcessor<DataChunk, ByteBuffer>(responseChunkPublisher) {
                         @Override
-                        public void onNext(ResponseChunk item) {
+                        public void onNext(DataChunk item) {
                             // chunk not released, as security provider may use it later
                             getSubscriber().onNext(item.data());
                         }
                     };
             Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromBizLogic);
-            return new ResponseProcessor<ByteBuffer, ResponseChunk>(securedBytes) {
+            return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
                 @Override
                 public void onNext(ByteBuffer item) {
-                    getSubscriber().onNext(new ResponseChunk(true, item));
+                    getSubscriber().onNext(DataChunk.create(true, item));
                 }
             };
         });
@@ -618,18 +617,18 @@ public final class SecurityHandler implements Handler {
     private Entity toRequestMessage(ServerRequest req) {
         return filterFunction -> req.content().registerFilter(requestChunkPublisher -> {
             Flow.Publisher<ByteBuffer> bytesFromExternal =
-                    new ResponseProcessor<RequestChunk, ByteBuffer>(requestChunkPublisher) {
+                    new ResponseProcessor<DataChunk, ByteBuffer>(requestChunkPublisher) {
                         @Override
-                        public void onNext(RequestChunk item) {
+                        public void onNext(DataChunk item) {
                             // chunk not released, as security provider may use it later
                             getSubscriber().onNext(item.data());
                         }
                     };
             Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromExternal);
-            return new ResponseProcessor<ByteBuffer, RequestChunk>(securedBytes) {
+            return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
                 @Override
                 public void onNext(ByteBuffer item) {
-                    getSubscriber().onNext(RequestChunk.from(item));
+                    getSubscriber().onNext(DataChunk.create(item));
                 }
             };
         });

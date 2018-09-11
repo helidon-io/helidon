@@ -32,6 +32,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;

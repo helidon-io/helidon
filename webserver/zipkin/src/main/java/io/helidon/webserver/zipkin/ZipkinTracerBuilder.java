@@ -21,7 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.logging.Logger;
 
-import io.helidon.webserver.Builder;
+import io.helidon.common.Builder;
 
 import brave.Tracing;
 import brave.opentracing.BraveTracer;

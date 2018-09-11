@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 /**
  * Copied from Guava.
@@ -95,10 +95,10 @@ final class Preconditions {
      * size {@code size}. A position index may range from zero to {@code size}, inclusive.
      *
      * @param index a user-supplied index identifying a position in an array, list or string
-     * @param size the size of that array, list or string
+     * @param size  the size of that array, list or string
      * @return the value of {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is negative or is greater than {@code size}
-     * @throws IllegalArgumentException if {@code size} is negative
+     * @throws IllegalArgumentException  if {@code size} is negative
      */
     public static int checkPositionIndex(int index, int size) {
         return checkPositionIndex(index, size, "index");
@@ -109,11 +109,11 @@ final class Preconditions {
      * size {@code size}. A position index may range from zero to {@code size}, inclusive.
      *
      * @param index a user-supplied index identifying a position in an array, list or string
-     * @param size the size of that array, list or string
-     * @param desc the text to use to describe this index in an error message
+     * @param size  the size of that array, list or string
+     * @param desc  the text to use to describe this index in an error message
      * @return the value of {@code index}
      * @throws IndexOutOfBoundsException if {@code index} is negative or is greater than {@code size}
-     * @throws IllegalArgumentException if {@code size} is negative
+     * @throws IllegalArgumentException  if {@code size} is negative
      */
     public static int checkPositionIndex(int index, int size, String desc) {
         // Carefully optimized for execution by hotspot (explanatory comment above)
@@ -129,11 +129,11 @@ final class Preconditions {
      * {@code size}, inclusive.
      *
      * @param start a user-supplied index identifying a starting position in an array, list or string
-     * @param end a user-supplied index identifying a ending position in an array, list or string
-     * @param size the size of that array, list or string
+     * @param end   a user-supplied index identifying a ending position in an array, list or string
+     * @param size  the size of that array, list or string
      * @throws IndexOutOfBoundsException if either index is negative or is greater than {@code size},
-     *     or if {@code end} is less than {@code start}
-     * @throws IllegalArgumentException if {@code size} is negative
+     *                                   or if {@code end} is less than {@code start}
+     * @throws IllegalArgumentException  if {@code size} is negative
      */
     public static void checkPositionIndexes(int start, int end, int size) {
         // Carefully optimized for execution by hotspot (explanatory comment above)
@@ -153,7 +153,6 @@ final class Preconditions {
         return format("end index (%s) must not be less than start index (%s)", end, start);
     }
 
-
     private static String badPositionIndex(int index, int size, String desc) {
         if (index < 0) {
             return format("%s (%s) must not be negative", desc, index);
@@ -171,8 +170,8 @@ final class Preconditions {
      * square braces.
      *
      * @param template a non-null string containing 0 or more {@code %s} placeholders.
-     * @param args the arguments to be substituted into the message template. Arguments are converted
-     *     to strings using {@link String#valueOf(Object)}. Arguments can be null.
+     * @param args     the arguments to be substituted into the message template. Arguments are converted
+     *                 to strings using {@link String#valueOf(Object)}. Arguments can be null.
      */
     // Note that this is somewhat-improperly used from Verify.java as well.
     static String format(String template, Object... args) {

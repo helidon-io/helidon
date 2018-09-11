@@ -29,19 +29,18 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import io.helidon.webserver.RequestChunk;
+import io.helidon.common.http.DataChunk;
 
 import org.hamcrest.Description;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.hamcrest.text.StringContainsInOrder.stringContainsInOrder;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The TestUtils.
@@ -192,7 +191,7 @@ public class TestUtils {
         assertThat(map, matcher(() -> map.get("my-key"), Is.is("my-value")));
     }
 
-    public static String requestChunkAsString(RequestChunk chunk) {
+    public static String requestChunkAsString(DataChunk chunk) {
         try {
             return new String(chunk.bytes());
         } finally {

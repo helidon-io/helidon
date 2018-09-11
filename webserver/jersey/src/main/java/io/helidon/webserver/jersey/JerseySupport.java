@@ -349,7 +349,7 @@ public class JerseySupport implements Service {
     /**
      * Builder for convenient way to create {@link JerseySupport}.
      */
-    public static class Builder implements Configurable<Builder>, io.helidon.webserver.Builder {
+    public static class Builder implements Configurable<Builder>, io.helidon.common.Builder {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;

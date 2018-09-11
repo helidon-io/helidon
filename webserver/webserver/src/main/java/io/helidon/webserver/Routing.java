@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import io.helidon.common.http.Http;
 import io.helidon.webserver.spi.BareRequest;
 import io.helidon.webserver.spi.BareResponse;
 
@@ -70,282 +71,6 @@ public interface Routing {
     }
 
     /**
-     * A {@link Routing} builder.
-     */
-    class Builder implements Rules<Builder>, io.helidon.webserver.Builder<Routing> {
-
-        private final RouteListRoutingRules delegate = new RouteListRoutingRules();
-        private final List<RequestRouting.ErrorHandlerRecord<?>> errorHandlerRecords = new ArrayList<>();
-
-        /**
-         * Creates new instance.
-         */
-        private Builder() {
-        }
-
-        // --------------- ROUTING API
-
-        @Override
-        public Builder register(io.helidon.webserver.Builder<? extends Service>... serviceBuilders) {
-            delegate.register(serviceBuilders);
-            return this;
-        }
-
-        @Override
-        public Builder register(Service... services) {
-            delegate.register(services);
-            return this;
-        }
-
-        @Override
-        public Builder register(String pathPattern, Service... services) {
-            delegate.register(pathPattern, services);
-            return this;
-        }
-
-        @Override
-        public Builder register(String pathPattern, io.helidon.webserver.Builder<? extends Service>... serviceBuilders) {
-            delegate.register(pathPattern, serviceBuilders);
-            return this;
-        }
-
-        @Override
-        public Builder get(Handler... requestHandlers) {
-            delegate.get(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder get(String pathPattern, Handler... requestHandlers) {
-            delegate.get(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder get(PathMatcher pathMatcher, Handler... requestHandlers) {
-            delegate.get(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder put(Handler... requestHandlers) {
-            delegate.put(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder put(String pathPattern, Handler... requestHandlers) {
-            delegate.put(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder put(PathMatcher pathMatcher, Handler... requestHandlers) {
-            delegate.put(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder post(Handler... requestHandlers) {
-            delegate.post(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder post(String pathPattern, Handler... requestHandlers) {
-            delegate.post(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder post(PathMatcher pathMatcher, Handler... requestHandlers) {
-            delegate.post(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder delete(Handler... requestHandlers) {
-            delegate.delete(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder delete(String pathPattern, Handler... requestHandlers) {
-            delegate.delete(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder delete(PathMatcher pathMatcher,
-                              Handler... requestHandlers) {
-            delegate.delete(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder options(Handler... requestHandlers) {
-            delegate.options(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder options(String pathPattern, Handler... requestHandlers) {
-            delegate.options(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder options(PathMatcher pathMatcher,
-                               Handler... requestHandlers) {
-            delegate.options(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder head(Handler... requestHandlers) {
-            delegate.head(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder head(String pathPattern, Handler... requestHandlers) {
-            delegate.head(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder head(PathMatcher pathMatcher, Handler... requestHandlers) {
-            delegate.head(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder trace(Handler... requestHandlers) {
-            delegate.trace(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder trace(String pathPattern, Handler... requestHandlers) {
-            delegate.trace(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder trace(PathMatcher pathMatcher, Handler... requestHandlers) {
-            delegate.trace(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder any(Handler... requestHandlers) {
-            delegate.any(requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder any(String pathPattern, Handler... requestHandlers) {
-            delegate.any(pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder any(PathMatcher pathMatcher, Handler... requestHandlers) {
-            delegate.any(pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers) {
-            delegate.anyOf(methods, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers) {
-            delegate.anyOf(methods, pathPattern, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder anyOf(Iterable<Http.RequestMethod> methods,
-                             PathMatcher pathMatcher,
-                             Handler... requestHandlers) {
-            delegate.anyOf(methods, pathMatcher, requestHandlers);
-            return this;
-        }
-
-        @Override
-        public Builder onNewWebServer(Consumer<WebServer> webServerConsumer) {
-            delegate.onNewWebServer(webServerConsumer);
-            return this;
-        }
-        // --------------- ERROR API
-
-        /**
-         * Registers an error handler that handles the given type of exceptions.
-         *
-         * @param exceptionClass the type of exception to handle by this handler
-         * @param errorHandler   the error handler
-         * @param <T>            an error handler type
-         * @return an updated builder
-         */
-        public <T extends Throwable> Builder error(Class<T> exceptionClass, ErrorHandler<T> errorHandler) {
-            if (errorHandler == null) {
-                return this;
-            }
-            errorHandlerRecords.add(RequestRouting.ErrorHandlerRecord.of(exceptionClass, errorHandler));
-
-            return this;
-        }
-
-        // --------------- BUILD API
-
-        /**
-         * Builds a new routing instance.
-         *
-         * @return a new instance
-         */
-        public Routing build() {
-            RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
-            return new RequestRouting(aggregate.getRouteList(), errorHandlerRecords, aggregate.getNewWebServerCallbacks());
-        }
-
-        /**
-         * Creates new {@link WebServer} instance with provided configuration and this routing.
-         *
-         * @param configuration a web server configuration
-         * @return new {@link WebServer} instance
-         * @throws IllegalStateException if none SPI implementation found
-         */
-        public WebServer createServer(ServerConfiguration configuration) {
-            return WebServer.create(configuration, this.build());
-        }
-
-        /**
-         * Creates new {@link WebServer} instance with provided configuration and this routing.
-         *
-         * @param configurationBuilder a web server configuration builder
-         * @return new {@link WebServer} instance
-         * @throws IllegalStateException if none SPI implementation found
-         */
-        public WebServer createServer(ServerConfiguration.Builder configurationBuilder) {
-            return WebServer.create(configurationBuilder.build(), this.build());
-        }
-
-        /**
-         * Creates new {@link WebServer} instance with this routing and default configuration.
-         *
-         * @return new {@link WebServer} instance
-         * @throws IllegalStateException if none SPI implementation found
-         */
-        public WebServer createServer() {
-            return WebServer.create(this.build());
-        }
-
-    }
-
-    /**
      * An API to define HTTP request routing rules.
      *
      * @param <T> the type to be returned by the subclasses (to support fluent API style)
@@ -369,7 +94,7 @@ public interface Routing {
          *                        method execution
          * @return Updated routing configuration
          */
-        T register(io.helidon.webserver.Builder<? extends Service>... serviceBuilders);
+        T register(io.helidon.common.Builder<? extends Service>... serviceBuilders);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -388,7 +113,7 @@ public interface Routing {
          *                        method execution
          * @return an updated routing configuration
          */
-        T register(String pathPattern, io.helidon.webserver.Builder<? extends Service>... serviceBuilders);
+        T register(String pathPattern, io.helidon.common.Builder<? extends Service>... serviceBuilders);
 
         /**
          * Routes all GET requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -661,5 +386,281 @@ public interface Routing {
          * @return updated routing configuration
          */
         T onNewWebServer(Consumer<WebServer> webServerConsumer);
+    }
+
+    /**
+     * A {@link Routing} builder.
+     */
+    class Builder implements Rules<Builder>, io.helidon.common.Builder<Routing> {
+
+        private final RouteListRoutingRules delegate = new RouteListRoutingRules();
+        private final List<RequestRouting.ErrorHandlerRecord<?>> errorHandlerRecords = new ArrayList<>();
+
+        /**
+         * Creates new instance.
+         */
+        private Builder() {
+        }
+
+        // --------------- ROUTING API
+
+        @Override
+        public Builder register(io.helidon.common.Builder<? extends Service>... serviceBuilders) {
+            delegate.register(serviceBuilders);
+            return this;
+        }
+
+        @Override
+        public Builder register(Service... services) {
+            delegate.register(services);
+            return this;
+        }
+
+        @Override
+        public Builder register(String pathPattern, Service... services) {
+            delegate.register(pathPattern, services);
+            return this;
+        }
+
+        @Override
+        public Builder register(String pathPattern, io.helidon.common.Builder<? extends Service>... serviceBuilders) {
+            delegate.register(pathPattern, serviceBuilders);
+            return this;
+        }
+
+        @Override
+        public Builder get(Handler... requestHandlers) {
+            delegate.get(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder get(String pathPattern, Handler... requestHandlers) {
+            delegate.get(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder get(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.get(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder put(Handler... requestHandlers) {
+            delegate.put(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder put(String pathPattern, Handler... requestHandlers) {
+            delegate.put(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder put(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.put(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder post(Handler... requestHandlers) {
+            delegate.post(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder post(String pathPattern, Handler... requestHandlers) {
+            delegate.post(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder post(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.post(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder delete(Handler... requestHandlers) {
+            delegate.delete(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder delete(String pathPattern, Handler... requestHandlers) {
+            delegate.delete(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder delete(PathMatcher pathMatcher,
+                              Handler... requestHandlers) {
+            delegate.delete(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder options(Handler... requestHandlers) {
+            delegate.options(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder options(String pathPattern, Handler... requestHandlers) {
+            delegate.options(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder options(PathMatcher pathMatcher,
+                               Handler... requestHandlers) {
+            delegate.options(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder head(Handler... requestHandlers) {
+            delegate.head(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder head(String pathPattern, Handler... requestHandlers) {
+            delegate.head(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder head(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.head(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder trace(Handler... requestHandlers) {
+            delegate.trace(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder trace(String pathPattern, Handler... requestHandlers) {
+            delegate.trace(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder trace(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.trace(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder any(Handler... requestHandlers) {
+            delegate.any(requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder any(String pathPattern, Handler... requestHandlers) {
+            delegate.any(pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder any(PathMatcher pathMatcher, Handler... requestHandlers) {
+            delegate.any(pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder anyOf(Iterable<Http.RequestMethod> methods, Handler... requestHandlers) {
+            delegate.anyOf(methods, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder anyOf(Iterable<Http.RequestMethod> methods, String pathPattern, Handler... requestHandlers) {
+            delegate.anyOf(methods, pathPattern, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder anyOf(Iterable<Http.RequestMethod> methods,
+                             PathMatcher pathMatcher,
+                             Handler... requestHandlers) {
+            delegate.anyOf(methods, pathMatcher, requestHandlers);
+            return this;
+        }
+
+        @Override
+        public Builder onNewWebServer(Consumer<WebServer> webServerConsumer) {
+            delegate.onNewWebServer(webServerConsumer);
+            return this;
+        }
+        // --------------- ERROR API
+
+        /**
+         * Registers an error handler that handles the given type of exceptions.
+         *
+         * @param exceptionClass the type of exception to handle by this handler
+         * @param errorHandler   the error handler
+         * @param <T>            an error handler type
+         * @return an updated builder
+         */
+        public <T extends Throwable> Builder error(Class<T> exceptionClass, ErrorHandler<T> errorHandler) {
+            if (errorHandler == null) {
+                return this;
+            }
+            errorHandlerRecords.add(RequestRouting.ErrorHandlerRecord.of(exceptionClass, errorHandler));
+
+            return this;
+        }
+
+        // --------------- BUILD API
+
+        /**
+         * Builds a new routing instance.
+         *
+         * @return a new instance
+         */
+        public Routing build() {
+            RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
+            return new RequestRouting(aggregate.getRouteList(), errorHandlerRecords, aggregate.getNewWebServerCallbacks());
+        }
+
+        /**
+         * Creates new {@link WebServer} instance with provided configuration and this routing.
+         *
+         * @param configuration a web server configuration
+         * @return new {@link WebServer} instance
+         * @throws IllegalStateException if none SPI implementation found
+         */
+        public WebServer createServer(ServerConfiguration configuration) {
+            return WebServer.create(configuration, this.build());
+        }
+
+        /**
+         * Creates new {@link WebServer} instance with provided configuration and this routing.
+         *
+         * @param configurationBuilder a web server configuration builder
+         * @return new {@link WebServer} instance
+         * @throws IllegalStateException if none SPI implementation found
+         */
+        public WebServer createServer(ServerConfiguration.Builder configurationBuilder) {
+            return WebServer.create(configurationBuilder.build(), this.build());
+        }
+
+        /**
+         * Creates new {@link WebServer} instance with this routing and default configuration.
+         *
+         * @return new {@link WebServer} instance
+         * @throws IllegalStateException if none SPI implementation found
+         */
+        public WebServer createServer() {
+            return WebServer.create(this.build());
+        }
+
     }
 }

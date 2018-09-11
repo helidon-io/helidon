@@ -20,7 +20,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.helidon.webserver.MediaType;
+import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -199,7 +199,7 @@ public final class PrometheusSupport implements Service {
     /**
      * A builder of {@link PrometheusSupport}.
      */
-    public static final class Builder implements io.helidon.webserver.Builder<PrometheusSupport> {
+    public static final class Builder implements io.helidon.common.Builder<PrometheusSupport> {
 
         private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
         private String path;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,18 +25,20 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.http.AlreadyCompletedException;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.SetCookie;
 import io.helidon.webserver.spi.BareResponse;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.utils.TestUtils.assertException;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-
-import static org.junit.jupiter.api.Assertions.*;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
@@ -109,7 +111,7 @@ public class HashResponseHeadersTest {
         h.addCookie("aaa", "bbbb", Duration.ofMinutes(10));
         h.addCookie("who", "me", Duration.ofMinutes(0));
 
-        h.addCookie(new ResponseHeaders.SetCookie("itis", "cool")
+        h.addCookie(new SetCookie("itis", "cool")
                     .domainAndPath(URI.create("http://oracle.com/foo"))
                     .expires(ZonedDateTime.of(2080, 1, 1, 0, 0, 0, 0, ZoneId.of("Z")))
                     .secure(true));

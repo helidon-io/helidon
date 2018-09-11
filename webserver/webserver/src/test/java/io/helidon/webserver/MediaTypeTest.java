@@ -19,18 +19,20 @@ package io.helidon.webserver;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.http.MediaType;
+
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.utils.TestUtils.matcher;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.number.IsCloseTo.closeTo;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The MediaTypeTest.
