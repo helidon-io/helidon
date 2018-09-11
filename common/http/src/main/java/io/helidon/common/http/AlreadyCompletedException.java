@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 /**
- * Signals that a method has been invoked on already completed {@link ServerResponse} or {@link ResponseHeaders}.
+ * Signals that a mutation method has been invoked on a resource that is already completed.
+ *
  * It is no longer possible to mute state of these objects.
  */
 public class AlreadyCompletedException extends IllegalStateException {
@@ -34,9 +35,9 @@ public class AlreadyCompletedException extends IllegalStateException {
     /**
      * Constructs an {@link AlreadyCompletedException} with the specified detail message and cause.
      *
-     * @param  message the detail message (which is saved for later retrieval by the {@link Throwable#getMessage()} method).
-     * @param  cause the cause (which is saved for later retrieval by the {@link Throwable#getCause()} method).
-     *               (A {@code null} value is permitted, and indicates that the cause is nonexistent or unknown.)
+     * @param message the detail message (which is saved for later retrieval by the {@link Throwable#getMessage()} method).
+     * @param cause   the cause (which is saved for later retrieval by the {@link Throwable#getCause()} method).
+     *                (A {@code null} value is permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public AlreadyCompletedException(String message, Throwable cause) {
         super(message, cause);
@@ -45,8 +46,8 @@ public class AlreadyCompletedException extends IllegalStateException {
     /**
      * Constructs an {@link AlreadyCompletedException} with the specified cause.
      *
-     * @param  cause the cause (which is saved for later retrieval by the {@link Throwable#getCause()} method).
-     *               (A {@code null} value is permitted, and indicates that the cause is nonexistent or unknown.)
+     * @param cause the cause (which is saved for later retrieval by the {@link Throwable#getCause()} method).
+     *              (A {@code null} value is permitted, and indicates that the cause is nonexistent or unknown.)
      */
     public AlreadyCompletedException(Throwable cause) {
         super(cause);

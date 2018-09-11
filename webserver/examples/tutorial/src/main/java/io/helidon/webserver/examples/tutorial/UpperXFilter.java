@@ -20,9 +20,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.ResponseChunk;
 
 import reactor.core.publisher.Flux;
 
@@ -31,14 +31,14 @@ import reactor.core.publisher.Flux;
  * <p>
  * This is a naive implementation.
  */
-public class UpperXFilter implements Function<Flow.Publisher<ResponseChunk>, Flow.Publisher<ResponseChunk>> {
+public class UpperXFilter implements Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> {
 
     private static final byte LOWER_X = "x".getBytes(StandardCharsets.US_ASCII)[0];
     private static final byte UPPER_X = "X".getBytes(StandardCharsets.US_ASCII)[0];
 
     @Override
-    public Flow.Publisher<ResponseChunk> apply(Flow.Publisher<ResponseChunk> publisher) {
-        Flux<ResponseChunk> flux = ReactiveStreamsAdapter.publisherFromFlow(publisher)
+    public Flow.Publisher<DataChunk> apply(Flow.Publisher<DataChunk> publisher) {
+        Flux<DataChunk> flux = ReactiveStreamsAdapter.publisherFromFlow(publisher)
                 .map(responseChunk -> {
                     if (responseChunk == null) {
                         return null;
@@ -53,7 +53,7 @@ public class UpperXFilter implements Function<Flow.Publisher<ResponseChunk>, Flo
                                 buff[i] = UPPER_X;
                             }
                         }
-                        return new ResponseChunk(responseChunk.flush(), ByteBuffer.wrap(buff));
+                        return DataChunk.create(responseChunk.flush(), ByteBuffer.wrap(buff));
                     } finally {
                         responseChunk.release();
                     }

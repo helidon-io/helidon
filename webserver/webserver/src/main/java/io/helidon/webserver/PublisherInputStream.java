@@ -25,32 +25,38 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 
 /**
  * An {@link Flow.Subscriber subscriber} that can subscribe to a source of {@code ByteBuffer} data chunks and then make
  * them available for consumption via standard blocking {@link InputStream} API.
  */
-public class PublisherInputStream extends InputStream implements Flow.Publisher<RequestChunk> {
+public class PublisherInputStream extends InputStream implements Flow.Publisher<DataChunk> {
 
     private static final Logger LOGGER = Logger.getLogger(PublisherInputStream.class.getName());
 
-    private final Flow.Publisher<RequestChunk> originalPublisher;
-
+    private final Flow.Publisher<DataChunk> originalPublisher;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private volatile CompletableFuture<DataChunk> processed = new CompletableFuture<>();
+    private volatile Flow.Subscription subscription;
     /**
      * Wraps the supplied publisher and adds a blocking {@link InputStream} based nature.
      * It is illegal to subscribe to the returned publisher.
      *
      * @param originalPublisher the original publisher to wrap
      */
-    public PublisherInputStream(Flow.Publisher<RequestChunk> originalPublisher) {
+    public PublisherInputStream(Flow.Publisher<DataChunk> originalPublisher) {
         this.originalPublisher = originalPublisher;
     }
-
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    private volatile Flow.Subscription subscription;
-    private volatile CompletableFuture<RequestChunk> processed = new CompletableFuture<>();
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
+
+    private static void releaseChunk(DataChunk chunk) {
+        if (chunk != null && !chunk.isReleased()) {
+            LOGGER.finest(() -> "Releasing chunk: " + chunk.id());
+            chunk.release();
+        }
+    }
 
     @Override
     public int read() throws IOException {
@@ -63,7 +69,7 @@ public class PublisherInputStream extends InputStream implements Flow.Publisher<
         try {
             while (true) {
 
-                RequestChunk chunk = processed.get(); // block until a processing data are available
+                DataChunk chunk = processed.get(); // block until a processing data are available
                 ByteBuffer currentBuffer = chunk != null && !chunk.isReleased() ? chunk.data() : null;
 
                 if (currentBuffer != null && currentBuffer.position() == 0) {
@@ -80,7 +86,7 @@ public class PublisherInputStream extends InputStream implements Flow.Publisher<
                     releaseChunk(chunk);
                     subscription.request(1);
                 } else {
-                    LOGGER.finest(() -> "Ending stream: " + Optional.ofNullable(chunk).map(RequestChunk::id).orElse(null));
+                    LOGGER.finest(() -> "Ending stream: " + Optional.ofNullable(chunk).map(DataChunk::id).orElse(null));
                     // else we have read all the data already and the data inflow has completed
                     releaseChunk(chunk);
                     return -1;
@@ -95,12 +101,12 @@ public class PublisherInputStream extends InputStream implements Flow.Publisher<
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super RequestChunk> subscriber) {
+    public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
         subscriber.onError(new UnsupportedOperationException("Subscribing on this publisher is not allowed!"));
     }
 
     private void subscribe() {
-        originalPublisher.subscribe(new Flow.Subscriber<RequestChunk>() {
+        originalPublisher.subscribe(new Flow.Subscriber<DataChunk>() {
 
             @Override
             public void onSubscribe(Flow.Subscription subscription) {
@@ -109,7 +115,7 @@ public class PublisherInputStream extends InputStream implements Flow.Publisher<
             }
 
             @Override
-            public void onNext(RequestChunk item) {
+            public void onNext(DataChunk item) {
                 LOGGER.finest(() -> "Processing chunk: " + item.id());
                 processed.complete(item);
             }
@@ -130,12 +136,5 @@ public class PublisherInputStream extends InputStream implements Flow.Publisher<
                 processed.complete(null); // if not already completed, then complete
             }
         });
-    }
-
-    private static void releaseChunk(RequestChunk chunk) {
-        if (chunk != null && !chunk.isReleased()) {
-            LOGGER.finest(() -> "Releasing chunk: " + chunk.id());
-            chunk.release();
-        }
     }
 }

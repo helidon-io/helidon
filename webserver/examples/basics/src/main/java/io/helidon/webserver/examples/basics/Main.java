@@ -23,10 +23,14 @@ import java.nio.charset.StandardCharsets;
 
 import javax.json.Json;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
+import io.helidon.common.http.Reader;
 import io.helidon.webserver.ContentReaders;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.MediaType;
+import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
@@ -132,7 +136,7 @@ public class Main {
      * <p>
      * {@link java.util.Optional Optional} API is heavily used to represent parameters optionality.
      * <p>
-     * WebServer {@link io.helidon.webserver.Parameters Parameters} API is used to represent fact, that <i>headers</i> and
+     * WebServer {@link Parameters Parameters} API is used to represent fact, that <i>headers</i> and
      * <i>query parameters</i> can contain multiple values.
      */
     public void parametersAndHeaders() {
@@ -186,7 +190,7 @@ public class Main {
 
     /**
      * Request payload (body/entity) is represented by {@link io.helidon.common.reactive.Flow.Publisher Flow.Publisher}
-     * of {@link io.helidon.webserver.RequestChunk RequestChunks} to enable reactive processing of the content of any size.
+     * of {@link DataChunk RequestChunks} to enable reactive processing of the content of any size.
      * But it is more convenient to process entity in some type specific form. WebServer supports few types which can be
      * used te read the whole entity:
      * <ul>
@@ -222,11 +226,11 @@ public class Main {
     }
 
     /**
-     * It is possible register custom request content {@link io.helidon.webserver.ServerRequest.Reader Reader}. It collects
-     * all {@link io.helidon.webserver.RequestChunk RequestChunks} into a single entity of the given type.
+     * It is possible register custom request content {@link Reader Reader}. It collects
+     * all {@link DataChunk RequestChunks} into a single entity of the given type.
      * <p>
      * It is also possible to register filters which can modify original {@link io.helidon.common.reactive.Flow Flow} of
-     * {@link io.helidon.webserver.RequestChunk RequestChunks}.
+     * {@link DataChunk RequestChunks}.
      */
     public void filterAndProcessEntity() {
         Routing routing = Routing.builder()
@@ -283,7 +287,7 @@ public class Main {
      * <p>
      * If error is not processed by a custom {@link io.helidon.webserver.ErrorHandler ErrorHandler} than default one is used.
      * It respond with <i>HTTP 500 code</i> unless error is not represented
-     * by {@link io.helidon.webserver.HttpException HttpException}. In such case it reflects its content.
+     * by {@link HttpException HttpException}. In such case it reflects its content.
      */
     public void errorHandling() {
         Routing routing = Routing.builder()

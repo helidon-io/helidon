@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -22,12 +22,12 @@ import java.util.function.Supplier;
 /**
  * A registry for context objects. Enables instance localization between several <i>services / components / ...</i> integrated in
  * a particular known scope. ContextualRegistry instance is intended to be associated with a scope aware object such as
- * {@link WebServer} or {@link ServerRequest}.
+ * WebServer, ServerRequest or ClientRequest.
  *
  * <p>Context contains also a notion of <i>classifiers</i>. Classifier is any object defining additional <i>key</i> for registered
  * objects. To obtain such registered object, the same classifier (precisely, any equal object) has to be used.
  *
- * <p>Classifiers can be used as folows:<ol>
+ * <p>Classifiers can be used as follows:<ol>
  * <li>As an additional identifier for registered objects of common types, like a {@link String}, ...<br>
  * <pre>{@code
  * // User detail provider service
@@ -48,6 +48,27 @@ import java.util.function.Supplier;
  * </ol>
  */
 public interface ContextualRegistry {
+
+    /**
+     * Creates a new empty instance.
+     *
+     * @return new instance
+     */
+    static ContextualRegistry create() {
+        return new ListContextualRegistry();
+    }
+
+    /**
+     * Creates a new empty instance backed by its parent read-through {@link ContextualRegistry}.
+     *
+     * <p>Parent {@code registry} is used only for get methods and only if this registry doesn't have registered required type.
+     *
+     * @param parent a parent registry
+     * @return new instance
+     */
+    static ContextualRegistry create(ContextualRegistry parent) {
+        return new ListContextualRegistry(parent);
+    }
 
     /**
      * Register a new instance.
@@ -96,7 +117,8 @@ public interface ContextualRegistry {
 
     /**
      * Registers a new instance using a provided supplier. The supplier is guarantied to be called at most once when it's
-     * requested by the {@link #get(Object, Class)} method. The returned value gets registered and the supplier is never called again.
+     * requested by the {@link #get(Object, Class)} method. The returned value gets registered and the supplier is never called
+     * again.
      *
      * <p>Registered instance can be obtained only using {@link #get(Object, Class)} method with a {@code classifier} equal with
      * the one used during registration.
@@ -122,25 +144,4 @@ public interface ContextualRegistry {
      * @throws NullPointerException If {@code classifier} is null.
      */
     <T> Optional<T> get(Object classifier, Class<T> type);
-
-    /**
-     * Creates a new empty instance.
-     *
-     * @return new instance
-     */
-    static ContextualRegistry create() {
-        return new ListContextualRegistry();
-    }
-
-    /**
-     * Creates a new empty instance backed by its parent read-through {@link ContextualRegistry}.
-     *
-     * <p>Parent {@code registry} is used only for get methods and only if this registry doesn't have registered required type.
-     *
-     * @param parent a parent registry
-     * @return new instance
-     */
-    static ContextualRegistry create(ContextualRegistry parent) {
-        return new ListContextualRegistry(parent);
-    }
 }

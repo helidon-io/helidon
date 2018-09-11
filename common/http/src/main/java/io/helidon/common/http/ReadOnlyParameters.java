@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,6 +57,31 @@ public class ReadOnlyParameters implements Parameters {
         this(parameters == null ? null : parameters.toMap());
     }
 
+    /**
+     * Returns empty and immutable singleton.
+     *
+     * @return the parameters singleton instance which is empty and immutable.
+     */
+    public static ReadOnlyParameters empty() {
+        return EMPTY;
+    }
+
+    /**
+     * Returns a deep copy of provided multi-map which is completely unmodifiable.
+     *
+     * @param data data to copy, if {@code null} then returns empty map.
+     * @return unmodifiable map, never {@code null}.
+     */
+    static Map<String, List<String>> copyMultimapAsImutable(Map<String, List<String>> data) {
+        if (data == null || data.isEmpty()) {
+            return Collections.emptyMap();
+        } else {
+            // Deep copy
+            Map<String, List<String>> h = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            data.forEach((k, v) -> h.put(k, Collections.unmodifiableList(new ArrayList<>(v))));
+            return Collections.unmodifiableMap(h);
+        }
+    }
 
     @Override
     public Optional<String> first(String name) {
@@ -128,31 +153,5 @@ public class ReadOnlyParameters implements Parameters {
         Map<String, List<String>> h = new HashMap<>(data.size());
         data.forEach((k, v) -> h.put(k, new ArrayList<>(v)));
         return h;
-    }
-
-    /**
-     * Returns empty and immutable singleton.
-     *
-     * @return the parameters singleton instance which is empty and immutable.
-     */
-    public static ReadOnlyParameters empty() {
-        return EMPTY;
-    }
-
-    /**
-     * Returns a deep copy of provided multi-map which is completely unmodifiable.
-     *
-     * @param data data to copy, if {@code null} then returns empty map.
-     * @return unmodifiable map, never {@code null}.
-     */
-    static Map<String, List<String>> copyMultimapAsImutable(Map<String, List<String>> data) {
-        if (data == null || data.isEmpty()) {
-            return Collections.emptyMap();
-        } else {
-            // Deep copy
-            Map<String, List<String>> h = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            data.forEach((k, v) -> h.put(k, Collections.unmodifiableList(new ArrayList<>(v))));
-            return Collections.unmodifiableMap(h);
-        }
     }
 }

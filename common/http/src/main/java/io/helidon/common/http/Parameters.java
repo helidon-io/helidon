@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +25,7 @@ import java.util.function.Function;
 /**
  * Parameters represents {@code key : value} pairs where {@code key} is a {@code String} with potentially multiple values.
  * <p>
- * This structure represents query parameters, headers and path parameters in {@link ServerRequest} and {@link ServerResponse}.
+ * This structure represents query parameters, headers and path parameters in e.g. {@link HttpRequest}.
  * <p>
  * Interface focus on most convenient use cases in HTTP Request and Response processing, like
  * <pre>
@@ -39,8 +39,8 @@ import java.util.function.Function;
  * <p>
  * Mutable operations are defined in two forms:
  * <ul>
- *     <li>{@code put...} create or replace association.</li>
- *     <li>{@code add...} create association or add values to existing association.</li>
+ * <li>{@code put...} create or replace association.</li>
+ * <li>{@code add...} create association or add values to existing association.</li>
  * </ul>
  * <p>
  * It is possible to use {@link #toMap()} method to get immutable map view of data.
@@ -48,6 +48,18 @@ import java.util.function.Function;
  * Various static factory methods can be used to create common implementations.
  */
 public interface Parameters {
+
+    /**
+     * Returns an unmodifiable view.
+     *
+     * @param parameters a parameters for unmodifiable view.
+     * @return An unmodifiable view.
+     * @throws NullPointerException if parameter {@code parameters} is null.
+     */
+    static Parameters toUnmodifiableParameters(Parameters parameters) {
+        Objects.requireNonNull(parameters, "Parameter 'parameters' is null!");
+        return new UnmodifiableParameters(parameters);
+    }
 
     /**
      * Returns an {@link Optional} containing the first value of the given
@@ -75,11 +87,10 @@ public interface Parameters {
      * Associates specified values with the specified key (optional operation).
      * If parameters previously contained a mapping for the key, the old values fully replaced.
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be associated with the specified key
      * @return the previous values associated with key, or empty {@code List} if there was no mapping for key.
-     *
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     List<String> put(String key, String... values);
@@ -88,11 +99,10 @@ public interface Parameters {
      * Associates specified values with the specified key (optional operation).
      * If parameters previously contained a mapping for the key, the old values fully replaced.
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be associated with the specified key. If {@code null} then association will be removed.
      * @return the previous values associated with key, or empty {@code List} if there was no mapping for key.
-     *
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     List<String> put(String key, Iterable<String> values);
@@ -101,11 +111,10 @@ public interface Parameters {
      * If the specified key is not already associated with a value associates it with the given value and returns empty
      * {@code List}, else returns the current value  (optional operation).
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be associated with the specified key
      * @return the previous values associated with key, or empty {@code List} if there was no mapping for key.
-     *
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     List<String> putIfAbsent(String key, String... values);
@@ -114,11 +123,10 @@ public interface Parameters {
      * If the specified key is not already associated with a value associates it with the given value and returns empty
      * {@code List}, else returns the current value  (optional operation).
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be associated with the specified key
      * @return the previous values associated with key, or empty {@code List} if there was no mapping for key.
-     *
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     List<String> putIfAbsent(String key, Iterable<String> values);
@@ -127,18 +135,17 @@ public interface Parameters {
      * If the specified key is not already associated with a value computes new association using the given function and returns
      * empty {@code List}, else returns the current value  (optional operation).
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be associated with the specified key
      * @return the current (potentially computed) values associated with key,
-     *         or empty {@code List} if function returns {@code null}
-     *
-     * @throws NullPointerException if the specified key is null
+     * or empty {@code List} if function returns {@code null}
+     * @throws NullPointerException          if the specified key is null
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters)
-     * @throws IllegalStateException if the computation detectably
-     *         attempts a recursive update to this map that would
-     *         otherwise never complete
-     * @throws RuntimeException or Error if the mappingFunction does so,
-     *         in which case the mapping is left unestablished
+     * @throws IllegalStateException         if the computation detectably
+     *                                       attempts a recursive update to this map that would
+     *                                       otherwise never complete
+     * @throws RuntimeException              or Error if the mappingFunction does so,
+     *                                       in which case the mapping is left unestablished
      */
     List<String> computeIfAbsent(String key, Function<String, Iterable<String>> values);
 
@@ -146,18 +153,17 @@ public interface Parameters {
      * If the specified key is not already associated with a value computes new association using the given function and returns
      * empty {@code List}, else returns the current value  (optional operation).
      *
-     * @param key a key with which the specified value is to be associated
+     * @param key   a key with which the specified value is to be associated
      * @param value a single value to be associated with the specified key
      * @return the current (potentially computed) values associated with key,
-     *         or empty {@code List} if function returns {@code null}
-     *
-     * @throws NullPointerException if the specified key is null.
+     * or empty {@code List} if function returns {@code null}
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
-     * @throws IllegalStateException if the computation detectably
-     *         attempts a recursive update to this map that would
-     *         otherwise never complete
-     * @throws RuntimeException or Error if the mappingFunction does so,
-     *         in which case the mapping is left unestablished
+     * @throws IllegalStateException         if the computation detectably
+     *                                       attempts a recursive update to this map that would
+     *                                       otherwise never complete
+     * @throws RuntimeException              or Error if the mappingFunction does so,
+     *                                       in which case the mapping is left unestablished
      */
     List<String> computeSingleIfAbsent(String key, Function<String, String> value);
 
@@ -166,8 +172,7 @@ public interface Parameters {
      * (optional operation).
      *
      * @param parameters to copy.
-     *
-     * @throws NullPointerException if the specified {@code parameters} are null.
+     * @throws NullPointerException          if the specified {@code parameters} are null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     void putAll(Parameters parameters);
@@ -176,10 +181,9 @@ public interface Parameters {
      * Adds specified values tu association with the specified key (optional operation).
      * If parameters doesn't contains mapping, new mapping is created.
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be add to association with the specified key
-     *
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     void add(String key, String... values);
@@ -188,10 +192,9 @@ public interface Parameters {
      * Adds specified values tu association with the specified key (optional operation).
      * If parameters doesn't contains mapping, new mapping is created.
      *
-     * @param key key with which the specified value is to be associated
+     * @param key    key with which the specified value is to be associated
      * @param values value to be add to association with the specified key. If {@code null} then noting will be add.
-     *
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException          if the specified key is null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     void add(String key, Iterable<String> values);
@@ -201,8 +204,7 @@ public interface Parameters {
      * (optional operation).
      *
      * @param parameters to copy.
-     *
-     * @throws NullPointerException if the specified {@code parameters} are null.
+     * @throws NullPointerException          if the specified {@code parameters} are null.
      * @throws UnsupportedOperationException if put operation is not supported (unmodifiable Parameters).
      */
     void addAll(Parameters parameters);
@@ -223,16 +225,4 @@ public interface Parameters {
      * @return the {@code Map}
      */
     Map<String, List<String>> toMap();
-
-    /**
-     * Returns an unmodifiable view.
-     *
-     * @param parameters a parameters for unmodifiable view.
-     * @return An unmodifiable view.
-     * @throws NullPointerException if parameter {@code parameters} is null.
-     */
-    static Parameters toUnmodifiableParameters(Parameters parameters) {
-        Objects.requireNonNull("Parameter 'parameters' is null!");
-        return new UnmodifiableParameters(parameters);
-    }
 }

@@ -21,14 +21,14 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import io.helidon.webserver.RequestChunk;
+import io.helidon.common.http.DataChunk;
 
 import io.netty.buffer.ByteBuf;
 
 /**
  * The ByteBufRequestChunk.
  */
-class ByteBufRequestChunk implements RequestChunk {
+class ByteBufRequestChunk implements DataChunk {
     private static final Logger LOGGER = Logger.getLogger(ByteBufRequestChunk.class.getName());
     private static final AtomicLong ID_INCREMENTER = new AtomicLong(1);
 

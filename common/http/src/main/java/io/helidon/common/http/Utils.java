@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,40 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 
 /**
  * Internal utility methods.
  */
-final class Utils {
+public final class Utils {
+    static final Runnable EMPTY_RUNNABLE = () -> {
+    };
 
     private Utils() {
-    }
-
-    /**
-     * Loads the first service implementation or throw an exception if nothing found.
-     *
-     * @param service the service class to load
-     * @param <T>     service type
-     * @return the loaded service
-     * @throws IllegalStateException if none implementation found
-     */
-    static <T> T loadSpi(Class<T> service) {
-        ServiceLoader<T> servers = ServiceLoader.load(service);
-        Iterator<T> serversIt = servers.iterator();
-        if (serversIt.hasNext()) {
-            return serversIt.next();
-        } else {
-            throw new IllegalStateException("No implementation found for SPI: " + service.getName());
-        }
     }
 
     /**
@@ -61,7 +43,7 @@ final class Utils {
      * @param text               a text to be tokenized.
      * @return A list of tokens without separator characters.
      */
-    static List<String> tokenize(char separator, String quoteChars, boolean includeEmptyTokens, String text) {
+    public static List<String> tokenize(char separator, String quoteChars, boolean includeEmptyTokens, String text) {
         char[] quotes = quoteChars == null ? new char[0] : quoteChars.toCharArray();
         StringBuilder token = new StringBuilder();
         List<String> result = new ArrayList<>();
@@ -105,7 +87,7 @@ final class Utils {
      * @param byteBuffer the byte buffer to append to the stream
      * @throws IOException in case of an IO problem
      */
-    static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
+    public static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
         if (byteBuffer.hasArray()) {
             out.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
         } else {
@@ -113,5 +95,17 @@ final class Utils {
             byteBuffer.get(buff);
             out.write(buff);
         }
+    }
+
+    static byte[] toByteArray(ByteBuffer byteBuffer) {
+        byte[] buff = new byte[byteBuffer.remaining()];
+
+        if (byteBuffer.hasArray()) {
+            System.arraycopy(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), buff, 0, buff.length);
+        } else {
+            byteBuffer.get(buff);
+        }
+
+        return buff;
     }
 }

@@ -23,6 +23,9 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 
 /**
@@ -30,7 +33,7 @@ import io.helidon.common.reactive.Flow;
  * a single string while using a given charset. If the charset cannot be used by the JVM,
  * the returned completion stage ends exceptionally with an {@link IllegalArgumentException}.
  */
-public class StringContentReader implements ServerRequest.Reader<String> {
+public class StringContentReader implements Reader<String> {
 
     /** The default charset to use in case that no charset or no mime-type is defined in the content type header. */
     static final String DEFAULT_CHARSET = StandardCharsets.UTF_8.name();
@@ -86,7 +89,7 @@ public class StringContentReader implements ServerRequest.Reader<String> {
      * {@link IllegalArgumentException}
      */
     @Override
-    public CompletionStage<String> apply(Flow.Publisher<RequestChunk> publisher, Class<? super String> clazz) {
+    public CompletionStage<String> apply(Flow.Publisher<DataChunk> publisher, Class<? super String> clazz) {
         if (charset != null) {
             return ContentReaders
                     .byteArrayReader()

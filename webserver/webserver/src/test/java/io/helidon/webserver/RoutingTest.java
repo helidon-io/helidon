@@ -18,10 +18,12 @@ package io.helidon.webserver;
 
 import java.util.Arrays;
 
+import io.helidon.common.http.Http;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Demonstrates routing configuration API included in WebServer builder.

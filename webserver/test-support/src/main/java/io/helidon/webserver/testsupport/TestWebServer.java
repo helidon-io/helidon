@@ -19,7 +19,7 @@ package io.helidon.webserver.testsupport;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.webserver.ContextualRegistry;
+import io.helidon.common.http.ContextualRegistry;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 

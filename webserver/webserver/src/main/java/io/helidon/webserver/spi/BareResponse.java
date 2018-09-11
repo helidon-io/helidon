@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.ResponseChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.SocketClosedException;
 import io.helidon.webserver.WebServer;
@@ -33,7 +33,7 @@ import io.helidon.webserver.WebServer;
  * Bare (minimal) representation of HTTP Response. Used by {@link WebServer WebServer} implementations to invoke
  * a {@link Routing Routing}.
  */
-public interface BareResponse extends Flow.Subscriber<ResponseChunk> {
+public interface BareResponse extends Flow.Subscriber<DataChunk> {
 
     /**
      * Send response line and headers to the client.
@@ -78,7 +78,7 @@ public interface BareResponse extends Flow.Subscriber<ResponseChunk> {
      * @throws SocketClosedException if response is already closed
      */
     @Override
-    void onNext(ResponseChunk data) throws SocketClosedException;
+    void onNext(DataChunk data) throws SocketClosedException;
 
     /**
      * Response should be flushed and closed.

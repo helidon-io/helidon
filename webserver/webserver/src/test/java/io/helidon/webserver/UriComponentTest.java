@@ -20,10 +20,11 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Optional;
 
+import io.helidon.common.http.Parameters;
+
 import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;

@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.webserver.Http;
+import io.helidon.common.http.Http;
 import io.helidon.webserver.WebServer;
 
 import org.hamcrest.core.Is;

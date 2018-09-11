@@ -16,11 +16,10 @@
 
 package io.helidon.webserver.examples.comments;
 
-import io.helidon.webserver.examples.comments.CommentsService;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.webserver.Http;
-import io.helidon.webserver.MediaType;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.testsupport.MediaPublisher;
 import io.helidon.webserver.testsupport.TestClient;
@@ -28,7 +27,7 @@ import io.helidon.webserver.testsupport.TestResponse;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**

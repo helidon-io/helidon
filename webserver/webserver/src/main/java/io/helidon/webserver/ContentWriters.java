@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.common.reactive.RetrySchema;
@@ -86,7 +87,7 @@ public final class ContentWriters {
      * @param copy a signal if byte array should be copied - set it {@code true} if {@code byte[]} will be immediately reused.
      * @return a {@code byte[]} writer
      */
-    public static Function<byte[], Flow.Publisher<ResponseChunk>> byteArrayWriter(boolean copy) {
+    public static Function<byte[], Flow.Publisher<DataChunk>> byteArrayWriter(boolean copy) {
         return copy ? COPY_BYTE_ARRAY_WRITER : BYTE_ARRAY_WRITER;
     }
 
@@ -99,7 +100,7 @@ public final class ContentWriters {
      * @return a {@link String} writer
      * @throws NullPointerException if parameter {@code charset} is {@code null}
      */
-    public static Function<CharSequence, Flow.Publisher<ResponseChunk>> charSequenceWriter(Charset charset) {
+    public static Function<CharSequence, Flow.Publisher<DataChunk>> charSequenceWriter(Charset charset) {
         CharSequenceWriter result = CharSequenceWritersHolder.MAP.get(charset);
         return result == null ? new CharSequenceWriter(charset) : result;
     }
@@ -111,7 +112,7 @@ public final class ContentWriters {
      * @param retrySchema a retry schema to use in case when {@code read} operation reads {@code 0 bytes}
      * @return a {@link ReadableByteChannel} writer
      */
-    public static Function<ReadableByteChannel, Flow.Publisher<ResponseChunk>> byteChannelWriter(RetrySchema retrySchema) {
+    public static Function<ReadableByteChannel, Flow.Publisher<DataChunk>> byteChannelWriter(RetrySchema retrySchema) {
         final RetrySchema schema = retrySchema == null ? RetrySchema.linear(0, 10, 250) : retrySchema;
         return channel -> new ReadableByteChannelPublisher(channel, schema);
     }
@@ -121,11 +122,11 @@ public final class ContentWriters {
      *
      * @return a {@link ReadableByteChannel} writer
      */
-    public static Function<ReadableByteChannel, Flow.Publisher<ResponseChunk>> byteChannelWriter() {
+    public static Function<ReadableByteChannel, Flow.Publisher<DataChunk>> byteChannelWriter() {
         return byteChannelWriter(null);
     }
 
-    private static class ByteArrayWriter implements Function<byte[], Flow.Publisher<ResponseChunk>> {
+    private static class ByteArrayWriter implements Function<byte[], Flow.Publisher<DataChunk>> {
 
         private final boolean copy;
 
@@ -134,7 +135,7 @@ public final class ContentWriters {
         }
 
         @Override
-        public Flow.Publisher<ResponseChunk> apply(byte[] bytes) {
+        public Flow.Publisher<DataChunk> apply(byte[] bytes) {
             if (bytes == null || bytes.length == 0) {
                 return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
             }
@@ -146,12 +147,12 @@ public final class ContentWriters {
             } else {
                 bs = bytes;
             }
-            ResponseChunk chunk = new ResponseChunk(false, ByteBuffer.wrap(bs));
+            DataChunk chunk = DataChunk.create(false, ByteBuffer.wrap(bs));
             return ReactiveStreamsAdapter.publisherToFlow(Mono.just(chunk));
         }
     }
 
-    private static class CharSequenceWriter implements Function<CharSequence, Flow.Publisher<ResponseChunk>> {
+    private static class CharSequenceWriter implements Function<CharSequence, Flow.Publisher<DataChunk>> {
 
         private final Charset charset;
 
@@ -179,11 +180,11 @@ public final class ContentWriters {
         }
 
         @Override
-        public Flow.Publisher<ResponseChunk> apply(CharSequence s) {
+        public Flow.Publisher<DataChunk> apply(CharSequence s) {
             if (s == null || s.length() == 0) {
                 return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
             }
-            ResponseChunk chunk = new ResponseChunk(false, charset.encode(s.toString()));
+            DataChunk chunk = DataChunk.create(false, charset.encode(s.toString()));
             return ReactiveStreamsAdapter.publisherToFlow(Mono.just(chunk));
         }
     }

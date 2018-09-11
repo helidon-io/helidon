@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.netty;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.RequestChunk;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -26,15 +26,15 @@ import org.reactivestreams.Subscription;
 /**
  * The WrappedOriginThreadPublisher.
  */
-public class WrappedOriginThreadPublisher extends OriginThreadPublisher implements Publisher<RequestChunk> {
+public class WrappedOriginThreadPublisher extends OriginThreadPublisher implements Publisher<DataChunk> {
 
     WrappedOriginThreadPublisher(UnboundedSemaphore semaphore) {
         super(semaphore, new ReferenceHoldingQueue<>());
     }
 
     @Override
-    public void subscribe(Subscriber<? super RequestChunk> subscriber) {
-        super.subscribe(new Flow.Subscriber<RequestChunk>() {
+    public void subscribe(Subscriber<? super DataChunk> subscriber) {
+        super.subscribe(new Flow.Subscriber<DataChunk>() {
             @Override
             public void onSubscribe(Flow.Subscription flowSubscription) {
                 subscriber.onSubscribe(new Subscription() {
@@ -51,7 +51,7 @@ public class WrappedOriginThreadPublisher extends OriginThreadPublisher implemen
             }
 
             @Override
-            public void onNext(RequestChunk item) {
+            public void onNext(DataChunk item) {
                 try {
                     subscriber.onNext(item);
                 } finally {

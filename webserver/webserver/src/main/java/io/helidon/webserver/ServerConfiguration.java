@@ -196,7 +196,7 @@ public interface ServerConfiguration extends SocketConfiguration {
     /**
      * A {@link ServerConfiguration} builder.
      */
-    final class Builder implements io.helidon.webserver.Builder<ServerConfiguration> {
+    final class Builder implements io.helidon.common.Builder<ServerConfiguration> {
 
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
@@ -224,7 +224,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param sslContextBuilder ssl context builder; will be built as a first step of this method execution
          * @return an updated builder
          */
-        public Builder ssl(io.helidon.webserver.Builder<? extends SSLContext> sslContextBuilder) {
+        public Builder ssl(io.helidon.common.Builder<? extends SSLContext> sslContextBuilder) {
             defaultSocketBuilder.ssl(sslContextBuilder);
             return this;
         }
@@ -343,7 +343,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          *                                   a first step of this method execution
          * @return an updated builder
          */
-        public Builder addSocket(String name, io.helidon.webserver.Builder<SocketConfiguration> socketConfigurationBuilder) {
+        public Builder addSocket(String name, io.helidon.common.Builder<SocketConfiguration> socketConfigurationBuilder) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
 
             return addSocket(name, socketConfigurationBuilder != null ? socketConfigurationBuilder.build() : null);
@@ -380,7 +380,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder
          */
-        public Builder tracer(io.helidon.webserver.Builder<? extends Tracer> tracerBuilder) {
+        public Builder tracer(io.helidon.common.Builder<? extends Tracer> tracerBuilder) {
             this.tracer = tracerBuilder != null ? tracerBuilder.build() : null;
             return this;
         }

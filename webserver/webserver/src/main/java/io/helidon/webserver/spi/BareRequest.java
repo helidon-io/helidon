@@ -20,9 +20,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.RequestChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -108,7 +108,7 @@ public interface BareRequest {
      *
      * @return the publisher
      */
-    Flow.Publisher<RequestChunk> bodyPublisher();
+    Flow.Publisher<DataChunk> bodyPublisher();
 
     /**
      * A unique correlation ID that is associated with this request and its associated response.

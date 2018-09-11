@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.http;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests {@link Utils}.
  */
-public class UtilsTest {
+class UtilsTest {
 
     @Test
-    public void tokenize() throws Exception {
+    void tokenize() throws Exception {
         String text = ",aa,,fo\"oooo\",\"bar\",co\"o'l,e\"c,df'hk,lm',";
         List<String> tokens = Utils.tokenize(',', null, false, text);
         assertThat(tokens, contains("aa", "fo\"oooo\"", "\"bar\"", "co\"o'l", "e\"c", "df'hk", "lm'"));
@@ -47,5 +50,14 @@ public class UtilsTest {
         tokens = Utils.tokenize(';', "\"'", true, text);
         assertEquals(1, tokens.size());
         assertEquals(text, tokens.get(0));
+    }
+
+    @Test
+    void testByteBufferToByteArray() {
+        byte[] array = "halleluja".getBytes(StandardCharsets.UTF_8);
+        ByteBuffer wrap = ByteBuffer.wrap(array);
+        byte[] unwrapped = Utils.toByteArray(wrap);
+
+        assertThat(unwrapped, is(array));
     }
 }

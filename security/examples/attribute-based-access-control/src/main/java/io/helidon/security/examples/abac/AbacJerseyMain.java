@@ -26,6 +26,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
+import io.helidon.common.Builder;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -39,7 +40,6 @@ import io.helidon.security.abac.time.TimeValidator.TimeOfDay;
 import io.helidon.security.annot.Authenticated;
 import io.helidon.security.annot.Authorized;
 import io.helidon.security.jersey.SecurityFeature;
-import io.helidon.webserver.Builder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
