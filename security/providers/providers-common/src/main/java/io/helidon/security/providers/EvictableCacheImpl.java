@@ -37,7 +37,7 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
     /**
      * An implementation that does no caching.
      */
-    static EvictableCache<?, ?> NO_CACHE = new EvictableCache() { };
+    static final EvictableCache<?, ?> NO_CACHE = new EvictableCache() { };
 
     static {
         ThreadFactory jf = new ThreadFactory() {

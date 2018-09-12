@@ -94,4 +94,19 @@ class EvictableCacheTest {
 
         cache.close();
     }
+
+    @Test
+    void testNoCache() {
+        EvictableCache<String, String> cache = EvictableCache.noCache();
+
+        assertThat(cache.computeValue("one", () -> Optional.of("1")), is(Optional.of("1")));
+        assertThat(cache.computeValue("two", () -> Optional.of("2")), is(Optional.of("2")));
+        assertThat(cache.computeValue("three", () -> Optional.of("3")), is(Optional.of("3")));
+
+        assertThat(cache.get("one"), is(EMPTY));
+        assertThat(cache.get("two"), is(EMPTY));
+        assertThat(cache.get("three"), is(EMPTY));
+
+        assertThat(cache.computeValue("one", () -> Optional.of("2")), is(Optional.of("2")));
+    }
 }

@@ -94,6 +94,21 @@ public interface EvictableCache<K, V> {
     }
 
     /**
+     * This method has same semantics as {@link #create(Config)} and is here to allow automatic
+     * loading of instances from config using {@link Config#as(Class)}.
+     *
+     * @param config config to read configuration of this cache from
+     * @param <K>    type of keys in the cache
+     * @param <V>    type of values in the cache
+     * @return new cache configured from config
+     * @deprecated Do not use directly, please use {@link #create(Config)}
+     */
+    @Deprecated
+    static <K, V> EvictableCache<K, V> from(Config config) {
+        return create(config);
+    }
+
+    /**
      * Create a new cache that is not a cache (e.g. never caches, delegates
      * all calls to the {@link Supplier} in {@link #computeValue(Object, Supplier)}.
      *
