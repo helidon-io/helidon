@@ -13,17 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * OIDC common classes.
+ * Mapper that retrieves roles from IDCS server and maps them to user subject.
  */
-module io.helidon.security.oidc.common {
-    requires java.logging;
-    requires io.helidon.security.util;
-    requires io.helidon.security.providers;
-    requires io.helidon.security.jwt;
-    requires jersey.client;
-    requires java.ws.rs;
-
-    exports io.helidon.security.oidc.common;
-}
+package io.helidon.security.idcs.mapper;

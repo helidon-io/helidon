@@ -32,6 +32,9 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 
+import static io.helidon.config.ConfigSources.classpath;
+import static io.helidon.config.ConfigSources.file;
+
 /**
  * IDCS Login example main class using configuration .
  */
@@ -56,7 +59,7 @@ public final class IdcsMain {
         // load logging configuration
         LogManager.getLogManager().readConfiguration(IdcsMain.class.getResourceAsStream("/logging.properties"));
 
-        Config config = Config.create();
+        Config config = buildConfig();
 
         Security security = Security.fromConfig(config);
 
@@ -81,5 +84,15 @@ public final class IdcsMain {
                 });
 
         theServer = IdcsUtil.startIt(routing);
+    }
+
+    private static Config buildConfig() {
+        return Config.builder()
+                .sources(
+                        // you can use this file to override the defaults built-in
+                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
+                        // in jar file (see src/main/resources/application.yaml)
+                        classpath("application.yaml"))
+                .build();
     }
 }

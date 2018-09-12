@@ -720,6 +720,13 @@ public final class Security {
             return this;
         }
 
+        /**
+         * Configure a subject mapping provider that would be used once authentication is processed.
+         * Allows you to add {@link Grant Grants} to {@link Subject} or modify it in other ways.
+         *
+         * @param provider provider to use for subject mapping
+         * @return updated builder instance
+         */
         public Builder subjectMappingProvider(SubjectMappingProvider provider) {
             this.subjectMappingProvider = provider;
             this.allProviders.put(provider, true);
