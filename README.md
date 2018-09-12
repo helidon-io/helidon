@@ -40,7 +40,7 @@ Issues are currently tracked in GitHub, see <https://github.com/oracle/helidon/i
 
 ## Communication
 
-* Slack: Coming soon
+* Slack: [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE)
 * Twitter: [@helidon_project](https://twitter.com/helidon_project)
 
 ## Downloads / Accessing Binaries
