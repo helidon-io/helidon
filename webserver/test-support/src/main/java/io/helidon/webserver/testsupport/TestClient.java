@@ -30,14 +30,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.Builder;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.Builder;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.ReadOnlyParameters;
-import io.helidon.webserver.RequestChunk;
-import io.helidon.webserver.ResponseChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.spi.BareRequest;
 import io.helidon.webserver.spi.BareResponse;
@@ -120,7 +119,7 @@ public class TestClient {
                       Http.Version version,
                       URI path,
                       Map<String, List<String>> headers,
-                      Flow.Publisher<RequestChunk> publisher) throws InterruptedException, TimeoutException {
+                      Flow.Publisher<DataChunk> publisher) throws InterruptedException, TimeoutException {
         TestBareRequest req = new TestBareRequest(method, version, path, headers, publisher);
         TestBareResponse res = new TestBareResponse(req.webServer);
         routing.route(req, res);
@@ -141,14 +140,14 @@ public class TestClient {
         private final Http.Version version;
         private final URI path;
         private final Map<String, List<String>> headers;
-        private final Flow.Publisher<RequestChunk> publisher;
+        private final Flow.Publisher<DataChunk> publisher;
         private final TestWebServer webServer = new TestWebServer();
 
         TestBareRequest(Http.RequestMethod method,
-                               Http.Version version,
-                               URI path,
-                               Map<String, List<String>> headers,
-                               Flow.Publisher<RequestChunk> publisher) {
+                        Http.Version version,
+                        URI path,
+                        Map<String, List<String>> headers,
+                        Flow.Publisher<DataChunk> publisher) {
             Objects.requireNonNull(method, "Parameter 'method' is null!");
             Objects.requireNonNull(version, "Parameter 'version' is null!");
             Objects.requireNonNull(path, "Parameter 'path' is null!");
@@ -215,7 +214,7 @@ public class TestClient {
         }
 
         @Override
-        public Flow.Publisher<RequestChunk> bodyPublisher() {
+        public Flow.Publisher<DataChunk> bodyPublisher() {
             return publisher;
         }
 
@@ -272,7 +271,7 @@ public class TestClient {
         }
 
         @Override
-        public void onNext(ResponseChunk data) {
+        public void onNext(DataChunk data) {
             if (data == null) {
                 return;
             }

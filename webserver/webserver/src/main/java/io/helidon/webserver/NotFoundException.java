@@ -16,6 +16,8 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.http.Http;
+
 /**
  * A runtime exception indicating a {@link Http.Status#NOT_FOUND_404 not found}.
  */

@@ -28,15 +28,15 @@ import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import org.hamcrest.core.IsCollectionContaining;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Tests {@link SendHeadersFirstPublisher}.

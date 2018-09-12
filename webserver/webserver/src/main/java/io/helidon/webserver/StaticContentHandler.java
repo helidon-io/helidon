@@ -24,6 +24,9 @@ import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+
 /**
  * Request {@link Handler} processing a static content.
  */

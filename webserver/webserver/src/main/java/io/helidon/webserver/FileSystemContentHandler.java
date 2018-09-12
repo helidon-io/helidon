@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 
+import io.helidon.common.http.Http;
+
 /**
  * Serves files from the filesystem as a static WEB content.
  */

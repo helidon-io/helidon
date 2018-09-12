@@ -25,9 +25,9 @@ import javax.json.JsonObjectBuilder;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;

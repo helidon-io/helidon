@@ -24,8 +24,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.RequestChunk;
 
 import io.netty.buffer.ByteBuf;
 
@@ -42,7 +42,7 @@ import io.netty.buffer.ByteBuf;
  * <p>
  * This publisher allows only a single subscriber.
  */
-class OriginThreadPublisher implements Flow.Publisher<RequestChunk> {
+class OriginThreadPublisher implements Flow.Publisher<DataChunk> {
 
     private static final Logger LOGGER = Logger.getLogger(OriginThreadPublisher.class.getName());
 
@@ -51,7 +51,7 @@ class OriginThreadPublisher implements Flow.Publisher<RequestChunk> {
     /** Required to achieve rule https://github.com/reactive-streams/reactive-streams-jvm#1.3 . */
     private final Lock reentrantLock = new ReentrantLock();
 
-    private volatile Flow.Subscriber<? super RequestChunk> singleSubscriber;
+    private volatile Flow.Subscriber<? super DataChunk> singleSubscriber;
     private volatile boolean completed;
     private volatile Throwable t;
 
@@ -86,7 +86,7 @@ class OriginThreadPublisher implements Flow.Publisher<RequestChunk> {
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super RequestChunk> originalSubscriber) {
+    public void subscribe(Flow.Subscriber<? super DataChunk> originalSubscriber) {
         if (!hasSingleSubscriber.compareAndSet(false, true)) {
             originalSubscriber.onError(new IllegalStateException("Only single subscriber is allowed!"));
             return;

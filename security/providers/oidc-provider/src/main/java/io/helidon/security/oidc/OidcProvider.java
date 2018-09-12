@@ -42,6 +42,7 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -62,7 +63,6 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webserver.Http;
 
 /**
  * Open ID Connect authentication provider.

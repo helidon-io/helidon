@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,33 +19,35 @@ package io.helidon.webserver;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
+import io.helidon.common.http.AlreadyCompletedException;
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
+import io.helidon.common.http.SetCookie;
+
 /**
  * Extends {@link Parameters} interface by adding HTTP response headers oriented constants and convenient methods.
- * Use constants located in {@link Http.Header} as standard header names.
+ * Use constants located in {@link io.helidon.common.http.Http.Header} as standard header names.
  *
  * <h3>Lifecycle</h3>
  * Headers can be muted until {@link #send() send} to the client. It is also possible to register a '{@link #beforeSend(Consumer)
  * before send}' function which can made 'last minute mutation'.
  * <p>
  * Headers are send together with HTTP status code also automatically just before first chunk of response data is send.
- * See {@link ServerResponse} for detail.
  *
- * @see Http.Header
- * @see ServerResponse
+ * @see io.helidon.common.http.Http.Header
  */
 public interface ResponseHeaders extends Headers {
 
     /**
-     * Gets immutable list of supported patch document formats (header {@value Http.Header#ACCEPT_PATCH}).
+     * Gets immutable list of supported patch document formats (header {@value io.helidon.common.http.Http.Header#ACCEPT_PATCH}).
      * <p>
      * Method returns a copy of actual values.
      *
@@ -54,7 +56,7 @@ public interface ResponseHeaders extends Headers {
     List<MediaType> acceptPatches();
 
     /**
-     * Adds one or more acceptedTypes path document formats (header {@value Http.Header#ACCEPT_PATCH}).
+     * Adds one or more acceptedTypes path document formats (header {@value io.helidon.common.http.Http.Header#ACCEPT_PATCH}).
      *
      * @param acceptableMediaTypes media types to add.
      * @throws AlreadyCompletedException if headers were completed (sent to the client).
@@ -77,14 +79,14 @@ public interface ResponseHeaders extends Headers {
     void contentType(MediaType contentType) throws AlreadyCompletedException;
 
     /**
-     * Optionally gets the value of {@value Http.Header#CONTENT_LENGTH} header.
+     * Optionally gets the value of {@value io.helidon.common.http.Http.Header#CONTENT_LENGTH} header.
      *
      * @return Length of the body in octets.
      */
     OptionalLong contentLength();
 
     /**
-     * Sets the value of {@value Http.Header#CONTENT_LENGTH} header.
+     * Sets the value of {@value io.helidon.common.http.Http.Header#CONTENT_LENGTH} header.
      *
      * @param contentLength Length of the body in octets.
      * @throws AlreadyCompletedException if headers were completed (sent to the client).
@@ -92,7 +94,7 @@ public interface ResponseHeaders extends Headers {
     void contentLength(long contentLength) throws AlreadyCompletedException;
 
     /**
-     * Optionally gets the value of {@value Http.Header#EXPIRES} header.
+     * Optionally gets the value of {@value io.helidon.common.http.Http.Header#EXPIRES} header.
      * <p>
      * Gives the date/time after which the response is considered stale.
      *
@@ -101,7 +103,7 @@ public interface ResponseHeaders extends Headers {
     Optional<ZonedDateTime> expires();
 
     /**
-     * Sets the value of {@value Http.Header#EXPIRES} header.
+     * Sets the value of {@value io.helidon.common.http.Http.Header#EXPIRES} header.
      * <p>
      * The date/time after which the response is considered stale.
      *
@@ -111,7 +113,7 @@ public interface ResponseHeaders extends Headers {
     void expires(ZonedDateTime dateTime) throws AlreadyCompletedException;
 
     /**
-     * Sets the value of {@value Http.Header#EXPIRES} header.
+     * Sets the value of {@value io.helidon.common.http.Http.Header#EXPIRES} header.
      * <p>
      * The date/time after which the response is considered stale.
      *
@@ -121,7 +123,7 @@ public interface ResponseHeaders extends Headers {
     void expires(Instant dateTime) throws AlreadyCompletedException;
 
     /**
-     * Optionally gets the value of {@value Http.Header#LAST_MODIFIED} header.
+     * Optionally gets the value of {@value io.helidon.common.http.Http.Header#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object.
      *
@@ -130,7 +132,7 @@ public interface ResponseHeaders extends Headers {
     Optional<ZonedDateTime> lastModified();
 
     /**
-     * Sets the value of {@value Http.Header#LAST_MODIFIED} header.
+     * Sets the value of {@value io.helidon.common.http.Http.Header#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object.
      *
@@ -140,7 +142,7 @@ public interface ResponseHeaders extends Headers {
     void lastModified(ZonedDateTime dateTime) throws AlreadyCompletedException;
 
     /**
-     * Sets the value of {@value Http.Header#LAST_MODIFIED} header.
+     * Sets the value of {@value io.helidon.common.http.Http.Header#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object
      *
@@ -150,7 +152,7 @@ public interface ResponseHeaders extends Headers {
     void lastModified(Instant dateTime) throws AlreadyCompletedException;
 
     /**
-     * Optionally gets the value of {@value Http.Header#LOCATION} header.
+     * Optionally gets the value of {@value io.helidon.common.http.Http.Header#LOCATION} header.
      * <p>
      * Used in redirection, or when a new resource has been created.
      *
@@ -159,7 +161,7 @@ public interface ResponseHeaders extends Headers {
     Optional<URI> location();
 
     /**
-     * Sets the value of {@value Http.Header#LOCATION} header.
+     * Sets the value of {@value io.helidon.common.http.Http.Header#LOCATION} header.
      * <p>
      * Used in redirection, or when a new resource has been created.
      *
@@ -171,9 +173,9 @@ public interface ResponseHeaders extends Headers {
     /**
      * Adds {@code Set-Cookie} header based on <a href="https://tools.ietf.org/html/rfc2616">RFC2616</a>.
      *
-     * @param name a name of the cookie.
+     * @param name  a name of the cookie.
      * @param value a value of the cookie.
-     * @throws NullPointerException if {@code name} parameter is {@code null}.
+     * @throws NullPointerException      if {@code name} parameter is {@code null}.
      * @throws AlreadyCompletedException if headers were completed (sent to the client).
      */
     void addCookie(String name, String value) throws AlreadyCompletedException, NullPointerException;
@@ -182,10 +184,10 @@ public interface ResponseHeaders extends Headers {
      * Adds {@code Set-Cookie} header based on <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a> with {@code Max-Age}
      * parameter.
      *
-     * @param name a name of the cookie.
-     * @param value a value of the cookie.
+     * @param name   a name of the cookie.
+     * @param value  a value of the cookie.
      * @param maxAge a {@code Max-Age} cookie parameter.
-     * @throws NullPointerException if {@code name} parameter is {@code null}.
+     * @throws NullPointerException      if {@code name} parameter is {@code null}.
      * @throws AlreadyCompletedException if headers were completed (sent to the client).
      */
     void addCookie(String name, String value, Duration maxAge) throws AlreadyCompletedException, NullPointerException;
@@ -227,175 +229,4 @@ public interface ResponseHeaders extends Headers {
      */
     CompletionStage<ResponseHeaders> send();
 
-    /**
-     * Represents {@code 'Set-Cookie'} header value specified by <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a> and
-     * use in method {@link #addCookie(SetCookie)}.
-     *
-     * <p>It is mutable and fluent builder.
-     */
-    class SetCookie {
-
-        private static final String PARAM_SEPARATOR = "; ";
-
-        private final String name;
-        private final String value;
-        private ZonedDateTime expires;
-        private Duration maxAge;
-        private String domain;
-        private String path;
-        private boolean secure;
-        private boolean httpOnly;
-
-        /**
-         * Creates new instance.
-         *
-         * @param name a cookie name.
-         * @param value a cookie value.
-         */
-        public SetCookie(String name, String value) {
-            Objects.requireNonNull(name, "Parameter 'name' is null!");
-            //todo validate accepted characters
-            this.name = name;
-            this.value = value;
-        }
-
-        /**
-         * Sets {@code Expires} parameter.
-         *
-         * @param expires an {@code Expires} parameter.
-         * @return Updated instance.
-         */
-        SetCookie expires(ZonedDateTime expires) {
-            this.expires = expires;
-            return this;
-        }
-
-        /**
-         * Sets {@code Expires} parameter.
-         *
-         * @param expires an {@code Expires} parameter.
-         * @return Updated instance.
-         */
-        SetCookie expires(Instant expires) {
-            if (expires == null) {
-                this.expires = null;
-            } else {
-                this.expires = ZonedDateTime.ofInstant(expires, ZoneId.systemDefault());
-            }
-            return this;
-        }
-
-        /**
-         * Sets {@code Max-Age} parameter.
-         *
-         * @param maxAge an {@code Max-Age} parameter.
-         * @return Updated instance.
-         */
-        SetCookie maxAge(Duration maxAge) {
-            this.maxAge = maxAge;
-            return this;
-        }
-
-        /**
-         * Sets {@code Domain} parameter.
-         *
-         * @param domain an {@code Domain} parameter.
-         * @return Updated instance.
-         */
-        SetCookie domain(String domain) {
-            this.domain = domain;
-            return this;
-        }
-
-        /**
-         * Sets {@code Path} parameter.
-         *
-         * @param path an {@code Path} parameter.
-         * @return Updated instance.
-         */
-        SetCookie path(String path) {
-            this.path = path;
-            return this;
-        }
-
-        /**
-         * Sets {@code Domain} and {@code Path} parameters.
-         *
-         * @param domainAndPath an URI to specify {@code Domain} and {@code Path} parameters.
-         * @return Updated instance.
-         */
-        SetCookie domainAndPath(URI domainAndPath) {
-            if (domainAndPath == null) {
-                this.domain = null;
-                this.path = null;
-            } else {
-                this.domain = domainAndPath.getHost();
-                this.path = domainAndPath.getPath();
-            }
-            return this;
-        }
-
-        /**
-         * Sets {@code Secure} parameter.
-         *
-         * @param secure an {@code Secure} parameter.
-         * @return Updated instance.
-         */
-        SetCookie secure(boolean secure) {
-            this.secure = secure;
-            return this;
-        }
-
-        /**
-         * Sets {@code HttpOnly} parameter.
-         *
-         * @param httpOnly an {@code HttpOnly} parameter.
-         * @return Updated instance.
-         */
-        SetCookie httpOnly(boolean httpOnly) {
-            this.httpOnly = httpOnly;
-            return this;
-        }
-
-        /**
-         * Returns content of this instance as a 'Set-Cookie:' header value specified
-         * by <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a>.
-         *
-         * @return a 'Set-Cookie:' header value.
-         */
-        @Override
-        public String toString() {
-            StringBuilder result = new StringBuilder();
-            result.append(name).append('=').append(value);
-            if (expires != null) {
-                result.append(PARAM_SEPARATOR);
-                result.append("Expires=");
-                result.append(expires.format(Http.DateTime.RFC_1123_DATE_TIME));
-            }
-            if (maxAge != null && !maxAge.isNegative() && !maxAge.isZero()) {
-                result.append(PARAM_SEPARATOR);
-                result.append("Max-Age=");
-                result.append(maxAge.getSeconds());
-            }
-            if (domain != null) {
-                result.append(PARAM_SEPARATOR);
-                result.append("Domain=");
-                result.append(domain);
-            }
-            if (path != null) {
-                result.append(PARAM_SEPARATOR);
-                result.append("Path=");
-                result.append(path);
-            }
-            if (secure) {
-                result.append(PARAM_SEPARATOR);
-                result.append("Secure");
-            }
-            if (httpOnly) {
-                result.append(PARAM_SEPARATOR);
-                result.append("HttpOnly");
-            }
-            return result.toString();
-        }
-    }
 }

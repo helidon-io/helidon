@@ -77,6 +77,16 @@ public final class RegistryFactory {
         return () -> staticInstance;
     }
 
+    /**
+     * Create a registry factory for systems without CDI.
+     *
+     * @param config configuration to load the factory config from
+     * @return a new registry factory to obtain application registry (and other registries)
+     */
+    public static RegistryFactory createSeFactory(Config config) {
+        return create(config);
+    }
+
     Registry getARegistry(Type type) {
         return registries.get(type);
     }

@@ -25,9 +25,9 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.MediaType;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.jersey.ClientSecurityFeature;
-import io.helidon.webserver.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;

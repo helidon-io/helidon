@@ -21,6 +21,10 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import io.helidon.common.http.AlreadyCompletedException;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
 
 /**
@@ -125,7 +129,7 @@ public interface ServerResponse {
      * @return a completion stage of the response - completed when response is transferred
      * @throws IllegalStateException if any {@code send(...)} method was already called
      */
-    CompletionStage<ServerResponse> send(Flow.Publisher<ResponseChunk> content);
+    CompletionStage<ServerResponse> send(Flow.Publisher<DataChunk> content);
 
     /**
      * Sends an empty response. Do nothing if response was already send.
@@ -138,7 +142,7 @@ public interface ServerResponse {
      * Registers a content writer for a given type.
      * <p>
      * Registered writer is used to marshal response content of given type to the {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk response chunks}.
+     * of {@link DataChunk response chunks}.
      *
      * @param type     a type of the content. If {@code null} then accepts any type.
      * @param function a writer function
@@ -146,13 +150,13 @@ public interface ServerResponse {
      * @return this instance of {@link ServerResponse}
      * @throws NullPointerException if {@code function} parameter is {@code null}
      */
-    <T> ServerResponse registerWriter(Class<T> type, Function<T, Flow.Publisher<ResponseChunk>> function);
+    <T> ServerResponse registerWriter(Class<T> type, Function<T, Flow.Publisher<DataChunk>> function);
 
     /**
      * Registers a content writer for a given type and media type.
      * <p>
      * Registered writer is used to marshal response content of given type to the {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk response chunks}. It is used only if {@code Content-Type} header is compatible with a given
+     * of {@link DataChunk response chunks}. It is used only if {@code Content-Type} header is compatible with a given
      * content type or if it is {@code null}. If {@code Content-Type} is {@code null} and it is still possible to modify
      * headers (headers were not send yet), the provided content type will be set.
      *
@@ -165,13 +169,13 @@ public interface ServerResponse {
      */
     <T> ServerResponse registerWriter(Class<T> type,
                                       MediaType contentType,
-                                      Function<? extends T, Flow.Publisher<ResponseChunk>> function);
+                                      Function<? extends T, Flow.Publisher<DataChunk>> function);
 
     /**
      * Registers a content writer for all accepted contents.
      * <p>
      * Registered writer is used to marshal response content of given type to the {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk response chunks}.
+     * of {@link DataChunk response chunks}.
      *
      * @param accept   a predicate to test if content is marshallable by the writer. If {@code null} then accepts any type.
      * @param function a writer function
@@ -179,13 +183,13 @@ public interface ServerResponse {
      * @return this instance of {@link ServerResponse}
      * @throws NullPointerException if {@code function} parameter is {@code null}
      */
-    <T> ServerResponse registerWriter(Predicate<?> accept, Function<T, Flow.Publisher<ResponseChunk>> function);
+    <T> ServerResponse registerWriter(Predicate<?> accept, Function<T, Flow.Publisher<DataChunk>> function);
 
     /**
      * Registers a content writer for all accepted contents.
      * <p>
      * Registered writer is used to marshal response content of given type to the {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk response chunks}. It is used only if {@code Content-Type} header is compatible with a given
+     * of {@link DataChunk response chunks}. It is used only if {@code Content-Type} header is compatible with a given
      * content type or if it is {@code null}. If {@code Content-Type} is {@code null} and it is still possible to modify
      * headers (headers were not send yet), the provided content type will be set.
      *
@@ -198,13 +202,13 @@ public interface ServerResponse {
      */
     <T> ServerResponse registerWriter(Predicate<?> accept,
                                       MediaType contentType,
-                                      Function<T, Flow.Publisher<ResponseChunk>> function);
+                                      Function<T, Flow.Publisher<DataChunk>> function);
 
     /**
      * Registers a provider of the new response content publisher - typically a filter.
      * <p>
      * All response content is always represented by a single {@link Flow.Publisher Publisher}
-     * of {@link ResponseChunk response chunks}. This method can be used to filter or completely replace original publisher by
+     * of {@link DataChunk response chunks}. This method can be used to filter or completely replace original publisher by
      * a new one with different contract. For example data coding, logging, filtering, caching, etc.
      * <p>
      * New publisher is created at the moment of content write by any {@link #send(Object) send(...)} method including the empty
@@ -218,7 +222,7 @@ public interface ServerResponse {
      * @return this instance of {@link ServerResponse}
      * @throws NullPointerException if parameter {@code function} is {@code null}
      */
-    ServerResponse registerFilter(Function<Flow.Publisher<ResponseChunk>, Flow.Publisher<ResponseChunk>> function);
+    ServerResponse registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function);
 
     /**
      * Completion stage is completed when response is completed.

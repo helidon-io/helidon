@@ -17,6 +17,8 @@
 package io.helidon.webserver;
 
 import java.net.URI;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,18 +26,24 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link HashRequestHeaders}.
  */
 public class HashRequestHeadersTest {
+    private static final ZonedDateTime ZDT = ZonedDateTime.of(2008, 6, 3, 11, 5, 30, 0, ZoneId.of("Z"));
 
     HashRequestHeaders withHeader(String name, String... values) {
         Map<String, List<String>> map = new HashMap<>(1);
@@ -44,34 +52,34 @@ public class HashRequestHeadersTest {
     }
 
     @Test
-    public void allConcatenated() throws Exception {
+    public void allConcatenated() {
         HashRequestHeaders hs = withHeader("Foo", "val1", "val 2", "val3,val4", "val5");
         assertEquals("val1,val 2,val3,val4,val5", hs.value("Foo").orElse(null));
     }
 
     @Test
-    public void allSepar() throws Exception {
+    public void allSepar() {
         HashRequestHeaders hs = withHeader("Foo", "val1", "val 2", "val3,val4", "val5", "val 6,val7,val 8", "val9");
         assertThat(hs.values("Foo"),
                    hasItems("val1", "val 2", "val3", "val4", "val5", "val 6", "val7", "val 8", "val9"));
     }
 
     @Test
-    public void contentType() throws Exception {
+    public void contentType() {
         HashRequestHeaders hs = withHeader(Http.Header.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString());
         assertTrue(hs.contentType().isPresent());
         assertEquals(MediaType.APPLICATION_JSON, hs.contentType().get());
     }
 
     @Test
-    public void contentLength() throws Exception {
+    public void contentLength() {
         HashRequestHeaders hs = withHeader(Http.Header.CONTENT_LENGTH, "1024");
         assertTrue(hs.contentLength().isPresent());
         assertEquals(1024L, hs.contentLength().getAsLong());
     }
 
     @Test
-    public void cookies() throws Exception {
+    public void cookies() {
         HashRequestHeaders hs
                 = withHeader(Http.Header.COOKIE,
                              "foo=bar; aaa=bbb; c=what_the_hell; aaa=ccc",
@@ -85,12 +93,12 @@ public class HashRequestHeadersTest {
     }
 
     @Test
-    public void acceptedTypes() throws Exception {
+    public void acceptedTypes() {
         HashRequestHeaders hs = withHeader(Http.Header.ACCEPT,
                              "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4");
         assertEquals(4, hs.acceptedTypes().size());
         assertEquals(new MediaType("text", "*", CollectionsHelper.mapOf("q", "0.3")), hs.acceptedTypes().get(0));
-        assertEquals(hs.acceptedTypes().get(0).qualityFactor(), 0, 0.3);
+        assertEquals(0, hs.acceptedTypes().get(0).qualityFactor(), 0.3);
         assertEquals(new MediaType("text", "html", CollectionsHelper.mapOf("q", "0.7")), hs.acceptedTypes().get(1));
         assertEquals(new MediaType("text", "html", CollectionsHelper.mapOf("level", "1")), hs.acceptedTypes().get(2));
         assertEquals(new MediaType("text", "html", CollectionsHelper.mapOf("level", "2", "q", "0.4")),
@@ -98,7 +106,7 @@ public class HashRequestHeadersTest {
     }
 
     @Test
-    public void isAccepted() throws Exception {
+    public void isAccepted() {
         HashRequestHeaders hs = withHeader(Http.Header.ACCEPT, "text/*;q=0.3, application/json;q=0.7");
         assertTrue(hs.isAccepted(MediaType.TEXT_HTML));
         assertTrue(hs.isAccepted(MediaType.TEXT_XML));
@@ -107,7 +115,7 @@ public class HashRequestHeadersTest {
     }
 
     @Test
-    public void bestAccepted() throws Exception {
+    public void bestAccepted() {
         HashRequestHeaders hs = withHeader(Http.Header.ACCEPT,
                                            "text/*;q=0.3, text/html;q=0.7, text/xml;q=0.4");
         assertEquals(MediaType.TEXT_XML, hs.bestAccepted(MediaType.APPLICATION_JSON,
@@ -124,31 +132,31 @@ public class HashRequestHeadersTest {
     }
 
     @Test
-    public void acceptDatetime() throws Exception {
+    public void acceptDatetime() {
         HashRequestHeaders hs = withHeader(Http.Header.ACCEPT_DATETIME, "Tue, 3 Jun 2008 11:05:30 GMT");
-        assertEquals(DateTimeTest.ZDT, hs.acceptDatetime().orElse(null));
+        assertEquals(ZDT, hs.acceptDatetime().orElse(null));
     }
 
     @Test
-    public void date() throws Exception {
+    public void date() {
         HashRequestHeaders hs = withHeader(Http.Header.DATE, "Tue, 3 Jun 2008 11:05:30 GMT");
-        assertEquals(DateTimeTest.ZDT, hs.date().orElse(null));
+        assertEquals(ZDT, hs.date().orElse(null));
     }
 
     @Test
-    public void ifModifiedSince() throws Exception {
+    public void ifModifiedSince() {
         HashRequestHeaders hs = withHeader(Http.Header.IF_MODIFIED_SINCE, "Tue, 3 Jun 2008 11:05:30 GMT");
-        assertEquals(DateTimeTest.ZDT, hs.ifModifiedSince().orElse(null));
+        assertEquals(ZDT, hs.ifModifiedSince().orElse(null));
     }
 
     @Test
-    public void ifUnmodifiedSince() throws Exception {
+    public void ifUnmodifiedSince() {
         HashRequestHeaders hs = withHeader(Http.Header.IF_UNMODIFIED_SINCE, "Tue, 3 Jun 2008 11:05:30 GMT");
-        assertEquals(DateTimeTest.ZDT, hs.ifUnmodifiedSince().orElse(null));
+        assertEquals(ZDT, hs.ifUnmodifiedSince().orElse(null));
     }
 
     @Test
-    public void referer() throws Exception {
+    public void referer() {
         HashRequestHeaders hs = withHeader(Http.Header.REFERER, "http://www.google.com");
         assertEquals("http://www.google.com", hs.referer().map(URI::toString).orElse(null));
     }

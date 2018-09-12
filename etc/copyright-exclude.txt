@@ -26,6 +26,7 @@ jaxb.index
 /LICENSE.txt
 /copyright.txt
 /3RD-PARTY-LICENSE.txt
+/3RD-PARTY.txt
 .pem
 .p8
 .pkcs8.pem
@@ -38,3 +39,4 @@ empty_file
 copyright-exclude.txt
 src/test/resources/sample.txt
 src/main/resources/WEB/node
+webserver/examples/streaming/src/main/resources/large-file.bin

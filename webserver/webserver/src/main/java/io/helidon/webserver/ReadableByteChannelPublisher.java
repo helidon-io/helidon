@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.RequestedCounter;
 import io.helidon.common.reactive.RetrySchema;
@@ -38,7 +39,7 @@ import io.helidon.common.reactive.SingleSubscriberHolder;
  * <p>
  * Only first subscriber is accepted.
  */
-public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChunk> {
+public class ReadableByteChannelPublisher implements Flow.Publisher<DataChunk> {
 
     private static final Logger LOGGER = Logger.getLogger(ReadableByteChannelPublisher.class.getName());
 
@@ -47,7 +48,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChun
     private final ReadableByteChannel channel;
     private final RetrySchema retrySchema;
 
-    private final SingleSubscriberHolder<ResponseChunk> subscriber = new SingleSubscriberHolder<>();
+    private final SingleSubscriberHolder<DataChunk> subscriber = new SingleSubscriberHolder<>();
     private final RequestedCounter requested = new RequestedCounter();
     private final int chunkCapacity = DEFAULT_CHUNK_CAPACITY;
 
@@ -56,7 +57,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChun
     private volatile long lastRetryDelay = 0;
 
     private ScheduledExecutorService scheduledExecutorService;
-    private volatile ResponseChunk curentChunk;
+    private volatile DataChunk curentChunk;
 
     /**
      * Creates new instance.
@@ -70,7 +71,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChun
     }
 
     @Override
-    public void subscribe(Flow.Subscriber<? super ResponseChunk> subscriberParam) {
+    public void subscribe(Flow.Subscriber<? super DataChunk> subscriberParam) {
         if (subscriber.register(subscriberParam)) {
             publishing.set(true); // prevent onNext from inside of onSubscribe
 
@@ -95,8 +96,8 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChun
         }
     }
 
-    private ResponseChunk allocateNewChunk() {
-        return new ResponseChunk(false, ByteBuffer.allocate(chunkCapacity));
+    private DataChunk allocateNewChunk() {
+        return DataChunk.create(false, ByteBuffer.allocate(chunkCapacity));
     }
 
     /**
@@ -107,8 +108,8 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChun
      * @return {@code true} if next item was published or subscriber was completed otherwise {@code false}
      * @throws Exception if any error happens and {@code onError()} must be called on the subscriber
      */
-    private boolean publishSingleOrFinish(Flow.Subscriber<? super ResponseChunk> subscr) throws Exception {
-        ResponseChunk chunk;
+    private boolean publishSingleOrFinish(Flow.Subscriber<? super DataChunk> subscr) throws Exception {
+        DataChunk chunk;
         if (curentChunk == null) {
             chunk = allocateNewChunk();
         } else {
@@ -156,7 +157,7 @@ public class ReadableByteChannelPublisher implements Flow.Publisher<ResponseChun
             // Publish, if can
             if (!subscriber.isClosed() && requested.get() > 0 && publishing.compareAndSet(false, true)) {
                 try {
-                    Flow.Subscriber<? super ResponseChunk> sub = this.subscriber.get(); // blocking retrieval
+                    Flow.Subscriber<? super DataChunk> sub = this.subscriber.get(); // blocking retrieval
                     while (!subscriber.isClosed() && requested.tryDecrement()) {
                         if (!publishSingleOrFinish(sub)) {
                             // Not yet published but can be done in the future

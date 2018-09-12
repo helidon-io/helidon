@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import io.helidon.common.http.Headers;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
+
 /**
  * Extends {@link Parameters} interface by adding HTTP request headers oriented convenient methods.
- * Use constants located in {@link Http.Header} as standard header names.
+ * Use constants located in {@link io.helidon.common.http.Http.Header} as standard header names.
  *
- * @see Http.Header
+ * @see io.helidon.common.http.Http.Header
  */
 public interface RequestHeaders extends Headers {
 
@@ -57,7 +61,8 @@ public interface RequestHeaders extends Headers {
     Parameters cookies();
 
     /**
-     * Returns a list of acceptedTypes ({@value Http.Header#ACCEPT} header) content types in quality factor order.
+     * Returns a list of acceptedTypes ({@value io.helidon.common.http.Http.Header#ACCEPT} header) content types in quality
+     * factor order.
      * Never {@code null}.
      *
      * @return A list of acceptedTypes media types.
@@ -75,7 +80,8 @@ public interface RequestHeaders extends Headers {
 
     /**
      * Optionally returns single media type from provided parameters which is best accepted by the client.
-     * Method uses content negotiation {@value Http.Header#ACCEPT} header parameter and returns an empty value in case
+     * Method uses content negotiation {@value io.helidon.common.http.Http.Header#ACCEPT} header parameter and returns an empty
+     * value in case
      * that nothing match.
      *
      * @param mediaTypes Supported media type candidates.
@@ -86,39 +92,39 @@ public interface RequestHeaders extends Headers {
     // TODO Add support for other accept headers.
 
     /**
-     * Optionally returns acceptedTypes version in time ({@value Http.Header#ACCEPT_DATETIME} header).
+     * Optionally returns acceptedTypes version in time ({@value io.helidon.common.http.Http.Header#ACCEPT_DATETIME} header).
      *
      * @return Acceptable version in time.
      */
     Optional<ZonedDateTime> acceptDatetime();
 
     /**
-     * Optionally returns request date ({@value Http.Header#ACCEPT_DATETIME} header).
+     * Optionally returns request date ({@value io.helidon.common.http.Http.Header#ACCEPT_DATETIME} header).
      *
      * @return Request date.
      */
     Optional<ZonedDateTime> date();
 
     /**
-     * Optionally returns a value of {@value Http.Header#IF_MODIFIED_SINCE} header.
+     * Optionally returns a value of {@value io.helidon.common.http.Http.Header#IF_MODIFIED_SINCE} header.
      * <p>
      * Allows a 304 Not Modified to be returned if content is unchanged.
      *
-     * @return Content of {@value Http.Header#IF_MODIFIED_SINCE} header.
+     * @return Content of {@value io.helidon.common.http.Http.Header#IF_MODIFIED_SINCE} header.
      */
     Optional<ZonedDateTime> ifModifiedSince();
 
     /**
-     * Optionally returns a value of {@value Http.Header#IF_UNMODIFIED_SINCE} header.
+     * Optionally returns a value of {@value io.helidon.common.http.Http.Header#IF_UNMODIFIED_SINCE} header.
      * <p>
      * <i>Only send the response if the entity has not been modified since a specific time.</i>
      *
-     * @return Content of {@value Http.Header#IF_MODIFIED_SINCE} header.
+     * @return Content of {@value io.helidon.common.http.Http.Header#IF_MODIFIED_SINCE} header.
      */
     Optional<ZonedDateTime> ifUnmodifiedSince();
 
     /**
-     * Optionally returns the address of the previous web page (header {@value Http.Header#REFERER}) from which a link
+     * Optionally returns the address of the previous web page (header {@value io.helidon.common.http.Http.Header#REFERER}) from which a link
      * to the currently requested page was followed.
      * <p>
      * <i>The word {@code referrer} has been misspelled in the RFC as well as in most implementations to the point that it

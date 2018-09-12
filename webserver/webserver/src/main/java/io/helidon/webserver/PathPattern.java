@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.regex.PatternSyntaxException;
  *
  * @see PathMatcher
  */
-class PathPattern {
+final class PathPattern {
 
     static final PathMatcher.PrefixResult NOT_MATCHED_RESULT = new PathMatcher.PrefixResult() {
         @Override

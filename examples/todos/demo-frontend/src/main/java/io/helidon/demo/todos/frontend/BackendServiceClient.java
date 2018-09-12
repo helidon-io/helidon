@@ -30,9 +30,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
-import io.helidon.webserver.Http;
 import io.helidon.webserver.ServerResponse;
 
 import io.opentracing.Span;

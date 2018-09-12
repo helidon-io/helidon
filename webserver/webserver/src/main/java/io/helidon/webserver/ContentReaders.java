@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Reader;
+import io.helidon.common.http.Utils;
 import io.helidon.common.reactive.Flow;
 
 /**
@@ -103,18 +106,18 @@ public final class ContentReaders {
      * {@link IllegalArgumentException} if it wasn't possible to convert the byte buffer
      * to an array of bytes
      */
-    public static ServerRequest.Reader<byte[]> byteArrayReader() {
+    public static Reader<byte[]> byteArrayReader() {
         return (publisher, clazz) -> {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             CompletableFuture<byte[]> future = new CompletableFuture<>();
-            publisher.subscribe(new Flow.Subscriber<RequestChunk>() {
+            publisher.subscribe(new Flow.Subscriber<DataChunk>() {
                 @Override
                 public void onSubscribe(Flow.Subscription subscription) {
                     subscription.request(Long.MAX_VALUE);
                 }
 
                 @Override
-                public void onNext(RequestChunk item) {
+                public void onNext(DataChunk item) {
                     try {
                         synchronized (bytes) {
                             Utils.write(item.data(), bytes);
@@ -149,11 +152,7 @@ public final class ContentReaders {
      *
      * @return a input stream content reader
      */
-    public static ServerRequest.Reader<InputStream> inputStreamReader() {
-        return (publisher, clazz) -> {
-            CompletableFuture future = new CompletableFuture<InputStream>();
-            future.complete(new PublisherInputStream(publisher));
-            return future;
-        };
+    public static Reader<InputStream> inputStreamReader() {
+        return (publisher, clazz) -> CompletableFuture.completedFuture(new PublisherInputStream(publisher));
     }
 }

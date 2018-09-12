@@ -19,14 +19,15 @@ package io.helidon.webserver.testsupport;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.webserver.Http;
+import io.helidon.common.http.Http;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.NotFoundException;
 import io.helidon.webserver.Routing;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 /**

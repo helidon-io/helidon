@@ -16,10 +16,6 @@
 
 package io.helidon.webserver.testsupport;
 
-import io.helidon.webserver.testsupport.TemporaryFolderExtension;
-import io.helidon.webserver.testsupport.TestResponse;
-import io.helidon.webserver.testsupport.TestClient;
-import io.helidon.webserver.testsupport.TemporaryFolder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,16 +24,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.webserver.Http;
-import io.helidon.webserver.MediaType;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests {@link io.helidon.webserver.FileSystemContentHandler}.

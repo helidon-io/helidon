@@ -24,12 +24,12 @@ import java.util.Set;
 import java.util.logging.LogManager;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.http.MediaType;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.provider.httpauth.HttpDigestAuthProvider;
 import io.helidon.security.provider.httpauth.UserStore;
 import io.helidon.security.webserver.WebSecurity;
-import io.helidon.webserver.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 

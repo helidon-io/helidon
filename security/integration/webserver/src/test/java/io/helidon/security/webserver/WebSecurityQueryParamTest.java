@@ -19,10 +19,10 @@ package io.helidon.security.webserver;
 import java.util.regex.Pattern;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.http.Parameters;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.util.TokenHandler;
-import io.helidon.webserver.Parameters;
 import io.helidon.webserver.ServerRequest;
 
 import org.junit.jupiter.api.Test;

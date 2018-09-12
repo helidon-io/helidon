@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>0.9.1-SNAPSHOT</version>
+        <version>0.10.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.webserver.examples</groupId>
@@ -48,6 +48,7 @@
         <module>opentracing</module>
         <module>demo-translator-frontend</module>
         <module>demo-translator-backend</module>
+        <module>streaming</module>
     </modules>
 
     <build>

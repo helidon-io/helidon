@@ -26,9 +26,9 @@ import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.Http;
-import io.helidon.webserver.RequestChunk;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.BareRequest;
 
@@ -41,14 +41,14 @@ import io.netty.handler.codec.http.HttpRequest;
 class BareRequestImpl implements BareRequest {
 
     private final HttpRequest nettyRequest;
-    private final Flow.Publisher<RequestChunk> publisher;
+    private final Flow.Publisher<DataChunk> publisher;
     private final WebServer webServer;
     private final ChannelHandlerContext ctx;
     private final SSLEngine sslEngine;
     private final long requestId;
 
     BareRequestImpl(HttpRequest request,
-                    Flow.Publisher<RequestChunk> publisher,
+                    Flow.Publisher<DataChunk> publisher,
                     WebServer webServer,
                     ChannelHandlerContext ctx,
                     SSLEngine sslEngine,
@@ -126,7 +126,7 @@ class BareRequestImpl implements BareRequest {
     }
 
     @Override
-    public Flow.Publisher<RequestChunk> bodyPublisher() {
+    public Flow.Publisher<DataChunk> bodyPublisher() {
         return publisher;
     }
 

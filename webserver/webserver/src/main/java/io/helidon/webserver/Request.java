@@ -36,6 +36,11 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.Parameters;
+import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.webserver.spi.BareRequest;
 
@@ -174,11 +179,31 @@ abstract class Request implements ServerRequest {
         return result;
     }
 
-    class Content implements ServerRequest.Content {
+    private static class InternalReader<T> implements Reader<T> {
 
-        private final Flow.Publisher<RequestChunk> originalPublisher;
+        private final Predicate<Class<?>> predicate;
+        private final Reader<T> reader;
+
+        InternalReader(Predicate<Class<?>> predicate, Reader<T> reader) {
+            this.predicate = predicate;
+            this.reader = reader;
+        }
+
+        public boolean accept(Class<?> o) {
+            return o != null && predicate != null && predicate.test(o);
+        }
+
+        @Override
+        public CompletionStage<? extends T> apply(Flow.Publisher<DataChunk> publisher, Class<? super T> clazz) {
+            return reader.apply(publisher, clazz);
+        }
+    }
+
+    class Content implements io.helidon.common.http.Content {
+
+        private final Flow.Publisher<DataChunk> originalPublisher;
         private final Deque<InternalReader<?>> readers;
-        private final List<Function<Flow.Publisher<RequestChunk>, Flow.Publisher<RequestChunk>>> filters;
+        private final List<Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>>> filters;
         private final ReadWriteLock readersLock;
         private final ReadWriteLock filtersLock;
 
@@ -199,7 +224,7 @@ abstract class Request implements ServerRequest {
         }
 
         @Override
-        public void registerFilter(Function<Flow.Publisher<RequestChunk>, Flow.Publisher<RequestChunk>> function) {
+        public void registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function) {
 
             Objects.requireNonNull(function, "Parameter 'function' is null!");
             try {
@@ -233,11 +258,12 @@ abstract class Request implements ServerRequest {
             return new InternalReader<>(aClass -> aClass.isAssignableFrom(clazz), reader);
         }
 
+
         @Override
         @SuppressWarnings("unchecked")
-        public <T> CompletionStage<? extends T> as(Class<T> type) {
+        public <T> CompletionStage<T> as(Class<T> type) {
             Span readSpan = createReadSpan(type);
-            CompletionStage<? extends T> result;
+            CompletionStage<T> result;
             try {
                 readersLock.readLock().lock();
 
@@ -296,17 +322,17 @@ abstract class Request implements ServerRequest {
         }
 
         @Override
-        public void subscribe(Flow.Subscriber<? super RequestChunk> subscriber) {
+        public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
             try {
                 Span readSpan = createReadSpan(Flow.Publisher.class);
-                chainPublishers().subscribe(new Flow.Subscriber<RequestChunk>() {
+                chainPublishers().subscribe(new Flow.Subscriber<DataChunk>() {
                     @Override
                     public void onSubscribe(Flow.Subscription subscription) {
                         subscriber.onSubscribe(subscription);
                     }
 
                     @Override
-                    public void onNext(RequestChunk item) {
+                    public void onNext(DataChunk item) {
                         subscriber.onNext(item);
                     }
 
@@ -333,37 +359,17 @@ abstract class Request implements ServerRequest {
             }
         }
 
-        private Flow.Publisher<RequestChunk> chainPublishers() {
-            Flow.Publisher<RequestChunk> lastPublisher = originalPublisher;
+        private Flow.Publisher<DataChunk> chainPublishers() {
+            Flow.Publisher<DataChunk> lastPublisher = originalPublisher;
             try {
                 filtersLock.readLock().lock();
-                for (Function<Flow.Publisher<RequestChunk>, Flow.Publisher<RequestChunk>> filter : filters) {
+                for (Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> filter : filters) {
                     lastPublisher = filter.apply(lastPublisher);
                 }
             } finally {
                 filtersLock.readLock().unlock();
             }
             return lastPublisher;
-        }
-    }
-
-    private static class InternalReader<T> implements Reader<T> {
-
-        private final Predicate<Class<?>> predicate;
-        private final Reader<T> reader;
-
-        InternalReader(Predicate<Class<?>> predicate, Reader<T> reader) {
-            this.predicate = predicate;
-            this.reader = reader;
-        }
-
-        public boolean accept(Class<?> o) {
-            return o != null && predicate != null && predicate.test(o);
-        }
-
-        @Override
-        public CompletionStage<? extends T> apply(Flow.Publisher<RequestChunk> publisher, Class<? super T> clazz) {
-            return reader.apply(publisher, clazz);
         }
     }
 

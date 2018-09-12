@@ -22,6 +22,7 @@ module io.helidon.webserver.netty {
 
     requires io.helidon.webserver;
     requires io.helidon.common;
+    requires io.helidon.common.http;
     requires io.helidon.common.reactive;
 
     requires io.netty.handler;

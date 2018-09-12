@@ -95,7 +95,7 @@ public interface SocketConfiguration {
     }
 
     /** The {@link io.helidon.webserver.SocketConfiguration} builder class. */
-    final class Builder implements io.helidon.webserver.Builder<SocketConfiguration> {
+    final class Builder implements io.helidon.common.Builder<SocketConfiguration> {
 
         private int port = 0;
         private InetAddress bindAddress = null;
@@ -190,7 +190,7 @@ public interface SocketConfiguration {
          *                          method execution
          * @return this builder
          */
-        public Builder ssl(io.helidon.webserver.Builder<? extends SSLContext> sslContextBuilder) {
+        public Builder ssl(io.helidon.common.Builder<? extends SSLContext> sslContextBuilder) {
             return ssl(sslContextBuilder != null ? sslContextBuilder.build() : null);
         }
 

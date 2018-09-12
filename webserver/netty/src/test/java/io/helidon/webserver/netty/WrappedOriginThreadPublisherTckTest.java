@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.webserver.RequestChunk;
+import io.helidon.common.http.DataChunk;
 
 import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 /**
  * The WrappedOriginThreadPublisherTckTest.
  */
-public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<RequestChunk> {
+public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<DataChunk> {
 
     private static final int DEFAULT_TIMEOUT_MILLIS = 200;
     private static final Logger LOGGER = Logger.getLogger(WrappedOriginThreadPublisherTckTest.class.getName());
@@ -48,7 +48,7 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<R
     private static final ExecutorService service = Executors.newCachedThreadPool();
 
     @Override
-    public Publisher<RequestChunk> createPublisher(long elements) {
+    public Publisher<DataChunk> createPublisher(long elements) {
         LOGGER.fine("creating publisher");
 
         UnboundedSemaphore semaphore = new UnboundedSemaphore();
@@ -99,10 +99,10 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<R
     }
 
     @Override
-    public Publisher<RequestChunk> createFailedPublisher() {
+    public Publisher<DataChunk> createFailedPublisher() {
         return new WrappedOriginThreadPublisher(new UnboundedSemaphore()) {
             @Override
-            public void subscribe(Subscriber<? super RequestChunk> subscriber) {
+            public void subscribe(Subscriber<? super DataChunk> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
                     @Override
                     public void request(long n) {

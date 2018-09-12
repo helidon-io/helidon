@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.webserver.ContentWriters;
-import io.helidon.webserver.MediaType;
-import io.helidon.webserver.ResponseChunk;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -54,7 +54,7 @@ public class CommentService implements Service {
                     .post("/{" + ROOM_PATH_ID + "}", this::addComment);
     }
 
-    Flow.Publisher<ResponseChunk> publish(List<Comment> comments) {
+    Flow.Publisher<DataChunk> publish(List<Comment> comments) {
         String str = comments.stream()
                 .map(Comment::toString)
                 .collect(Collectors.joining("\n"));
