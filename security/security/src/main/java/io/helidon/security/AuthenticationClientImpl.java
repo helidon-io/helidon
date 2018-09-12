@@ -47,7 +47,11 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
                 .map(this::authenticate)
                 .orElseThrow(() -> new SecurityException("Could not find any authentication provider. Security is not "
                                                                  + "configured"))
-                .thenCompose(this::mapSubject);
+                .thenCompose(authenticationResponse -> {
+                    CompletionStage<AuthenticationResponse> response = mapSubject(
+                            authenticationResponse);
+                    return response;
+                });
 
     }
 
@@ -60,7 +64,18 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
         if (prevResponse.getStatus() == SecurityResponse.SecurityStatus.SUCCESS) {
             return security.getSubjectMapper()
                     .map(mapper -> mapper.map(providerRequest, prevResponse))
-                    .orElseGet(() -> CompletableFuture.completedFuture(prevResponse));
+                    .orElseGet(() -> CompletableFuture.completedFuture(prevResponse))
+                    .thenApply(newResponse -> {
+                        // intentionally checking for instance equality, as that means we are guaranteed no changes
+                        if (newResponse == prevResponse) {
+                            // no changes were done, response as is
+                            return prevResponse;
+                        } else {
+                            newResponse.getUser().ifPresent(context::setUser);
+                            newResponse.getService().ifPresent(context::setService);
+                            return newResponse;
+                        }
+                    });
         } else {
             return CompletableFuture.completedFuture(prevResponse);
         }

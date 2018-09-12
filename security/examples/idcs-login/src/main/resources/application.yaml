@@ -25,20 +25,28 @@ security:
     frontend-uri: "http://localhost:7987"
     proxy-host: ""
   providers:
-    - abac:
-    - oidc:
+  - abac:
+  - oidc:
+      client-id: "${ALIAS=security.properties.idcs-client-id}"
+      client-secret: "${ALIAS=security.properties.idcs-client-secret}"
+      identity-uri: "${ALIAS=security.properties.idcs-uri}"
+      # A prefix used for custom scopes
+      scope-audience: "http://localhost:7987/test-application"
+      proxy-host: "${ALIAS=security.properties.proxy-host}"
+      frontend-uri: "${ALIAS=security.properties.frontend-uri}"
+  - idcs-role-mapper:
+      oidc-config:
+        # we must repeat IDCS configuration, as in this case
+        # IDCS serves both as open ID connect authenticator and
+        # as a role mapper. Using minimal configuration here
         client-id: "${ALIAS=security.properties.idcs-client-id}"
         client-secret: "${ALIAS=security.properties.idcs-client-secret}"
         identity-uri: "${ALIAS=security.properties.idcs-uri}"
-        # A prefix used for custom scopes
-        scope-audience: "http://localhost:7987/test-application"
-        proxy-host: "${ALIAS=security.properties.proxy-host}"
-        frontend-uri: "${ALIAS=security.properties.frontend-uri}"
-        # Retrieve roles
-        idcs-roles: true
+      cache-config:
+        cache-timeout-millis: 100000
   web-server:
     # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
     paths:
-      - path: "/rest/profile"
-        methods: ["get"]
-        authenticate: true
+    - path: "/rest/profile"
+      methods: ["get"]
+      authenticate: true

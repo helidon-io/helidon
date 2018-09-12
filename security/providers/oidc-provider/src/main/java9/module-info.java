@@ -22,6 +22,8 @@ module io.helidon.security.provider.oidc {
     requires io.helidon.common;
     requires io.helidon.security;
     requires java.logging;
+
+    requires io.helidon.security.oidc.common;
     requires io.helidon.security.providers;
     requires io.helidon.security.util;
     requires io.helidon.security.abac.scope;

@@ -49,11 +49,10 @@ import io.helidon.security.providers.EvictableCache;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
 
-
 /**
  * {@link SubjectMappingProvider} to obtain roles from IDCS server for a user.
  */
-public class IdcsRoleMapperProvider implements SubjectMappingProvider {
+public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProvider.class.getName());
     private static final String ACCESS_TOKEN_KEY = "access_token";
 
@@ -65,7 +64,7 @@ public class IdcsRoleMapperProvider implements SubjectMappingProvider {
     private volatile SignedJwt appToken;
     private volatile Jwt appJwt;
 
-    public IdcsRoleMapperProvider(Builder builder) {
+    private IdcsRoleMapperProvider(Builder builder) {
         this.roleCache = builder.roleCache;
         OidcConfig oidcConfig = builder.oidcConfig;
 
@@ -73,10 +72,27 @@ public class IdcsRoleMapperProvider implements SubjectMappingProvider {
         this.tokenEndpoint = oidcConfig.tokenEndpoint();
     }
 
+    /**
+     * Creates a new builder to build instances of this class.
+     *
+     * @return a new fluent API builder.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Creates an instance from configuration.
+     * <p>
+     * Expects:
+     * <ul>
+     * <li>oidc-config to load an instance of {@link OidcConfig}</li>
+     * <li>cache-config (optional) to load an instance of {@link EvictableCache} for role caching</li>
+     * </ul>
+     *
+     * @param config configuration of this provider
+     * @return a new instance configured from config
+     */
     public static SecurityProvider create(Config config) {
         return builder().fromConfig(config).build();
     }
@@ -97,11 +113,14 @@ public class IdcsRoleMapperProvider implements SubjectMappingProvider {
                 .orElse(CollectionsHelper.listOf());
 
         AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
+        builder.user(buildSubject(subject, grants));
         previousResponse.getService().ifPresent(builder::service);
         previousResponse.getDescription().ifPresent(builder::description);
         builder.requestHeaders(previousResponse.getRequestHeaders());
-        builder.user(buildSubject(subject, grants));
-        return CompletableFuture.completedFuture(builder.build());
+
+        AuthenticationResponse response = builder.build();
+
+        return CompletableFuture.completedFuture(response);
     }
 
     private Subject buildSubject(Subject originalSubject, List<? extends Grant> grants) {
@@ -214,30 +233,55 @@ public class IdcsRoleMapperProvider implements SubjectMappingProvider {
         }
     }
 
+    /**
+     * Fluent API builder for {@link IdcsRoleMapperProvider}.
+     */
     public static class Builder implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
         private OidcConfig oidcConfig;
-        // todo maybe allow control of timeouts?
-        // refactor to interface
-        // add a "NO_CACHE" implementation
-        // support loading from config (with support for no-cache)
         private EvictableCache<String, List<? extends Grant>> roleCache;
 
         @Override
         public IdcsRoleMapperProvider build() {
+            if (null == roleCache) {
+                roleCache = EvictableCache.create();
+            }
             return new IdcsRoleMapperProvider(this);
         }
 
+        /**
+         * Update this builder state from configuration.
+         * Expects:
+         * <ul>
+         * <li>oidc-config to load an instance of {@link OidcConfig}</li>
+         * <li>cache-config (optional) to load an instance of {@link EvictableCache} for role caching</li>
+         * </ul>
+         *
+         * @param config current node must have "oidc-config" as one of its children
+         * @return updated builder instance
+         */
         public Builder fromConfig(Config config) {
             config.get("oidc-config").asOptional(OidcConfig.class).ifPresent(this::oidcConfig);
             config.get("cache-config").asOptional(EvictableCache.class).ifPresent(this::roleCache);
             return this;
         }
 
+        /**
+         * Use explicit {@link OidcConfig} instance, e.g. when using it also for OIDC provider.
+         *
+         * @param config oidc specific configuration, must have at least identity endpoint and client credentials configured
+         * @return updated builder instance
+         */
         public Builder oidcConfig(OidcConfig config) {
             this.oidcConfig = config;
             return this;
         }
 
+        /**
+         * Use explicit {@link EvictableCache} for role caching.
+         *
+         * @param roleCache cache to use
+         * @return update builder instance
+         */
         public Builder roleCache(EvictableCache<String, List<? extends Grant>> roleCache) {
             this.roleCache = roleCache;
             return this;

@@ -113,6 +113,11 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * </table>
  */
 public final class OidcConfig {
+    /**
+     * Default name of the header we expect JWT in.
+     */
+    public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
+
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
 
     static final int DEFAULT_PROXY_PORT = 80;
@@ -128,7 +133,7 @@ public final class OidcConfig {
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
-    public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
+
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
 
@@ -266,94 +271,242 @@ public final class OidcConfig {
                 .build();
     }
 
+    /**
+     * Only for use with {@link Config#as(Class)}.
+     *
+     * @param config config instance to load from
+     * @return a new instance of this class configured from config
+     */
+    @Deprecated
+    public static OidcConfig from(Config config) {
+        return create(config);
+    }
+
+    /**
+     * JWK used for signature validation.
+     *
+     * @return set of keys used use to verify tokens
+     * @see Builder#signJwk(JwkKeys)
+     */
     public JwkKeys signJwk() {
         return signJwk;
     }
 
+    /**
+     * Redirection URI.
+     *
+     * @return uri the OIDC server redirects back to
+     * @see Builder#redirectUri(String)
+     */
     public String redirectUri() {
         return redirectUri;
     }
 
+    /**
+     * Token endpoint of the OIDC server.
+     *
+     * @return target the endpoint is on
+     * @see Builder#tokenEndpointUri(URI)
+     */
     public WebTarget tokenEndpoint() {
         return tokenEndpoint;
     }
 
+    /**
+     * Whether to use query parameter to get the information from request.
+     *
+     * @return if query parameter should be used
+     * @see Builder#useParam(Boolean)
+     */
     public boolean useParam() {
         return useParam;
     }
 
+    /**
+     * Query parameter name.
+     *
+     * @return name of the query parameter to use
+     * @see Builder#paramName(String)
+     */
     public String paramName() {
         return paramName;
     }
 
+    /**
+     * Whether to use cooke to get the information from request.
+     *
+     * @return if cookie should be used
+     * @see Builder#useCookie(Boolean)
+     */
     public boolean useCookie() {
         return useCookie;
     }
 
+    /**
+     * Cookie name.
+     *
+     * @return name of the cookie to use
+     * @see Builder#cookieName(String)
+     */
     public String cookieName() {
         return cookieName;
     }
 
+    /**
+     * Additional options of the cookie to use.
+     *
+     * @return cookie options to use in cookie string
+     * @see Builder#cookieHttpOnly(Boolean)
+     * @see Builder#cookieDomain(String)
+     */
     public String cookieOptions() {
         return cookieOptions;
     }
 
+    /**
+     * Whether to use HTTP header to get the information from request.
+     *
+     * @return if header should be used
+     * @see Builder#useHeader(Boolean)
+     */
     public boolean useHeader() {
         return useHeader;
     }
 
+    /**
+     * {@link TokenHandler} to extract header information from request.
+     *
+     * @return handler to extract header
+     * @see Builder#headerTokenHandler(TokenHandler)
+     */
     public TokenHandler headerHandler() {
         return headerHandler;
     }
 
+    /**
+     * Prefix of a cookie header formed by name and "=".
+     *
+     * @return prefix of cookie value
+     * @see Builder#cookieName(String)
+     */
     public String cookieValuePrefix() {
         return cookieValuePrefix;
     }
 
+    /**
+     * Audience URI of custom scopes.
+     *
+     * @return scope audience
+     * @see Builder#scopeAudience(String)
+     */
     public String scopeAudience() {
         return scopeAudience;
     }
 
+    /**
+     * Authorization endpoint.
+     *
+     * @return authorization endpoint uri as a string
+     * @see Builder#authorizationEndpointUri(URI)
+     */
     public String authorizationEndpointUri() {
         return authorizationEndpointUri;
     }
 
+    /**
+     * Client id of this client.
+     *
+     * @return client id
+     * @see Builder#clientId(String)
+     */
     public String clientId() {
         return clientId;
     }
 
+    /**
+     * Redirect URI with host information.
+     *
+     * @return redirect URI
+     * @see Builder#redirectUri(String)
+     */
     public String redirectUriWithHost() {
         return redirectUriWithHost;
     }
 
+    /**
+     * Base scopes to require from OIDC server.
+     *
+     * @return base scopes
+     * @see Builder#baseScopes(String)
+     */
     public String baseScopes() {
         return baseScopes;
     }
 
+    /**
+     * Whether to validate JWT with JWK information (e.g. verify signatures locally).
+     *
+     * @return if we should validate JWT with JWK
+     * @see Builder#validateJwtWithJwk(Boolean)
+     */
     public boolean validateJwtWithJwk() {
         return validateJwtWithJwk;
     }
 
+    /**
+     * Token introspection endpoint.
+     *
+     * @return introspection endpoint
+     * @see Builder#introspectEndpointUri(URI)
+     */
     public WebTarget introspectEndpoint() {
         return introspectEndpoint;
     }
 
+    /**
+     * Token issuer.
+     *
+     * @return token issuer
+     * @see Builder#issuer(String)
+     */
     public String issuer() {
         return issuer;
     }
 
+    /**
+     * Expected token audience.
+     *
+     * @return audience
+     * @see Builder#audience(String)
+     */
     public String audience() {
         return audience;
     }
 
+    /**
+     * Identity server URI.
+     *
+     * @return identity server URI
+     * @see Builder#identityUri(URI)
+     */
     public URI identityUri() {
         return identityUri;
     }
 
+    /**
+     * Client with configured proxy with no security.
+     *
+     * @return client for general use.
+     */
     public Client generalClient() {
         return generalClient;
     }
 
+    /**
+     * Client with configured proxy and security of this OIDC client.
+     *
+     * @return client for communication with OIDC server
+     */
     public Client appClient() {
         return appClient;
     }
