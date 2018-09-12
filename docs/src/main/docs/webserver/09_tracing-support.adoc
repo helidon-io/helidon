@@ -45,7 +45,7 @@ To enable Zipkin integration, configure `Tracer` on the
 .Configuring OpenTracing `Tracer`
 ----
 ServerConfiguration.builder()
-                   .tracer(new ZipkinTracerBuilder.forService("my-application") //<1>
+                   .tracer(ZipkinTracerBuilder.forService("my-application") //<1>
                                  .zipkin("http://10.0.0.18:9411")  // <2>
                                  .build())
                    .build()
