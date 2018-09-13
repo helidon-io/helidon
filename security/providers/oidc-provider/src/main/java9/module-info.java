@@ -17,7 +17,7 @@
 /**
  * OIDC authentication and security propagation provider.
  */
-module io.helidon.security.provider.oidc {
+module io.helidon.security.oidc {
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.security;

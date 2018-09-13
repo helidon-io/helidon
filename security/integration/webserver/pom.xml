@@ -56,9 +56,18 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <!--
+        Must explicitly mention used providers in tests, as some have dependency on this project (e.g. oidc)
+        -->
         <dependency>
             <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security-bundle</artifactId>
+            <artifactId>helidon-security-provider-http-auth</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security-provider-abac</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

@@ -32,4 +32,5 @@ module io.helidon.security.bundle {
     requires transitive io.helidon.security.abac.policy.el;
     requires transitive io.helidon.security.abac.role;
     requires transitive io.helidon.security.abac.scope;
+    requires transitive io.helidon.security.oidc;
 }
