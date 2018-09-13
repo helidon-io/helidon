@@ -311,7 +311,7 @@ of which structure a config source used.
 
 One easy way to do this is to _detach_ a subtree from a larger config tree. When
 your application invokes the
-link:{javadoc-base-url-api}/Config.htlm#detach[`Config.detach`] method it gets back
+link:{javadoc-base-url-api}/Config.htlm#detach--[`Config.detach`] method it gets back
 a _copy_ of the config node but with no parent. The copy and the original node both
 point to the same objects for their child nodes (if any). The original node is 
 unchanged.

@@ -64,14 +64,14 @@ the <<config/07_extensions.adoc,extensions>> documentation for complete informat
 See the <<config/06_advanced-configuration.adoc,advanced topics>> page for further
 information on some more involved aspects of config sources.
 
-== Config Parsers
+== Config Parsers [[parsers]]
 When it reads configuration text from sources, the config system uses config parsers 
 to translate that text into the in-memory data structures representing that configuration. 
-The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See <<config/01_introduction.adoc#build-in-formats,this section in
+The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See <<config/01_introduction.adoc#built-in-formats,this section in
 the introduction>> for
 how to change your `pom.xml` to make parsers for those formats available to your 
 application. Then your application can invoke the 
-link:{javadoc-base-url-api}/Config.Builder.html#addParser[config builder's `addParser`] method
+link:{javadoc-base-url-api}/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-[config builder's `addParser`] method
 so that builder will use the parsers you choose.
 
 You can extend the system with custom parsers of your own. Implement the link:{javadoc-base-url-api}/spi/ConfigParser.html[`ConfigParser`] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
@@ -81,9 +81,9 @@ Each `Config` object which the config system returns to your application is
 immutable; even if the information in one of the underlying config sources changes, an in-memory data structure built from the earlier
 content remains unchanged.
 
-Even so, the config system allows your application to learn when such underlying changes in the data occur and respond accordingly. The <<config/05_mutability-support.adoc.mutability>> section explains this in detail, and the link:{javadoc-base-url-api}/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations. You can, of course, write your own by implementing the link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
+Even so, the config system allows your application to learn when such underlying changes in the data occur and respond accordingly. The <<config/05_mutability-support.adoc,mutability>> section explains this in detail, and the link:{javadoc-base-url-api}/PollingStrategies.html[`PollingStrategies`] JavaDoc describes the built-in implementations. You can, of course, write your own by implementing the link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 
-== Dealing with Loading Errors: Retry Policies
+== Dealing with Loading Errors: Retry Policies [[retry]]
 Config sources, especially those that depend on fallible mechanisms such as the network or a shared file system, might fail to load during momentary outages. The config system allows you to build resiliency into your application's use of configuration that relies on such technologies. 
 
 When your application builds a `ConfigSource` it can specify a _retry policy_. When the config system needs to load data from that source it delegates the load operation to that retry policy. That policy is responsible not only for loading the data but also for detecting errors during loading and implementing the algorithm for deciding when and how many times to retry a failed load before reporting a failure back to your application.

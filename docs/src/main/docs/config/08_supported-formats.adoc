@@ -44,7 +44,7 @@ With each of the parsers described here, your application can either
 media types to parsers.
 
 If your application creates a `Config.Builder` with parser services _disabled_ 
-(see link:{javadoc-base-url-api}/Config.Builder.html#disableParserServices[`disableParserServices`] 
+(see link:{javadoc-base-url-api}/Config.Builder.html#disableParserServices--[`disableParserServices`] 
 then that builder will not find the Java services for the various parsers and so
 will be unable to match the file type or media type of sources with the corresponding
 parser automatically. So if you want to use automatic type 

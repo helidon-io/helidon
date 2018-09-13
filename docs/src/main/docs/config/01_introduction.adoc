@@ -211,7 +211,7 @@ system properties serve as config sources. The JavaDoc explains how to use the
 link:{javadoc-base-url-api}/Config.Builder.html[`Config.Builder`].
 +
 or
-* creating a <<config/06_advanced-configuration.adoc#metaconfig,meta-configuration>>
+* creating a <<config/06_advanced-configuration.adoc#Config-Advanced-metaconfig,meta-configuration>>
 file on the runtime classpath to control how the config system prepares the 
 default configuration.
 
@@ -230,9 +230,9 @@ other config topics.
 <<config/06_advanced-configuration.adoc#metaconfig,meta-configuration>>
 | What format config data is expressed in |<<config/02_config-sources.adoc#parsers,Config parsers>>, 
 <<config/08_supported-formats.adoc,supported formats>>
-| How to filter, override, and dereference values |<<config/06_advanced-configuration.html#filters-and-overrides,Filters and overrides>>
-| What happens when config data changes |<<config/05_mutability-support.adoc,Config polling>>
-| How to deal with loading errors |<<config/06_advanced-configuration.#retry,Config retry policies>>
+| How to filter, override, and dereference values |<<config/06_advanced-configuration.adoc#filters-and-overrides,Filters and overrides>>
+| What happens when config data changes |<<config/05_mutability-support.adoc#polling,Config polling>>
+| How to deal with loading errors |<<config/02_config-sources.adoc#retry,Config retry policies>>
 |===
 
 .Accessing Configuration Data
@@ -245,7 +245,7 @@ other config topics.
 
 .Extending and Fine-tuning the Config System
 |===
-| Topic |Documentation
+| Topic |Documentation 
 
 | Writing extensions |<<config/07_extensions.adoc,Extensions>>
 |===

@@ -40,7 +40,7 @@ value for a key.
 == Using Config Metadata
 === Loading Time
 The config system records when it loads each configuration into memory. 
-Your application can retrieve it by invoking the link:{javadoc-base-url-api}/Config.html#timestamp[timestamp method]:
+Your application can retrieve it by invoking the link:{javadoc-base-url-api}/Config.html#timestamp--[timestamp method]:
 [source,java]
 java.time.Instance loadTime = myConfig.timestamp();
 
@@ -67,7 +67,7 @@ Note that the config context describes or replaces a currently-loaded config tre
 It by itself does not help your application decide _when_ reloading the config might be
 useful.
 
-== Responding to Changes in Config Sources
+== Responding to Changes in Config Sources [[polling]]
 [IMPORTANT]
 .Evolving API
 ====
@@ -179,7 +179,7 @@ The config system also supports the flow publisher/subscriber model for applicat
 that need more control over the pace at which the config system delivers
 config change events.
 
-Each `Config` instance exposes the link:{javadoc-base-url-api}/Config.html#changes[`Config.changes()`]
+Each `Config` instance exposes the link:{javadoc-base-url-api}/Config.html#changes--[`Config.changes()`]
 method which returns a `Flow.Publisher<Config>`.
 Your application can invoke this method, then invoke `subscribe` on the returned 
 `Flow.Publisher`, passing your own `Flow.Subscriber` implementation. The config system will
