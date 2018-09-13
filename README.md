@@ -34,15 +34,6 @@ Latest documentation and javadocs are available at <https://helidon.io/docs/late
 
 See Getting Started at <https://helidon.io>.
 
-## Bugs and Feedback
-
-Issues are currently tracked in GitHub, see <https://github.com/oracle/helidon/issues>
-
-## Communication
-
-* Slack: [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE)
-* Twitter: [@helidon_project](https://twitter.com/helidon_project)
-
 ## Downloads / Accessing Binaries
 
 There are no Helidon downloads. Just use our Maven releases (GroupID `io.helidon`).
