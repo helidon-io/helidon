@@ -92,13 +92,16 @@ but a couple are handy to use on your desktop to verify your changes.
 * `copyright.sh`: Run a full copyright check
 * `checkstyle.sh`: Run a full style check
 
-## Contributing
+## Get Help
 
-We are just getting started, so bear with us while we get the project up and running.
-We'll have more details about contributing shortly. 
+* Join us on Slack: [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE)
 
-We do know that for a pull request to be merged we need the contributor to sign the
-Oracle Contributor Agreement first. See
-https://www.oracle.com/technetwork/community/oca-486395.html
-for details.
+## Get Involved
 
+* Learn how to [contribute](CONTRIBUTING.md)
+* See [issues](https://github.com/oracle/helidon/issues) for issues you can help with
+
+## Stay Informed
+
+* Twitter: [@helidon_project](https://twitter.com/helidon_project)
+* Blog: [OracleDevs on Medium](https://medium.com/oracledevs/search?q=helidon)
