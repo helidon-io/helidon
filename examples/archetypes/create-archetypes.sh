@@ -91,7 +91,7 @@ for _ex in ${EXAMPLES}; do
   cat >> ${ARCHETYPE_DIR}/pom.xml << EOF
   <description>Helidon Archetype</description>
 
-  <url>https://helidonm.io</url>
+  <url>https://helidon.io</url>
 
   <organization>
       <name>Oracle Corporation</name>
