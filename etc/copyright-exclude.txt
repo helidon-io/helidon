@@ -5,6 +5,7 @@
 .exe
 .gif
 .gitignore
+.github/
 .ico
 .jar
 .jks
@@ -22,6 +23,7 @@
 jaxb.index
 /MANIFEST.MF
 /README
+/CONTRIBUTING.md
 /NOTICE.txt
 /LICENSE.txt
 /copyright.txt
