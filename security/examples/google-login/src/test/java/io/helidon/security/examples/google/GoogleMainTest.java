@@ -68,7 +68,7 @@ public abstract class GoogleMainTest {
 
     @Test
     public void testEndpoint() {
-        Response response = client.target("http://localhost:" + GoogleUtil.PORT + "/rest/profile")
+        Response response = client.target("http://localhost:" + port() + "/rest/profile")
                 .request()
                 .get();
 
@@ -76,4 +76,6 @@ public abstract class GoogleMainTest {
         assertThat(response.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE),
                    is("Bearer realm=\"helidon\",scope=\"openid profile email\""));
     }
+
+    abstract int port();
 }

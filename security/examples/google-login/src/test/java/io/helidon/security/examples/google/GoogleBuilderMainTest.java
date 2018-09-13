@@ -23,13 +23,20 @@ import org.junit.jupiter.api.BeforeAll;
  * Unit test for {@link GoogleBuilderMain}.
  */
 public class GoogleBuilderMainTest extends GoogleMainTest {
+    static int port;
+
     @BeforeAll
     public static void initClass() throws InterruptedException {
-        GoogleBuilderMain.main(null);
+        port = GoogleBuilderMain.start(0);
     }
 
     @AfterAll
     public static void destroyClass() throws InterruptedException {
         stopServer(GoogleBuilderMain.getTheServer());
+    }
+
+    @Override
+    int port() {
+        return port;
     }
 }

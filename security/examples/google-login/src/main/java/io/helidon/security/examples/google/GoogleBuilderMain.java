@@ -45,9 +45,12 @@ public final class GoogleBuilderMain {
      * Start the example.
      *
      * @param args ignored
-     * @throws InterruptedException if server startup is interrupted.
      */
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
+        start(GoogleUtil.PORT);
+    }
+
+    static int start(int port) {
         Security security = Security.builder()
                 .addProvider(GoogleTokenProvider.builder()
                                      .clientId("your-client-id.apps.googleusercontent.com"))
@@ -69,6 +72,8 @@ public final class GoogleBuilderMain {
                      })
                 .register(StaticContentSupport.create("/WEB"));
 
-        theServer = GoogleUtil.startIt(routing);
+        theServer = GoogleUtil.startIt(port, routing);
+
+        return theServer.port();
     }
 }

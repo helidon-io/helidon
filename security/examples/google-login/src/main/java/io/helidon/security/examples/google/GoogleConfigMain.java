@@ -47,9 +47,22 @@ public final class GoogleConfigMain {
      * Start the example.
      *
      * @param args ignored
-     * @throws InterruptedException if server startup is interrupted.
      */
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
+        start(GoogleUtil.PORT);
+    }
+
+    private static Config buildConfig() {
+        return Config.builder()
+                .sources(
+                        // you can use this file to override the defaults built-in
+                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
+                        // in jar file (see src/main/resources/application.yaml)
+                        classpath("application.yaml"))
+                .build();
+    }
+
+    static int start(int port) {
         Config config = buildConfig();
 
         Routing.Builder routing = Routing.builder()
@@ -66,16 +79,8 @@ public final class GoogleConfigMain {
                 })
                 .register(StaticContentSupport.create("/WEB"));
 
-        theServer = GoogleUtil.startIt(routing);
-    }
+        theServer = GoogleUtil.startIt(port, routing);
 
-    private static Config buildConfig() {
-        return Config.builder()
-                .sources(
-                        // you can use this file to override the defaults built-in
-                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
-                        // in jar file (see src/main/resources/application.yaml)
-                        classpath("application.yaml"))
-                .build();
+        return theServer.port();
     }
 }

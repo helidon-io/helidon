@@ -44,7 +44,6 @@ import io.helidon.security.Principal;
 import io.helidon.security.Security;
 import io.helidon.security.annot.Authenticated;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 
@@ -61,6 +60,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class EntityModificationTest {
     private static WebServer server;
     private static Client client;
+    private static int port;
 
     @BeforeAll
     public static void initClass() throws Throwable {
@@ -86,9 +86,7 @@ public class EntityModificationTest {
                                   })
                                   .build())
                 .build()
-                .createServer(ServerConfiguration.builder()
-                                      .port(9998)
-                                      .build());
+                .createServer();
 
         client = ClientBuilder.newClient();
 
@@ -104,6 +102,8 @@ public class EntityModificationTest {
         if (th.get() != null) {
             throw th.get();
         }
+
+        port = server.port();
     }
 
     private static Security buildSecurity() {
@@ -209,7 +209,7 @@ public class EntityModificationTest {
     @Test
     public void testReplaceEntity() {
         Response response = client
-                .target("http://localhost:9998")
+                .target("http://localhost:" + port)
                 .path("/")
                 .request()
                 .post(Entity.text("Hello"));

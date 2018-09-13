@@ -28,7 +28,6 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.util.TokenHandler;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +39,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link WebSecurity}.
  */
 public class WebSecurityProgrammaticTest extends WebSecurityTests {
+    private static String baseUri;
+
     @BeforeAll
     public static void initClass() throws InterruptedException {
         WebSecurityTestUtil.auditLogFinest();
@@ -86,7 +87,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                 })
                 .build();
 
-        server = WebServer.create(ServerConfiguration.builder().port(PORT).build(), routing);
+        server = WebServer.create(routing);
         long t = System.currentTimeMillis();
         CountDownLatch cdl = new CountDownLatch(1);
         server.start().thenAccept(webServer -> {
@@ -97,5 +98,12 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
 
         //we must wait for server to start, so other tests are not triggered until it is ready!
         assertThat("Timeout while waiting for server to start!", cdl.await(5, TimeUnit.SECONDS), is(true));
+
+        baseUri = "http://localhost:" + server.port();
+    }
+
+    @Override
+    String serverBaseUri() {
+        return baseUri;
     }
 }
