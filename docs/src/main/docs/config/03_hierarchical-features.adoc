@@ -34,7 +34,7 @@ it.
 == Configuration Node Types
 The config system represents configuration in memory using three types of nodes, 
 each a different interface
-defined within the link:{java-base-url-api}/spi/ConfigNode.html[`ConfigNode`] interface.
+defined within the link:{javadoc-base-url-api}/spi/ConfigNode.html[`ConfigNode`] interface.
 
 .`ConfigNode` Types
 |===
@@ -119,9 +119,9 @@ value |member name of the node within its parent
 ====
 
 The `Config` object exposes methods to return the 
-link:{javadoc-base-url-api}/Config.Name.html[`name`], 
- link:{javadoc-base-url-api}/Config.Key.html[`key`], and 
- link:{javadoc-base-url-api}/Config.Type.html[`type`] of the
+link:{javadoc-base-url-api}/Config.html#name--[`name`], 
+ link:{javadoc-base-url-api}/Config.html#key--[`key`], and 
+ link:{javadoc-base-url-api}/Config.html#type--[`type`] of the
  node.
 
 == Access by Key [[accessByKey]]
@@ -311,7 +311,7 @@ of which structure a config source used.
 
 One easy way to do this is to _detach_ a subtree from a larger config tree. When
 your application invokes the
-link:{javadoc-base-url-api}/Config.htlm#detach[`Config.detach`] method it gets back
+link:{javadoc-base-url-api}/Config.html#detach--[`Config.detach`] method it gets back
 a _copy_ of the config node but with no parent. The copy and the original node both
 point to the same objects for their child nodes (if any). The original node is 
 unchanged.

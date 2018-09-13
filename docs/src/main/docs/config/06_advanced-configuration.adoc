@@ -75,8 +75,8 @@ assert secrets.get("password").asString()        // <4>
 <4> ...and the key `password` to `^ery$ecretP&ssword`.
 
 Remember that your application can process the contents of a given file
-as configuration. See the link:02_config-sources.html[config sources] section
-and the link:{javadoc-base-url-api}/ConfigSources.html#file[`ConfigSources.file`] 
+as configuration. See the <<config/02_config-sources.adoc,config sources>> section
+and the link:{javadoc-base-url-api}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`] 
 JavaDoc.
 
 === In-memory Config Sources
@@ -143,7 +143,7 @@ in different subtrees.
 
 The config system lets you assign a prefix to all keys 
 from a given source using the 
-link:{javadoc-base-url-api}/ConfigSources.html#prefix[`ConfigSources.prefix`] method. 
+link:{javadoc-base-url-api}/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method. 
 The following example shows two YAML files as config sources
 and the code to load each with a different prefix into a single `Config` tree:
 
@@ -205,14 +205,14 @@ if their keys would otherwise conflict.
 
 ===== Merging Strategies
 The `ConfigSources.from(Supplier<ConfigSource>...)` and `ConfigSources.from(List<Supplier<ConfigSource>...)`
-methods return a link:{javadoc-base-url-api}/CompositeConfigSource.html[`CompositeConfigSource`].
+methods return a `CompositeConfigSource`.
 By default, earlier sources in the list have higher priority than later ones, meaning
 that if the same key appears in two or more sources the source earlier in the
 list prevails.
 
 Each ``CompositeConfigSource``'s _merging strategy_ actually controls this behavior.
 The config system provides the 
-link:{javadoc-base-url-api}/FallbackMergingStrategy.html[`FallbackMergingStrategy`] 
+`FallbackMergingStrategy`
 which implements the default, "first wins" algorithm. You can write your own
 implementation of 
 link:{javadoc-base-url-api}/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
@@ -239,7 +239,7 @@ Config config = Config.from(                                                 // 
 
 
 === How Config Chooses Parsers [[Config-Advanced-Sources-SuitableParser]]
-As the link:02_config-sources.html[config sources and parsers] section describes,
+As the link:config/02_config-sources.html[config sources and parsers] section describes,
 these two work together to read and translate configuration data from some
 external form into the corresponding in-memory config tree. 
 
@@ -289,7 +289,7 @@ also inspect the contents of the file to infer the media type. The detector
 which the config system provides looks only for the `.properties` file type in the
 path.
 
-==== Locating a Parser
+==== Locating a Parser [[locating-parser]]
 ===== By Inference from `media-type`
 Each config parser reports which media types it handles. Once the config system
 has determined a source's media type, it searches the config parsers associated
@@ -421,7 +421,7 @@ value of the `app` key. (HCON is a superset of JSON.)
 As before, the config system replaces the value node in the 
 containing config tree with the config tree resulting from the additional parse.
 
-=== Loading Config using Meta-configuration
+=== Loading Config using Meta-configuration [[Config-Advanced-metaconfig]]
 Instead of including code in your application to construct config trees from
 builders, sources, etc., you can instead prepare _meta-configuration_ in a file
 that declares the sources to load and their attributes. 
@@ -436,9 +436,9 @@ the configuration specified by a meta-config file by:
 
 * invoking the link:{javadoc-base-url-api}/ConfigSources.html#load-io.helidon.config.Config-[`ConfigSources.load(Config)`]
 method, passing a config object read from the meta-config source as the argument;
-* invoking the link:{javadoc-base-url-api}/Config.html#loadSources[`Config.loadSources`]
+* invoking the link:{javadoc-base-url-api}/Config.html#loadSources-java.util.function.Supplier...[`Config.loadSources`]
 method, or
-* invoking the link:{javadoc-base-url-api}/Config.html#loadSourcesFrom[`Config.loadSourcesFrom`]
+* invoking the link:{javadoc-base-url-api}/Config.html#loadSourcesFrom-java.util.function.Supplier...[`Config.loadSourcesFrom`]
 method.
 
 These methods return either a `Config` tree or a `Config.Builder` which
@@ -447,7 +447,7 @@ tree. The config system interprets the meta-config as directions for how to
 build a config tree, rather than as the config data itself.
 
 ==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
-The link:01_introduction.html[introduction] section shows how to use
+The <<config/01_introduction.adoc,introduction>> section shows how to use
 `Config.create()` to load config from one of several possible default config files.
 That same method also searches for one of severl possible default meta-config files
 from which to load config sources to be used for the default config.
@@ -470,7 +470,7 @@ the following search:
 ... `application.properties` - configuration file in Java Properties format
 
 Remember that the config system will check for these default meta-config and config files
-only if the classpath includes the corresponding parsers. The introduction section on link:01_introduction.html#built-in-formats[built-in formats]
+only if the classpath includes the corresponding parsers. The introduction section on <<config/01_introduction.adoc#built-in-formats,built-in formats>>
 section describes this further.
 
 ==== Meta-configuration File Format
@@ -692,11 +692,11 @@ accompanying `properties`.
 |Strategy Type |Usage |Properties
 
 |`regular` 
-| Periodic polling - See link:{javadoc-base-url-api}/PollingStrategies.html#regular[`PollingStrategies.regular`] method 
+| Periodic polling - See link:{javadoc-base-url-api}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method 
 |`interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds
 
 |`watch` 
-| Filesystem monitoring - See link:{javadoc-base-url-api}/PollingStrategies.html#watch[`PollingStrategies.watch`] method 
+| Filesystem monitoring - See link:{javadoc-base-url-api}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method 
 | `path` - file system path to the `classpath`, `file`, or `directory` to monitor
 
 |===
@@ -706,7 +706,7 @@ accompanying `properties`.
 |Policy Type |Usage |Properties
 
 |`repeat` 
-|Regularly-scheduled - see link:{javadoc-base-url-api}RetryPolicies.html#repeat[`RetryPolicies.repeat`].
+|Regularly-scheduled - see link:{javadoc-base-url-api}RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
 a|`retries` (`int`) - number of retries to perform +
 
 Optional:
@@ -727,8 +727,8 @@ link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections. 
 
 == Configuration Key
-As described in link:04_hierarchical-features.html#accessByKey[hierarchical features 
-section] each config node (except the root) has a non-null key. Here is the formal
+As described in the <<config/03_hierarchical-features.adoc#accessByKey,hierarchical features 
+section>> each config node (except the root) has a non-null key. Here is the formal
 definition of what keys can be:
 [source,abnf]
 .The ABNF syntax of config key
@@ -803,8 +803,8 @@ before returning the value, according to _filters_, _overrides_, and
 _tokens_. The config system provides some built-in instances of these
 you can use, and you can add your own as described in the 
 sections which describe 
-link:07_extensions.html#Config-SPI-ConfigFilter[filters] and
-link:07_extensions.html#Config-SPI-OverrideSource[overrides].
+<<config/07_extensions.adoc#Config-SPI-ConfigFilter,filters>> and
+<<config/07_extensions.adoc#Config-SPI-OverrideSource,overrides>>.
 
 Your application can add filters and overrides explicitly to a config builder
 and the config system by default uses the Java service loader mechanism to
@@ -817,7 +817,7 @@ Each filter accepts a key and the value as defined in the source, and returns
 the value to be used. The filter can leave the value unchanged or
 alter it, as it sees fit.
 
-The built-in link:{javadoc-base-url-api}/ConfigFilters.html#valueResolving[value-resolving]
+The built-in link:{javadoc-base-url-api}/ConfigFilters.html#valueResolving--[value-resolving]
 filter enables the token substitution described below. 
 
 See the link:{javadoc-base-url-api}/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc

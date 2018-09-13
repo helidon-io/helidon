@@ -31,7 +31,7 @@ use the built-in mappings and your own custom ones to convert to simple and
 complext types.
 
 == Converting Configuration to Simple Types
-The link:{java-base-url-api}/Config.html[`Config`] class itself provides many 
+The link:{javadoc-base-url-api}/Config.html[`Config`] class itself provides many 
 conversions to Java types. See the JavaDoc for the complete list. 
 
 The methods which support Java primitive types and their related classes follow a 
@@ -46,7 +46,8 @@ Config config = Config.get("someKey");
 |===
 |Java type |Example usage ^1^
 
-|`boolean` |`boolean b = config.asBoolean();` ^2^ +
+|`boolean` |`boolean b = config.asBoolean();` ^2^ 
+
 `boolean defaultedB = config.asBoolean(true);` ^3^
 |`Supplier<Boolean>` |`Boolean b = config.asBooleanSupplier().get();` 
 |`Optional<Boolean>` |`Boolean b = config.asOptionalBoolean().orElse(Boolean.TRUE);` ^4^
@@ -73,7 +74,7 @@ the value using `Boolean.parseBoolean`.
 
 The numerous conversions defined on the `Config` class for other types (integers, 
 doubles, etc.) will satisfy 
-many of your application's needs. The link:{java-base-url-api}/ConfigMappers.html[`ConfigMappers`] class 
+many of your application's needs. The link:{javadoc-base-url-api}/ConfigMappers.html[`ConfigMappers`] class 
 includes other related mappings from `String` (rather than from `Config`) to 
 Java types (described in the JavaDoc).
 
@@ -105,7 +106,7 @@ of a config tree to complex Java types.
 
 === Built-in Conversions to `List` and `Map`
 The `Config` class exposes several methods for mapping a structured config node 
-to a Java `List` or `Map`. The link:{java-base-url-api}/Config.html[JavaDoc] 
+to a Java `List` or `Map`. The link:{javadoc-base-url-api}/Config.html[JavaDoc] 
 contains complete details, but briefly your application can convert a structured `Config` node into:
 
 * a `List<T>` of a given type, with or without default values,
@@ -120,7 +121,7 @@ custom, application-specific Java objects, rather than as a group of `String` ke
 values. You will need customized conversions to do so.
 
 The config system provides many ways to accomplish this, described in
-the link:{java-base-url-api}/package-summary.html#conversions[`io.helidon.config` 
+the link:{javadoc-base-url-api}/package-summary.html#conversions[`io.helidon.config` 
 package JavaDoc].
 
 Some of those approaches require that the target class -- the class to which
@@ -131,7 +132,7 @@ might not even be able to if you do not control its source.
 
 Here are two approaches that will always work without requiring changes
 to the target class. For both you write your own
-custom link:{java-base-url-api}/ConfigMapper.html[`ConfigMapper`] class. 
+custom link:{javadoc-base-url-api}/ConfigMapper.html[`ConfigMapper`] class. 
 The difference is in how your application triggers the use of that mapper.
 
 ==== Use Custom Mapper Explicitly: `Config.map` method
@@ -157,7 +158,7 @@ In this approach, your application:
 that needs to know about the custom mapper by either:
    a. registering an instance of your mapper by invoking `Config.Builder.addMapper`, or
    b. implementing 
-link:{java-base-url-api}/spi/ConfigMapperProvider.html[`ConfigMapperProvider`] 
+link:{javadoc-base-url-api}/spi/ConfigMapperProvider.html[`ConfigMapperProvider`] 
 so it returns an instance of your mapper (see the JavaDoc for complete information) 
 and creating or editing the file `io.helidon.config.spi.ConfigMapperProvider` 
 so it contains 
@@ -365,7 +366,7 @@ object from the config data.
 By default, the system matches potential JavaBean property names with 
 config keys in the configuration. 
 
-Use the link:{java-base-url-api}/Config.Value.html[`Config.Value`] annnotation to control some of the JavaBean processing for a 
+Use the link:{javadoc-base-url-api}/Config.Value.html[`Config.Value`] annnotation to control some of the JavaBean processing for a 
 given property.
 
 .`Config.Value` Annotation
@@ -378,7 +379,7 @@ given property.
 |===
 
 To exclude a bean property from the config system bean processing annotate it with 
-link:{java-base-url-api}/Config.Transient.html[`Config.Transient`]. 
+link:{javadoc-base-url-api}/Config.Transient.html[`Config.Transient`]. 
 
 Here is an example using the `app` portion of the example configuration from the
 introduction.
