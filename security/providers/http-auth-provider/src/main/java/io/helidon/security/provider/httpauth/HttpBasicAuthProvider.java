@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -269,7 +268,8 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
      * {@link HttpBasicAuthProvider} fluent API builder.
      */
     public static class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
-        private UserStore userStore;
+        private static final UserStore EMPTY_STORE = login -> Optional.empty();
+        private UserStore userStore = EMPTY_STORE;
         private String realm;
         private SubjectType subjectType = SubjectType.USER;
 
@@ -281,17 +281,27 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
             builder.realm(config.get("realm").asString("realm"));
             config.get("principal-type").asOptional(SubjectType.class).ifPresent(builder::subjectType);
-            builder.userStore(config.get("users").asOptional(ConfigUserStore.class)
-                                      .orElseThrow(() -> new HttpAuthException(
-                                              "No users configured! Key \"users\" must be in configuration")));
 
+            // now users may not be configured at all
+            Config usersConfig = config.get("users");
+            if (usersConfig.exists()) {
+                // or it may be jst an empty list (e.g. users: with no subnodes).
+                if (!usersConfig.isLeaf()) {
+                    builder.userStore(usersConfig.asOptional(ConfigUserStore.class)
+                                              .orElseThrow(() -> new HttpAuthException(
+                                                      "No users configured! Key \"users\" must be in configuration")));
+                }
+            }
             return builder;
         }
 
         @Override
         public HttpBasicAuthProvider build() {
-            Objects.requireNonNull(userStore, "User store must be configured");
-
+            // intentional instance equality
+            if (userStore == EMPTY_STORE) {
+                LOGGER.info("Basic authentication configured with no users. Inbound will always fail, outbound would work"
+                                    + "only with explicit username and password");
+            }
             return new HttpBasicAuthProvider(this);
         }
 

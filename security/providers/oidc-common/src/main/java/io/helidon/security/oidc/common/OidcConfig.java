@@ -110,6 +110,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * identity-uri/oauth2/v1/introspect</td><td>When validate-with-jwk is set to "false", this is the endpoint used</td></tr>
  * <tr><td>base-scopes</td><td>{@value DEFAULT_BASE_SCOPES}</td><td>Configure scopes to be requested by default. If the scope
  * has a qualifier, it must be included here</td></tr>
+ * <tr><td>redirect</td><td>true</td><td>Whether to redirect to identity server when authentication failed.</td></tr>
  * </table>
  */
 public final class OidcConfig {
@@ -136,6 +137,7 @@ public final class OidcConfig {
 
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
+    static final boolean DEFAULT_REDIRECT = true;
 
     private final String redirectUri;
     private final boolean useCookie;
@@ -161,6 +163,7 @@ public final class OidcConfig {
     private final String audience;
     private final Client appClient;
     private final Client generalClient;
+    private final boolean redirect;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -178,6 +181,7 @@ public final class OidcConfig {
         this.issuer = builder.issuer;
         this.audience = builder.audience;
         this.identityUri = builder.identityUri;
+        this.redirect = builder.redirect;
 
         if (null == builder.signJwk) {
             this.signJwk = JwkKeys.builder().build();
@@ -512,6 +516,15 @@ public final class OidcConfig {
     }
 
     /**
+     * Whether to redirect to identity server if user is not authenticated.
+     *
+     * @return whether to redirect, defaults to true
+     */
+    public boolean shouldRedirect() {
+        return redirect;
+    }
+
+    /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
@@ -558,6 +571,7 @@ public final class OidcConfig {
 
         private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
         private URI introspectUri;
+        private boolean redirect = DEFAULT_REDIRECT;
 
         @Override
         public OidcConfig build() {
@@ -727,6 +741,22 @@ public final class OidcConfig {
             config.get("issuer").value().ifPresent(this::issuer);
             config.get("audience").value().ifPresent(this::audience);
 
+            config.get("redirect").asOptionalBoolean().ifPresent(this::redirect);
+
+            return this;
+        }
+
+        /**
+         * By default the client should redirect to the identity server for the user to log in.
+         * This behavior can be overridden by setting redirect to false. When token is not present in the request, the client
+         * will not redirect and just return appropriate error response code.
+         *
+         * @param redirect Whether to redirect to OIDC server in case the request does not contain sufficient information to
+         *                 authenticate the user, defaults to true
+         * @return updated builder instance
+         */
+        public Builder redirect(boolean redirect) {
+            this.redirect = redirect;
             return this;
         }
 

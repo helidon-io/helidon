@@ -234,40 +234,44 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private AuthenticationResponse missingToken(ProviderRequest providerRequest) {
-        Set<String> expectedScopes = expectedScopes(providerRequest);
+        if (oidcConfig.shouldRedirect()) {
+            Set<String> expectedScopes = expectedScopes(providerRequest);
 
-        StringBuilder scopes = new StringBuilder(oidcConfig.baseScopes());
+            StringBuilder scopes = new StringBuilder(oidcConfig.baseScopes());
 
-        expectedScopes
-                .forEach(scope -> scopes.append(' ').append(oidcConfig.scopeAudience()).append(scope));
+            expectedScopes
+                    .forEach(scope -> scopes.append(' ').append(oidcConfig.scopeAudience()).append(scope));
 
-        String scopeString;
-        try {
-            scopeString = URLEncoder.encode(scopes.toString(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // UTF-8 should be supported. If not, just use openid to be able to connect
-            scopeString = oidcConfig.baseScopes();
+            String scopeString;
+            try {
+                scopeString = URLEncoder.encode(scopes.toString(), "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                // UTF-8 should be supported. If not, just use openid to be able to connect
+                scopeString = oidcConfig.baseScopes();
+            }
+
+            String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
+
+            String nonce = UUID.randomUUID().toString();
+            StringBuilder queryString = new StringBuilder("?");
+            queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
+            queryString.append("response_type=code&");
+            queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost()).append("&");
+            queryString.append("scope=").append(scopeString).append("&");
+            queryString.append("nonce=").append(nonce).append("&");
+            queryString.append("state=").append(origUri(providerRequest));
+
+            // must redirect
+            return AuthenticationResponse
+                    .builder()
+                    .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
+                    .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
+                    .description("Missing token, redirecting to identity server")
+                    .responseHeader("Location", authorizationEndpoint + queryString)
+                    .build();
+        } else {
+            return AuthenticationResponse.failed("Missing token");
         }
-
-        String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
-
-        String nonce = UUID.randomUUID().toString();
-        StringBuilder queryString = new StringBuilder("?");
-        queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
-        queryString.append("response_type=code&");
-        queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost()).append("&");
-        queryString.append("scope=").append(scopeString).append("&");
-        queryString.append("nonce=").append(nonce).append("&");
-        queryString.append("state=").append(origUri(providerRequest));
-
-        // must redirect
-        return AuthenticationResponse
-                .builder()
-                .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
-                .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
-                .description("Missing token, redirecting to identity server")
-                .responseHeader("Location", authorizationEndpoint + queryString)
-                .build();
     }
 
     private String origUri(ProviderRequest providerRequest) {

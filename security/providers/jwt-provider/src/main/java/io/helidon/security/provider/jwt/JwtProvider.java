@@ -611,8 +611,8 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         }
 
         private void outbound(Config config) {
-            signJwk(Resource.from(config, "jwk")
-                            .orElseThrow(() -> new JwtException("Failed to extract sign JWK from configuration")));
+            // jwk is optional, we may be propagating existing token
+            Resource.from(config, "jwk").ifPresent(this::signJwk);
             config.get("jwt-issuer").asOptionalString().ifPresent(this::issuer);
         }
     }

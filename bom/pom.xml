@@ -146,6 +146,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security</groupId>
+                <artifactId>helidon-security-provider-idcs-mapper</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-provider-http-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -223,6 +228,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile</groupId>
                 <artifactId>helidon-microprofile-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-oidc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
