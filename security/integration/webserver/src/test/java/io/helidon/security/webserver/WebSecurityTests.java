@@ -48,8 +48,6 @@ public abstract class WebSecurityTests {
     static final String HEADER_BEARER_TOKEN = "BEARER_TOKEN";
     static final String HEADER_NAME = "NAME_FROM_REQUEST";
 
-    static final int PORT = 9999;
-    static final String SERVER_BASE = "http://localhost:" + PORT;
     static final String AUDIT_MESSAGE_FORMAT = "Unit test message format";
     static UnitTestAuditProvider myAuditProvider;
     static WebServer server;
@@ -71,16 +69,18 @@ public abstract class WebSecurityTests {
         WebSecurityTestUtil.stopServer(server);
     }
 
+    abstract String serverBaseUri();
+
     @Test
     void basicTestJohn() {
         String username = "john";
         String password = "password";
 
-        testProtected(SERVER_BASE + "/noRoles", username, password, CollectionsHelper.setOf(), CollectionsHelper.setOf());
+        testProtected(serverBaseUri() + "/noRoles", username, password, CollectionsHelper.setOf(), CollectionsHelper.setOf());
         // this user has no roles, all requests should fail except for public
-        testForbidden(SERVER_BASE + "/user", username, password);
-        testForbidden(SERVER_BASE + "/admin", username, password);
-        testForbidden(SERVER_BASE + "/deny", username, password);
+        testForbidden(serverBaseUri() + "/user", username, password);
+        testForbidden(serverBaseUri() + "/admin", username, password);
+        testForbidden(serverBaseUri() + "/deny", username, password);
     }
 
     @Test
@@ -88,22 +88,22 @@ public abstract class WebSecurityTests {
         String username = "jack";
         String password = "jackIsGreat";
 
-        testProtected(SERVER_BASE + "/noRoles",
+        testProtected(serverBaseUri() + "/noRoles",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
                       CollectionsHelper.setOf());
-        testProtected(SERVER_BASE + "/user",
+        testProtected(serverBaseUri() + "/user",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
                       CollectionsHelper.setOf());
-        testProtected(SERVER_BASE + "/admin",
+        testProtected(serverBaseUri() + "/admin",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
                       CollectionsHelper.setOf());
-        testForbidden(SERVER_BASE + "/deny", username, password);
+        testForbidden(serverBaseUri() + "/deny", username, password);
     }
 
     @Test
@@ -111,24 +111,24 @@ public abstract class WebSecurityTests {
         String username = "jill";
         String password = "password";
 
-        testProtected(SERVER_BASE + "/noRoles",
+        testProtected(serverBaseUri() + "/noRoles",
                       username,
                       password,
                       CollectionsHelper.setOf("user"),
                       CollectionsHelper.setOf("admin"));
-        testProtected(SERVER_BASE + "/user",
+        testProtected(serverBaseUri() + "/user",
                       username,
                       password,
                       CollectionsHelper.setOf("user"),
                       CollectionsHelper.setOf("admin"));
-        testForbidden(SERVER_BASE + "/admin", username, password);
-        testForbidden(SERVER_BASE + "/deny", username, password);
+        testForbidden(serverBaseUri() + "/admin", username, password);
+        testForbidden(serverBaseUri() + "/deny", username, password);
     }
 
     @Test
     void basicTest401() {
         // here we call the endpoint
-        Response response = client.target(SERVER_BASE + "/noRoles")
+        Response response = client.target(serverBaseUri() + "/noRoles")
                 .request()
                 .get();
 
@@ -137,7 +137,7 @@ public abstract class WebSecurityTests {
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
 
-        response = callProtected(SERVER_BASE + "/noRoles", "invalidUser", "invalidPassword");
+        response = callProtected(serverBaseUri() + "/noRoles", "invalidUser", "invalidPassword");
         assertThat(response.getStatus(), is(401));
         authHeader = response.getHeaderString(Http.Header.WWW_AUTHENTICATE);
         assertThat(authHeader, notNullValue());
@@ -146,7 +146,7 @@ public abstract class WebSecurityTests {
 
     @Test
     void testCustomizedAudit() throws InterruptedException {
-        Response response = client.target(SERVER_BASE + "/auditOnly").request().get();
+        Response response = client.target(serverBaseUri() + "/auditOnly").request().get();
 
         assertThat(response.getStatus(), is(200));
 

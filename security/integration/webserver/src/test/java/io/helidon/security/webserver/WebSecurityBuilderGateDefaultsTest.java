@@ -33,7 +33,6 @@ import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
@@ -53,11 +52,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link WebSecurity}.
  */
 public class WebSecurityBuilderGateDefaultsTest {
-    private static final String SERVER_BASE = "http://localhost:" + WebSecurityTests.PORT;
     private static UnitTestAuditProvider myAuditProvider;
     private static WebServer server;
     private static Client authFeatureClient;
     private static Client client;
+    private static String serverBaseUri;
 
     @BeforeAll
     public static void initClass() throws InterruptedException {
@@ -98,7 +97,7 @@ public class WebSecurityBuilderGateDefaultsTest {
                 })
                 .build();
 
-        server = WebServer.create(ServerConfiguration.builder().port(WebSecurityTests.PORT).build(), routing);
+        server = WebServer.create(routing);
         long t = System.currentTimeMillis();
         CountDownLatch cdl = new CountDownLatch(1);
         server.start().thenAccept(webServer -> {
@@ -109,6 +108,8 @@ public class WebSecurityBuilderGateDefaultsTest {
 
         //we must wait for server to start, so other tests are not triggered until it is ready!
         assertThat("Timeout while waiting for server to start!", cdl.await(5, TimeUnit.SECONDS), is(true));
+
+        serverBaseUri = "http://localhost:" + server.port();
     }
 
     @AfterAll
@@ -124,10 +125,10 @@ public class WebSecurityBuilderGateDefaultsTest {
         String username = "john";
         String password = "password";
 
-        testForbidden(SERVER_BASE + "/noRoles", username, password);
-        testForbidden(SERVER_BASE + "/user", username, password);
-        testForbidden(SERVER_BASE + "/admin", username, password);
-        testForbidden(SERVER_BASE + "/deny", username, password);
+        testForbidden(serverBaseUri + "/noRoles", username, password);
+        testForbidden(serverBaseUri + "/user", username, password);
+        testForbidden(serverBaseUri + "/admin", username, password);
+        testForbidden(serverBaseUri + "/deny", username, password);
     }
 
     @Test
@@ -135,22 +136,22 @@ public class WebSecurityBuilderGateDefaultsTest {
         String username = "jack";
         String password = "jackIsGreat";
 
-        testProtected(SERVER_BASE + "/noRoles",
+        testProtected(serverBaseUri + "/noRoles",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
                       CollectionsHelper.setOf());
-        testProtected(SERVER_BASE + "/user",
+        testProtected(serverBaseUri + "/user",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
                       CollectionsHelper.setOf());
-        testProtected(SERVER_BASE + "/admin",
+        testProtected(serverBaseUri + "/admin",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
                       CollectionsHelper.setOf());
-        testProtected(SERVER_BASE + "/deny",
+        testProtected(serverBaseUri + "/deny",
                       username,
                       password,
                       CollectionsHelper.setOf("user", "admin"),
@@ -162,20 +163,20 @@ public class WebSecurityBuilderGateDefaultsTest {
         String username = "jill";
         String password = "password";
 
-        testForbidden(SERVER_BASE + "/noRoles", username, password);
-        testProtected(SERVER_BASE + "/user",
+        testForbidden(serverBaseUri + "/noRoles", username, password);
+        testProtected(serverBaseUri + "/user",
                       username,
                       password,
                       CollectionsHelper.setOf("user"),
                       CollectionsHelper.setOf("admin"));
-        testForbidden(SERVER_BASE + "/admin", username, password);
-        testForbidden(SERVER_BASE + "/deny", username, password);
+        testForbidden(serverBaseUri + "/admin", username, password);
+        testForbidden(serverBaseUri + "/deny", username, password);
     }
 
     @Test
     public void basicTest401() {
         // here we call the endpoint
-        Response response = client.target(SERVER_BASE + "/noRoles")
+        Response response = client.target(serverBaseUri + "/noRoles")
                 .request()
                 .get();
 
@@ -184,7 +185,7 @@ public class WebSecurityBuilderGateDefaultsTest {
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
 
-        response = callProtected(SERVER_BASE + "/noRoles", "invalidUser", "invalidPassword");
+        response = callProtected(serverBaseUri + "/noRoles", "invalidUser", "invalidPassword");
         assertThat(response.getStatus(), is(401));
         authHeader = response.getHeaderString(Http.Header.WWW_AUTHENTICATE);
         assertThat(authHeader, notNullValue());
@@ -196,7 +197,7 @@ public class WebSecurityBuilderGateDefaultsTest {
         // even though I send username and password, this MUST NOT require authentication
         // as then audit is called twice - first time with 401 (challenge) and second time with 200 (correct request)
         // and that intermittently breaks this test
-        Response response = client.target(SERVER_BASE + "/auditOnly").request().get();
+        Response response = client.target(serverBaseUri + "/auditOnly").request().get();
 
         assertThat(response.getStatus(), is(200));
 

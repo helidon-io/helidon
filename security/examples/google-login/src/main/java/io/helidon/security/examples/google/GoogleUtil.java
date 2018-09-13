@@ -27,7 +27,7 @@ import io.helidon.webserver.WebServer;
 /**
  * Google login example utilities.
  */
-public class GoogleUtil {
+public final class GoogleUtil {
     // do not change this constant, unless you modify configuration
     // of Google application redirect URI
     static final int PORT = 8080;
@@ -36,9 +36,9 @@ public class GoogleUtil {
     private GoogleUtil() {
     }
 
-    static WebServer startIt(Builder<? extends Routing> routing) throws InterruptedException {
+    static WebServer startIt(int port, Builder<? extends Routing> routing) {
         WebServer server = WebServer.create(ServerConfiguration.builder()
-                                                    .port(PORT),
+                                                    .port(port),
                                             routing);
 
         long t = System.nanoTime();

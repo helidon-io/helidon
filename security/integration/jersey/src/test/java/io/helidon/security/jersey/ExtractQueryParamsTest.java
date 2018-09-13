@@ -29,7 +29,6 @@ import javax.ws.rs.ext.ExceptionMapper;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
 
@@ -45,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Test that query params can be sent and resolved as headers for security.
  */
 public class ExtractQueryParamsTest {
-    private static final int PORT = 9989;
+
     private static final String USERNAME = "assdlakdfknkasdfvsadfasf";
     private static Client client;
     private static WebServer server;
@@ -58,9 +57,6 @@ public class ExtractQueryParamsTest {
         SecurityFeature feature = SecurityFeature.builder(security)
                 .fromConfig(config.get("security.jersey"))
                 .build();
-
-        client = ClientBuilder.newClient();
-        baseTarget = client.target(UriBuilder.fromUri("http://localhost/").port(PORT).build());
 
         server = Routing.builder()
                 .register(JerseySupport.builder()
@@ -77,9 +73,7 @@ public class ExtractQueryParamsTest {
                                   })
                                   .build())
                 .build()
-                .createServer(ServerConfiguration.builder()
-                                      .port(PORT)
-                                      .build());
+                .createServer();
         CountDownLatch cdl = new CountDownLatch(1);
         AtomicReference<Throwable> th = new AtomicReference<>();
         server.start().whenComplete((webServer, throwable) -> {
@@ -92,6 +86,9 @@ public class ExtractQueryParamsTest {
         if (th.get() != null) {
             throw th.get();
         }
+
+        client = ClientBuilder.newClient();
+        baseTarget = client.target(UriBuilder.fromUri("http://localhost/").port(server.port()).build());
     }
 
     @AfterAll

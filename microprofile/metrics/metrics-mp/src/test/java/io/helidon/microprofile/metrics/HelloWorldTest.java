@@ -42,7 +42,7 @@ public class HelloWorldTest extends MetricsMpServiceTest {
     @Test
     public void testMetrics() {
         IntStream.range(0, 5).forEach(
-                i -> client.target(BASE_URL)
+                i -> client.target(baseUri())
                         .path("helloworld").request().accept(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
         assertEquals(5, getCounter("helloCounter").getCount());
@@ -50,7 +50,7 @@ public class HelloWorldTest extends MetricsMpServiceTest {
 
     @AfterEach
     public void checkMetricsUrl() {
-        JsonObject app = client.target(BASE_URL)
+        JsonObject app = client.target(baseUri())
                 .path("metrics").request().accept(MediaType.APPLICATION_JSON_TYPE)
                 .get(JsonObject.class).getJsonObject("application");
         assertEquals(5, app.getJsonNumber("helloCounter").intValue());

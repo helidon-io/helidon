@@ -16,25 +16,25 @@
 
 package io.helidon.security.provider.httpauth;
 
-import java.io.IOException;
-import java.net.URI;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
 import io.helidon.security.jersey.SecurityFeature;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.jersey.JerseySupport;
 
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -52,52 +52,66 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link HttpBasicAuthProvider} and {@link HttpDigestAuthProvider}.
  */
 public class HttpAuthProviderConfigTest {
-    private static final int PORT = 9900;
-    private static final String SERVER_BASE = "http://localhost:" + PORT;
+
     private static final Client authFeatureClient = ClientBuilder.newClient()
             .register(HttpAuthenticationFeature.universalBuilder().build());
     private static final Client client = ClientBuilder.newClient();
-    private static final String DIGEST_URI = SERVER_BASE + "/digest";
-    private static final String DIGEST_OLD_URI = SERVER_BASE + "/digest_old";
 
-    private static HttpServer grizzlyServerInstance;
+    private static String serverBase;
+    private static String digestUri;
+    private static String digestOldUri;
+
+    private static WebServer server;
 
     @BeforeAll
-    public static void startIt() {
-        Config config = Config.create();
+    public static void startIt() throws Throwable {
+        startServer(Security.fromConfig(Config.create()));
 
-        Security security = Security.fromConfig(config);
+        serverBase = "http://localhost:" + server.port();
+        digestUri = serverBase + "/digest";
+        digestOldUri = serverBase + "/digest_old";
+    }
 
-        URI baseUri = UriBuilder.fromUri("http://localhost/").port(PORT).build();
-        ResourceConfig resourceConfig = new ResourceConfig()
-                // register JAX-RS resource
-                .register(TestResource.class)
-                // integrate security
-                .register(SecurityFeature.builder(security).authorizeAnnotatedOnly(true).build())
-                .register(new ExceptionMapper<Exception>() {
-                    @Override
-                    public Response toResponse(Exception exception) {
-                        exception.printStackTrace();
-                        return Response.serverError().build();
-                    }
-                });
+    private static void startServer(Security security) throws Throwable {
+        server = Routing.builder()
+                .register(JerseySupport.builder()
+                                  .register(TestResource.class)
+                                  .register(SecurityFeature.builder(security).authorizeAnnotatedOnly(true).build())
+                                  .register(new ExceptionMapper<Exception>() {
+                                      @Override
+                                      public Response toResponse(Exception exception) {
+                                          exception.printStackTrace();
+                                          return Response.serverError().build();
+                                      }
+                                  })
+                                  .build())
+                .build()
+                .createServer();
+        CountDownLatch cdl = new CountDownLatch(1);
+        AtomicReference<Throwable> th = new AtomicReference<>();
+        server.start().whenComplete((webServer, throwable) -> {
+            th.set(throwable);
+            cdl.countDown();
+        });
 
-        // create container (Grizzly)
-        HttpServer server = GrizzlyHttpServerFactory.createHttpServer(baseUri, resourceConfig);
+        cdl.await();
 
-        // and start the whole fun
-        try {
-            server.start();
-            //only assign after start, so test can check for it
-            grizzlyServerInstance = server;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to start server", e);
+        if (th.get() != null) {
+            throw th.get();
         }
     }
 
     @AfterAll
-    public static void stopIt() {
-        grizzlyServerInstance.shutdownNow();
+    public static void stopIt() throws InterruptedException {
+        CountDownLatch cdl = new CountDownLatch(1);
+
+        server.shutdown()
+                .whenComplete((webServer, throwable) -> {
+                    cdl.countDown();
+                    ;
+                });
+
+        cdl.await(10, TimeUnit.SECONDS);
         authFeatureClient.close();
     }
 
@@ -131,38 +145,38 @@ public class HttpAuthProviderConfigTest {
 
     @Test
     public void basicTestJack() {
-        testProtected(SERVER_BASE, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
+        testProtected(serverBase, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
     }
 
     @Test
     public void basicTestJill() {
-        testProtected(SERVER_BASE, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(serverBase, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
     }
 
     @Test
     public void digestTestJack() {
-        testProtected(DIGEST_URI, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
+        testProtected(digestUri, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
     }
 
     @Test
     public void digestTestJill() {
-        testProtected(DIGEST_URI, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(digestUri, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
     }
 
     @Test
     public void digestOldTestJack() {
-        testProtected(DIGEST_OLD_URI, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
+        testProtected(digestOldUri, "jack", "jackIsGreat", CollectionsHelper.setOf("user", "admin"), CollectionsHelper.setOf());
     }
 
     @Test
     public void digestOldTestJill() {
-        testProtected(DIGEST_OLD_URI, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
+        testProtected(digestOldUri, "jill", "password", CollectionsHelper.setOf("user"), CollectionsHelper.setOf("admin"));
     }
 
     @Test
     public void basicTest401() {
         // here we call the endpoint
-        Response response = client.target(SERVER_BASE)
+        Response response = client.target(serverBase)
                 .request()
                 .get();
 
@@ -175,7 +189,7 @@ public class HttpAuthProviderConfigTest {
     @Test
     public void digestTest401() {
         // here we call the endpoint
-        Response response = client.target(DIGEST_URI)
+        Response response = client.target(digestUri)
                 .request()
                 .get();
 
@@ -189,7 +203,7 @@ public class HttpAuthProviderConfigTest {
     @Test
     public void digestOldTest401() {
         // here we call the endpoint
-        Response response = client.target(DIGEST_OLD_URI)
+        Response response = client.target(digestOldUri)
                 .request()
                 .get();
 

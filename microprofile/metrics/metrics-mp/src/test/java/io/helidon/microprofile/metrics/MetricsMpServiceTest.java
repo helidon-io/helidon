@@ -40,16 +40,12 @@ import org.junit.jupiter.api.BeforeAll;
  * @author Santiago Pericas-Geertsen
  */
 public class MetricsMpServiceTest {
-
-    protected static final int PORT = 6539;
-
-    protected static final String BASE_URL = "http://localhost:" + PORT;
-
     protected static Server server;
-
     protected static MetricRegistry registry;
-
     protected static Client client = ClientBuilder.newClient();
+
+    private static int port;
+    private static String baseUri;
 
     @BeforeAll
     public static void initializeServer() throws Exception {
@@ -60,16 +56,24 @@ public class MetricsMpServiceTest {
                 .cdiContainer(cdiContainer)
                 .config(MpConfig.builder().config(Config.create()).build())
                 .host("localhost")
-                .port(PORT)
+                // choose a random available port
+                .port(-1)
                 .build();
         server.start();
 
         registry = RegistryFactory.getRegistryFactory().get().getRegistry(MetricRegistry.Type.APPLICATION);
+
+        port = server.getPort();
+        baseUri = "http://localhost:" + port;
     }
 
     @AfterAll
     public static void terminateServer() {
         server.stop();
+    }
+
+    protected String baseUri() {
+        return baseUri;
     }
 
     protected static void registerCounter(String name) {

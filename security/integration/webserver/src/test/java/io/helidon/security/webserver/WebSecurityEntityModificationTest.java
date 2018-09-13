@@ -38,7 +38,6 @@ import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.Security;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
@@ -52,9 +51,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link SecurityHandler} with message modification.
  */
 public class WebSecurityEntityModificationTest {
-    private static final int PORT = 9998;
     private static WebServer server;
     private static Client client;
+    private static int port;
 
     @BeforeAll
     public static void initClass() throws IOException, InterruptedException {
@@ -80,7 +79,7 @@ public class WebSecurityEntityModificationTest {
                 .build();
 
         client = ClientBuilder.newClient();
-        server = WebServer.create(ServerConfiguration.builder().port(PORT).build(), routing);
+        server = WebServer.create(routing);
         long t = System.currentTimeMillis();
         CountDownLatch cdl = new CountDownLatch(1);
         server.start().thenAccept(webServer -> {
@@ -91,6 +90,8 @@ public class WebSecurityEntityModificationTest {
 
         //we must wait for server to start, so other tests are not triggered until it is ready!
         assertThat("Timeout while waiting for server to start!", cdl.await(5, TimeUnit.SECONDS), is(true));
+
+        port = server.port();
     }
 
     private static Security buildSecurity() {
@@ -198,7 +199,7 @@ public class WebSecurityEntityModificationTest {
     @Test
     public void testReplaceEntity() {
         Response response = client
-                .target("http://localhost:9998")
+                .target("http://localhost:" + port)
                 .path("/")
                 .request()
                 .post(Entity.text("Hello"));
