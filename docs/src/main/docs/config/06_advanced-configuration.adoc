@@ -75,7 +75,7 @@ assert secrets.get("password").asString()        // <4>
 <4> ...and the key `password` to `^ery$ecretP&ssword`.
 
 Remember that your application can process the contents of a given file
-as configuration. See the link:02_config-sources.html[config sources] section
+as configuration. See the <<config/02_config-sources.adoc,config sources>> section
 and the link:{javadoc-base-url-api}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`] 
 JavaDoc.
 
@@ -205,14 +205,14 @@ if their keys would otherwise conflict.
 
 ===== Merging Strategies
 The `ConfigSources.from(Supplier<ConfigSource>...)` and `ConfigSources.from(List<Supplier<ConfigSource>...)`
-methods return a link:{javadoc-base-url-api}/CompositeConfigSource.html[`CompositeConfigSource`].
+methods return a `CompositeConfigSource`.
 By default, earlier sources in the list have higher priority than later ones, meaning
 that if the same key appears in two or more sources the source earlier in the
 list prevails.
 
 Each ``CompositeConfigSource``'s _merging strategy_ actually controls this behavior.
 The config system provides the 
-link:{javadoc-base-url-api}/FallbackMergingStrategy.html[`FallbackMergingStrategy`] 
+`FallbackMergingStrategy`
 which implements the default, "first wins" algorithm. You can write your own
 implementation of 
 link:{javadoc-base-url-api}/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
@@ -239,7 +239,7 @@ Config config = Config.from(                                                 // 
 
 
 === How Config Chooses Parsers [[Config-Advanced-Sources-SuitableParser]]
-As the link:02_config-sources.html[config sources and parsers] section describes,
+As the link:config/02_config-sources.html[config sources and parsers] section describes,
 these two work together to read and translate configuration data from some
 external form into the corresponding in-memory config tree. 
 
@@ -289,7 +289,7 @@ also inspect the contents of the file to infer the media type. The detector
 which the config system provides looks only for the `.properties` file type in the
 path.
 
-==== Locating a Parser
+==== Locating a Parser [[locating-parser]]
 ===== By Inference from `media-type`
 Each config parser reports which media types it handles. Once the config system
 has determined a source's media type, it searches the config parsers associated
@@ -447,7 +447,7 @@ tree. The config system interprets the meta-config as directions for how to
 build a config tree, rather than as the config data itself.
 
 ==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
-The link:01_introduction.html[introduction] section shows how to use
+The <<config/01_introduction.adoc,introduction>> section shows how to use
 `Config.create()` to load config from one of several possible default config files.
 That same method also searches for one of severl possible default meta-config files
 from which to load config sources to be used for the default config.
@@ -727,7 +727,7 @@ link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
 sections. 
 
 == Configuration Key
-As described in <<config/04_hierarchical-features.adoc#accessByKey,hierarchical features 
+As described in the <<config/03_hierarchical-features.adoc#accessByKey,hierarchical features 
 section>> each config node (except the root) has a non-null key. Here is the formal
 definition of what keys can be:
 [source,abnf]

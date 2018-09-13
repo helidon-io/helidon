@@ -74,12 +74,11 @@ importance of an extension by annotating the implementation class with
 A _lower_ priority value represents _greater_ importance. The sections below for
 each interface tell which SPIs support `@Priority`.
 
-[[Config-SPI-ConfigSource]]
-== ConfigSource SPI
+== ConfigSource SPI [[Config-SPI-ConfigSource]]
 
 The config system includes built-in support for several types of sources
 (for example, Java `String`, `Readable`, `Properties`, and `Map`
-objects - see link:{javadoc-base-url-api}io/helidon/config/ConfigSources.html[`ConfigSources`]).
+objects - see link:{javadoc-base-url-api}/ConfigSources.html[`ConfigSources`]).
 Implement a link:{javadoc-base-url-api}/spi/ConfigSource.html[`ConfigSource`] to
 load raw configuration data from a type of source that the config system does
 not already support.
@@ -136,8 +135,7 @@ The interfaces `ConfigNode`, `ObjectNode`, `ValueNode` and
 //TODO example [P2] Issue #29
 
 
-[[Config-SPI-ConfigParser]]
-== ConfigParser SPI
+== ConfigParser SPI [[Config-SPI-ConfigParser]]
 
 The parsing step converts config data in some format into the corresponding
 in-memory representation of config ``ObjectNode``s. The config system can already parse 
@@ -209,8 +207,7 @@ module myModule {
 //TODO example [P2] Issue #29
 
 
-[[Config-SPI-OverrideSource]]
-== OverrideSource SPI
+== OverrideSource SPI [[Config-SPI-OverrideSource]]
 
 When the application retrieves a configuration value the config system first uses
 the relevant config sources and filters. It then applies any _overrides_ the
@@ -239,8 +236,7 @@ interface OverrideSource {
 //TODO example [P2] Issue #29
 
 
-[[Config-SPI-ConfigFilter]]
-== ConfigFilter SPI
+== ConfigFilter SPI [[Config-SPI-ConfigFilter]]
 
 Before returning a `String` from `Config.value()` the config system applies any 
 _filters_ set up on the `Config.Builder` used to create the config tree that
@@ -258,7 +254,7 @@ system also uses the Java service loader mechanism to load
 additional filters automatically, for all builders, using 
 the service interface described in the following table. Prevent a given 
 builder from using the auto-loaded filters by invoking the
-link:{javadoc-base-url-api}/Config.Builder.htlm#disableFilterServices--[`disableFilterServices`]
+link:{javadoc-base-url-api}/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
 method.
 
 .Config SPI Interfaces for Filtering
@@ -301,8 +297,7 @@ interface ConfigFilter {
 //TODO example [P2] Issue #29
 
 
-[[Config-SPI-ConfigMapperProvider]]
-== ConfigMapperProvider SPI
+== ConfigMapperProvider SPI [[Config-SPI-ConfigMapperProvider]]
 
 The config system provides built-in mappings from `String` values to various Java 
 types. (See link:{javadoc-base-url-api}/ConfigMappers.html[`ConfigMappers`].) 
@@ -360,8 +355,7 @@ module myModule {
 //TODO example [P2] Issue #29
 
 
-[[Config-SPI-PollingStrategy]]
-== PollingStrategy SPI
+== PollingStrategy SPI [[Config-SPI-PollingStrategy]]
 
 Once it loads a `Config` tree from ``ConfigSource``s the config
 system does not itself change the in-memory `Config` tree. Even so, the
@@ -371,7 +365,7 @@ informs other interested code when changes to that underlying data might have
 occurred.
 
 In implementations of `PollingStrategy` the `#ticks()` method
-returns a `Flow.Publisher of ``PollingEvent``s to which the
+returns a `Flow.Publisher` of ``PollingEvent``s to which the
 application or the ``ConfigSource``s themselves can subscribe. Generally,
 each event is a hint to the subscriber that
 it should check to see if any of the underlying config data it relies on
@@ -410,8 +404,7 @@ the underlying data when its subscriber receives an event.
 
 //TODO example [P2] Issue #29
 
-[[Config-SPI-RetryPolicy]]
-== RetryPolicy SPI
+== RetryPolicy SPI [[Config-SPI-RetryPolicy]]
 
 The builder for each `ConfigSource` and `OverrideSource` accepts a 
 link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] 
