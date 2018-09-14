@@ -105,9 +105,14 @@ public interface AuditProvider extends SecurityProvider {
                     .walk(stream -> stream
                             .filter(f -> !f.getClassName().startsWith("sun."))
                             .filter(f -> !f.getClassName().startsWith("java."))
-                            .filter(
-                                    // if this is a unit test class, return it
-                                    f -> f.getClassName().endsWith("Tests") || isSecurityClass(f))
+                            .filter(f -> {
+                                // if this is a unit test class, return it
+                                if (f.getClassName().endsWith("Test")) {
+                                    return true;
+                                }
+                                // filter out security classes
+                                return !isSecurityClass(f);
+                            })
                             .findFirst());
 
             if (!frame.isPresent()) {
