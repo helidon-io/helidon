@@ -111,6 +111,7 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * <tr><td>base-scopes</td><td>{@value DEFAULT_BASE_SCOPES}</td><td>Configure scopes to be requested by default. If the scope
  * has a qualifier, it must be included here</td></tr>
  * <tr><td>redirect</td><td>true</td><td>Whether to redirect to identity server when authentication failed.</td></tr>
+ * <tr><td>realm</td><td>Helidon</td><td>Realm returned in HTTP response if redirect is not enabled or possible.</td></tr>
  * </table>
  */
 public final class OidcConfig {
@@ -138,6 +139,7 @@ public final class OidcConfig {
     static final String DEFAULT_BASE_SCOPES = "openid";
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final boolean DEFAULT_REDIRECT = true;
+    static final String DEFAULT_REALM = "Helidon";
 
     private final String redirectUri;
     private final boolean useCookie;
@@ -164,6 +166,7 @@ public final class OidcConfig {
     private final Client appClient;
     private final Client generalClient;
     private final boolean redirect;
+    private final String realm;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -182,6 +185,7 @@ public final class OidcConfig {
         this.audience = builder.audience;
         this.identityUri = builder.identityUri;
         this.redirect = builder.redirect;
+        this.realm = builder.realm;
 
         if (null == builder.signJwk) {
             this.signJwk = JwkKeys.builder().build();
@@ -525,6 +529,15 @@ public final class OidcConfig {
     }
 
     /**
+     * Realm to use for WWW-Authenticate response (if needed).
+     *
+     * @return realm name
+     */
+    public String realm() {
+        return realm;
+    }
+
+    /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
@@ -572,6 +585,7 @@ public final class OidcConfig {
         private boolean validateJwtWithJwk = DEFAULT_JWT_VALIDATE_JWK;
         private URI introspectUri;
         private boolean redirect = DEFAULT_REDIRECT;
+        private String realm = DEFAULT_REALM;
 
         @Override
         public OidcConfig build() {
@@ -757,6 +771,17 @@ public final class OidcConfig {
          */
         public Builder redirect(boolean redirect) {
             this.redirect = redirect;
+            return this;
+        }
+
+        /**
+         * Realm to return when not redirecting and an error occurs that sends back WWW-Authenticate header.
+         *
+         * @param realm realm name
+         * @return updated builder instance
+         */
+        public Builder realm(String realm) {
+            this.realm = realm;
             return this;
         }
 
