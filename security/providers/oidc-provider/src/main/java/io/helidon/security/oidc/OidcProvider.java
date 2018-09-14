@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -193,7 +194,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         if (token.isPresent()) {
             return validateToken(providerRequest, token.get());
         } else {
-            return missingToken(providerRequest);
+            return errorResponse(providerRequest, Http.Status.UNAUTHORIZED_401, null, "Missing token");
         }
     }
 
@@ -233,7 +234,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         return result;
     }
 
-    private AuthenticationResponse missingToken(ProviderRequest providerRequest) {
+    private AuthenticationResponse errorResponse(ProviderRequest providerRequest,
+                                                 Http.Status status,
+                                                 String code,
+                                                 String description) {
         if (oidcConfig.shouldRedirect()) {
             Set<String> expectedScopes = expectedScopes(providerRequest);
 
@@ -270,8 +274,27 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
         } else {
-            return AuthenticationResponse.failed("Missing token");
+
+            if (null == code) {
+                return AuthenticationResponse.builder()
+                        .status(SecurityResponse.SecurityStatus.FAILURE)
+                        .statusCode(Http.Status.UNAUTHORIZED_401.code())
+                        .responseHeader(Http.Header.WWW_AUTHENTICATE, "Bearer realm=\"" + oidcConfig.realm() + "\"")
+                        .description(description)
+                        .build();
+            } else {
+                return AuthenticationResponse.builder()
+                        .status(SecurityResponse.SecurityStatus.FAILURE)
+                        .statusCode(status.code())
+                        .responseHeader(Http.Header.WWW_AUTHENTICATE, errorHeader(code, description))
+                        .description(description)
+                        .build();
+            }
         }
+    }
+
+    private String errorHeader(String code, String description) {
+        return "Bearer realm=\"" + oidcConfig.realm() + "\", error=\"" + code + "\", error_description=\"" + description + "\"";
     }
 
     private String origUri(ProviderRequest providerRequest) {
@@ -314,15 +337,21 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
             for (String expectedScope : expectedScopes) {
                 if (!scopes.contains(expectedScope)) {
-                    return missingToken(providerRequest);
+                    return errorResponse(providerRequest,
+                                         Http.Status.FORBIDDEN_403,
+                                         "insufficient_scope",
+                                         "Scope " + expectedScope + " missing");
                 }
             }
 
             return AuthenticationResponse.success(subject);
         } else {
-            errors.log(LOGGER);
-            validationErrors.log(LOGGER);
-            return missingToken(providerRequest);
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                // only log errors when details requested
+                errors.log(LOGGER);
+                validationErrors.log(LOGGER);
+            }
+            return errorResponse(providerRequest, Http.Status.UNAUTHORIZED_401, "invalid_token", "Token not valid");
         }
     }
 
