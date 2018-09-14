@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.examples</groupId>
         <artifactId>helidon-webserver-examples-project</artifactId>
-        <version>0.10.0-SNAPSHOT</version>
+        <version>0.10.0</version>
     </parent>
     <artifactId>helidon-webserver-examples-jersey</artifactId>
     <name>Helidon WebServer Examples Jersey</name>
@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <helidon.version>0.10.0-SNAPSHOT</helidon.version>
+        <helidon.version>0.10.0</helidon.version>
         <mainClass>io.helidon.webserver.examples.jersey.WebServerJerseyMain</mainClass>
     </properties>
 
