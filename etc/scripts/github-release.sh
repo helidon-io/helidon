@@ -59,7 +59,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 {
   ARG=${ARGS[${i}]}
   case ${ARG} in
-  "--changelog=")
+  "--changelog="*)
     readonly CHANGELOG=${ARG#*=}
     ;;
   "--version="*)
@@ -71,7 +71,7 @@ for ((i=0;i<${#ARGS[@]};i++))
     ;;
   *)
     if [ -z "${CHANGELOG}" ] || [ ! -f "${CHANGELOG}" ]; then
-      echo "ERROR: invalid changelog: ${CHANGELOG}.
+      echo "ERROR: invalid changelog: ${CHANGELOG}."
       exit 1
     elif [ -z "${version}" ]; then
       echo "ERROR: no version provided"
@@ -82,7 +82,7 @@ for ((i=0;i<${#ARGS[@]};i++))
 }
 
 if [ -z "${GITHUB_API_KEY}" ] ; then
-    echo "ERROR: GITHUB_API_KEY is not set
+    echo "ERROR: GITHUB_API_KEY is not set"
     exit 1
 fi
 
@@ -91,7 +91,7 @@ readonly MEDIA_TYPE="application/vnd.github.v3+json"
 readonly GITHUB_OWNER="oracle"
 readonly REPO="helidon"
 
-BODY=$(cat ${CHANGELOG} | sed -n ':a;N;${s/\n/\\n/g;p};ba' | sed -e 's/"/\\"/g')
+BODY=$(cat ${CHANGELOG} | awk '{printf "%s\\n", $0;}' | sed -e 's/"/\\"/g')
 PAYLOAD="{
   \"tag_name\": \"${VERSION}\",
   \"name\": \"${VERSION}\",
@@ -100,17 +100,12 @@ PAYLOAD="{
   \"prerelease\": false
 }"
 
-HTTP_CODE=$(curl \
+curl \
+  -vvv \
   -w "%{http_code}" \
   -u "${GITHUB_OWNER}:${GITHUB_API_KEY}" \
-  -s -o /dev/null \
   -H "Accept: ${MEDIA_TYPE}" \
   -X POST \
   -d "${PAYLOAD}" \
-  ${GITHUB_API_URL}/repos/${GITHUB_OWNER}/${REPO}/releases)
+  ${GITHUB_API_URL}/repos/${GITHUB_OWNER}/${REPO}/releases
 
-if [ "${HTTP_CODE}" != "201" ] ; then
-  echo "GITHUB RELEASE CREATION ERROR, HTTP_CODE=${HTTP_CODE}"
-else 
-  echo "GITHUB RELEASE CREATED."
-fi
