@@ -5,11 +5,12 @@ We welcome your contributions! There are multiple ways to contribute.
 
 ## Discussion
 
-Join as at [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE) and participate in discussions.
+Join us at [#helidon-users](https://join.slack.com/t/helidon/shared_invite/enQtNDM1NjU3MjkyNDg2LTFkZTM4NmI3OWUyNjUxYWQ5Njc0NGNiMzY3MTZiZmMwNzAxYmI4YzUzOWNkNzNlZTEwNDRkZGU4YzMzZjhkNTE) and participate in discussions.
 
 ## Issues
 
-If you hit a bug or have an enhancement request then file a [GitHub issue](https://github.com/oracle/helidon/issues). When filing a bug remember that the better written the bug is, the more likely it is
+If you hit a bug or have an enhancement request then file a [GitHub issue](https://github.com/oracle/helidon/issues).
+When filing a bug remember that the better written the bug is, the more likely it is
 to be fixed. Please include:
 
 1. Version of Helidon
@@ -33,7 +34,7 @@ The process:
 4. Watch your PR for pipeline results. If there are failures then fix them.
 5. We will review your PR and merge as appropriate.
 
-## Code of Contact
+## Code of Conduct
 
 Follow the [Golden Rule](https://en.wikipedia.org/wiki/Golden_Rule). If
 you'd like more specific guidelines see the
