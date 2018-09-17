@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-rest-tck</artifactId>
-            <version>1.1</version>
+            <version>${version.lib.microprofile-metrics-api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -74,7 +74,7 @@
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api-tck</artifactId>
-            <version>1.1</version>
+            <version>${version.lib.microprofile-metrics-api}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -93,16 +93,7 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.0</version>
                 <configuration>
                     <dependenciesToScan>
                         <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-api-tck</dependency>
@@ -111,18 +102,12 @@
                     <environmentVariables>
                         <MP_METRICS_TAGS>tier=integration</MP_METRICS_TAGS>
                     </environmentVariables>
-                    <systemPropertyVariables>
-                        <java.util.logging.ConsoleHandler.level>FINEST</java.util.logging.ConsoleHandler.level>
-                        <org.arquillian.level>FINER</org.arquillian.level>
-                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
-                        <org.slf4j.impl.JDK14LoggerFactory.defaultLogLevel>finer</org.slf4j.impl.JDK14LoggerFactory.defaultLogLevel>
-                    </systemPropertyVariables>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
                         <artifactId>surefire-junit4</artifactId>
-                        <version>2.19.1</version>
+                        <version>${version.plugin.surefire}</version>
                     </dependency>
                 </dependencies>
             </plugin>
