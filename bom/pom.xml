@@ -273,6 +273,13 @@
                 <artifactId>helidon-common-key-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- extensions -->
+            <dependency>
+                <groupId>io.helidon.extensions</groupId>
+                <artifactId>helidon-extension-substrate-vm</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

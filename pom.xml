@@ -194,6 +194,7 @@
         <module>security</module>
         <module>bom</module>
         <module>microprofile</module>
+        <module>extensions</module>
     </modules>
 
     <build>
