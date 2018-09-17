@@ -15,14 +15,10 @@
  */
 package io.helidon.examples.graal;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.SpiHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.netty.Factory;
-import io.helidon.webserver.spi.WebServerFactory;
 
 /**
  * Runnable class for Graal integration example.
@@ -35,12 +31,8 @@ import io.helidon.webserver.spi.WebServerFactory;
  * <li>Install the library into local repository: {@code  mvn install:install-file -Dfile=${JAVA_HOME}/jre/lib/svm/builder/svm
  * .jar -DgroupId=com.oracle.substratevm -DartifactId=svm -Dversion=GraalVM-1.0.0-rc6 -Dpackaging=jar}</li>
  * <li>Build the project: {@code mvn clean package}</li>
- * <li>Build the native image: {@code  native-image -jar target/helidon-graal-vm-full.jar
- * -H:ReflectionConfigurationResources=./etc/graal/reflection-config.json
- * --delay-class-initialization-to-runtime=io.netty.handler.codec.http.HttpObjectEncoder,io.netty.handler.ssl
- * .ReferenceCountedOpenSslEngine
- * --report-unsupported-elements-at-runtime
- * }</li>
+ * <li>Build the native image: {@code ./etc/graal/svm-compile.sh}</li>
+ * <li>Run the application: {@code ./helidon-graal-vm-full}</li>
  * </ol>
  */
 public final class GraalMain {
@@ -49,14 +41,27 @@ public final class GraalMain {
     }
 
     public static void main(String[] args) {
+        //        System.out.println("Config Parsers:");
+        //        SpiHelper.loadServices(ConfigParser.class).stream().map(Object::getClass).map(Class::getName).forEach(System
+        // .out::println);
+        //        System.out.println("File type detectors:");
+        //        SpiHelper.loadServices(FileTypeDetector.class).stream().map(Object::getClass).map(Class::getName).forEach
+        // (System.out::println);
+
+        // work around - could not set property using graal
+        System.setProperty("java.runtime.name", "Graal SubstrateVM");
+
         long t = System.currentTimeMillis();
+        //        Config config = Config.builder()
+        //                .sources(ConfigSources.from(CollectionsHelper.mapOf("my-app.message", "Hello World!")))
+        //                .build();
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("my-app.message", "Hello World!")))
+                .sources(ConfigSources.classpath("application.yaml"))
                 .build();
 
         String message = config.get("my-app.message").asString();
 
-        SpiHelper.registerService(WebServerFactory.class, new Factory());
+        //SpiHelper.registerService(WebServerFactory.class, new Factory());
 
         WebServer.create(Routing.builder()
                                  .get("/", (req, res) -> {
