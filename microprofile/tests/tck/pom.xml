@@ -32,7 +32,7 @@
 
     <modules>
         <module>tck-config</module>
-        <!--<module>tck-health</module>-->
+        <module>tck-health</module>
         <module>tck-metrics</module>
     </modules>
 

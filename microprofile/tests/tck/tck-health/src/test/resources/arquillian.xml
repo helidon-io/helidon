@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  -->
+<arquillian xmlns="http://jboss.org/schema/arquillian"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://jboss.org/schema/arquillian http://www.jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <container qualifier="helidon-embedded" default="true">
+        <configuration>
+            <property name="port">8080</property>
+            <property name="deleteTmp">true</property>
+        </configuration>
+    </container>
+</arquillian>

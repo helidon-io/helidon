@@ -123,8 +123,8 @@
         <version.lib.jersey>2.26</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
         <version.lib.jmh>1.19</version.lib.jmh>
-        <version.lib.jsonp-api>1.0</version.lib.jsonp-api>
-        <version.lib.jsonp-impl>1.1</version.lib.jsonp-impl>
+        <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
+        <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
         <version.lib.jsr305>3.0.2</version.lib.jsr305>
         <version.lib.junit>5.1.0</version.lib.junit>
         <version.lib.microprofile-config-api>1.2.1</version.lib.microprofile-config-api>

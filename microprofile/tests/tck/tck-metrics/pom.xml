@@ -59,9 +59,7 @@
             <artifactId>arquillian-junit-container</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- Uncomment these to run TCKs -->
-        <!-- dependency>
+        <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-rest-tck</artifactId>
             <version>1.1</version>
@@ -84,15 +82,13 @@
                     <artifactId>arquillian-junit-container</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency -->
-
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -109,8 +105,8 @@
                 <version>2.22.0</version>
                 <configuration>
                     <dependenciesToScan>
-                        <!-- dependency>org.eclipse.microprofile.metrics:microprofile-metrics-api-tck</dependency -->
-                        <!-- dependency>org.eclipse.microprofile.metrics:microprofile-metrics-rest-tck</dependency -->
+                        <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-api-tck</dependency>
+                        <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-rest-tck</dependency>
                     </dependenciesToScan>
                     <environmentVariables>
                         <MP_METRICS_TAGS>tier=integration</MP_METRICS_TAGS>

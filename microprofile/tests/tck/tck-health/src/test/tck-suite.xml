@@ -1,0 +1,16 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<!--
+  ~  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  -->
+<suite name="microprofile-health-TCK" verbose="2" configfailurepolicy="continue" >
+
+    <test name="microprofile-health 1.0 TCK">
+        <packages>
+            <package name="org.eclipse.microprofile.health.tck.*"/>
+        </packages>
+        <!--<classes>-->
+            <!--<class name="org.eclipse.microprofile.health.tck.EnforceQualifierTest"/>-->
+        <!--</classes>-->
+    </test>
+
+</suite>
