@@ -192,8 +192,6 @@
         <module>security</module>
         <module>bom</module>
         <module>microprofile</module>
-    <module>quickstart-se</module>
-    <module>quickstart-mp</module>
   </modules>
 
     <build>
