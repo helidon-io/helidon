@@ -194,8 +194,6 @@
         <module>javadocs</module>
         <!--<module>docs</module>-->
         <module>microprofile</module>
-    <module>quickstart-se</module>
-    <module>quickstart-mp</module>
   </modules>
 
     <build>
