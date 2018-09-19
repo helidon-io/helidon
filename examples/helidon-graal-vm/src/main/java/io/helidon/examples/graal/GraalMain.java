@@ -15,10 +15,20 @@
  */
 package io.helidon.examples.graal;
 
+import java.io.IOException;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.json.JsonSupport;
 
 /**
  * Runnable class for Graal integration example.
@@ -40,34 +50,18 @@ public final class GraalMain {
     private GraalMain() {
     }
 
-    public static void main(String[] args) {
-        //        System.out.println("Config Parsers:");
-        //        SpiHelper.loadServices(ConfigParser.class).stream().map(Object::getClass).map(Class::getName).forEach(System
-        // .out::println);
-        //        System.out.println("File type detectors:");
-        //        SpiHelper.loadServices(FileTypeDetector.class).stream().map(Object::getClass).map(Class::getName).forEach
-        // (System.out::println);
+    public static void main(String[] args) throws IOException {
+        LogManager.getLogManager().readConfiguration(GraalMain.class.getResourceAsStream("/logging.properties"));
 
-        // work around - could not set property using graal
+        // this property is not available in Graal SVM, and is not mandatory, yet YAML parser fails if it not present
         System.setProperty("java.runtime.name", "Graal SubstrateVM");
+        Logger.getLogger(GraalMain.class.getName()).severe("Does it even work?");
 
         long t = System.currentTimeMillis();
-        //        Config config = Config.builder()
-        //                .sources(ConfigSources.from(CollectionsHelper.mapOf("my-app.message", "Hello World!")))
-        //                .build();
-        Config config = Config.builder()
-                .sources(ConfigSources.classpath("application.yaml"))
-                .build();
 
-        String message = config.get("my-app.message").asString();
+        Config config = Config.create();
 
-        //SpiHelper.registerService(WebServerFactory.class, new Factory());
-
-        WebServer.create(Routing.builder()
-                                 .get("/", (req, res) -> {
-                                     res.send(message);
-                                 })
-        )
+        WebServer.create(ServerConfiguration.fromConfig(config.get("server")), routing(config))
                 .start().thenAccept(webServer -> {
             long time = System.currentTimeMillis() - t;
             System.out.println("Application started in " + time + " milliseconds");
@@ -78,5 +72,31 @@ public final class GraalMain {
                     throwable.printStackTrace();
                     return null;
                 });
+    }
+
+    private static Routing routing(Config config) {
+        String message = config.get("my-app.message").asString();
+
+        return Routing.builder()
+                .get("/", (req, res) -> res.send(message))
+                .get("/hello", (req, res) -> res.send("Hello World"))
+                .register("/json", JsonSupport.get())
+                .get("/json", GraalMain::jsonResponse)
+                .build();
+    }
+
+    private static void jsonResponse(ServerRequest req, ServerResponse res) {
+        String param = req.queryParams().first("param").orElse("default");
+        try {
+            JsonObject theObject = Json.createObjectBuilder()
+                    .add("key", "value")
+                    .add("time", System.currentTimeMillis())
+                    .add("parameter", param)
+                    .build();
+
+            res.send(theObject);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

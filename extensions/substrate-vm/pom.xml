@@ -40,5 +40,10 @@
             <version>GraalVM-1.0.0-rc6</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.graalvm</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>1.0.0-rc6</version>
+        </dependency>
     </dependencies>
 </project>

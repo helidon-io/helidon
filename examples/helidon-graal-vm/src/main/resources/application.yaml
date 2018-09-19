@@ -1,2 +1,5 @@
+server:
+  port: 8099
+
 my-app:
   message: "Hello World"

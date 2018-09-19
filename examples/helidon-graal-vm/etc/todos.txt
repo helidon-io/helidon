@@ -1,0 +1,11 @@
+Graal Substrate VM example features:
+
+DONE start webserver and create a route
+DONE add YAML
+DONE use config
+DONE add json support
+TODO logging support
+TODO add security
+TODO   - basic authentication
+TODO add metrics
+TODO add tracing
