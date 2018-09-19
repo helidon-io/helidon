@@ -211,12 +211,12 @@ class RouteListRoutingRules implements Routing.Rules<RouteListRoutingRules> {
 
     @Override
     public RouteListRoutingRules put(PathMatcher pathMatcher, Handler... requestHandlers) {
-        return addSingle(Http.Method.GET, pathMatcher, requestHandlers);
+        return addSingle(Http.Method.PUT, pathMatcher, requestHandlers);
     }
 
     @Override
     public RouteListRoutingRules post(Handler... requestHandlers) {
-        return addSingle(Http.Method.PUT, requestHandlers);
+        return addSingle(Http.Method.POST, requestHandlers);
     }
 
     @Override
