@@ -24,8 +24,16 @@ else
   SCRIPT_PATH="${0}"
 fi
 
-# Current directory
+# Directory this script resides in
 MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
+# Current directory
+CURRENT_DIR=${PWD}
+
+# cd to an innocuous directory since the archetypes will create
+# a project here when we test it. See issue #64
+TARGET_DIR=${MY_DIR}/target
+mkdir -p ${TARGET_DIR}
+cd ${TARGET_DIR}
 
 ${MY_DIR}/create-archetypes.sh
 
@@ -60,3 +68,11 @@ mvn archetype:generate -DinteractiveMode=false \
 
 # build the generated project
 mvn -f ${PWD}/quickstart-mp/pom.xml install
+
+# Paranoia. Don't want to delete /!
+if [ ! -z "${TARGET_DIR}" ]; then
+    rm -rf ${TARGET_DIR}/
+fi
+
+# cd back to original directory 
+cd ${CURRENT_DIR}
