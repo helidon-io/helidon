@@ -9,3 +9,4 @@ TODO add security
 TODO   - basic authentication
 TODO add metrics
 TODO add tracing
+TODO add support for Config.as(Pojo.class) (ConfigSubstitutions class in substrate-vm extension)

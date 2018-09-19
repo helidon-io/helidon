@@ -50,6 +50,12 @@ public final class GraalMain {
     private GraalMain() {
     }
 
+    /**
+     * Start this example.
+     *
+     * @param args not used
+     * @throws IOException if we fail to read logging configuration
+     */
     public static void main(String[] args) throws IOException {
         LogManager.getLogManager().readConfiguration(GraalMain.class.getResourceAsStream("/logging.properties"));
 

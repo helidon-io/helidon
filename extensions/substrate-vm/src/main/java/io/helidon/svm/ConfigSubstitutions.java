@@ -26,9 +26,9 @@ import com.oracle.svm.core.annotate.TargetClass;
 /**
  * Graal VM substitutions for Config.
  */
-public class ConfigSubstitutions {
+public final class ConfigSubstitutions {
     @TargetClass(className = "io.helidon.config.ConfigMapperManager")
-    static final class Target_io_helidon_config_ConfigMapperManager {
+    static final class ConfigMapperSvmExtension {
         @Substitute
         private <T> ConfigMapper<T> fallbackConfigMapper(Class<T> type) {
             return new ConfigMapper<T>() {

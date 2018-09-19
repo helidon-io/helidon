@@ -25,29 +25,29 @@ import io.netty.util.internal.logging.JdkLoggerFactory;
 /**
  * Substitutions for Graal Substrate VM.
  */
-public class NettySubstitutions {
+public final class NettySubstitutions {
     @TargetClass(className = "io.netty.util.internal.PlatformDependent0")
-    static final class Target_io_netty_util_internal_PlatformDependent0 {
+    static final class PlatformDependent0SvmExtension {
         @Alias @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.FieldOffset, declClassName = "java.nio.Buffer", name =
                 "address")
         private static long ADDRESS_FIELD_OFFSET;
     }
 
     @TargetClass(className = "io.netty.util.internal.CleanerJava6")
-    static final class Target_io_netty_util_internal_CleanerJava6 {
+    static final class CleanerJava6SvmExtension {
         @Alias @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.FieldOffset, declClassName = "java.nio.DirectByteBuffer",
                                     name = "cleaner")
         private static long CLEANER_FIELD_OFFSET;
     }
 
     @TargetClass(className = "io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess")
-    static final class Target_io_netty_util_internal_shaded_org_jctools_util_UnsafeRefArrayAccess {
+    static final class UnsafeRefArrayAccessSvmExtension {
         @Alias @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.ArrayIndexShift, declClass = Object[].class)
         public static int REF_ELEMENT_SHIFT;
     }
 
-    @TargetClass(io.netty.util.internal.logging.InternalLoggerFactory.class)
-    static final class Target_io_netty_util_internal_logging_InternalLoggerFactory {
+    @TargetClass(className = "io.netty.util.internal.logging.InternalLoggerFactory")
+    static final class InternalLoggerFactorySvmExtension {
         @Substitute
         private static InternalLoggerFactory newDefaultFactory(String name) {
             return JdkLoggerFactory.INSTANCE;

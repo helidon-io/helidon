@@ -27,7 +27,7 @@ import org.graalvm.nativeimage.RuntimeReflection;
  * Add all service loader files and classes.
  */
 @AutomaticFeature
-public class ServiceLoaderFeature implements Feature {
+public final class ServiceLoaderFeature implements Feature {
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
