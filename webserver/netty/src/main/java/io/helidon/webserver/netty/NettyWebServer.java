@@ -101,7 +101,7 @@ class NettyWebServer implements WebServer {
                 bootstrap.option(ChannelOption.SO_BACKLOG, soConfig.backlog());
             }
             if (soConfig.timeoutMillis() > 0) {
-                bootstrap.option(ChannelOption.SO_TIMEOUT, soConfig.backlog());
+                bootstrap.option(ChannelOption.SO_TIMEOUT, soConfig.timeoutMillis());
             }
             if (soConfig.receiveBufferSize() > 0) {
                 bootstrap.option(ChannelOption.SO_RCVBUF, soConfig.receiveBufferSize());
