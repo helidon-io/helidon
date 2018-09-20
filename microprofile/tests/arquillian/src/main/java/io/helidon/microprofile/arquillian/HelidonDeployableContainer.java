@@ -209,16 +209,18 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         urls.add(classesDir.toUri().toURL());
 
         // lib directory - need to find each jar file
-        Files.list(libDir)
-                .filter(path -> path.getFileName().toString().endsWith(".jar"))
-                .forEach(path -> {
-                    try {
-                        urls.add(path.toUri().toURL());
-                    } catch (MalformedURLException e) {
-                        throw new HelidonArquillianException("Failed to get URL from library on path: " + path.toAbsolutePath(),
-                                                             e);
-                    }
-                });
+        if (Files.exists(libDir)) {
+            Files.list(libDir)
+                    .filter(path -> path.getFileName().toString().endsWith(".jar"))
+                    .forEach(path -> {
+                        try {
+                            urls.add(path.toUri().toURL());
+                        } catch (MalformedURLException e) {
+                            throw new HelidonArquillianException("Failed to get URL from library on path: "
+                                    + path.toAbsolutePath(), e);
+                        }
+                    });
+        }
 
         return urls.toArray(new URL[0]);
     }

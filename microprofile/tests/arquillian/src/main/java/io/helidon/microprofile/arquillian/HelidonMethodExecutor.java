@@ -16,22 +16,63 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.stream.Stream;
+
+import io.helidon.microprofile.arquillian.HelidonContainerExtension.HelidonCDIInjectionEnricher;
+
 import org.jboss.arquillian.container.test.spi.ContainerMethodExecutor;
 import org.jboss.arquillian.test.spi.TestMethodExecutor;
 import org.jboss.arquillian.test.spi.TestResult;
+import org.junit.After;
+import org.junit.Before;
 
 /**
  * Class HelidonMethodExecutor.
  */
 public class HelidonMethodExecutor implements ContainerMethodExecutor {
 
+    private HelidonCDIInjectionEnricher enricher = new HelidonCDIInjectionEnricher();
+
     /**
-     * This is basically a no-op executor.
+     * Invoke method after enrichment. Inexplicably, the {@code @Before}
+     * and {@code @After} methods are not called when running this
+     * executor. Calling them manually for now.
      *
      * @param testMethodExecutor Method executor.
      * @return Test result.
      */
     public TestResult invoke(TestMethodExecutor testMethodExecutor) {
+        try {
+            Object object = testMethodExecutor.getInstance();
+            Method method = testMethodExecutor.getMethod();
+            enricher.enrich(object);
+            invokeAnnotated(object, Before.class);
+            testMethodExecutor.invoke(enricher.resolve(method));
+            invokeAnnotated(object, After.class);
+        } catch (Throwable t) {
+            return TestResult.failed(t);
+        }
         return TestResult.passed();
+    }
+
+    /**
+     * Invoke an annotated method.
+     *
+     * @param object Test instance.
+     * @param annotClass Annotation to look for.
+     */
+    private void invokeAnnotated(Object object, Class<? extends Annotation> annotClass) {
+        Class<?> clazz = object.getClass();
+        Stream.of(clazz.getMethods())
+                .filter(m -> m.getAnnotation(annotClass) != null)
+                .forEach(m -> {
+                    try {
+                        m.invoke(object);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 }

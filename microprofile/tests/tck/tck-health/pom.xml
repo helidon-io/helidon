@@ -20,31 +20,26 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
         <version>0.10.1-SNAPSHOT</version>
     </parent>
-    <artifactId>tck-metrics</artifactId>
-    <name>Helidon Microprofile Tests TCK Metrics</name>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>tck-health</artifactId>
+    <name>Helidon Microprofile Tests TCK Health</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-microprofile-metrics-cdi</artifactId>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-1.1</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <groupId>io.helidon.microprofile.health</groupId>
+            <artifactId>helidon-microprofile-health-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -55,37 +50,19 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
+            <groupId>org.jboss.arquillian.testng</groupId>
+            <artifactId>arquillian-testng-container</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-rest-tck</artifactId>
-            <version>${version.lib.microprofile-metrics-api}</version>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.arquillian.junit</groupId>
-                    <artifactId>arquillian-junit-container</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api-tck</artifactId>
-            <version>${version.lib.microprofile-metrics-api}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.arquillian.junit</groupId>
-                    <artifactId>arquillian-junit-container</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <groupId>org.eclipse.microprofile.health</groupId>
+            <artifactId>microprofile-health-tck</artifactId>
+            <version>${version.lib.microprofile-health-api}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -96,17 +73,13 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <dependenciesToScan>
-                        <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-api-tck</dependency>
-                        <dependency>org.eclipse.microprofile.metrics:microprofile-metrics-rest-tck</dependency>
+                        <dependency>org.eclipse.microprofile.health:microprofile-health-tck</dependency>
                     </dependenciesToScan>
-                    <environmentVariables>
-                        <MP_METRICS_TAGS>tier=integration</MP_METRICS_TAGS>
-                    </environmentVariables>
                 </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-junit4</artifactId>
+                        <artifactId>surefire-testng</artifactId>
                         <version>${version.plugin.surefire}</version>
                     </dependency>
                 </dependencies>
