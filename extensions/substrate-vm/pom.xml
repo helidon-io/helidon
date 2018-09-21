@@ -35,6 +35,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <!-- This dependency does not exist in maven central -->
+            <!-- it must be configured manually in local repo - see Graal VM example for steps -->
             <groupId>com.oracle.substratevm</groupId>
             <artifactId>svm</artifactId>
             <version>GraalVM-1.0.0-rc6</version>
@@ -43,7 +45,7 @@
         <dependency>
             <groupId>org.graalvm</groupId>
             <artifactId>graal-sdk</artifactId>
-            <version>1.0.0-rc6</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

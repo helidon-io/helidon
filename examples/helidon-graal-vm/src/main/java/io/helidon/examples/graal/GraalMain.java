@@ -17,7 +17,6 @@ package io.helidon.examples.graal;
 
 import java.io.IOException;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -46,6 +45,15 @@ import io.helidon.webserver.json.JsonSupport;
  * </ol>
  */
 public final class GraalMain {
+    private static long timestamp;
+
+    static {
+        try {
+            LogManager.getLogManager().readConfiguration(GraalMain.class.getResourceAsStream("/logging.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     // private constructor
     private GraalMain() {
     }
@@ -57,27 +65,32 @@ public final class GraalMain {
      * @throws IOException if we fail to read logging configuration
      */
     public static void main(String[] args) throws IOException {
-        LogManager.getLogManager().readConfiguration(GraalMain.class.getResourceAsStream("/logging.properties"));
-
         // this property is not available in Graal SVM, and is not mandatory, yet YAML parser fails if it not present
         System.setProperty("java.runtime.name", "Graal SubstrateVM");
-        Logger.getLogger(GraalMain.class.getName()).severe("Does it even work?");
 
-        long t = System.currentTimeMillis();
+        timestamp = System.currentTimeMillis();
 
         Config config = Config.create();
 
         WebServer.create(ServerConfiguration.fromConfig(config.get("server")), routing(config))
-                .start().thenAccept(webServer -> {
-            long time = System.currentTimeMillis() - t;
-            System.out.println("Application started in " + time + " milliseconds");
-            System.out.println("Application is available at: http://localhost:" + webServer.port() + "/");
-        })
-                .exceptionally(throwable -> {
-                    System.err.println("Failed to start webserver");
-                    throwable.printStackTrace();
-                    return null;
-                });
+                .start()
+                .thenAccept(GraalMain::webServerStarted)
+                .exceptionally(GraalMain::webServerFailed);
+    }
+
+    private static Void webServerFailed(Throwable throwable) {
+        System.err.println("Failed to start webserver");
+        throwable.printStackTrace();
+        return null;
+    }
+
+    private static void webServerStarted(WebServer webServer) {
+        long time = System.currentTimeMillis() - timestamp;
+        System.out.println("Application started in " + time + " milliseconds");
+        System.out.println("Application is available at:");
+        System.out.println("Message from config:        http://localhost:" + webServer.port() + "/");
+        //System.out.println("Hardcoded message:          http://localhost:" + webServer.port() + "/hello");
+        //System.out.println("JSON response:              http://localhost:" + webServer.port() + "/json?param=testParam");
     }
 
     private static Routing routing(Config config) {
@@ -93,16 +106,13 @@ public final class GraalMain {
 
     private static void jsonResponse(ServerRequest req, ServerResponse res) {
         String param = req.queryParams().first("param").orElse("default");
-        try {
-            JsonObject theObject = Json.createObjectBuilder()
-                    .add("key", "value")
-                    .add("time", System.currentTimeMillis())
-                    .add("parameter", param)
-                    .build();
 
-            res.send(theObject);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        JsonObject theObject = Json.createObjectBuilder()
+                .add("key", "value")
+                .add("time", System.currentTimeMillis())
+                .add("parameter", param)
+                .build();
+
+        res.send(theObject);
     }
 }

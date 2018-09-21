@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-graal-vm</artifactId>
+    <name>Helidon Examples Graal VM Integration</name>
 
     <dependencies>
         <dependency>
@@ -54,7 +55,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>

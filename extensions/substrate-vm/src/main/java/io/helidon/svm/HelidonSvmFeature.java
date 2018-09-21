@@ -33,7 +33,15 @@ public class HelidonSvmFeature implements Feature {
     public void beforeAnalysis(BeforeAnalysisAccess access) {
         // logging
         registerInstantiation(ConsoleHandler.class);
+        RuntimeReflection.register(ConsoleHandler.class.getDeclaredMethods());
+        RuntimeReflection.register(ConsoleHandler.class.getMethods());
+        RuntimeReflection.register(ConsoleHandler.class.getDeclaredConstructors());
+        RuntimeReflection.register(ConsoleHandler.class.getConstructors());
         registerInstantiation(SimpleFormatter.class);
+        RuntimeReflection.register(SimpleFormatter.class.getDeclaredMethods());
+        RuntimeReflection.register(SimpleFormatter.class.getMethods());
+        RuntimeReflection.register(SimpleFormatter.class.getDeclaredConstructors());
+        RuntimeReflection.register(SimpleFormatter.class.getConstructors());
 
         // needed for YAML parsing
         RuntimeReflection.register(Map.class);
