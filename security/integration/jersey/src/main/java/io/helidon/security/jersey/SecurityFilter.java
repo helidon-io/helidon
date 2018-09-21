@@ -66,7 +66,6 @@ import io.helidon.security.internal.SecurityAuditEvent;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -83,7 +82,7 @@ import static io.helidon.security.EndpointConfig.AnnotationScope.METHOD;
  */
 @Priority(Priorities.AUTHENTICATION)
 @ConstrainedTo(RuntimeType.SERVER)
-public class SecurityFilter implements ContainerRequestFilter, ContainerResponseFilter {
+public class SecurityFilter extends SecurityFilterCommon implements ContainerRequestFilter, ContainerResponseFilter {
     private static final String PROP_FILTER_CONTEXT = "io.helidon.security.jersey.FilterContext";
 
     private static final Logger LOGGER = Logger.getLogger(SecurityFilter.class.getName());
@@ -93,9 +92,6 @@ public class SecurityFilter implements ContainerRequestFilter, ContainerResponse
 
     @Context
     private FeatureConfig featureConfig;
-
-    @Context
-    private Security security;
 
     @Context
     private ServerConfig serverConfig;
@@ -127,8 +123,8 @@ public class SecurityFilter implements ContainerRequestFilter, ContainerResponse
                    UriInfo uriInfo,
                    SecurityContext securityContext) {
 
+        super(security);
         this.featureConfig = featureConfig;
-        this.security = security;
         this.serverConfig = serverConfig;
         this.resourceInfo = resourceInfo;
         this.uriInfo = uriInfo;
@@ -147,8 +143,15 @@ public class SecurityFilter implements ContainerRequestFilter, ContainerResponse
 
     @Override
     public void filter(ContainerRequestContext request) {
-        Span securitySpan = startNewSpan(securityContext.getTracingSpan(), "security");
-        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.getId()));
+        if (featureConfig.shouldUsePrematching()) {
+            return;
+        }
+        handleSecurity(request);
+    }
+
+    private void handleSecurity(ContainerRequestContext request) {
+        Span securitySpan = startSecuritySpan(securityContext);
+
         FilterContext context = initRequestFiltering(request);
 
         if (context.isShouldFinish()) {
@@ -331,12 +334,7 @@ public class SecurityFilter implements ContainerRequestFilter, ContainerResponse
         span.finish();
     }
 
-    private Span startNewSpan(SpanContext parentSpan, String name) {
-        Tracer.SpanBuilder spanBuilder = security.getTracer().buildSpan(name);
-        spanBuilder.asChildOf(parentSpan);
 
-        return spanBuilder.start();
-    }
 
     private void authorize(FilterContext context, Span securitySpan, SecurityContext securityContext) {
         if (context.getMethodSecurity().isAtzExplicit()) {

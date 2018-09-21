@@ -66,7 +66,10 @@ public final class SecurityFeature implements Feature {
 
     private SecurityFeature(Builder builder) {
         this.security = builder.security;
-        this.featureConfig = new FeatureConfig(builder.authorizeAnnotatedOnly, builder.queryParamHandlers, builder.debug);
+        this.featureConfig = new FeatureConfig(builder.authorizeAnnotatedOnly,
+                                               builder.queryParamHandlers,
+                                               builder.debug,
+                                               builder.usePrematching);
     }
 
     /**
@@ -121,6 +124,7 @@ public final class SecurityFeature implements Feature {
         private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private boolean authorizeAnnotatedOnly;
         private boolean debug;
+        private boolean usePrematching;
 
         private Builder(Security security) {
             this.security = security;
@@ -156,6 +160,21 @@ public final class SecurityFeature implements Feature {
          */
         public Builder addQueryParamHandlers(Iterable<QueryParamHandler> handlers) {
             handlers.forEach(this::addQueryParamHandler);
+            return this;
+        }
+
+        /**
+         * Configure whether pre-matching or post-matching filter is used.
+         * Defaults to post-matching, as we have access to information about resource class and method that is
+         * invoked, allowing us to use annotations defined on these.
+         * When switched to prematching, the security is an on/off switch - all resources are protected the
+         * same way.
+         *
+         * @param usePrematching whether to use pre-matching filter instead of post-matching
+         * @return updated builder instance
+         */
+        public Builder usePrematchingFilter(boolean usePrematching) {
+            this.usePrematching = usePrematching;
             return this;
         }
 
@@ -198,6 +217,7 @@ public final class SecurityFeature implements Feature {
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
+            config.get("use-prematching-filter").asOptionalBoolean().ifPresent(this::usePrematchingFilter);
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asOptionalBoolean().ifPresent(this::authorizeAnnotatedOnly);
             myConfig.get("query-params").asOptionalList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
