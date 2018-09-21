@@ -30,7 +30,6 @@ import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.GenericType;
 
-import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 
 import io.opentracing.Span;
@@ -44,14 +43,12 @@ import org.glassfish.jersey.internal.util.collection.Ref;
 @PreMatching
 @Priority(Priorities.AUTHENTICATION)
 @ConstrainedTo(RuntimeType.SERVER)
-class SecurityPreMatchingFilter implements ContainerRequestFilter {
+class SecurityPreMatchingFilter extends SecurityFilterCommon implements ContainerRequestFilter {
     static final String PROP_CLOSE_PARENT_SPAN = "io.helidon.security.jersey.SecurityFilter.closeParent";
     static final String PROP_PARENT_SPAN = "io.helidon.security.jersey.SecurityFilter.parentSpan";
 
     private static final AtomicInteger CONTEXT_COUNTER = new AtomicInteger();
 
-    @Context
-    private Security security;
 
     @Context
     private InjectionManager injectionManager;
@@ -61,6 +58,9 @@ class SecurityPreMatchingFilter implements ContainerRequestFilter {
 
     @Context
     private ExecutorService executorService;
+
+    @Context
+    private FeatureConfig featureConfig;
 
     @Override
     public void filter(ContainerRequestContext request) {
@@ -85,5 +85,14 @@ class SecurityPreMatchingFilter implements ContainerRequestFilter {
 
         injectionManager.<Ref<SecurityContext>>getInstance((new GenericType<Ref<SecurityContext>>() { }).getType())
                 .set(securityContext);
+
+        if (featureConfig.shouldUsePrematching()) {
+            handleSecurity(request, securityContext);
+        }
+    }
+
+    private void handleSecurity(ContainerRequestContext request, SecurityContext securityContext) {
+        Span securitySpan = startSecuritySpan(securityContext);
+        FilterCon
     }
 }

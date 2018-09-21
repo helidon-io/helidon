@@ -26,19 +26,23 @@ import java.util.List;
 class FeatureConfig {
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
+    private final boolean usePrematching;
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
 
     FeatureConfig() {
         this.authorizeAnnotatedOnly = false;
         this.debug = false;
+        this.usePrematching = false;
     }
 
     FeatureConfig(boolean authorizeAnnotatedOnly,
                   List<QueryParamHandler> queryParamHandlers,
-                  boolean debug) {
+                  boolean debug,
+                  boolean usePrematching) {
         this.authorizeAnnotatedOnly = authorizeAnnotatedOnly;
         this.queryParamHandlers.addAll(queryParamHandlers);
         this.debug = debug;
+        this.usePrematching = usePrematching;
     }
 
     public boolean shouldAuthorizeAnnotatedOnly() {
@@ -51,6 +55,10 @@ class FeatureConfig {
 
     public boolean isDebug() {
         return debug;
+    }
+
+    public boolean shouldUsePrematching() {
+        return usePrematching;
     }
 
     @Override
