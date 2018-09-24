@@ -159,7 +159,8 @@ class NettyWebServer implements WebServer {
                 try {
                     bootstrap.bind(configuration.bindAddress(), port).addListener(channelFuture -> {
                         if (!channelFuture.isSuccess()) {
-                            LOGGER.info(() -> "Channel '" + name + "' startup failed. Startup failure routine initiated.");
+                            LOGGER.info(() -> "Channel '" + name + "' startup failed with message '"
+                                    + channelFuture.cause().getMessage() + "'.");
                             channelsUpFuture.completeExceptionally(new IllegalStateException("Channel startup failed: " + name,
                                                                                              channelFuture.cause()));
                             return;
