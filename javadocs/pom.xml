@@ -79,11 +79,24 @@
                             <verbose/>
                             <maxmemory>256m</maxmemory>
                             <links>
-                                <link>https://docs.oracle.com/javase/8/docs/api/</link>
+                                <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                                <link>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</link>
+                                <link>https://docs.oracle.com/javase/8/docs/api</link>
+                                <link>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</link>
+                                <link>https://jersey.github.io/apidocs/${version.lib.jersey}/jersey</link>
+                                <link>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</link>
+                                <link>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</link>
+                                <link>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</link>
+                                <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
+                                <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
+                                <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
+                                <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
+                                <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
+                                <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
                             </links>
-                            <additionalJOptions>
-                                <JOption>-source</JOption>
-                                <JOption>8</JOption>
+                            <additionalJOptions combine.children="append">
+                                <!-- javadoc.io requires a user agent -->
+                                <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                             </additionalJOptions>
                             <additionalparam>-Xdoclint:none</additionalparam>
                             <includeDependencySources>true</includeDependencySources>
