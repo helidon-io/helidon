@@ -315,6 +315,7 @@ public final class Security {
      * <li>environment</li>
      * </ul>
      *
+     * @param child the name of the child node to retrieve from config
      * @return a child node of security configuration
      * @throws IllegalArgumentException in case you request child in one of the forbidden trees
      */
