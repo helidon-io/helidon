@@ -76,7 +76,7 @@ class OptionalSecurityTest {
                 .addAuthenticationProvider(OptionalSecurityTest::authenticate)
                 .build();
 
-        featureConfig = new FeatureConfig(false, CollectionsHelper.listOf(), false);
+        featureConfig = new FeatureConfig();
 
         serverConfig = ResourceConfig.forApplication(getApplication());
 

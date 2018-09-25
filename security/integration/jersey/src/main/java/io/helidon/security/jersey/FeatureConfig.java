@@ -26,39 +26,48 @@ import java.util.List;
 class FeatureConfig {
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
-    private final boolean usePrematching;
+    private final boolean usePrematchingAtn;
+    private final boolean usePrematchingAtz;
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
 
     FeatureConfig() {
-        this.authorizeAnnotatedOnly = false;
         this.debug = false;
-        this.usePrematching = false;
+        this.authorizeAnnotatedOnly = false;
+        this.usePrematchingAtn = false;
+        this.usePrematchingAtz = false;
     }
 
-    FeatureConfig(boolean authorizeAnnotatedOnly,
-                  List<QueryParamHandler> queryParamHandlers,
-                  boolean debug,
-                  boolean usePrematching) {
-        this.authorizeAnnotatedOnly = authorizeAnnotatedOnly;
-        this.queryParamHandlers.addAll(queryParamHandlers);
-        this.debug = debug;
-        this.usePrematching = usePrematching;
+    FeatureConfig(SecurityFeature.Builder builder) {
+        this.debug = builder.isDebug();
+        this.authorizeAnnotatedOnly = builder.isAuthorizeAnnotatedOnly();
+        this.usePrematchingAtz = builder.isPrematchingAuthorization();
+        if (this.usePrematchingAtz) {
+            this.usePrematchingAtn = true;
+        } else {
+            this.usePrematchingAtn = builder.isPrematchingAuthentication();
+        }
+
+        this.queryParamHandlers.addAll(builder.getQueryParamHandlers());
     }
 
-    public boolean shouldAuthorizeAnnotatedOnly() {
+    boolean shouldAuthorizeAnnotatedOnly() {
         return authorizeAnnotatedOnly;
     }
 
-    public List<QueryParamHandler> getQueryParamHandlers() {
+    List<QueryParamHandler> getQueryParamHandlers() {
         return Collections.unmodifiableList(queryParamHandlers);
     }
 
-    public boolean isDebug() {
+    boolean isDebug() {
         return debug;
     }
 
-    public boolean shouldUsePrematching() {
-        return usePrematching;
+    public boolean shouldUsePrematchingAuthentication() {
+        return usePrematchingAtn;
+    }
+
+    public boolean shouldUsePrematchingAuthorization() {
+        return usePrematchingAtz;
     }
 
     @Override

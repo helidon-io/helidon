@@ -104,6 +104,14 @@ class SecurityDefinition {
         this.auditErrorSeverity = checkDefault(auditErrorSeverity, audited.errorSeverity(), Audited.DEFAULT_ERROR_SEVERITY);
     }
 
+    void requiresAuthentication(boolean atn) {
+        this.requiresAuthentication = atn;
+    }
+
+    void setRequiresAuthorization(boolean atz) {
+        this.requiresAuthorization = atz;
+    }
+
     private <T> T checkDefault(T currentValue, T annotValue, T defaultValue) {
         if (null == currentValue) {
             return annotValue;

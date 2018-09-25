@@ -61,15 +61,12 @@ public final class SecurityFeature implements Feature {
      */
     public SecurityFeature(Security security) {
         this.security = security;
-        this.featureConfig = new FeatureConfig();
+        this.featureConfig = new FeatureConfig(builder(security).fromConfig(security.getConfig("jersey")));
     }
 
     private SecurityFeature(Builder builder) {
         this.security = builder.security;
-        this.featureConfig = new FeatureConfig(builder.authorizeAnnotatedOnly,
-                                               builder.queryParamHandlers,
-                                               builder.debug,
-                                               builder.usePrematching);
+        this.featureConfig = new FeatureConfig(builder);
     }
 
     /**
@@ -119,12 +116,13 @@ public final class SecurityFeature implements Feature {
     /**
      * {@link SecurityFeature} fluent API builder.
      */
-    public static class Builder implements io.helidon.common.Builder<SecurityFeature> {
+    public static final class Builder implements io.helidon.common.Builder<SecurityFeature> {
         private final Security security;
         private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
         private boolean authorizeAnnotatedOnly;
         private boolean debug;
-        private boolean usePrematching;
+        private boolean prematchingAuthorization = false;
+        private boolean prematchingAuthentication = false;
 
         private Builder(Security security) {
             this.security = security;
@@ -132,6 +130,8 @@ public final class SecurityFeature implements Feature {
 
         /**
          * Whether to authorize only annotated methods (with {@link Authorized} annotation) or all.
+         * When using {@link #usePrematchingAuthorization(boolean)}
+         * this method is ignored.
          *
          * @param authzOnly if set to true, authorization will be performed on annotated methods only
          * @return updated builder instance
@@ -164,7 +164,7 @@ public final class SecurityFeature implements Feature {
         }
 
         /**
-         * Configure whether pre-matching or post-matching filter is used.
+         * Configure whether pre-matching or post-matching filter is used to authenticate requests.
          * Defaults to post-matching, as we have access to information about resource class and method that is
          * invoked, allowing us to use annotations defined on these.
          * When switched to prematching, the security is an on/off switch - all resources are protected the
@@ -173,8 +173,25 @@ public final class SecurityFeature implements Feature {
          * @param usePrematching whether to use pre-matching filter instead of post-matching
          * @return updated builder instance
          */
-        public Builder usePrematchingFilter(boolean usePrematching) {
-            this.usePrematching = usePrematching;
+        public Builder usePrematchingAuthentication(boolean usePrematching) {
+            this.prematchingAuthentication = usePrematching;
+            return this;
+        }
+
+        /**
+         * Configure whether pre-matching or post-matching filter is used to authorize requests.
+         * Defaults to post-matching, as we have access to information about resource class and method that is
+         * invoked, allowing us to use annotations defined on these.
+         * When switched to prematching, the security is an on/off switch - all resources are protected the
+         * same way.
+         *
+         * When set to true, authentication will be prematching as well.
+         *
+         * @param usePrematching whether to use pre-matching filter instead of post-matching
+         * @return updated builder instance
+         */
+        public Builder usePrematchingAuthorization(boolean usePrematching) {
+            this.prematchingAuthorization = usePrematching;
             return this;
         }
 
@@ -217,7 +234,8 @@ public final class SecurityFeature implements Feature {
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("use-prematching-filter").asOptionalBoolean().ifPresent(this::usePrematchingFilter);
+            config.get("prematching-authentication").asOptionalBoolean().ifPresent(this::usePrematchingAuthentication);
+            config.get("prematching-authorization").asOptionalBoolean().ifPresent(this::usePrematchingAuthorization);
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asOptionalBoolean().ifPresent(this::authorizeAnnotatedOnly);
             myConfig.get("query-params").asOptionalList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
@@ -233,6 +251,30 @@ public final class SecurityFeature implements Feature {
         @Override
         public SecurityFeature build() {
             return new SecurityFeature(this);
+        }
+
+        Security getSecurity() {
+            return security;
+        }
+
+        List<QueryParamHandler> getQueryParamHandlers() {
+            return queryParamHandlers;
+        }
+
+        boolean isAuthorizeAnnotatedOnly() {
+            return authorizeAnnotatedOnly;
+        }
+
+        boolean isDebug() {
+            return debug;
+        }
+
+        boolean isPrematchingAuthorization() {
+            return prematchingAuthorization;
+        }
+
+        boolean isPrematchingAuthentication() {
+            return prematchingAuthentication;
         }
     }
 

@@ -20,7 +20,8 @@ security:
   - name: "TestProvider"
     class: "io.helidon.security.jersey.BindingTestProvider"
   jersey:
-    use-prematching-filter: true
+    prematching-authentication: true
+    prematching-authorization: true
     defaults:
       # query parameters will be extracted from request
       # and sent to authentication and authorization providers
