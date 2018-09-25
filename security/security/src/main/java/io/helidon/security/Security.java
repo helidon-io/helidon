@@ -75,12 +75,19 @@ public final class Security {
      */
     public static final String HEADER_ORIG_URI = "X_ORIG_URI_HEADER";
 
-    private static final Set<String> RESERVED_PROVIDER_KEYS = CollectionsHelper.setOf("name",
-                                                                                      "class",
-                                                                                      "is-authentication-provider",
-                                                                                      "is-authorization-provider",
-                                                                                      "is-client-security-provider",
-                                                                                      "is-audit-provider");
+    private static final Set<String> RESERVED_PROVIDER_KEYS = CollectionsHelper.setOf(
+            "name",
+            "class",
+            "is-authentication-provider",
+            "is-authorization-provider",
+            "is-client-security-provider",
+            "is-audit-provider");
+
+    private static final Set<String> CONFIG_INTERNAL_PREFIXES = CollectionsHelper.setOf(
+            "provider-policy",
+            "providers",
+            "environment"
+    );
 
     private static final Logger LOGGER = Logger.getLogger(Security.class.getName());
 
@@ -92,6 +99,7 @@ public final class Security {
     private final Tracer securityTracer;
     private final SecurityTime serverTime;
     private final Supplier<ExecutorService> executorService;
+    private final Config securityConfig;
 
     @SuppressWarnings("unchecked")
     private Security(Builder builder) {
@@ -101,6 +109,7 @@ public final class Security {
         this.annotations.addAll(SecurityUtil.getAnnotations(builder.allProviders));
         this.securityTracer = SecurityUtil.getTracer(builder.tracingEnabled, builder.tracer);
         this.subjectMappingProvider = Optional.ofNullable(builder.subjectMappingProvider);
+        this.securityConfig = builder.config;
 
         //providers
         List<NamedProvider<AuthorizationProvider>> atzProviders = new LinkedList<>();
@@ -294,6 +303,33 @@ public final class Security {
      */
     public Collection<Class<? extends Annotation>> getCustomAnnotations() {
         return annotations;
+    }
+
+    /**
+     * The configuration of security.
+     * <p>
+     * This method will NOT return security internal configuration:
+     * <ul>
+     * <li>provider-policy</li>
+     * <li>providers</li>
+     * <li>environment</li>
+     * </ul>
+     *
+     * @return a child node of security configuration
+     * @throws IllegalArgumentException in case you request child in one of the forbidden trees
+     */
+    public Config getConfig(String child) {
+        String test = child.trim();
+        if (test.isEmpty()) {
+            throw new IllegalArgumentException("Root of security configuration is not available");
+        }
+        for (String prefix : CONFIG_INTERNAL_PREFIXES) {
+            if (child.equals(prefix) || child.startsWith(prefix + ".")) {
+                throw new IllegalArgumentException("Security configuration for " + prefix + " is not available");
+            }
+        }
+
+        return securityConfig.get(child);
     }
 
     Optional<? extends AuthenticationProvider> resolveAtnProvider(String providerName) {
@@ -792,6 +828,7 @@ public final class Security {
          * @return updated builder instance
          */
         Builder fromConfig(Config config) {
+            this.config = config.get("security");
             config.get("security.environment.server-time").asOptional(SecurityTime.class).ifPresent(this::serverTime);
             executorSupplier(ThreadPoolSupplier.from(config));
 
