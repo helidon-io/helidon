@@ -210,7 +210,7 @@ Example configuration with a single user (may have more):
 
 Example configuration with a single user (may have more) using secured config
 filter (to encrypt passwords) - in this example, the password is intentionally in
-clear text to show its value (see secure config)
+clear text to show its value (see <<microprofile/06_configuration.adoc,Configuration Secrets>>)
 
 [source,yaml]
 ----
