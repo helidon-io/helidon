@@ -21,59 +21,111 @@
 :keywords: helidon, reactive, reactive streams, reactive java, reactive webserver, metrics
 
 == Metrics Support
-The WebServer includes Prometheus support for metrics.
+Helidon WebServer includes support for MicroProfile Metrics. MicroProfile
+Metrics has a variety of metric types and two reporting formats that
+are exposed at the `/metrics` endpoint.
+
 
 === Prerequisites
 
 Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
-.Webserver Prometheus Support Dependency
+.Webserver Metrics Dependency
 ----
-<dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-prometheus</artifactId>
-</dependency>
+    <dependency>
+        <groupId>io.helidon.microprofile.metrics</groupId>
+        <artifactId>helidon-metrics-se</artifactId>
+    </dependency>
 ----
 
-=== Configuring Prometheus
-To enable Prometheus integration, register Prometheus support
-with the WebServer:
+=== Using Metrics in Your Application
+To enable Metrics, register it with the WebServer.
 
 [source,java]
-.Configuring Prometheus
+.Configuring Metrics in WebServer
 ----
+import io.helidon.metrics.MetricsSupport;
+. . .
+
 Routing.builder()
-                .register(PrometheusSupport.create())
+                .register(MetricsSupport.create())
                 .register("/myapp", new MyService())
                 .build();
 ----
 
-Then you can interact with Prometheus collectors in your service. Metrics are available at `/metrics`
+Then you can use metrics in your service.
 
 [source,java]
-.Define a Prometheus Counter
+.Define and use a Metrics Counter
 ----
+import io.helidon.metrics.RegistryFactory;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+. . .
+
 public class MyService implements Service {
-    static final Counter accessCtr = Counter.build()
-        .name("requests_total").help("Total requests.").register();  //<1>
+
+    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+        .getRegistry(MetricRegistry.Type.APPLICATION); <1>
+    private final Counter accessCtr = registry.counter("accessctr"); <2>
 
     @Override
     public void update(Routing.Rules rules) {
-            rules
-                 .any(this::countAccess)
-                 .get("/", this::myGet);
-        }
+        rules
+             .any(this::countAccess)
+             .get("/", this::myGet);
+    }
 
     private void countAccess(ServerRequest request, ServerResponse response) {
-            accessCtr.inc(); //<2>
+            accessCtr.inc(); //<3>
             request.next();
     }
 }
 ----
 
-<1> Register a Prometheus `Counter` with the default Collector
-<2> Use the `Counter` in a request handler
+<1> Get the application metrics registry
+<2> Create a counter in that registry
+<3> Increment the counter for every request
+
+=== Accessing Metrics Endpoint
+
+Access metrics data via the `/metrics` endpoint. Two reporting formats
+are supported. The HTTP Accept header sent by the client determines
+the reporting format:
+
+1. JSON format - used when the HTTP Accept header matches `application/json`
+2. Prometheus text format - used when the HTTP Accept header is `text/plain`
+   or otherwise does not match `application/json`
+
+[source,bash]
+.Example Reporting: Prometheus format
+----
+curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/metrics/
+# TYPE base:classloader_total_loaded_class_count counter
+# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
+base:classloader_total_loaded_class_count 3157
+. . .
+----
+
+[source,bash]
+.Example Reporting: JSON format
+----
+curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/ | json_pp
+{
+   "base" : {
+      "memory.maxHeap" : 3817865216,
+      "memory.committedHeap" : 335544320,
+. . .
+----
+
+In addition to your application metrics the reports contain other
+metrics of interest such as system and VM information.
+
+For full details see the
+https://github.com/eclipse/microprofile-metrics/releases[MicroProfile Metrics]
+specification.
+
 
 == Implementing a Health Check
 
