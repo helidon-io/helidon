@@ -80,7 +80,7 @@ security:
               jwt-audience: "audience"
               # notBefore = now - jwt-not-before-seconds
               # defaults to 5 seconds
-              jwt-not-before-secconds: 60
+              jwt-not-before-seconds: 60
               # expiration = now + jwt-validity-seconds
               # defaults to 1 day
               jwt-validity-seconds: 3600

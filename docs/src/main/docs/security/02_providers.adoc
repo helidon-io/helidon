@@ -24,14 +24,121 @@
 
 The following providers are implemented:
 
+* <<JWT Provider,JWT Provider>>
 * <<HTTP Basic Authentication Provider,HTTP Basic Authentication>>
 * <<HTTP Digest Authentication Provider,HTTP Digest Authentication>>
 * <<Header Authentication Provider,Header Assertion>>
 * <<HTTP Signatures,HTTP Signatures>>
 * <<ABAC (Attribute based access control) Authorization Provider,ABAC Authorization>>
-* Google Login Authentication Provider - please see security examples
-* OIDC (Open ID Connect) Authentication provider (with Oracle IDCS extension) - please see security examples
+* Google Login Authentication Provider
+    - please see security example: https://github.com/oracle/helidon/tree/master/security/examples/google-login
+* OIDC (Open ID Connect) Authentication provider - an OAuth extension for authentication
+    - please see security example: https://github.com/oracle/helidon/tree/master/security/examples/idcs-login
+* IDCS Role Mapping Provider - a role mapper that can be used with any authentication provider, retrieves roles from IDCS
+    - please see security example: https://github.com/oracle/helidon/tree/master/security/examples/idcs-login
 
+=== JWT Provider
+
+JSON Web Token (JWT) provider has support for authentication and outbound security.
+
+Authentication is based on validating the token (signature, valid before etc.) and on asserting the subject
+of the JWT subject claim.
+
+For outbound, we support either token propagation (e.g. the token from request is propagated further) or
+support for generating a brand new token based on configuration of this provider.
+
+|===
+|Property |Value
+
+|Maven groupId |io.helidon.security
+|Maven artifactId |helidon-security-provider-jwt
+|Provider package |io.helidon.security.provider.jwt
+|Provider class |JwtProvider
+|Provider key |jwt
+|===
+
+This provider is:
+
+* Authentication Provider
+* [line-through]#Authorization Provider#
+* Outbound Security Provider
+* [line-through]#Audit Provider#
+
+
+[source,xml]
+.Maven Dependency
+----
+<dependency>
+    <groupId>io.helidon.security</groupId>
+    <artifactId>helidon-security-provider-jwt</artifactId>
+</dependency>
+----
+
+==== Configuration Based Approach
+All configuration options:
+
+|===
+|key |default value |description
+
+|optional | false |If set to true, the provider will return "ABSTAIN" rather than "FAILURE" if token is not present in request
+|authenticate |true |Whether to attempt authentication
+|propagate |true |Whether to attempt identity propagation/JWT creation
+|principal-type |USER |Whether we authenticate a user or a service (other option is SERVICE)
+|atn-token | |A group for configuring authentication of the request
+|atn-token/jwk-* | |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk-path, jwk-resource-path, jwk-url, jwk-content-plain (actual JSON string), jwk-content (base64)
+|atn-token/handler |Authorization bearer |A handler configuration for inbound token - e.g. how to extract it
+|atn-token/handler/header |Authorization |Name of a header the token is expected in
+|atn-token/handler/prefix |bearer  |Prefix before the token value (optional)
+|atn-token/handler/regexp | |Regular expression to obtain the token, first matching group is used (optional)
+|sign-token | |A group for configuring outbound security
+|sign-token/jwk-* | |Configuration of the JWK to use when generating tokens (follows same rules as atn-token/jwk above), this JWK must contain private keys when using asymmetric ciphers
+|sign-token/jwt-issuer | |When we issue a new token, this is the issuer to be placed into it (validated by target service)
+|sign-token/outbound | |A group for configuring outbound rules (based on transport, host and/or path)
+|sign-token/outbound/name | |A short descriptive name for configured target service(s)
+|sign-token/outbound/transports |* |An array of transports this outbound matches (e.g. https)
+|sign-token/outbound/hosts |* |An array of hosts this outbound matches, may use * as a a wild-card (e.g. *.oracle.com)
+|sign-token/outbound/paths |* |An array of paths on the host this outbound matches, may use * as a wild-card (e.g. /some/path/*)
+|sign-token/outbound/outbound-token |Authorization bearer  |Configuration of outbound token handler (same as atn-token/handler)
+|sign-token/outbound/outbound-token/format | |Java text format for generating the value of outbound token header (e.g. "bearer %1$s")
+|sign-token/outbound/jwk-kid | |If this key is defined, we are generating a new token, otherwise we propagate existing. Defines the key id of a key definition in the JWK file to use for signing the outbound token
+|sign-token/outbound/jwt-kid | |A key to use in the generated JWT - this is for the other service to locate the verification key in their JWK
+|sign-token/outbound/jwt-audience | |Audience this key is generated for (e.g. http://www.example.org/api/myService) - validated by the other service
+|sign-token/outbound/jwt-not-before-seconds |5 |Makes this key valid this amount of seconds into the past. Allows a certain time-skew for the generated token to be valid before current time (e.g. when we expect a certain misalignment of clocks)
+|sign-token/outbound/jwt-validity-seconds |1 day |Token validity in seconds
+|===
+
+Example configuration with authentication and outbound security:
+
+[source,yaml]
+----
+- jwt:
+    atn-token:
+        jwk-path: "/config/securiy/verify-jwk.json"
+    sign-token:
+        jwk-path: "/config/security/sign-jwk.json"
+        jwt-issuer: "http://www.example.org/myservice"
+        outbound:
+         - name: "internal-services"
+           # create a new token
+           hosts:
+             - "*.example.org"
+           jwk-kid: "internal-key"
+           jwt-audience: "http://www.example.org/services"
+         - name: "b2b-service-49"
+           # create a new token and send it in a custom header
+           hosts:
+             - "b2b.partner.org"
+           paths:
+             - "/services/49"
+           jwk-kid: "partner-b2b"
+           jwt-audience: "http://b2b.partner.org"
+           outbound-token:
+             header: "X-Partner-Auth"
+         - name: "as-is"
+           # identity propagation (use existing token)
+           hosts:
+             - "*.internal.org"
+----
 
 === HTTP Basic Authentication Provider
 
@@ -103,7 +210,7 @@ Example configuration with a single user (may have more):
 
 Example configuration with a single user (may have more) using secured config
 filter (to encrypt passwords) - in this example, the password is intentionally in
-clear text to show its value (see secure config)
+clear text to show its value (see <<microprofile/06_configuration.adoc,Configuration Secrets>>)
 
 [source,yaml]
 ----
