@@ -8,6 +8,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Improvements
 
+### Fixes
+
+## [0.10.1] - 2019-09-28
+
+### Improvements
+
 - Security: Jersey integration to use pre-matching filter for securing requests
 
 ### Fixes
