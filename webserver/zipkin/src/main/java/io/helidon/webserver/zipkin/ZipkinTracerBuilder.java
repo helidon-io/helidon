@@ -50,10 +50,11 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
     private static final String DEFAULT_ZIPKIN_HOST = "127.0.0.1";
     private static final Version DEFAULT_VERSION = Version.V2;
 
-    private final String serviceName;
+    private String serviceName;
     private String protocol = DEFAULT_PROTOCOL;
     private String host = DEFAULT_ZIPKIN_HOST;
     private int port = DEFAULT_ZIPKIN_PORT;
+    private String path;
     private Version version = DEFAULT_VERSION;
     private Sender sender;
     private String userInfo;
@@ -84,8 +85,43 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
         return this;
     }
 
+    /**
+     * Override path to use.
+     * Path is usually defined by the protocol {@link Version}.
+     * Use this to override if not using default (e.g. when
+     * Zipkin is behind a reverse proxy that prefixes the path).
+     *
+     * @param path path to override the default defined by {@link Version}
+     * @return updated builder instance
+     */
+    public ZipkinTracerBuilder path(String path) {
+        this.path = path;
+        return this;
+    }
+
     public static ZipkinTracerBuilder from(Config config) {
-        return null;
+        String serviceName = config.get("service").value()
+                .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
+
+        return ZipkinTracerBuilder.forService(serviceName)
+                .fromConfig(config);
+    }
+
+    /**
+     * Update this builder from configuration.
+     *
+     * @param config configuration that contains at least the key service (if using configuration only).
+     * @return updated builder instance
+     */
+    public ZipkinTracerBuilder fromConfig(Config config) {
+        config.get("service").value().ifPresent(this::serviceName);
+        config.get("protocol").value().ifPresent(this::protocol);
+        config.get("host").value().ifPresent(this::zipkinHost);
+        config.get("port").asOptionalInt().ifPresent(this::port);
+        config.get("path").value().ifPresent(this::path);
+        config.get("api-version").value().ifPresent(this::configApiVersion);
+
+        return this;
     }
 
     /**
@@ -186,7 +222,7 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
         Sender buildSender = (this.sender == null) ? createSender() : this.sender;
 
         Reporter<Span> reporter = AsyncReporter.builder(buildSender)
-                .build(version.encoder);
+                .build(version.encoder());
 
         // Now, create a Brave tracing component with the service name you want to see in Zipkin.
         //   (the dependency is io.zipkin.brave:brave)
@@ -205,19 +241,40 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
         return new ZipkinTracer(BraveTracer.create(braveTracing));
     }
 
+    private void configApiVersion(String version) {
+        String workingVersion = version.trim().toLowerCase();
+
+        switch (workingVersion) {
+        case "1":
+        case "v1":
+            version(Version.V1);
+            return;
+        case "2":
+        case "v2":
+            version(Version.V2);
+            return;
+        default:
+            throw new IllegalArgumentException("Version in tracing configuration must be 1, 2, v1 or v2, but was: " + version);
+        }
+    }
+
+    private void serviceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
     private URI createEndpoint() {
+        String buildPath = ((null == path) ? version.path() : path);
         try {
             return new URI(
                     protocol,
                     userInfo,
                     host,
                     port,
-                    version.path(),
+                    buildPath,
                     null,
                     null);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid Zipkin endpoint: " + protocol + "://" + host + ":" + port + version.path,
-                                               e);
+            throw new IllegalArgumentException("Invalid Zipkin endpoint: " + protocol + "://" + host + ":" + port + buildPath, e);
         }
     }
 
