@@ -27,6 +27,7 @@ import brave.Tracing;
 import brave.opentracing.BraveTracer;
 import io.opentracing.Tracer;
 import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Reporter;
 import zipkin2.reporter.Sender;
@@ -166,7 +167,8 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
     public Tracer build() {
         Sender sender = this.sender != null ? this.sender : defaultSender();
 
-        Reporter<Span> reporter = AsyncReporter.builder(sender).build();
+        Reporter<Span> reporter = AsyncReporter.builder(sender)
+                .build(SpanBytesEncoder.JSON_V1);
 
         // Now, create a Brave tracing component with the service name you want to see in Zipkin.
         //   (the dependency is io.zipkin.brave:brave)
