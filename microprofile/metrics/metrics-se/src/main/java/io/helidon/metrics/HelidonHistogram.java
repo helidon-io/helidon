@@ -142,6 +142,17 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
     }
 
+    /**
+     * Returns underlying delegate. For testing purposes only.
+     *
+     * @return Underlying delegate.
+     */
+    HistogramImpl getDelegate() {
+        return delegate instanceof HistogramImpl ? (HistogramImpl) delegate
+                : delegate instanceof HelidonHistogram ? ((HelidonHistogram) delegate).getDelegate()
+                : null;
+    }
+
     @Override
     public void jsonData(JsonObjectBuilder builder) {
         JsonObjectBuilder myBuilder = Json.createObjectBuilder();
@@ -162,7 +173,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         builder.add(getName(), myBuilder.build());
     }
 
-    private static final class HistogramImpl implements Histogram {
+    static final class HistogramImpl implements Histogram {
         private final LongAdder counter = new LongAdder();
         private final ExponentiallyDecayingReservoir reservoir;
 
@@ -178,6 +189,11 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         public void update(long value) {
             counter.increment();
             reservoir.update(value);
+        }
+
+        public void update(long value, long timestamp) {
+            counter.increment();
+            reservoir.update(value, timestamp);
         }
 
         @Override
