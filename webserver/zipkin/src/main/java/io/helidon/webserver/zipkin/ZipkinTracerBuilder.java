@@ -99,6 +99,14 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
         return this;
     }
 
+    /**
+     * Create a new builder based on values in configuration.
+     * This requires at least a key "service" in the provided config.
+     *
+     * @param config configuration to load this builder from
+     * @return a new builder instance.
+     * @see ZipkinTracerBuilder#fromConfig(Config)
+     */
     public static ZipkinTracerBuilder from(Config config) {
         String serviceName = config.get("service").value()
                 .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
