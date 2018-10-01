@@ -19,14 +19,17 @@ package io.helidon.webserver.zipkin;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import io.helidon.common.Builder;
+import io.helidon.config.Config;
 
 import brave.Tracing;
 import brave.opentracing.BraveTracer;
 import io.opentracing.Tracer;
 import zipkin2.Span;
+import zipkin2.codec.BytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Reporter;
@@ -39,21 +42,24 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-public class ZipkinTracerBuilder implements Builder<Tracer> {
+public final class ZipkinTracerBuilder implements Builder<Tracer> {
 
     private static final Logger LOGGER = Logger.getLogger(ZipkinTracerBuilder.class.getName());
+    private static final String DEFAULT_PROTOCOL = "http";
     private static final int DEFAULT_ZIPKIN_PORT = 9411;
     private static final String DEFAULT_ZIPKIN_HOST = "127.0.0.1";
-    private static final String DEFAULT_ZIPKIN_API_PATH = "/api/v1/spans";
+    private static final Version DEFAULT_VERSION = Version.V2;
 
     private final String serviceName;
-    private URI zipkinEndpoint;
-
+    private String protocol = DEFAULT_PROTOCOL;
+    private String host = DEFAULT_ZIPKIN_HOST;
+    private int port = DEFAULT_ZIPKIN_PORT;
+    private Version version = DEFAULT_VERSION;
     private Sender sender;
+    private String userInfo;
 
     private ZipkinTracerBuilder(String serviceName) {
         this.serviceName = serviceName;
-        this.zipkinEndpoint = defaultEndpoint(DEFAULT_ZIPKIN_HOST);
     }
 
     /**
@@ -66,19 +72,20 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
         return new ZipkinTracerBuilder(serviceName);
     }
 
-    private static URI defaultEndpoint(String host) {
-        try {
-            return new URI(
-                    "http",
-                    null,
-                    host != null ? host : DEFAULT_ZIPKIN_HOST,
-                    DEFAULT_ZIPKIN_PORT,
-                    DEFAULT_ZIPKIN_API_PATH,
-                    null,
-                    null);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid Zipkin endpoint.", e);
-        }
+    /**
+     * Version of Zipkin API to use.
+     * Defaults to {@link Version#V2}.
+     *
+     * @param version version to use
+     * @return updated builder instance
+     */
+    public ZipkinTracerBuilder version(Version version) {
+        this.version = version;
+        return this;
+    }
+
+    public static ZipkinTracerBuilder from(Config config) {
+        return null;
     }
 
     /**
@@ -91,18 +98,15 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
      * @return updated builder.
      */
     public ZipkinTracerBuilder zipkin(URI endpoint) {
-        try {
-            this.zipkinEndpoint = new URI(
-                    "http",
-                    endpoint.getUserInfo(),
-                    endpoint.getHost() != null ? endpoint.getHost() : DEFAULT_ZIPKIN_HOST,
-                    endpoint.getPort() >= 0 ? endpoint.getPort() : DEFAULT_ZIPKIN_PORT,
-                    DEFAULT_ZIPKIN_API_PATH,
-                    null,
-                    null);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid Zipkin endpoint.", e);
+        Optional.ofNullable(endpoint.getScheme()).ifPresent(this::protocol);
+        Optional.ofNullable(endpoint.getHost()).ifPresent(this::zipkinHost);
+        if (endpoint.getPort() != -1) {
+            port(endpoint.getPort());
         }
+        if (null != endpoint.getUserInfo()) {
+            this.userInfo = endpoint.getUserInfo();
+        }
+
         return this;
     }
 
@@ -119,8 +123,6 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
     public ZipkinTracerBuilder zipkin(String endpoint) {
         if (endpoint != null) {
             zipkin(URI.create(endpoint));
-        } else {
-            this.zipkinEndpoint = defaultEndpoint(null);
         }
         return this;
     }
@@ -135,12 +137,36 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
      * @return updated builder.
      */
     public ZipkinTracerBuilder zipkinHost(String hostName) {
-        this.zipkinEndpoint = defaultEndpoint(hostName);
+        this.host = hostName;
+        return this;
+    }
+
+    /**
+     * Set the protocol to use (http, https). Defaults to {@value #DEFAULT_PROTOCOL}.
+     *
+     * @param protocol protocol to use
+     * @return updated builder instance
+     */
+    public ZipkinTracerBuilder protocol(String protocol) {
+        this.protocol = protocol;
+        return this;
+    }
+
+    /**
+     * Set the port to use. Defaults to {@value #DEFAULT_ZIPKIN_PORT}.
+     *
+     * @param port port of the zipkin server
+     * @return updated builder instance
+     */
+    public ZipkinTracerBuilder port(int port) {
+        this.port = port;
         return this;
     }
 
     /**
      * The sender to use for sending events to Zipkin.
+     * When configured, all {@link #protocol(String)}, {@link #zipkinHost(String)}, {@link #port(int)}, and
+     * {@link #version(Version)} methods are ignored.
      *
      * @param sender the sender to use
      * @return this builder
@@ -151,24 +177,16 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
         return this;
     }
 
-    private Sender defaultSender() {
-        try {
-            return URLConnectionSender.newBuilder().endpoint(zipkinEndpoint.toURL()).build();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Cannot convert to URL: " + zipkinEndpoint, e);
-        }
-    }
-
     /**
      * Builds the {@link Tracer} for Zipkin based on the configured parameters.
      *
      * @return the tracer
      */
     public Tracer build() {
-        Sender sender = this.sender != null ? this.sender : defaultSender();
+        Sender buildSender = (this.sender == null) ? createSender() : this.sender;
 
-        Reporter<Span> reporter = AsyncReporter.builder(sender)
-                .build(SpanBytesEncoder.JSON_V1);
+        Reporter<Span> reporter = AsyncReporter.builder(buildSender)
+                .build(version.encoder);
 
         // Now, create a Brave tracing component with the service name you want to see in Zipkin.
         //   (the dependency is io.zipkin.brave:brave)
@@ -177,9 +195,69 @@ public class ZipkinTracerBuilder implements Builder<Tracer> {
                 .spanReporter(reporter)
                 .build();
 
-        LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + zipkinEndpoint);
+        if (null == sender) {
+            LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + createEndpoint());
+        } else {
+            LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
+        }
 
         // use this to create an OpenTracing Tracer
         return new ZipkinTracer(BraveTracer.create(braveTracing));
+    }
+
+    private URI createEndpoint() {
+        try {
+            return new URI(
+                    protocol,
+                    userInfo,
+                    host,
+                    port,
+                    version.path(),
+                    null,
+                    null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid Zipkin endpoint: " + protocol + "://" + host + ":" + port + version.path,
+                                               e);
+        }
+    }
+
+    private Sender createSender() {
+        URI endpoint = createEndpoint();
+
+        try {
+            return URLConnectionSender.newBuilder().endpoint(endpoint.toURL()).build();
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Cannot convert to URL: " + endpoint, e);
+        }
+    }
+
+    /**
+     * Versions available for Zipkin API.
+     */
+    public enum Version {
+        /**
+         * Version 1.
+         */
+        V1("/api/v1/spans", SpanBytesEncoder.JSON_V1),
+        /**
+         * Version 2.
+         */
+        V2("/api/v2/spans", SpanBytesEncoder.JSON_V2);
+
+        private final String path;
+        private final BytesEncoder<Span> encoder;
+
+        Version(String path, SpanBytesEncoder encoder) {
+            this.path = path;
+            this.encoder = encoder;
+        }
+
+        String path() {
+            return path;
+        }
+
+        BytesEncoder<Span> encoder() {
+            return encoder;
+        }
     }
 }
