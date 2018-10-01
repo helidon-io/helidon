@@ -45,6 +45,7 @@ class ConfigMapperManager {
     private static final String METHOD_BUILDER = "builder";
     private static final String METHOD_BUILD = "build";
     private static final String METHOD_PARSE = "parse";
+    private static final String METHOD_CREATE = "create";
 
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
 
@@ -174,6 +175,11 @@ class ConfigMapperManager {
         if (!configMapper.isPresent()) {
             configMapper = findStaticMethod(type, METHOD_FROM, String.class)
                     .map(methodHandle -> new StringMethodHandleConfigMapper<>(type, "from(String) method", methodHandle));
+        }
+        //create(Config) method
+        if (!configMapper.isPresent()) {
+            configMapper = findStaticMethod(type, METHOD_CREATE, Config.class)
+                    .map(methodHandle -> new ConfigMethodHandleConfigMapper<>(type, "create(Config) method", methodHandle));
         }
         //parse(String) method
         if (!configMapper.isPresent()) {
