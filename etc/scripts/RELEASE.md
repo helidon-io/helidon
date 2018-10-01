@@ -31,7 +31,7 @@ export VERSION="0.7.0"
 
 1. Create local release branch
     ```
-    git remote add upstream https://github.com/oracle/helidon.git
+    git remote add upstream git@github.com:oracle/helidon.git
     git remote -v
     git fetch upstream
     git checkout -b release-${VERSION}
@@ -52,7 +52,7 @@ export VERSION="0.7.0"
 4. Wait for build pipeline in Wercker to complete
 
 5. Check and close nexus staging repository
-    1. In browser go to: `https://oss.sonatype.org/#view-repositories` and login
+    1. In browser go to: https://oss.sonatype.org/#view-repositories and login
        as helidonrobot.
     2. On left click "Staging Repositories"
     3. Scroll down list of repositories and find `iohelidon-`. It should be Status closed.
@@ -106,7 +106,9 @@ export VERSION="0.7.0"
    5. Create PR and merge into master
 
 
-# Staging repository profile (for `settings.xml`)
+# Staging Repository Profile
+
+To pull artifacts from the sonatype staging repository add this profile to your `settings.xml`:
 
 ```
       <profile>
