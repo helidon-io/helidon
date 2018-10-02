@@ -85,7 +85,7 @@ class HelidonHistogramTest {
     private static HelidonHistogram delegatingHistoLong;
 
     @BeforeAll
-    static void initClass() throws Exception {
+    static void initClass() {
         meta = new Metadata("file_sizes",
                             "theDisplayName",
                             "Users file size",
