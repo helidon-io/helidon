@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -96,14 +97,16 @@ class HelidonHistogramTest {
         histoLong = HelidonHistogram.create("application", meta);
         delegatingHistoLong = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
 
+        long now = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+
         for (int dato : SAMPLE_INT_DATA) {
-            histoInt.update(dato);
-            delegatingHistoInt.update(dato);
+            histoInt.getDelegate().update(dato, now);
+            delegatingHistoInt.getDelegate().update(dato, now);
         }
 
         for (long dato : SAMPLE_LONG_DATA) {
-            histoLong.update(dato);
-            delegatingHistoLong.update(dato);
+            histoLong.getDelegate().update(dato, now);
+            delegatingHistoLong.getDelegate().update(dato, now);
         }
     }
 
