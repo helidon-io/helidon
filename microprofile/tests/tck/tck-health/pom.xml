@@ -65,6 +65,11 @@
             <version>${version.lib.microprofile-health-api}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
