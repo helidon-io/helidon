@@ -111,6 +111,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                         .thenRun(() -> {
                             RequestContext requestContext = this.requestContext;
                             requestContext.responseCompleted(true);
+                            /*
+                             * Cleanup for these queues is done in HttpInitializer. However,
+                             * it may take a while for the event loop on the channel to
+                             * execute that code. If the handler has already consumed
+                             * all the data when this code is executed, we can cleanup
+                             * here and reduce the number of queues we track. This is
+                             * especially useful when keep-alive is enabled.
+                             */
+                            if (queue.release()) {
+                                queues.remove(queue);
+                            }
                         });
             if (HttpUtil.is100ContinueExpected(request)) {
                 send100Continue(ctx);
