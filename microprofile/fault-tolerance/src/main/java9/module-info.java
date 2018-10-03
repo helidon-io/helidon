@@ -19,12 +19,19 @@
  */
 module io.helidon.mp.faulttolerance {
     requires java.logging;
-    requires cdi.api;
+    requires java.annotation;
     requires javax.inject;
+    requires javax.interceptor.api;
+
+    requires cdi.api;
+    requires hystrix.core;
+    requires archaius.core;
+    requires commons.configuration;
+    requires failsafe;
+
     requires microprofile.config.api;
     requires microprofile.metrics.api;
+    requires microprofile.fault.tolerance.api;
 
-    exports io.helidon.microprofile.faultolerance;
-
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faultolerance.FaultToleranceExtension;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
 }
