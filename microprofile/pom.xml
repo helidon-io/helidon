@@ -39,6 +39,7 @@
         <module>oidc</module>
         <module>server</module>
         <module>security</module>
+        <module>fault-tolerance</module>
         <module>bundles</module>
         <module>tests</module>
     </modules>
