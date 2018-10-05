@@ -17,7 +17,8 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
@@ -88,8 +89,8 @@
 
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF8</surefire.argLine>
         <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF8</failsafe.argLine>
-        <surefire.coverage.argline />
-        <failsafe.coverage.argline />
+        <surefire.coverage.argline/>
+        <failsafe.coverage.argline/>
 
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
@@ -112,6 +113,7 @@
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
         <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
+        <version.lib.graal-sdk>1.0.0-rc6</version.lib.graal-sdk>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.grpc>1.11.0</version.lib.grpc>
         <version.lib.guava>25.0-jre</version.lib.guava>
@@ -178,6 +180,7 @@
         <version.plugin.protobuf>0.5.0</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
+        <version.plugin.shade>3.1.0</version.plugin.shade>
         <version.plugin.sitegen>1.0.0</version.plugin.sitegen>
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>3.1.3.1</version.plugin.spotbugs>
@@ -197,6 +200,7 @@
         <module>security</module>
         <module>bom</module>
         <module>microprofile</module>
+        <module>extensions</module>
     </modules>
 
     <build>
@@ -436,6 +440,11 @@
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${version.plugin.nexus-staging}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${version.plugin.shade}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -876,6 +885,13 @@
                 </exclusions>
             </dependency>
 
+            <!-- Extensions -->
+            <dependency>
+                <groupId>org.graalvm</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${version.lib.graal-sdk}</version>
+            </dependency>
+
             <!-- Testing libraries -->
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -1062,7 +1078,8 @@
                                 <phase>validate</phase>
                                 <configuration>
                                     <configLocation>${top.parent.basedir}/etc/checkstyle.xml</configLocation>
-                                    <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml</suppressionsLocation>
+                                    <suppressionsLocation>${top.parent.basedir}/etc/checkstyle-suppressions.xml
+                                    </suppressionsLocation>
                                 </configuration>
                             </execution>
                         </executions>

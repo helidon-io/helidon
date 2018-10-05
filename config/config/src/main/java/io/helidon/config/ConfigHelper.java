@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.SpiHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigFileTypeDetector;
 
@@ -176,7 +177,9 @@ public final class ConfigHelper {
         String result = null;
 
         try {
-            for (FileTypeDetector detector : FileTypeDetectors.INSTALLED_DETECTORS) {
+            // reworked for the actual SPI loader
+            List<FileTypeDetector> detectors = SpiHelper.loadServices(FileTypeDetector.class);
+            for (FileTypeDetector detector : detectors) {
                 result = detector.probeContentType(path);
                 if (result != null) {
                     break;
