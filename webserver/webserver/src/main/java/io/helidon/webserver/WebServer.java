@@ -17,12 +17,13 @@
 package io.helidon.webserver;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-import io.helidon.common.SpiHelper;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.webserver.spi.WebServerFactory;
 
@@ -311,7 +312,7 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
-            WebServer result = SpiHelper.loadSpi(WebServerFactory.class)
+            WebServer result = loadFactory()
                                     .newWebServer(configuration == null
                                                           ? ServerBasicConfig.DEFAULT_CONFIGURATION
                                                           : configuration,
@@ -320,6 +321,15 @@ public interface WebServer {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }
             return result;
+        }
+
+        private WebServerFactory loadFactory() {
+            Iterator<WebServerFactory> implementations = ServiceLoader.load(WebServerFactory.class).iterator();
+            if (implementations.hasNext()) {
+                return implementations.next();
+            }
+
+            throw new IllegalStateException("No implementation found for SPI: " + WebServerFactory.class.getName());
         }
     }
 }

@@ -33,7 +33,10 @@ public final class SpiHelper {
      * @param <T>     service type
      * @return the loaded service
      * @throws IllegalStateException if none implementation found
+     * @deprecated Use direct access to {@link ServiceLoader} or have such a helper in your module, as from jigsaw this is not
+     * allowed
      */
+    @Deprecated
     public static <T> T loadSpi(Class<T> service) {
         ServiceLoader<T> servers = ServiceLoader.load(service);
         Iterator<T> serversIt = servers.iterator();
