@@ -415,7 +415,7 @@ public final class JwtUtil {
             return country;
         }
 
-        JsonObject getJson() {
+        public JsonObject getJson() {
             JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
 
             formatted.ifPresent(it -> objectBuilder.add("formatted", it));

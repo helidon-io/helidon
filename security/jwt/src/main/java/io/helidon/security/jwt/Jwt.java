@@ -118,6 +118,21 @@ public class Jwt {
     */
     // "sub":"106482221621567111461",
     private final Optional<String> subject;
+
+    /*
+     Microprofile specification JWT Auth:
+     A human readable claim that uniquely identifies the subject or user principal of the token, across the MicroProfile
+     services the token will be accessed with.
+     */
+    // "upn":"john.doe@example.org"
+    private final Optional<String> userPrincipal;
+    /*
+    Microprofile specification JWT Auth:
+    The token subject’s group memberships that will be mapped to Java EE style application level roles in the MicroProfile
+    service container.
+     */
+    // "groups": ["normalUsers", "abnormalUsers"]
+    private final Optional<List<String>> userGroups;
     // "aud":"1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com",
     /*
    The "aud" (audience) claim identifies the recipients that the JWT is
@@ -228,6 +243,13 @@ public class Jwt {
         this.issueTime = JwtUtil.toInstant(payloadJson, "iat");
         this.notBefore = JwtUtil.toInstant(payloadJson, "nbf");
         this.subject = JwtUtil.getString(payloadJson, "sub");
+        JsonValue groups = payloadJson.get("groups");
+        if (groups instanceof JsonArray) {
+            this.userGroups = JwtUtil.getStrings(payloadJson, "groups");
+        } else {
+            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(CollectionsHelper::listOf);
+        }
+
         JsonValue aud = payloadJson.get("aud");
         // support both a single string and an array
         if (aud instanceof JsonArray) {
@@ -260,6 +282,10 @@ public class Jwt {
         this.cHash = JwtUtil.getByteArray(payloadJson, "c_hash", "c_hash value");
         this.nonce = JwtUtil.getString(payloadJson, "nonce");
         this.scopes = JwtUtil.toScopes(payloadJson);
+        this.userPrincipal = OptionalHelper.from(JwtUtil.getString(payloadJson, "upn"))
+                .or(() -> preferredUsername)
+                .or(() -> subject)
+                .asOptional();
     }
 
     private Jwt(Builder builder) {
@@ -319,6 +345,14 @@ public class Jwt {
         this.cHash = builder.cHash;
         this.nonce = builder.nonce;
         this.scopes = builder.scopes;
+
+        this.userPrincipal = OptionalHelper.from(builder.userPrincipal)
+                .or(() -> toOptionalString(builder.payloadClaims, "upn"))
+                .or(() -> preferredUsername)
+                .or(() -> subject)
+                .asOptional();
+
+        this.userGroups = builder.userGroups;
     }
 
     @SuppressWarnings("unchecked")
@@ -486,6 +520,14 @@ public class Jwt {
         return subject;
     }
 
+    public Optional<String> getUserPrincipal() {
+        return userPrincipal;
+    }
+
+    public Optional<List<String>> getUserGroups() {
+        return userGroups.map(Collections::unmodifiableList);
+    }
+
     public Optional<List<String>> getAudience() {
         return audience;
     }
@@ -614,6 +656,12 @@ public class Jwt {
         this.issueTime.ifPresent(it -> objectBuilder.add("iat", it.getEpochSecond()));
         this.notBefore.ifPresent(it -> objectBuilder.add("nbf", it.getEpochSecond()));
         this.subject.ifPresent(it -> objectBuilder.add("sub", it));
+        this.userPrincipal.ifPresent(it -> objectBuilder.add("upn", it));
+        this.userGroups.ifPresent(it -> {
+            JsonArrayBuilder jab = Json.createArrayBuilder();
+            it.forEach(jab::add);
+            objectBuilder.add("groups", jab);
+        });
         this.audience.ifPresent(it -> {
             JsonArrayBuilder jab = Json.createArrayBuilder();
             it.forEach(jab::add);
@@ -981,6 +1029,8 @@ public class Jwt {
         private Optional<Instant> issueTime = Optional.empty();
         private Optional<Instant> notBefore = Optional.empty();
         private Optional<String> subject = Optional.empty();
+        private Optional<String> userPrincipal = Optional.empty();
+        private Optional<List<String>> userGroups = Optional.empty();
         private Optional<List<String>> audience = Optional.empty();
         private Optional<String> jwtId = Optional.empty();
         private Optional<String> email = Optional.empty();
@@ -1053,6 +1103,19 @@ public class Jwt {
         public Builder addScope(String scope) {
             this.scopes = OptionalHelper.from(this.scopes).or(() -> Optional.of(new LinkedList<>())).asOptional();
             this.scopes.ifPresent(it -> it.add(scope));
+            return this;
+        }
+
+        /**
+         * A user group claim to add.
+         * Based on Microprofile JWT Auth specification, uses claim "groups".
+         *
+         * @param group group name to add to the list of groups
+         * @return updated builder instance
+         */
+        public Builder addUserGroup(String group) {
+            this.userGroups = OptionalHelper.from(this.userGroups).or(() -> Optional.of(new LinkedList<>())).asOptional();
+            this.userGroups.ifPresent(it -> it.add(group));
             return this;
         }
 
@@ -1171,6 +1234,19 @@ public class Jwt {
          */
         public Builder subject(String subject) {
             this.subject = Optional.ofNullable(subject);
+            return this;
+        }
+
+        /**
+         * User principal claim as defined by Microprofile JWT Auth spec.
+         * Uses "upn" claim.
+         *
+         * @param principal name of the principal, falls back to {@link #preferredUsername(String)} and then to
+         *                  {@link #subject(String)}
+         * @return updated builder instance
+         */
+        public Builder userPrincipal(String principal) {
+            this.userPrincipal = Optional.ofNullable(principal);
             return this;
         }
 
