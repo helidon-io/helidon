@@ -127,8 +127,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         final CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
                 new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
 
-        p.addLast(new HelidonEventLogger());
         p.addLast(cleartextHttp2ServerUpgradeHandler);
+        p.addLast(new HelidonEventLogger());
         p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues));
     }
 
@@ -149,13 +149,13 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
     }
 
-    private static class HelidonConnectionHandler extends Http2ConnectionHandler implements Http2FrameListener {
+    private static class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements Http2FrameListener {
 
         private final InboundHttp2ToHttpAdapter inboundAdapter;
 
         HelidonConnectionHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                                  Http2Settings initialSettings) {
-            super(decoder, encoder, initialSettings);
+            super(decoder, encoder, initialSettings, true);
             inboundAdapter = new InboundHttp2ToHttpAdapterBuilder(decoder.connection())
                     .maxContentLength(64 * 1024)
                     .propagateSettings(true)
