@@ -45,6 +45,7 @@ import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -61,6 +62,9 @@ class BareResponseImpl implements BareResponse {
 
     private static final Logger LOGGER = Logger.getLogger(BareResponseImpl.class.getName());
 
+    // See HttpConversionUtil.ExtensionHeaderNames
+    private static final String HTTP_2_HEADER_PREFIX = "x-http2";
+
     private final boolean keepAlive;
     private final ChannelHandlerContext ctx;
     private final AtomicBoolean statusHeadersSent = new AtomicBoolean(false);
@@ -70,6 +74,7 @@ class BareResponseImpl implements BareResponse {
     private final BooleanSupplier requestContentConsumed;
     private final Thread thread;
     private final long requestId;
+    private final HttpHeaders requestHeaders;
 
     private volatile Flow.Subscription subscription;
 
@@ -103,6 +108,7 @@ class BareResponseImpl implements BareResponse {
            .addListener(channelFuture -> responseFuture
                    .completeExceptionally(new SocketClosedException("Response channel is closed!")));
         this.keepAlive = HttpUtil.isKeepAlive(request);
+        this.requestHeaders = request.headers();
     }
 
     @Override
@@ -116,6 +122,11 @@ class BareResponseImpl implements BareResponse {
         for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             response.headers().add(headerEntry.getKey(), headerEntry.getValue());
         }
+
+        // Copy HTTP/2 headers to response for correlation (streamId)
+        requestHeaders.names().stream()
+                .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
+                .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
         if (keepAlive) {
             if (status.code() != Http.Status.NO_CONTENT_204.code()) {
