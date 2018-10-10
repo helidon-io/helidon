@@ -605,6 +605,11 @@
                 <artifactId>netty-codec-http</artifactId>
                 <version>${version.lib.netty}</version>
             </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http2</artifactId>
+                <version>${version.lib.netty}</version>
+            </dependency>
 
             <!-- Config related -->
             <dependency>
