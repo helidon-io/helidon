@@ -3,8 +3,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
+## [0.10.2] - 2018-10-12
 ### Improvements
 
 - MicroProfile Fault Tolerance 1.0 support [97](https://github.com/oracle/helidon/pull/97)
@@ -15,8 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - WebServer: Eager cleanup of queues to reduce memory usage during heavy loads [90](https://github.com/oracle/helidon/pull/90)
 - WebServer: Fix for jigsaw service loading problem [99](https://github.com/oracle/helidon/pull/99)
 
-## [0.10.1] - 2019-09-28
-
+## [0.10.1] - 2018-09-28
 ### Improvements
 
 - Security: Jersey integration to use pre-matching filter for securing requests
