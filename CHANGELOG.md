@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Notes
 
 ### Improvements
 
+- MicroProfile Fault Tolerance 1.0 support [97](https://github.com/oracle/helidon/pull/97)
+- WebServer: Support version 1 and 2 of Zipkin API and configuration based building [87](https://github.com/oracle/helidon/pull/87)
+
 ### Fixes
+
+- WebServer: Eager cleanup of queues to reduce memory usage during heavy loads [90](https://github.com/oracle/helidon/pull/90)
+- WebServer: Fix for jigsaw service loading problem [99](https://github.com/oracle/helidon/pull/99)
 
 ## [0.10.1] - 2019-09-28
 
