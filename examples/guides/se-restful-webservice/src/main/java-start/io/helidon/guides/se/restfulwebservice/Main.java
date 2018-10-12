@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.guides.restfulwebservice;
+package io.helidon.guides.se.restfulwebservice;
 
 import java.io.IOException;
 import java.util.logging.LogManager;

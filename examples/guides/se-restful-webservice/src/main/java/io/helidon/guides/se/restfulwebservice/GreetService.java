@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.guides.restfulwebservice;
+package io.helidon.guides.se.restfulwebservice;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -46,48 +46,57 @@ public class GreetService implements Service {
      * This gets config from application.yaml on classpath
      * and uses "app" section.
      */
-    private static final Config CONFIG = Config.create().get("app");
+    // tag::CONFIG[]
+    private static final Config CONFIG = Config.create().get("app"); // <1>
+    // end::CONFIG[]
 
     /**
      * The config value for the key {@code greeting}.
      */
-    private static String greeting = CONFIG.get("greeting").asString("Ciao");
+    // tag::greetingDef[]
+    private static String greeting = CONFIG.get("greeting").asString("Ciao"); // <2>
+    // end::greetingDef[]
 
     /**
      * A service registers itself by updating the routine rules.
      * @param rules the routing rules.
      */
+    // tag::update[]
     @Override
-    public final void update(final Routing.Rules rules) {
+    public final void update(final Routing.Rules rules) { // <1>
         rules
-            .get("/", this::getDefaultMessage)
-            .get("/{name}", this::getMessage)
-            .put("/greeting/{greeting}", this::updateGreeting);
+            .get("/", this::getDefaultMessage) //<2>
+            .get("/{name}", this::getMessage) //<3>
+            .put("/greeting/{greeting}", this::updateGreeting); //<4>
     }
+    // end::update[]
 
     /**
      * Return a wordly greeting message.
      * @param request the server request
      * @param response the server response
      */
+    // tag::getDefaultMessage[]
     private void getDefaultMessage(final ServerRequest request,
                                    final ServerResponse response) {
-        String msg = String.format("%s %s!", greeting, "World");
+        String msg = String.format("%s %s!", greeting, "World"); // <1>
 
         JsonObject returnObject = Json.createObjectBuilder()
-                .add("message", msg)
+                .add("message", msg) // <2>
                 .build();
-        response.send(returnObject);
+        response.send(returnObject); // <3>
     }
+    //end::getDefaultMessage[]
 
     /**
      * Return a greeting message using the name that was provided.
      * @param request the server request
      * @param response the server response
      */
+    // tag::getMessage[]
     private void getMessage(final ServerRequest request,
                             final ServerResponse response) {
-        String name = request.path().param("name");
+        String name = request.path().param("name"); // <1>
         String msg = String.format("%s %s!", greeting, name);
 
         JsonObject returnObject = Json.createObjectBuilder()
@@ -95,19 +104,22 @@ public class GreetService implements Service {
                 .build();
         response.send(returnObject);
     }
+    // end::getMessage[]
 
     /**
      * Set the greeting to use in future messages.
      * @param request the server request
      * @param response the server response
      */
+    // tag::updateGreeting[]
     private void updateGreeting(final ServerRequest request,
                                 final ServerResponse response) {
-        greeting = request.path().param("greeting");
+        greeting = request.path().param("greeting"); // <1>
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = Json.createObjectBuilder() // <2>
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);
     }
+    // end::updateGreeting[]
 }

@@ -21,4 +21,4 @@
  *
  * @see io.helidon.guides.Main
  */
-package io.helidon.guides.restfulwebservice;
+package io.helidon.guides.se.restfulwebservice;

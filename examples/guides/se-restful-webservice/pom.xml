@@ -26,10 +26,10 @@
     </parent>
 
     <groupId>io.helidon.guides</groupId>
-    <artifactId>restful-webservice</artifactId>
+    <artifactId>se-restful-webservice</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>${project.artifactId}</name>
+    <name>se-restful-webservice</name>
 
     <properties>
         <helidon.version>0.10.1</helidon.version>

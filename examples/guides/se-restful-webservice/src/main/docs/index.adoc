@@ -1,0 +1,218 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+:java-base: ../java/io/helidon/guides/se/restfulwebservice
+:greet-service: {java-base}/GreetService.java
+
+= The ReSTful Web Service Guide
+:description: Helidon guide restful web service
+:keywords: helidon, guide, example
+
+This guide describes how to create and build a ReSTful web service as your first Helidon application.
+
+== What You Will Learn
+You'll learn how to use Helidon quickly to create a ReSTful web service that accepts these HTTP requests:
+
+|===
+|Method and URL | Result
+
+|`GET localhost:8080/greet` |Returns a generic but friendly greeting
+|`GET localhost:8080/greet/Joe` |Returns a personalized greeting for Joe
+|`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
+|===
+
+== What You Need
+
+|===
+|About 10 minutes
+|An IDE or text editor
+|JDK 1.8 or later
+|Maven 3.5 or later
+|===
+
+//Optional:
+//|===
+//|Docker 18.02 (use the Edge channel to run Kubernetes on your desktop)
+//|`kubectl` 1.7.4
+//|===
+
+== Write Your Application
+=== Create a new Maven Project
+You can create your maven project in these ways:
+
+* use your IDE to create a new Java maven project, or
+* run the standard maven archetype to create a new Java project using this command:
++
+[source]
+mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
+
+In either case make sure
+the parent POM is set to the `io.helidon.guides:helidon-guides` artifact. That allows
+you to take advantage of the parent's plug-in and dependency management settings
+to simplify your own POM.
+
+?? Will these be set in the parent pom?
+Make sure the Java version settings in the new `pom.xml` are set to `8`:
+[source]
+----
+<maven.compiler.source>=8</maven.compiler.source>
+<maven.compiler.target>=${maven.compiler.source}</maven.compiler.target>
+----
+
+=== Create a Config Resource File
+Your app will use the Helidon config support to initialize the greeting and set up HTTP
+listening.
+
+Create this config file:
+
+.`src/main/resources/application.yaml`
+[source,yaml]
+----
+include::../resources/application.yaml[tag=configContent]
+----
+<1> Sets the initial greeting text for responses from the service
+<2> Sets how the service will listen for requests
+
+=== Create a logging properties file
+.`src/main/resources/logging.properties`
+[source]
+----
+include::../resources/logging.properties[tag=loggingProps]
+----
+
+=== Create your "Greet" Service
+In general, your application can implement multiple services, each tied to its own
+URL path. We'll start with just one service: the greeting service.
+
+Create a new Java class `GreetService.java` as follows:
+
+. Make `GreetService` implement `io.helidon.webserver.Service`.
+. Read the config file and set the initial greeting from it:
++
+[source,java]
+----
+include::{greet-service}[tag=CONFIG]
+include::{greet-service}[tag=greetingDef]
+----
+<1> Loads the config from the (default) `application.yaml` resource you created earlier
+and loads the subtree rooted at the `app` entry into the `CONFIG` field. The
+type of the field is `io.helidon.config.Config`.
+<2> Sets the initial greeting from the config, using "Ciao" if the expected
+entry is missing.
++
+. Implement the responses to the three types of request.
+.. Returning the default greeting
++
+[source,java]
+----
+include::{greet-service}[tag=getDefaultMessage]
+---- 
+<1> Gets the greeting (defaults to "Hello") from the current setting (and adds "World").
+<2> Creates the JSON response by adding the message an building it.
+<3> Sends the response.
+.. Returning a personalized greeting
++
+[source,java]
+----
+include::{greet-service}[tag=getMessage]
+----
+<1> Get the name from the URL path in the request and use it in buildig the 
+JSON response.
+The rest of the method is the same as `getDefaultMessage`.
+.. Updating the greeting
++
+[source,java]
+----
+include::{greet-service}[tag=updateGreeting]
+----
+<1> Save the new greeting from the URL path in the request.
+<2> Compose the JSON response to confirm the new setting for `greeting`.
+. Link your logic with the correct URL paths
++
+[source,java]
+----
+include::{greet-service}[tag=update]
+----
+<1> Each service overrides `update` to define its routing rules.
+<2> Handle `GET` requests with no extra path using `getDefaultMessage`.
+<3> Handle `GET` requests with a name using `getMessage` which personalizes the response
+using the name provided as the path suffix.
+<4> Handle `PUT` requests to the `greeting` path using `updateGreeting`,
+interpreting the end of the path as the new greeting string.
+
+=== Write your main class
+You need just a little more code so your app starts the Helidon web server
+and makes it aware of your greeting service.
+
+. Add a method to set up routing for your app
+[source,java]
+----
+    private static Routing createRouting() {
+        return Routing.builder()
+                .register(JsonSupport.get()) <1>
+                .register("/greet", new GreetService()) <2>
+                .build();
+    }
+----
+<1> Tells the Helidon web server that you want to use JSON.
+<2> Associates the `/greet` path with your greet service. 
+
+. Add the `startServer` method.
+[source,java]
+----
+    protected static WebServer startServer() throws IOException {
+
+        LogManager.getLogManager().readConfiguration(
+                Main.class.getResourceAsStream("/logging.properties"));
+
+        Config config = Config.create();
+
+        ServerConfiguration serverConfig =
+                ServerConfiguration.fromConfig(config.get("server")); <1>
+
+        WebServer server = WebServer.create(serverConfig, createRouting()); <2>
+
+        server.start().thenAccept(ws -> { <3>
+            System.out.println(
+                    "WEB server is up! http://localhost:" + ws.port());
+        });
+
+        server.whenShutdown().thenRun(() <4>
+                -> System.out.println("WEB server is DOWN. Good bye!"));
+
+        return server;
+    }
+----
+<1> Gets the webserver config from the "server" section of `application.yaml`. The
+config system automatically maps the config's `host` and `port` to those 
+attributes of `ServerConfiguration`.
+<2> Creates the web server using the routing rules from the `createRouting` method.
+<3> Starts the web server, then logs a message.
+<4> Set up a shutdown hook so when the web server is shut down (for example, by ^C on the console) 
+the app prints a message.
+
+. Write your main method
+Adding
+[source,java]
+----
+    startServer();
+----
+is enough to get your app running.
+
+== Build and Run
+
+
