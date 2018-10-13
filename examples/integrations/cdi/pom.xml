@@ -30,9 +30,10 @@
   <description>Helidon Integrations Examples Project</description>
   
   <parent>
-    <groupId>io.helidon.integrations</groupId>
-    <artifactId>helidon-integrations-project</artifactId>
+    <groupId>io.helidon.examples</groupId>
+    <artifactId>helidon-examplesproject</artifactId>
     <version>0.10.3-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <dependencyManagement>
