@@ -23,7 +23,7 @@
     <parent>
         <artifactId>helidon-security-examples-project</artifactId>
         <groupId>io.helidon.security.examples</groupId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
