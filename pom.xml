@@ -895,6 +895,42 @@
                 </exclusions>
             </dependency>
 
+            <!-- Integrations related -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.lib.h2}</version>
+            </dependency>
+            <!--
+                See http://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9010
+            -->
+            <dependency>
+                <groupId>com.oracle.jdbc</groupId>
+                <artifactId>ojdbc8</artifactId>
+                <version>${version.lib.ojdbc8}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${version.lib.mysql-connector-java}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-objectstorage</artifactId>
+                <version>${version.lib.oci-java-sdk-objectstorage}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${version.lib.HikariCP}</version>
+            </dependency>
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>${version.lib.jedis}</version>
+            </dependency>
+
             <!-- Testing libraries -->
             <dependency>
                 <groupId>org.mockito</groupId>

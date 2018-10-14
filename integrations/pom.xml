@@ -42,65 +42,11 @@
 
   <dependencyManagement>
     <dependencies>
-
-      <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <version>${version.lib.h2}</version>
-        <type>jar</type>
-      </dependency>
-
-      <!--
-          See http://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9010
-      -->
-      <dependency>
-        <groupId>com.oracle.jdbc</groupId>
-        <artifactId>ojdbc8</artifactId>
-        <version>${version.lib.ojdbc8}</version>
-        <type>jar</type>
-      </dependency>
-
-      <dependency>
-        <groupId>com.oracle.oci.sdk</groupId>
-        <artifactId>oci-java-sdk-objectstorage</artifactId>
-        <version>${version.lib.oci-java-sdk-objectstorage}</version>
-        <type>pom</type>
-      </dependency>
-
-      <dependency>
-        <groupId>com.zaxxer</groupId>
-        <artifactId>HikariCP</artifactId>
-        <version>${version.lib.HikariCP}</version>
-        <type>jar</type>
-      </dependency>
-
       <dependency>
         <groupId>io.helidon.microprofile.config</groupId>
         <artifactId>helidon-microprofile-config-cdi</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <version>${version.lib.mysql-connector-java}</version>
-        <type>jar</type>
-      </dependency>
-
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>${version.lib.slf4j}</version>
-        <type>jar</type>
-      </dependency>
-
-      <dependency>
-        <groupId>redis.clients</groupId>
-        <artifactId>jedis</artifactId>
-        <version>${version.lib.jedis}</version>
-        <type>jar</type>
-      </dependency>
-
     </dependencies>
   </dependencyManagement>
 

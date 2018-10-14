@@ -31,7 +31,7 @@
   
   <parent>
     <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-examplesproject</artifactId>
+    <artifactId>helidon-examples-project</artifactId>
     <version>0.10.3-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
@@ -55,6 +55,12 @@
         <artifactId>helidon-integrations-examples-oci-objectstorage</artifactId>
         <version>${project.version}</version>
         <type>jar</type>
+      </dependency>
+      <dependency>
+        <groupId>io.helidon.microprofile.config</groupId>
+        <artifactId>helidon-microprofile-config-cdi</artifactId>
+        <type>jar</type>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>io.helidon.microprofile.server</groupId>
