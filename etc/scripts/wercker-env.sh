@@ -20,4 +20,9 @@
 if [ "${WERCKER}" = "true" ] ; then
     export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
     rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh ${WERCKER_CACHE_DIR}/local_repository/io/helidon
+    if [ ! -d "${WERCKER_CACHE_DIR}/local_repository/com/oracle/oci/sdk" ] ; then
+        # Work around https://github.com/oracle/oci-java-sdk/issues/25
+        TEMP_OCI_SDK_DIR=$(mktemp -d "oci-java-sdk.XXX")
+        git clone --depth 1 --branch v$(mvn -f "${WERCKER_ROOT}/pom.xml" -Dexpression=version.lib.oci-java-sdk-objectstorage org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate | grep -v '\[') "https://github.com/oracle/oci-java-sdk.git" "${TEMP_OCI_SDK_DIR}" && mvn -U -f "${TEMP_OCI_SDK_DIR}/pom.xml" -Dmaven.test.skip=true -Dmaven.source.skip=true -Dmaven.javadoc.skip=true -Dlombok.delombok.skip=true -pl bmc-objectstorage -am install && rm -rf "${TEMP_OCI_SDK_DIR}"
+    fi
 fi
