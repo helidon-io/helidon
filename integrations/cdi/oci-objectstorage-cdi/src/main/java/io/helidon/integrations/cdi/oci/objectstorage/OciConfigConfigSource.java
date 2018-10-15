@@ -139,8 +139,8 @@ public final class OciConfigConfigSource implements ConfigSource {
    * <p>This method never returns {@code null}.</p>
    *
    * <p>The returned {@link Map} is {@linkplain
-   * Collections#emptyMap(Map) immutable} and safe for concurrent use
-   * by multiple threads.</p>
+   * Collections#unmodifiableMap(Map) immutable} and safe for
+   * concurrent use by multiple threads.</p>
    *
    * <p>This method may return different {@link Map} instances when
    * invoked at different times.</p>
@@ -164,7 +164,7 @@ public final class OciConfigConfigSource implements ConfigSource {
    * guidance on whether the return value of an implementation of the
    * {@link ConfigSource#getProperties()} method should be immutable
    * and/or threadsafe.  This implementation returns an {@linkplain
-   * Collections#emptyMap(Map) immutable <code>Map</code>}.</p>
+   * Collections#unmodifiableMap(Map) immutable <code>Map</code>}.</p>
    *
    * @return a non-{@code null} {@link Map} of properties known to
    * this {@link OciConfigConfigSource}

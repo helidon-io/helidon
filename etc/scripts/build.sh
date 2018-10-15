@@ -45,7 +45,6 @@ fi
 
 mvn -f ${WS_DIR}/pom.xml \
     clean install \
-    -Pexamples,spotbugs,javadoc,docs,sources,ossrh-releases \
-    --fail-at-end
+    -Pexamples,spotbugs,javadoc,docs,sources,ossrh-releases
 
 examples/archetypes/test-archetypes.sh

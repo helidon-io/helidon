@@ -22,5 +22,5 @@ if [ "${WERCKER}" = "true" ] ; then
     rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh ${WERCKER_CACHE_DIR}/local_repository/io/helidon
     # Work around https://github.com/oracle/oci-java-sdk/issues/25
     TEMP_OCI_SDK_DIR=$(mktemp -d "oci-java-sdk.XXX")
-    git clone --depth 1 --branch v$(mvn -f "${WERCKER_ROOT}/pom.xml" -Dexpression=version.lib.oci-java-sdk-objectstorage org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate | grep '^[0-9]') "https://github.com/oracle/oci-java-sdk.git" "${TEMP_OCI_SDK_DIR}" && mvn -U -f "${TEMP_OCI_SDK_DIR}/pom.xml" -Dmaven.test.skip=true -Dmaven.source.skip=true -Dmaven.javadoc.skip=true -Dlombok.delombok.skip=true -pl bmc-objectstorage -am install && rm -rf "${TEMP_OCI_SDK_DIR}"
+    git clone --depth 1 --branch v$(mvn -B -f "${WERCKER_ROOT}/pom.xml" -Dexpression=version.lib.oci-java-sdk-objectstorage org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate | grep '^[0-9]') "https://github.com/oracle/oci-java-sdk.git" "${TEMP_OCI_SDK_DIR}" && mvn -B -U -f "${TEMP_OCI_SDK_DIR}/pom.xml" -Dmaven.test.skip=true -Dmaven.source.skip=true -Dmaven.javadoc.skip=true -Dlombok.delombok.skip=true -pl bmc-objectstorage -am install && rm -rf "${TEMP_OCI_SDK_DIR}"
 fi
