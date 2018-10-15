@@ -32,12 +32,16 @@
     <name>se-restful-webservice</name>
 
     <properties>
+<!-- tag::helidonVersion[] -->
         <helidon.version>0.10.1</helidon.version>
+<!-- end::helidonVersion[] -->
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
         <mainClass>io.helidon.guides.se.restfulwebservice.Main</mainClass>
+<!-- tag::javaVersions[] -->
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+<!-- end::javaVersions[] -->
         <libs.classpath.prefix>libs</libs.classpath.prefix>
         <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -153,13 +157,15 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
+<!-- tag::depMgt[] -->
+            <dependency>            
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
                 <version>${helidon.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+<!-- end::depMgt[] -->            
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
@@ -174,14 +180,18 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
+<!-- tag::webserverBundleDependency[] -->
+        <dependency> <!--1-->
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-bundle</artifactId>
         </dependency>
-        <dependency>
+<!-- end::webserverBundleDependency[] -->
+<!-- tag::configYamlDependency[] -->
+        <dependency> <!--2-->
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
+<!-- end::configYamlDependency[] -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

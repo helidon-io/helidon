@@ -18,12 +18,15 @@
 :java-base: ../java/io/helidon/guides/se/restfulwebservice
 :greet-service: {java-base}/GreetService.java
 :main-class: {java-base}/Main.java
+:pom: ../../pom.xml
+:helidon-version: 0.10.2 // can be overridden from the CLI or API
+:helidon.version: {helidon-version}
 
 = The ReSTful Web Service Guide
 :description: Helidon guide restful web service
 :keywords: helidon, guide, example
 
-This guide describes how to create and build a ReSTful web service as your first Helidon application.
+Create and build a ReSTful web service as your first Helidon application.
 
 == What You Will Learn
 You'll learn how to use Helidon quickly to create a ReSTful web service that accepts these HTTP requests:
@@ -58,21 +61,35 @@ You can create your maven project in these ways:
 * use your IDE to create a new Java maven project, or
 * run the standard maven archetype to create a new Java project using this command:
 +
-[source]
+[source,bash]
 mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
 
-In either case make sure
-the parent POM is set to the `io.helidon.guides:helidon-guides` artifact. That allows
-you to take advantage of the parent's plug-in and dependency management settings
-to simplify your own POM.
+=== Update Your `pom.xml`
+Make sure your POM contains these sections:
+[source,xml,subs="verbatim,attributes"]
+----
+<properties>
+include::{pom}[tag=helidonVersion]
+include::{pom}[tag=javaVersions]
+</properties>
 
-?? Will these be set in the parent pom?
-Make sure the Java version settings in the new `pom.xml` are set to `8`:
-[source]
+<dependencyManagement>
+    <dependencies>
+include::{pom}[tag=depMgt]
+    </dependencies>
+</dependencyManagement>
 ----
-<maven.compiler.source>=8</maven.compiler.source>
-<maven.compiler.target>=${maven.compiler.source}</maven.compiler.target>
+You can add Helidon dependencies to your project without having to specify the version.
+For this example add these dependencies:
+[source,xml]
 ----
+<dependencies>
+include::{pom}[tag=webserverBundleDependency]
+include::{pom}[tag=configYamlDependency]
+</dependencies>
+----
+<1> Incorporates the Helidon web server.
+<2> Pulls in support for YAML as a config source.
 
 === Create a Config Resource File
 Your app will use the Helidon config support to initialize the greeting and set up HTTP
@@ -99,7 +116,12 @@ include::../resources/logging.properties[tag=loggingProps]
 In general, your application can implement multiple services, each tied to its own
 URL path. We'll start with just one service: the greeting service.
 
-Create a new Java class `GreetService.java` as follows:
+Create a new Java class `GreetService.java` as follows. Note that along the way 
+you or your IDE will be adding these Java `import` statements:
+[source,java]
+----
+include::{greet-service}[tag=imports]
+----
 
 . Make `GreetService` implement `io.helidon.webserver.Service`.
 . Set two static fields by reading the config file and setting the initial greeting from 
