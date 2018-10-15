@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 :java-base: ../java/io/helidon/guides/se/restfulwebservice
 :greet-service: {java-base}/GreetService.java
+:main-class: {java-base}/Main.java
 
 = The ReSTful Web Service Guide
 :description: Helidon guide restful web service
@@ -31,7 +32,7 @@ You'll learn how to use Helidon quickly to create a ReSTful web service that acc
 |Method and URL | Result
 
 |`GET localhost:8080/greet` |Returns a generic but friendly greeting
-|`GET localhost:8080/greet/Joe` |Returns a personalized greeting for Joe
+|`GET localhost:8080/greet/Joe` |Returns a personalized greeting for the specified person
 |`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
 |===
 
@@ -101,7 +102,8 @@ URL path. We'll start with just one service: the greeting service.
 Create a new Java class `GreetService.java` as follows:
 
 . Make `GreetService` implement `io.helidon.webserver.Service`.
-. Read the config file and set the initial greeting from it:
+. Set two static fields by reading the config file and setting the initial greeting from 
+the loaded config:
 +
 [source,java]
 ----
@@ -112,9 +114,9 @@ include::{greet-service}[tag=greetingDef]
 and loads the subtree rooted at the `app` entry into the `CONFIG` field. The
 type of the field is `io.helidon.config.Config`.
 <2> Sets the initial greeting from the config, using "Ciao" if the expected
-entry is missing.
+entry is missing from the loaded config.
 +
-. Implement the responses to the three types of request.
+. Implement the responses to the three types of request by adding three methods.
 .. Returning the default greeting
 +
 [source,java]
@@ -122,8 +124,8 @@ entry is missing.
 include::{greet-service}[tag=getDefaultMessage]
 ---- 
 <1> Gets the greeting (defaults to "Hello") from the current setting (and adds "World").
-<2> Creates the JSON response by adding the message an building it.
-<3> Sends the response.
+<2> Creates the JSON response from the message and builds the response.
+<3> Sends the response to the client.
 .. Returning a personalized greeting
 +
 [source,java]
@@ -158,44 +160,20 @@ interpreting the end of the path as the new greeting string.
 You need just a little more code so your app starts the Helidon web server
 and makes it aware of your greeting service.
 
-. Add a method to set up routing for your app
+. Add a method to your main class to set up routing for your app.
++
 [source,java]
 ----
-    private static Routing createRouting() {
-        return Routing.builder()
-                .register(JsonSupport.get()) <1>
-                .register("/greet", new GreetService()) <2>
-                .build();
-    }
+include::{main-class}[tag=createRouting]
 ----
 <1> Tells the Helidon web server that you want to use JSON.
 <2> Associates the `/greet` path with your greet service. 
 
 . Add the `startServer` method.
++
 [source,java]
 ----
-    protected static WebServer startServer() throws IOException {
-
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
-
-        Config config = Config.create();
-
-        ServerConfiguration serverConfig =
-                ServerConfiguration.fromConfig(config.get("server")); <1>
-
-        WebServer server = WebServer.create(serverConfig, createRouting()); <2>
-
-        server.start().thenAccept(ws -> { <3>
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port());
-        });
-
-        server.whenShutdown().thenRun(() <4>
-                -> System.out.println("WEB server is DOWN. Good bye!"));
-
-        return server;
-    }
+include::{main-class}[tag=startServer]
 ----
 <1> Gets the webserver config from the "server" section of `application.yaml`. The
 config system automatically maps the config's `host` and `port` to those 
@@ -206,13 +184,45 @@ attributes of `ServerConfiguration`.
 the app prints a message.
 
 . Write your main method
-Adding
++
+Add
++
 [source,java]
 ----
-    startServer();
+include::{main-class}[tag=mainContent]
 ----
-is enough to get your app running.
++
+to your main method.
 
 == Build and Run
+Build your app:
+[source,bash]
+mvn package
 
+and run it:
+[source,bash]
+java -jar target/se-restful-webservice.jar
+
+From another command window run these commands to access the three functions of your app:
+[source,bash]
+----
+curl -X GET http://localhost:8080/greet
+
+curl -X GET http://localhost:8080/greet/Joe
+
+curl -X PUT http://localhost:8080/greet/greeting/Hola
+
+curl -X GET http://localhost:8080/greet/Jose
+----
+and you should see these results:
+[source,bash]
+----
+{"message":"Hello World!"}
+
+{"message":"Hello Joe!"}
+
+{"greeting":"Hola"}
+
+{"message":"Hola Jose!"}
+----
 

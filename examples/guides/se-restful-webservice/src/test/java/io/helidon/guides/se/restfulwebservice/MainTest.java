@@ -16,7 +16,6 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
-import io.helidon.guides.se.restfulwebservice.Main;
 import java.util.concurrent.TimeUnit;
 import java.net.URL;
 import java.net.HttpURLConnection;

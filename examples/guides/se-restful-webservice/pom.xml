@@ -35,7 +35,7 @@
         <helidon.version>0.10.1</helidon.version>
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
-        <mainClass>io.helidon.guides.Main</mainClass>
+        <mainClass>io.helidon.guides.se.restfulwebservice.Main</mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>

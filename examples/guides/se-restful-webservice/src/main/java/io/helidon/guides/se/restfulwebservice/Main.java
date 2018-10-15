@@ -40,12 +40,14 @@ public final class Main {
      *
      * @return the new instance
      */
+    // tag::createRouting[]
     private static Routing createRouting() {
         return Routing.builder()
-                .register(JsonSupport.get())
-                .register("/greet", new GreetService())
+                .register(JsonSupport.get()) // <1>
+                .register("/greet", new GreetService()) // <2>
                 .build();
     }
+    // end::createRouting[]
 
     /**
      * Application main entry point.
@@ -53,7 +55,9 @@ public final class Main {
      * @throws IOException if there are problems reading logging properties
      */
     public static void main(final String[] args) throws IOException {
+        // tag::mainContent[]
         startServer();
+        // end::mainContent[]
     }
 
     /**
@@ -61,6 +65,7 @@ public final class Main {
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
+    // tag::startServer[]
     protected static WebServer startServer() throws IOException {
 
         // load logging configuration
@@ -72,20 +77,21 @@ public final class Main {
 
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
-                ServerConfiguration.fromConfig(config.get("server"));
+                ServerConfiguration.fromConfig(config.get("server")); // <1>
 
-        WebServer server = WebServer.create(serverConfig, createRouting());
+        WebServer server = WebServer.create(serverConfig, createRouting()); // <2>
 
         // Start the server and print some info.
-        server.start().thenAccept(ws -> {
+        server.start().thenAccept(ws -> { // <3>
             System.out.println(
                     "WEB server is up! http://localhost:" + ws.port());
         });
 
         // Server threads are not demon. NO need to block. Just react.
-        server.whenShutdown().thenRun(()
+        server.whenShutdown().thenRun(() // <4>
                 -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }
+    // end::startServer[]
 }
