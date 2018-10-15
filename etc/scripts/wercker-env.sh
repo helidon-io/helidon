@@ -17,6 +17,7 @@
 
 # WERCKER=true when running inside a wercker pipeline
 
+echo "wercker-env.sh sourced"
 if [ "${WERCKER}" = "true" ] ; then
     export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository"
     rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh ${WERCKER_CACHE_DIR}/local_repository/io/helidon
