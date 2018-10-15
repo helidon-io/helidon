@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-set -x
 set -o pipefail || true  # trace ERR through pipes
 set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
