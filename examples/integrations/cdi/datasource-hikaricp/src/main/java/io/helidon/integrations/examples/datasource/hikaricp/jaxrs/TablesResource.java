@@ -72,16 +72,12 @@ public class TablesResource {
   @Produces(MediaType.TEXT_PLAIN)
   public Response get() throws SQLException {
     final StringBuilder sb = new StringBuilder();
-    try (Connection connection = this.dataSource.getConnection()) {
-      assert connection != null;
-      final PreparedStatement ps =
-        connection.prepareStatement(" SELECT TABLE_NAME"
-                                    + " FROM ALL_TABLES "
-                                    + "ORDER BY TABLE_NAME ASC");
-      assert ps != null;
-      final ResultSet rs = ps.executeQuery();
-      assert rs != null;
-
+    try (Connection connection = this.dataSource.getConnection();
+         PreparedStatement ps =
+           connection.prepareStatement(" SELECT TABLE_NAME"
+                                       + " FROM ALL_TABLES "
+                                       + "ORDER BY TABLE_NAME ASC");
+         ResultSet rs = ps.executeQuery()) {
       while (rs.next()) {
         sb.append(rs.getString(1)).append("\n");
       }

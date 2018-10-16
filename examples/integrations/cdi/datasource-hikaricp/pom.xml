@@ -233,6 +233,7 @@
   <properties>
     <dependenciesDirectory>libs</dependenciesDirectory>
     <kubernetesSecretName>${project.artifactId}</kubernetesSecretName>
+    <spotbugs.exclude>${project.basedir}/src/main/spotbugs/exclusions.xml</spotbugs.exclude>
   </properties>
 
 </project>
