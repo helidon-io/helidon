@@ -35,7 +35,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * A JAX-RS resource class rooted at {@code /logo}.
  *
- * @see getLogo(String, String, String);
+ * @see #getLogo(String, String, String)
  */
 @Path("/logo")
 @ApplicationScoped
