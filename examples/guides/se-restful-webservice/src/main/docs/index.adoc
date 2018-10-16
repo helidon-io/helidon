@@ -19,8 +19,7 @@
 :greet-service: {java-base}/GreetService.java
 :main-class: {java-base}/Main.java
 :pom: ../../pom.xml
-:helidon-version: 0.10.2 // can be overridden from the CLI or API
-:helidon.version: {helidon-version}
+
 
 = The ReSTful Web Service Guide
 :description: Helidon guide restful web service
@@ -68,28 +67,55 @@ mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -Darchetyp
 Make sure your POM contains these sections:
 [source,xml,subs="verbatim,attributes"]
 ----
-<properties>
+    <properties>
 include::{pom}[tag=helidonVersion]
 include::{pom}[tag=javaVersions]
-</properties>
+    </properties>
 
-<dependencyManagement>
-    <dependencies>
+    <dependencyManagement>
+        <dependencies>
 include::{pom}[tag=depMgt]
-    </dependencies>
-</dependencyManagement>
+        </dependencies>
+    </dependencyManagement>
 ----
-You can add Helidon dependencies to your project without having to specify the version.
+Now you can add Helidon dependencies to your project without having to specify the version.
 For this example add these dependencies:
 [source,xml]
 ----
-<dependencies>
+    <dependencies>
 include::{pom}[tag=webserverBundleDependency]
 include::{pom}[tag=configYamlDependency]
-</dependencies>
+    </dependencies>
 ----
 <1> Incorporates the Helidon web server.
-<2> Pulls in support for YAML as a config source.
+<2> Pulls in support for YAML as a config format.
+
+Often, if you run your project from the IDE the IDE handles the main class and places
+dependent JARs on the runtime classpath for you. If you want to use `maven` yourself,
+outside the IDE, then add the following to your pom:
+[source,xml]
+----
+    <properties>
+        ...
+        <mainClass>your-fully-qualified-main-class</mainClass> <!--1-->
+include::{pom}[tag=libsCopying]
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+include::{pom}[tag=mainClassPlugin]
+            </plugins>
+        </pluginManagement>
+        <plugins>
+include::{pom}[tag=copyDependencies]
+        </plugins>
+    </build>
+----
+<1> Make sure to specify your own main class path.
+<2> Instructs maven to set the main class in the JAR's manifest and a prefix used for
+packaged library JARs.
+<3> Tells maven to package the dependency JARs in a known directory relative to the project's JAR.
 
 === Create a Config Resource File
 Your app will use the Helidon config support to initialize the greeting and set up HTTP
@@ -182,6 +208,11 @@ interpreting the end of the path as the new greeting string.
 You need just a little more code so your app starts the Helidon web server
 and makes it aware of your greeting service.
 
+Along the way you or your IDE will be adding these Java `import` statements:
+[source,java]
+----
+include::{main-class}[tag=imports]
+----
 . Add a method to your main class to set up routing for your app.
 +
 [source,java]
@@ -217,34 +248,40 @@ include::{main-class}[tag=mainContent]
 to your main method.
 
 == Build and Run
-Build your app:
+You can use your IDE's features to build and run the project directly.
+
+Or, to use `maven` outside the IDE, build your app this way:
 [source,bash]
 mvn package
 
-and run it:
+and run it like this:
 [source,bash]
-java -jar target/se-restful-webservice.jar
+java -jar target/your-jar-name.jar
 
-From another command window run these commands to access the three functions of your app:
-[source,bash]
-----
+Once you have started your app, from another command window run these commands 
+to access its three functions (order is important for the last two):
+|====
+|Commmand |Result
+
+a|[source,bash]
 curl -X GET http://localhost:8080/greet
-
-curl -X GET http://localhost:8080/greet/Joe
-
-curl -X PUT http://localhost:8080/greet/greeting/Hola
-
-curl -X GET http://localhost:8080/greet/Jose
-----
-and you should see these results:
-[source,bash]
-----
+a|[source,bash]
 {"message":"Hello World!"}
 
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Joe
+a|[source,bash]
 {"message":"Hello Joe!"}
 
+a|[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/Hola
+a|[source,bash]
 {"greeting":"Hola"}
 
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Jose
+a|[source,bash]
 {"message":"Hola Jose!"}
-----
+|====
+
 

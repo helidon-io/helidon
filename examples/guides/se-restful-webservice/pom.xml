@@ -42,8 +42,10 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
 <!-- end::javaVersions[] -->
+<!-- tag::libsCopying[] -->
         <libs.classpath.prefix>libs</libs.classpath.prefix>
         <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
+<!-- end::libsCopying[] -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <argLine>-Dfile.encoding=UTF-8</argLine>
@@ -80,11 +82,12 @@
                     <artifactId>maven-resources-plugin</artifactId>
                     <version>3.0.2</version>
                 </plugin>
+                <!-- tag::mainClassPlugin[] -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>2.5</version>
-                    <configuration>
+                    <configuration>  <!--2-->
                         <archive>
                             <manifest>
                                 <addClasspath>true</addClasspath>
@@ -94,11 +97,13 @@
                         </archive>
                     </configuration>
                 </plugin>
+                <!-- end::mainClassPlugin[] -->
             </plugins>
         </pluginManagement>
 
         <plugins>
-            <plugin>
+<!-- tag::copyDependencies[] -->
+            <plugin> <!--3-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
@@ -120,6 +125,7 @@
                     </execution>
                 </executions>
             </plugin>
+<!-- end::copyDependencies[] -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>

@@ -19,11 +19,13 @@ package io.helidon.guides.se.restfulwebservice;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
+// tag::imports[]
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.json.JsonSupport;
+// end::imports[]
 
 /**
  * Simple Hello World rest application.
