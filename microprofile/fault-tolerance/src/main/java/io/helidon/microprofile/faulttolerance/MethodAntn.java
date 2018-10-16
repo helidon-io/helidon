@@ -36,7 +36,7 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
 /**
  * Class MethodAntn.
  */
-public class MethodAntn {
+public abstract class MethodAntn {
     private static final Logger LOGGER = Logger.getLogger(MethodAntn.class.getName());
 
     private final Method method;
@@ -78,34 +78,39 @@ public class MethodAntn {
      */
     public MethodAntn(Method method) {
         this.method = method;
-        validate();
     }
 
     public Method getMethod() {
         return method;
     }
 
+
+    public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> clazz) {
+        return lookupAnnotation(getMethod(), clazz);
+    }
+
     /**
      * Returns underlying annotation and info as to how it was found.
      *
+     * @param method The method.
      * @param clazz Annotation class.
      * @param <A> Annotation type.
      * @return The lookup result or {@code null}.
      */
-    public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> clazz) {
-        A annotation = getMethod().getAnnotation(clazz);
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(Method method, Class<A> clazz) {
+        A annotation = method.getAnnotation(clazz);
         if (annotation != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine("Found annotation '" + clazz.getName()
-                            + "' method '" + getMethod().getName() + "'");
+                        + "' method '" + method.getName() + "'");
             }
             return new LookupResult<>(MatchingType.METHOD, annotation);
         }
-        annotation = getMethod().getDeclaringClass().getAnnotation(clazz);
+        annotation = method.getDeclaringClass().getAnnotation(clazz);
         if (annotation != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
                 LOGGER.fine("Found annotation '" + clazz.getName()
-                            + "' class '" + getMethod().getDeclaringClass().getName() + "'");
+                        + "' class '" + method.getDeclaringClass().getName() + "'");
             }
             return new LookupResult<>(MatchingType.CLASS, annotation);
         }
@@ -120,14 +125,13 @@ public class MethodAntn {
      * @return Outcome of test.
      */
     static boolean isAnnotationPresent(Method method, Class<? extends Annotation> clazz) {
-        return new MethodAntn(method).lookupAnnotation(clazz) != null;
+        return lookupAnnotation(method, clazz) != null;
     }
 
     /**
      * Validate the annotation on this method.
      */
-    public void validate() {
-    }
+    public abstract void validate();
 
     /**
      * Get annotation type.
@@ -155,10 +159,10 @@ public class MethodAntn {
         // Check if property defined at method level
         if (type == MatchingType.METHOD) {
             String methodLevel = String.format("%s/%s/%s/%s",
-                                               method.getDeclaringClass().getName(),
-                                               method.getName(),
-                                               annotationType,
-                                               parameter);
+                    method.getDeclaringClass().getName(),
+                    method.getName(),
+                    annotationType,
+                    parameter);
             value = getProperty(methodLevel);
             if (value != null) {
                 return value;
@@ -167,9 +171,9 @@ public class MethodAntn {
 
         // Check if property defined a class level
         String classLevel = String.format("%s/%s/%s",
-                                          method.getDeclaringClass().getName(),
-                                          annotationType,
-                                          parameter);
+                method.getDeclaringClass().getName(),
+                annotationType,
+                parameter);
         value = getProperty(classLevel);
         if (value != null) {
             return value;
@@ -177,8 +181,8 @@ public class MethodAntn {
 
         // Check if propoerty defined at global level
         String globalLevel = String.format("%s/%s",
-                                           annotationType,
-                                           parameter);
+                annotationType,
+                parameter);
         value = getProperty(globalLevel);
         if (value != null) {
             return value;
@@ -232,29 +236,17 @@ public class MethodAntn {
     }
 
     /**
-     * Determines if a method or its declaring class has a FT annotation.
+     * Determines if a method has any fault tolerance annotations.
      *
      * @param method The method to check.
      * @return Outcome of test.
      */
     static boolean isFaultToleranceMethod(Method method) {
-        if (method.isAnnotationPresent(Retry.class)
-            || method.isAnnotationPresent(CircuitBreaker.class)
-            || method.isAnnotationPresent(Bulkhead.class)
-            || method.isAnnotationPresent(Timeout.class)
-            || method.isAnnotationPresent(Asynchronous.class)
-            || method.isAnnotationPresent(Fallback.class)) {
-            return true;
-        }
-        final Class<?> clazz = method.getDeclaringClass();
-        if (clazz.isAnnotationPresent(Retry.class)
-            || clazz.isAnnotationPresent(CircuitBreaker.class)
-            || clazz.isAnnotationPresent(Bulkhead.class)
-            || clazz.isAnnotationPresent(Timeout.class)
-            || clazz.isAnnotationPresent(Asynchronous.class)
-            || clazz.isAnnotationPresent(Fallback.class)) {
-            return true;
-        }
-        return false;
+        return MethodAntn.isAnnotationPresent(method, Retry.class)
+                || MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)
+                || MethodAntn.isAnnotationPresent(method, Bulkhead.class)
+                || MethodAntn.isAnnotationPresent(method, Timeout.class)
+                || MethodAntn.isAnnotationPresent(method, Asynchronous.class)
+                || MethodAntn.isAnnotationPresent(method, Fallback.class);
     }
 }

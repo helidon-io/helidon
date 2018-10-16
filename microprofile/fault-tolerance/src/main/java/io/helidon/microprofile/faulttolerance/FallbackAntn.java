@@ -17,9 +17,13 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.concurrent.Future;
 
+import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
+import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
 /**
  * Class FallbackAntn.
@@ -36,14 +40,59 @@ public class FallbackAntn extends MethodAntn implements Fallback {
     }
 
     @Override
+    public void validate() {
+        String methodName = fallbackMethod();
+        Class<? extends FallbackHandler<?>> value = value();
+
+        // Handler and fallback method not allowed
+        if (value != Fallback.DEFAULT.class && !methodName.isEmpty()) {
+            throw new FaultToleranceDefinitionException("Fallback annotation cannot declare a "
+                    + "handler and a fallback method");
+        }
+
+        // Fallback method must be compatible
+        Method method = getMethod();
+        if (!methodName.isEmpty()) {
+            try {
+                final Method fallbackMethod = method.getDeclaringClass().getMethod(methodName,
+                        getMethod().getParameterTypes());
+                if (!fallbackMethod.getReturnType().isAssignableFrom(method.getReturnType())
+                        && !method.getReturnType().isAssignableFrom(Future.class)) {        // async
+                    throw new FaultToleranceDefinitionException("Fallback method return type "
+                            + "is invalid: " + fallbackMethod.getReturnType());
+                }
+                if (!Arrays.equals(fallbackMethod.getParameterTypes(), method.getParameterTypes())) {
+                    throw new FaultToleranceDefinitionException("Fallback method parameter types "
+                            + "are incompatible");
+                }
+            } catch (NoSuchMethodException e) {
+                throw new FaultToleranceDefinitionException(e);
+            }
+        }
+
+        // Handler method must be compatible
+        if (value != Fallback.DEFAULT.class) {
+            try {
+                final Method handleMethod = value.getMethod("handle", ExecutionContext.class);
+                if (!handleMethod.getReturnType().isAssignableFrom(method.getReturnType())) {
+                    throw new FaultToleranceDefinitionException("Handler method return type "
+                            + "is invalid: " + handleMethod.getReturnType());
+                }
+            } catch (NoSuchMethodException e) {
+                throw new FaultToleranceDefinitionException(e);
+            }
+        }
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public Class<? extends FallbackHandler<?>> value() {
         LookupResult<Fallback> lookupResult = lookupAnnotation(Fallback.class);
         final String override = getParamOverride("value", lookupResult.getType());
         try {
             return override != null
-                   ? (Class<? extends FallbackHandler<?>>) Class.forName(override)
-                   : lookupResult.getAnnotation().value();
+                    ? (Class<? extends FallbackHandler<?>>) Class.forName(override)
+                    : lookupResult.getAnnotation().value();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

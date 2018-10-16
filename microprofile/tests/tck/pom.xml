@@ -34,6 +34,7 @@
         <module>tck-config</module>
         <module>tck-health</module>
         <module>tck-metrics</module>
+        <module>tck-fault-tolerance</module>
     </modules>
 
     <dependencies>

@@ -1,0 +1,18 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<!--
+  ~  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  -->
+
+<suite name="microprofile-fault-tolerance-TCK" verbose="2" configfailurepolicy="continue" >
+
+    <test name="microprofile-fault-tolerance 1.0 TCK">
+        <!-- packages>
+            <package name="org.eclipse.microprofile.fault.tolerance.tck.*">
+            </package>
+        </packages -->
+        <classes>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.TimeoutTest"/>
+        </classes>
+    </test>
+
+</suite>

@@ -93,18 +93,23 @@ public class FaultToleranceExtension implements Extension {
                 // Metrics depending on the annotations present
                 if (MethodAntn.isAnnotationPresent(method, Retry.class)) {
                     FaultToleranceMetrics.registerRetryMetrics(method);
+                    new RetryAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)) {
                     FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
+                    new CircuitBreakerAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, Timeout.class)) {
                     FaultToleranceMetrics.registerTimeoutMetrics(method);
+                    new TimeoutAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, Fallback.class)) {
                     FaultToleranceMetrics.registerFallbackMetrics(method);
+                    new FallbackAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, Bulkhead.class)) {
                     FaultToleranceMetrics.registerBulkheadMetrics(method);
+                    new BulkheadAntn(method).validate();
                 }
             });
         }

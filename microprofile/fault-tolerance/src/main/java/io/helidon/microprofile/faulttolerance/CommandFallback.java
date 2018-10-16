@@ -47,22 +47,17 @@ class CommandFallback {
     CommandFallback(InvocationContext context, MethodIntrospector introspector) {
         this.context = context;
 
-        // First check for error conditions
-        final Fallback fallback = introspector.getFallback();
-        if (fallback.value() != Fallback.DEFAULT.class && !fallback.fallbackMethod().isEmpty()) {
-            throw new FaultToleranceDefinitionException("Fallback annotation cannot declare a "
-                                                        + "handler and a fallback fallbackMethod");
-        }
-
         // Establish fallback strategy
+        final Fallback fallback = introspector.getFallback();
         if (fallback.value() != Fallback.DEFAULT.class) {
             handler = fallback.value();
         } else if (!fallback.fallbackMethod().isEmpty()) {
             Object instance = context.getTarget();
             try {
-                fallbackMethod = instance.getClass().getMethod(introspector.getFallback().fallbackMethod());
+                fallbackMethod = instance.getClass().getMethod(introspector.getFallback().fallbackMethod(),
+                        context.getMethod().getParameterTypes());
             } catch (NoSuchMethodException e) {
-                throw new FaultToleranceDefinitionException(e);
+                throw new InternalError(e);     // should have been validated
             }
         } else {
             handler = Fallback.DEFAULT.class;
@@ -95,7 +90,7 @@ class CommandFallback {
                 }
             );
         } else {
-            return fallbackMethod.invoke(context.getTarget());
+            return fallbackMethod.invoke(context.getTarget(), context.getParameters());
         }
     }
 

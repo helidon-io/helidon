@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.arquillian;
 
+import javax.enterprise.inject.spi.DefinitionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -39,7 +40,6 @@ import java.util.logging.Logger;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
@@ -126,7 +126,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             final Set<String> classNames = new TreeSet<>();
             copyArchiveToDeployDir(archive, context.deployDir, p -> {
                 if (p.endsWith(".class")) {
-                    final int prefixLength = isJavaArchive ? 1 :  "/WEB-INF/classes/".length();
+                    final int prefixLength = isJavaArchive ? 1 : "/WEB-INF/classes/".length();
                     classNames.add(p.substring(prefixLength, p.lastIndexOf(".class")).replace('/', '.'));
                 }
             });
@@ -148,8 +148,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             if (isJavaArchive) {
                 Path rootDir = context.deployDir.resolve("");
                 ensureBeansXml(rootDir);
-                classPath = new URL[] {
-                    rootDir.toUri().toURL()
+                classPath = new URL[]{
+                        rootDir.toUri().toURL()
                 };
             } else {
                 // Prepare the launcher files
@@ -163,8 +163,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             startServer(context, classPath, classNames);
         } catch (IOException e) {
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
-        } catch (Exception e) {
-            throw new DeploymentException("Unable to start server", e);
+        } catch (ReflectiveOperationException e) {
+            throw new DefinitionException(e.getCause());        // validation exceptions
         }
 
         // Server has started, so we're done.
@@ -300,11 +300,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     /**
      * Copies the given Archive to the given deployDir. For each asset copied, the callback will be invoked.
      *
-     * @param archive   The archive to deploy. This cannot be null.
+     * @param archive The archive to deploy. This cannot be null.
      * @param deployDir The directory to deploy to. This cannot be null.
-     * @param callback  The callback to invoke per item. This can be null.
+     * @param callback The callback to invoke per item. This can be null.
      * @throws IOException if there is an I/O failure related to copying the archive assets to the deployment
-     *                     directory. If this happens, the entire setup is bad and must be terminated.
+     * directory. If this happens, the entire setup is bad and must be terminated.
      */
     private void copyArchiveToDeployDir(Archive<?> archive, Path deployDir, Consumer<String> callback) throws IOException {
         Map<ArchivePath, Node> archiveContents = archive.getContent();

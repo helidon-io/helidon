@@ -42,12 +42,14 @@ class HelidonContainerExtension implements LoadableExtension {
 
         @Override
         public BeanManager getBeanManager() {
-            return CDI.current().getBeanManager();
+            CDI<Object> cdi = CDI.current();
+            return cdi != null ? cdi.getBeanManager() : null;
         }
 
         @Override
         public CreationalContext<Object> getCreationalContext() {
-            return getBeanManager().createCreationalContext(null);
+            BeanManager beanManager = getBeanManager();
+            return beanManager != null ? beanManager.createCreationalContext(null) : null;
         }
     }
 

@@ -796,6 +796,11 @@
                 <version>${version.lib.microprofile-fault-tolerance-api}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
+                <artifactId>microprofile-fault-tolerance-tck</artifactId>
+                <version>${version.lib.microprofile-fault-tolerance-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.netflix.hystrix</groupId>
                 <artifactId>hystrix-core</artifactId>
                 <version>${version.lib.hystrix}</version>
