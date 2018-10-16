@@ -16,18 +16,23 @@
 
 package io.helidon.webserver.netty;
 
-import javax.net.ssl.SSLEngine;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
+import javax.net.ssl.SSLEngine;
+
+import io.helidon.webserver.ExperimentalConfiguration;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.netty.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.CleartextHttp2ServerUpgradeHandler;
@@ -76,25 +81,36 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             p.addLast(sslHandler);
         }
 
-        HttpServerCodec sourceCodec = new HttpServerCodec();
-        HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec, upgradeCodecFactory);
-        HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder().build();
-        CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
-                new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
+        // Set up HTTP/2 pipeline if feature is enabled
+        ExperimentalConfiguration experimental = webServer.configuration().experimental();
+        if (experimental.enableHttp2()) {
+            HttpServerCodec sourceCodec = new HttpServerCodec();
+            HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder()
+                    .maxContentLength(experimental.http2MaxContentLength()).build();
+            HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
+                    protocol -> AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)
+                            ? new Http2ServerUpgradeCodec(helidonHandler) : null);
 
-        p.addLast(cleartextHttp2ServerUpgradeHandler);
-        p.addLast(new HelidonEventLogger());
+            CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
+                    new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
+
+            p.addLast(cleartextHttp2ServerUpgradeHandler);
+            p.addLast(new HelidonEventLogger());
+        } else {
+            p.addLast(new HttpRequestDecoder());
+            // Uncomment the following line if you don't want to handle HttpChunks.
+            //        p.addLast(new HttpObjectAggregator(1048576));
+            p.addLast(new HttpResponseEncoder());
+            // Remove the following line if you don't want automatic content compression.
+            //p.addLast(new HttpContentCompressor());
+        }
+
+        // Helidon's forwarding handler
         p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues));
-    }
 
-    private static final HttpServerUpgradeHandler.UpgradeCodecFactory upgradeCodecFactory =
-            protocol -> {
-                if (AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)) {
-                    return new Http2ServerUpgradeCodec(new HelidonHttp2ConnectionHandlerBuilder().build());
-                } else {
-                    return null;
-                }
-            };
+        // Cleanup queues as part of event loop
+        ch.eventLoop().execute(this::clearQueues);
+    }
 
     private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override

@@ -165,6 +165,13 @@ public interface ServerConfiguration extends SocketConfiguration {
     Tracer tracer();
 
     /**
+     * Returns an {@link ExperimentalConfiguration}.
+     *
+     * @return Experimental configuration.
+     */
+    ExperimentalConfiguration experimental();
+
+    /**
      * Creates new instance with defaults from external configuration source.
      *
      * @param config the externalized configuration
@@ -203,6 +210,7 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         private int workers;
         private Tracer tracer;
+        private ExperimentalConfiguration experimental;
 
         private Builder() {
         }
@@ -385,6 +393,11 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        public Builder experimental(ExperimentalConfiguration experimental) {
+            this.experimental = experimental;
+            return this;
+        }
+
         private InetAddress string2InetAddress(String address) {
             try {
                 return InetAddress.getByName(address);
@@ -421,6 +434,18 @@ public interface ServerConfiguration extends SocketConfiguration {
                 }
             }
 
+            // experimental
+            Config experimentalConfig = config.get("experimental");
+            if (experimentalConfig.exists()) {
+                Optional<Boolean> enableHttp2 = experimentalConfig.get("enable-http2").asOptional(Boolean.class);
+                Optional<Integer> http2MaxBufferSize = experimentalConfig.get("maxHttp2BufferSize")
+                        .asOptional(Integer.class);
+                ExperimentalConfiguration.Builder builder = new ExperimentalConfiguration.Builder();
+                enableHttp2.ifPresent(builder::enableHttp2);
+                http2MaxBufferSize.ifPresent(builder::http2MaxContentLength);
+                experimental = builder.build();
+            }
+
             return this;
         }
 
@@ -453,7 +478,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public ServerConfiguration build() {
-            return new ServerBasicConfig(defaultSocketBuilder.build(), workers, tracer, sockets);
+            return new ServerBasicConfig(defaultSocketBuilder.build(), workers, tracer, sockets, experimental);
         }
     }
 }

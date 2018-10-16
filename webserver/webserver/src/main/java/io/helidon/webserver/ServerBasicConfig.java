@@ -37,6 +37,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final int workers;
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
+    private final ExperimentalConfiguration experimental;
 
     /**
      * Creates new instance.
@@ -49,7 +50,8 @@ class ServerBasicConfig implements ServerConfiguration {
     ServerBasicConfig(SocketConfiguration socketConfig,
                       int workers,
                       Tracer tracer,
-                      Map<String, SocketConfiguration> socketConfigs) {
+                      Map<String, SocketConfiguration> socketConfigs,
+                      ExperimentalConfiguration experimental) {
         this.socketConfig = socketConfig == null ? new SocketConfig() : socketConfig;
         if (workers <= 0) {
             workers = Runtime.getRuntime().availableProcessors() * 2;
@@ -59,6 +61,8 @@ class ServerBasicConfig implements ServerConfiguration {
         HashMap<String, SocketConfiguration> map = new HashMap<>(socketConfigs);
         map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
         this.socketConfigs = Collections.unmodifiableMap(map);
+        this.experimental = experimental != null ? experimental
+                : new ExperimentalConfiguration.Builder().build();
     }
 
     @Override
@@ -104,6 +108,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public Map<String, SocketConfiguration> sockets() {
         return socketConfigs;
+    }
+
+    @Override
+    public ExperimentalConfiguration experimental() {
+        return experimental;
     }
 
     static class SocketConfig implements SocketConfiguration {
@@ -174,6 +183,27 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public SSLContext ssl() {
             return sslContext;
+        }
+    }
+
+    static class ExperimentalConfig implements ExperimentalConfiguration {
+
+        private final boolean enableHttp2;
+        private final int http2MaxContentLength;
+
+        ExperimentalConfig(boolean enableHttp2, int http2MaxContentLength) {
+            this.enableHttp2 = enableHttp2;
+            this.http2MaxContentLength = http2MaxContentLength;
+        }
+
+        @Override
+        public boolean enableHttp2() {
+            return enableHttp2;
+        }
+
+        @Override
+        public int http2MaxContentLength() {
+            return http2MaxContentLength;
         }
     }
 }

@@ -44,15 +44,13 @@ import static io.netty.handler.logging.LogLevel.INFO;
  */
 class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements Http2FrameListener {
 
-    private static final int MAX_CONTENT_LENGTH = 64 * 1024;
-
     private final InboundHttp2ToHttpAdapter inboundAdapter;
 
     HelidonConnectionHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
-                             Http2Settings initialSettings) {
+                             Http2Settings initialSettings, int maxContentLength) {
         super(decoder, encoder, initialSettings, true);
         inboundAdapter = new InboundHttp2ToHttpAdapterBuilder(decoder.connection())
-                .maxContentLength(MAX_CONTENT_LENGTH)
+                .maxContentLength(maxContentLength)
                 .propagateSettings(true)
                 .validateHttpHeaders(true)
                 .build();
@@ -158,10 +156,17 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
     static final class HelidonHttp2ConnectionHandlerBuilder extends
             AbstractHttp2ConnectionHandlerBuilder<HelidonConnectionHandler, HelidonHttp2ConnectionHandlerBuilder> {
 
-        private static final Http2FrameLogger logger = new Http2FrameLogger(INFO, HelidonConnectionHandler.class);
+        private static final Http2FrameLogger LOGGER = new Http2FrameLogger(INFO, HelidonConnectionHandler.class);
+
+        private int maxContentLength;
 
         HelidonHttp2ConnectionHandlerBuilder() {
-            frameLogger(logger);
+            frameLogger(LOGGER);
+        }
+
+        public HelidonHttp2ConnectionHandlerBuilder maxContentLength(int maxContentLength) {
+            this.maxContentLength = maxContentLength;
+            return this;
         }
 
         @Override
@@ -172,7 +177,8 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
         @Override
         protected HelidonConnectionHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                                                  Http2Settings initialSettings) {
-            HelidonConnectionHandler handler = new HelidonConnectionHandler(decoder, encoder, initialSettings);
+            HelidonConnectionHandler handler = new HelidonConnectionHandler(decoder, encoder, initialSettings,
+                    maxContentLength);
             frameListener(handler);
             return handler;
         }
