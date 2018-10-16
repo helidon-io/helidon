@@ -22,6 +22,7 @@
     xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
                         https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
   <Match>
-    <Class name="io.helidon.integrations.examples.datasource.hikaricp.jaxrs.TablesResource" />
+    <Class name="io.helidon.integrations.examples.oci.objectstorage.jaxrs.Application" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
   </Match>
 </FindBugsFilter>

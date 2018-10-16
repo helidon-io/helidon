@@ -235,7 +235,8 @@
   <properties>
     <dependenciesDirectory>libs</dependenciesDirectory>
     <kubernetesSecretName>${project.artifactId}</kubernetesSecretName>
-
+    <spotbugs.exclude>${project.basedir}/src/main/spotbugs/exclusions.xml</spotbugs.exclude>
+    
     <oci.auth.fingerprint>TODO: For testing only, you need to set your OCI fingerprint here.  For more information: https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm</oci.auth.fingerprint>
     <oci.auth.keyFile>TODO: For testing only, you need to set the full path to your OCI keyFile here.  For more information: https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm</oci.auth.keyFile>
     <oci.auth.passphraseCharacters>TODO: For testing only, you need to set your OCI keyFile passphrase here.  For more information: https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm</oci.auth.passphraseCharacters>
