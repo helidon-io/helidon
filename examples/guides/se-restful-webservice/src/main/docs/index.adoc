@@ -54,6 +54,8 @@ You'll learn how to use Helidon quickly to create a ReSTful web service that acc
 //|===
 
 == Write Your Application
+(See the last section to find out how to get the entire finished code for this example.)
+
 === Create a new Maven Project
 You can create your maven project in these ways:
 
@@ -64,6 +66,8 @@ You can create your maven project in these ways:
 mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
 
 === Update Your `pom.xml`
+==== The Essentials
+
 Make sure your POM contains these sections:
 [source,xml,subs="verbatim,attributes"]
 ----
@@ -90,15 +94,20 @@ include::{pom}[tag=configYamlDependency]
 <1> Incorporates the Helidon web server.
 <2> Pulls in support for YAML as a config format.
 
-Often, if you run your project from the IDE the IDE handles the main class and places
-dependent JARs on the runtime classpath for you. If you want to use `maven` yourself,
-outside the IDE, then add the following to your pom:
+If you run your project from the IDE, the IDE typically handles the main class and places
+dependent JARs on the runtime classpath for you and your pom is now ready to go. 
+
+==== To Run `maven` Outside your IDE
+If you want to use `maven` yourself,
+outside the IDE, then add the following to your pom. (This is typical with maven
+projects and is not specific to Helidon or this example):
 [source,xml]
 ----
     <properties>
         ...
         <mainClass>your-fully-qualified-main-class</mainClass> <!--1-->
 include::{pom}[tag=libsCopying]
+        ...
     </properties>
 
     <build>
@@ -113,9 +122,9 @@ include::{pom}[tag=copyDependencies]
     </build>
 ----
 <1> Make sure to specify your own main class path.
-<2> Instructs maven to set the main class in the JAR's manifest and a prefix used for
-packaged library JARs.
-<3> Tells maven to package the dependency JARs in a known directory relative to the project's JAR.
+<2> Instructs maven what main class to set in the JAR's manifest and what prefix to use for
+copied dependency JARs.
+<3> Tells maven to package the dependency JARs in the specified directory relative to the project's JAR.
 
 === Create a Config Resource File
 Your app will use the Helidon config support to initialize the greeting and set up HTTP
@@ -284,4 +293,16 @@ a|[source,bash]
 {"message":"Hola Jose!"}
 |====
 
+== (Or, Download the Example Source)
+We think the guide is most useful if you follow along step-by-step, building
+up the app and understanding what each part of the code is doing as you go. 
+
+But if you prefer, you can get the finished code for this example by cloning the link:https://github.com/oracle/helidon[`git` workspace
+for Helidon], navigating to the `examples/guides/se-restful-webservice` directory, and
+running
+[source,bash]
+----
+mvn package
+java -jar target/se-restful-webservice.jar
+----
 
