@@ -43,6 +43,8 @@ if [ "${WERCKER}" = "true" ] ; then
   apt-get update && apt-get -y install graphviz
 fi
 
+inject_credentials
+
 mvn -f ${WS_DIR}/pom.xml \
     clean install \
     -Pexamples,spotbugs,javadoc,docs,sources,ossrh-releases
