@@ -77,7 +77,7 @@ public class RedisClientResource {
    *
    * @see #set(UriInfo, String, String)
    *
-   * @see #del(String)x
+   * @see #del(String)
    */
   @GET
   @Path("/{key}")

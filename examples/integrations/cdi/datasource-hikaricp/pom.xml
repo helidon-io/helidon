@@ -23,9 +23,9 @@
   <modelVersion>4.0.0</modelVersion>
   
   <artifactId>helidon-integrations-examples-datasource-hikaricp</artifactId>
-  
-  <name>Helidon Integrations DataSource Hikari Connection Pool Example</name>
-  <description>${project.name}</description>
+
+  <name>Helidon Integrations: DataSource/HikariCP Example</name>
+  <description>Helidon Integrations DataSource Hikari Connection Pool Example</description>
   
   <parent>
     <groupId>io.helidon.integrations.examples</groupId>
