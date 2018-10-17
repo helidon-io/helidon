@@ -48,7 +48,7 @@ mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
         -Dcopyright.exclude=${WS_DIR}/etc/copyright-exclude.txt \
         -Dcopyright.template=${WS_DIR}/etc/copyright.txt \
         -Dcopyright.scm=git \
-        -Pexamples,docs,ossrh-releases > ${RESULT_FILE} || die "Error running the Maven command"
+        -Pexamples,integrations,docs,ossrh-releases > ${RESULT_FILE} || die "Error running the Maven command"
 
 grep -i "copyright" ${RESULT_FILE} \
     && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"

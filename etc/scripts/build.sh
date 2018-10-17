@@ -47,6 +47,6 @@ inject_credentials
 
 mvn -f ${WS_DIR}/pom.xml \
     clean install \
-    -Pexamples,spotbugs,javadoc,docs,sources,ossrh-releases
+    -Pexamples,integrations,spotbugs,javadoc,docs,sources,ossrh-releases
 
 examples/archetypes/test-archetypes.sh
