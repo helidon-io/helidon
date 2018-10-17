@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-examples-project</artifactId>
@@ -34,5 +34,6 @@
         <module>helidon-quickstart-se</module>
         <module>helidon-quickstart-mp</module>
         <module>todos</module>
+        <module>integrations/cdi</module>
     </modules>
 </project>

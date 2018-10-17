@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>abac-validators</artifactId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-abac-role</artifactId>
     <name>Helidon Security Validators Role</name>

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-webserver-netty</artifactId>
     <name>Helidon WebServer Netty</name>
@@ -154,6 +154,10 @@
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http2</artifactId>
         </dependency>
     </dependencies>
 </project>

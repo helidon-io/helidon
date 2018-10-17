@@ -31,6 +31,7 @@ module io.helidon.webserver.netty {
     requires io.netty.transport;
     requires io.netty.common;
     requires io.netty.buffer;
+    requires io.netty.codec.http2;
 
     provides io.helidon.webserver.spi.WebServerFactory with io.helidon.webserver.netty.Factory;
 }

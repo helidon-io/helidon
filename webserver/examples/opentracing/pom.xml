@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.examples</groupId>
         <artifactId>helidon-webserver-examples-project</artifactId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-webserver-examples-opentracing</artifactId>
     <name>Helidon WebServer Examples OpenTracing</name>
@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <helidon.version>0.10.2-SNAPSHOT</helidon.version>
+        <helidon.version>0.10.3-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.webserver.examples.opentracing.ZipkinExampleMain</mainClass>
 
         <docker.image.name>${docker.registry}/helidon-webserver-opentracing-example:${project.version}</docker.image.name>

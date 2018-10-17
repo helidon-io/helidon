@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-javadocs</artifactId>
     <name>Helidon Javadocs</name>
@@ -147,12 +147,6 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-netty</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>

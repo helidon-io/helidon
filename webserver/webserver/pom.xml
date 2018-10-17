@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-webserver</artifactId>
     <name>Helidon WebServer</name>
@@ -95,6 +95,12 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-hocon</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

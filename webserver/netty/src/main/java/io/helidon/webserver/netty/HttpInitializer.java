@@ -16,25 +16,39 @@
 
 package io.helidon.webserver.netty;
 
+
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
+import io.helidon.webserver.ExperimentalConfiguration;
+import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.netty.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpServerUpgradeHandler;
+import io.netty.handler.codec.http2.CleartextHttp2ServerUpgradeHandler;
+import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.AsciiString;
 
 /**
  * The HttpInitializer.
  */
 class HttpInitializer extends ChannelInitializer<SocketChannel> {
+    private static final Logger LOGGER = Logger.getLogger(HttpInitializer.class.getName());
 
     private final SslContext sslContext;
     private final NettyWebServer webServer;
@@ -60,7 +74,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     public void initChannel(SocketChannel ch) {
-        ChannelPipeline p = ch.pipeline();
+        final ChannelPipeline p = ch.pipeline();
 
         SSLEngine sslEngine = null;
         if (sslContext != null) {
@@ -69,14 +83,43 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
             p.addLast(sslHandler);
         }
 
-        p.addLast(new HttpRequestDecoder());
-        // Uncomment the following line if you don't want to handle HttpChunks.
-        //        p.addLast(new HttpObjectAggregator(1048576));
-        p.addLast(new HttpResponseEncoder());
-        // Remove the following line if you don't want automatic content compression.
-        //p.addLast(new HttpContentCompressor());
+        // Set up HTTP/2 pipeline if feature is enabled
+        ExperimentalConfiguration experimental = webServer.configuration().experimental();
+        if (experimental != null && experimental.http2() != null && experimental.http2().enable()) {
+            Http2Configuration http2Config = experimental.http2();
+            HttpServerCodec sourceCodec = new HttpServerCodec();
+            HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder()
+                    .maxContentLength(http2Config.maxContentLength()).build();
+            HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
+                    protocol -> AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)
+                            ? new Http2ServerUpgradeCodec(helidonHandler) : null);
+
+            CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
+                    new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
+
+            p.addLast(cleartextHttp2ServerUpgradeHandler);
+            p.addLast(new HelidonEventLogger());
+        } else {
+            p.addLast(new HttpRequestDecoder());
+            // Uncomment the following line if you don't want to handle HttpChunks.
+            //        p.addLast(new HttpObjectAggregator(1048576));
+            p.addLast(new HttpResponseEncoder());
+            // Remove the following line if you don't want automatic content compression.
+            //p.addLast(new HttpContentCompressor());
+        }
+
+        // Helidon's forwarding handler
         p.addLast(new ForwardingHandler(routing, webServer, sslEngine, queues));
 
+        // Cleanup queues as part of event loop
         ch.eventLoop().execute(this::clearQueues);
+    }
+
+    private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+            LOGGER.info("Event Triggered: " + evt);
+            ctx.fireUserEventTriggered(evt);
+        }
     }
 }

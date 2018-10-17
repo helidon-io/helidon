@@ -164,7 +164,12 @@
             <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://|@see| \* |@link|imp|@todo|@version"/>
         </module>
         <module name="MethodLength"/>
-        <module name="ParameterNumber"/>
+
+        <!-- Some Netty interfaces need this -->
+        <module name="ParameterNumber">
+            <property name="ignoreOverriddenMethods" value="true"/>
+            <property name="tokens" value="METHOD_DEF"/>
+        </module>
 
         <!-- Several variable declaration on one line: int i, p; -->
         <module name="MultipleVariableDeclarations"/>

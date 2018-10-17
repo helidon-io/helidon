@@ -24,7 +24,7 @@
     <parent>
         <artifactId>helidon-security-examples-project</artifactId>
         <groupId>io.helidon.security.examples</groupId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-examples-spi</artifactId>
     <name>Helidon Security Examples SPI implementation</name>
