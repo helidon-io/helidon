@@ -205,7 +205,6 @@
         <module>security</module>
         <module>bom</module>
         <module>microprofile</module>
-        <module>integrations</module>
     </modules>
 
     <build>
@@ -990,6 +989,12 @@
             <id>examples</id>
             <modules>
                 <module>examples</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>integrations</id>
+            <modules>
+                <module>integrations</module>
             </modules>
         </profile>
         <profile>
