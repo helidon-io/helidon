@@ -18,7 +18,7 @@ package io.helidon.metrics;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.RequestHeaders;
-import io.helidon.webserver.WebServerHelpers;
+import io.helidon.webserver.WebServerHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +44,7 @@ class AcceptHeaderTest {
     private RequestHeaders constructRequestHeaders(String name, String... values) {
         Map<String, List<String>> map = new HashMap<>(1);
         map.put(name, new ArrayList<>(Arrays.asList(values)));
-        return WebServerHelpers.constructRequestHeaders(map);
+        return WebServerHelper.constructRequestHeaders(map);
     }
 
     @Test

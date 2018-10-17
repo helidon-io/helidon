@@ -25,7 +25,19 @@ import java.util.Map;
  * WebServer objects, but should not know the implementation details
  * of webserver
  */
-public class WebServerHelpers {
+public class WebServerHelper {
+
+    private WebServerHelper() {
+        //not called
+    }
+
+    /**
+     * Create an instance of RequestHeaders.
+     *
+     * @param headerMap a Map of request headers
+     *
+     * @return a new instance built with the passed headers
+     */
     public static RequestHeaders constructRequestHeaders(Map<String, List<String>> headerMap) {
         return new HashRequestHeaders(headerMap);
     }

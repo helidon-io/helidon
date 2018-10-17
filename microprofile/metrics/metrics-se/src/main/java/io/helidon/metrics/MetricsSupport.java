@@ -143,13 +143,19 @@ public final class MetricsSupport implements Service {
         return new Builder();
     }
 
-    public static boolean requestsJsonData(RequestHeaders headers) {
+    /**
+     * Check if the passed headers (specifically Accept) prefer
+     * data in JSON format.
+     *
+     * @return true if passed headers prefer data in JSON format.
+     */
+    static boolean requestsJsonData(RequestHeaders headers) {
         Optional<MediaType> mediaType = headers.bestAccepted(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN);
         boolean requestsJson =  mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
 
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Generating metrics for media type " + mediaType.toString() +
-                ". requestsJson=" + requestsJson);
+            LOGGER.fine("Generating metrics for media type " + mediaType.toString()
+                + ". requestsJson=" + requestsJson);
         }
         return requestsJson;
     }
