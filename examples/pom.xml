@@ -34,5 +34,6 @@
         <module>helidon-quickstart-se</module>
         <module>helidon-quickstart-mp</module>
         <module>todos</module>
+        <module>integrations/cdi</module>
     </modules>
 </project>
