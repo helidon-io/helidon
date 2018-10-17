@@ -437,13 +437,17 @@ public interface ServerConfiguration extends SocketConfiguration {
             // experimental
             Config experimentalConfig = config.get("experimental");
             if (experimentalConfig.exists()) {
-                Optional<Boolean> enableHttp2 = experimentalConfig.get("enable-http2").asOptional(Boolean.class);
-                Optional<Integer> http2MaxBufferSize = experimentalConfig.get("maxHttp2BufferSize")
-                        .asOptional(Integer.class);
-                ExperimentalConfiguration.Builder builder = new ExperimentalConfiguration.Builder();
-                enableHttp2.ifPresent(builder::enableHttp2);
-                http2MaxBufferSize.ifPresent(builder::http2MaxContentLength);
-                experimental = builder.build();
+                ExperimentalConfiguration.Builder experimentalBuilder = new ExperimentalConfiguration.Builder();
+                Config http2Config = experimentalConfig.get("http2");
+                if (http2Config.exists()) {
+                    Optional<Boolean> enable = http2Config.get("enable").asOptional(Boolean.class);
+                    Optional<Integer> maxContentLength = http2Config.get("maxContentLength").asOptional(Integer.class);
+                    Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
+                    enable.ifPresent(http2Builder::enable);
+                    maxContentLength.ifPresent(http2Builder::maxContentLength);
+                    experimentalBuilder.http2(http2Builder.build());
+                }
+                experimental = experimentalBuilder.build();
             }
 
             return this;

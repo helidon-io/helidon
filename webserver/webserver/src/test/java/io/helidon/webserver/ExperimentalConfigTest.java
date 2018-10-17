@@ -30,28 +30,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ExperimentalConfigTest {
 
     @Test
-    public void configBuilderDefault() {
-        ExperimentalConfiguration config = new ExperimentalConfiguration.Builder().build();
-        assertFalse(config.enableHttp2());
-        assertEquals(ExperimentalConfiguration.DEFAULT_MAX_CONTENT_LENGTH, config.http2MaxContentLength());
+    public void http2BuilderDefaults() {
+        Http2Configuration http2 = new Http2Configuration.Builder().build();
+        assertFalse(http2.enable());
+        assertEquals(Http2Configuration.DEFAULT_MAX_CONTENT_LENGTH, http2.maxContentLength());
     }
 
     @Test
     public void configBuilder() {
-        ExperimentalConfiguration.Builder builder = new ExperimentalConfiguration.Builder();
-        builder.enableHttp2(true);
-        builder.http2MaxContentLength(32 * 1024);
-        ExperimentalConfiguration config = builder.build();
-        assertTrue(config.enableHttp2());
-        assertEquals(32 * 1024, config.http2MaxContentLength());
+        Http2Configuration.Builder builder = new Http2Configuration.Builder();
+        builder.enable(true);
+        builder.maxContentLength(32 * 1024);
+        Http2Configuration http2 = builder.build();
+        assertTrue(http2.enable());
+        assertEquals(32 * 1024, http2.maxContentLength());
+        ExperimentalConfiguration config = new ExperimentalConfiguration.Builder().http2(http2).build();
+        assertEquals(http2, config.http2());
     }
 
     @Test
     public void configResource() {
-        Config experimental = Config.from(ConfigSources.classpath("experimental/application.yaml"))
+        Config http2 = Config.from(ConfigSources.classpath("experimental/application.yaml"))
                 .get("webserver")
-                .get("experimental");
-        assertTrue(experimental.get("enable-http2").as(Boolean.class));
-        assertEquals(64 * 1024, (int) experimental.get("http2-max-content-length").as(Integer.class));
+                .get("experimental")
+                .get("http2");
+        assertTrue(http2.get("enable").as(Boolean.class));
+        assertEquals(16 * 1024, (int) http2.get("max-content-length").as(Integer.class));
     }
 }

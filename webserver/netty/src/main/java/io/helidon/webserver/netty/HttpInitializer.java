@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.netty;
 
+
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
@@ -23,6 +24,7 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLEngine;
 
 import io.helidon.webserver.ExperimentalConfiguration;
+import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.netty.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
@@ -83,10 +85,11 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
 
         // Set up HTTP/2 pipeline if feature is enabled
         ExperimentalConfiguration experimental = webServer.configuration().experimental();
-        if (experimental.enableHttp2()) {
+        if (experimental != null && experimental.http2() != null && experimental.http2().enable()) {
+            Http2Configuration http2Config = experimental.http2();
             HttpServerCodec sourceCodec = new HttpServerCodec();
             HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder()
-                    .maxContentLength(experimental.http2MaxContentLength()).build();
+                    .maxContentLength(http2Config.maxContentLength()).build();
             HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
                     protocol -> AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)
                             ? new Http2ServerUpgradeCodec(helidonHandler) : null);

@@ -22,58 +22,33 @@ package io.helidon.webserver;
 public interface ExperimentalConfiguration {
 
     /**
-     * Default value for max content length.
-     */
-    int DEFAULT_MAX_CONTENT_LENGTH = 64 * 1024;
-
-    /**
-     * Config property to enable HTTP/2 support.
+     * Config property to set HTTP/2 configuration.
      *
-     * @return Value of property.
+     * @return HTTP/2 configuration.
      */
-    boolean enableHttp2();
-
-    /**
-     * Default HTTP/2 content length. Streaming is currently not supported for HTTP/2,
-     * so this is largest payload acceptable.
-     *
-     * @return Max HTTP/2 buffer size.
-     */
-    int http2MaxContentLength();
+    Http2Configuration http2();
 
     /**
      * Builder for {@link ExperimentalConfiguration}.
      */
     final class Builder implements io.helidon.common.Builder<ExperimentalConfiguration> {
 
-        private boolean enableHttp2 = false;
-        private int http2MaxContentLength = DEFAULT_MAX_CONTENT_LENGTH;
+        private Http2Configuration http2;
 
         /**
-         * Sets value to enable HTTP/2 support.
+         * Sets value for HTTP/2 configuration.
          *
-         * @param enableHttp2 New value.
-         * @return
+         * @param http2 HTTP/2 configuration.
+         * @return The builder.
          */
-        public Builder enableHttp2(boolean enableHttp2) {
-            this.enableHttp2 = enableHttp2;
-            return this;
-        }
-
-        /**
-         * Sets max content length for HTTP/2.
-         *
-         * @param http2MaxContentLength New value for max content length.
-         * @return
-         */
-        public Builder http2MaxContentLength(int http2MaxContentLength) {
-            this.http2MaxContentLength = http2MaxContentLength;
+        public Builder http2(Http2Configuration http2) {
+            this.http2 = http2;
             return this;
         }
 
         @Override
         public ExperimentalConfiguration build() {
-            return new ServerBasicConfig.ExperimentalConfig(enableHttp2, http2MaxContentLength);
+            return () -> http2;
         }
     }
 }

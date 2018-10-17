@@ -17,5 +17,6 @@
 
 webserver:
   experimental:
-    enable-http2: true
-    http2-max-content-length: 65536
+    http2:
+      enable: true
+      max-content-length: 16384

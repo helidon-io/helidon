@@ -185,25 +185,4 @@ class ServerBasicConfig implements ServerConfiguration {
             return sslContext;
         }
     }
-
-    static class ExperimentalConfig implements ExperimentalConfiguration {
-
-        private final boolean enableHttp2;
-        private final int http2MaxContentLength;
-
-        ExperimentalConfig(boolean enableHttp2, int http2MaxContentLength) {
-            this.enableHttp2 = enableHttp2;
-            this.http2MaxContentLength = http2MaxContentLength;
-        }
-
-        @Override
-        public boolean enableHttp2() {
-            return enableHttp2;
-        }
-
-        @Override
-        public int http2MaxContentLength() {
-            return http2MaxContentLength;
-        }
-    }
 }
