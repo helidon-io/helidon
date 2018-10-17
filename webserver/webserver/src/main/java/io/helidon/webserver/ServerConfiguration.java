@@ -165,6 +165,13 @@ public interface ServerConfiguration extends SocketConfiguration {
     Tracer tracer();
 
     /**
+     * Returns an {@link ExperimentalConfiguration}.
+     *
+     * @return Experimental configuration.
+     */
+    ExperimentalConfiguration experimental();
+
+    /**
      * Creates new instance with defaults from external configuration source.
      *
      * @param config the externalized configuration
@@ -203,6 +210,7 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         private int workers;
         private Tracer tracer;
+        private ExperimentalConfiguration experimental;
 
         private Builder() {
         }
@@ -385,6 +393,11 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        public Builder experimental(ExperimentalConfiguration experimental) {
+            this.experimental = experimental;
+            return this;
+        }
+
         private InetAddress string2InetAddress(String address) {
             try {
                 return InetAddress.getByName(address);
@@ -421,6 +434,22 @@ public interface ServerConfiguration extends SocketConfiguration {
                 }
             }
 
+            // experimental
+            Config experimentalConfig = config.get("experimental");
+            if (experimentalConfig.exists()) {
+                ExperimentalConfiguration.Builder experimentalBuilder = new ExperimentalConfiguration.Builder();
+                Config http2Config = experimentalConfig.get("http2");
+                if (http2Config.exists()) {
+                    Optional<Boolean> enable = http2Config.get("enable").asOptional(Boolean.class);
+                    Optional<Integer> maxContentLength = http2Config.get("maxContentLength").asOptional(Integer.class);
+                    Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
+                    enable.ifPresent(http2Builder::enable);
+                    maxContentLength.ifPresent(http2Builder::maxContentLength);
+                    experimentalBuilder.http2(http2Builder.build());
+                }
+                experimental = experimentalBuilder.build();
+            }
+
             return this;
         }
 
@@ -453,7 +482,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public ServerConfiguration build() {
-            return new ServerBasicConfig(defaultSocketBuilder.build(), workers, tracer, sockets);
+            return new ServerBasicConfig(defaultSocketBuilder.build(), workers, tracer, sockets, experimental);
         }
     }
 }
