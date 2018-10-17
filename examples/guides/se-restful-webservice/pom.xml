@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-guides-project</artifactId>
         <groupId>io.helidon.guides</groupId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.3-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.guides</groupId>
