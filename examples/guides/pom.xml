@@ -23,15 +23,6 @@
     <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
   </properties>
 
-<!--  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-  </dependencies>-->
-
-  
-
   <reporting>
     <plugins>
       <plugin>
