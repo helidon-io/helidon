@@ -15,6 +15,7 @@ target/
 *.releaseBackup
 atlassian-ide-plugin.xml
 user.txt
+nbactions.xml
 nb-configuration.xml
 node_modules/
 node/
