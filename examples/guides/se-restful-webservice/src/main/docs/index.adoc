@@ -15,17 +15,18 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-:java-base: ../java/io/helidon/guides/se/restfulwebservice
+:adoc-dir: {guides-dir}/se-restful-webservice/src/main/docs
+:java-base: {adoc-dir}/../java/io/helidon/guides/se/restfulwebservice
 :greet-service: {java-base}/GreetService.java
 :main-class: {java-base}/Main.java
-:pom: ../../pom.xml
+:pom: {adoc-dir}/../../../pom.xml
 
 
 = The ReSTful Web Service Guide
 :description: Helidon guide restful web service
 :keywords: helidon, guide, example
 
-Create and build a ReSTful web service as your first Helidon application.
+Create and build a ReSTful web service as your first Helidon SE application.
 
 == What You Will Learn
 You'll learn how to use Helidon quickly to create a ReSTful web service that accepts these HTTP requests:
