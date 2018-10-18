@@ -67,7 +67,8 @@ final class MicroProfileConfigAuthenticationDetailsProvider extends CustomerAuth
       .orElse(null);
     if (privateKey == null || privateKey.trim().isEmpty()) {
       final String pemFormattedPrivateKeyFilePath =
-        this.config.getOptionalValue("oci.auth.keyFile", String.class).orElse("~/.oci/oci_api_key.pem");
+        this.config.getOptionalValue("oci.auth.keyFile", String.class)
+        .orElse(Paths.get(System.getProperty("user.home"), ".oci/oci_api_key.pem").toString());
       assert pemFormattedPrivateKeyFilePath != null;
       try {
         return new BufferedInputStream(Files.newInputStream(Paths.get(pemFormattedPrivateKeyFilePath)));
