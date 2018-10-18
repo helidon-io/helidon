@@ -21,42 +21,9 @@
 
 
 = Creating a ReSTful Web Service using Helidon SE
-:description: Helidon SE ReSTful Web Service Guide
-:keywords: helidon, guide, rest, web, service
+:description: Helidon guide restful web service
+:keywords: helidon, guide, rest, web, service, example
 
-This guide takes you through creating, building, and running a simple ReSTful web service using Helidon SE.
+Create and build a ReSTful web service as your first Helidon SE application.
 
-image:guides/baseline-schedule-24px.svg["Duration", title="Duration"] 15 minutes
-
-== What You'll Learn
-You will learn how to write a simple ReSTful web service using Helidon SE and its
-reactive web server and how to build and run it using Maven.
-
-== What You'll Need
-
-* A text editor or an IDE
-* JDK 1.8 or later
-* Maven 3.5 or later
-
-== Creating the Application
-You have two choices:
-
-* <<do-it-yourself,Do-it-yourself>> - Create a new maven project and add the code to it yourself.
-* <<outsource-it,Outsource it>> - Clone a github repository or download a zip containing the finished example.
-
-Either way you'll follow the same steps to build and run the application.
-
-=== Do-it-yourself [[do-it-yourself]]
-
-[source,java]
-----
-include::https://github.com/oracle/helidon/blob/master/examples/helidon-quickstart-se/src/main/java/io/helidon/examples/quickstart/se/Main.java
-----
-
-=== Outsource It [[outsource-it]]
-
-== Building the Project
-
-== Running the Application
-
- 
+include::{guides-dir}/se-restful-webservice/src/main/docs/index.adoc[]
