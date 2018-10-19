@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.examples</groupId>
         <artifactId>examples-project</artifactId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.3</version>
     </parent>
     <artifactId>security-idcs</artifactId>
     <name>Helidon Microprofile Examples IDCS Security</name>
