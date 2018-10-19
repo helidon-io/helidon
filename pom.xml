@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-project</artifactId>
-    <version>0.10.3-SNAPSHOT</version>
+    <version>0.10.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Project</name>
