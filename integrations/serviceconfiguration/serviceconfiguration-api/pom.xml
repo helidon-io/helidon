@@ -30,7 +30,7 @@
   <parent>
     <groupId>io.helidon.serviceconfiguration</groupId>
     <artifactId>helidon-serviceconfiguration-project</artifactId>
-    <version>0.10.4-SNAPSHOT</version>
+    <version>0.10.5-SNAPSHOT</version>
   </parent>
   
 </project>

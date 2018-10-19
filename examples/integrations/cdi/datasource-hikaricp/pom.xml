@@ -30,7 +30,7 @@
   <parent>
     <groupId>io.helidon.integrations.examples</groupId>
     <artifactId>helidon-integrations-examples-project</artifactId>
-    <version>0.10.4-SNAPSHOT</version>
+    <version>0.10.5-SNAPSHOT</version>
   </parent>
 
   <dependencyManagement>
