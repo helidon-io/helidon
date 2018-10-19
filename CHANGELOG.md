@@ -11,7 +11,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixes
 
-## [0.10.3] - 2018-10-12
+## [0.10.4] - 2018-10-19
+
+### Fixes
+
+- Update site to display and navigate to the guides [120](https://github.com/oracle/helidon/pull/120)
+- Fixes minor error in OCI object storage integration [119](https://github.com/oracle/helidon/pull/119)
+
+## [0.10.3] - 2018-10-18
 
 ### Improvements
 
@@ -79,6 +86,7 @@ for details.
 - Initial source drop on Github
 
 [Unreleased]: https://github.com/oracle/helidon/compare/0.10.3...HEAD
+[0.10.4]: https://github.com/oracle/helidon/compare/0.10.3...0.10.4
 [0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3
 [0.10.2]: https://github.com/oracle/helidon/compare/0.10.1...0.10.2
 [0.10.1]: https://github.com/oracle/helidon/compare/0.10.0...0.10.1
