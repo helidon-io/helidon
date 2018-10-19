@@ -22,13 +22,13 @@
 
   <groupId>io.helidon.guides</groupId>
   <artifactId>helidon-guides-project</artifactId>
-  <version>0.10.4-SNAPSHOT</version>
+  <version>0.10.4</version>
   <packaging>pom</packaging>
   
   <parent>
       <groupId>io.helidon.examples</groupId>
       <artifactId>helidon-examples-project</artifactId>
-      <version>0.10.4-SNAPSHOT</version>
+      <version>0.10.4</version>
   </parent>
 
   <name>helidon-guides-project</name>

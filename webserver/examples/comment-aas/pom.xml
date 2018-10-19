@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.examples</groupId>
         <artifactId>helidon-webserver-examples-project</artifactId>
-        <version>0.10.4-SNAPSHOT</version>
+        <version>0.10.4</version>
     </parent>
     <artifactId>helidon-webserver-examples-comment-aas</artifactId>
     <name>Helidon WebServer Examples CommentsAAS</name>
@@ -32,7 +32,7 @@
     <description>Comments As A Service example application</description>
 
     <properties>
-        <helidon.version>0.10.4-SNAPSHOT</helidon.version>
+        <helidon.version>0.10.4</helidon.version>
         <mainClass>io.helidon.webserver.examples.comments.Main</mainClass>
     </properties>
 
