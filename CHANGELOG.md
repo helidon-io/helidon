@@ -11,6 +11,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixes
 
+## [0.10.3] - 2018-10-12
+
+### Improvements
+
+- Helidon CDI Extensions [109](https://github.com/oracle/helidon/pull/109)
+- Guide for building restful web services[117](https://github.com/oracle/helidon/pull/117)
+- Experimental support for HTTP/2 [105](https://github.com/oracle/helidon/issues/105)
+
+### Fixes
+
+- WebServer: Prometheus fails to scrape Helidon metrics [111](https://github.com/oracle/helidon/issues/111)
+
 ## [0.10.2] - 2018-10-12
 
 ### Improvements
@@ -66,6 +78,9 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/0.10.3...HEAD
+[0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3
+[0.10.2]: https://github.com/oracle/helidon/compare/0.10.1...0.10.2
+[0.10.1]: https://github.com/oracle/helidon/compare/0.10.0...0.10.1
 [0.10.0]: https://github.com/oracle/helidon/compare/0.9.1...0.10.0
 [0.9.1]: https://github.com/oracle/helidon/compare/0.9.0...0.9.1
