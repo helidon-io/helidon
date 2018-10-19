@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.examples</groupId>
         <artifactId>helidon-security-examples-project</artifactId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.4-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-examples-nohttp-programmatic</artifactId>
     <name>Helidon Security Examples No-HTTP programmatic</name>

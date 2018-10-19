@@ -22,18 +22,18 @@
     <parent>
         <artifactId>helidon-guides-project</artifactId>
         <groupId>io.helidon.guides</groupId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.4-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.guides</groupId>
     <artifactId>se-restful-webservice</artifactId>
-    <version>0.10.3-SNAPSHOT</version>
+    <version>0.10.4-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>se-restful-webservice</name>
 
     <properties>
 <!-- tag::helidonVersion[] -->
-        <helidon.version>0.10.1</helidon.version>
+        <helidon.version>0.10.4-SNAPSHOT</helidon.version>
 <!-- end::helidonVersion[] -->
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
