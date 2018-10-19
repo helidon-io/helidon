@@ -26,4 +26,4 @@
 
 Create and build a ReSTful web service as your first Helidon SE application.
 
-include::{guides-dir}/se-restful-webservice/src/main/docs/index.adoc[]
+include::{guides-dir}/se-restful-webservice/src/main/docs/index.adoc[leveloffset=+1]
