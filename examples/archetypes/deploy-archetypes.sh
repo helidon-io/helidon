@@ -50,7 +50,7 @@ for _ex in ${EXAMPLES}; do
   pom_file="${EXAMPLE_DIR}/${_ex}/target/generated-sources/archetype/pom.xml"
   if [ -f "${pom_file}" ]; then
       mvn -f "${pom_file}" \
-        clean verify gpg:sign deploy:deploy -B -DskipTests \
+        clean verify gpg:sign org.apache.maven.plugins:maven-deploy-plugin:2.8.2:deploy -B -DskipTests \
         -Dgpg.passphase="${GPG_PASSPHRASE}" \
         -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}
   else
