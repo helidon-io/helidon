@@ -44,16 +44,28 @@
                             <goal>javadoc-no-fork</goal>
                         </goals>
                         <configuration>
-                            <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
-                            <destDir>classes</destDir>
-                            <doctitle>Helidon ${project.version} API Documentation</doctitle>
-                            <windowtitle>Helidon ${project.version} API</windowtitle>
                             <bottom>
                             <![CDATA[Copyright &#169; 2018,
                                 <a href="http://www.oracle.com">Oracle</a>
                                 and/or its affiliates.
                                 All Rights Reserved. Use is subject to license terms.]]>
                             </bottom>
+                            <dependencySourceExcludes>
+                                <dependencySourceExclude>org.osgi:*</dependencySourceExclude>
+                                <dependencySourceExclude>com.typesafe:config-test-lib_*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.annotation:*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.interceptor:*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.enterprise.concurrent:*</dependencySourceExclude>
+                                <dependencySourceExclude>javax.el:*</dependencySourceExclude>
+                            </dependencySourceExcludes>
+                            <dependencySourceIncludes>
+                                <dependencySourceInclude>io.helidon.*:*</dependencySourceInclude>
+                                <dependencySourceInclude>io.helidon*:*</dependencySourceInclude>
+                            </dependencySourceIncludes>
+                            <destDir>classes</destDir>
+                            <doclint>none</doclint>
+                            <doctitle>Helidon ${project.version} API Documentation</doctitle>
+                            <excludePackageNames>*.internal:*.internal.*:*.config.testing.*</excludePackageNames>
                             <groups>
                                 <group>
                                     <title>Microprofile</title>
@@ -75,13 +87,16 @@
                                     <title>Reactive Web Server API</title>
                                     <packages>io.helidon.webserver*</packages>
                                 </group>
+                                <group>
+                                    <title>Integrations</title>
+                                    <packages>io.helidon.integrations*:io.helidon.service.configuration*</packages>
+                                </group>
                             </groups>
-                            <verbose/>
-                            <maxmemory>256m</maxmemory>
+                            <includeDependencySources>true</includeDependencySources>
+                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
                             <links>
                                 <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
                                 <link>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</link>
-                                <link>https://docs.oracle.com/javase/8/docs/api</link>
                                 <link>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</link>
                                 <link>https://jersey.github.io/apidocs/${version.lib.jersey}/jersey</link>
                                 <link>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</link>
@@ -94,32 +109,15 @@
                                 <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
                                 <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
                             </links>
-                            <additionalJOptions combine.children="append">
-                                <!-- javadoc.io requires a user agent -->
-                                <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
-                            </additionalJOptions>
-                            <additionalparam>-Xdoclint:none</additionalparam>
-                            <includeDependencySources>true</includeDependencySources>
-                            <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
-                            <dependencySourceIncludes>
-                                <dependencySourceInclude>io.helidon.*:*</dependencySourceInclude>
-                                <dependencySourceInclude>io.helidon*:*</dependencySourceInclude>
-                            </dependencySourceIncludes>
-                            <dependencySourceExcludes>
-                                <dependencySourceExclude>org.osgi:*</dependencySourceExclude>
-                                <dependencySourceExclude>com.typesafe:config-test-lib_*</dependencySourceExclude>
-                                <dependencySourceExclude>javax.annotation:*</dependencySourceExclude>
-                                <dependencySourceExclude>javax.interceptor:*</dependencySourceExclude>
-                                <dependencySourceExclude>javax.enterprise.concurrent:*</dependencySourceExclude>
-                                <dependencySourceExclude>javax.el:*</dependencySourceExclude>
-                            </dependencySourceExcludes>
-                            <sourceFileIncludes>
-                                <sourceFileInclude>io/helidon/**/*.java</sourceFileInclude>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.internal:*.internal.*:*.config.testing.*</excludePackageNames>
+                            <maxmemory>256m</maxmemory>
+                            <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
                             <sourceFileExcludes>
                                 <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             </sourceFileExcludes>
+                            <sourceFileIncludes>
+                                <sourceFileInclude>io/helidon/**/*.java</sourceFileInclude>
+                            </sourceFileIncludes>
+                            <windowtitle>Helidon ${project.version} API</windowtitle>
                         </configuration>
                     </execution>
                 </executions>
@@ -268,6 +266,58 @@
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-security</artifactId>
+        </dependency>
+
+        <!-- integrations javadocs -->
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-config-source</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-system-kubernetes</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-system-oracle-accs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-jedis</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

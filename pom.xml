@@ -998,6 +998,58 @@
             </modules>
         </profile>
         <profile>
+          <id>jdk9-javadoc</id>
+          <!-- https://maven.apache.org/guides/introduction/introduction-to-profiles.html#Details_on_profile_activation -->
+          <!-- AND semantics; see https://issues.apache.org/jira/browse/MNG-4565 -->
+            <activation> 
+              <jdk>[9,10)</jdk>
+              <property>
+                  <name>!jdkToolchainVersion</name>
+              </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <configuration>
+                                <additionalJOptions>
+                                    <!-- https://bugs.openjdk.java.net/browse/JDK-8184969 -->
+                                    <JOption>-Xold</JOption>
+                                </additionalJOptions>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+          <id>jdk9-toolchain-javadoc</id>
+            <activation>
+              <property>
+                <name>jdkToolchainVersion</name>
+                <value>9</value>
+              </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <configuration>
+                                <additionalJOptions combine.children="append">
+                                    <!-- https://bugs.openjdk.java.net/browse/JDK-8184969 -->
+                                    <JOption>-Xold</JOption>
+                                </additionalJOptions>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
             <id>jdk9+</id>
             <activation>
                 <jdk>[9,)</jdk>
@@ -1010,7 +1062,7 @@
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-compiler-plugin</artifactId>
                             <executions>
-                                <!-- fist pass, compile everything for java9 -->
+                                <!-- first pass, compile everything for java9 -->
                                 <execution>
                                     <id>default-compile</id>
                                     <configuration>
@@ -1353,7 +1405,7 @@
                 </file>
             </activation>
             <properties>
-                <jdkToolchainVersion>${maven.compiler.target}</jdkToolchainVersion>
+                <jdkToolchainVersion>${java.vm.specification.version}</jdkToolchainVersion>
             </properties>
             <build>
                 <plugins>
