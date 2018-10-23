@@ -21,12 +21,15 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
-import static io.helidon.config.Config.Type.VALUE;
-import java.util.stream.Stream;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static io.helidon.config.Config.Type.VALUE;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
@@ -39,8 +42,6 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests {@link Config} API in case the node is {@link Config.Type#VALUE} type, i.e. {@link ConfigValueImpl}.
@@ -80,7 +81,6 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
         array = ConfigValueImpl.toArray(",a,b");
         assertThat(array, arrayContaining("", "a", "b"));
 
-
         array = ConfigValueImpl.toArray("a\\,");
         assertThat(array, arrayContaining("a,"));
 
@@ -93,7 +93,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTypeExists(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).exists(), is(true));
+        assertThat(config("text-" + level()).exists(), is(true));
         assertThat(config("text-" + level()).type().exists(), is(true));
     }
 
@@ -102,7 +102,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTypeIsLeaf(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).isLeaf(), is(true));
+        assertThat(config("text-" + level()).isLeaf(), is(true));
         assertThat(config("text-" + level()).type().isLeaf(), is(true));
     }
 
@@ -111,7 +111,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testValue(TestContext context) {
         init(context);
-	assertValue(key -> config(key).value().get());
+        assertValue(key -> config(key).value().get());
     }
 
     @Override
@@ -119,7 +119,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalString(TestContext context) {
         init(context);
-	assertValue(key -> config(key).asOptionalString().get());
+        assertValue(key -> config(key).asOptionalString().get());
     }
 
     @Override
@@ -127,7 +127,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testNodeList(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.nodeList());
+        getConfigAndExpectException("text-" + level(), config -> config.nodeList());
     }
 
     @Override
@@ -135,7 +135,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptional(TestContext context) {
         init(context);
-	assertBean(key -> config(key).asOptional(ValueConfigBean.class).get(), "fromConfig");
+        assertBean(key -> config(key).asOptional(ValueConfigBean.class).get(), "fromConfig");
     }
 
     @Override
@@ -143,7 +143,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalList(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asOptionalList(ValueConfigBean.class).get(),
+        assertThat(config("text-" + level()).asOptionalList(ValueConfigBean.class).get(),
                    containsInAnyOrder(ValueConfigBean.utFromConfig("string value " + level())));
     }
 
@@ -152,7 +152,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalStringList(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asOptionalStringList().get(),
+        assertThat(config("text-" + level()).asOptionalStringList().get(),
                    containsInAnyOrder("string value " + level()));
     }
 
@@ -161,7 +161,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalWithFunction(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapOptional(ValueConfigBean::fromString).get(), "fromString");
+        assertBean(key -> config(key).mapOptional(ValueConfigBean::fromString).get(), "fromString");
     }
 
     @Override
@@ -169,7 +169,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalWithConfigMapper(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapOptional(ValueConfigBean::fromConfig).get(), "fromConfig");
+        assertBean(key -> config(key).mapOptional(ValueConfigBean::fromConfig).get(), "fromConfig");
     }
 
     @Override
@@ -177,7 +177,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalBoolean(TestContext context) {
         init(context);
-	assertThat(config("bool-" + level()).asOptionalBoolean().get(), is(true));
+        assertThat(config("bool-" + level()).asOptionalBoolean().get(), is(true));
     }
 
     @Override
@@ -185,14 +185,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalInt(TestContext context) {
         init(context);
-	assertThat(config("int-" + level()).asOptionalInt().getAsInt(), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asOptionalInt().getAsInt(), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalIntFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asOptionalInt());
+        getConfigAndExpectException("text-" + level(), config -> config.asOptionalInt());
     }
 
     @Override
@@ -200,14 +200,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalLong(TestContext context) {
         init(context);
-	assertThat(config("long-" + level()).asOptionalLong().getAsLong(), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asOptionalLong().getAsLong(), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalLongFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asOptionalLong());
+        getConfigAndExpectException("text-" + level(), config -> config.asOptionalLong());
     }
 
     @Override
@@ -215,14 +215,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalDouble(TestContext context) {
         init(context);
-	assertThat(config("double-" + level()).asOptionalDouble().getAsDouble(), is(1230.5678 + level()));
+        assertThat(config("double-" + level()).asOptionalDouble().getAsDouble(), is(1230.5678 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalDoubleFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asOptionalDouble());
+        getConfigAndExpectException("text-" + level(), config -> config.asOptionalDouble());
     }
 
     @Override
@@ -230,7 +230,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalListWithFunction(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.mapOptionalList(ValueConfigBean::fromString));
+        getConfigAndExpectException("text-" + level(), config -> config.mapOptionalList(ValueConfigBean::fromString));
     }
 
     @Override
@@ -238,7 +238,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalListWithConfigMapper(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.mapOptionalList(ValueConfigBean::fromConfig));
+        getConfigAndExpectException("text-" + level(), config -> config.mapOptionalList(ValueConfigBean::fromConfig));
     }
 
     @Override
@@ -246,14 +246,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAs(TestContext context) {
         init(context);
-	assertBean(key -> config(key).as(ValueConfigBean.class), "fromConfig"); //uses MyConfigBean.fromConfig as a mapper
+        assertBean(key -> config(key).as(ValueConfigBean.class), "fromConfig"); //uses MyConfigBean.fromConfig as a mapper
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.as(NoMapperConfigBean.class)); //no mapper
+        getConfigAndExpectException("text-" + level(), config -> config.as(NoMapperConfigBean.class)); //no mapper
     }
 
     @Override
@@ -261,7 +261,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsWithDefault(TestContext context) {
         init(context);
-	assertBean(key -> config(key).as(ValueConfigBean.class, ValueConfigBean.EMPTY),
+        assertBean(key -> config(key).as(ValueConfigBean.class, ValueConfigBean.EMPTY),
                    "fromConfig"); //uses MyConfigBean.fromConfig as a mapper
     }
 
@@ -270,7 +270,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithFunction(TestContext context) {
         init(context);
-	assertBean(key -> config(key).map(ValueConfigBean::fromString), "fromString");
+        assertBean(key -> config(key).map(ValueConfigBean::fromString), "fromString");
     }
 
     @Override
@@ -278,7 +278,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithFunctionAndDefault(TestContext context) {
         init(context);
-	assertBean(key -> config(key).map(ValueConfigBean::fromString, ValueConfigBean.EMPTY), "fromString");
+        assertBean(key -> config(key).map(ValueConfigBean::fromString, ValueConfigBean.EMPTY), "fromString");
     }
 
     @Override
@@ -286,7 +286,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithConfigMapper(TestContext context) {
         init(context);
-	assertBean(key -> config(key).map(ValueConfigBean::fromConfig), "fromConfig");
+        assertBean(key -> config(key).map(ValueConfigBean::fromConfig), "fromConfig");
     }
 
     @Override
@@ -294,7 +294,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithConfigMapperAndDefault(TestContext context) {
         init(context);
-	assertBean(key -> config(key).map(ValueConfigBean::fromConfig, ValueConfigBean.EMPTY), "fromConfig");
+        assertBean(key -> config(key).map(ValueConfigBean::fromConfig, ValueConfigBean.EMPTY), "fromConfig");
     }
 
     @Override
@@ -302,7 +302,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsList(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asList(ValueConfigBean.class),
+        assertThat(config("text-" + level()).asList(ValueConfigBean.class),
                    contains(ValueConfigBean.utFromConfig("string value " + level())));
     }
 
@@ -311,7 +311,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsListWithDefault(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asList(ValueConfigBean.class, CollectionsHelper.listOf(ValueConfigBean.EMPTY)),
+        assertThat(config("text-" + level()).asList(ValueConfigBean.class, CollectionsHelper.listOf(ValueConfigBean.EMPTY)),
                    contains(ValueConfigBean.utFromConfig("string value " + level())));
     }
 
@@ -320,7 +320,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithFunction(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.mapList(ValueConfigBean::fromString));
+        getConfigAndExpectException("text-" + level(), config -> config.mapList(ValueConfigBean::fromString));
     }
 
     @Override
@@ -328,7 +328,9 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithFunctionAndDefault(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.mapList(ValueConfigBean::fromString, CollectionsHelper.listOf(ValueConfigBean.EMPTY)));
+        getConfigAndExpectException("text-" + level(),
+                                    config -> config.mapList(ValueConfigBean::fromString,
+                                                             CollectionsHelper.listOf(ValueConfigBean.EMPTY)));
     }
 
     @Override
@@ -336,7 +338,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithConfigMapper(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.mapList(ValueConfigBean::fromConfig));
+        getConfigAndExpectException("text-" + level(), config -> config.mapList(ValueConfigBean::fromConfig));
     }
 
     @Override
@@ -344,7 +346,9 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithConfigMapperAndDefault(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.mapList(ValueConfigBean::fromConfig, CollectionsHelper.listOf(ValueConfigBean.EMPTY)));
+        getConfigAndExpectException("text-" + level(),
+                                    config -> config.mapList(ValueConfigBean::fromConfig,
+                                                             CollectionsHelper.listOf(ValueConfigBean.EMPTY)));
     }
 
     @Override
@@ -352,7 +356,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsString(TestContext context) {
         init(context);
-	assertValue(key -> config(key).asString());
+        assertValue(key -> config(key).asString());
     }
 
     @Override
@@ -360,7 +364,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringWithDefault(TestContext context) {
         init(context);
-	assertValue(key -> config(key).asString("default value"));
+        assertValue(key -> config(key).asString("default value"));
     }
 
     @Override
@@ -368,7 +372,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsBoolean(TestContext context) {
         init(context);
-	assertThat(config("bool-" + level()).asBoolean(), is(true));
+        assertThat(config("bool-" + level()).asBoolean(), is(true));
         assertThat(config("text-" + level()).asBoolean(), is(false));
     }
 
@@ -377,7 +381,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsBooleanWithDefault(TestContext context) {
         init(context);
-	assertThat(config("bool-" + level()).asBoolean(false), is(true));
+        assertThat(config("bool-" + level()).asBoolean(false), is(true));
         assertThat(config("text-" + level()).asBoolean(true), is(false));
     }
 
@@ -386,14 +390,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsInt(TestContext context) {
         init(context);
-	assertThat(config("int-" + level()).asInt(), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asInt(), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsIntFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asInt());
+        getConfigAndExpectException("text-" + level(), config -> config.asInt());
     }
 
     @Override
@@ -401,14 +405,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsIntWithDefault(TestContext context) {
         init(context);
-	assertThat(config("int-" + level()).asInt(42), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asInt(42), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsIntWithDefaultFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asInt(42));
+        getConfigAndExpectException("text-" + level(), config -> config.asInt(42));
     }
 
     @Override
@@ -416,14 +420,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsLong(TestContext context) {
         init(context);
-	assertThat(config("long-" + level()).asLong(), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asLong(), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsLongFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asLong());
+        getConfigAndExpectException("text-" + level(), config -> config.asLong());
     }
 
     @Override
@@ -431,14 +435,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsLongWithDefault(TestContext context) {
         init(context);
-	assertThat(config("long-" + level()).asLong(42), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asLong(42), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsLongWithDefaultFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asLong(42));
+        getConfigAndExpectException("text-" + level(), config -> config.asLong(42));
     }
 
     @Override
@@ -446,14 +450,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsDouble(TestContext context) {
         init(context);
-	assertThat(config("double-" + level()).asDouble(), is(1230.5678 + level()));
+        assertThat(config("double-" + level()).asDouble(), is(1230.5678 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsDoubleFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asDouble());
+        getConfigAndExpectException("text-" + level(), config -> config.asDouble());
     }
 
     @Override
@@ -461,14 +465,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsDoubleWithDefault(TestContext context) {
         init(context);
-	assertThat(config("double-" + level()).asDouble(Math.PI), is(1230.5678 + level()));
+        assertThat(config("double-" + level()).asDouble(Math.PI), is(1230.5678 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsDoubleWithDefaultFailing(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asDouble(Math.PI));
+        getConfigAndExpectException("text-" + level(), config -> config.asDouble(Math.PI));
     }
 
     @Override
@@ -476,7 +480,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringList(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asStringList(),
+        assertThat(config("text-" + level()).asStringList(),
                    contains("string value " + level()));
 
     }
@@ -486,7 +490,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringListWithDefault(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asStringList(CollectionsHelper.listOf("default", "value")),
+        assertThat(config("text-" + level()).asStringList(CollectionsHelper.listOf("default", "value")),
                    contains("string value " + level()));
     }
 
@@ -495,7 +499,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsNodeList(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asNodeList());
+        getConfigAndExpectException("text-" + level(), config -> config.asNodeList());
     }
 
     @Override
@@ -503,7 +507,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsNodeListWithDefault(TestContext context) {
         init(context);
-	getConfigAndExpectException("text-" + level(), config -> config.asNodeList(CollectionsHelper.listOf(Config.empty())));
+        getConfigAndExpectException("text-" + level(), config -> config.asNodeList(CollectionsHelper.listOf(Config.empty())));
     }
 
     @Override
@@ -511,7 +515,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTimestamp(TestContext context) {
         init(context);
-	testTimestamp(config("text-" + level()));
+        testTimestamp(config("text-" + level()));
     }
 
     @Override
@@ -519,7 +523,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testDetach(TestContext context) {
         init(context);
-	Config detached = config("text-" + level()).detach();
+        Config detached = config("text-" + level()).detach();
         assertThat(detached.type(), is(VALUE));
         assertThat(detached.key().toString(), is(""));
         assertThat(detached.asString(), is("string value " + level()));
@@ -530,7 +534,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testNode(TestContext context) {
         init(context);
-	AtomicBoolean called = new AtomicBoolean(false);
+        AtomicBoolean called = new AtomicBoolean(false);
         config("text-" + level())
                 .node()
                 .ifPresent(node -> {
@@ -545,7 +549,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testIfExists(TestContext context) {
         init(context);
-	AtomicBoolean called = new AtomicBoolean(false);
+        AtomicBoolean called = new AtomicBoolean(false);
         config("text-" + level())
                 .ifExists(node -> {
                     assertThat(node.key().toString(), is(key("text-" + level())));
@@ -559,7 +563,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testIfExistsOrElse(TestContext context) {
         init(context);
-	AtomicBoolean called = new AtomicBoolean(false);
+        AtomicBoolean called = new AtomicBoolean(false);
         config("text-" + level())
                 .ifExistsOrElse(node -> {
                                     assertThat(node.key().toString(), is(key("text-" + level())));
@@ -579,7 +583,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalMap(TestContext context) {
         init(context);
-	testMap(config("text-" + level()).asOptionalMap().get());
+        testMap(config("text-" + level()).asOptionalMap().get());
     }
 
     @Override
@@ -587,7 +591,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsMap(TestContext context) {
         init(context);
-	testMap(config("text-" + level()).asMap());
+        testMap(config("text-" + level()).asMap());
     }
 
     @Override
@@ -595,7 +599,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsMapWithDefault(TestContext context) {
         init(context);
-	testMap(config("text-" + level()).asMap(CollectionsHelper.mapOf()));
+        testMap(config("text-" + level()).asMap(CollectionsHelper.mapOf()));
     }
 
     @Override
@@ -603,7 +607,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTraverseWithPredicate(TestContext context) {
         init(context);
-	assertThat(config("text-" + level())
+        assertThat(config("text-" + level())
                            .traverse((node) -> false)
                            .collect(Collectors.toList()),
                    is(empty()));
@@ -614,7 +618,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTraverse(TestContext context) {
         init(context);
-	assertThat(config("text-" + level())
+        assertThat(config("text-" + level())
                            .traverse()
                            .collect(Collectors.toList()),
                    is(empty()));
@@ -625,7 +629,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testToString(TestContext context) {
         init(context);
-	String key = "text-" + level();
+        String key = "text-" + level();
         assertThat(config(key).toString(), both(startsWith("["))
                 .and(endsWith(key(key) + "] VALUE 'string value " + level() + "'")));
     }
@@ -635,7 +639,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTypeExistsSupplier(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).nodeSupplier().get().get().exists(), is(true));
+        assertThat(config("text-" + level()).nodeSupplier().get().get().exists(), is(true));
         assertThat(config("text-" + level()).nodeSupplier().get().get().type().exists(), is(true));
     }
 
@@ -644,7 +648,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTypeIsLeafSupplier(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).nodeSupplier().get().get().isLeaf(), is(true));
+        assertThat(config("text-" + level()).nodeSupplier().get().get().isLeaf(), is(true));
         assertThat(config("text-" + level()).nodeSupplier().get().get().type().isLeaf(), is(true));
     }
 
@@ -653,7 +657,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testOptionalStringSupplier(TestContext context) {
         init(context);
-	assertValue(key -> config(key).asOptionalStringSupplier().get().get());
+        assertValue(key -> config(key).asOptionalStringSupplier().get().get());
     }
 
     @Override
@@ -661,7 +665,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testNodeListSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asNodeListSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asNodeListSupplier().get());
     }
 
     @Override
@@ -669,7 +673,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).asSupplier(ValueConfigBean.class).get(), "fromConfig");
+        assertBean(key -> config(key).asSupplier(ValueConfigBean.class).get(), "fromConfig");
     }
 
     @Override
@@ -677,7 +681,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalListSupplier(TestContext context) {
         init(context);
-	Config config = config("text-" + level());
+        Config config = config("text-" + level());
         List<ValueConfigBean> list = config.asOptionalListSupplier(ValueConfigBean.class).get().get();
 
         assertThat(list, contains(ValueConfigBean.utFromConfig("string value " + level())));
@@ -688,7 +692,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalStringListSupplier(TestContext context) {
         init(context);
-	Config config = config("text-" + level());
+        Config config = config("text-" + level());
         List<String> strings = config.asOptionalStringListSupplier().get().get();
 
         assertThat(strings, contains("string value " + level()));
@@ -699,7 +703,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalWithFunctionSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapOptionalSupplier(ValueConfigBean::fromString).get().get(), "fromString");
+        assertBean(key -> config(key).mapOptionalSupplier(ValueConfigBean::fromString).get().get(), "fromString");
     }
 
     @Override
@@ -707,7 +711,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalWithConfigMapperSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapOptionalSupplier(ValueConfigBean::fromConfig).get().get(), "fromConfig");
+        assertBean(key -> config(key).mapOptionalSupplier(ValueConfigBean::fromConfig).get().get(), "fromConfig");
     }
 
     @Override
@@ -715,7 +719,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalBooleanSupplier(TestContext context) {
         init(context);
-	assertThat(config("bool-" + level()).asOptionalBooleanSupplier().get().get(), is(true));
+        assertThat(config("bool-" + level()).asOptionalBooleanSupplier().get().get(), is(true));
     }
 
     @Override
@@ -723,14 +727,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalIntSupplier(TestContext context) {
         init(context);
-	assertThat(config("int-" + level()).asOptionalIntSupplier().get().getAsInt(), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asOptionalIntSupplier().get().getAsInt(), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalIntFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asOptionalIntSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asOptionalIntSupplier().get());
     }
 
     @Override
@@ -738,14 +742,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalLongSupplier(TestContext context) {
         init(context);
-	assertThat(config("long-" + level()).asOptionalLongSupplier().get().getAsLong(), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asOptionalLongSupplier().get().getAsLong(), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalLongFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asOptionalLongSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asOptionalLongSupplier().get());
     }
 
     @Override
@@ -753,14 +757,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalDoubleSupplier(TestContext context) {
         init(context);
-	assertThat(config("double-" + level()).asOptionalDoubleSupplier().get().getAsDouble(), is(1230.5678 + level()));
+        assertThat(config("double-" + level()).asOptionalDoubleSupplier().get().getAsDouble(), is(1230.5678 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalDoubleFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asOptionalDoubleSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asOptionalDoubleSupplier().get());
     }
 
     @Override
@@ -768,7 +772,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalListWithFunctionSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.mapOptionalList(ValueConfigBean::fromString).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.mapOptionalList(ValueConfigBean::fromString).get());
     }
 
     @Override
@@ -776,7 +781,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapOptionalListWithConfigMapperSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.mapOptionalListSupplier(ValueConfigBean::fromConfig).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.mapOptionalListSupplier(ValueConfigBean::fromConfig).get());
     }
 
     @Override
@@ -784,14 +790,15 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).asSupplier(ValueConfigBean.class).get(), "fromConfig");
+        assertBean(key -> config(key).asSupplier(ValueConfigBean.class).get(), "fromConfig");
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asSupplier(NoMapperConfigBean.class).get()); //no mapper
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.asSupplier(NoMapperConfigBean.class).get()); //no mapper
     }
 
     @Override
@@ -799,7 +806,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsWithDefaultSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).asSupplier(ValueConfigBean.class, ValueConfigBean.EMPTY).get(),
+        assertBean(key -> config(key).asSupplier(ValueConfigBean.class, ValueConfigBean.EMPTY).get(),
                    "fromConfig"); //uses MyConfigBean.fromConfig as a mapper
     }
 
@@ -808,7 +815,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithFunctionSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromString).get(), "fromString");
+        assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromString).get(), "fromString");
     }
 
     @Override
@@ -816,7 +823,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithFunctionAndDefaultSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromString, ValueConfigBean.EMPTY).get(), "fromString");
+        assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromString, ValueConfigBean.EMPTY).get(), "fromString");
     }
 
     @Override
@@ -824,7 +831,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithConfigMapperSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromConfig).get(), "fromConfig");
+        assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromConfig).get(), "fromConfig");
     }
 
     @Override
@@ -832,7 +839,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapWithConfigMapperAndDefaultSupplier(TestContext context) {
         init(context);
-	assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromConfig, ValueConfigBean.EMPTY).get(), "fromConfig");
+        assertBean(key -> config(key).mapSupplier(ValueConfigBean::fromConfig, ValueConfigBean.EMPTY).get(), "fromConfig");
     }
 
     @Override
@@ -840,7 +847,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsListSupplier(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asListSupplier(ValueConfigBean.class).get(),
+        assertThat(config("text-" + level()).asListSupplier(ValueConfigBean.class).get(),
                    contains(ValueConfigBean.utFromConfig("string value " + level())));
     }
 
@@ -849,7 +856,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsListWithDefaultSupplier(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asListSupplier(ValueConfigBean.class, CollectionsHelper.listOf(ValueConfigBean.EMPTY)).get(),
+        assertThat(config("text-" + level())
+                           .asListSupplier(ValueConfigBean.class, CollectionsHelper.listOf(ValueConfigBean.EMPTY)).get(),
                    contains(ValueConfigBean.utFromConfig("string value " + level())));
     }
 
@@ -858,7 +866,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithFunctionSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.mapListSupplier(ValueConfigBean::fromString).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.mapListSupplier(ValueConfigBean::fromString).get());
     }
 
     @Override
@@ -866,7 +875,10 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithFunctionAndDefaultSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.mapListSupplier(ValueConfigBean::fromString, CollectionsHelper.listOf(ValueConfigBean.EMPTY)).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.mapListSupplier(ValueConfigBean::fromString,
+                                                                             CollectionsHelper.listOf(ValueConfigBean.EMPTY))
+                                                    .get());
     }
 
     @Override
@@ -874,7 +886,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithConfigMapperSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.mapListSupplier(ValueConfigBean::fromConfig).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.mapListSupplier(ValueConfigBean::fromConfig).get());
     }
 
     @Override
@@ -882,7 +895,10 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testMapListWithConfigMapperAndDefaultSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.mapListSupplier(ValueConfigBean::fromConfig, CollectionsHelper.listOf(ValueConfigBean.EMPTY)).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.mapListSupplier(ValueConfigBean::fromConfig,
+                                                                             CollectionsHelper.listOf(ValueConfigBean.EMPTY))
+                                                    .get());
     }
 
     @Override
@@ -890,7 +906,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringSupplier(TestContext context) {
         init(context);
-	assertValue(key -> config(key).asStringSupplier().get());
+        assertValue(key -> config(key).asStringSupplier().get());
     }
 
     @Override
@@ -898,7 +914,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringWithDefaultSupplier(TestContext context) {
         init(context);
-	assertValue(key -> config(key).asStringSupplier("default value").get());
+        assertValue(key -> config(key).asStringSupplier("default value").get());
     }
 
     @Override
@@ -906,7 +922,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsBooleanSupplier(TestContext context) {
         init(context);
-	assertThat(config("bool-" + level()).asBooleanSupplier().get(), is(true));
+        assertThat(config("bool-" + level()).asBooleanSupplier().get(), is(true));
         assertThat(config("text-" + level()).asBooleanSupplier().get(), is(false));
     }
 
@@ -915,7 +931,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsBooleanWithDefaultSupplier(TestContext context) {
         init(context);
-	assertThat(config("bool-" + level()).asBooleanSupplier(false).get(), is(true));
+        assertThat(config("bool-" + level()).asBooleanSupplier(false).get(), is(true));
         assertThat(config("text-" + level()).asBooleanSupplier(true).get(), is(false));
     }
 
@@ -924,14 +940,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsIntSupplier(TestContext context) {
         init(context);
-	assertThat(config("int-" + level()).asIntSupplier().get(), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asIntSupplier().get(), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsIntFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asIntSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asIntSupplier().get());
     }
 
     @Override
@@ -939,14 +955,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsIntWithDefaultSupplier(TestContext context) {
         init(context);
-	assertThat(config("int-" + level()).asIntSupplier(42).get(), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asIntSupplier(42).get(), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsIntWithDefaultFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asIntSupplier(42).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asIntSupplier(42).get());
     }
 
     @Override
@@ -954,14 +970,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsLongSupplier(TestContext context) {
         init(context);
-	assertThat(config("long-" + level()).asLongSupplier().get(), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asLongSupplier().get(), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsLongFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asLongSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asLongSupplier().get());
     }
 
     @Override
@@ -969,14 +985,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsLongWithDefaultSupplier(TestContext context) {
         init(context);
-	assertThat(config("long-" + level()).asLongSupplier(42).get(), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asLongSupplier(42).get(), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsLongWithDefaultFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asLongSupplier(42).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asLongSupplier(42).get());
     }
 
     @Override
@@ -984,14 +1000,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsDoubleSupplier(TestContext context) {
         init(context);
-	assertThat(config("double-" + level()).asDoubleSupplier().get(), is(1230.5678 + level()));
+        assertThat(config("double-" + level()).asDoubleSupplier().get(), is(1230.5678 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsDoubleFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asDoubleSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asDoubleSupplier().get());
     }
 
     @Override
@@ -999,14 +1015,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsDoubleWithDefaultSupplier(TestContext context) {
         init(context);
-	assertThat(config("double-" + level()).asDoubleSupplier(Math.PI).get(), is(1230.5678 + level()));
+        assertThat(config("double-" + level()).asDoubleSupplier(Math.PI).get(), is(1230.5678 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsDoubleWithDefaultFailingSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asDoubleSupplier(Math.PI).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asDoubleSupplier(Math.PI).get());
     }
 
     @Override
@@ -1014,7 +1030,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringListSupplier(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asStringListSupplier().get(),
+        assertThat(config("text-" + level()).asStringListSupplier().get(),
                    contains("string value " + level()));
     }
 
@@ -1023,7 +1039,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringListWithDefaultSupplier(TestContext context) {
         init(context);
-	assertThat(config("text-" + level()).asStringListSupplier(CollectionsHelper.listOf("default", "value")).get(),
+        assertThat(config("text-" + level()).asStringListSupplier(CollectionsHelper.listOf("default", "value")).get(),
                    contains("string value " + level()));
     }
 
@@ -1032,7 +1048,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsNodeListSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asNodeListSupplier().get());
+        getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asNodeListSupplier().get());
     }
 
     @Override
@@ -1040,7 +1056,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsNodeListWithDefaultSupplier(TestContext context) {
         init(context);
-	getConfigAndExpectExceptionSupplier("text-" + level(), config -> config.asNodeListSupplier(CollectionsHelper.listOf(Config.empty())).get());
+        getConfigAndExpectExceptionSupplier("text-" + level(),
+                                            config -> config.asNodeListSupplier(CollectionsHelper.listOf(Config.empty())).get());
     }
 
     @Override
@@ -1048,7 +1065,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTimestampSupplier(TestContext context) {
         init(context);
-	testTimestamp(configViaSupplier("text-" + level()));
+        testTimestamp(configViaSupplier("text-" + level()));
     }
 
     @Override
@@ -1056,7 +1073,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testDetachSupplier(TestContext context) {
         init(context);
-	Config detached = config("text-" + level()).detach().nodeSupplier().get().get();
+        Config detached = config("text-" + level()).detach().nodeSupplier().get().get();
         assertThat(detached.type(), is(VALUE));
         assertThat(detached.key().toString(), is(""));
         assertThat(detached.asString(), is("string value " + level()));
@@ -1067,7 +1084,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testNodeSupplier(TestContext context) {
         init(context);
-	AtomicBoolean called = new AtomicBoolean(false);
+        AtomicBoolean called = new AtomicBoolean(false);
         config("text-" + level())
                 .nodeSupplier()
                 .get()
@@ -1083,7 +1100,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testIfExistsSupplier(TestContext context) {
         init(context);
-	AtomicBoolean called = new AtomicBoolean(false);
+        AtomicBoolean called = new AtomicBoolean(false);
         configViaSupplier("text-" + level())
                 .ifExists(node -> {
                     assertThat(node.key().toString(), is(key("text-" + level())));
@@ -1097,7 +1114,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testIfExistsOrElseSupplier(TestContext context) {
         init(context);
-	AtomicBoolean called = new AtomicBoolean(false);
+        AtomicBoolean called = new AtomicBoolean(false);
         configViaSupplier("text-" + level())
                 .ifExistsOrElse(node -> {
                                     assertThat(node.key().toString(), is(key("text-" + level())));
@@ -1112,7 +1129,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalMapSupplier(TestContext context) {
         init(context);
-	testMap(config("text-" + level()).asOptionalMapSupplier().get().get());
+        testMap(config("text-" + level()).asOptionalMapSupplier().get().get());
     }
 
     @Override
@@ -1120,7 +1137,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsMapSupplier(TestContext context) {
         init(context);
-	testMap(config("text-" + level()).asMapSupplier().get());
+        testMap(config("text-" + level()).asMapSupplier().get());
     }
 
     @Override
@@ -1128,7 +1145,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsMapWithDefaultSupplier(TestContext context) {
         init(context);
-	testMap(config("text-" + level()).asMapSupplier(CollectionsHelper.mapOf()).get());
+        testMap(config("text-" + level()).asMapSupplier(CollectionsHelper.mapOf()).get());
     }
 
     @Override
@@ -1136,7 +1153,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTraverseWithPredicateSupplier(TestContext context) {
         init(context);
-	assertThat(configViaSupplier("text-" + level())
+        assertThat(configViaSupplier("text-" + level())
                            .traverse((node) -> false)
                            .collect(Collectors.toList()),
                    is(empty()));
@@ -1147,7 +1164,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testTraverseSupplier(TestContext context) {
         init(context);
-	assertThat(configViaSupplier("text-" + level())
+        assertThat(configViaSupplier("text-" + level())
                            .traverse()
                            .collect(Collectors.toList()),
                    is(empty()));
@@ -1158,7 +1175,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testToStringSupplier(TestContext context) {
         init(context);
-	String key = "text-" + level();
+        String key = "text-" + level();
         assertThat(configViaSupplier(key).toString(), both(startsWith("["))
                 .and(endsWith(key(key) + "] VALUE 'string value " + level() + "'")));
     }
@@ -1167,21 +1184,21 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     // helper
     //
 
-    private <T> void getConfigAndExpectException(String key, Function<Config,T> op) {
+    private <T> void getConfigAndExpectException(String key, Function<Config, T> op) {
         expectException(config(key), key, op);
     }
 
-    private <T> void getConfigAndExpectExceptionSupplier(String key, Function<Config,T> op) {
+    private <T> void getConfigAndExpectExceptionSupplier(String key, Function<Config, T> op) {
         expectException(config(key).nodeSupplier().get().get(), key, op);
     }
-    
-    private <T> void expectException(Config config, String key, Function<Config,T> op) {
+
+    private <T> void expectException(Config config, String key, Function<Config, T> op) {
         ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             op.apply(config);
-                });
+        });
         assertTrue(ex.getMessage().contains("'" + config.key() + "'"));
     }
-    
+
     private String key(String key) {
         return super.config(key).key().toString();
     }

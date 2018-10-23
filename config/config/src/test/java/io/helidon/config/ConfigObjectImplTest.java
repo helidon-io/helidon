@@ -18,13 +18,16 @@ package io.helidon.config;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-
-import io.helidon.common.CollectionsHelper;
-import static io.helidon.config.Config.Type.OBJECT;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.CollectionsHelper;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static io.helidon.config.Config.Type.OBJECT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -35,8 +38,6 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests {@link Config} API in case the node is {@link Config.Type#OBJECT} type,
@@ -84,7 +85,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testValue(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.value());
+        assertValue(key -> config(key).value().get());
     }
 
     @Override
@@ -92,7 +93,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalString(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.asOptionalString());
+        assertValue(key -> config(key).asOptionalString().get());
     }
 
     @Override
@@ -304,7 +305,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsString(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.asString());
+        assertValue(key -> config(key).asString());
     }
 
     @Override
@@ -312,7 +313,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringWithDefault(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.asString("default value"));
+        assertValue(key -> config(key).asString("default value"));
     }
 
     @Override
@@ -538,7 +539,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testOptionalStringSupplier(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.asOptionalStringSupplier().get());
+        assertValue(key -> config(key).asOptionalStringSupplier().get().get());
     }
 
     @Override
@@ -751,7 +752,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringSupplier(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.asStringSupplier().get());
+        assertValue(key -> config(key).asStringSupplier().get());
     }
 
     @Override
@@ -759,7 +760,7 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsStringWithDefaultSupplier(TestContext context) {
         init(context);
-        getConfigAndExpectException(config -> config.asStringSupplier("default value").get());
+        assertValue(key -> config(key).asStringSupplier("default value").get());
     }
 
     @Override
@@ -1145,5 +1146,25 @@ public class ConfigObjectImplTest extends AbstractConfigImplTest {
                 new ObjectConfigBean("fromConfig", "key:list-" + level() + "@LIST"))
                 .toArray(new ObjectConfigBean[0]);
     }
+
+    /**
+     * Invokes specified {@code valueFunction} asserts expected value for following text nodes:
+     * <ul>
+     * <li>{@code text-#} - test value</li>
+     * <li>{@code str-list-#.0} - first element of list of strings {@code str-list-#}</li>
+     * <li>{@code str-list-#.1} - second element of list of strings {@code str-list-#}</li>
+     * <li>{@code str-list-#.2} - third element of list of strings {@code str-list-#}</li>
+     * </ul>
+     * Where {@code #} means level of config structure.
+     *
+     * @param valueFunction function to get string value of key
+     */
+    private void assertValue(Function<String, String> valueFunction) {
+        assertThat(valueFunction.apply("text-" + level()), is("string value " + level()));
+        assertThat(valueFunction.apply("str-list-" + level() + ".0"), is("aaa-" + level()));
+        assertThat(valueFunction.apply("str-list-" + level() + ".1"), is("bbb-" + level()));
+        assertThat(valueFunction.apply("str-list-" + level() + ".2"), is("ccc-" + level()));
+    }
+
 
 }

@@ -19,13 +19,13 @@ package io.helidon.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.core.Is.is;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.core.Is.is;
 
 /**
  * Tests {@link Config#empty()} implementation.
@@ -49,7 +49,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsString() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        Assertions.assertThrows(MissingValueException.class, () -> {
             //separate lines to see the line that fails
             Config empty = Config.empty();
             empty.asString();
@@ -58,9 +58,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringDefault() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
-            assertThat(Config.empty().asString("default"), is("default"));
-        });
+        assertThat(Config.empty().asString("default"), is("default"));
     }
 
     @Test
@@ -132,7 +130,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        Assertions.assertThrows(MissingValueException.class, () -> {
             // separate lines to see which statement fails
             Config empty = Config.empty();
             Supplier<String> supp = empty.asStringSupplier();
@@ -142,9 +140,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringDefaultSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
-            assertThat(Config.empty().asStringSupplier("default").get(), is("default"));
-        });
+        assertThat(Config.empty().asStringSupplier("default").get(), is("default"));
     }
 
     @Test
