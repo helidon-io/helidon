@@ -215,7 +215,7 @@ abstract class SecurityFilterCommon {
                                          SecurityClientBuilder<AuthenticationResponse> clientBuilder,
                                          SecurityDefinition methodSecurity) {
 
-        AuthenticationResponse response = clientBuilder.get();
+        AuthenticationResponse response = clientBuilder.buildAndGet();
 
         SecurityResponse.SecurityStatus responseStatus = response.getStatus();
 
@@ -313,7 +313,7 @@ abstract class SecurityFilterCommon {
     protected void processAuthorization(SecurityFilter.FilterContext context,
                                         SecurityClientBuilder<AuthorizationResponse> clientBuilder) {
         // now fully synchronous
-        AuthorizationResponse response = clientBuilder.get();
+        AuthorizationResponse response = clientBuilder.buildAndGet();
         SecurityResponse.SecurityStatus responseStatus = response.getStatus();
 
         switch (responseStatus) {

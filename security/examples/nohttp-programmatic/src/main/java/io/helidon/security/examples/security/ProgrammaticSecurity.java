@@ -93,7 +93,7 @@ public class ProgrammaticSecurity {
     }
 
     private void propagate() {
-        OutboundSecurityResponse response = CONTEXT.get().outboundClientBuilder().get();
+        OutboundSecurityResponse response = CONTEXT.get().outboundClientBuilder().buildAndGet();
 
         switch (response.getStatus()) {
         case SUCCESS:
@@ -121,7 +121,7 @@ public class ProgrammaticSecurity {
                                .addAttribute("resourceType", "CustomResourceType"));
 
         //check authorization through provider
-        AuthorizationResponse response = context.atzClientBuilder().get();
+        AuthorizationResponse response = context.atzClientBuilder().buildAndGet();
 
         if (response.getStatus().isSuccess()) {
             //ok, process resource
@@ -137,7 +137,7 @@ public class ProgrammaticSecurity {
                                        .path("/some/path")
                                        .header("Authorization", buildBasic("aUser", "aPassword")));
 
-        AuthenticationResponse response = securityContext.atnClientBuilder().get();
+        AuthenticationResponse response = securityContext.atnClientBuilder().buildAndGet();
 
         if (response.getStatus().isSuccess()) {
             return response.getUser().orElseThrow(() -> new IllegalStateException("No user authenticated!"));
