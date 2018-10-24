@@ -18,7 +18,10 @@ package io.helidon.microprofile.arquillian;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import javax.enterprise.context.control.RequestContextController;
 
 import io.helidon.microprofile.arquillian.HelidonContainerExtension.HelidonCDIInjectionEnricher;
 
@@ -32,6 +35,7 @@ import org.junit.Before;
  * Class HelidonMethodExecutor.
  */
 public class HelidonMethodExecutor implements ContainerMethodExecutor {
+    private static final Logger LOGGER = Logger.getLogger(ContainerMethodExecutor.class.getName());
 
     private HelidonCDIInjectionEnricher enricher = new HelidonCDIInjectionEnricher();
 
@@ -44,15 +48,20 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
      * @return Test result.
      */
     public TestResult invoke(TestMethodExecutor testMethodExecutor) {
+        RequestContextController controller = enricher.getRequestContextController();
         try {
+            controller.activate();
             Object object = testMethodExecutor.getInstance();
             Method method = testMethodExecutor.getMethod();
+            LOGGER.info("Invoking '" + method + "' on " + object);
             enricher.enrich(object);
             invokeAnnotated(object, Before.class);
             testMethodExecutor.invoke(enricher.resolve(method));
             invokeAnnotated(object, After.class);
         } catch (Throwable t) {
             return TestResult.failed(t);
+        } finally {
+            controller.deactivate();
         }
         return TestResult.passed();
     }

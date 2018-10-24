@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.arquillian;
 
-import javax.enterprise.inject.spi.DefinitionException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -31,15 +30,19 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.spi.DefinitionException;
+
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
@@ -104,6 +107,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public ProtocolDescription getDefaultProtocol() {
         return new ProtocolDescription(HelidonLocalProtocol.PROTOCOL_NAME);
+        // return new ProtocolDescription(LocalProtocol.NAME);
     }
 
     @Override
@@ -176,30 +180,36 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         context.classLoader = (URLClassLoader) ((PrivilegedAction<ClassLoader>) () -> new URLClassLoader(classPath))
                 .run();
 
-        ClassLoader current = Thread.currentThread().getContextClassLoader();
+        context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
 
-        try {
-            final Config config = Config.builder()
-                    .sources(CollectionsHelper.listOf(
-                            ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional(),
-                            ConfigSources.file(context.deployDir.resolve("/application.properties").toString()).optional(),
-                            ConfigSources.file(context.deployDir.resolve("/application.yaml").toString()).optional()))
-                    .build();
-
-            context.runnerClass = context.classLoader
-                    .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
-
-            context.runner = context.runnerClass
-                    .getDeclaredConstructor()
-                    .newInstance();
-
-            context.runnerClass
-                    .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
-                    .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
-        } finally {
-            Thread.currentThread().setContextClassLoader(current);
+        Config.Builder builder = Config.builder()
+                .sources(CollectionsHelper.listOf(
+                        ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional(),
+                        ConfigSources.file(context.deployDir.resolve("/application.properties").toString()).optional(),
+                        ConfigSources.file(context.deployDir.resolve("/application.yaml").toString()).optional()));
+        URL mpConfigProps = context.classLoader.getResource("META-INF/microprofile-config.properties");
+        if (mpConfigProps != null) {
+            try {
+                Properties props = new Properties();
+                props.load(mpConfigProps.openStream());
+                builder.sources(ConfigSources.from(props));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+        final Config config = builder.build();
+
+        context.runnerClass = context.classLoader
+                .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
+
+        context.runner = context.runnerClass
+                .getDeclaredConstructor()
+                .newInstance();
+
+        context.runnerClass
+                .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
+                .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
     }
 
     URL[] getServerClasspath(Path classesDir, Path libDir) throws IOException {
@@ -263,6 +273,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 context.classLoader.close();
             } catch (IOException ignore) {
             }
+            // Restore original context class loader
+            Thread.currentThread().setContextClassLoader(context.oldClassLoader);
         }
 
         if (containerConfig.getDeleteTmp()) {
@@ -352,6 +364,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         private Class<?> runnerClass;
         // runner used to run this server instance
         private Object runner;
+        // existing class loader
+        private ClassLoader oldClassLoader;
     }
 
 }
