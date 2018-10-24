@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class CommandExecutor {
 
-    private static final int THREAD_POOL_SIZE = 5;      // TODO config
+    private static final int THREAD_POOL_SIZE = 16;      // TODO config
 
     private static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 

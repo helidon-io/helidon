@@ -26,12 +26,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.faulttolerance.Asynchronous;
-import org.eclipse.microprofile.faulttolerance.Bulkhead;
-import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
-import org.eclipse.microprofile.faulttolerance.Fallback;
-import org.eclipse.microprofile.faulttolerance.Retry;
-import org.eclipse.microprofile.faulttolerance.Timeout;
 
 /**
  * Class MethodAntn.
@@ -85,6 +79,13 @@ public abstract class MethodAntn {
     }
 
 
+    /**
+     * Look up an annotation on the method.
+     *
+     * @param clazz Annotation class.
+     * @param <A> Annotation class type param.
+     * @return A lookup result.
+     */
     public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> clazz) {
         return lookupAnnotation(getMethod(), clazz);
     }
@@ -163,10 +164,7 @@ public abstract class MethodAntn {
                     method.getName(),
                     annotationType,
                     parameter);
-            value = getProperty(methodLevel);
-            if (value != null) {
-                return value;
-            }
+            return getProperty(methodLevel);
         }
 
         // Check if property defined a class level
@@ -179,7 +177,7 @@ public abstract class MethodAntn {
             return value;
         }
 
-        // Check if propoerty defined at global level
+        // Check if property defined at global level
         String globalLevel = String.format("%s/%s",
                 annotationType,
                 parameter);
@@ -233,20 +231,5 @@ public abstract class MethodAntn {
         } catch (NoSuchElementException e) {
             return null;
         }
-    }
-
-    /**
-     * Determines if a method has any fault tolerance annotations.
-     *
-     * @param method The method to check.
-     * @return Outcome of test.
-     */
-    static boolean isFaultToleranceMethod(Method method) {
-        return MethodAntn.isAnnotationPresent(method, Retry.class)
-                || MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)
-                || MethodAntn.isAnnotationPresent(method, Bulkhead.class)
-                || MethodAntn.isAnnotationPresent(method, Timeout.class)
-                || MethodAntn.isAnnotationPresent(method, Asynchronous.class)
-                || MethodAntn.isAnnotationPresent(method, Fallback.class);
     }
 }

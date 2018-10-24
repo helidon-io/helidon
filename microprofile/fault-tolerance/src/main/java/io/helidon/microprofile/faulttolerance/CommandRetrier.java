@@ -18,6 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -127,9 +128,10 @@ public class CommandRetrier {
 
         if (isAsynchronous) {
             AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(executor);
-            return introspector.hasFallback()
+            Future<?> result = (Future<?>) (introspector.hasFallback()
                    ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                   : failsafe.get(this::retryExecute);
+                   : failsafe.get(this::retryExecute));
+            return result;
         } else {
             SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
             return introspector.hasFallback()
