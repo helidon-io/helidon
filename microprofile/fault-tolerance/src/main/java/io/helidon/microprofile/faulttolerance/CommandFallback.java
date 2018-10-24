@@ -19,12 +19,14 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * Class CommandFallback.
@@ -34,7 +36,7 @@ class CommandFallback {
 
     private final InvocationContext context;
 
-    private Class<? extends FallbackHandler<?>> handler;
+    private Class<? extends FallbackHandler<?>> handlerClass;
 
     private Method fallbackMethod;
 
@@ -50,7 +52,7 @@ class CommandFallback {
         // Establish fallback strategy
         final Fallback fallback = introspector.getFallback();
         if (fallback.value() != Fallback.DEFAULT.class) {
-            handler = fallback.value();
+            handlerClass = fallback.value();
         } else if (!fallback.fallbackMethod().isEmpty()) {
             Object instance = context.getTarget();
             try {
@@ -60,7 +62,7 @@ class CommandFallback {
                 throw new InternalError(e);     // should have been validated
             }
         } else {
-            handler = Fallback.DEFAULT.class;
+            handlerClass = Fallback.DEFAULT.class;
         }
     }
 
@@ -71,12 +73,14 @@ class CommandFallback {
      * @throws Exception If something fails.
      */
     public Object execute() throws Exception {
-        assert handler != null || fallbackMethod != null;
+        assert handlerClass != null || fallbackMethod != null;
 
         updateMetrics();
 
-        if (handler != null) {
-            return handler.getDeclaredConstructor().newInstance().handle(
+        if (handlerClass != null) {
+            // Instantiate handler using CDI
+            FallbackHandler<?> handler = CDI.current().select(handlerClass).get();
+            return handler.handle(
                 new ExecutionContext() {
                     @Override
                     public Method getMethod() {

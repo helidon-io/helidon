@@ -59,6 +59,7 @@ public class FallbackBean {
         throw new RuntimeException("Oops");
     }
 
+    @Dependent
     static class FallbackBeanHandler implements FallbackHandler<String> {
 
         @Override
