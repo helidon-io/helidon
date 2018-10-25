@@ -56,7 +56,7 @@ public class GreetService implements Service {
      * The config value for the key {@code greeting}.
      */
     // tag::greetingDef[]
-    private static String greeting = CONFIG.get("greeting").asString("Ciao"); // <2>
+    private String greeting = CONFIG.get("greeting").asString("Ciao"); // <2>
     // end::greetingDef[]
 
     /**
@@ -74,7 +74,7 @@ public class GreetService implements Service {
     // end::update[]
 
     /**
-     * Return a wordly greeting message.
+     * Return a worldly greeting message.
      * @param request the server request
      * @param response the server response
      */
@@ -124,4 +124,17 @@ public class GreetService implements Service {
         response.send(returnObject);
     }
     // end::updateGreeting[]
+
+    /**
+     * Checks the health of the greeting service.
+     * @return a String reporting any problems; null if all is well
+     */
+    // tag::checkHealth[]
+    String checkHealth() {
+        if (greeting == null || greeting.trim().length() == 0) { //<1>
+           return "greeting is not set or is empty";
+        }
+        return null;
+    }
+    // end::checkHealth[]
 }

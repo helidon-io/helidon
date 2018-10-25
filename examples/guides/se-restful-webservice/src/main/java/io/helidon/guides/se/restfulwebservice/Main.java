@@ -19,18 +19,35 @@ package io.helidon.guides.se.restfulwebservice;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-// tag::imports[]
+// tag::importsHealth1[]
+import io.helidon.common.http.Http;
+// end::importsHealth1[]
+// tag::importsStart[]
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
+// end::importsStart[]
+// tag::importsHealth2[]
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+// end::importsHealth2[]
+// tag::importsEnd[]
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.json.JsonSupport;
-// end::imports[]
+// end::importsEnd[]
+// tag::importsHealth3[]
+import javax.json.Json;
+import javax.json.JsonObject;
+// end::importsHealth3[]
 
 /**
  * Simple Hello World rest application.
  */
 public final class Main {
+
+    // tag::greetServiceDecl[]
+    private static GreetService greetService;
+    // end::greetServiceDecl[]
 
     /**
      * Cannot be instantiated.
@@ -42,14 +59,21 @@ public final class Main {
      *
      * @return the new instance
      */
-    // tag::createRouting[]
+    // tag::createRoutingStart[]
     private static Routing createRouting() {
+        greetService = new GreetService(); //<1>
         return Routing.builder()
-                .register(JsonSupport.get()) // <1>
-                .register("/greet", new GreetService()) // <2>
+                .register(JsonSupport.get()) // <2>
+                .register("/greet", greetService) // <3>
+    // end::createRoutingStart[]
+    // tag::createRoutingHealth[]
+                .get("/alive", Main::alive) //<1>
+                .get("/ready", Main::ready) //<2>
+    // end::createRoutingHealth[]
+    // tag::createRoutingEnd[]
                 .build();
     }
-    // end::createRouting[]
+    // end::createRoutingEnd[]
 
     /**
      * Application main entry point.
@@ -96,4 +120,46 @@ public final class Main {
         return server;
     }
     // end::startServer[]
+
+    /**
+     * Responds with a health message.
+     * @param request the server request
+     * @param response the server response
+     */
+    // tag::alive[]
+    private static void alive(final ServerRequest request,
+                        final ServerResponse response) {
+        /*
+         * Return 200 if the greeting is set to something non-null and non-empty;
+         * return 500 (server error) otherwise.
+         */
+        String greetServiceError = greetService.checkHealth(); //<1>
+        if (greetServiceError == null) {
+            response
+                    .status(Http.Status.OK_200) //<2>
+                    .send();
+        } else {
+            JsonObject returnObject = Json.createObjectBuilder() //<3>
+                    .add("error", greetServiceError)
+                    .build();
+            response
+                    .status(Http.Status.INTERNAL_SERVER_ERROR_500) //<4>
+                    .send(returnObject);
+        }
+    }
+    // end::alive[]
+
+    /**
+     * Implements a very simple readiness check.
+     * @param request the server request
+     * @param response the server response
+     */
+    //tag::ready[]
+    private static void ready(final ServerRequest request,
+                       final ServerResponse response) {
+        response
+                .status(Http.Status.OK_200)
+                .send();
+    }
+    //end::ready[]
 }

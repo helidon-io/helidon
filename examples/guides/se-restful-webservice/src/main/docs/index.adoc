@@ -42,7 +42,7 @@ You'll learn how to use Helidon quickly to create a ReSTful web service that acc
 == What You Need
 
 |===
-|About 10 minutes
+|About 15 minutes
 |An IDE or text editor
 |JDK 1.8 or later
 |Maven 3.5 or later
@@ -221,16 +221,27 @@ and makes it aware of your greeting service.
 Along the way you or your IDE will be adding these Java `import` statements:
 [source,java]
 ----
-include::{main-class}[tag=imports]
+include::{main-class}[tag=importsStart]
+include::{main-class}[tag=importsEnd]
 ----
+. Add a field to your main class to hold a reference to a `GreetService` instance.
++
+[source,java]
+----
+include::{main-class}[tag=greetServiceDecl]
+----
+
 . Add a method to your main class to set up routing for your app.
 +
 [source,java]
 ----
-include::{main-class}[tag=createRouting]
+include::{main-class}[tag=createRoutingStart]
+include::{main-class}[tag=createRoutingEnd]
 ----
-<1> Tells the Helidon web server that you want to use JSON.
-<2> Associates the `/greet` path with your greet service. 
+<1> Creates and saves the reference to the `GreetService`. (We'll use this again
+later when we add support for health checking.)
+<2> Tells the Helidon web server that you want to use JSON.
+<3> Associates the `/greet` path with your greet service. 
 
 . Add the `startServer` method.
 +
@@ -293,6 +304,134 @@ curl -X GET http://localhost:8080/greet/Jose
 a|[source,bash]
 {"message":"Hola Jose!"}
 |====
+
+== Add Support for Health Checking
+A key responsibility of a well-behaved microservice is to actually report on its own behavior.
+Two common approaches for checking health, often used together, are:
+
+- readiness - a simple verification that the service has been started, has initialized itself,
+and is ready to respond to requests; and
+- liveness - often a more thorough assessment of if
+and how well the service can do its job.
+
+For example, Kubernetes can ping your service's 
+readiness endpoint after it starts the pod containing the service to determine 
+when the service is ready to accept requests, withholding traffic until the readiness
+endpoint reports success. Kubernetes can use the liveness endpoint to find out if
+the service considers itself able to function, attempting a pod restart if the
+endpoint reports a problem.
+
+In general a liveness check might assess:
+
+- service health - whether the service itself is prepared to respond correctly
+- host health - if the host has sufficient resources (for example, disk space)
+for the service to operate
+- health of other, dependent services - if other services on which this service
+depends are themselves OK.
+
+To do its job our greeting service does not depend on any
+host resources (like disk space) or any other services. So we'll define the 
+health of our greeting service to be OK if the greeting text has been assigned
+_and is not empty_ when trimmed of leading or trailing white space. Otherwise we'll
+consider the service to be unhealthy. Note that in this case the service will
+still respond but its answers might not be what we want. 
+
+Normally we would 
+write our service to make 
+sure that a newly-assigned greeting is non-empty _before_
+accepting it. But omitting that validation lets us create an easy health check
+and we can see it in operation by simply setting the greeting to blank from 
+a `curl` command.
+
+=== Add code to `GreetService.java`
+
+For our simple service, assess health simply by making sure the greeting contains
+something other than blanks.
+
+[source,java]
+----
+include::{greet-service}[tag=checkHealth]
+----
+
+=== Add code to `Main.java`
+
+Now let's add the code to actually implement the readiness and liveness endpoints to
+to the `Main` class.
+
+Along the way, you or your IDE will need to add 
+[source,java]
+include::{main-class}[tag=importsHealth1]
+include::{main-class}[tag=importsHealth2]
+include::{main-class}[tag=importsHealth3]
+
+. Add a new `ready` method
++
+[source,java]
+----
+include::{main-class}[tag=ready]
+----
+This method simply returns 200 so the client knows the service is up.
+. Add a new `health` method
++
+[source,java]
+----
+include::{main-class}[tag=alive]
+----
+<1> Delegates to `GreetService` to evaluate the liveness of the service -- in our case, is the greeting non-empty.
+<2> Replies with a simple 200 for the health case.
+<3> For the unhealthy case prepares a description of the problem...
+<4> ...and replies with a 500.
+
+. Add the new endpoints to the routing
++
+In the `createRouting` method in `Main.java` insert these lines immediately
+after the two `.register` invocations:
++
+[source,java]
+----
+include::{main-class}[tag=createRoutingHealth]
+----
+
+=== Rebuild and rerun your service
+Just follow the same steps you did before. Make sure you have stopped any earlier 
+instance of your service to free up the port.
+
+=== Try the readiness check
+Access the readiness check endpoint:
+[source,bash]
+curl -X GET http://localhost:8080/ready
+
+Our readiness check returns no payload, just the 200 status, so you won't see any data
+displayed. You can add the `-v` verbose option to the `curl` command to see the
+200 status in the response.
+
+=== Try the health check
+. Ping the health check endpoint
++
+Without changing the greeting, ping the health endpoint:
+[source,bash]
+curl -i -X GET http://localhost:8080/alive
++
+The greeting is valid and in that case our health check code simply returns a 200
+with no payload. 
+
+. Set the greeting to a blank
++
+[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/%20
++
+Our code to update the greeting accepts this and saves it as the new greeting.
+
+. Ping the health check endpoint again with the same command as before
++
+[source,bash]
+curl -i -X GET http://localhost:8080/alive
++
+This time you should see
+[source,bash]
+{"error":"greeting is not set or is empty"}
++
+and if you added `-i` to the `curl` command you would see the 500 status returned.
 
 == (Or, Download the Example Source)
 We think the guide is most useful if you follow along step-by-step, building
