@@ -405,7 +405,7 @@ Our readiness check returns no payload, just the 200 status, so you won't see an
 displayed. You can add the `-v` verbose option to the `curl` command to see the
 200 status in the response.
 
-=== Try the health check
+=== Try the liveness check
 . Ping the health check endpoint
 +
 Without changing the greeting, ping the health endpoint:
