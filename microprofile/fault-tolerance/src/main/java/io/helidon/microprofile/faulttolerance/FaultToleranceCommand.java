@@ -39,6 +39,8 @@ import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStr
 public class FaultToleranceCommand extends HystrixCommand<Object> {
     private static final Logger LOGGER = Logger.getLogger(FaultToleranceCommand.class.getName());
 
+    private static final String HELIDON_MICROPROFILE_FAULTTOLERANCE = "io.helidon.microprofile.faulttolerance";
+
     private final String commandKey;
 
     private final MethodIntrospector introspector;
@@ -63,7 +65,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         private final Runnable runnable;
 
         RunnableCommand(String commandKey, Runnable runnable) {
-            super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey("io.j4c.faulttolerance"))
+            super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(HELIDON_MICROPROFILE_FAULTTOLERANCE))
                         .andCommandKey(
                             HystrixCommandKey.Factory.asKey(commandKey))
                         .andCommandPropertiesDefaults(
@@ -98,7 +100,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * @param context CDI invocation context.
      */
     public FaultToleranceCommand(String commandKey, MethodIntrospector introspector, InvocationContext context) {
-        super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey("io.j4c.faulttolerance"))
+        super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(HELIDON_MICROPROFILE_FAULTTOLERANCE))
                     .andCommandKey(
                         HystrixCommandKey.Factory.asKey(commandKey))
                     .andCommandPropertiesDefaults(
@@ -225,6 +227,12 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                     .entrySet()
                     .forEach(entry -> setProperty(entry.getKey(), entry.getValue()));
 
+        // Ensure our internal state is consistent with Hystrix
+        if (introspector.hasCircuitBreaker()) {
+            breakerHelper.ensureConsistentState();
+            LOGGER.info("Circuit breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
+        }
+
         // Record state of breaker
         boolean wasBreakerOpen = isCircuitBreakerOpen();
 
@@ -273,7 +281,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             synchronized (breakerHelper.getSyncObject()) {
                 if (hasFailed) {
                     if (breakerHelper.getState() == CircuitBreakerHelper.State.HALF_OPEN_MP) {
-                        // If failed and in HALF_OPEN_MP, we need to force braker to open
+                        // If failed and in HALF_OPEN_MP, we need to force breaker to open
                         runTripBreaker();
                         breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
                     } else if (breakerHelper.getState() == CircuitBreakerHelper.State.CLOSED_MP) {
@@ -289,12 +297,15 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 }
 
                 if (wasBreakerOpen && isClosedNow) {
+                    // Last called was successful
+                    breakerHelper.incSuccessCount();
+
                     // We stay in HALF_OPEN_MP until successThreshold is reached
                     if (breakerHelper.getSuccessCount() < introspector.getCircuitBreaker().successThreshold()) {
                         breakerHelper.setState(CircuitBreakerHelper.State.HALF_OPEN_MP);
-                        breakerHelper.incSuccessCount();
                     } else {
                         breakerHelper.setState(CircuitBreakerHelper.State.CLOSED_MP);
+                        breakerHelper.resetCommandData();
                     }
                 }
             }
