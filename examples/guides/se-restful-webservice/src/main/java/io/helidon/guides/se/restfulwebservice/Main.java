@@ -67,8 +67,8 @@ public final class Main {
                 .register("/greet", greetService) // <3>
     // end::createRoutingStart[]
     // tag::createRoutingHealth[]
-                .get("/alive", Main::alive) //<1>
-                .get("/ready", Main::ready) //<2>
+                .get("/alive", Main::alive)
+                .get("/ready", Main::ready)
     // end::createRoutingHealth[]
     // tag::createRoutingEnd[]
                 .build();
