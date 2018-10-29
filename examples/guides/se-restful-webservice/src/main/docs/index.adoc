@@ -306,7 +306,7 @@ a|[source,bash]
 |====
 
 == Add Support for Health Checking
-A key responsibility of a well-behaved microservice is to actually report on its own behavior.
+A well-behaved microservice reports on its own health.
 Two common approaches for checking health, often used together, are:
 
 - readiness - a simple verification that the service has been started, has initialized itself,
@@ -323,24 +323,24 @@ endpoint reports a problem.
 
 In general a liveness check might assess:
 
-- service health - whether the service itself is prepared to respond correctly
+- service health - whether the service itself can do its job correctly
 - host health - if the host has sufficient resources (for example, disk space)
 for the service to operate
 - health of other, dependent services - if other services on which this service
 depends are themselves OK.
 
-To do its job our greeting service does not depend on any
-host resources (like disk space) or any other services. So we'll define the 
-health of our greeting service to be OK if the greeting text has been assigned
-_and is not empty_ when trimmed of leading or trailing white space. Otherwise we'll
-consider the service to be unhealthy. Note that in this case the service will
+Our greeting service does not depend on any
+host resources (like disk space) or any other services. So we choose to define our
+greeting service to be OK if the greeting text has been assigned
+_and is not empty_ when trimmed of leading or trailing white space. Otherwise we
+consider the service to be unhealthy, in which case the service will
 still respond but its answers might not be what we want. 
 
 Normally we would 
 write our service to make 
 sure that a newly-assigned greeting is non-empty _before_
 accepting it. But omitting that validation lets us create an easy health check
-and we can see it in operation by simply setting the greeting to blank from 
+that we can use by simply setting the greeting to blank from 
 a `curl` command.
 
 === Add code to `GreetService.java`
