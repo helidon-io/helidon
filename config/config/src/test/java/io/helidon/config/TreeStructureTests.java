@@ -51,4 +51,18 @@ public class TreeStructureTests {
         assertThat(config.get("c.a").value(), is(Optional.empty()));
         assertThat(config.get("c.a").asList(String.class), is(CollectionsHelper.listOf("first", "second", "third")));
     }
+
+    @Test
+    void testListAndDirectValue() {
+        Config config = Config.withSources(ConfigSources.from(
+                CollectionsHelper.mapOf("c.a", "treeAndLeafNode",
+                                        "c.a.0", "first",
+                                        "c.a.1", "second",
+                                        "c.a.2", "third")
+        )).build();
+
+        assertThat(config.get("c").value(), is(Optional.empty()));
+        assertThat(config.get("c.a").value(), is(Optional.of("treeAndLeafNode")));
+        assertThat(config.get("c.a").asList(String.class), is(CollectionsHelper.listOf("first", "second", "third")));
+    }
 }

@@ -71,7 +71,12 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
 
     @Override
     public final <T> Optional<T> asOptional(Class<? extends T> type) throws ConfigMappingException {
-        return Optional.ofNullable(mapperManager.map(type, this));
+        try {
+            return Optional.ofNullable(mapperManager.map(type, this));
+        } catch (MissingValueException ignored) {
+            // if we are missing a value, we return empty, should not propagate it further!
+            return Optional.empty();
+        }
     }
 
     @Override

@@ -712,20 +712,11 @@ public final class ConfigMappers {
         return (node) -> {
             Optional<String> nodeValue = node.value();
 
-            switch (node.type()) {
-            case VALUE:
-            case MISSING:
-                return nodeValue
-                        .map(value -> safeMap(node.key(), value, mapper))
-                        .orElseThrow(MissingValueException.supplierForKey(node.key()));
-            default:
-                return nodeValue
-                        .map(value -> safeMap(node.key(), value, mapper))
-                        .orElseThrow(() -> new ConfigMappingException(
-                                node.key(),
-                                "The config node type '" + node.type() + "' represents a complex configuration hierarchy"
-                                        + " and cannot be mapped as a single String value."));
-            }
+            return nodeValue
+                    .map(value -> safeMap(node.key(), value, mapper))
+                    .orElseThrow(MissingValueException.supplierForKey(node.key()));
+
+
         };
     }
 
