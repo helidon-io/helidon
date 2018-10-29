@@ -48,9 +48,9 @@ abstract class ConfigComplexImpl<N extends ConfigNode> extends ConfigExistingImp
                     .map(list -> list.stream()
                             .map(config -> config.as(type))
                             .collect(Collectors.toList()));
-        } catch (ConfigMappingException ex) {
+        } catch (MissingValueException | ConfigMappingException ex) {
             throw new ConfigMappingException(key(),
-                                             "Error to map complex node item. " + ex.getLocalizedMessage(),
+                                             "Error to map complex node item to list. " + ex.getLocalizedMessage(),
                                              ex);
         }
     }
