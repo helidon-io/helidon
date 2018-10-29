@@ -141,7 +141,7 @@ final class JerseyResources {
         @Produces(MediaType.TEXT_PLAIN)
         // due to Jersey approach to path matching, we need two methods to match both the "root" and "root" + subpaths
         public Response getHelloName(@Context SecurityContext securityContext, @Context HttpHeaders headers) {
-            AuthenticationResponse resp = securityContext.atnClientBuilder().get();
+            AuthenticationResponse resp = securityContext.atnClientBuilder().buildAndGet();
 
             if (resp.getStatus().isSuccess()) {
                 //and to authorize

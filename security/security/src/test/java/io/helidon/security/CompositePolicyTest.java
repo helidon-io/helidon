@@ -74,7 +74,7 @@ public abstract class CompositePolicyTest {
         OutboundSecurityResponse outboundResponse = context.outboundClientBuilder()
                 .outboundEnvironment(envBuilder)
                 .outboundEndpointConfig(EndpointConfig.create())
-                .get();
+                .buildAndGet();
 
         assertThat(outboundResponse.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
 

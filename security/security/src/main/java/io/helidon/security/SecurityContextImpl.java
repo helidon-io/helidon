@@ -102,7 +102,7 @@ final class SecurityContextImpl implements SecurityContext {
 
     @Override
     public AuthenticationResponse authenticate() {
-        return atnClientBuilder().get();
+        return atnClientBuilder().buildAndGet();
     }
 
     @Override
@@ -171,7 +171,7 @@ final class SecurityContextImpl implements SecurityContext {
             builder.object("object" + i, resource[i]);
         }
 
-        return builder.get();
+        return builder.buildAndGet();
     }
 
     @Override

@@ -97,12 +97,12 @@ public class SecurityTest {
         context.setEnv(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
 
         // default authorizationClient
-        AuthorizationResponse response = context.atzClientBuilder().get();
+        AuthorizationResponse response = context.atzClientBuilder().buildAndGet();
 
         assertThat(response.getStatus().isSuccess(), is(false));
 
         context.setEnv(envBuilder.addAttribute("resourceType", "PERMIT"));
-        response = context.atzClientBuilder().get();
+        response = context.atzClientBuilder().buildAndGet();
 
         assertThat(response.getStatus().isSuccess(), is(true));
 
@@ -110,14 +110,14 @@ public class SecurityTest {
         context.setEnv(envBuilder.addAttribute("resourceType", "DENY"));
         response = context.atzClientBuilder()
                 .explicitProvider("FirstInstance")
-                .get();
+                .buildAndGet();
 
         assertThat(response.getStatus().isSuccess(), is(false));
 
         context.setEnv(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
         response = context.atzClientBuilder()
                 .explicitProvider("FirstInstance")
-                .get();
+                .buildAndGet();
 
         assertThat(response.getStatus().isSuccess(), is(true));
     }
