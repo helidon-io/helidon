@@ -18,7 +18,6 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +29,7 @@ import javax.interceptor.InvocationContext;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeFuture;
 import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.SyncFailsafe;
 import net.jodah.failsafe.function.CheckedFunction;
@@ -128,10 +128,10 @@ public class CommandRetrier {
 
         if (isAsynchronous) {
             AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(executor);
-            Future<?> result = (Future<?>) (introspector.hasFallback()
-                   ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                   : failsafe.get(this::retryExecute));
-            return result;
+            FailsafeFuture<?> chainedFuture = (FailsafeFuture<?>) (introspector.hasFallback()
+                               ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                               : failsafe.get(this::retryExecute));
+            return new FailsafeChainedFuture<>(chainedFuture);
         } else {
             SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
             return introspector.hasFallback()
