@@ -19,105 +19,103 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  
-  <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-  
-  <name>Helidon HikariCP DataSource CDI Integration</name>
-  <description>${project.name}</description>
-  
-  <parent>
-    <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-project</artifactId>
-    <version>0.10.5-SNAPSHOT</version>
-  </parent>
-  
-  <dependencies>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.integrations.cdi</groupId>
+        <artifactId>helidon-integrations-cdi-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+    <name>Helidon CDI Integrations HikariCP DataSource</name>
 
-    <!-- Test-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-all</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss.weld.se</groupId>
-      <artifactId>weld-se-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <properties>
+        <!-- maven-javadoc-plugin property -->
+        <show>package</show>
+    </properties>
 
-    <!-- Runtime-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>io.helidon.serviceconfiguration</groupId>
-      <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.helidon.serviceconfiguration</groupId>
-      <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss</groupId>
-      <artifactId>jandex</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.helidon.microprofile.config</groupId>
-      <artifactId>helidon-microprofile-config-cdi</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
+    <dependencies>
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-config-source</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
 
-    <!-- Provided-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>javax.enterprise</groupId>
-      <artifactId>cdi-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
+        <!-- Provided-scoped dependencies. -->
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- Compile-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>io.helidon.serviceconfiguration</groupId>
-      <artifactId>helidon-serviceconfiguration-config-source</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.helidon.serviceconfiguration</groupId>
-      <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-api</artifactId>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
+        <!-- Runtime-scoped dependencies. -->
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
+            <scope>runtime</scope>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
 
-  <properties>
-    <show>package</show>
-  </properties>
-  
+        <!-- Test-scoped dependencies. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

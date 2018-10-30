@@ -27,7 +27,7 @@
         <version>0.10.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-oidc</artifactId>
-    <name>Helidon Microprofile Security integration with OIDC</name>
+    <name>Helidon Microprofile Security OIDC Integration</name>
 
     <description>
         Integration with Open ID Connect (OIDC)
