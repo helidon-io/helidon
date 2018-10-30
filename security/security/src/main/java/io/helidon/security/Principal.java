@@ -25,27 +25,21 @@ import io.helidon.security.util.AbacSupport;
  *
  * @see java.security.Principal
  */
-public class Principal implements AbacSupport, java.security.Principal {
-    private final AbacSupport properties;
-    private final String name;
-    private final String id;
+public interface Principal extends AbacSupport, java.security.Principal {
 
-    private Principal(Builder builder) {
-        this.name = builder.name;
-        this.id = builder.id;
-        BasicAttributes container = new BasicAttributes(builder.properties);
-
-        container.put("name", name);
-        container.put("id", id);
-        this.properties = container;
-    }
+    /**
+     * Id of this principal.
+     *
+     * @return id if defined, name otherwise
+     */
+    String getId();
 
     /**
      * Creates a fluent API builder to build new instances of this class.
      *
      * @return a builder instance
      */
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -55,49 +49,16 @@ public class Principal implements AbacSupport, java.security.Principal {
      * @param id identification used both for name and id attributes of this principal
      * @return a new principal with the specified id (and name)
      */
-    public static Principal create(String id) {
+    static Principal create(String id) {
         return Principal.builder()
                 .id(id)
                 .build();
     }
 
-    @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
-    }
-
-    @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Id of this principal.
-     *
-     * @return id if defined, name otherwise
-     */
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public String toString() {
-        return "Principal{"
-                + "properties=" + properties
-                + ", name='" + name + '\''
-                + ", id='" + id + '\''
-                + '}';
-    }
-
     /**
      * A fluent API builder for {@link Principal}.
      */
-    public static class Builder implements io.helidon.common.Builder<Principal> {
+    class Builder implements io.helidon.common.Builder<Principal> {
         private String name;
         private String id;
         private BasicAttributes properties = new BasicAttributes();
@@ -107,7 +68,7 @@ public class Principal implements AbacSupport, java.security.Principal {
 
         @Override
         public Principal build() {
-            return new Principal(this);
+            return new PrincipalImpl(this);
         }
 
         /**
@@ -163,5 +124,51 @@ public class Principal implements AbacSupport, java.security.Principal {
             this.properties.put(key, value);
             return this;
         }
+    }
+
+    class PrincipalImpl implements Principal {
+        private final AbacSupport properties;
+        private final String name;
+        private final String id;
+
+        private PrincipalImpl(Builder builder) {
+            this.name = builder.name;
+            this.id = builder.id;
+            BasicAttributes container = new BasicAttributes(builder.properties);
+
+            container.put("name", name);
+            container.put("id", id);
+            this.properties = container;
+        }
+
+        @Override
+        public Object getAttributeRaw(String key) {
+            return properties.getAttributeRaw(key);
+        }
+
+        @Override
+        public Collection<String> getAttributeNames() {
+            return properties.getAttributeNames();
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public String toString() {
+            return "Principal{"
+                    + "properties=" + properties
+                    + ", name='" + name + '\''
+                    + ", id='" + id + '\''
+                    + '}';
+        }
+
     }
 }

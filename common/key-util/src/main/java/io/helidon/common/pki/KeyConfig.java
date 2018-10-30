@@ -583,6 +583,7 @@ public final class KeyConfig {
      */
     public static final class PemBuilder implements io.helidon.common.Builder<KeyConfig> {
         private final StreamHolder privateKeyStream = new StreamHolder("privateKey");
+        private final StreamHolder publicKeyStream = new StreamHolder("publicKey");
         private final StreamHolder certChainStream = new StreamHolder("certChain");
         private char[] pemKeyPassphrase;
 
@@ -597,6 +598,17 @@ public final class KeyConfig {
          */
         public PemBuilder key(Resource resource) {
             privateKeyStream.stream(resource);
+            return this;
+        }
+
+        /**
+         * Read a public key from PEM format from a resource definition.
+         *
+         * @param resource key resource (file, classpath, URL etc.)
+         * @return updated builder instance
+         */
+        public PemBuilder publicKey(Resource resource) {
+            publicKeyStream.stream(resource);
             return this;
         }
 
@@ -646,6 +658,9 @@ public final class KeyConfig {
         private Builder updateBuilder(Builder builder) {
             if (privateKeyStream.isSet()) {
                 builder.privateKey(PemReader.readPrivateKey(privateKeyStream.stream(), pemKeyPassphrase));
+            }
+            if (publicKeyStream.isSet()) {
+                builder.publicKey(PemReader.readPublicKey(publicKeyStream.getInputStream()));
             }
 
             if (certChainStream.isSet()) {

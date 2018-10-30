@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -25,22 +26,40 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.security.Principal;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
 
+import io.helidon.security.util.AbacSupport;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * TODO javadoc.
  */
-public class JsonWebTokenImpl implements JsonWebToken {
+public class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final Jwt jwt;
     private final SignedJwt signed;
+
+    private final AbacSupport properties;
+
 
     JsonWebTokenImpl(Jwt jwt, SignedJwt signed) {
         this.jwt = jwt;
         this.signed = signed;
+        BasicAttributes container = new BasicAttributes();
+        jwt.getPayloadClaims()
+                .forEach((key, jsonValue) -> container.put(key, JwtUtil.toObject(jsonValue)));
+
+        jwt.getEmail().ifPresent(value -> container.put("email", value));
+        jwt.getEmailVerified().ifPresent(value -> container.put("email_verified", value));
+        jwt.getLocale().ifPresent(value -> container.put("locale", value));
+        jwt.getFamilyName().ifPresent(value -> container.put("family_name", value));
+        jwt.getGivenName().ifPresent(value -> container.put("given_name", value));
+        jwt.getFullName().ifPresent(value -> container.put("full_name", value));
+
+        this.properties = container;
     }
 
     @Override
@@ -62,18 +81,18 @@ public class JsonWebTokenImpl implements JsonWebToken {
 
     private Object getClaim(Claims claims) {
         switch (claims) {
-        case raw_token:
-            return signed.getTokenContent();
-        case groups:
-            return jwt.getUserGroups().map(HashSet::new).orElseGet(HashSet::new);
-        case aud:
-            return jwt.getAudience().map(HashSet::new).orElseGet(HashSet::new);
-        case email_verified:
-            return jwt.getEmailVerified().orElseGet(null);
-        case phone_number_verified:
-            return jwt.getPhoneNumberVerified().orElseGet(null);
-        default:
-            //do nothing, just continue to processing based on type
+            case raw_token:
+                return signed.getTokenContent();
+            case groups:
+                return jwt.getUserGroups().map(HashSet::new).orElseGet(HashSet::new);
+            case aud:
+                return jwt.getAudience().map(HashSet::new).orElseGet(HashSet::new);
+            case email_verified:
+                return jwt.getEmailVerified().orElseGet(null);
+            case phone_number_verified:
+                return jwt.getPhoneNumberVerified().orElseGet(null);
+            default:
+                //do nothing, just continue to processing based on type
         }
 
         String claimName = claims.name();
@@ -111,5 +130,22 @@ public class JsonWebTokenImpl implements JsonWebToken {
         }
 
         return value;
+    }
+
+
+    @Override
+    public Object getAttributeRaw(String key) {
+        return properties.getAttributeRaw(key);
+    }
+
+    @Override
+    public Collection<String> getAttributeNames() {
+        return properties.getAttributeNames();
+    }
+
+    @Override
+    public String getId() {
+        //TODO
+        return jwt.getJwtId().get();
     }
 }

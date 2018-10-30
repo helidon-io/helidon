@@ -252,6 +252,18 @@ public class SignedJwt {
      * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
      */
     public Errors verifySignature(JwkKeys keys) {
+        return verifySignature(keys, null);
+    }
+
+    /**
+     * Verify signature against the provided keys (the kid of thisPrincipal
+     * JWT should be present in the {@link JwkKeys} provided).
+     *
+     * @param keys JwkKeys to obtain a key to verify signature
+     * @param defaultJwk Default value of JWK
+     * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
+     */
+    public Errors verifySignature(JwkKeys keys, Jwk defaultJwk) {
         Errors.Collector collector = Errors.collector();
 
         String alg = JwtUtil.getString(headerJson, "alg").orElse(null);
@@ -262,7 +274,7 @@ public class SignedJwt {
         if (null == alg) {
             if (null == kid) {
                 collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
-                jwk = Jwk.NONE_JWK;
+                jwk = defaultJwk == null ? Jwk.NONE_JWK : defaultJwk;
                 alg = jwk.getAlgorithm();
             } else {
                 //null alg, non-null kid - will use alg of jwk
@@ -279,8 +291,10 @@ public class SignedJwt {
                 if (Jwk.ALG_NONE.equals(alg)) {
                     jwk = Jwk.NONE_JWK;
                 } else {
-                    collector.fatal("Algorithm is " + alg + ", yet no kid is defined in JWT header, cannot validate");
-                    jwk = null;
+                    jwk = defaultJwk;
+                    if (null == jwk) {
+                        collector.fatal("Algorithm is " + alg + ", yet no kid is defined in JWT header, cannot validate");
+                    }
                 }
             } else {
                 //both not null
