@@ -41,7 +41,15 @@
         <module>helidon-quickstart-se</module>
         <module>helidon-quickstart-mp</module>
         <module>todos</module>
-        <module>integrations/cdi</module>
         <module>guides</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>integrations</id>
+            <modules>
+                <module>integrations/cdi</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
