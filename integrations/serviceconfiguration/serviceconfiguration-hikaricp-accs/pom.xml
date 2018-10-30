@@ -16,53 +16,63 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.serviceconfiguration</groupId>
+        <artifactId>helidon-serviceconfiguration-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
+    <name>Helidon ServiceConfiguration HikariCP ACCS</name>
 
-  <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
+    <description>
+        Helidon HikariCP ServiceConfiguration Implementation for Application Container Cloud Service
+    </description>
 
-  <name>Helidon HikariCP ServiceConfiguration Implementation for Application Container Cloud Service</name>
-  <description>${project.name}</description>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
-  <parent>
-    <groupId>io.helidon.serviceconfiguration</groupId>
-    <artifactId>helidon-serviceconfiguration-project</artifactId>
-    <version>0.10.5-SNAPSHOT</version>
-  </parent>
-  
-  <dependencies>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.oracle.jdbc</groupId>
-      <artifactId>ojdbc8</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
-    
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
-    
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
-  
+    <!--
+        com.oracle:jdbc:odjbc8 requires the maven oracle repository
+    -->
+    <repositories>
+        <repository>
+            <id>maven.oracle.com</id>
+            <url>https://maven.oracle.com</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
 </project>
-
