@@ -30,5 +30,7 @@
              as unacceptable blank lines within a package's imports. -->
         <suppress checks="ImportOrder"
             files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/Main.java"/>
+        <suppress checks="ImportOrder"
+            files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java"/>
 </suppressions>
 
