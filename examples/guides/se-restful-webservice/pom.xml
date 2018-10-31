@@ -198,6 +198,12 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
 <!-- end::configYamlDependency[] -->
+<!-- tag::metricsDependency[] -->
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-metrics-se</artifactId>
+        </dependency>
+<!-- end::metricsDependency[] -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

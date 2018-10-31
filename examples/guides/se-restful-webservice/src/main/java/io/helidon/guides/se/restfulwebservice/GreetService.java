@@ -16,16 +16,25 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
-//tag::imports[]
+//tag::importsStart[]
 import javax.json.Json;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
+//end::importsStart[]
+//tag::importsHelidonMetrics[]
+import io.helidon.metrics.RegistryFactory;
+//end::importsHelidonMetrics[]
+//tag::importsWebServer[]
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-// end::imports[]
+// end::importsWebServer[]
+// tag::importsMPMetrics[]
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+// end::importsMPMetrics[]
 
 /**
  * A simple service to greet you. Examples:
@@ -60,18 +69,38 @@ public class GreetService implements Service {
     // end::greetingDef[]
 
     /**
-     * A service registers itself by updating the routine rules.
+     * Create metric registry.
+     */
+    // tag::metricsRegistration[]
+    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+            .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
+    // end::metricsRegistration[]
+
+    /**
+     * Counter for all requests to this service.
+     */
+    // tag::counterRegistration[]
+    private final Counter greetCounter = registry.counter("accessctr"); // <2>
+    // end::counterRegistration[]
+
+    /**
+     * A service registers itself by updating the routing rules.
      * @param rules the routing rules.
      */
-    // tag::update[]
+    // tag::updateStart[]
     @Override
     public final void update(final Routing.Rules rules) { // <1>
         rules
+    // end::updateStart[]
+    // tag::updateForCounter[]
+            .any(this::counterFilter) // <1>
+    // end::updateForCounter[]
+    // tag::updateGetsAndPuts[]
             .get("/", this::getDefaultMessage) //<2>
             .get("/{name}", this::getMessage) //<3>
             .put("/greeting/{greeting}", this::updateGreeting); //<4>
     }
-    // end::update[]
+    // end::updateGetsAndPuts[]
 
     /**
      * Return a worldly greeting message.
@@ -137,4 +166,26 @@ public class GreetService implements Service {
         return null;
     }
     // end::checkHealth[]
+
+    /**
+     * Increments a simple counter.
+     * Calls request.next() to ensure other handlers are called.
+     * @param request
+     * @param response
+     */
+    // tag::counterFilter[]
+    private void counterFilter(final ServerRequest request,
+                               final ServerResponse response) {
+        displayThread(); // <1>
+        greetCounter.inc(); // <2>
+        request.next(); // <3>
+    }
+    // end::counterFilter[]
+
+    // tag::displayThread[]
+    private void displayThread() {
+        String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
+        System.out.println("Method=" + methodName + " " + "Thread=" + Thread.currentThread().getName());
+    }
+    // end::displayThread[]
 }

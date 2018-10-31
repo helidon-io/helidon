@@ -24,9 +24,14 @@ import io.helidon.common.http.Http;
 // end::importsHealth1[]
 // tag::importsStart[]
 import io.helidon.config.Config;
+// end::importsStart[]
+// tag::importsMetrics[]
+import io.helidon.metrics.MetricsSupport;
+// end::importsMetrics[]
+// tag::importsWebServer[]
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
-// end::importsStart[]
+// end::importsWebServer[]
 // tag::importsHealth2[]
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -59,13 +64,24 @@ public final class Main {
      *
      * @return the new instance
      */
+    // tag::createRoutingFull[]
     // tag::createRoutingStart[]
     private static Routing createRouting() {
-        greetService = new GreetService(); //<1>
+    // end::createRoutingStart[]
+    // tag::initMetrics[]
+        final MetricsSupport metrics = MetricsSupport.create(); // <1>
+    // end::initMetrics[]
+    // tag::createRoutingBasic[]
+        greetService = new GreetService(); // <1>
         return Routing.builder()
                 .register(JsonSupport.get()) // <2>
+    // end::createRoutingBasic[]
+    // tag::registerMetrics[]
+                .register(metrics) // <1>
+    // end::registerMetrics[]
+    // tag::registerGreetService[]
                 .register("/greet", greetService) // <3>
-    // end::createRoutingStart[]
+    // end::registerGreetService[]
     // tag::createRoutingHealth[]
                 .get("/alive", Main::alive)
                 .get("/ready", Main::ready)
@@ -74,6 +90,7 @@ public final class Main {
                 .build();
     }
     // end::createRoutingEnd[]
+    // end::createRoutingFull[]
 
     /**
      * Application main entry point.
