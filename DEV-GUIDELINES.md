@@ -2,33 +2,10 @@ Development Guidelines
 ------------
 
 This document provides a list of rules and best practices followed by project Helidon.
-Please follow these rules when contributing to the project or when refactoring existing code.
+Please follow these rules when contributing to the project, when refactoring existing code and when
+reviewing changes done by others.
 
-**There may be reasons to violate these guidelines - in such cases, this must be documented in code, as otherwise 
-    review will fail.**
-
-_We are aware that there are existing inconsistencies in our project, these will be fixed before first release_
-
-
-# Known issues
-
-- Helidon SE is "scattered" around root of the project, maybe we should
-    create an "se" module and move the modules there? - this would require changes in group ids
-- Some webServer extension are not really server related but Helidon SE related
-- Maven coordinates and package names are not correct for some projects, such as security/abac-validators, security/providers/*)
-- Some builders accept other builders - this should be refactored to accept Supplier<OtherClass>
-- Some classes have factory methods "from(Config)", "fromConfig(Config)" etc. - these should be removed and replaced with 
-    "create(Config)"
-- Some builders have methods "update(Config)", "fromConfig(Config)" etc. - these should be removed and replaced with
-    "config(Config)"
-- Getters and setters are not consistent across the project
-- Configuration approach is not consistent (security expects config located above "security", naming of keys etc.)
-- jpms (module-info.java) - currently we have issues when running on java 9+
-- maybe rename "java9" directory to "jpms" or "jigsaw"?
-- microprofile security is incorrectly bundling all security providers - this creates a lot of unwanted dependencies
-    and should be refactored
-- can we check bom pom during build, that it contains all jar packaging modules? 
-    Maybe allow exclude from bom pom (though default must be include). We have had several issues with bom not including a module.
+**Exceptions to these rules should be documented clearly.**
 
 # Package and module structure
 1. We use flat package structure
