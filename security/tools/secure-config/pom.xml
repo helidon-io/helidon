@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-security-tools-config</artifactId>
-    <name>Helidon Security Tools: Secured config</name>
+    <name>Helidon Security Tools Secured Config</name>
 
     <description>
         Configuration filter checking property values and decrypting them if needed. Also provides tools to encrypt values to

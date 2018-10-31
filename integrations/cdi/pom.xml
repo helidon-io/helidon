@@ -20,49 +20,20 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.integrations</groupId>
+        <artifactId>helidon-integrations-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-project</artifactId>
+    <packaging>pom</packaging>
+    <name>Helidon CDI Integrations</name>
 
-  <groupId>io.helidon.integrations.cdi</groupId>
-  <artifactId>helidon-integrations-cdi-project</artifactId>
-  <packaging>pom</packaging>
-
-  <name>Helidon CDI Integrations</name>
-  <description>Helidon CDI Integrations</description>
-  
-  <parent>
-    <groupId>io.helidon.integrations</groupId>
-    <artifactId>helidon-integrations-project</artifactId>
-    <version>0.10.5-SNAPSHOT</version>
-  </parent>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-integrations-cdi-jedis</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>io.helidon.serviceconfiguration</groupId>
-        <artifactId>helidon-serviceconfiguration-project</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-  
-  <modules>
-    <module>datasource-hikaricp</module>
-    <module>jedis-cdi</module>
-    <module>oci-objectstorage-cdi</module>
-  </modules>
-  
+    <modules>
+        <module>datasource-hikaricp</module>
+        <module>jedis-cdi</module>
+        <module>oci-objectstorage-cdi</module>
+    </modules>
 </project>

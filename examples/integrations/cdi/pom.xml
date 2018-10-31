@@ -20,61 +20,21 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <groupId>io.helidon.integrations.examples</groupId>
+    <artifactId>helidon-integrations-examples-project</artifactId>
+    <packaging>pom</packaging>
+    <name>Helidon Integrations Examples</name>
 
-  <groupId>io.helidon.integrations.examples</groupId>
-  <artifactId>helidon-integrations-examples-project</artifactId>
-  <packaging>pom</packaging>
-
-  <name>Helidon Integrations Examples Project</name>
-  <description>Helidon Integrations Examples Project</description>
-  
-  <parent>
-    <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-examples-project</artifactId>
-    <version>0.10.5-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-integrations-examples-datasource-hikaricp</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-integrations-examples-jedis</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-integrations-examples-oci-objectstorage</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>io.helidon.microprofile.config</groupId>
-        <artifactId>helidon-microprofile-config-cdi</artifactId>
-        <type>jar</type>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.helidon.microprofile.server</groupId>
-        <artifactId>helidon-microprofile-server</artifactId>
-        <type>jar</type>
-        <version>${project.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-  
-  <modules>
-    <module>datasource-hikaricp</module>
-    <module>jedis</module>
-    <module>oci-objectstorage</module>
-  </modules>
-  
+    <modules>
+        <module>datasource-hikaricp</module>
+        <module>jedis</module>
+        <module>oci-objectstorage</module>
+    </modules>
 </project>

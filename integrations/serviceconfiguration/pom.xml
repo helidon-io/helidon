@@ -20,76 +20,25 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.integrations</groupId>
+        <artifactId>helidon-integrations-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <groupId>io.helidon.serviceconfiguration</groupId>
+    <artifactId>helidon-serviceconfiguration-project</artifactId>
+    <packaging>pom</packaging>
 
-  <groupId>io.helidon.serviceconfiguration</groupId>
-  <artifactId>helidon-serviceconfiguration-project</artifactId>
-  <packaging>pom</packaging>
+    <name>Helidon Service Configuration Framework</name>
 
-  <name>Helidon Service Configuration Framework Projects</name>
-  <description>Helidon Service Configuration Framework Projects</description>
-  
-  <parent>
-    <groupId>io.helidon.integrations</groupId>
-    <artifactId>helidon-integrations-project</artifactId>
-    <version>0.10.5-SNAPSHOT</version>
-  </parent>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-api</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-config-source</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-system-kubernetes</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>helidon-serviceconfiguration-system-oracle-accs</artifactId>
-        <version>${project.version}</version>
-        <type>jar</type>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-  
-  <modules>
-    <module>serviceconfiguration-api</module>
-    <module>serviceconfiguration-config-source</module>
-    <module>serviceconfiguration-hikaricp</module>
-    <module>serviceconfiguration-hikaricp-accs</module>
-    <module>serviceconfiguration-hikaricp-localhost</module>
-    <module>serviceconfiguration-system-kubernetes</module>
-    <module>serviceconfiguration-system-oracle-accs</module>
-  </modules>
-  
+    <modules>
+        <module>serviceconfiguration-api</module>
+        <module>serviceconfiguration-config-source</module>
+        <module>serviceconfiguration-hikaricp</module>
+        <module>serviceconfiguration-hikaricp-accs</module>
+        <module>serviceconfiguration-hikaricp-localhost</module>
+        <module>serviceconfiguration-system-kubernetes</module>
+        <module>serviceconfiguration-system-oracle-accs</module>
+    </modules>
 </project>
