@@ -16,12 +16,13 @@ reviewing changes done by others.
     5. Do not rely on java module system (JPMS/Jigsaw) to enforce visibility
     6. If a set of classes seems to require a separate package, maybe it is a good candidate for a separate module
         1. Example: _there could be a package for each "abac" module in "abac" security provider. Even though these modules 
-            are mostly very small, I have chosen to extract them to standalone modules, not to break the rule of flat package 
+            are mostly very small, these were extract to standalone modules, not to break the rule of flat package 
             structure. In general this helps enforce the rule of separation of concerns - if you feel you need a new package, 
             in most cases you are putting together different concerns in a single module._
 2. Naming conventions of maven modules, maven module directories and package names are connected:
-    1. Directories: name of the directory is module name (use as ${module_name} further in this document)
-        1. For pom packaging, the module is a "project module"
+    1. Directories: name of the directory is module name (referred to as ${module_name} further in this document)
+        1. For pom packaging, the module is a "project module" (considering modules that serve as aggregators for sub-modules 
+            into a common reactor)
     2. Maven coordinates:
         1. Group id: io.helidon.${project_module}* - such as io.helidon.webserver; io.helidon.microprofile.config
         2. Artifact id: helidon-${module_name}(-project)? - such as "helidon-security", "helicon-security-project", 
@@ -67,6 +68,8 @@ Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-co
     1. **This implies that there are no public API classes that would use public constructors**
     2. Allowed exceptions to this rule:
         1. Integration APIs that follow rules of integrated solution, e.g. Jersey SecurityFeature
+        2. APIs that must be capable of reflection instantiation by tools that only support 
+            public constructors
 2. Class or interface using a builder (let's call ours "FooBar" for the purpose of this document)
     1. Must have:   
         1. Hidden constructor (private or protected) - this is to allow us to switch to interface if needed
@@ -80,8 +83,9 @@ Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-co
             "return builder().config(config).build()"
         2. Other factory methods that build specific (predefined) instances, such as "fail(String cause)", 
             "success(Subject subject)" etc. - **these methods MUST use builder to build the instance internally**
-        3. An internal "Builder" class used to build it - it is allowed to have the builder as a top level class,
-            though the name must reflect the class it is building (e.g. FooBarBuilder) 
+        3. An internal class named "Builder" that is building instances of the containing class
+            1. it is allowed to have the builder as a top level class, in such a case the name must reflect the class it is 
+                building (e.g. FooBarBuilder) 
 3. Builder class
     1. Must have:
         1. Implements "io.helidon.common.Builder<FooBar>"
@@ -155,9 +159,11 @@ but: was "Requested value for configuration key 'list-1.1' is not present in the
 3. When referencing other Helidon modules, use ${project.version} as a version
 4. In pom.xml of a module, always define a "name" tag and follow naming conventions already used
     1. For project module: Helidon ${module_name} Project
-    2. For java module: Helidon ${module_name} 
+    2. For java module: Helidon ${module_name}
+    3. The name should be "reactor" friendly - it should not overflow
+    4. The name is a name, not a sentence - it does not have to be grammatically correct 
 5. All java modules that are expected to be used by our users MUST be defined in our [bom pom](bom/pom.xml)
-6. Bundles may be created, though we still must give our users the freedom to pick and choose modules directly  
+6. Bundles may be created, thoua sengh we still must give our users the freedom to pick and choose modules directly  
 7. Java EE components and Microprofile specifications should be in "provided" scope unless you are implementing
     the spec itself
 8. Carefully choose scope for dependencies on other helidon modules (e.g. microprofile extensions should have
