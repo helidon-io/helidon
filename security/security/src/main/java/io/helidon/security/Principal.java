@@ -16,8 +16,6 @@
 
 package io.helidon.security;
 
-import java.util.Collection;
-
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -66,9 +64,21 @@ public interface Principal extends AbacSupport, java.security.Principal {
         private Builder() {
         }
 
+        String name() {
+            return name;
+        }
+
+        String id() {
+            return id;
+        }
+
+        BasicAttributes properties() {
+            return properties;
+        }
+
         @Override
         public Principal build() {
-            return new PrincipalImpl(this);
+            return new HelidonPrincipal(this);
         }
 
         /**
@@ -126,49 +136,4 @@ public interface Principal extends AbacSupport, java.security.Principal {
         }
     }
 
-    class PrincipalImpl implements Principal {
-        private final AbacSupport properties;
-        private final String name;
-        private final String id;
-
-        private PrincipalImpl(Builder builder) {
-            this.name = builder.name;
-            this.id = builder.id;
-            BasicAttributes container = new BasicAttributes(builder.properties);
-
-            container.put("name", name);
-            container.put("id", id);
-            this.properties = container;
-        }
-
-        @Override
-        public Object getAttributeRaw(String key) {
-            return properties.getAttributeRaw(key);
-        }
-
-        @Override
-        public Collection<String> getAttributeNames() {
-            return properties.getAttributeNames();
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
-        public String getId() {
-            return id;
-        }
-
-        @Override
-        public String toString() {
-            return "Principal{"
-                    + "properties=" + properties
-                    + ", name='" + name + '\''
-                    + ", id='" + id + '\''
-                    + '}';
-        }
-
-    }
 }

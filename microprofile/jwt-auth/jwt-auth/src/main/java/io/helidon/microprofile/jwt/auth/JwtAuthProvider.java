@@ -15,13 +15,50 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.enterprise.inject.spi.DeploymentException;
+import javax.json.Json;
+import javax.json.JsonObject;
+
 import io.helidon.common.Errors;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
-import io.helidon.security.*;
+import io.helidon.microprofile.config.MpConfigProviderResolver;
+import io.helidon.security.AuthenticationResponse;
+import io.helidon.security.EndpointConfig;
+import io.helidon.security.Grant;
+import io.helidon.security.OutboundSecurityResponse;
+import io.helidon.security.Principal;
+import io.helidon.security.ProviderRequest;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityException;
+import io.helidon.security.SecurityResponse;
+import io.helidon.security.Subject;
+import io.helidon.security.SubjectType;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.SignedJwt;
@@ -35,31 +72,15 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.json.Json;
-import javax.json.JsonObject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.interfaces.RSAPublicKey;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * TODO javadoc.
  */
 public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
+    private static final Logger LOGGER = Logger.getLogger(JwtAuthProvider.class.getName());
 
     /**
      * Configure this for outbound requests to override user to use.
@@ -173,12 +194,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
 
-
         scopes.ifPresent(scopeList ->
-                scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
-                .name(scope)
-                .type("scope")
-                .build())));
+                                 scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
+                                                                                            .name(scope)
+                                                                                            .type("scope")
+                                                                                            .build())));
 
         return subjectBuilder.build();
     }
@@ -205,11 +225,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 .flatMap(username -> {
                     if (!allowImpersonation) {
                         return Optional.of(OutboundSecurityResponse.builder()
-                                .description(
-                                        "Attempting to impersonate a user, when impersonation is not allowed"
-                                                + " for JWT provider")
-                                .status(SecurityResponse.SecurityStatus.FAILURE)
-                                .build());
+                                                   .description(
+                                                           "Attempting to impersonate a user, when impersonation is not allowed"
+                                                                   + " for JWT provider")
+                                                   .status(SecurityResponse.SecurityStatus.FAILURE)
+                                                   .build());
                     }
 
                     // TODO allow additional claims from config?
@@ -220,9 +240,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
                         if (null == jwtOutboundTarget.jwkKid) {
                             return Optional.of(OutboundSecurityResponse.builder()
-                                    .description("Cannot do explicit user propagation if no kid is defined.")
-                                    .status(SecurityResponse.SecurityStatus.FAILURE)
-                                    .build());
+                                                       .description("Cannot do explicit user propagation if no kid is defined.")
+                                                       .status(SecurityResponse.SecurityStatus.FAILURE)
+                                                       .build());
                         } else {
                             // we do have kid - we are creating a new token of our own
                             return Optional.of(impersonate(jwtOutboundTarget, username));
@@ -277,7 +297,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         OptionalHelper.from(principal.getAttribute("full_name"))
                 .ifPresentOrElse(name -> builder.addPayloadClaim("name", name),
-                        () -> builder.removePayloadClaim("name"));
+                                 () -> builder.removePayloadClaim("name"));
 
         builder.subject(principal.getId())
                 .preferredUsername(principal.getName())
@@ -285,6 +305,14 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 .algorithm(jwk.getAlgorithm());
 
         ot.update(builder);
+
+        // MP specific
+        if (!principal.getAttribute("upn").isPresent()) {
+            builder.userPrincipal(principal.getName());
+        }
+
+        Security.getRoles(subject)
+                .forEach(builder::addUserGroup);
 
         Jwt jwt = builder.build();
         SignedJwt signed = SignedJwt.sign(jwt, jwk);
@@ -323,7 +351,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return customObject.get();
         }
         return JwtOutboundTarget.fromConfig(outboundTarget.getConfig()
-                .orElse(Config.empty()), defaultTokenHandler);
+                                                    .orElse(Config.empty()), defaultTokenHandler);
     }
 
     /**
@@ -419,7 +447,6 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
                 Pattern.CASE_INSENSITIVE);
 
-
         private boolean optional = false;
         private boolean authenticate = true;
         private boolean propagate = true;
@@ -442,42 +469,55 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         @Override
         public JwtAuthProvider build() {
             if (verifyKeys == null) {
-                if (publicKeyPath != null && publicKey != null) {
-                    throw new DeploymentException("Both " + CONFIG_PUBLIC_KEY + " and " + CONFIG_PUBLIC_KEY_PATH + " are set! Only one of them should be picked.");
+                if ((publicKeyPath != null) && (publicKey != null)) {
+                    throw new DeploymentException("Both " + CONFIG_PUBLIC_KEY + " and " + CONFIG_PUBLIC_KEY_PATH + " are set! "
+                                                          + "Only one of them should be picked.");
                 }
                 verifyKeys = createJwkKeys();
             }
-            //pokud ne verifyKeys tak nacist z publickKeyPath nebo publicKey
-            //JwkKeys.builder().addKey(JwkRSA.builder().k)
+
+            if ((null == defaultJwk) && (null != defaultKeyId)) {
+                defaultJwk = verifyKeys.forKeyId(defaultKeyId)
+                        .orElseThrow(() -> new DeploymentException("Default key id defined as \"" + defaultKeyId + "\" yet the "
+                                                                           + "key id is not present in the JWK keys"));
+            }
+
             return new JwtAuthProvider(this);
         }
 
         private JwkKeys loadPkcs8FromLocation(String uri) {
-            try {
-                Path path = Paths.get(uri);
-                if (Files.exists(path)) {
-                    loadPkcs8(new String(Files.readAllBytes(path)));
+            Path path = Paths.get(uri);
+            if (Files.exists(path)) {
+                try {
+                    return loadPkcs8(new String(Files.readAllBytes(path)));
+                } catch (IOException e) {
+                    throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
                 }
-            } catch (InvalidPathException | IOException ignored) {
+            } else {
                 URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
                 if (url != null) {
                     try (InputStream bufferedInputStream = url.openStream()) {
                         return getPublicKeyFromContent(bufferedInputStream);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        throw new SecurityException("Failed to load public key(s) from class path: " + url, e);
                     }
                 } else {
+
                     try {
-                        URL targetURL = new URL(uri);
-                        return getPublicKeyFromContent(targetURL.openStream());
+                        url = new URL(uri);
                     } catch (MalformedURLException ignored2) {
                         //ignored not and valid URL
+                        LOGGER.finest(() -> "Configuration of public key(s) is not a valid URL: " + uri);
+                        return null;
+                    }
+
+                    try {
+                        return getPublicKeyFromContent(url.openStream());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        throw new SecurityException("Failed to load public key(s) from URL: " + url, e);
                     }
                 }
             }
-            return null;
         }
 
         private JwkKeys getPublicKeyFromContent(InputStream bufferedInputStream) throws IOException {
@@ -504,12 +544,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private JwkKeys loadPlainPublicKey(String stringContent) {
             return JwkKeys.builder()
                     .addKey(JwkRSA.builder()
-                            .publicKey((RSAPublicKey) KeyConfig.pemBuilder()
-                                    .publicKey(Resource.fromContent("public key from PKCS8", stringContent))
-                                    .build()
-                                    .getPublicKey()
-                                    .orElseThrow(() -> new DeploymentException("Failed to load public key from string content")))
-                            .build())
+                                    .publicKey((RSAPublicKey) KeyConfig.pemBuilder()
+                                            .publicKey(Resource.fromContent("public key from PKCS8", stringContent))
+                                            .build()
+                                            .getPublicKey()
+                                            .orElseThrow(() -> new DeploymentException(
+                                                    "Failed to load public key from string content")))
+                                    .build())
                     .build();
         }
 
@@ -519,14 +560,16 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         private JwkKeys createJwkKeys() {
             return OptionalHelper
-                    .from(Optional.of(publicKeyPath)
-                            .map(this::loadPkcs8FromLocation))
-                    .or(() -> Optional.of(publicKey)
+                    .from(Optional.ofNullable(publicKeyPath)
+                                  .map(this::loadPkcs8FromLocation))
+                    .or(() -> Optional.ofNullable(publicKey)
                             .map(this::loadPkcs8))
-                    .or(() -> Optional.ofNullable(JwkKeys.builder().addKey(defaultJwk).build()))
+                    .or(() -> Optional.ofNullable(defaultJwk)
+                            .map(jwk -> JwkKeys.builder()
+                                    .addKey(jwk)
+                                    .build()))
                     .asOptional()
                     .orElseThrow(() -> new SecurityException("No public key or default JWK set."));
-            //TODO DEFAULT??!
         }
 
         private JwkKeys loadPublicKeyJWK(String jwkJson) {
@@ -584,11 +627,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             this.subjectType = subjectType;
 
             switch (subjectType) {
-                case USER:
-                case SERVICE:
-                    break;
-                default:
-                    throw new SecurityException("Invalid configuration. Principal type not supported: " + subjectType);
+            case USER:
+            case SERVICE:
+                break;
+            default:
+                throw new SecurityException("Invalid configuration. Principal type not supported: " + subjectType);
             }
 
             return this;
@@ -701,13 +744,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("atn-token.handler").asOptional(TokenHandler.class).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asOptionalString().ifPresent(this::expectedAudience);
+            config.get("atn-token.default-key-id").asOptionalString().ifPresent(this::defaultKeyId);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.parseTargets(outbound)));
             config.get("sign-token").ifExists(this::outbound);
-            config.get(CONFIG_PUBLIC_KEY).asOptionalString().ifPresent(this::publicKey);
-            config.get(CONFIG_PUBLIC_KEY_PATH).asOptionalString().ifPresent(this::publicKeyPath);
-            //TODO ???
-            config.get("default-jwk").asOptional(Jwk.class).ifPresent(this::defaultJwk);
-            config.get("default-key-id").asOptionalString().ifPresent(this::defaultKeyId);
+
+            org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
+            //mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY, String.class).ifPresent(this::publicKey);
+            mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
 
             return this;
         }
@@ -722,8 +765,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private void verifyKeys(Config config) {
-            verifyJwk(Resource.from(config, "jwk")
-                    .orElseThrow(() -> new JwtException("Failed to extract verify JWK from configuration")));
+            Resource.from(config, "jwk")
+                    .map(this::verifyJwk);
         }
 
         private void outbound(Config config) {

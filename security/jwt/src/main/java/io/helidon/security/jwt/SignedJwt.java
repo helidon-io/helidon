@@ -34,7 +34,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated
  * with a dot.
  */
-public class SignedJwt {
+public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
@@ -274,7 +274,7 @@ public class SignedJwt {
         if (null == alg) {
             if (null == kid) {
                 collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
-                jwk = defaultJwk == null ? Jwk.NONE_JWK : defaultJwk;
+                jwk = (defaultJwk == null) ? Jwk.NONE_JWK : defaultJwk;
                 alg = jwk.getAlgorithm();
             } else {
                 //null alg, non-null kid - will use alg of jwk

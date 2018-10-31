@@ -28,10 +28,11 @@ import javax.json.JsonValue;
 import io.helidon.common.OptionalHelper;
 import io.helidon.security.Principal;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
-
 import io.helidon.security.util.AbacSupport;
+
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -41,9 +42,10 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 public class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final Jwt jwt;
     private final SignedJwt signed;
+    private final String id;
 
     private final AbacSupport properties;
-
+    private final String name;
 
     JsonWebTokenImpl(Jwt jwt, SignedJwt signed) {
         this.jwt = jwt;
@@ -60,11 +62,20 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         jwt.getFullName().ifPresent(value -> container.put("full_name", value));
 
         this.properties = container;
+
+        String subject = jwt.getSubject()
+                .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
+
+        this.name = OptionalHelper.from(jwt.getUserPrincipal())
+                .or(jwt::getPreferredUsername).asOptional()
+                .orElse(subject);
+
+        this.id = subject;
     }
 
     @Override
     public String getName() {
-        return jwt.getUserPrincipal().get();
+        return name;
     }
 
     @Override
@@ -81,18 +92,18 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
 
     private Object getClaim(Claims claims) {
         switch (claims) {
-            case raw_token:
-                return signed.getTokenContent();
-            case groups:
-                return jwt.getUserGroups().map(HashSet::new).orElseGet(HashSet::new);
-            case aud:
-                return jwt.getAudience().map(HashSet::new).orElseGet(HashSet::new);
-            case email_verified:
-                return jwt.getEmailVerified().orElseGet(null);
-            case phone_number_verified:
-                return jwt.getPhoneNumberVerified().orElseGet(null);
-            default:
-                //do nothing, just continue to processing based on type
+        case raw_token:
+            return signed.getTokenContent();
+        case groups:
+            return jwt.getUserGroups().map(HashSet::new).orElseGet(HashSet::new);
+        case aud:
+            return jwt.getAudience().map(HashSet::new).orElseGet(HashSet::new);
+        case email_verified:
+            return jwt.getEmailVerified().orElseGet(null);
+        case phone_number_verified:
+            return jwt.getPhoneNumberVerified().orElseGet(null);
+        default:
+            //do nothing, just continue to processing based on type
         }
 
         String claimName = claims.name();
@@ -132,7 +143,6 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         return value;
     }
 
-
     @Override
     public Object getAttributeRaw(String key) {
         return properties.getAttributeRaw(key);
@@ -145,7 +155,6 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
 
     @Override
     public String getId() {
-        //TODO
-        return jwt.getJwtId().get();
+        return id;
     }
 }
