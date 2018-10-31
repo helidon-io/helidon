@@ -71,7 +71,7 @@ public class HeaderAtnProviderConfigTest extends HeaderAtnProviderTest {
                              .build())
                 .build();
 
-        AuthenticationResponse response = context.atnClientBuilder().get();
+        AuthenticationResponse response = context.atnClientBuilder().buildAndGet();
 
         assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
         assertThat(response.getUser(), is(not(Optional.empty())));

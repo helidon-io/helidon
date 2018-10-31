@@ -27,7 +27,7 @@
         <version>0.10.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-security</artifactId>
-    <name>Helidon Microprofile Security integration</name>
+    <name>Helidon Microprofile Security Integration</name>
 
     <description>
         Integration with Helidon Security
