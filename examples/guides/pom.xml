@@ -18,38 +18,22 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <groupId>io.helidon.guides</groupId>
+    <artifactId>helidon-guides-project</artifactId>
+    <packaging>pom</packaging>
+    <name>Helidon Guides</name>
 
-  <groupId>io.helidon.guides</groupId>
-  <artifactId>helidon-guides-project</artifactId>
-  <version>0.10.5-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  
-  <parent>
-      <groupId>io.helidon.examples</groupId>
-      <artifactId>helidon-examples-project</artifactId>
-      <version>0.10.5-SNAPSHOT</version>
-  </parent>
+    <description>
+        Project containing the Helidon Guides documentation and code
+    </description>
 
-  <name>helidon-guides-project</name>
-  <description>Project containing the Helidon Guides documentation and code</description>
-  <url>http://io.helidon</url>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
-  </properties>
-
-  <reporting>
-    <plugins>
-      <plugin>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </reporting>
-  
-  <modules>
-    <module>se-restful-webservice</module>
-  </modules>
+    <modules>
+        <module>se-restful-webservice</module>
+    </modules>
 </project>
