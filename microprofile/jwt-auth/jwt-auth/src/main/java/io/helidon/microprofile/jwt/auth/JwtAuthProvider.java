@@ -485,6 +485,20 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return new JwtAuthProvider(this);
         }
 
+        private JwkKeys createJwkKeys() {
+            return OptionalHelper
+                    .from(Optional.ofNullable(publicKeyPath)
+                            .map(this::loadPkcs8FromLocation))
+                    .or(() -> Optional.ofNullable(publicKey)
+                            .map(this::loadPkcs8))
+                    .or(() -> Optional.ofNullable(defaultJwk)
+                            .map(jwk -> JwkKeys.builder()
+                                    .addKey(jwk)
+                                    .build()))
+                    .asOptional()
+                    .orElseThrow(() -> new SecurityException("No public key or default JWK set."));
+        }
+
         private JwkKeys loadPkcs8FromLocation(String uri) {
             Path path = Paths.get(uri);
             if (Files.exists(path)) {
@@ -556,20 +570,6 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         private JwkKeys loadPublicKeyJWKBase64(String base64Encoded) {
             return loadPublicKeyJWK(new String(Base64.getUrlDecoder().decode(base64Encoded)));
-        }
-
-        private JwkKeys createJwkKeys() {
-            return OptionalHelper
-                    .from(Optional.ofNullable(publicKeyPath)
-                                  .map(this::loadPkcs8FromLocation))
-                    .or(() -> Optional.ofNullable(publicKey)
-                            .map(this::loadPkcs8))
-                    .or(() -> Optional.ofNullable(defaultJwk)
-                            .map(jwk -> JwkKeys.builder()
-                                    .addKey(jwk)
-                                    .build()))
-                    .asOptional()
-                    .orElseThrow(() -> new SecurityException("No public key or default JWK set."));
         }
 
         private JwkKeys loadPublicKeyJWK(String jwkJson) {

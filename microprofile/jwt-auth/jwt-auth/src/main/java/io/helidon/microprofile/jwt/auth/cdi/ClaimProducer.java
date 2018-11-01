@@ -13,21 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.Extension;
-import java.util.logging.Level;
+import org.eclipse.microprofile.jwt.Claim;
+
+import javax.enterprise.context.RequestScoped;
+import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.InjectionPoint;
+import javax.json.JsonString;
 
 /**
- * TODO javadoc.
+ * Class MetricProducer.
  */
-public class JwtAuthCdiExtension implements Extension {
+@RequestScoped
+public class ClaimProducer {
 
-    public void before(@Observes BeforeBeanDiscovery discovery) {
-        // Register beans manually
-        discovery.addAnnotatedType(ClaimProducer.class, "ClaimProducer");
+    @Produces
+    @Claim
+    public String produceClaim(InjectionPoint ip) {
+        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
+        return "";
     }
+
+    @Produces
+    @Claim
+    public JsonString produceJsonClaim(InjectionPoint ip) {
+        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
+        return null;
+    }
+
 
 }

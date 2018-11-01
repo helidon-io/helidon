@@ -69,9 +69,6 @@ class JwtAuthTest {
         @Claim("iss")
         private JsonString issuerJson;
 
-        @Inject
-        @Claim(standard = Claims.aud)
-        private Optional<ClaimValue<Set<String>>> audience;
 
         @Path("/hello")
         @GET

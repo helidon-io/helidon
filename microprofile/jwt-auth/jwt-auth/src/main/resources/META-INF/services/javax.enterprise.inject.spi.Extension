@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.microprofile.metrics.cdi.MetricsCdiExtension
+io.helidon.microprofile.jwt.auth.cdi.JwtAuthCdiExtension
