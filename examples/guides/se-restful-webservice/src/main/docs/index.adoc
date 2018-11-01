@@ -370,7 +370,7 @@ include::{main-class}[tags=importsHealth1;importsHealth2;importsHealth3]
 include::{main-class}[tag=ready]
 ----
 This method simply returns 200 so the client knows the service is up.
-. Add a new `health` method
+. Add a new `alive` method
 +
 [source,java]
 ----
@@ -583,8 +583,9 @@ a|[source,bash]
 |The total HTTP requests the Helidon web server received (and several values
 reflecting the request arrival rate)
 |====
-The request count is higher because of the access to `/metrics` to retrieve the
-monitoring data.
+The request count is higher because the access to `/metrics` to retrieve the
+monitoring data is _not_ handled by our app's rules and filters but by the 
+metrics infrastructure.
 
 == (Or, Download the Example Source)
 We think the guide is most useful if you follow along step-by-step, building
