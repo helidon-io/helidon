@@ -1082,7 +1082,7 @@ public interface Config {
                     .map(configList -> configList.stream()
                             .map(config -> config.map(mapper)) //map every single list item
                             .collect(Collectors.toList()));
-        } catch (ConfigMappingException ex) {
+        } catch (MissingValueException ex) {
             throw new ConfigMappingException(key(),
                                              "Error to map list element from config node. " + ex.getLocalizedMessage(),
                                              ex);
@@ -1117,7 +1117,7 @@ public interface Config {
                     .map(configList -> configList.stream()
                             .map(mapper::apply) //map every single list item
                             .collect(Collectors.toList()));
-        } catch (ConfigMappingException ex) {
+        } catch (MissingValueException ex) {
             throw new ConfigMappingException(key(),
                                              "Error to map list element from config node. " + ex.getLocalizedMessage(),
                                              ex);
@@ -1187,8 +1187,8 @@ public interface Config {
      * @return a supplier of a typed value or a default value
      * @see #as(Class, Object)
      */
-    default <T> Supplier<T> asSupplier(Class<? extends T> type, T defaultValue) {
-        return () -> context().last().as(type, defaultValue);
+    default <T> Supplier<T> asSupplier(Class<T> type, T defaultValue) {
+        return () -> context().last().asOptional(type).orElse(defaultValue);
     }
 
     /**

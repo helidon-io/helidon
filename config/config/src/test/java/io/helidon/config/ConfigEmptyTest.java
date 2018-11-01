@@ -19,13 +19,13 @@ package io.helidon.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-
-
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link Config#empty()} implementation.
@@ -49,7 +49,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsString() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             //separate lines to see the line that fails
             Config empty = Config.empty();
             empty.asString();
@@ -58,23 +58,19 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringDefault() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
-            assertThat(Config.empty().asString("default"), is("default"));
-        });
+        assertThat(Config.empty().asString("default"), is("default"));
     }
 
     @Test
     public void testAsInt() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Config.empty().asInt();
         });
     }
 
     @Test
     public void testAsIntDefault() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
-            assertThat(Config.empty().asInt(5), is(5));
-        });
+        assertThat(Config.empty().asInt(5), is(5));
     }
 
     @Test
@@ -110,7 +106,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testMap() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Config.empty().map(ConfigMappers::toBigInteger);
         });
     }
@@ -132,7 +128,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             // separate lines to see which statement fails
             Config empty = Config.empty();
             Supplier<String> supp = empty.asStringSupplier();
@@ -142,23 +138,19 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringDefaultSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
-            assertThat(Config.empty().asStringSupplier("default").get(), is("default"));
-        });
+        assertThat(Config.empty().asStringSupplier("default").get(), is("default"));
     }
 
     @Test
     public void testAsIntSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Config.empty().asIntSupplier().get();
         });
     }
 
     @Test
     public void testAsIntDefaultSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
-            assertThat(Config.empty().asIntSupplier(5).get(), is(5));
-        });
+        assertThat(Config.empty().asIntSupplier(5).get(), is(5));
     }
 
     @Test
@@ -194,7 +186,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testMapSupplier() {
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Config.empty().mapSupplier(ConfigMappers::toBigInteger).get();
         });
     }

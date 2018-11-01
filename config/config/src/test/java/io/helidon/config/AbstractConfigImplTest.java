@@ -308,17 +308,6 @@ public abstract class AbstractConfigImplTest {
                        "str-list-" + level + "@LIST");
     }
 
-    public static String[] listNames() {
-        return CollectionsHelper.listOf("0@VALUE",
-                       "1@OBJECT",
-                       "2@LIST",
-                       "3@VALUE",
-                       "4@VALUE",
-                       "5@VALUE",
-                       "6@VALUE",
-                       "7@LIST")
-                .toArray(new String[0]);
-    }
 
     public static List<String> nodeNames(List<Config> nodeList) {
         return nodeList.stream()

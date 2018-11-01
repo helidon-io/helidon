@@ -58,17 +58,9 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
         if (null != value) {
             return Optional.ofNullable(filter.apply(realKey(), value));
         } else {
-            switch (type()) {
-            case VALUE:
-                return Optional.empty();
-            case OBJECT:
-            case MISSING:
-            case LIST:
-            default:
-                throw new ConfigMappingException(key(),
-                                                 "The Config node represents complex value and does not have a direct value .");
-
-            }
+            // even if this is a tree node, we want to return empty, as this node does not have a value
+            // and that is a good state (as complex nodes are allowed to have a direct value)
+            return Optional.empty();
         }
     }
 
@@ -79,7 +71,12 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
 
     @Override
     public final <T> Optional<T> asOptional(Class<? extends T> type) throws ConfigMappingException {
-        return Optional.ofNullable(mapperManager.map(type, this));
+        try {
+            return Optional.ofNullable(mapperManager.map(type, this));
+        } catch (MissingValueException ignored) {
+            // if we are missing a value, we return empty, should not propagate it further!
+            return Optional.empty();
+        }
     }
 
     @Override

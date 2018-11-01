@@ -16,7 +16,9 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.serviceconfiguration</groupId>
@@ -25,6 +27,7 @@
     </parent>
     <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
     <name>Helidon ServiceConfiguration HikariCP ACCS</name>
+
     <description>
         Helidon HikariCP ServiceConfiguration Implementation for Application Container Cloud Service
     </description>
@@ -59,4 +62,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!--
+        com.oracle:jdbc:odjbc8 requires the maven oracle repository
+    -->
+    <repositories>
+        <repository>
+            <id>maven.oracle.com</id>
+            <url>https://maven.oracle.com</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
 </project>
