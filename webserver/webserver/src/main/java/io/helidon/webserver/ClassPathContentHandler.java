@@ -56,13 +56,20 @@ class ClassPathContentHandler extends FileSystemContentHandler {
         URL url = classLoader.getResource(path.toString());
         if (url == null) {
             return false;
-        } else {
-            // If URL exists then it can be directory and we have to try locate a welcome page
-            String welcomePageName = getWelcomePageName();
-            if (welcomePageName != null && !welcomePageName.isEmpty()) {
-                URL welcomeUrl = classLoader.getResource(path.resolve(welcomePageName).toString());
-                if (welcomeUrl != null) {
+        }
+
+        // If URL exists then it can be directory and we have to try locate a welcome page
+        String welcomePageName = getWelcomePageName();
+        if ((welcomePageName != null) && !welcomePageName.isEmpty()) {
+            URL welcomeUrl = classLoader.getResource(path.resolve(welcomePageName).toString());
+            if (welcomeUrl != null) {
+                // we must redirect to this endpoint, as otherwise we may have invalid relative references from the welcome file
+                String rawFullPath = request.uri().getRawPath();
+                if (rawFullPath.endsWith("/")) {
                     url = welcomeUrl;
+                } else {
+                    redirect(response, rawFullPath + "/");
+                    return true;
                 }
             }
         }
