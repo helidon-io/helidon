@@ -14,7 +14,7 @@ reviewing changes done by others.
     3. Unit testing is enabled through package local access (not public!)
     4. Be aware that any public class and its public methods are part of Helidon API and will require careful maintenance
     5. Do not rely on java module system (JPMS/Jigsaw) to enforce visibility
-    6. If a set of classes seems to require a separate package, maybe it is a good candidate for a separate module
+    6. If a set of classes seems to require a separate package, it is a good candidate for a separate module
         1. Example: _there could be a package for each "abac" module in "abac" security provider. Even though these modules 
             are mostly very small, these were extract to standalone modules, not to break the rule of flat package 
             structure. In general this helps enforce the rule of separation of concerns - if you feel you need a new package, 
@@ -33,7 +33,10 @@ reviewing changes done by others.
 
 # Configuration and programmatic API
 1. **Everything that can be done using config, must be possible using programmatic approach through builders**
-    1. Everything that can be done using builders should be possible also using configuration, 
+    1. Exceptions:
+        1. CDI components configured from a CDI Extension (we still have support for explicitly defining the extension in 
+                Server Builder)
+1. Everything that can be done using builders should be possible also using configuration, 
         except for cases that would mandate usage of reflection 
         (such an exception may be configuration of Routing in WebServer - nevertheless we still may support 
             it (emphasis on "may" rather than "should"), or configuration of security for Jersey resources)
