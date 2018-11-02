@@ -40,6 +40,7 @@
         <module>zipkin</module>
         <module>prometheus</module>
         <module>bundles</module>
+        <module>synchronous</module>
         <module>examples</module>
     </modules>
 </project>

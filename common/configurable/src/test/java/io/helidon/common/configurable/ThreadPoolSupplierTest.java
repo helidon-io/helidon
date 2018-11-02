@@ -20,8 +20,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +55,13 @@ class ThreadPoolSupplierTest {
 
         configuredInstance = ThreadPoolSupplier.create(Config.create().get("unit.thread-pool"))
                 .get();
+    }
+
+    @AfterAll
+    static void destroyClass() {
+        assertThat(defaultInstance.shutdownNow(), is(CollectionsHelper.listOf()));
+        assertThat(builtInstance.shutdownNow(), is(CollectionsHelper.listOf()));
+        assertThat(configuredInstance.shutdownNow(), is(CollectionsHelper.listOf()));
     }
 
     @Test
