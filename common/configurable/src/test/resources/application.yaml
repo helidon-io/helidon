@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+unit:
+  thread-pool:
+    core-pool-size: 3
+    queue-capacity: 15
+    is-daemon: false
+    thread-name-prefix: "thread-pool-config-unit-test-"
+    should-prestart: false
 
 test-1:
   resource-path: "src/test/resources/sample.txt"

@@ -24,6 +24,7 @@ module io.helidon.security {
     requires java.logging;
 
     requires transitive io.helidon.common;
+    requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
     requires transitive opentracing.api;
