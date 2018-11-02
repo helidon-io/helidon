@@ -24,131 +24,169 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 
 /**
- * Class BulkheadHelper.
+ * Helper class to keep track of invocations associated with a bulkhead.
  */
 public class BulkheadHelper {
 
-    static class CommandData {
-
-        private final int queueSize;
-
-        private Set<FaultToleranceCommand> runningCommands = new HashSet<>();
-
-        private Set<FaultToleranceCommand> allCommands = new HashSet<>();
-
-        CommandData(int queueSize) {
-            this.queueSize = queueSize;
-        }
-
-        synchronized boolean isQueueFull() {
-            return runningCommands.size() == queueSize;
-        }
-
-        synchronized void addCommand(FaultToleranceCommand command) {
-            allCommands.add(command);
-        }
-
-        synchronized void removeCommand(FaultToleranceCommand command) {
-            allCommands.remove(command);
-        }
-
-        synchronized int runningCommands() {
-            return runningCommands.size();
-        }
-
-        synchronized void markAsRunning(FaultToleranceCommand command) {
-            runningCommands.add(command);
-        }
-
-        synchronized void markAsNotRunning(FaultToleranceCommand command) {
-            runningCommands.remove(command);
-        }
-
-        synchronized int waitingCommands() {
-            return allCommands.size() - runningCommands.size();
-        }
-    }
-
-    private static final Map<String, CommandData> COMMAND_STATS = new ConcurrentHashMap<>();
-
-    private final FaultToleranceCommand command;
-
-    private final CommandData commandData;
-
-    BulkheadHelper(FaultToleranceCommand command, Bulkhead bulkhead) {
-        this.command = command;
-        this.commandData = COMMAND_STATS.computeIfAbsent(
-            command.getCommandKey().toString(),
-            d -> new CommandData(bulkhead.waitingTaskQueue()));
-    }
-
     /**
-     * Track a new command instance related to a key.
-     *
-     * @param command Command instance.
+     * A command ID is unique to an target (object) and method. A {@link
+     * FaultToleranceCommand} instance is created for each invocation of that
+     * target/method pair and is assigned the same invocation ID. This class
+     * collects information about all those invocations, including their state:
+     * waiting or running.
      */
-    void addCommand(FaultToleranceCommand command) {
-        commandData.addCommand(command);
+    static class InvocationData {
+
+        /**
+         * Maximum number of concurrent invocations.
+         */
+        private final int maxRunningInvocations;
+
+        /**
+         * The waiting queue size.
+         */
+        private final int waitingQueueSize;
+
+        /**
+         * All invocations in running state. Must be a subset of {@link #allInvocations}.
+         */
+        private Set<FaultToleranceCommand> runningInvocations = new HashSet<>();
+
+        /**
+         * All invocations associated with a invocation.
+         */
+        private Set<FaultToleranceCommand> allInvocations = new HashSet<>();
+
+        InvocationData(int maxRunningCommands, int waitingQueueSize) {
+            this.maxRunningInvocations = maxRunningCommands;
+            this.waitingQueueSize = waitingQueueSize;
+        }
+
+        synchronized boolean isWaitingQueueFull() {
+            return waitingInvocations() == waitingQueueSize;
+        }
+
+        synchronized boolean isAtMaxRunningInvocations() {
+            return runningInvocations.size() == maxRunningInvocations;
+        }
+
+        synchronized void trackInvocation(FaultToleranceCommand invocation) {
+            allInvocations.add(invocation);
+        }
+
+        synchronized void untrackInvocation(FaultToleranceCommand invocation) {
+            allInvocations.remove(invocation);
+        }
+
+        synchronized int runningInvocations() {
+            return runningInvocations.size();
+        }
+
+        synchronized void markAsRunning(FaultToleranceCommand invocation) {
+            runningInvocations.add(invocation);
+        }
+
+        synchronized void markAsNotRunning(FaultToleranceCommand invocation) {
+            runningInvocations.remove(invocation);
+        }
+
+        synchronized int waitingInvocations() {
+            return allInvocations.size() - runningInvocations.size();
+        }
     }
 
     /**
-     * Stop tracking a command instance.
-     *
-     * @param command Command instance.
+     * Tracks all invocations associated with a command ID.
      */
-    void removeCommand(FaultToleranceCommand command) {
-        commandData.removeCommand(command);
-    }
+    private static final Map<String, InvocationData> COMMAND_STATS = new ConcurrentHashMap<>();
 
     /**
-     * Mark a command instance as running.
-     *
-     * @param command Command instance.
+     * Command key.
      */
-    void markAsRunning(FaultToleranceCommand command) {
-        commandData.markAsRunning(command);
-    }
+    private final String commandKey;
 
     /**
-     * Mark a command instance as terminated.
-     *
-     * @param command Command instance.
+     * Annotation instance.
      */
-    void markAsNotRunning(FaultToleranceCommand command) {
-        commandData.markAsNotRunning(command);
+    private final Bulkhead bulkhead;
+
+    BulkheadHelper(String commandKey, Bulkhead bulkhead) {
+        this.commandKey = commandKey;
+        this.bulkhead = bulkhead;
+    }
+
+    private InvocationData invocationData() {
+        return COMMAND_STATS.computeIfAbsent(
+                commandKey,
+                d -> new InvocationData(bulkhead.value(), bulkhead.waitingTaskQueue()));
     }
 
     /**
-     * Get the number of commands that are running.
-     *
-     * @return Number of commands running.
+     * Track a new invocation instance related to a key.
      */
-    int runningCommands() {
-        return commandData.runningCommands();
+    void trackInvocation(FaultToleranceCommand invocation) {
+        invocationData().trackInvocation(invocation);
     }
 
     /**
-     * Get the number of commands that are waiting.
-     *
-     * @return Number of commands waiting.
+     * Stop tracking a invocation instance.
      */
-    int waitingCommands() {
-        return commandData.waitingCommands();
+    void untrackInvocation(FaultToleranceCommand invocation) {
+        invocationData().untrackInvocation(invocation);
+
+        // Attempt to cleanup state when not in use
+        if (runningInvocations() == 0 && waitingInvocations() == 0) {
+            COMMAND_STATS.remove(commandKey);
+        }
     }
 
     /**
-     * Check if the command queue is full.
+     * Mark a invocation instance as running.
+     */
+    void markAsRunning(FaultToleranceCommand invocation) {
+        invocationData().markAsRunning(invocation);
+    }
+
+    /**
+     * Mark a invocation instance as terminated.
+     */
+    void markAsNotRunning(FaultToleranceCommand invocation) {
+        invocationData().markAsNotRunning(invocation);
+    }
+
+    /**
+     * Get the number of invocations that are running.
+     *
+     * @return Number of invocations running.
+     */
+    int runningInvocations() {
+        return invocationData().runningInvocations();
+    }
+
+    /**
+     * Get the number of invocations that are waiting.
+     *
+     * @return Number of invocations waiting.
+     */
+    int waitingInvocations() {
+        return invocationData().waitingInvocations();
+    }
+
+    /**
+     * Check if the invocation queue is full.
      *
      * @return Outcome of test.
      */
-    boolean isQueueFull() {
-        return commandData.isQueueFull();
+    boolean isWaitingQueueFull() {
+        return invocationData().isWaitingQueueFull();
     }
 
     /**
-     * Clear underlying command cache.
+     * Check if at maximum number of running invocations.
+     *
+     * @return Outcome of test.
      */
-    static void clearCache() {
-        COMMAND_STATS.clear();
+    boolean isAtMaxRunningInvocations() {
+        return invocationData().isAtMaxRunningInvocations();
     }
 }

@@ -18,20 +18,50 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class CommandExecutor.
  */
 public class CommandExecutor {
 
-    private static final int THREAD_POOL_SIZE = 16;      // TODO config
+    private static final int THREAD_POOL_SIZE = 16;
 
-    private static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
+    private static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(
+            THREAD_POOL_SIZE, new HelidonFaultToleranceThreadFactory());
 
     public static ScheduledExecutorService getExecutorService() {
         return EXECUTOR;
     }
 
     private CommandExecutor() {
+    }
+
+    static class HelidonFaultToleranceThreadFactory implements ThreadFactory {
+        private static final AtomicInteger POOL_NUMBER = new AtomicInteger(1);
+
+        private final ThreadGroup group;
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+        private final String namePrefix;
+
+        HelidonFaultToleranceThreadFactory() {
+            SecurityManager s = System.getSecurityManager();
+            group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
+            namePrefix = "helidon-fault-tolerance-" + POOL_NUMBER.getAndIncrement() + "-thread-";
+        }
+
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r,
+                    namePrefix + threadNumber.getAndIncrement(),
+                    0);
+            if (t.isDaemon()) {
+                t.setDaemon(false);
+            }
+            if (t.getPriority() != Thread.NORM_PRIORITY) {
+                t.setPriority(Thread.NORM_PRIORITY);
+            }
+            return t;
+        }
     }
 }

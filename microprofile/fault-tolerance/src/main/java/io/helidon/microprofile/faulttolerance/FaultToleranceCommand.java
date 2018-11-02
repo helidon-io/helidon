@@ -128,8 +128,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                                    .withQueueSizeRejectionThreshold(
                                                        introspector.hasBulkhead()
                                                        ? introspector.getBulkhead().waitingTaskQueue()
-                                                       : MAX_THREAD_POOL_QUEUE_SIZE
-                                                   )));
+                                                       : MAX_THREAD_POOL_QUEUE_SIZE)));
         this.commandKey = commandKey;
         this.introspector = introspector;
         this.context = context;
@@ -154,23 +153,22 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         }
 
         if (introspector.hasBulkhead()) {
-            bulkheadHelper = new BulkheadHelper(this, introspector.getBulkhead());
+            bulkheadHelper = new BulkheadHelper(commandKey, introspector.getBulkhead());
             // Record instance if command is getting queued
-            if (bulkheadHelper.isQueueFull()) {
+            if (bulkheadHelper.isAtMaxRunningInvocations()) {
                 queuedNanos = System.nanoTime();
             }
-            bulkheadHelper.addCommand(this);
 
-            // Register guages for this method
+            // Register gauges for this method
             FaultToleranceMetrics.registerGauge(introspector.getMethod(),
                                                 FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS,
                                                 "Number of currently running executions",
-                                                () -> bulkheadHelper.runningCommands());
+                                                () -> bulkheadHelper.runningInvocations());
             if (introspector.isAsynchronous()) {
                 FaultToleranceMetrics.registerGauge(introspector.getMethod(),
                                                     FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION,
                                                     "Number of executions currently waiting in the queue",
-                                                    () -> bulkheadHelper.waitingCommands());
+                                                    () -> bulkheadHelper.waitingInvocations());
             }
         }
     }
@@ -189,7 +187,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     }
 
     /**
-     * Code to run as part of this command.
+     * Code to run as part of this command. Called from superclass.
      *
      * @return Result of command.
      * @throws Exception If an error occurs.
@@ -198,6 +196,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     public Object run() throws Exception {
         if (introspector.hasBulkhead()) {
             bulkheadHelper.markAsRunning(this);
+
             // Update waiting time histogram
             if (introspector.isAsynchronous() && queuedNanos != -1L) {
                 FaultToleranceMetrics.getHistogram(introspector.getMethod(), FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
@@ -205,13 +204,14 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             }
         }
 
-        // Command execution
-        Object result = context.proceed();
-
-        if (introspector.hasBulkhead()) {
-            bulkheadHelper.markAsNotRunning(this);
+        // Finally, invoke the user method
+        try {
+            return context.proceed();
+        } finally {
+            if (introspector.hasBulkhead()) {
+                bulkheadHelper.markAsNotRunning(this);
+            }
         }
-        return result;
     }
 
     /**
@@ -236,6 +236,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         // Record state of breaker
         boolean wasBreakerOpen = isCircuitBreakerOpen();
 
+        // Track invocation in a bulkhead
+        if (introspector.hasBulkhead()) {
+            bulkheadHelper.trackInvocation(this);
+        }
+
         // Execute command
         Object result = null;
         Throwable throwable = null;
@@ -245,6 +250,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         } catch (Throwable t) {
             throwable = t;
         }
+
         executionTime = System.nanoTime() - startNanos;
         boolean hasFailed = (throwable != null);
 
@@ -313,9 +319,9 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
         }
 
-        // Update bulkhead helper
+        // Untrack invocation in a bulkhead
         if (introspector.hasBulkhead()) {
-            bulkheadHelper.removeCommand(this);
+            bulkheadHelper.untrackInvocation(this);
         }
 
         // Outcome of execution

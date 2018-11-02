@@ -114,10 +114,9 @@ public class CommandRetrier {
      * Retries running a command according to retry policy.
      *
      * @return Object returned by command.
-     * @throws Throwable If something fails.
      */
     @SuppressWarnings("unchecked")
-    public Object execute() throws Throwable {
+    public Object execute() {
         LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
         final ScheduledExecutorService executor = CommandExecutor.getExecutorService();
 
@@ -153,7 +152,7 @@ public class CommandRetrier {
 
         Object result;
         try {
-            LOGGER.info("About to execute command with key " + commandKey);
+            LOGGER.info("About to execute command with key " + command.getCommandKey());
             updateMetricsBefore();
             result = command.execute();
             updateMetricsAfter(null);
