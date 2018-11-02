@@ -47,7 +47,7 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final AbacSupport properties;
     private final String name;
 
-    JsonWebTokenImpl(Jwt jwt, SignedJwt signed) {
+    public JsonWebTokenImpl(Jwt jwt, SignedJwt signed) {
         this.jwt = jwt;
         this.signed = signed;
         BasicAttributes container = new BasicAttributes();

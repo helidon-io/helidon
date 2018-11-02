@@ -44,6 +44,7 @@ class JwtAuthTest {
     void testIt() {
         Server server = Server.create(MyApp.class);
         server.start();
+        System.out.println();
     }
 
     @LoginConfig(authMethod = "MP-JWT", realmName = "Helidon")
@@ -69,6 +70,9 @@ class JwtAuthTest {
         @Claim("iss")
         private JsonString issuerJson;
 
+        @Inject
+        @Claim(standard = Claims.aud)
+        private Optional<ClaimValue<Set<String>>> audience;
 
         @Path("/hello")
         @GET

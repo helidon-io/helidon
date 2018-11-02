@@ -16,8 +16,13 @@
 
 package io.helidon.microprofile.jwt.auth.cdi;
 
+import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.Jwk;
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
@@ -32,30 +37,16 @@ import java.util.Set;
  * Class MetricProducer.
  */
 @RequestScoped
-public class ClaimProducer {
+public class JsonWebTokenProducer {
 
     @Context
     private SecurityContext securityContext;
 
     @Produces
-    @Claim
-    public String produceClaim(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return "";
-    }
-
-    @Produces
-    @Claim
-    public JsonString produceJsonClaim(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return null;
-    }
-
-    @Produces
-    @Claim
-    public Optional<ClaimValue<Set<String>>> produceClaimValueSet(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return null;
+    public JsonWebToken produceClaim(InjectionPoint ip) {
+        Jwt jwt = Jwt.builder().subject("TypekLibovej").build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
+        return new JsonWebTokenImpl(jwt, signedJwt);
     }
 
 
