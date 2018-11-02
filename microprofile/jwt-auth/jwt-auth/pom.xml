@@ -49,6 +49,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile</groupId>
+            <artifactId>helidon-microprofile-security</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
             <version>${project.version}</version>
@@ -62,7 +68,7 @@
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
-            <version>0.10.2-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

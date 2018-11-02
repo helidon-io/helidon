@@ -15,12 +15,9 @@
  */
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import org.eclipse.microprofile.jwt.JsonWebToken;
-
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
-import java.util.logging.Level;
 
 /**
  * TODO javadoc.
@@ -30,7 +27,6 @@ public class JwtAuthCdiExtension implements Extension {
     public void before(@Observes BeforeBeanDiscovery discovery) {
         // Register beans manually
         discovery.addAnnotatedType(ClaimProducer.class, "ClaimProducer");
-        discovery.addAnnotatedType(JsonWebTokenProducer.class, "JsonWebTokenProducer");
     }
 
 }

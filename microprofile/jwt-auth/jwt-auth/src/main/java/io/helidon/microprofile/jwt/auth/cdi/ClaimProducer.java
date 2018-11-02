@@ -16,39 +16,54 @@
 
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import org.eclipse.microprofile.jwt.Claim;
-import org.eclipse.microprofile.jwt.ClaimValue;
-
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.json.JsonString;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.SecurityContext;
 import java.util.Optional;
 import java.util.Set;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Produces;
+import javax.enterprise.inject.spi.InjectionPoint;
+import javax.json.Json;
+import javax.json.JsonString;
+import javax.ws.rs.core.Context;
+
+import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
+import io.helidon.security.jwt.jwk.Jwk;
+
+import org.eclipse.microprofile.jwt.Claim;
+import org.eclipse.microprofile.jwt.ClaimValue;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * Class MetricProducer.
  */
-@RequestScoped
+@ApplicationScoped
 public class ClaimProducer {
 
     @Context
     private SecurityContext securityContext;
 
     @Produces
+    public JsonWebToken produceToken(InjectionPoint ip) {
+        Jwt jwt = Jwt.builder().subject("TypekLibovej").build();
+        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
+        return new JsonWebTokenImpl(jwt, signedJwt);
+    }
+
+    @Produces
     @Claim
     public String produceClaim(InjectionPoint ip) {
         Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return "";
+        return "InjectedClaim";
     }
 
     @Produces
     @Claim
     public JsonString produceJsonClaim(InjectionPoint ip) {
         Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return null;
+        return Json.createValue("Injected claim");
     }
 
     @Produces
