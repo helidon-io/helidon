@@ -27,6 +27,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
