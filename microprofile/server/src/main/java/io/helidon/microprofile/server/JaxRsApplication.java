@@ -16,12 +16,13 @@
 
 package io.helidon.microprofile.server;
 
-import org.glassfish.jersey.server.ResourceConfig;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  * A JAX-RS application to be registered.

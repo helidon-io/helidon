@@ -16,24 +16,39 @@
 
 package io.helidon.microprofile.server;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.server.spi.MpService;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.glassfish.jersey.server.ResourceConfig;
+import java.lang.annotation.Annotation;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.ConversationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.SessionScoped;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.core.Application;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
-import java.util.logging.Logger;
+
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.microprofile.config.MpConfig;
+import io.helidon.microprofile.server.spi.MpService;
+
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  * Microprofile server.
@@ -135,6 +150,15 @@ public interface Server {
     final class Builder {
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
+        private static final Set<Class<? extends Annotation>> CDI_ANNOTATIONS = new HashSet<>();
+
+        static {
+            CDI_ANNOTATIONS.add(RequestScoped.class);
+            CDI_ANNOTATIONS.add(ApplicationScoped.class);
+            CDI_ANNOTATIONS.add(ConversationScoped.class);
+            CDI_ANNOTATIONS.add(SessionScoped.class);
+            CDI_ANNOTATIONS.add(Dependent.class);
+        }
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
         private final List<MpService> extensions = new LinkedList<>();
@@ -300,17 +324,9 @@ public interface Server {
         }
 
         private boolean notACdiBean(Class<?> clazz) {
-            if (clazz.getAnnotation(RequestScoped.class) != null) {
-                // CDI bean
-                return false;
-            }
-
-            if (clazz.getAnnotation(ApplicationScoped.class) != null) {
-                //CDI bean
-                return false;
-            }
-
-            return true;
+            return CDI_ANNOTATIONS.stream()
+                    .map(clazz::getAnnotation)
+                    .noneMatch(Objects::nonNull);
         }
 
         /**

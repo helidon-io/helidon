@@ -16,6 +16,28 @@
 
 package io.helidon.microprofile.server;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import javax.annotation.Priority;
+import javax.enterprise.inject.se.SeContainer;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -27,24 +49,8 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
-import org.glassfish.jersey.server.ResourceConfig;
 
-import javax.annotation.Priority;
-import javax.enterprise.inject.se.SeContainer;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  * Server to handle lifecycle of microprofile implementation.
