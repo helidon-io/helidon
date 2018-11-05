@@ -150,7 +150,7 @@ public final class MetricsSupport implements Service {
      * @return true if passed headers prefer data in JSON format.
      */
     static boolean requestsJsonData(RequestHeaders headers) {
-        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN);
+        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
         boolean requestsJson =  mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
 
         if (LOGGER.isLoggable(Level.FINE)) {
