@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
 import javax.interceptor.InvocationContext;
@@ -25,14 +24,11 @@ import javax.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * Class CommandFallback.
  */
 class CommandFallback {
-    private static final Logger LOGGER = Logger.getLogger(CommandFallback.class.getName());
 
     private final InvocationContext context;
 
