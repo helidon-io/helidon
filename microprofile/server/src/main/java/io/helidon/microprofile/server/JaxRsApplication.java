@@ -16,13 +16,12 @@
 
 package io.helidon.microprofile.server;
 
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+import org.glassfish.jersey.server.ResourceConfig;
 
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
-
-import org.glassfish.jersey.server.ResourceConfig;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 /**
  * A JAX-RS application to be registered.
@@ -37,6 +36,7 @@ public final class JaxRsApplication {
     private final String contextRoot;
     private final ResourceConfig config;
     private final ExecutorService executorService;
+    private final Class<? extends Application> applicationClass;
 
     /**
      * Create a new instance based on an JAX-RS Application class.
@@ -71,21 +71,26 @@ public final class JaxRsApplication {
         return new Builder();
     }
 
-    private JaxRsApplication(String contextRoot, ResourceConfig config, ExecutorService executorService) {
-        this.contextRoot = contextRoot;
-        this.config = config;
-        this.executorService = executorService;
+    private JaxRsApplication(Builder builder) {
+        this.contextRoot = builder.contextRoot;
+        this.config = builder.config;
+        this.executorService = builder.executorService;
+        this.applicationClass = builder.appClass;
     }
 
-    String getContextRoot() {
+    Optional<Class<? extends Application>> applicationClass() {
+        return Optional.ofNullable(applicationClass);
+    }
+
+    String contextRoot() {
         return contextRoot;
     }
 
-    ResourceConfig getConfig() {
+    ResourceConfig resourceConfig() {
         return config;
     }
 
-    Optional<ExecutorService> getExecutorService() {
+    Optional<ExecutorService> executorService() {
         return Optional.ofNullable(executorService);
     }
 
@@ -97,6 +102,7 @@ public final class JaxRsApplication {
         private String contextRoot;
         private ResourceConfig config;
         private ExecutorService executorService;
+        private Class<? extends Application> appClass;
 
         /**
          * Configure an explicit context root for this application.
@@ -133,6 +139,7 @@ public final class JaxRsApplication {
          * @see #config(ResourceConfig)
          */
         public Builder application(Application app) {
+            this.appClass = app.getClass();
             this.config = toConfig(app);
             if (null == this.contextRoot) {
                 this.contextRoot = getContextRoot(app.getClass());
@@ -150,7 +157,8 @@ public final class JaxRsApplication {
          * @see #config(ResourceConfig)
          */
         public Builder application(Class<? extends Application> appClass) {
-            config = ResourceConfig.forApplicationClass(appClass);
+            this.appClass = appClass;
+            this.config = ResourceConfig.forApplicationClass(appClass);
             if (null == this.contextRoot) {
                 this.contextRoot = getContextRoot(appClass);
             }
@@ -179,7 +187,7 @@ public final class JaxRsApplication {
                 contextRoot = DEFAULT_CONTEXT_ROOT;
             }
 
-            return new JaxRsApplication(contextRoot, config, executorService);
+            return new JaxRsApplication(this);
         }
 
         private static ResourceConfig toConfig(Application application) {

@@ -16,28 +16,6 @@
 
 package io.helidon.microprofile.server;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.file.Path;
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
-import javax.annotation.Priority;
-import javax.enterprise.inject.se.SeContainer;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -49,8 +27,24 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
-
 import org.glassfish.jersey.server.ResourceConfig;
+
+import javax.annotation.Priority;
+import javax.enterprise.inject.se.SeContainer;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Server to handle lifecycle of microprofile implementation.
@@ -111,7 +105,7 @@ public class ServerImpl implements Server {
 
         STARTUP_LOGGER.finest("Extensions loaded");
 
-        applications.stream().map(JaxRsApplication::getConfig).forEach(resourceConfig -> {
+        applications.stream().map(JaxRsApplication::resourceConfig).forEach(resourceConfig -> {
             // do not remove the "new ExceptionMapper<Exception>", as otherwise Jersey loses the generics info and does not
             // trigger the handler
             resourceConfig.register(new ExceptionMapper<Exception>() {
@@ -164,15 +158,15 @@ public class ServerImpl implements Server {
 
         applications
                 .forEach(app -> {
-                    JerseySupport js = JerseySupport.builder(app.getConfig())
-                            .executorService(app.getExecutorService()
+                    JerseySupport js = JerseySupport.builder(app.resourceConfig())
+                            .executorService(app.executorService()
                                                      .orElseGet(builder::getDefaultExecutorService))
                             .build();
 
-                    if ("/".equals(app.getContextRoot())) {
+                    if ("/".equals(app.contextRoot())) {
                         routingBuilder.register(js);
                     } else {
-                        routingBuilder.register(app.getContextRoot(), js);
+                        routingBuilder.register(app.contextRoot(), js);
                     }
                 });
 
@@ -215,7 +209,7 @@ public class ServerImpl implements Server {
             @Override
             public List<ResourceConfig> getApplications() {
                 return apps.stream()
-                        .map(JaxRsApplication::getConfig)
+                        .map(JaxRsApplication::resourceConfig)
                         .collect(Collectors.toList());
             }
 

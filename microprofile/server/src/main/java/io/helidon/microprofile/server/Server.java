@@ -16,17 +16,13 @@
 
 package io.helidon.microprofile.server;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
-import java.util.logging.Logger;
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.microprofile.config.MpConfig;
+import io.helidon.microprofile.server.spi.MpService;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.glassfish.jersey.server.ResourceConfig;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
@@ -34,15 +30,10 @@ import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.core.Application;
-
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.server.spi.MpService;
-
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.glassfish.jersey.server.ResourceConfig;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 /**
  * Microprofile server.
@@ -285,13 +276,22 @@ public interface Server {
                     .filter(this::notACdiBean)
                     .forEach(initializer::addBeanClasses);
 
-
-            this.applications.stream()
-                    .map(JaxRsApplication::getConfig)
-                    .map(ResourceConfig::getClasses)
-                    .flatMap(Set::stream)
-                    .filter(this::notACdiBean)
-                    .forEach(initializer::addBeanClasses);
+            // add application classes without CDI annotations (and their resources if configured as an instance)
+            this.applications.forEach(app -> {
+                ResourceConfig config = app.resourceConfig();
+                // the config may be for an application class rather than application instance
+                // if we use a class, then we cannot obtain the resources :(
+                if (config.getApplication() == null) {
+                    app.applicationClass()
+                            .filter(this::notACdiBean)
+                            .ifPresent(initializer::addBeanClasses);
+                } else {
+                    Set<Class<?>> classes = config.getApplication().getClasses();
+                    classes.stream()
+                            .filter(this::notACdiBean)
+                            .forEach(initializer::addBeanClasses);
+                }
+            });
 
             STARTUP_LOGGER.finest("Initializer");
             SeContainer container = initializer.initialize();
