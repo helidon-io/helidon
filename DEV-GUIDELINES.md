@@ -171,8 +171,21 @@ but: was "Requested value for configuration key 'list-1.1' is not present in the
     3. The name should be "reactor" friendly - it should not overflow
     4. The name is a name, not a sentence - it does not have to be grammatically correct 
 5. All java modules that are expected to be used by our users MUST be defined in our [bom pom](bom/pom.xml)
-6. Bundles may be created, thoua sengh we still must give our users the freedom to pick and choose modules directly  
+6. Bundles may be created, though we still must give our users the freedom to pick and choose modules directly
+    1. Avoid bundling third party dependencies that may bring unexpected libraries in (e.g. Google Login provider)
+    2. $root/bundles - SE bundles (groupId: io.helidon.bundles)
+    3. microprofile/bundles - MP bundles
+    4. Bundles are for end users, not for internal use
 7. Java EE components and Microprofile specifications should be in "provided" scope unless you are implementing
     the spec itself
+    1. Analyze the dependencies of your module and choose the correct maven scope and module-info.java dependency declaration
+    2. Mapping to module-info.java
+        1. compile -> requires
+        2. optional -> requires static
+        3. provided -> requires
+        4. runtime -> "requires" or "requires static" depending on requirements
+                    note that "requires static" only works if the module is required by any other module used, otherwise
+                    it does not end up on module path even if it is on the class path 
+    3. Use transitive in module-info.java for your dependencies that are part of public API of the module
 8. Carefully choose scope for dependencies on other helidon modules (e.g. microprofile extensions should have
     helidon microprofile in "provided" scope)
