@@ -22,10 +22,12 @@ import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
+import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonString;
 import javax.ws.rs.core.Context;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.jwt.Jwt;
@@ -34,6 +36,7 @@ import io.helidon.security.jwt.jwk.Jwk;
 
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
+import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
@@ -42,21 +45,20 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 @ApplicationScoped
 public class ClaimProducer {
 
-    @Context
-    private SecurityContext securityContext;
-
-    @Produces
-    public JsonWebToken produceToken(InjectionPoint ip) {
-        Jwt jwt = Jwt.builder().subject("TypekLibovej").build();
-        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
-        return new JsonWebTokenImpl(jwt, signedJwt);
-    }
+    @Inject
+    @Impl
+    private JsonWebTokenImpl token;
 
     @Produces
     @Claim
     public String produceClaim(InjectionPoint ip) {
+
         Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return "InjectedClaim";
+        if (claim.standard() == Claims.UNKNOWN) {
+            return token.getClaim(claim.value());
+        } else {
+            return token.getClaim(claim.standard().name());
+        }
     }
 
     @Produces
@@ -68,9 +70,32 @@ public class ClaimProducer {
 
     @Produces
     @Claim
+    public Optional<String> produceOptionalClaim(InjectionPoint ip) {
+        return Optional.of("OptionalString");
+    }
+
+    @Produces
+    @Claim
     public Optional<ClaimValue<Set<String>>> produceClaimValueSet(InjectionPoint ip) {
         Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return null;
+        return Optional.of(new ClaimValue<Set<String>>() {
+            @Override
+            public String getName() {
+                return "name";
+            }
+
+            @Override
+            public Set<String> getValue() {
+                return CollectionsHelper.setOf("name");
+            }
+        });
+    }
+
+    @Produces
+    @Claim
+    public Optional<ClaimValue<Set<JsonString>>> produceClaimValueSetJson(InjectionPoint ip) {
+        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
+        return Optional.empty();
     }
 
 

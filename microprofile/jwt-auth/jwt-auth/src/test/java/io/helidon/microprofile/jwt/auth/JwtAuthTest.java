@@ -74,6 +74,8 @@ class JwtAuthTest {
         @Claim(standard = Claims.aud)
         private Optional<ClaimValue<Set<String>>> audience;
 
+
+
         @Path("/hello")
         @GET
         public String hello() {
