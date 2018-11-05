@@ -17,7 +17,6 @@
 package io.helidon.microprofile.server;
 
 import java.lang.annotation.Annotation;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
