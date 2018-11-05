@@ -10,6 +10,7 @@ reviewing changes done by others.
 # Package and module structure
 1. We use flat package structure
     1. Each module (maven and jigsaw) has a single implementation package
+        1. Each maven jar packaging module used outside of testing is also a jigsaw module 
     2. Module may have an additional package "spi" for classes related to service provider interface (extensibility)
     3. Unit testing is enabled through package local access (not public!)
     4. Be aware that any public class and its public methods are part of Helidon API and will require careful maintenance
@@ -46,8 +47,12 @@ reviewing changes done by others.
     1. Use lower case words separated by dashes 
         (e.g. "token-endpoint-uri", NOT "tokenEndpointUri")
     2. May be nested in a tree structure (e.g. outbound-token.name, outbound-token.algorithm)
-    3. Each component should have useful defaults defined for each property it expects. Components should only fail when missing 
-         a configuration that cannot be defaulted
+    3. The following properties may be used by a component:
+        1. Required: component will fail to build when such a configuration property is missing
+        2. Default: component has a well defined and documented default value for such a property
+        3. Optional: component behaves in a well defined and documented manner if such a property is not 
+            configured (e.g. a component may expect tracing endpoint - if not defined, tracing may be disabled)         
+        
 
 Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java)
 
