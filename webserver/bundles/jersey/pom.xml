@@ -24,7 +24,7 @@
     <parent>
         <artifactId>helidon-webserver-bundles-project</artifactId>
         <groupId>io.helidon.webserver</groupId>
-        <version>0.10.5-SNAPSHOT</version>
+        <version>0.10.5</version>
     </parent>
     <artifactId>helidon-webserver-jersey-bundle</artifactId>
     <name>Helidon WebServer Jersey Bundle</name>
