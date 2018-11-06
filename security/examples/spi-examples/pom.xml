@@ -24,10 +24,10 @@
     <parent>
         <artifactId>helidon-security-examples-project</artifactId>
         <groupId>io.helidon.security.examples</groupId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-examples-spi</artifactId>
-    <name>Helidon Security Examples SPI implementation</name>
+    <name>Helidon Security Examples SPI Implementation</name>
 
     <description>
         Example of implementation of custom providers and other SPI implementations

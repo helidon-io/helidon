@@ -19,115 +19,99 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  
-  <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
-  
-  <name>Helidon OCI Object Storage CDI Integration</name>
-  <description>${project.name}</description>
-  
-  <parent>
-    <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-project</artifactId>
-    <version>0.10.3-SNAPSHOT</version>
-  </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.integrations.cdi</groupId>
+        <artifactId>helidon-integrations-cdi-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+    <name>Helidon CDI Integrations OCI Object Storage</name>
 
-  <dependencies>
+    <properties>
+        <!-- maven-javadoc-plugin property -->
+        <show>package</show>
+        <oci.objectstorage.compartmentId/>
+        <oci.objectstorage.namespaceName/>
+        <oci.objectstorage.region/>
+    </properties>
 
-    <!-- Test-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-all</artifactId>
-      <scope>test</scope>
-    </dependency>
-    
-    <dependency>
-      <groupId>org.jboss.weld.se</groupId>
-      <artifactId>weld-se-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <oci.objectstorage.compartmentId>${oci.objectstorage.compartmentId}</oci.objectstorage.compartmentId>
+                        <oci.objectstorage.namespaceName>${oci.objectstorage.namespaceName}</oci.objectstorage.namespaceName>
+                        <oci.objectstorage.region>${oci.objectstorage.region}</oci.objectstorage.region>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-    <!-- Runtime-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>org.jboss</groupId>
-      <artifactId>jandex</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
-    
-    <dependency>
-      <groupId>io.helidon.microprofile.config</groupId>
-      <artifactId>helidon-microprofile-config-cdi</artifactId>
-      <scope>runtime</scope>
-      <optional>true</optional>
-    </dependency>
+    <dependencies>
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
+            <scope>compile</scope>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
-    <dependency>
-      <groupId>org.glassfish.jersey.inject</groupId>
-      <artifactId>jersey-hk2</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    
+        <!-- Provided-scoped dependencies. -->
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- Provided-scoped dependencies. -->
-    
-    <dependency>
-      <groupId>javax.enterprise</groupId>
-      <artifactId>cdi-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
+        <!-- Runtime-scoped dependencies. -->
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
-    <!-- Compile-scoped dependencies. -->
-
-    <dependency>
-      <groupId>com.oracle.oci.sdk</groupId>
-      <artifactId>oci-java-sdk-objectstorage</artifactId>
-      <scope>compile</scope>
-      <type>pom</type>
-    </dependency>
-
-    <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-api</artifactId>
-      <scope>compile</scope>
-    </dependency>
-
-  </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-            <oci.objectstorage.compartmentId>${oci.objectstorage.compartmentId}</oci.objectstorage.compartmentId>
-            <oci.objectstorage.namespaceName>${oci.objectstorage.namespaceName}</oci.objectstorage.namespaceName>
-            <oci.objectstorage.region>${oci.objectstorage.region}</oci.objectstorage.region>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
-  <properties>
-    <show>package</show>
-    <oci.objectstorage.compartmentId/>
-    <oci.objectstorage.namespaceName/>
-    <oci.objectstorage.region/>
-  </properties>
-
+        <!-- Test-scoped dependencies. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

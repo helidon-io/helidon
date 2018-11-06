@@ -23,17 +23,33 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.5-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-examples-project</artifactId>
     <name>Helidon Examples</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <modules>
         <module>helidon-quickstart-se</module>
         <module>helidon-quickstart-mp</module>
         <module>todos</module>
-        <module>integrations/cdi</module>
+        <module>guides</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>integrations</id>
+            <modules>
+                <module>integrations/cdi</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

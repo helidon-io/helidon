@@ -102,7 +102,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);
 
-            OutboundSecurityResponse providerResponse = clientBuilder.get();
+            OutboundSecurityResponse providerResponse = clientBuilder.buildAndGet();
 
             switch (providerResponse.getStatus()) {
             case FAILURE:

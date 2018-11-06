@@ -1,0 +1,602 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+:adoc-dir: {guides-dir}/se-restful-webservice/src/main/docs
+:java-base: {adoc-dir}/../java/io/helidon/guides/se/restfulwebservice
+:greet-service: {java-base}/GreetService.java
+:main-class: {java-base}/Main.java
+:pom: {adoc-dir}/../../../pom.xml
+
+
+= The ReSTful Web Service Guide
+:description: Helidon guide restful web service
+:keywords: helidon, guide, example
+
+Create and build a ReSTful web service as your first Helidon SE application.
+
+== What You Will Learn
+You'll learn how to use Helidon quickly to create a ReSTful web service that accepts these HTTP requests:
+
+|===
+|Method and URL | Result
+
+|`GET localhost:8080/greet` |Returns a generic but friendly greeting
+|`GET localhost:8080/greet/Joe` |Returns a personalized greeting for the specified person
+|`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
+|===
+
+We create the app in three main steps:
+. Write a basic app to respond to the HTTP requests.
+. Add code to perform simple health checks.
+. Add code to record simple metrics.
+
+(See the last section to find out how to get the entire finished code for this example.)
+
+== What You Need
+
+|===
+|About 15 minutes
+|An IDE or text editor
+|JDK 1.8 or later
+|Maven 3.5 or later
+|===
+
+//Optional:
+//|===
+//|Docker 18.02 (use the Edge channel to run Kubernetes on your desktop)
+//|`kubectl` 1.7.4
+//|===
+
+== Create Your Application
+
+=== Create a new Maven Project
+You can create your maven project in these ways:
+
+* use your IDE to create a new Java maven project, or
+* run the standard maven archetype to create a new Java project using this command:
++
+[source,bash]
+mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
+
+=== Update Your `pom.xml`
+==== The Essentials
+
+Make sure your POM contains these sections:
+[source,xml,subs="verbatim,attributes"]
+----
+    <properties>
+include::{pom}[tags=helidonVersion;javaVersions]
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+include::{pom}[tag=depMgt]
+        </dependencies>
+    </dependencyManagement>
+----
+Now you can add Helidon dependencies to your project without having to specify the version.
+For this example add these dependencies:
+[source,xml]
+----
+    <dependencies>
+include::{pom}[tags=webserverBundleDependency;configYamlDependency]
+    </dependencies>
+----
+<1> Incorporates the Helidon web server.
+<2> Pulls in support for YAML as a config format.
+
+If you run your project from the IDE, the IDE typically handles the main class and places
+dependent JARs on the runtime classpath for you and your pom is now ready to go. 
+
+==== To Run `maven` Outside your IDE
+If you want to use `maven` yourself,
+outside the IDE, then add the following to your pom. (This is typical with maven
+projects and is not specific to Helidon or this example):
+[source,xml]
+----
+    <properties>
+        ...
+        <mainClass>your-fully-qualified-main-class</mainClass> <!--1-->
+include::{pom}[tag=libsCopying]
+        ...
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+include::{pom}[tag=mainClassPlugin]
+            </plugins>
+        </pluginManagement>
+        <plugins>
+include::{pom}[tag=copyDependencies]
+        </plugins>
+    </build>
+----
+<1> Make sure to specify your own main class path.
+<2> Instructs maven what main class to set in the JAR's manifest and what prefix to use for
+copied dependency JARs.
+<3> Tells maven to package the dependency JARs in the specified directory relative to the project's JAR.
+
+=== Create a Config Resource File
+Your app will use the Helidon config support to initialize the greeting and set up HTTP
+listening.
+
+Create this config file:
+
+.`src/main/resources/application.yaml`
+[source,yaml]
+----
+include::../resources/application.yaml[tag=configContent]
+----
+<1> Sets the initial greeting text for responses from the service
+<2> Sets how the service will listen for requests
+
+=== Create a logging properties file
+.`src/main/resources/logging.properties`
+[source]
+----
+include::../resources/logging.properties[tag=loggingProps]
+----
+
+=== Create your "Greet" Service
+In general, your application can implement multiple services, each tied to its own
+URL path. We'll start with just one service: the greeting service.
+
+Create a new Java class `GreetService.java` as follows. Note that along the way 
+you or your IDE will be adding these Java `import` statements:
+[source,java]
+----
+include::{greet-service}[tags=importsStart;importsWebServer]
+----
+
+. Make `GreetService` implement `io.helidon.webserver.Service`.
+. Set two static fields by reading the config file and setting the initial greeting from 
+the loaded config:
++
+[source,java]
+----
+include::{greet-service}[tags=CONFIG;greetingDef]
+----
+<1> Loads the config from the (default) `application.yaml` resource you created earlier
+and loads the subtree rooted at the `app` entry into the `CONFIG` field. The
+type of the field is `io.helidon.config.Config`.
+<2> Sets the initial greeting from the config, using "Ciao" if the expected
+entry is missing from the loaded config.
++
+. Implement the responses to the three types of request by adding three methods.
+.. Returning the default greeting
++
+[source,java]
+----
+include::{greet-service}[tag=getDefaultMessage]
+---- 
+<1> Gets the greeting (defaults to "Hello") from the current setting (and adds "World").
+<2> Creates the JSON response from the message and builds the response.
+<3> Sends the response to the client.
+.. Returning a personalized greeting
++
+[source,java]
+----
+include::{greet-service}[tag=getMessage]
+----
+<1> Get the name from the URL path in the request and use it in buildig the 
+JSON response.
+The rest of the method is the same as `getDefaultMessage`.
+.. Updating the greeting
++
+[source,java]
+----
+include::{greet-service}[tag=updateGreeting]
+----
+<1> Save the new greeting from the URL path in the request.
+<2> Compose the JSON response to confirm the new setting for `greeting`.
+. Link your logic with the correct URL paths
++
+[source,java]
+----
+include::{greet-service}[tags=updateStart;updateGetsAndPuts]
+----
+<1> Each service overrides `update` to define its routing rules.
+<2> Handle `GET` requests with no extra path using `getDefaultMessage`.
+<3> Handle `GET` requests with a name using `getMessage` which personalizes the response
+using the name provided as the path suffix.
+<4> Handle `PUT` requests to the `greeting` path using `updateGreeting`,
+interpreting the end of the path as the new greeting string.
+
+=== Write your main class
+You need just a little more code so your app starts the Helidon web server
+and makes it aware of your greeting service.
+
+Along the way you or your IDE will be adding these Java `import` statements:
+[source,java]
+----
+include::{main-class}[tags=importsStart;importsWebServer;importsEnd]
+----
+. Add a field to your main class to hold a reference to a `GreetService` instance.
++
+[source,java]
+----
+include::{main-class}[tag=greetServiceDecl]
+----
+
+. Add a method to your main class to set up routing for your app.
++
+[source,java]
+----
+include::{main-class}[tags=createRoutingStart;createRoutingBasic;registerGreetService;createRoutingEnd]
+----
+<1> Creates and saves the reference to the `GreetService`. (We'll use `greeting` reference again
+later when we add support for health checking.)
+<2> Tells the Helidon web server that you want to use JSON.
+<3> Associates the greeting service with the `/greet` path. 
+
+. Add the `startServer` method.
++
+[source,java]
+----
+include::{main-class}[tag=startServer]
+----
+<1> Gets the webserver config from the "server" section of `application.yaml`. The
+config system automatically maps the config's `host` and `port` to those 
+attributes of `ServerConfiguration`.
+<2> Creates the web server using the routing rules from the `createRouting` method.
+<3> Starts the web server, then logs a message.
+<4> Set up a shutdown hook so when the web server is shut down (for example, by ^C on the console) 
+the app prints a message.
+
+. Write your main method
++
+Add
++
+[source,java]
+----
+include::{main-class}[tag=mainContent]
+----
++
+to your main method.
+
+== Build and Run
+You can use your IDE's features to build and run the project directly.
+
+Or, to use `maven` outside the IDE, build your app this way:
+[source,bash]
+mvn package
+
+and run it like this:
+[source,bash]
+java -jar target/your-jar-name.jar
+
+Once you have started your app, from another command window run these commands 
+to access its three functions (order is important for the last two):
+|====
+|Command |Result
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet
+a|[source,bash]
+{"message":"Hello World!"}
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Joe
+a|[source,bash]
+{"message":"Hello Joe!"}
+
+a|[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/Hola
+a|[source,bash]
+{"greeting":"Hola"}
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Jose
+a|[source,bash]
+{"message":"Hola Jose!"}
+|====
+
+== Add Health Checks
+A well-behaved microservice reports on its own health.
+Two common approaches for checking health, often used together, are:
+
+- readiness - a simple verification that the service has been started, has initialized itself,
+and is ready to respond to requests; and
+- liveness - often a more thorough assessment of if
+and how well the service can do its job.
+
+For example, Kubernetes can ping your service's 
+readiness endpoint after it starts the pod containing the service to determine 
+when the service is ready to accept requests, withholding traffic until the readiness
+endpoint reports success. Kubernetes can use the liveness endpoint to find out if
+the service considers itself able to function, attempting a pod restart if the
+endpoint reports a problem.
+
+In general a liveness check might assess:
+
+- service health - whether the service itself can do its job correctly
+- host health - if the host has sufficient resources (for example, disk space)
+for the service to operate
+- health of other, dependent services - if other services on which this service
+depends are themselves OK.
+
+Our greeting service does not depend on any
+host resources (like disk space) or any other services. So we choose to define our
+greeting service to be OK if the greeting text has been assigned
+_and is not empty_ when trimmed of leading or trailing white space. Otherwise we
+consider the service to be unhealthy, in which case the service will
+still respond but its answers might not be what we want. 
+
+Normally we would 
+write our service to make 
+sure that a newly-assigned greeting is non-empty _before_
+accepting it. But omitting that validation lets us create an easy health check
+that we can use by simply setting the greeting to blank from 
+a `curl` command.
+
+=== Add code to `GreetService.java`
+
+For our simple service, assess health simply by making sure the greeting contains
+something other than blanks.
+
+[source,java]
+----
+include::{greet-service}[tag=checkHealth]
+----
+
+=== Add code to `Main.java`
+
+Now let's add the code to actually implement the readiness and liveness endpoints to
+to the `Main` class.
+
+Along the way, you or your IDE will need to add 
+[source,java]
+include::{main-class}[tags=importsHealth1;importsHealth2;importsHealth3]
+
+. Add a new `ready` method
++
+[source,java]
+----
+include::{main-class}[tag=ready]
+----
+This method simply returns 200 so the client knows the service is up.
+. Add a new `alive` method
++
+[source,java]
+----
+include::{main-class}[tag=alive]
+----
+<1> Delegates to `GreetService` to evaluate the liveness of the service -- in our case, is the greeting non-empty.
+<2> Replies with a simple 200 for the health case.
+<3> For the unhealthy case prepares a description of the problem...
+<4> ...and replies with a 500.
+
+. Add the new endpoints to the routing
++
+In the `createRouting` method in `Main.java` insert these lines immediately
+after the `.register` invocations:
++
+[source,java]
+----
+include::{main-class}[tag=createRoutingHealth]
+----
+These link the health-related endpoints your code is exposing to the new methods.
+
+=== Rebuild and rerun your service
+Follow the same steps you did before. Make sure you have stopped any earlier 
+instance of your service to free up the port.
+
+=== Try the readiness check
+Access the readiness check endpoint:
+[source,bash]
+curl -i -X GET http://localhost:8080/ready
+
+Our readiness check returns no payload, just the 200 status, so you won't see any data
+displayed. The `-i` option shows the
+200 status in the response.
+
+=== Try the liveness check
+. Ping the health check endpoint
++
+Without changing the greeting, ping the health endpoint:
+[source,bash]
+curl -i -X GET http://localhost:8080/alive
++
+The greeting is valid and in that case our health check code simply returns a 200
+with no payload. 
+
+. Set the greeting to a blank
++
+[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/%20
++
+Our code to update the greeting accepts this and saves it as the new greeting.
+
+. Ping the health check endpoint again with the same command as before
++
+[source,bash]
+curl -i -X GET http://localhost:8080/alive
++
+This time you should see
+[source,bash]
+{"error":"greeting is not set or is empty"}
++
+and with the `-i` added to the `curl` command you would see the 500 status returned.
+
+== Add Metrics Support
+As a simple illustration of using metrics, we revise our greeting service to count how many times
+a client sends a request to the app.
+
+. Add the metrics dependency to `pom.xml`
++
+[source,xml]
+----
+include::{pom}[tag=metricsDependency]
+----
+. Enable metrics in `Main.java`
++
+You or your IDE will add this import:
++
+[source,java]
+----
+include::{main-class}[tag=importsMetrics]
+----
+.. Register metrics support in request routing 
++
+In `Main.createRouting`:
+
+... Just before the code instantiates `GreetService` add this:
++
+[source,java]
+----
+include::{main-class}[tag=initMetrics]
+----
+<1> Initializes the metrics infrastructure in Helidon.
+
+... Just after the invocation of `register(JsonSupport.get())`
+add this
++
+[source,java]
+----
+include::{main-class}[tag=registerMetrics]
+----
+<1> Registers the `MetricsSupport` handler with the web server's
+handler chain.
++
+Here is the whole, updated method:
++
+[source,java]
+include::{main-class}[tag=createRoutingFull]
+
+. Revise `GreetService.java` for metrics
++
+You or your IDE will add these imports:
++
+[source,java]
+----
+include::{greet-service}[tags=importsHelidonMetrics;importsMPMetrics]
+----
+
+.. Register a metric in `GreetService.java`
++
+Add these declarations as private fields:
++
+[source,java]
+----
+include::{greet-service}[tags=metricsRegistration;counterRegistration]
+----
+<1> Refers to the application-scoped metrics registry.
+<2> Declares a metric of type `counter`.
+
+.. Create a method to display which method is handling a request.
++
+Add this method:
++
+[source,java]
+----
+include::{greet-service}[tag=displayThread]
+----
+
+.. Create a request handler to update the counter
++
+Add this method:
++
+[source,java]
+----
+include::{greet-service}[tag=counterFilter]
+----
+<1> Shows which method is handling the request.
+<2> Updates the counter metric.
+<3> Lets the next handler process the same request.
+
+.. Register a filter to count requests
++
+To the `update` method add this line immediately before the
+existing `get` invocations.
++
+[source,java]
+----
+include::{greet-service}[tag=updateForCounter]
+----
+<1> Invokes `counterFilter` for _any_ incoming request.
+
+=== Rebuild and rerun your application
+Follow the same steps as before, remembering to stop any instance
+of your application that is still running.
+
+=== Sends some requests
+Use the same `curl` commands from the beginning to send requests to the server:
+
+|====
+|Command |Server Output
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet
+a|[source,bash]
+Method=counterFilter Thread=nioEventLoopGroup-3-1
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Joe
+a|[source,bash]
+Method=counterFilter Thread=nioEventLoopGroup-3-2
+
+a|[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/Hola
+a|[source,bash]
+Method=counterFilter Thread=nioEventLoopGroup-3-3
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Jose
+a|[source,bash]
+Method=counterFilter Thread=nioEventLoopGroup-3-4
+|====
+
+=== Retrieve metrics
+Run this `curl` command to retrieve the collected metrics:
+[source,bash]
+----
+curl -X GET http://localhost:8080/metrics
+----
+
+You should see a long JSON result. Note two parts:
+|====
+|Output |Meaning
+
+a|[source,bash]
+"application":{"accessctr":4}
+
+|The counter we added to the app
+
+a|[source,bash]
+"requests.meter":{"count":5, ...
+
+|The total HTTP requests the Helidon web server received (and several values
+reflecting the request arrival rate)
+|====
+The request count is higher because the access to `/metrics` to retrieve the
+monitoring data is _not_ handled by our app's rules and filters but by the 
+metrics infrastructure.
+
+== (Or, Download the Example Source)
+We think the guide is most useful if you follow along step-by-step, building
+up the app and understanding what each part of the code is doing as you go. 
+
+But if you prefer, you can get the finished code for this example by cloning the link:https://github.com/oracle/helidon[`git` workspace
+for Helidon], navigating to the `examples/guides/se-restful-webservice` directory, and
+running
+[source,bash]
+----
+mvn package
+java -jar target/se-restful-webservice.jar
+----
+

@@ -20,26 +20,21 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.serviceconfiguration</groupId>
+        <artifactId>helidon-serviceconfiguration-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <artifactId>helidon-serviceconfiguration-system-oracle-accs</artifactId>
+    <name>Helidon Oracle ACCS System Implementation</name>
 
-  <artifactId>helidon-serviceconfiguration-system-oracle-accs</artifactId>
-
-  <name>Helidon Oracle ACCS System Implementation</name>
-  <description>${project.name}</description>
-
-  <parent>
-    <groupId>io.helidon.serviceconfiguration</groupId>
-    <artifactId>helidon-serviceconfiguration-project</artifactId>
-    <version>0.10.3-SNAPSHOT</version>
-  </parent>
-  
-  <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>helidon-serviceconfiguration-api</artifactId>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
-
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.serviceconfiguration</groupId>
+            <artifactId>helidon-serviceconfiguration-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 </project>
-

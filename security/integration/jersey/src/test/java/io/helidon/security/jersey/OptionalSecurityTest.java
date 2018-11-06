@@ -94,7 +94,7 @@ class OptionalSecurityTest {
                 .build();
 
         clientBuilder = mock(SecurityClientBuilder.class);
-        when(clientBuilder.get()).thenReturn(atr);
+        when(clientBuilder.buildAndGet()).thenReturn(atr);
     }
 
     @Test
