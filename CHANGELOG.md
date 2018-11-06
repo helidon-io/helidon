@@ -3,11 +3,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Notes
-
-### Improvements
+## [0.10.5] - 2018-11-06
 
 ### Fixes
 
@@ -91,7 +87,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/0.10.4...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/0.10.5...HEAD
+[0.10.5]: https://github.com/oracle/helidon/compare/0.10.4...0.10.5
 [0.10.4]: https://github.com/oracle/helidon/compare/0.10.3...0.10.4
 [0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3
 [0.10.2]: https://github.com/oracle/helidon/compare/0.10.1...0.10.2
