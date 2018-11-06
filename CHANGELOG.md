@@ -11,6 +11,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixes
 
+- WebServer: Binary input stream truncated [159](https://github.com/oracle/helidon/issues/159)
+- WebServer: Metrics endpoint provides JSON output by default [127](https://github.com/oracle/helidon/issues/127)
+- WebServer: Static serving of a webpage does not work correctly [149](https://github.com/oracle/helidon/issues/149)
+- Config direct values [134](https://github.com/oracle/helidon/pull/134)
+- Documentation: Add health check and metrics to first guide [128](https://github.com/oracle/helidon/pull/128)
+
 ## [0.10.4] - 2018-10-19
 
 ### Fixes
@@ -85,7 +91,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/0.10.3...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/0.10.4...HEAD
 [0.10.4]: https://github.com/oracle/helidon/compare/0.10.3...0.10.4
 [0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3
 [0.10.2]: https://github.com/oracle/helidon/compare/0.10.1...0.10.2
