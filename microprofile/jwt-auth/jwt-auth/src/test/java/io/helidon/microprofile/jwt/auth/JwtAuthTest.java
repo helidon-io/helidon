@@ -18,6 +18,7 @@ package io.helidon.microprofile.jwt.auth;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.JsonString;
 import javax.ws.rs.GET;
