@@ -81,8 +81,6 @@
     </scm>
 
     <properties>
-        <java.version>8</java.version>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -104,6 +102,7 @@
         <version.lib.apache-httpclient>4.5.5</version.lib.apache-httpclient>
         <version.lib.arquillian>1.4.0.Final</version.lib.arquillian>
         <version.lib.arquillian-weld-embedded>2.0.0.Final</version.lib.arquillian-weld-embedded>
+        <version.lib.asciidoclet>1.5.6</version.lib.asciidoclet>
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.brave-opentracing>0.31.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
@@ -126,6 +125,7 @@
         <version.lib.jersey>2.26</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
         <version.lib.jmh>1.19</version.lib.jmh>
+        <version.lib.jruby>1.7.26</version.lib.jruby>
         <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
         <version.lib.jsr305>3.0.2</version.lib.jsr305>
@@ -215,8 +215,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -227,11 +227,47 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
+                        <doclet>org.asciidoctor.Asciidoclet</doclet>
+                        <!-- the asciidoclet artifact requires a specific maven
+                            repository that is configured in the 'javadoc' profile -->
+                        <docletArtifacts>
+                            <docletArtifact>
+                                <groupId>org.asciidoctor</groupId>
+                                <artifactId>asciidoclet</artifactId>
+                                <version>${version.lib.asciidoclet}</version>
+                            </docletArtifact>
+                            <!-- the javadoc plugin does not include jruby for some reason
+                                adding it manually ... -->
+                            <docletArtifact>
+                                <groupId>org.jruby</groupId>
+                                <artifactId>jruby-complete</artifactId>
+                                <version>${version.lib.jruby}</version>
+                            </docletArtifact>
+                        </docletArtifacts>
+                        <additionalparam>
+                            --base-dir ${project.basedir}
+                            --attribute "name=${project.name}"
+                            --attribute "version=${project.version}"
+                        </additionalparam>
+                        <links>
+                            <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                            <link>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</link>
+                            <link>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</link>
+                            <link>https://jersey.github.io/apidocs/${version.lib.jersey}/jersey</link>
+                            <link>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</link>
+                            <link>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</link>
+                            <link>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</link>
+                            <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
+                            <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
+                            <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
+                        </links>
                         <doclint>all</doclint>
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
-                        <source>8</source>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
@@ -1088,7 +1124,7 @@
                                         <goal>compile</goal>
                                     </goals>
                                     <configuration>
-                                        <release>${java.version}</release>
+                                        <release>8</release>
                                     </configuration>
                                 </execution>
                                 <execution>
@@ -1097,7 +1133,7 @@
                                         <goal>testCompile</goal>
                                     </goals>
                                     <configuration>
-                                        <release>${java.version}</release>
+                                        <release>8</release>
                                     </configuration>
                                 </execution>
                             </executions>
@@ -1134,6 +1170,22 @@
         </profile>
         <profile>
             <id>javadoc</id>
+            <!-- the latest asciidoclet version that is compatible with jdk9+
+                is only available in bintray. Configuring the bintray repository
+                here to avoid impact the rest of the build -->
+            <repositories>
+                <repository>
+                    <id>asciidoctor</id>
+                    <name>Asciidoctor Bintray Repository</name>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <url>https://dl.bintray.com/asciidoctor/maven/</url>
+                </repository>
+            </repositories>
             <build>
                 <plugins>
                     <plugin>
