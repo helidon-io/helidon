@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.examples</groupId>
         <artifactId>examples-project</artifactId>
-        <version>0.10.5-SNAPSHOT</version>
+        <version>0.10.6-SNAPSHOT</version>
     </parent>
     <artifactId>hello-world-implicit</artifactId>
     <name>Helidon Microprofile Examples Implicit Hello World</name>
