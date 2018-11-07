@@ -29,6 +29,7 @@ import javax.interceptor.InvocationContext;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeFuture;
 import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.SyncFailsafe;
 import net.jodah.failsafe.function.CheckedFunction;
@@ -113,10 +114,9 @@ public class CommandRetrier {
      * Retries running a command according to retry policy.
      *
      * @return Object returned by command.
-     * @throws Throwable If something fails.
      */
     @SuppressWarnings("unchecked")
-    public Object execute() throws Throwable {
+    public Object execute() {
         LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
         final ScheduledExecutorService executor = CommandExecutor.getExecutorService();
 
@@ -127,9 +127,10 @@ public class CommandRetrier {
 
         if (isAsynchronous) {
             AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(executor);
-            return introspector.hasFallback()
-                   ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                   : failsafe.get(this::retryExecute);
+            FailsafeFuture<?> chainedFuture = (FailsafeFuture<?>) (introspector.hasFallback()
+                               ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                               : failsafe.get(this::retryExecute));
+            return new FailsafeChainedFuture<>(chainedFuture);
         } else {
             SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
             return introspector.hasFallback()
@@ -151,7 +152,7 @@ public class CommandRetrier {
 
         Object result;
         try {
-            LOGGER.info("About to execute command with key " + commandKey);
+            LOGGER.info("About to execute command with key " + command.getCommandKey());
             updateMetricsBefore();
             result = command.execute();
             updateMetricsAfter(null);

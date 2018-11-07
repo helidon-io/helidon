@@ -38,15 +38,15 @@ class MethodIntrospector {
 
     private final Method method;
 
-    private final Retry retry;
+    private Retry retry;
 
-    private final Fallback fallback;
+    private Fallback fallback;
 
-    private final CircuitBreaker circuitBreaker;
+    private CircuitBreaker circuitBreaker;
 
-    private final Timeout timeout;
+    private Timeout timeout;
 
-    private final Bulkhead bulkhead;
+    private Bulkhead bulkhead;
 
     /**
      * Constructor.
@@ -55,12 +55,18 @@ class MethodIntrospector {
      */
     MethodIntrospector(Method method) {
         this.method = method;
-        this.retry = isAnnotationPresent(Retry.class) ? new RetryAntn(method) : null;
+
+        // Only process annotations if FT is enabled
+        if (FaultToleranceExtension.isIsFaultToleranceEnabled()) {
+            this.retry = isAnnotationPresent(Retry.class) ? new RetryAntn(method) : null;
+            this.circuitBreaker = isAnnotationPresent(CircuitBreaker.class) ? new CircuitBreakerAntn(method) : null;
+            this.timeout = isAnnotationPresent(Timeout.class) ? new TimeoutAntn(method) : null;
+            this.bulkhead = isAnnotationPresent(Bulkhead.class) ? new BulkheadAntn(method) : null;
+            validate();
+        }
+
+        // Fallback is always enabled
         this.fallback = isAnnotationPresent(Fallback.class) ? new FallbackAntn(method) : null;
-        this.circuitBreaker = isAnnotationPresent(CircuitBreaker.class) ? new CircuitBreakerAntn(method) : null;
-        this.timeout = isAnnotationPresent(Timeout.class) ? new TimeoutAntn(method) : null;
-        this.bulkhead = isAnnotationPresent(Bulkhead.class) ? new BulkheadAntn(method) : null;
-        validate();
     }
 
     Method getMethod() {

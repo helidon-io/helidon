@@ -30,11 +30,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.enterprise.inject.spi.DefinitionException;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
@@ -104,6 +107,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     @Override
     public ProtocolDescription getDefaultProtocol() {
         return new ProtocolDescription(HelidonLocalProtocol.PROTOCOL_NAME);
+        // return new ProtocolDescription(LocalProtocol.NAME);
     }
 
     @Override
@@ -126,7 +130,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             final Set<String> classNames = new TreeSet<>();
             copyArchiveToDeployDir(archive, context.deployDir, p -> {
                 if (p.endsWith(".class")) {
-                    final int prefixLength = isJavaArchive ? 1 :  "/WEB-INF/classes/".length();
+                    final int prefixLength = isJavaArchive ? 1 : "/WEB-INF/classes/".length();
                     classNames.add(p.substring(prefixLength, p.lastIndexOf(".class")).replace('/', '.'));
                 }
             });
@@ -148,8 +152,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             if (isJavaArchive) {
                 Path rootDir = context.deployDir.resolve("");
                 ensureBeansXml(rootDir);
-                classPath = new URL[] {
-                    rootDir.toUri().toURL()
+                classPath = new URL[]{
+                        rootDir.toUri().toURL()
                 };
             } else {
                 // Prepare the launcher files
@@ -163,8 +167,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             startServer(context, classPath, classNames);
         } catch (IOException e) {
             throw new DeploymentException("Failed to copy the archive assets into the deployment directory", e);
-        } catch (Exception e) {
-            throw new DeploymentException("Unable to start server", e);
+        } catch (ReflectiveOperationException e) {
+            throw new DefinitionException(e.getCause());        // validation exceptions
         }
 
         // Server has started, so we're done.
@@ -176,30 +180,36 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         context.classLoader = (URLClassLoader) ((PrivilegedAction<ClassLoader>) () -> new URLClassLoader(classPath))
                 .run();
 
-        ClassLoader current = Thread.currentThread().getContextClassLoader();
+        context.oldClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(context.classLoader);
 
-        try {
-            final Config config = Config.builder()
-                    .sources(CollectionsHelper.listOf(
-                            ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional(),
-                            ConfigSources.file(context.deployDir.resolve("/application.properties").toString()).optional(),
-                            ConfigSources.file(context.deployDir.resolve("/application.yaml").toString()).optional()))
-                    .build();
-
-            context.runnerClass = context.classLoader
-                    .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
-
-            context.runner = context.runnerClass
-                    .getDeclaredConstructor()
-                    .newInstance();
-
-            context.runnerClass
-                    .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
-                    .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
-        } finally {
-            Thread.currentThread().setContextClassLoader(current);
+        Config.Builder builder = Config.builder()
+                .sources(CollectionsHelper.listOf(
+                        ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional(),
+                        ConfigSources.file(context.deployDir.resolve("/application.properties").toString()).optional(),
+                        ConfigSources.file(context.deployDir.resolve("/application.yaml").toString()).optional()));
+        URL mpConfigProps = context.classLoader.getResource("META-INF/microprofile-config.properties");
+        if (mpConfigProps != null) {
+            try {
+                Properties props = new Properties();
+                props.load(mpConfigProps.openStream());
+                builder.sources(ConfigSources.from(props));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+        final Config config = builder.build();
+
+        context.runnerClass = context.classLoader
+                .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
+
+        context.runner = context.runnerClass
+                .getDeclaredConstructor()
+                .newInstance();
+
+        context.runnerClass
+                .getDeclaredMethod("start", Config.class, HelidonContainerConfiguration.class, Set.class, ClassLoader.class)
+                .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
     }
 
     URL[] getServerClasspath(Path classesDir, Path libDir) throws IOException {
@@ -263,6 +273,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 context.classLoader.close();
             } catch (IOException ignore) {
             }
+            // Restore original context class loader
+            Thread.currentThread().setContextClassLoader(context.oldClassLoader);
         }
 
         if (containerConfig.getDeleteTmp()) {
@@ -300,11 +312,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
     /**
      * Copies the given Archive to the given deployDir. For each asset copied, the callback will be invoked.
      *
-     * @param archive   The archive to deploy. This cannot be null.
+     * @param archive The archive to deploy. This cannot be null.
      * @param deployDir The directory to deploy to. This cannot be null.
-     * @param callback  The callback to invoke per item. This can be null.
+     * @param callback The callback to invoke per item. This can be null.
      * @throws IOException if there is an I/O failure related to copying the archive assets to the deployment
-     *                     directory. If this happens, the entire setup is bad and must be terminated.
+     * directory. If this happens, the entire setup is bad and must be terminated.
      */
     private void copyArchiveToDeployDir(Archive<?> archive, Path deployDir, Consumer<String> callback) throws IOException {
         Map<ArchivePath, Node> archiveContents = archive.getContent();
@@ -352,6 +364,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         private Class<?> runnerClass;
         // runner used to run this server instance
         private Object runner;
+        // existing class loader
+        private ClassLoader oldClassLoader;
     }
 
 }

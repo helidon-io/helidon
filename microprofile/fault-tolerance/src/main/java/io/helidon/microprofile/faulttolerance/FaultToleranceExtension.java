@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -34,6 +35,7 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
@@ -46,7 +48,18 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
  */
 public class FaultToleranceExtension implements Extension {
 
+    private static boolean isFaultToleranceEnabled = true;
+
     private Set<Method> registeredMethods;
+
+    /**
+     * Returns a boolean indicating if FT is enabled.
+     *
+     * @return Fault tolerance enabled or disabled.
+     */
+    static boolean isIsFaultToleranceEnabled() {
+        return isFaultToleranceEnabled;
+    }
 
     /**
      * Adds interceptor bindings and annotated types.
@@ -55,12 +68,17 @@ public class FaultToleranceExtension implements Extension {
      * @param bm Bean manager instance.
      */
     void registerInterceptorBindings(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
+        // Check if fault tolerance is enabled
+        Optional<Boolean> enabled = ConfigProvider.getConfig().getOptionalValue(
+                "MP_Fault_Tolerance_NonFallback_Enabled", Boolean.class);
+        isFaultToleranceEnabled = enabled.isPresent() ? enabled.get() : true;
+
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Retry.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(CircuitBreaker.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Timeout.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Asynchronous.class)));
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Fallback.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Bulkhead.class)));
+        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Fallback.class)));
 
         discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class), CommandInterceptor.class.getName());
     }
@@ -73,7 +91,7 @@ public class FaultToleranceExtension implements Extension {
     void registerFaultToleranceMethods(@Observes ProcessManagedBean<?> event) {
         AnnotatedType<?> type = event.getAnnotatedBeanClass();
         for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (MethodAntn.isFaultToleranceMethod(method.getJavaMember())) {
+            if (isFaultToleranceMethod(method.getJavaMember())) {
                 getRegisteredMethods().add(method.getJavaMember());
             }
         }
@@ -93,18 +111,23 @@ public class FaultToleranceExtension implements Extension {
                 // Metrics depending on the annotations present
                 if (MethodAntn.isAnnotationPresent(method, Retry.class)) {
                     FaultToleranceMetrics.registerRetryMetrics(method);
+                    new RetryAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)) {
                     FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
+                    new CircuitBreakerAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, Timeout.class)) {
                     FaultToleranceMetrics.registerTimeoutMetrics(method);
-                }
-                if (MethodAntn.isAnnotationPresent(method, Fallback.class)) {
-                    FaultToleranceMetrics.registerFallbackMetrics(method);
+                    new TimeoutAntn(method).validate();
                 }
                 if (MethodAntn.isAnnotationPresent(method, Bulkhead.class)) {
                     FaultToleranceMetrics.registerBulkheadMetrics(method);
+                    new BulkheadAntn(method).validate();
+                }
+                if (MethodAntn.isAnnotationPresent(method, Fallback.class)) {
+                    FaultToleranceMetrics.registerFallbackMetrics(method);
+                    new FallbackAntn(method).validate();
                 }
             });
         }
@@ -134,6 +157,22 @@ public class FaultToleranceExtension implements Extension {
             result = result.getSuperclass();
         }
         return result;
+    }
+
+    /**
+     * Determines if a method has any fault tolerance annotations. Only {@code @Fallback}
+     * is considered if fault tolerance is disabled.
+     *
+     * @param method The method to check.
+     * @return Outcome of test.
+     */
+    static boolean isFaultToleranceMethod(Method method) {
+        return MethodAntn.isAnnotationPresent(method, Retry.class)
+                || MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)
+                || MethodAntn.isAnnotationPresent(method, Bulkhead.class)
+                || MethodAntn.isAnnotationPresent(method, Timeout.class)
+                || MethodAntn.isAnnotationPresent(method, Asynchronous.class)
+                || MethodAntn.isAnnotationPresent(method, Fallback.class);
     }
 
     /**
