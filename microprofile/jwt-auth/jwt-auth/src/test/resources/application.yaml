@@ -18,51 +18,49 @@ mp.jwt.verify.publickey.location: "verify-jwk.json"
 
 security:
   providers:
+    - mp-jwt-auth:
+        # Token extraction
+        atn-token:
+          # Expected audience (if not defined, any audience is accepted - security issue...)
+          jwt-audience: "audience.application.id"
+          default-key-id: "verify-rsa"
+        sign-token:
+          # JWK configuration (where to get keys for signatures)
+          # This is defined only once, as we can have more keys in a single jwk
+          jwk-resource-path: "sign-jwk.json"
+          jwt-issuer: "jwt.example.com"
+          outbound:
+            - name: "rsa"
+              paths:
+                - "/rsa"
+              # if we want to create a new token based on current subject
+              # we need the key to sign
+              jwk-kid: "sign-rsa"
+              jwt-kid: "verify-rsa"
+              jwt-audience: "audience.application.id"
+              # notBefore = now - jwt-not-before-seconds
+              # defaults to 5 seconds
+              jwt-not-before-seconds: 60
+              # expiration = now + jwt-validity-seconds
+              # defaults to 1 day
+              jwt-validity-seconds: 3600
+              # defaults to the same as inbound
+              outbound-token:
+                header: "Authorization"
+                format: "bearer %1$s"
+            - name: "ec"
+              paths:
+                - "/ec"
+              jwk-kid: "sign-ec"
+              jwt-kid: "verify-ec"
+              jwt-audience: "audience.application.id"
+            - name: "oct"
+              paths:
+                - "/oct"
+              jwk-kid: "sign-oct"
+              jwt-kid: "verify-oct"
+              jwt-audience: "audience.application.id"
+            - name: "asIs"
+              paths:
+                - "/asis"
     - abac:
-
-# Full configuration of JWT provider
-jwt-auth:
-  # Token extraction
-  atn-token:
-    # Expected audience (if not defined, any audience is accepted - security issue...)
-    jwt-audience: "audience.application.id"
-    default-key-id: "verify-rsa"
-  sign-token:
-    # JWK configuration (where to get keys for signatures)
-    # This is defined only once, as we can have more keys in a single jwk
-    jwk-resource-path: "sign-jwk.json"
-    jwt-issuer: "jwt.example.com"
-    outbound:
-      - name: "rsa"
-        paths:
-          - "/rsa"
-        # if we want to create a new token based on current subject
-        # we need the key to sign
-        jwk-kid: "sign-rsa"
-        jwt-kid: "verify-rsa"
-        jwt-audience: "audience.application.id"
-        # notBefore = now - jwt-not-before-seconds
-        # defaults to 5 seconds
-        jwt-not-before-seconds: 60
-        # expiration = now + jwt-validity-seconds
-        # defaults to 1 day
-        jwt-validity-seconds: 3600
-        # defaults to the same as inbound
-        outbound-token:
-          header: "Authorization"
-          format: "bearer %1$s"
-      - name: "ec"
-        paths:
-          - "/ec"
-        jwk-kid: "sign-ec"
-        jwt-kid: "verify-ec"
-        jwt-audience: "audience.application.id"
-      - name: "oct"
-        paths:
-          - "/oct"
-        jwk-kid: "sign-oct"
-        jwt-kid: "verify-oct"
-        jwt-audience: "audience.application.id"
-      - name: "asIs"
-        paths:
-          - "/asis"

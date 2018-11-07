@@ -285,14 +285,6 @@ public interface Server {
                     .filter(this::notACdiBean)
                     .forEach(initializer::addBeanClasses);
 
-
-            this.applications.stream()
-                    .map(JaxRsApplication::getConfig)
-                    .map(ResourceConfig::getClasses)
-                    .flatMap(Set::stream)
-                    .filter(this::notACdiBean)
-                    .forEach(initializer::addBeanClasses);
-
             STARTUP_LOGGER.finest("Initializer");
             SeContainer container = initializer.initialize();
             STARTUP_LOGGER.finest("Initalizer.initialize()");

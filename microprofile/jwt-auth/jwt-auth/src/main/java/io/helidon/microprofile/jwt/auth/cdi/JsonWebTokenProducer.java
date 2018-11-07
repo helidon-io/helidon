@@ -22,9 +22,6 @@ import javax.ws.rs.core.Context;
 
 import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.jwt.Jwt;
-import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.jwt.jwk.Jwk;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -38,16 +35,14 @@ public class JsonWebTokenProducer {
 
     @Produces
     public JsonWebToken produceToken(InjectionPoint ip) {
-        Jwt jwt = Jwt.builder().subject("TypekLibovej").build();
-        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
-        return new JsonWebTokenImpl(jwt, signedJwt);
+        return securityContext.getUserPrincipal()
+                .map(JsonWebToken.class::cast)
+                .orElse(null);
     }
 
     @Produces
     @Impl
     public JsonWebTokenImpl produceTokenImpl(InjectionPoint ip) {
-        Jwt jwt = Jwt.builder().subject("TypekLibovej").build();
-        SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
-        return new JsonWebTokenImpl(jwt, signedJwt);
+        return (JsonWebTokenImpl) produceToken(ip);
     }
 }

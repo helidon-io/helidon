@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
-import java.util.Optional;
 import java.util.Set;
 
 import javax.enterprise.context.RequestScoped;
@@ -29,10 +28,10 @@ import javax.ws.rs.core.SecurityContext;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.server.Server;
+import io.helidon.security.annot.Authenticated;
 
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.jwt.Claim;
-import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.Test;
@@ -41,13 +40,18 @@ import org.junit.jupiter.api.Test;
  * TODO javadoc.
  */
 class JwtAuthTest {
-    @Test
+    public static void main(String[] args) {
+        Server server = Server.create(MyApp.class);
+        server.start();
+        System.out.println();
+    }
     void testIt() {
         Server server = Server.create(MyApp.class);
         server.start();
         System.out.println();
     }
 
+    @Authenticated
     @LoginConfig(authMethod = "MP-JWT", realmName = "Helidon")
     public static class MyApp extends Application {
         @Override
@@ -57,6 +61,7 @@ class JwtAuthTest {
     }
 
     @Path("/")
+    @RequestScoped
     public static class MyResource {
         @Inject
         private JsonWebToken callerPrincipal;
@@ -71,9 +76,9 @@ class JwtAuthTest {
         @Claim("iss")
         private JsonString issuerJson;
 
-        @Inject
-        @Claim(standard = Claims.aud)
-        private Optional<ClaimValue<Set<String>>> audience;
+        //@Inject
+        //@Claim(standard = Claims.aud)
+        //private Optional<ClaimValue<Set<String>>> audience;
 
 
 

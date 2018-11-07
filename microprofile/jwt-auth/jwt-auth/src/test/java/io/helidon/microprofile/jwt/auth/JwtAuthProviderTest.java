@@ -42,6 +42,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
+import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.jwt.Claims;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,7 @@ public class JwtAuthProviderTest {
                 .addGrant(Role.create("group3"))
                 .build();
 
-        JwtAuthProvider provider = JwtAuthProvider.fromConfig(Config.create().get("security.providers.0.jwt-auth"));
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.getUser()).thenReturn(Optional.of(subject));
@@ -152,12 +153,7 @@ public class JwtAuthProviderTest {
         assertThat(jwt.getExpirationTime(), is(Optional.of(expectedExpiry)));
 
         //now we need to use the same token to invoke authentication
-        ProviderRequest atnRequest = mock(ProviderRequest.class);
-        SecurityEnvironment se = SecurityEnvironment.builder()
-                .header("Authorization", "bearer " + signedToken)
-                .build();
-
-        when(atnRequest.getEnv()).thenReturn(se);
+        ProviderRequest atnRequest = mockRequest(signedToken);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
         OptionalHelper.from(authenticationResponse.getUser()
@@ -186,7 +182,7 @@ public class JwtAuthProviderTest {
         Principal tp = Principal.create(userId);
         Subject subject = Subject.create(tp);
 
-        JwtAuthProvider provider = JwtAuthProvider.fromConfig(Config.create().get("security.providers.0.jwt-auth"));
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.getUser()).thenReturn(Optional.of(subject));
@@ -233,11 +229,8 @@ public class JwtAuthProviderTest {
         assertThat(jwt.getExpirationTime(), is(Optional.of(expectedExpiry)));
 
         //now we need to use the same token to invoke authentication
-        ProviderRequest atnRequest = mock(ProviderRequest.class);
-        SecurityEnvironment se = SecurityEnvironment.builder()
-                .header("Authorization", "bearer " + signedToken)
-                .build();
-        when(atnRequest.getEnv()).thenReturn(se);
+        ProviderRequest atnRequest = mockRequest(signedToken);
+
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
         OptionalHelper.from(authenticationResponse.getUser()
@@ -278,7 +271,7 @@ public class JwtAuthProviderTest {
 
         Subject subject = Subject.create(principal);
 
-        JwtAuthProvider provider = JwtAuthProvider.fromConfig(Config.create().get("security.providers.0.jwt-auth"));
+        JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.getUser()).thenReturn(Optional.of(subject));
@@ -328,11 +321,7 @@ public class JwtAuthProviderTest {
                 });
 
         //now we need to use the same token to invoke authentication
-        ProviderRequest atnRequest = mock(ProviderRequest.class);
-        SecurityEnvironment se = SecurityEnvironment.builder()
-                .header("Authorization", "bearer " + signedToken)
-                .build();
-        when(atnRequest.getEnv()).thenReturn(se);
+        ProviderRequest atnRequest = mockRequest(signedToken);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
         OptionalHelper.from(authenticationResponse.getUser()
@@ -347,5 +336,24 @@ public class JwtAuthProviderTest {
                     assertThat(atnPrincipal.getAttribute("full_name"), is(Optional.of(fullName)));
                     assertThat(atnPrincipal.getAttribute("locale"), is(Optional.of(locale)));
                 }, () -> fail("User must be present in response"));
+    }
+
+    private ProviderRequest mockRequest(String signedToken) {
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + signedToken)
+                .build();
+        when(atnRequest.getEnv()).thenReturn(se);
+
+        EndpointConfig ep = mock(EndpointConfig.class);
+        LoginConfig lc = mock(LoginConfig.class);
+        when(lc.authMethod()).thenReturn(JwtAuthProvider.LOGIN_CONFIG_METHOD);
+        when(lc.realmName()).thenReturn("");
+
+        when(ep.combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION))
+                .thenReturn(CollectionsHelper.listOf(lc));
+        when(atnRequest.getEndpointConfig()).thenReturn(ep);
+
+        return atnRequest;
     }
 }

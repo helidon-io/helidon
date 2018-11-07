@@ -18,16 +18,17 @@ package io.helidon.microprofile.jwt.auth;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -41,12 +42,12 @@ import javax.enterprise.inject.spi.DeploymentException;
 import javax.json.Json;
 import javax.json.JsonObject;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfigProviderResolver;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -73,6 +74,7 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
+import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -86,6 +88,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Configure this for outbound requests to override user to use.
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
+    static final String LOGIN_CONFIG_METHOD = "MP-JWT";
 
     private final boolean optional;
     private final boolean authenticate;
@@ -141,8 +144,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * @param config configuration of this provider
      * @return provider instance
      */
-    public static JwtAuthProvider fromConfig(Config config) {
+    public static JwtAuthProvider create(Config config) {
         return builder().fromConfig(config).build();
+    }
+
+    @Override
+    public Collection<Class<? extends Annotation>> supportedAnnotations() {
+        return CollectionsHelper.setOf(LoginConfig.class);
     }
 
     @Override
@@ -151,6 +159,21 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return AuthenticationResponse.abstain();
         }
 
+        List<LoginConfig> loginConfigs = providerRequest.getEndpointConfig()
+                .combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION);
+
+        return loginConfigs.stream()
+                .filter(JwtAuthProvider::isMpJwt)
+                .findFirst()
+                .map(loginConfig -> authenticate(providerRequest, loginConfig))
+                .orElseGet(AuthenticationResponse::abstain);
+    }
+
+    private static boolean isMpJwt(LoginConfig config) {
+        return LOGIN_CONFIG_METHOD.equals(config.authMethod());
+    }
+
+    AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
         return atnTokenHandler.extractToken(providerRequest.getEnv().getHeaders())
                 .map(token -> {
                     SignedJwt signedJwt = SignedJwt.parseToken(token);

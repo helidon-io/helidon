@@ -16,79 +16,59 @@
 
 package io.helidon.microprofile.jwt.auth.cdi;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.spi.Bean;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
+import javax.enterprise.inject.spi.DeploymentException;
+import javax.enterprise.inject.spi.InjectionPoint;
+import javax.inject.Provider;
+import javax.json.Json;
+import javax.json.JsonValue;
+
 import io.helidon.common.CollectionsHelper;
-import io.helidon.config.Config;
-import io.helidon.config.MissingValueException;
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.Producer;
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.json.Json;
-import javax.json.JsonString;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 /**
  * Class MetricProducer.
  */
-@RequestScoped
-public class ClaimProducer<T> implements Bean<Object> {
-
-    @Inject
-    @Impl
-    private JsonWebTokenImpl token;
-
-    private static final Annotation QUALIFIER = new ConfigProperty() {
+public class ClaimProducer implements Bean<Object> {
+    private static final Annotation QUALIFIER = new Claim() {
         @Override
-        public String name() {
+        public String value() {
             return "";
         }
 
         @Override
-        public String defaultValue() {
-            return UNCONFIGURED_VALUE;
+        public Claims standard() {
+            return Claims.UNKNOWN;
         }
 
         @Override
         public Class<? extends Annotation> annotationType() {
-            return ConfigProperty.class;
+            return Claim.class;
         }
     };
 
-    private final JwtAuthCdiExtension.ClaimInternal qualifier;
+    private final JwtAuthCdiExtension.MpClaimQualifier qualifier;
     private final Type type;
     private final BeanManager bm;
 
-    ClaimProducer(JwtAuthCdiExtension.ClaimInternal q, Type type, BeanManager bm) {
+    ClaimProducer(JwtAuthCdiExtension.MpClaimQualifier q, Type type, BeanManager bm) {
         this.qualifier = q;
         this.bm = bm;
         Type actualType = type;
@@ -103,21 +83,24 @@ public class ClaimProducer<T> implements Bean<Object> {
     }
 
     static Object getClaimValue(String claimName,
-                                JsonWebToken webToken,
-                                JwtAuthCdiExtension.ClaimInternal q) {
+                                JsonWebTokenImpl webToken,
+                                JwtAuthCdiExtension.MpClaimQualifier q) {
 
         if (q.rawType() == q.typeArg()) {
             // not a generic
             //return config.getValue(q.getQualifier().rawType());
             //TODO
-            return null;
+            if (JsonValue.class.isAssignableFrom(q.rawType())) {
+                return Json.createValue((String)webToken.getClaim(claimName));
+            }
+            return webToken.getClaim(claimName);
         }
         // generic declaration
         return getParametrizedClaimValue(claimName,
-                webToken,
-                q.rawType(),
-                q.typeArg(),
-                q.typeArg2());
+                                         webToken,
+                                         q.rawType(),
+                                         q.typeArg(),
+                                         q.typeArg2());
     }
 
     @SuppressWarnings("unchecked")
@@ -134,10 +117,10 @@ public class ClaimProducer<T> implements Bean<Object> {
             } else {
                 return Optional
                         .ofNullable(getParametrizedClaimValue(claimName,
-                                webToken,
-                                typeArg,
-                                typeArg2,
-                                typeArg2));
+                                                              webToken,
+                                                              typeArg,
+                                                              typeArg2,
+                                                              typeArg2));
             }
         } else if (rawType.isAssignableFrom(Optional.class)) {
             if (typeArg == typeArg2) {
@@ -145,10 +128,10 @@ public class ClaimProducer<T> implements Bean<Object> {
             } else {
                 return Optional
                         .ofNullable(getParametrizedClaimValue(claimName,
-                                webToken,
-                                typeArg,
-                                typeArg2,
-                                typeArg2));
+                                                              webToken,
+                                                              typeArg,
+                                                              typeArg2,
+                                                              typeArg2));
             }
         } else if (rawType.isAssignableFrom(Set.class)
                 && typeArg.isAssignableFrom(String.class)) {
@@ -175,6 +158,12 @@ public class ClaimProducer<T> implements Bean<Object> {
     }
 
     private Object getClaimValue(CreationalContext<Object> context) {
+        JsonWebTokenImpl token = CDI.current().select(JsonWebTokenImpl.class, new Impl(){
+            @Override
+            public Class<? extends Annotation> annotationType() {
+                return Impl.class;
+            }
+        }).get();
         return getClaimValue(qualifier.name(), token, qualifier);
     }
 
@@ -215,7 +204,7 @@ public class ClaimProducer<T> implements Bean<Object> {
 
     @Override
     public String getName() {
-        return qualifier.name();
+        return qualifier.id();
     }
 
     @Override
@@ -230,60 +219,8 @@ public class ClaimProducer<T> implements Bean<Object> {
 
     @Override
     public String toString() {
-        return "ConfigPropertyProducer{"
+        return "ClaimProducer{"
                 + "qualifier=" + qualifier
                 + '}';
     }
-
-//----------------------------------------------------------------
-
-    /*@Produces
-    @Claim
-    public String produceClaim(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        if (claim.standard() == Claims.UNKNOWN) {
-            return token.getClaim(claim.value());
-        } else {
-            return token.getClaim(claim.standard().name());
-        }
-    }
-
-    @Produces
-    @Claim
-    public JsonString produceJsonClaim(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return Json.createValue("Injected claim");
-    }
-
-    @Produces
-    @Claim
-    public Optional<String> produceOptionalClaim(InjectionPoint ip) {
-        return Optional.of("OptionalString");
-    }
-
-    @Produces
-    @Claim
-    public Optional<ClaimValue<Set<String>>> produceClaimValueSet(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return Optional.of(new ClaimValue<Set<String>>() {
-            @Override
-            public String getName() {
-                return "name";
-            }
-
-            @Override
-            public Set<String> getValue() {
-                return CollectionsHelper.setOf("name");
-            }
-        });
-    }
-
-    @Produces
-    @Claim
-    public Optional<ClaimValue<Set<JsonString>>> produceClaimValueSetJson(InjectionPoint ip) {
-        Claim claim = ip.getAnnotated().getAnnotation(Claim.class);
-        return Optional.empty();
-    }*/
-
-
 }

@@ -15,10 +15,20 @@
  */
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import io.helidon.config.Config;
-import io.helidon.microprofile.config.MpConfig;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.jwt.Claim;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
@@ -36,20 +46,8 @@ import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Supplier;
+
+import org.eclipse.microprofile.jwt.Claim;
 
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -76,16 +74,18 @@ public class JwtAuthCdiExtension implements Extension {
      * @param pip event from CDI container
      */
     public void collectClaimProducer(@Observes ProcessInjectionPoint<?, ?> pip) {
-        Claim configProperty = pip.getInjectionPoint().getAnnotated().getAnnotation(Claim.class);
-        if (configProperty != null) {
+        Claim claim = pip.getInjectionPoint().getAnnotated().getAnnotation(Claim.class);
+        if (claim != null) {
             InjectionPoint ip = pip.getInjectionPoint();
 
             Type type = ip.getType();
             FieldTypes ft = FieldTypes.forType(type);
 
-            //TODO
             ClaimLiteral q = new ClaimLiteral(
-                    configProperty.value()==null || configProperty.value().isEmpty() ? configProperty.standard().name() : configProperty.value(),
+                    ((claim.value() == null) || claim.value().isEmpty())
+                            ? claim.standard().name()
+                            : claim.value(),
+                    ip.getMember().getDeclaringClass().getName() + "." + getFieldName(ip),
                     ft.getField0().getRawType(),
                     ft.getField1().getRawType(),
                     ft.getField2().getRawType());
@@ -120,14 +120,17 @@ public class JwtAuthCdiExtension implements Extension {
     }
 
     /**
-     * Register a config producer bean for each {@link Claim} injection.
+     * Register a claim producer bean for each {@link Claim} injection.
      *
      * @param abd event from CDI container
      * @param bm  bean manager
      */
-    public void registerConfigProducer(@Observes AfterBeanDiscovery abd, BeanManager bm) {
+    public void registerClaimProducers(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // each injection point will have its own bean
-        qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, bm)));
+        //qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, bm)));
+        for (ClaimIP q : qualifiers) {
+            abd.addBean(new ClaimProducer(q.qualifier, q.type, bm));
+        }
 
         // we also must support injection of Config itself
         /*abd.addBean()
@@ -149,7 +152,7 @@ public class JwtAuthCdiExtension implements Extension {
     public void validate(@Observes AfterDeploymentValidation add) {
 
         qualifiers.forEach(q -> {
-            System.out.println();
+            System.out.print("");
             /*try {
                 Class<?> propertyClass = getPropertyClass(q.qualifier);
                 if (!mpConfig.hasConverter(propertyClass)) {
@@ -183,7 +186,7 @@ public class JwtAuthCdiExtension implements Extension {
         //LOGGER.exiting(getClass().getName(), "validate");
     }
 
-    private Class<?> getPropertyClass(ClaimInternal qualifier) {
+    private Class<?> getPropertyClass(MpClaimQualifier qualifier) {
         if (qualifier.rawType().isArray()) {
             return qualifier.rawType().getComponentType();
         }
@@ -200,9 +203,12 @@ public class JwtAuthCdiExtension implements Extension {
     @Qualifier
     @Retention(RUNTIME)
     @Target({METHOD, FIELD, PARAMETER, TYPE})
-    @interface ClaimInternal {
+    @interface MpClaimQualifier {
         @Nonbinding
         String name();
+
+        @Nonbinding
+        String id();
 
         // e.g. String, Producer, Optional
         @Nonbinding
@@ -216,14 +222,16 @@ public class JwtAuthCdiExtension implements Extension {
         Class typeArg2();
     }
 
-    static class ClaimLiteral extends AnnotationLiteral<ClaimInternal> implements ClaimInternal {
+    static class ClaimLiteral extends AnnotationLiteral<MpClaimQualifier> implements MpClaimQualifier {
         private String name;
+        private String id;
         private Class rawType;
         private Class typeArg;
         private Class typeArg2;
 
-        ClaimLiteral(String name, Class rawType, Class typeArg, Class typeArg2) {
+        ClaimLiteral(String name, String id, Class rawType, Class typeArg, Class typeArg2) {
             this.name = name;
+            this.id = id;
             this.rawType = rawType;
             this.typeArg = typeArg;
             this.typeArg2 = typeArg2;
@@ -232,6 +240,11 @@ public class JwtAuthCdiExtension implements Extension {
         @Override
         public String name() {
             return name;
+        }
+
+        @Override
+        public String id() {
+            return id;
         }
 
         @Override
@@ -274,8 +287,6 @@ public class JwtAuthCdiExtension implements Extension {
             return type;
         }
     }
-
-
 
     static class FieldTypes {
         private TypedField field0;
