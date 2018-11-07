@@ -24,10 +24,10 @@
     <parent>
         <groupId>io.helidon.security.examples</groupId>
         <artifactId>helidon-security-examples-project</artifactId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-examples-jersey</artifactId>
-    <name>Helidon Security Examples Jersey integration</name>
+    <name>Helidon Security Examples Jersey Integration</name>
 
     <description>
         Integration of security with Jersey, shows how to use configuration based approach, builder approach, and programmatic

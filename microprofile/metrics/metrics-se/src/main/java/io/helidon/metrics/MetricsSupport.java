@@ -16,7 +16,10 @@
 
 package io.helidon.metrics;
 
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import javax.json.Json;
@@ -28,6 +31,7 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
+import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -82,6 +86,7 @@ public final class MetricsSupport implements Service {
     private final Meter totalMeter;
 
     private static MetricsSupport metricsSupport;
+    private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     private MetricsSupport(Builder builder) {
         this.rf = RegistryFactory.create(builder.config);
@@ -138,14 +143,32 @@ public final class MetricsSupport implements Service {
         return new Builder();
     }
 
+    /**
+     * Check if the passed headers (specifically Accept) prefer
+     * data in JSON format.
+     *
+     * @return true if passed headers prefer data in JSON format.
+     */
+    static boolean requestsJsonData(RequestHeaders headers) {
+        Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
+        boolean requestsJson =  mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
+
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.fine("Generating metrics for media type " + mediaType.toString()
+                + ". requestsJson=" + requestsJson);
+        }
+        return requestsJson;
+    }
+
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
+
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
             return;
         }
 
-        if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+        if (requestsJsonData(req.headers())) {
             res.send(toJsonData(registry));
         } else {
             res.send(toPrometheusData(registry));
@@ -285,7 +308,7 @@ public final class MetricsSupport implements Service {
 
         OptionalHelper.from(registry.getMetric(metricName))
                 .ifPresentOrElse(metric -> {
-                    if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+                    if (requestsJsonData(req.headers())) {
                         JsonObjectBuilder builder = Json.createObjectBuilder();
                         metric.jsonData(builder);
                         res.send(builder.build());
@@ -299,7 +322,7 @@ public final class MetricsSupport implements Service {
     }
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
-        if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+        if (requestsJsonData(req.headers())) {
             res.send(toJsonData(registries));
         } else {
             res.send(toPrometheusData(registries));
@@ -307,7 +330,7 @@ public final class MetricsSupport implements Service {
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
-        if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
+        if (requestsJsonData(req.headers())) {
             res.send(toJsonMeta(registries));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);

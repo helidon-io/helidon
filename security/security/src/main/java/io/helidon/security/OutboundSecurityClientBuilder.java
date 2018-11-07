@@ -101,7 +101,7 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
      *
      * @return {@link SecurityResponse} of expected type
      */
-    public OutboundSecurityResponse get() {
+    public OutboundSecurityResponse buildAndGet() {
         return build().get();
     }
 

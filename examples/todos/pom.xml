@@ -25,7 +25,7 @@
     <groupId>io.helidon.demo.todos</groupId>
     <artifactId>helidon-demo-todos-project</artifactId>
     <packaging>pom</packaging>
-    <version>0.10.3-SNAPSHOT</version>
+    <version>0.10.5-SNAPSHOT</version>
     <name>Helidon Examples TODOs Demo</name>
 
     <description>

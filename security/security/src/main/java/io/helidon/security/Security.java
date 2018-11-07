@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.spi.AuditProvider;
@@ -399,7 +400,7 @@ public final class Security {
         private Tracer tracer;
         private boolean tracingEnabled = true;
         private SecurityTime serverTime = SecurityTime.builder().build();
-        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.builder().build();
+        private Supplier<ExecutorService> executorService = ThreadPoolSupplier.create();
 
         private Builder() {
         }
@@ -831,7 +832,7 @@ public final class Security {
         Builder fromConfig(Config config) {
             this.config = config.get("security");
             config.get("security.environment.server-time").asOptional(SecurityTime.class).ifPresent(this::serverTime);
-            executorSupplier(ThreadPoolSupplier.from(config));
+            executorSupplier(ThreadPoolSupplier.create(config.get("security.environment.executor-service")));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();

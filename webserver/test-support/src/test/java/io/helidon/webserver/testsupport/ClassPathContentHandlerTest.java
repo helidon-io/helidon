@@ -18,6 +18,7 @@ package io.helidon.webserver.testsupport;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -28,8 +29,11 @@ import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -163,9 +167,17 @@ public class ClassPathContentHandlerTest {
         assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
         // /a
         response = TestClient.create(routing)
+                .path("/a/")
+                .get();
+        assertThat(response.status(), is(Http.Status.OK_200));
+
+        // redirect to /a/
+        response = TestClient.create(routing)
                 .path("/a")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+        assertThat(response.headers().first("Location"), is(Optional.of("/a/")));
+
         // another index
         routing = Routing.builder()
                 .register(StaticContentSupport.builder("/s-internal")

@@ -20,61 +20,43 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-project</artifactId>
+        <version>0.10.5-SNAPSHOT</version>
+    </parent>
+    <groupId>io.helidon.integrations</groupId>
+    <artifactId>helidon-integrations-project</artifactId>
+    <packaging>pom</packaging>
+    <name>Helidon Integrations Project</name>
 
-  <groupId>io.helidon.integrations</groupId>
-  <artifactId>helidon-integrations-project</artifactId>
-  <packaging>pom</packaging>
+    <properties>
+        <!-- maven-compiler-plugin properties -->
+        <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
+        <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
+        <!-- maven-surefire-plugin properties -->
+        <trimStackTrace>false</trimStackTrace>
+    </properties>
 
-  <name>Helidon Integrations Project</name>
-  <description>Helidon Integrations Project</description>
+    <modules>
+        <module>serviceconfiguration</module>
+        <module>cdi</module>
+    </modules>
 
-  <parent>
-    <groupId>io.helidon</groupId>
-    <artifactId>helidon-project</artifactId>
-    <version>0.10.3-SNAPSHOT</version>
-  </parent>
-
-  <modules>
-    <module>serviceconfiguration</module>
-    <module>cdi</module>
-  </modules>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>io.helidon.microprofile.config</groupId>
-        <artifactId>helidon-microprofile-config-cdi</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <compilerArgs>
-              <arg>-Xlint:all</arg>
-              <arg>-parameters</arg>
-            </compilerArgs>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-
-  <properties>
-
-    <!-- maven-compiler-plugin properties; https://maven.apache.org/plugins/maven-compiler-plugin/ -->
-    <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
-    <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
-
-    <!-- maven-surefire-plugin properties -->
-    <trimStackTrace>false</trimStackTrace>
-
-  </properties>
-
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

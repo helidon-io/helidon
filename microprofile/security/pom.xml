@@ -24,10 +24,10 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-security</artifactId>
-    <name>Helidon Microprofile Security integration</name>
+    <name>Helidon Microprofile Security Integration</name>
 
     <description>
         Integration with Helidon Security

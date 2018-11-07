@@ -37,25 +37,30 @@ public final class Main {
      * @throws IOException if there are problems reading logging properties
      */
     public static void main(final String[] args) throws IOException {
-        startServer();
+        setupLogging();
+
+        Server server = startServer();
+
+        System.out.println("http://localhost:" + server.getPort() + "/greet");
     }
 
     /**
      * Start the server.
      * @return the created {@link Server} instance
-     * @throws IOException if there are problems reading logging properties
      */
-    protected static Server startServer() throws IOException {
+    static Server startServer() {
+        // Server will automatically pick up configuration from
+        // microprofile-config.properties
+        // and Application classes annotated as @ApplicationScoped
+        return Server.create().start();
+    }
 
+    /**
+     * Configure logging from logging.properties file.
+     */
+    private static void setupLogging() throws IOException {
         // load logging configuration
         LogManager.getLogManager().readConfiguration(
                 Main.class.getResourceAsStream("/logging.properties"));
-
-
-        // Server will automatically pick up configuration from
-        // microprofile-config.properties
-        Server server = Server.create();
-        server.start();
-        return server;
     }
 }

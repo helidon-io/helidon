@@ -23,6 +23,7 @@ engine:
       plantumlconfig: "_plantuml-config.txt"
       javadoc-base-url: "./apidocs/index.html"
       helidon-version: "${project.version}"
+      guides-dir: "${project.basedir}/../examples/guides"
 assets:
   - target: "/"
     includes:
@@ -100,6 +101,14 @@ backend:
               items:
                 -  includes:
                      - "microprofile/*.adoc"
+            - title: "Guides"
+              pathprefix: "/guides"
+              glyph:
+                type: "icon"
+                value: "explore"
+              items:
+                - includes:
+                    - "guides/*.adoc"
             - title: "Javadocs"
               glyph:
                 type: "icon"

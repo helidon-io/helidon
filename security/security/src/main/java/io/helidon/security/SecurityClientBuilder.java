@@ -57,7 +57,7 @@ public class SecurityClientBuilder<T extends SecurityResponse>
      *
      * @return {@link SecurityResponse} of expected type
      */
-    public T get() {
+    public T buildAndGet() {
         return build().get();
     }
 

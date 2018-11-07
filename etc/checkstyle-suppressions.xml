@@ -25,5 +25,12 @@
     <suppress checks="FileLength"
             files="config/config/src/main/java/io/helidon/config/Config.java"
             lines="1"/>
+
+        <!-- Java comments with AsciiDoc tag:: and end:: in import section incorrectly flagged
+             as unacceptable blank lines within a package's imports. -->
+        <suppress checks="ImportOrder"
+            files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/Main.java"/>
+        <suppress checks="ImportOrder"
+            files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java"/>
 </suppressions>
 

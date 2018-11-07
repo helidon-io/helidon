@@ -42,11 +42,11 @@ public class SynchronousProviderTest {
 
         SecurityContext context = security.contextBuilder("unit_test").build();
 
-        AuthenticationResponse authenticationResponse = context.atnClientBuilder().get();
+        AuthenticationResponse authenticationResponse = context.atnClientBuilder().buildAndGet();
         checkResponse(authenticationResponse);
-        AuthorizationResponse authorizationResponse = context.atzClientBuilder().get();
+        AuthorizationResponse authorizationResponse = context.atzClientBuilder().buildAndGet();
         checkResponse(authorizationResponse);
-        OutboundSecurityResponse outboundSecurityResponse = context.outboundClientBuilder().get();
+        OutboundSecurityResponse outboundSecurityResponse = context.outboundClientBuilder().buildAndGet();
         checkResponse(outboundSecurityResponse);
     }
 

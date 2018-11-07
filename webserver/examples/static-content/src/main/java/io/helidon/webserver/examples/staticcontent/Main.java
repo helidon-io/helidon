@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.examples.staticcontent;
 
+import io.helidon.common.http.Http;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
@@ -27,7 +28,8 @@ import io.helidon.webserver.WebServer;
  */
 public class Main {
 
-    private Main() {}
+    private Main() {
+    }
 
     /**
      * Creates new {@link Routing}.
@@ -36,11 +38,17 @@ public class Main {
      */
     static Routing createRouting() {
         return Routing.builder()
-                      .register(new CounterService())
-                      .register(StaticContentSupport.builder("WEB")
-                                                    .welcomeFileName("index.html")
-                                                    .build())
-                      .build();
+                .any("/", (req, res) -> {
+                    // showing the capability to run on any path, and redirecting from root
+                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.headers().put(Http.Header.LOCATION, "/ui");
+                    res.send();
+                })
+                .register("/ui", new CounterService())
+                .register("/ui", StaticContentSupport.builder("WEB")
+                        .welcomeFileName("index.html")
+                        .build())
+                .build();
     }
 
     /**

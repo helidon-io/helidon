@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-integration-project</artifactId>
-        <version>0.10.3-SNAPSHOT</version>
+        <version>0.10.5-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-integration-annotations</artifactId>
     <name>Helidon Security Integration Annotations</name>

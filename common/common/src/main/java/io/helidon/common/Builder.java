@@ -16,6 +16,8 @@
 
 package io.helidon.common;
 
+import java.util.function.Supplier;
+
 /**
  * Interface for builders, to be able to accept a builder in addition to an instance.
  * <p>
@@ -26,12 +28,17 @@ package io.helidon.common;
  * @param <T> Type of the built instance
  */
 @FunctionalInterface
-public interface Builder<T> {
+public interface Builder<T> extends Supplier<T> {
     /**
      * Build the instance from this builder.
      *
      * @return instance of the built type
      */
     T build();
+
+    @Override
+    default T get() {
+        return build();
+    }
 }
 
