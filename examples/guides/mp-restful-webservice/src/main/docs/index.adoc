@@ -1,0 +1,269 @@
+
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+:adoc-dir: {guides-dir}/mp-restful-webservice/src/main/docs
+:java-base: {adoc-dir}/../java/io/helidon/guides/mp/restfulwebservice
+:greet-app: {java-base}/GreetApplication.java
+:main-class: {java-base}/Main.java
+:greet-resource-class: {java-base}/GreetResource.java
+:greeting-message-class: {java-base}/GreetingMessage.java
+:pom: {adoc-dir}/../../../pom.xml
+
+
+= The MP ReSTful Web Service Guide
+:description: Helidon MP guide restful web service
+:keywords: helidon, guide, example, mp
+
+Create and build a JAX-RS ReSTful web service as your first Helidon MP application.
+
+== What You Will Learn
+You'll learn how to use Helidon MP quickly to create a JAX-RS ReSTful web service that accepts these HTTP requests:
+
+|===
+|Method and URL | Result
+
+|`GET localhost:8080/greet` |Returns a generic but friendly greeting
+|`GET localhost:8080/greet/Joe` |Returns a personalized greeting for the specified person
+|`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
+|===
+
+We create the app in three main steps:
+. Write an application-scoped bean to hold and manage the current greeting.
+. Write a JAX-RS resource to respond to the incoming requests.
+. Write a main class to start the server.
+. Add code to perform simple health checks.
+. Add code to record simple metrics.
+
+(See the last section to find out how to get the entire finished code for this example.)
+
+== What You Need
+
+|===
+|About 15 minutes
+|An IDE or text editor
+|JDK 1.8 or later
+|Maven 3.5 or later
+|===
+
+//Optional:
+//|===
+//|Docker 18.02 (use the Edge channel to run Kubernetes on your desktop)
+//|`kubectl` 1.7.4
+//|===
+
+== Create Your Application
+
+=== Create a new Maven Project
+You can create your maven project in these ways:
+
+* use your IDE to create a new Java maven project, or
+* run the standard maven archetype to create a new Java project using this command:
++
+[source,bash]
+mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
+
+=== Update Your `pom.xml`
+==== The Essentials
+Make sure your POM contains these sections:
+[source,xml,subs="verbatim,attributes"]
+----
+    <properties>
+include::{pom}[tags=helidonVersion;javaVersions]
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+include::{pom}[tag=depMgt]
+        </dependencies>
+    </dependencyManagement>
+----
+Now you can add Helidon dependencies to your project without having to specify the version.
+For this example add these dependencies:
+[source,xml]
+----
+    <dependencies>
+include::{pom}[tags=webserverBundleDependency;configYamlDependency]
+    </dependencies>
+----
+<1> Incorporates the Helidon web server.
+<2> Pulls in support for YAML as a config format.
+
+If you run your project from the IDE, the IDE typically handles the main class and places
+dependent JARs on the runtime classpath for you and your pom is now ready to go. 
+
+=== Create a MP Config File
+This file contains settings for the Helidon web server and the 
+application.
+[source,java]
+.src/main/resources/META-INF/microprofile-config.properties
+----
+include::../resources/META-INF/microprofile-config.properties[tag=configContent]
+----
+<1> Initial application greeting.
+<2> Web server configuration.
+
+=== Create a logging config file
+This file controls logging within the application.
+[source,java]
+.src/main/resources/logging.properties
+----
+include::../resources/logging.properties
+----
+
+=== Create an "empty" `beans.xml` 
+We need to make sure JAX-RS searches for beans and, in particular, our
+resource serving our REST endpoings. 
+[source,java]
+.src/main/resources/META-INF/beans.xml
+----
+include::{beans-xml}[tags=prolog;beans]
+----
+
+=== Create a JAX-RS bean to hold the greeting message
+The app contains a default greeting which the user can set via HTTP. 
+The app stores the current message in a JAX-RS bean.
+
+You or your IDE will add these imports along the way:
+[source,java]
+----
+include::{greeting-message-class}[tags=mainImports;mpImports]
+----
+
+. Create `GreetingMessage.java`
+. Annotate the class with `javax.enterprise.context.ApplicationScoped`
++
+This makes sure that the system allocates one instance of `GreetingMessage` and
+uses it for all requests.
+. You need a `String` field to hold the greeting that can handle potential concurrent attempts to update it,
+because your application might receive multiple concurrent HTTP requests that
+try to modify the message. One way is to add an `AtomicReference` for a `String`:
++
+[source,java]
+----
+include::{greeting-message-class}[tag=messageDecl]
+----
+. Add a constructor annotated with `javax.inject.Inject`and which
+accepts the initial message value as a `String`.
++
+[source,java]
+----
+include::{greeting-message-class}[tag=ctor]
+----
+<1> Causes the annotated parameter to be processed and injected.
+<2> The `ConfigProperty` annotation triggers automatic MP config processing
+to look up the `app.greeting` config value from (in our case) the default
+MP config source: `META-INF/microprofile-config.properties`.
+<3> Assigns the parameter value to the `AtomicString` field.
+
+. Add a getter and setter for the `message`
++
+[source,java]
+----
+include::{greeting-message-class}[tag=getter]
+
+include::{greeting-message-class}[tag=setter]
+----
+
+=== Create a JAX-RS Root Resource for the Application
+This class defines the endpoints for the application.
+
+You or your IDE will add these imports along the way:
+[source,java]
+----
+include::{greet-resource-class}[tag=javaxImports]
+----
+
+. Create the `GreetResource.java` file.
+Mark it as request-scoped and declare the common path prefix that
+all endpoints in the resource share.
++
+[source,java]
+----
+include::{greet-resource-class}[tag=classDecl]
+----
+
+. Create a private field for the application's `GreetingMessage`
++
+[source,java]
+----
+include::{greet-resource-class}[tag=greetingMessageDecl]
+----
+
+. Create a public constructor, annotated with `javax.inject.Inject`
++
+[source,java]
+----
+include::{greet-resource-class}[tag=ctor]
+----
+<1> Because you annotate the constructor with `@Inject` the Helidon MP
+system will inject the argument because the argument class `GreetingMessage` 
+is defined as a JAX-RS bean. Further, because you defined it to have
+application scope, JAX-RS will inject the same instance every time
+it creates a new instance of the `GreetResource` so all will
+share the same greeting message.
+
+. Write a private method to format the message your endpoints
+return to the clients.
++
+[source,java]
+----
+include::{greet-resource-class}[tag=createResponse]
+----
+<1> `who` is the name of the end-user we want to greet
+<2> Retrieves the message from the `GreetingMessage` bean.
+<3> Formats the response as JSON.
+
+=== Add the code for the resource's endpoints
+
+==== Write a method to return the default greeting
+
+=== Add an `Application` class
+JAX-RS looks for an `Application`. Create `GreetApplication.java` which
+extends `javax.ws.rs.core.Application`, annotate the class with
+`javax.ws.rs.core.Application` and `javax.enterprise.context.ApplicationScoped("/")`.
+
+
+=== Write the `Main` class
+You or your IDE will add these imports:
+[source,java]
+----
+include::{main-class}[tags=javaImports;helidonMPImports]
+----
+
+. Add the `startServer` method
++
+[source,java]
+----
+include::{main-class}[tag=startServer]
+----
+<1> Automatically reads server configuration from `microprofil-config.properties`
+
+. Write a method to initialize logging
++
+[source,java]
+----
+include::{main-class}[tag=setupLogging]
+----
+<1> Loads logging config from `logging.properties`
+
+. Add to the `main` method
++
+[source,java]
+----
+include::{main-class}[tag=main]
+----
