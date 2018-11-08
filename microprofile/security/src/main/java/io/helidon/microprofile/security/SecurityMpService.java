@@ -41,7 +41,7 @@ public class SecurityMpService implements MpService {
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean(true)) {
             SecurityFeature feature = SecurityFeature.builder(security)
-                    .fromConfig(config)
+                    .fromConfig(jerseyConfig)
                     .build();
 
             context.getApplications().forEach(app -> app.register(feature));

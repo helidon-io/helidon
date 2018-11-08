@@ -17,6 +17,9 @@
 mp.jwt.verify.publickey.location: "verify-jwk.json"
 
 security:
+  jersey:
+    defaults:
+      authenticate-annotated-only: false
   providers:
     - mp-jwt-auth:
         # Token extraction

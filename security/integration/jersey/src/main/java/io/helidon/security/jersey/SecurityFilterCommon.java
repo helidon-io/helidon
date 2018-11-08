@@ -157,17 +157,19 @@ abstract class SecurityFilterCommon {
         Span atnSpan = startNewSpan(securitySpan.context(), "security:atn");
 
         try {
-            if (context.getMethodSecurity().requiresAuthentication()) {
+            SecurityDefinition methodSecurity = context.getMethodSecurity();
+
+            if (methodSecurity.requiresAuthentication()) {
                 //authenticate request
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
                         .atnClientBuilder()
-                        .optional(context.getMethodSecurity().authenticationOptional())
+                        .optional(methodSecurity.authenticationOptional())
                         .requestMessage(toRequestMessage(context))
                         .responseMessage(context.getResponseMessage())
                         .tracingSpan(atnSpan);
 
-                clientBuilder.explicitProvider(context.getMethodSecurity().getAuthenticator());
-                processAuthentication(context, clientBuilder, context.getMethodSecurity());
+                clientBuilder.explicitProvider(methodSecurity.getAuthenticator());
+                processAuthentication(context, clientBuilder, methodSecurity);
             }
         } finally {
             if (context.isTraceSuccess()) {

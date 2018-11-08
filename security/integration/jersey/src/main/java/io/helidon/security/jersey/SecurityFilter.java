@@ -291,6 +291,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         definition.add(atn);
         definition.add(atz);
         definition.add(audited);
+        if (!featureConfig().shouldAuthenticateAnnotatedOnly()) {
+            definition.requiresAuthentication(true);
+        }
+
 
         //this is specific jersey implementation - if parent is null, this is application scope, otherwise resource scope
         Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = (

@@ -51,7 +51,6 @@ class JwtAuthTest {
         System.out.println();
     }
 
-    @Authenticated
     @LoginConfig(authMethod = "MP-JWT", realmName = "Helidon")
     public static class MyApp extends Application {
         @Override

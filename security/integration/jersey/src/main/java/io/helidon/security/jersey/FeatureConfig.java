@@ -24,22 +24,31 @@ import java.util.List;
  * Configuration of a Jersey security feature.
  */
 class FeatureConfig {
+    static final boolean DEFAULT_DEBUG = false;
+    static final boolean DEFAULT_ATZ_ANNOTATED_ONLY = false;
+    static final boolean DEFAULT_ATN_ANNOTATED_ONLY = true;
+    static final boolean DEFAULT_PREMATCHING_ATN = false;
+    static final boolean DEFAULT_PREMATCHING_ATZ = false;
+
     private final boolean debug;
     private final boolean authorizeAnnotatedOnly;
     private final boolean usePrematchingAtn;
     private final boolean usePrematchingAtz;
     private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
+    private final boolean authenticateAnnotatedOnly;
 
     FeatureConfig() {
-        this.debug = false;
-        this.authorizeAnnotatedOnly = false;
-        this.usePrematchingAtn = false;
-        this.usePrematchingAtz = false;
+        this.debug = DEFAULT_DEBUG;
+        this.authorizeAnnotatedOnly = DEFAULT_ATZ_ANNOTATED_ONLY;
+        this.usePrematchingAtn = DEFAULT_PREMATCHING_ATN;
+        this.usePrematchingAtz = DEFAULT_PREMATCHING_ATZ;
+        this.authenticateAnnotatedOnly = DEFAULT_ATN_ANNOTATED_ONLY;
     }
 
     FeatureConfig(SecurityFeature.Builder builder) {
         this.debug = builder.isDebug();
         this.authorizeAnnotatedOnly = builder.isAuthorizeAnnotatedOnly();
+        this.authenticateAnnotatedOnly = builder.isAuthenticateAnnotatedOnly();
         this.usePrematchingAtz = builder.isPrematchingAuthorization();
         if (this.usePrematchingAtz) {
             this.usePrematchingAtn = true;
@@ -52,6 +61,10 @@ class FeatureConfig {
 
     boolean shouldAuthorizeAnnotatedOnly() {
         return authorizeAnnotatedOnly;
+    }
+
+    boolean shouldAuthenticateAnnotatedOnly() {
+        return authenticateAnnotatedOnly;
     }
 
     List<QueryParamHandler> getQueryParamHandlers() {
