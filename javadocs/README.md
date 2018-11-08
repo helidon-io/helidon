@@ -8,13 +8,10 @@ The Maven `sources.jar` are required to aggregate the javadocs.
 When building locally against SNAPSHOT, you can generate the `sources.jar` for all
 components by doing a top level build with `-Psources`.
 
-We use [asciidoclet](https://github.com/asciidoctor/asciidoclet), however it is
- available from a specific Maven repository that is configured in the 'javadoc' profile.
-
 ## Building the javadocs
 
 ```bash
 # Cd to the project root
 $ mvn install  -Psources
-$ cd javadocs ; mvn generate-sources -Pjavadoc
+$ cd javadocs ; mvn generate-sources
 ```
