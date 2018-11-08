@@ -43,7 +43,7 @@ public class CommandScheduler implements Scheduler {
      *
      * @return The instance.
      */
-    public static CommandScheduler instance() {
+    public static synchronized CommandScheduler instance() {
         if (instance == null) {
             instance = new CommandScheduler();
         }
