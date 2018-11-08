@@ -23,6 +23,8 @@ module io.helidon.mp.faulttolerance {
     requires javax.inject;
     requires javax.interceptor.api;
 
+    requires io.helidon.common.configurable;
+
     requires cdi.api;
     requires hystrix.core;
     requires archaius.core;
