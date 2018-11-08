@@ -20,6 +20,11 @@ unit:
     is-daemon: false
     thread-name-prefix: "thread-pool-config-unit-test-"
     should-prestart: false
+  scheduled-thread-pool:
+    core-pool-size: 3
+    is-daemon: false
+    thread-name-prefix: "scheduled-thread-pool-config-unit-test-"
+    should-prestart: false
 
 test-1:
   resource-path: "src/test/resources/sample.txt"
