@@ -46,7 +46,7 @@ class ResourceTest {
 
     @Test
     void testString() throws IOException {
-        Resource r = Resource.fromContent("unitTest", STRING_CONTENT);
+        Resource r = Resource.create("unitTest", STRING_CONTENT);
 
         assertThat(r.getString(), is(STRING_CONTENT));
         assertThat(r.getString(StandardCharsets.UTF_8), is(STRING_CONTENT));
@@ -66,7 +66,7 @@ class ResourceTest {
 
     @Test
     void testStreamOnlyOnce() throws IOException {
-        Resource r = Resource.from(new ByteArrayInputStream(STRING_CONTENT.getBytes(StandardCharsets.UTF_8)), "unit-test");
+        Resource r = Resource.create("unit-test", new ByteArrayInputStream(STRING_CONTENT.getBytes(StandardCharsets.UTF_8)));
 
         InputStream is = r.getStream();
         byte[] buffer = new byte[128];
@@ -79,7 +79,7 @@ class ResourceTest {
 
     @Test
     void testStreamCached() throws IOException {
-        Resource r = Resource.from(new ByteArrayInputStream(STRING_CONTENT.getBytes(StandardCharsets.UTF_8)), "unit-test");
+        Resource r = Resource.create("unit-test", new ByteArrayInputStream(STRING_CONTENT.getBytes(StandardCharsets.UTF_8)));
 
         //cache it
         assertThat(r.getString(), is(STRING_CONTENT));
@@ -96,31 +96,31 @@ class ResourceTest {
 
     @Test
     void testConfigPath() {
-        Resource resource = Resource.from(config.get("test-1"), "resource").get();
+        Resource resource = Resource.create(config.get("test-1"), "resource").get();
         assertThat(resource.getString(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigClasPath() {
-        Resource resource = Resource.from(config.get("test-2"), "resource").get();
+        Resource resource = Resource.create(config.get("test-2"), "resource").get();
         assertThat(resource.getString(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigUrl() {
-        Resource resource = Resource.from(config.get("test-3"), "resource").get();
+        Resource resource = Resource.create(config.get("test-3"), "resource").get();
         assertThat(resource.getString(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigPlainContent() {
-        Resource resource = Resource.from(config.get("test-4"), "resource").get();
+        Resource resource = Resource.create(config.get("test-4"), "resource").get();
         assertThat(resource.getString(), is("content"));
     }
 
     @Test
     void testConfigContent() {
-        Resource resource = Resource.from(config.get("test-5"), "resource").get();
+        Resource resource = Resource.create(config.get("test-5"), "resource").get();
         assertThat(resource.getString(), is(STRING_CONTENT));
     }
 }

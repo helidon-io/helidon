@@ -227,7 +227,7 @@ public final class CryptUtil {
 
         getEnv(ConfigProperties.PRIVATE_KEY_PEM_PATH_ENV_VARIABLE)
                 .map(Paths::get)
-                .ifPresent(path -> pemBuilder.key(Resource.from(path)));
+                .ifPresent(path -> pemBuilder.key(Resource.create(path)));
 
         getEnv(ConfigProperties.PRIVATE_KEY_PASS_ENV_VARIABLE)
                 .map(String::toCharArray)
@@ -236,7 +236,7 @@ public final class CryptUtil {
         // override the ones defined in environment variables
         getEnv(ConfigProperties.PRIVATE_KEYSTORE_PATH_ENV_VARIABLE)
                 .map(Paths::get)
-                .ifPresent(path -> keystoreBuilder.keystore(Resource.from(path)));
+                .ifPresent(path -> keystoreBuilder.keystore(Resource.create(path)));
 
         getEnv(ConfigProperties.PRIVATE_KEYSTORE_TYPE_ENV_VARIABLE)
                 .ifPresent(keystoreBuilder::keystoreType);

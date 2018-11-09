@@ -18,11 +18,17 @@ package io.helidon.common.configurable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Objects;
+import java.util.Optional;
+
+import io.helidon.config.Config;
 
 /**
  * Utilities to move private static methods from interface,
@@ -98,5 +104,48 @@ final class ResourceUtil {
         } catch (IOException e) {
             throw new ResourceException("Failed to open strem to uri: " + uri, e);
         }
+    }
+
+    static Optional<Resource> fromConfigPath(Config config, String keyPrefix) {
+        return config.get(keyPrefix + "-path")
+                                           .asOptionalString()
+                                           .map(Paths::get)
+                                           .map(Resource::create);
+    }
+
+    static Optional<Resource> fromConfigB64Content(Config config, String keyPrefix) {
+        return config.get(keyPrefix + "-content")
+                .asOptionalString()
+                .map(Base64.getDecoder()::decode)
+                .map(content -> Resource.create("config:" + keyPrefix + "-content-b64", content));
+    }
+
+    static Optional<Resource> fromConfigContent(Config config, String keyPrefix) {
+        return config.get(keyPrefix + "-content-plain")
+                .asOptionalString()
+                .map(content -> Resource.create("config:" + keyPrefix + "-content", content));
+    }
+
+    static Optional<Resource> fromConfigUrl(Config config, String keyPrefix) {
+        return config.get(keyPrefix + "-url")
+                .asOptional(URI.class)
+                .map(uri -> config.get("proxy-host").value()
+                        .map(proxyHost -> {
+                            if (config.get(keyPrefix + "-use-proxy").asBoolean(true)) {
+                                Proxy proxy = new Proxy(Proxy.Type.HTTP,
+                                                        new InetSocketAddress(proxyHost,
+                                                                              config.get("proxy-port").asInt(80)));
+                                return Resource.create(uri, proxy);
+                            } else {
+                                return Resource.create(uri);
+                            }
+                        })
+                        .orElseGet(() -> Resource.create(uri)));
+    }
+
+    static Optional<Resource> fromConfigResourcePath(Config config, String keyPrefix) {
+        return config.get(keyPrefix + "-resource-path")
+                .asOptionalString()
+                .map(Resource::create);
     }
 }

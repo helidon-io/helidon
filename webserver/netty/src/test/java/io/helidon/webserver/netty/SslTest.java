@@ -66,8 +66,8 @@ public class SslTest {
      */
     private static void startServer(int port) throws Exception {
         Builder<SSLContext> nettyContext = SSLContextBuilder.create(KeyConfig.pemBuilder()
-                                                                             .key(Resource.from("ssl/key.pkcs8.pem"))
-                                                                             .certChain(Resource.from("ssl/certificate.pem"))
+                                                                             .key(Resource.create("ssl/key.pkcs8.pem"))
+                                                                             .certChain(Resource.create("ssl/certificate.pem"))
                                                                              .build());
 
         webServer = WebServer.create(

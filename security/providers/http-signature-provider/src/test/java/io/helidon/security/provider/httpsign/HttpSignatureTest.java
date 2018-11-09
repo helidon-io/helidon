@@ -17,6 +17,7 @@
 package io.helidon.security.provider.httpsign;
 
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,7 @@ public class HttpSignatureTest {
         SecurityEnvironment env = buildSecurityEnv("/my/resource", headers);
         OutboundTargetDefinition outboundDef = OutboundTargetDefinition.builder("rsa-key-12345")
                 .privateKeyConfig(KeyConfig.keystoreBuilder()
-                                          .keystore(Resource.fromPath("src/test/resources/keystore.p12"))
+                                          .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
                                           .keystorePassphrase("password".toCharArray())
                                           .keyAlias("myPrivateKey")
                                           .build())
@@ -227,7 +228,7 @@ public class HttpSignatureTest {
         InboundClientDefinition inboundClientDef = InboundClientDefinition.builder("rsa-key-12345")
                 .principalName("theService")
                 .publicKeyConfig(KeyConfig.keystoreBuilder()
-                                         .keystore(Resource.fromPath("src/test/resources/keystore.p12"))
+                                         .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
                                          .keystorePassphrase("password".toCharArray())
                                          .certAlias("service_cert")
                                          .build())
