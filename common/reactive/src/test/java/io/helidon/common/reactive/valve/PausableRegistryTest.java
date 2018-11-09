@@ -22,11 +22,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PausableRegistryTest {
 
@@ -42,54 +42,56 @@ class PausableRegistryTest {
     void resumeCallsTryProcess() {
         CountingRegistry reg = new CountingRegistry();
         reg.resume();
-        assertEquals(1, reg.counter.get());
+        assertThat(reg.counter.get(), is(1));
         reg.resume();
-        assertEquals(2, reg.counter.get());
+        assertThat(reg.counter.get(), is(2));
     }
 
     @Test
     void noProcessIfNoHandler() {
         CountingRegistry<String> reg = new CountingRegistry<>();
-        assertFalse(reg.canProcess());
+        assertThat(reg.canProcess(), is(false));
         reg.resume();
-        assertFalse(reg.canProcess());
+        assertThat(reg.canProcess(), is(false));
         reg.handle((data, psb) -> {}, null, null);
-        assertTrue(reg.canProcess());
-        assertFalse(reg.paused());
-        assertTrue(reg.canContinueProcessing());
+        assertThat(reg.canProcess(), is(true));
+        assertThat(reg.paused(), is(false));
+        assertThat(reg.canContinueProcessing(), is(true));
     }
 
     @Test
     void processByHandlerRegistration() {
         CountingRegistry<String> reg = new CountingRegistry<>();
-        assertEquals(0, reg.counter.get());
+        assertThat(reg.counter.get(), is(0));
         reg.handle((data, psb) -> {}, null, null);
-        assertEquals(1, reg.counter.get());
+        assertThat(reg.counter.get(), is(1));
     }
 
     @Test
     void pauseResume() {
         CountingRegistry<String> reg = new CountingRegistry<>();
         reg.handle((data, psb) -> {}, null, null);
-        assertTrue(reg.canProcess());
-        assertFalse(reg.paused());
-        assertTrue(reg.canContinueProcessing());
+        assertThat(reg.canProcess(), is(true));
+        assertThat(reg.paused(), is(false));
+        assertThat(reg.canContinueProcessing(), is(true));
         reg.pause();
-        assertFalse(reg.canContinueProcessing());
-        assertFalse(reg.canProcess());
+        assertThat(reg.canContinueProcessing(), is(false));
+        assertThat(reg.paused(), is(true));
+        assertThat(reg.canProcess(), is(false));
         reg.resume();
-        assertTrue(reg.canProcess());
-        assertTrue(reg.canContinueProcessing());
+        assertThat(reg.canProcess(), is(true));
+        assertThat(reg.paused(), is(false));
+        assertThat(reg.canContinueProcessing(), is(true));
     }
 
     @Test
     void notTwoProcessors() {
         CountingRegistry<String> reg = new CountingRegistry<>();
         reg.handle((data, psb) -> {}, null, null);
-        assertTrue(reg.canProcess());
-        assertFalse(reg.canProcess());
+        assertThat(reg.canProcess(), is(true));
+        assertThat(reg.canProcess(), is(false));
         reg.releaseProcessing();
-        assertTrue(reg.canProcess());
+        assertThat(reg.canProcess(), is(true));
     }
 
     @Test
@@ -98,8 +100,8 @@ class PausableRegistryTest {
         CountingRegistry<String> reg = new CountingRegistry<>();
         reg.handle((data, psb) -> {}, ref::set, null);
         reg.handleError(new IOException());
-        assertNotNull(ref.get());
-        assertEquals(IOException.class, ref.get().getClass());
+        assertThat(ref.get(), notNullValue());
+        assertThat(ref.get(), instanceOf(IOException.class));
     }
 
     @Test

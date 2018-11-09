@@ -28,9 +28,10 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 class ValveTest {
 
@@ -57,18 +58,18 @@ class ValveTest {
         // --- Basic consumer
         // Simple
         Valves.from(LIST_0_10).handle((Consumer<Integer>) buffer::add);
-        assertEquals(LIST_0_10, buffer);
+        assertThat(buffer, is(LIST_0_10));
         buffer.clear();
         // Two Params
         Valves.from(LIST_0_10).handle((Consumer<Integer>) buffer::add, thrRef::set);
-        assertEquals(LIST_0_10, buffer);
-        assertNull(thrRef.get());
+        assertThat(buffer, is(LIST_0_10));
+        assertThat(thrRef.get(), nullValue());
         buffer.clear();
         // Three Params
         Valves.from(LIST_0_10).handle((Consumer<Integer>) buffer::add, thrRef::set, () -> resultRef.set(true));
-        assertEquals(LIST_0_10, buffer);
-        assertNull(thrRef.get());
-        assertTrue(resultRef.get());
+        assertThat(buffer, is(LIST_0_10));
+        assertThat(thrRef.get(), nullValue());
+        assertThat(resultRef.get(), is(true));
         buffer.clear();
         resultRef.set(false);
 
@@ -81,9 +82,9 @@ class ValveTest {
             }
             buffer.add(i);
         });
-        assertEquals(LIST_0_5, buffer);
+        assertThat(buffer, is(LIST_0_5));
         valve.resume();
-        assertEquals(LIST_0_10, buffer);
+        assertThat(buffer, is(LIST_0_10));
         buffer.clear();
         // Two Params
         valve = Valves.from(LIST_0_10);
@@ -93,10 +94,10 @@ class ValveTest {
             }
             buffer.add(i);
         }, thrRef::set);
-        assertEquals(LIST_0_5, buffer);
+        assertThat(buffer, is(LIST_0_5));
         valve.resume();
-        assertEquals(LIST_0_10, buffer);
-        assertNull(thrRef.get());
+        assertThat(buffer, is(LIST_0_10));
+        assertThat(thrRef.get(), nullValue());
         buffer.clear();
         // Three Params
         valve = Valves.from(LIST_0_10);
@@ -106,11 +107,11 @@ class ValveTest {
             }
             buffer.add(i);
         }, thrRef::set, () -> resultRef.set(true));
-        assertEquals(LIST_0_5, buffer);
+        assertThat(buffer, is(LIST_0_5));
         valve.resume();
-        assertEquals(LIST_0_10, buffer);
-        assertNull(thrRef.get());
-        assertTrue(resultRef.get());
+        assertThat(buffer, is(LIST_0_10));
+        assertThat(thrRef.get(), nullValue());
+        assertThat(resultRef.get(), is(true));
         buffer.clear();
         resultRef.set(false);
     }
@@ -122,7 +123,8 @@ class ValveTest {
                                      .collect(Collectors.toList())
                                      .toCompletableFuture()
                                      .get();
-        assertEquals(LIST_0_5, result);
+
+        assertThat(result, is(LIST_0_5));
     }
 
     @Test
@@ -132,9 +134,12 @@ class ValveTest {
                               .collect(Collectors.joining())
                               .toCompletableFuture()
                               .get();
-        assertEquals(LIST_0_10.stream()
-                              .map(String::valueOf)
-                              .collect(Collectors.joining()), result);
+
+        String expected = LIST_0_10.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining());
+
+        assertThat(result, is(expected));
     }
 
     @Test
@@ -145,8 +150,8 @@ class ValveTest {
                                      .collect(Collectors.toList())
                                      .toCompletableFuture()
                                      .get();
-        assertEquals(LIST_0_10, buffer);
-        assertEquals(LIST_0_10, result);
+        assertThat(buffer, is(LIST_0_10));
+        assertThat(result, is(LIST_0_10));
     }
 
     @Test
@@ -159,7 +164,8 @@ class ValveTest {
                                      .collect(Collectors.toList())
                                      .toCompletableFuture()
                                      .get();
-        assertEquals(LIST_0_100, result);
-        assertTrue(threadNames.size() > 1);
+
+        assertThat(result, is(LIST_0_100));
+        assertThat(threadNames.size(), greaterThan(1));
     }
 }
