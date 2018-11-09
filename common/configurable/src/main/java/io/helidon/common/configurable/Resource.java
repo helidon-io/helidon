@@ -35,7 +35,7 @@ import io.helidon.config.Config;
  * or direct value ({@link #create(String, byte[])}, {@link #create(String, String)}.
  *
  * The resource bytes can then be accessed by various methods, depending on the type required - either you can access bytes
- * ({@link #getBytes()}, {@link #getStream()}) or String ({@link #getString()}, {@link #getString(Charset)}).
+ * ({@link #bytes()}, {@link #stream()}) or String ({@link #string()}, {@link #string(Charset)}).
  *
  * This class is not thread safe. If you want to use it across multiple threads,
  * there is an option: call {@link #cacheBytes()} before accessing it by other threads.
@@ -45,7 +45,7 @@ public interface Resource {
     /**
      * Load resource from URI provided.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param uri Resource location
@@ -58,7 +58,7 @@ public interface Resource {
     /**
      * Load resource from URI provided with an explicit proxy server.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param uri   Resource location
@@ -72,7 +72,7 @@ public interface Resource {
     /**
      * Load resource from classpath.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param resourcePath classpath path
@@ -85,7 +85,7 @@ public interface Resource {
     /**
      * Load resource from file system.
      * Note that the loading is lazy - this method opens the stream,
-     * but byte are ready only once you call {@link #getBytes()} and other
+     * but byte are ready only once you call {@link #bytes()} and other
      * content retrieval-methods.
      *
      * @param fsPath path of file system
@@ -167,14 +167,14 @@ public interface Resource {
      * If you create the resource with byte content (e.g. from string), the content
      * will be pre-buffered.
      *
-     * If you first call another method (such as {@link #getBytes()}, or explicitly buffer
+     * If you first call another method (such as {@link #bytes()}, or explicitly buffer
      * this resource {@link #cacheBytes()}, you will get a new input stream to the
      * buffered bytes and may call this method multiple times.
      *
      * @return input stream ready to read bytes
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    InputStream getStream();
+    InputStream stream();
 
     /**
      * Get bytes of this resource.
@@ -183,7 +183,7 @@ public interface Resource {
      * @return bytes of this resource
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    byte[] getBytes();
+    byte[] bytes();
 
     /**
      * Get string content of this resource.
@@ -192,7 +192,7 @@ public interface Resource {
      * @return string content of this instance, using UTF-8 encoding to decode bytes
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    String getString();
+    String string();
 
     /**
      * Get string content of this resource.
@@ -202,14 +202,14 @@ public interface Resource {
      * @return string content of this instance, using your encoding to decode bytes
      * @throws IllegalStateException in case the stream was already provided in previous call and was not buffered
      */
-    String getString(Charset charset);
+    String string(Charset charset);
 
     /**
      * Type of this resource, depends on the original source.
      *
      * @return type
      */
-    Source getSourceType();
+    Source sourceType();
 
     /**
      * Location (or description) of this resource, depends on original source.
@@ -225,7 +225,7 @@ public interface Resource {
      *
      * @return location of this resource (or other description of where it comes from)
      */
-    String getLocation();
+    String location();
 
     /**
      * Caches the resource bytes in memory, so they can be repeatedly

@@ -221,7 +221,7 @@ public class InboundClientDefinition {
                 algorithm = HttpSignProvider.ALGORITHM_RSA;
             }
             // make sure this is a public key (validation of inbound signatures)
-            keyConfig.getPublicKey()
+            keyConfig.publicKey()
                     .orElseThrow(() -> new HttpSignatureException("Configuration must contain a public key"));
 
             this.keyConfig = keyConfig;

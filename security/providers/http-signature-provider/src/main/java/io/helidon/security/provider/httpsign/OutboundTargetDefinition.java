@@ -210,7 +210,7 @@ public class OutboundTargetDefinition {
             }
 
             // make sure this is a private key (signature of outbound requests)
-            keyConfig.getPrivateKey()
+            keyConfig.privateKey()
                     .orElseThrow(() -> new HttpSignatureException("Configuration must contain a private key"));
 
             this.keyConfig = keyConfig;

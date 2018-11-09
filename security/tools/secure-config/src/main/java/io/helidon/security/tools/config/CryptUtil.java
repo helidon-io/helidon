@@ -222,8 +222,8 @@ public final class CryptUtil {
 
     static Optional<PrivateKey> resolvePrivateKey(Config config) {
         // load configuration values
-        KeyConfig.PemBuilder pemBuilder = KeyConfig.pemBuilder().from(config);
-        KeyConfig.KeystoreBuilder keystoreBuilder = KeyConfig.keystoreBuilder().from(config);
+        KeyConfig.PemBuilder pemBuilder = KeyConfig.pemBuilder().config(config);
+        KeyConfig.KeystoreBuilder keystoreBuilder = KeyConfig.keystoreBuilder().config(config);
 
         getEnv(ConfigProperties.PRIVATE_KEY_PEM_PATH_ENV_VARIABLE)
                 .map(Paths::get)
@@ -256,7 +256,7 @@ public final class CryptUtil {
                 .updateWith(pemBuilder)
                 .updateWith(keystoreBuilder)
                 .build()
-                .getPrivateKey();
+                .privateKey();
 
         if (!result.isPresent()) {
             LOGGER.fine("Securing properties using asymmetric cipher is not available, as private key is not configured");

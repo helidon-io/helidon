@@ -112,7 +112,7 @@ public class JwkKeys {
          */
         public Builder resource(Resource resource) {
             Objects.requireNonNull(resource, "Json resource must not be null");
-            try (InputStream is = resource.getStream()) {
+            try (InputStream is = resource.stream()) {
                 JsonObject jsonObject = Json.createReader(is).readObject();
                 addKeys(jsonObject);
             } catch (IOException e) {

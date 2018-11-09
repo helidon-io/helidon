@@ -698,7 +698,7 @@ public final class OidcConfig {
             if ((null == oidcMetadata) && oidcMetadataWellKnown) {
                 try {
                     String wellKnown = identityUri + OidcConfig.DEFAULT_OIDC_METADATA_URI;
-                    oidcMetadata = Json.createReader(Resource.create(URI.create(wellKnown)).getStream()).readObject();
+                    oidcMetadata = Json.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
                     LOGGER.finest(() -> "OIDC Metadata loaded from well known URI: " + wellKnown);
                 } catch (Exception e) {
                     collector.fatal(e, "Failed to load metadata: " + e.getClass().getName() + ": " + e.getMessage());
@@ -892,7 +892,7 @@ public final class OidcConfig {
          * @return udpated builder instance
          */
         public Builder oidcMetadata(Resource resource) {
-            this.oidcMetadata = Json.createReader(resource.getStream()).readObject();
+            this.oidcMetadata = Json.createReader(resource.stream()).readObject();
             return this;
         }
 
