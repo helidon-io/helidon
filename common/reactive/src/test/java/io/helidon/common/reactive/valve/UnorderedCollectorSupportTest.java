@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link UnorderedCollectorSupport}.
@@ -49,7 +50,7 @@ class UnorderedCollectorSupportTest {
         Set<Integer> result = support.getResult()
                                        .toCompletableFuture()
                                        .get(10, TimeUnit.SECONDS);
-        assertEquals(threadsCount * valuesPerThread, result.size());
+        assertThat(result.size(), is(threadsCount * valuesPerThread));
     }
 
     @Test

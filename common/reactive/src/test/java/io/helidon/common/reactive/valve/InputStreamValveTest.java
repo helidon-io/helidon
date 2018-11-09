@@ -40,8 +40,8 @@ import org.hamcrest.core.IsCollectionContaining;
 import org.hamcrest.core.StringStartsWith;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The InputStreamValveTest.
@@ -205,8 +205,9 @@ class InputStreamValveTest {
                              .toCompletableFuture()
                              .get();
 
-        assertEquals(string, result);
-        assertEquals(expected, readCounter.intValue());
+        assertThat(result, is(string));
+        assertThat(readCounter.intValue(), is(expected));
+
         assertThat("Unexpected thread names: " + threadNames, threadNames, matcher);
     }
 
