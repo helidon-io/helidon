@@ -133,8 +133,8 @@ class KeyConfigTest {
     @Test
     void testPem() {
         KeyConfig conf = KeyConfig.pemBuilder()
-                .certChain(Resource.from("keystore/public_key_cert.pem"))
-                .key(Resource.from("keystore/id_rsa.p8"))
+                .certChain(Resource.create("keystore/public_key_cert.pem"))
+                .key(Resource.create("keystore/id_rsa.p8"))
                 .keyPassphrase("heslo".toCharArray())
                 .build();
 

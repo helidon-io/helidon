@@ -17,14 +17,11 @@
 package io.helidon.common.configurable;
 
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,9 +30,9 @@ import io.helidon.config.Config;
 
 /**
  * A representation of a resource that can be
- * loaded from URL ({@link #from(URI)}), classpath ({@link #from(String)}), filesystem ({@link #from(Path)},
- * {@link #fromPath(String)}), content in config ({@link #from(Config, String)}, input stream({@link #from(InputStream, String)},
- * or direct value ({@link #fromContent(String, byte[])}, {@link #fromContent(String, String)}.
+ * loaded from URL ({@link #create(URI)}), classpath ({@link #create(String)}), filesystem ({@link #create(Path)},
+ * content in config ({@link #create(Config, String)}, input stream({@link #create(String, InputStream)},
+ * or direct value ({@link #create(String, byte[])}, {@link #create(String, String)}.
  *
  * The resource bytes can then be accessed by various methods, depending on the type required - either you can access bytes
  * ({@link #getBytes()}, {@link #getStream()}) or String ({@link #getString()}, {@link #getString(Charset)}).
@@ -54,7 +51,7 @@ public interface Resource {
      * @param uri Resource location
      * @return resource instance
      */
-    static Resource from(URI uri) {
+    static Resource create(URI uri) {
         return ResourceUtil.from(ResourceUtil.toIs(uri), uri.toString(), Source.URL);
     }
 
@@ -68,7 +65,7 @@ public interface Resource {
      * @param proxy HTTP proxy to use when accessing the URI
      * @return resource instance
      */
-    static Resource from(URI uri, Proxy proxy) {
+    static Resource create(URI uri, Proxy proxy) {
         return ResourceUtil.from(ResourceUtil.toIs(uri, proxy), uri.toString(), Source.URL);
     }
 
@@ -81,7 +78,7 @@ public interface Resource {
      * @param resourcePath classpath path
      * @return resource instance
      */
-    static Resource from(String resourcePath) {
+    static Resource create(String resourcePath) {
         return ResourceUtil.from(ResourceUtil.toIs(resourcePath), resourcePath, Source.CLASSPATH);
     }
 
@@ -94,18 +91,8 @@ public interface Resource {
      * @param fsPath path of file system
      * @return resource instance
      */
-    static Resource from(Path fsPath) {
+    static Resource create(Path fsPath) {
         return ResourceUtil.from(ResourceUtil.toIs(fsPath), fsPath.toAbsolutePath().toString(), Source.FILE);
-    }
-
-    /**
-     * Helper method for {@link #from(Path)} so you do not have to create the path yourself.
-     *
-     * @param fsPath String path to file system
-     * @return resource instance
-     */
-    static Resource fromPath(String fsPath) {
-        return from(Paths.get(fsPath));
     }
 
     /**
@@ -115,19 +102,19 @@ public interface Resource {
      * @param bytes       raw bytes of this resource
      * @return resource instance
      */
-    static Resource fromContent(String description, byte[] bytes) {
+    static Resource create(String description, byte[] bytes) {
         Objects.requireNonNull(bytes, "Resource bytes must not be null");
         return new ResourceImpl(Source.BINARY_CONTENT, description, bytes);
     }
 
     /**
-     * Load resource from text content (e.g. this must not be base64 - use {@link #fromContent(String, byte[])} for binary).
+     * Load resource from text content (e.g. this must not be base64 - use {@link #create(String, byte[])} for binary).
      *
      * @param description description of this resource (e.g. "JWK-private")
      * @param string      string content of this resource, will be transformed to bytes using UTF-8 encoding
      * @return resource instance
      */
-    static Resource fromContent(String description, String string) {
+    static Resource create(String description, String string) {
         Objects.requireNonNull(string, "Resource content must not be null");
         return new ResourceImpl(Source.CONTENT, description, string.getBytes(StandardCharsets.UTF_8));
     }
@@ -135,11 +122,11 @@ public interface Resource {
     /**
      * Load resource from binary content from an input stream, using {@link Source#UNKNOWN} type.
      *
-     * @param inputStream input stream to raw bytes of this resource
      * @param description description of this resource (e.g. "keystore")
+     * @param inputStream input stream to raw bytes of this resource
      * @return resource instance
      */
-    static Resource from(InputStream inputStream, String description) {
+    static Resource create(String description, InputStream inputStream) {
         return ResourceUtil.from(inputStream, description, Source.UNKNOWN);
     }
 
@@ -163,35 +150,12 @@ public interface Resource {
      * @param keyPrefix prefix of keys that may contain the location of resource
      * @return a resource ready to load from one of the locations or empty if neither is defined
      */
-    static Optional<Resource> from(Config config, String keyPrefix) {
-        return OptionalHelper.from(config.get(keyPrefix + "-path")
-                                           .asOptionalString()
-                                           .map(Paths::get)
-                                           .map(Resource::from))
-                .or(() -> config.get(keyPrefix + "-resource-path")
-                        .asOptionalString()
-                        .map(Resource::from))
-                .or(() -> config.get(keyPrefix + "-url")
-                        .asOptional(URI.class)
-                        .map(uri -> config.get("proxy-host").value()
-                                .map(proxyHost -> {
-                                    if (config.get(keyPrefix + "-use-proxy").asBoolean(true)) {
-                                        Proxy proxy = new Proxy(Proxy.Type.HTTP,
-                                                                new InetSocketAddress(proxyHost,
-                                                                                      config.get("proxy-port").asInt(80)));
-                                        return Resource.from(uri, proxy);
-                                    } else {
-                                        return Resource.from(uri);
-                                    }
-                                })
-                                .orElseGet(() -> Resource.from(uri))))
-                .or(() -> config.get(keyPrefix + "-content-plain")
-                        .asOptionalString()
-                        .map(content -> Resource.fromContent("config:" + keyPrefix + "-content", content)))
-                .or(() -> config.get(keyPrefix + "-content")
-                        .asOptionalString()
-                        .map(Base64.getDecoder()::decode)
-                        .map(content -> Resource.fromContent("config:" + keyPrefix + "-content-b64", content)))
+    static Optional<Resource> create(Config config, String keyPrefix) {
+        return OptionalHelper.from(ResourceUtil.fromConfigPath(config, keyPrefix))
+                .or(() -> ResourceUtil.fromConfigResourcePath(config, keyPrefix))
+                .or(() -> ResourceUtil.fromConfigUrl(config, keyPrefix))
+                .or(() -> ResourceUtil.fromConfigContent(config, keyPrefix))
+                .or(() -> ResourceUtil.fromConfigB64Content(config, keyPrefix))
                 .asOptional();
     }
 
@@ -254,9 +218,9 @@ public interface Resource {
      * <li>FILE - absolute path to the file</li>
      * <li>CLASSPATH - resource path</li>
      * <li>URL - string of the URI</li>
-     * <li>CONTENT - either config key or description provided to method {@link #fromContent(String, String)}</li>
-     * <li>BINARY_CONTENT - either config key or description provided to {@link #fromContent(String, byte[])}</li>
-     * <li>UNKNOWN - whatever description was provided to {@link #from(InputStream, String)}</li>
+     * <li>CONTENT - either config key or description provided to method {@link #create(String, String)}</li>
+     * <li>BINARY_CONTENT - either config key or description provided to {@link #create(String, byte[])}</li>
+     * <li>UNKNOWN - whatever description was provided to {@link #create(String, InputStream)}</li>
      * </ul>
      *
      * @return location of this resource (or other description of where it comes from)

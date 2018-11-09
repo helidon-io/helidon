@@ -529,7 +529,7 @@ public class KeyConfig {
          * @return updated builder instance
          */
         public KeystoreBuilder from(Config config) {
-            Resource.from(config, "keystore").ifPresent(this::keystore);
+            Resource.create(config, "keystore").ifPresent(this::keystore);
             config.get("keystore-type").value().ifPresent(this::keystoreType);
             config.get("keystore-passphrase").value().map(String::toCharArray).ifPresent(this::keystorePassphrase);
             config.get("key-alias").value().ifPresent(this::keyAlias);
@@ -645,9 +645,9 @@ public class KeyConfig {
          * @return updated builder instance
          */
         public PemBuilder from(Config config) {
-            Resource.from(config, "pem-key").ifPresent(this::key);
+            Resource.create(config, "pem-key").ifPresent(this::key);
             config.get("pem-key-passphrase").value().map(String::toCharArray).ifPresent(this::keyPassphrase);
-            Resource.from(config, "pem-cert-chain").ifPresent(this::certChain);
+            Resource.create(config, "pem-cert-chain").ifPresent(this::certChain);
 
             return this;
         }

@@ -54,7 +54,7 @@ public class CryptUtilTest {
     @BeforeAll
     public static void staticInit() {
         KeyConfig kc = KeyConfig.keystoreBuilder()
-                .keystore(Resource.from(".ssh/keystore.p12"))
+                .keystore(Resource.create(".ssh/keystore.p12"))
                 .keystorePassphrase("j4c".toCharArray())
                 .keyAlias("1")
                 .certAlias("1")

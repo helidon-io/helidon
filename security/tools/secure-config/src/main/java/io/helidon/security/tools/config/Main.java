@@ -125,7 +125,7 @@ public final class Main {
             }
             String certAlias = cliArgs[3];
             KeyConfig kc = KeyConfig.keystoreBuilder()
-                    .keystore(Resource.from(keyPath))
+                    .keystore(Resource.create(keyPath))
                     .keystorePassphrase(cliArgs[2].toCharArray())
                     .certAlias(certAlias)
                     .build();
