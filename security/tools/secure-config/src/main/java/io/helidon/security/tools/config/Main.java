@@ -130,7 +130,7 @@ public final class Main {
                     .certAlias(certAlias)
                     .build();
 
-            publicKey = kc.getPublicKey()
+            publicKey = kc.publicKey()
                     .orElseThrow(() -> new ValidationException("There is no public key available for cert alias: " + certAlias));
         }
 

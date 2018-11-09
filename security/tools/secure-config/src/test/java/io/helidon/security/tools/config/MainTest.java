@@ -75,7 +75,7 @@ public class MainTest {
                 .keyAlias("1")
                 .keystorePassphrase(keystorePass.toCharArray())
                 .build()
-                .getPrivateKey().orElseThrow(AssertionError::new);
+                .privateKey().orElseThrow(AssertionError::new);
 
         Main.EncryptionCliProcessor ecp = new Main.EncryptionCliProcessor();
         ecp.parse(args);

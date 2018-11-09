@@ -53,7 +53,7 @@ class ResourceImpl implements Resource {
     }
 
     @Override
-    public InputStream getStream() {
+    public InputStream stream() {
         check();
         streamObtained = true;
         if (null == cachedBytes) {
@@ -64,14 +64,14 @@ class ResourceImpl implements Resource {
     }
 
     @Override
-    public byte[] getBytes() {
+    public byte[] bytes() {
         check();
         cacheBytes();
         return cachedBytes;
     }
 
     @Override
-    public String getString() {
+    public String string() {
         check();
         cacheBytes();
 
@@ -79,7 +79,7 @@ class ResourceImpl implements Resource {
     }
 
     @Override
-    public String getString(Charset charset) {
+    public String string(Charset charset) {
         check();
         cacheBytes();
 
@@ -87,12 +87,12 @@ class ResourceImpl implements Resource {
     }
 
     @Override
-    public Source getSourceType() {
+    public Source sourceType() {
         return source;
     }
 
     @Override
-    public String getLocation() {
+    public String location() {
         return location;
     }
 

@@ -73,10 +73,10 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      *                               a {@link GeneralSecurityException}
      */
     public static SSLContext fromConfig(Config sslConfig) {
-        return new SSLContextBuilder().privateKeyConfig(KeyConfig.fromConfig(sslConfig.get("private-key")))
+        return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
                                       .sessionCacheSize(sslConfig.get("sessionCacheSize").asInt(0))
                                       .sessionTimeout(sslConfig.get("sessionTimeout").asInt(0))
-                                      .trustConfig(KeyConfig.fromConfig(sslConfig.get("trust")))
+                                      .trustConfig(KeyConfig.create(sslConfig.get("trust")))
                                       .build();
     }
 
@@ -172,9 +172,9 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, null);
         ks.setKeyEntry("key",
-                       privateKeyConfig.getPrivateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
+                       privateKeyConfig.privateKey().orElseThrow(() -> new RuntimeException("Private key not available")),
                        password,
-                       privateKeyConfig.getCertChain().toArray(new Certificate[0]));
+                       privateKeyConfig.certChain().toArray(new Certificate[0]));
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(algorithm);
         kmf.init(ks, password);
@@ -189,7 +189,7 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
         if (trustConfig == null) {
             certs = CollectionsHelper.listOf();
         } else {
-            certs = trustConfig.getCerts();
+            certs = trustConfig.certs();
         }
 
         KeyStore ks = KeyStore.getInstance("JKS");

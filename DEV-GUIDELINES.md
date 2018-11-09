@@ -78,6 +78,7 @@ Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-co
         1. Integration APIs that follow rules of integrated solution, e.g. Jersey SecurityFeature
         2. APIs that must be capable of reflection instantiation by tools that only support 
             public constructors
+        3. Exceptions with constructors for string, and string and a throwable
 2. Class or interface using a builder (let's call ours "FooBar" for the purpose of this document)
     1. Must have:   
         1. Hidden constructor (private or protected) - this is to allow us to switch to interface if needed

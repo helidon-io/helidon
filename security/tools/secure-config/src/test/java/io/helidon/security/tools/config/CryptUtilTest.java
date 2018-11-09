@@ -60,8 +60,8 @@ public class CryptUtilTest {
                 .certAlias("1")
                 .build();
 
-        privateKey = kc.getPrivateKey().orElseThrow(AssertionError::new);
-        publicKey = kc.getPublicKey().orElseThrow(AssertionError::new);
+        privateKey = kc.privateKey().orElseThrow(AssertionError::new);
+        publicKey = kc.publicKey().orElseThrow(AssertionError::new);
     }
 
     @Test

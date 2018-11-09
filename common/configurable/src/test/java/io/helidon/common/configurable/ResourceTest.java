@@ -48,16 +48,16 @@ class ResourceTest {
     void testString() throws IOException {
         Resource r = Resource.create("unitTest", STRING_CONTENT);
 
-        assertThat(r.getString(), is(STRING_CONTENT));
-        assertThat(r.getString(StandardCharsets.UTF_8), is(STRING_CONTENT));
+        assertThat(r.string(), is(STRING_CONTENT));
+        assertThat(r.string(StandardCharsets.UTF_8), is(STRING_CONTENT));
 
-        String other = new String(r.getBytes(), StandardCharsets.UTF_8);
+        String other = new String(r.bytes(), StandardCharsets.UTF_8);
         assertThat(other, is(STRING_CONTENT));
 
-        assertThat(r.getLocation(), is("unitTest"));
-        assertThat(r.getSourceType(), is(Resource.Source.CONTENT));
+        assertThat(r.location(), is("unitTest"));
+        assertThat(r.sourceType(), is(Resource.Source.CONTENT));
 
-        InputStream is = r.getStream();
+        InputStream is = r.stream();
         byte[] buffer = new byte[128];
         int read = is.read(buffer);
         String s = new String(buffer, 0, read, StandardCharsets.UTF_8);
@@ -68,13 +68,13 @@ class ResourceTest {
     void testStreamOnlyOnce() throws IOException {
         Resource r = Resource.create("unit-test", new ByteArrayInputStream(STRING_CONTENT.getBytes(StandardCharsets.UTF_8)));
 
-        InputStream is = r.getStream();
+        InputStream is = r.stream();
         byte[] buffer = new byte[128];
         int read = is.read(buffer);
         String s = new String(buffer, 0, read, StandardCharsets.UTF_8);
         assertThat(s, is(STRING_CONTENT));
 
-        Assertions.assertThrows(IllegalStateException.class, r::getString);
+        Assertions.assertThrows(IllegalStateException.class, r::string);
     }
 
     @Test
@@ -82,45 +82,45 @@ class ResourceTest {
         Resource r = Resource.create("unit-test", new ByteArrayInputStream(STRING_CONTENT.getBytes(StandardCharsets.UTF_8)));
 
         //cache it
-        assertThat(r.getString(), is(STRING_CONTENT));
+        assertThat(r.string(), is(STRING_CONTENT));
 
         //get stream
-        InputStream is = r.getStream();
+        InputStream is = r.stream();
         byte[] buffer = new byte[128];
         int read = is.read(buffer);
         String s = new String(buffer, 0, read, StandardCharsets.UTF_8);
         assertThat(s, is(STRING_CONTENT));
 
-        assertThat(r.getString(), is(STRING_CONTENT));
+        assertThat(r.string(), is(STRING_CONTENT));
     }
 
     @Test
     void testConfigPath() {
         Resource resource = Resource.create(config.get("test-1"), "resource").get();
-        assertThat(resource.getString(), is(COPYRIGHT_TEXT));
+        assertThat(resource.string(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigClasPath() {
         Resource resource = Resource.create(config.get("test-2"), "resource").get();
-        assertThat(resource.getString(), is(COPYRIGHT_TEXT));
+        assertThat(resource.string(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigUrl() {
         Resource resource = Resource.create(config.get("test-3"), "resource").get();
-        assertThat(resource.getString(), is(COPYRIGHT_TEXT));
+        assertThat(resource.string(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigPlainContent() {
         Resource resource = Resource.create(config.get("test-4"), "resource").get();
-        assertThat(resource.getString(), is("content"));
+        assertThat(resource.string(), is("content"));
     }
 
     @Test
     void testConfigContent() {
         Resource resource = Resource.create(config.get("test-5"), "resource").get();
-        assertThat(resource.getString(), is(STRING_CONTENT));
+        assertThat(resource.string(), is(STRING_CONTENT));
     }
 }
