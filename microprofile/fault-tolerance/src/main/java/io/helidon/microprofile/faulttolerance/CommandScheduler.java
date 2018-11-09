@@ -18,10 +18,10 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.config.Config;
 
 import net.jodah.failsafe.util.concurrent.Scheduler;
 
@@ -32,26 +32,66 @@ public class CommandScheduler implements Scheduler {
 
     private static CommandScheduler instance;
 
-    private ScheduledThreadPoolExecutor executor;
+    private final ScheduledThreadPoolSupplier poolSupplier;
 
-    private CommandScheduler() {
-        executor = ScheduledThreadPoolSupplier.create().get();
+    private CommandScheduler(ScheduledThreadPoolSupplier poolSupplier) {
+        this.poolSupplier = poolSupplier;
     }
 
     /**
-     * Returns the single instance of this class.
+     * If no command scheduler exists, creates one using a config.
      *
-     * @return The instance.
+     * @param config Config to use.
+     * @return Existing scheduler or newly created one.
      */
-    public static synchronized CommandScheduler instance() {
+    public static synchronized CommandScheduler create(Config config) {
         if (instance == null) {
-            instance = new CommandScheduler();
+            instance = new CommandScheduler(
+                    ScheduledThreadPoolSupplier.create(config));
         }
         return instance;
     }
 
+    /**
+     * If no command scheduler exists, creates one using default values.
+     *
+     * @return Existing scheduler or newly created one.
+     */
+    public static synchronized CommandScheduler create() {
+        if (instance == null) {
+            instance = new CommandScheduler(ScheduledThreadPoolSupplier.create());
+        }
+        return instance;
+    }
+
+    /**
+     * Returns underlying pool supplier.
+     *
+     * @return The pool supplier.
+     */
+    ScheduledThreadPoolSupplier poolSupplier() {
+        return poolSupplier;
+    }
+
+    /**
+     * Schedules a task using executor.
+     *
+     * @param callable The callable.
+     * @param delay Delay before scheduling task.
+     * @param unit Unite of delay.
+     * @return Future to track task execution.
+     */
     @Override
     public ScheduledFuture<?> schedule(Callable<?> callable, long delay, TimeUnit unit) {
-        return executor.schedule(callable, delay, unit);
+        return poolSupplier.get().schedule(callable, delay, unit);
+    }
+
+    /**
+     * Returns underlying instance (for testing purposes).
+     *
+     * @return The instance.
+     */
+    static CommandScheduler instance() {
+        return instance;
     }
 }

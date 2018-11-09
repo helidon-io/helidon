@@ -24,6 +24,8 @@ module io.helidon.mp.faulttolerance {
     requires javax.interceptor.api;
 
     requires io.helidon.common.configurable;
+    requires io.helidon.mp.config;
+    requires io.helidon.mp.server;
 
     requires cdi.api;
     requires hystrix.core;
@@ -35,5 +37,6 @@ module io.helidon.mp.faulttolerance {
     requires microprofile.metrics.api;
     requires microprofile.fault.tolerance.api;
 
+    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.faulttolerance.FaultToleranceMpService;
     provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
 }

@@ -125,7 +125,7 @@ public class CommandRetrier {
         };
 
         if (isAsynchronous) {
-            Scheduler scheduler = CommandScheduler.instance();
+            Scheduler scheduler = CommandScheduler.create();
             AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
             FailsafeFuture<?> chainedFuture = (FailsafeFuture<?>) (introspector.hasFallback()
                                ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
