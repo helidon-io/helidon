@@ -277,7 +277,7 @@ public class TestClientTest {
     @Test
     public void advancingToDefaultErrorHandler() throws Exception {
         StringBuffer sb = new StringBuffer();
-        HttpException exception = new HttpException("test-exception", Http.ResponseStatus.from(777));
+        HttpException exception = new HttpException("test-exception", Http.ResponseStatus.create(777));
 
         Routing routing = Routing.builder()
                 .any((req, res) -> {
@@ -318,11 +318,11 @@ public class TestClientTest {
         Routing routing = Routing.builder()
                 .any((req, res) -> {
                     sb.append("any-");
-                    throw new HttpException("original-exception", Http.ResponseStatus.from(777));
+                    throw new HttpException("original-exception", Http.ResponseStatus.create(777));
                 })
                 .error(HttpException.class, (req, res, ex) -> {
                     sb.append("httpExceptionHandler-");
-                    throw new HttpException("unexpected-exception", Http.ResponseStatus.from(888));
+                    throw new HttpException("unexpected-exception", Http.ResponseStatus.create(888));
                 })
                 .error(Throwable.class, (req, res, ex) -> {
                     fail("The rest of the handlers were supposed to be skipped due to an unexpected exception being thrown "
@@ -353,7 +353,7 @@ public class TestClientTest {
                     } catch (Exception e) {
                         fail("Should not have gotten an exception.");
                     }
-                    throw new HttpException("test-exception", Http.ResponseStatus.from(400));
+                    throw new HttpException("test-exception", Http.ResponseStatus.create(400));
                 })
                 .error(Throwable.class, (req, res, ex) -> {
                     sb.append("throwableHandler");

@@ -34,122 +34,45 @@ public class SetCookie {
 
     private final String name;
     private final String value;
-    private ZonedDateTime expires;
-    private Duration maxAge;
-    private String domain;
-    private String path;
-    private boolean secure;
-    private boolean httpOnly;
+    private final ZonedDateTime expires;
+    private final Duration maxAge;
+    private final String domain;
+    private final String path;
+    private final Boolean secure;
+    private final Boolean httpOnly;
+
+    private SetCookie(Builder builder) {
+        this.name = builder.name;
+        this.value = builder.value;
+        this.expires = builder.expires;
+        this.maxAge = builder.maxAge;
+        this.domain = builder.domain;
+        this.path = builder.path;
+        this.secure = builder.secure;
+        this.httpOnly = builder.httpOnly;
+    }
+
+    /**
+     * Creates a new fluent API builder.
+     *
+     * @param name  a cookie name.
+     * @param value a cookie value.
+     * @return a new fluent API builder
+     */
+    public static Builder builder(String name, String value) {
+        return new Builder(name, value);
+    }
 
     /**
      * Creates new instance.
      *
      * @param name  a cookie name.
      * @param value a cookie value.
+     * @return a new instance with just the name and value configured
      */
-    public SetCookie(String name, String value) {
-        Objects.requireNonNull(name, "Parameter 'name' is null!");
-        //todo validate accepted characters
-        this.name = name;
-        this.value = value;
-    }
-
-    /**
-     * Sets {@code Expires} parameter.
-     *
-     * @param expires an {@code Expires} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie expires(ZonedDateTime expires) {
-        this.expires = expires;
-        return this;
-    }
-
-    /**
-     * Sets {@code Expires} parameter.
-     *
-     * @param expires an {@code Expires} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie expires(Instant expires) {
-        if (expires == null) {
-            this.expires = null;
-        } else {
-            this.expires = ZonedDateTime.ofInstant(expires, ZoneId.systemDefault());
-        }
-        return this;
-    }
-
-    /**
-     * Sets {@code Max-Age} parameter.
-     *
-     * @param maxAge an {@code Max-Age} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie maxAge(Duration maxAge) {
-        this.maxAge = maxAge;
-        return this;
-    }
-
-    /**
-     * Sets {@code Domain} parameter.
-     *
-     * @param domain an {@code Domain} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie domain(String domain) {
-        this.domain = domain;
-        return this;
-    }
-
-    /**
-     * Sets {@code Path} parameter.
-     *
-     * @param path an {@code Path} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie path(String path) {
-        this.path = path;
-        return this;
-    }
-
-    /**
-     * Sets {@code Domain} and {@code Path} parameters.
-     *
-     * @param domainAndPath an URI to specify {@code Domain} and {@code Path} parameters.
-     * @return Updated instance.
-     */
-    public SetCookie domainAndPath(URI domainAndPath) {
-        if (domainAndPath == null) {
-            this.domain = null;
-            this.path = null;
-        } else {
-            this.domain = domainAndPath.getHost();
-            this.path = domainAndPath.getPath();
-        }
-        return this;
-    }
-
-    /**
-     * Sets {@code Secure} parameter.
-     *
-     * @param secure an {@code Secure} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie secure(boolean secure) {
-        this.secure = secure;
-        return this;
-    }
-
-    /**
-     * Sets {@code HttpOnly} parameter.
-     *
-     * @param httpOnly an {@code HttpOnly} parameter.
-     * @return Updated instance.
-     */
-    public SetCookie httpOnly(boolean httpOnly) {
-        this.httpOnly = httpOnly;
-        return this;
+    public static SetCookie create(String name, String value) {
+        return builder(name, value)
+                .build();
     }
 
     /**
@@ -167,7 +90,7 @@ public class SetCookie {
             result.append("Expires=");
             result.append(expires.format(Http.DateTime.RFC_1123_DATE_TIME));
         }
-        if (maxAge != null && !maxAge.isNegative() && !maxAge.isZero()) {
+        if ((maxAge != null) && !maxAge.isNegative() && !maxAge.isZero()) {
             result.append(PARAM_SEPARATOR);
             result.append("Max-Age=");
             result.append(maxAge.getSeconds());
@@ -182,14 +105,138 @@ public class SetCookie {
             result.append("Path=");
             result.append(path);
         }
-        if (secure) {
+        if (secure != null) {
             result.append(PARAM_SEPARATOR);
             result.append("Secure");
         }
-        if (httpOnly) {
+        if (httpOnly != null) {
             result.append(PARAM_SEPARATOR);
             result.append("HttpOnly");
         }
         return result.toString();
+    }
+
+    /**
+     * A fluent API builder for {@link SetCookie}.
+     */
+    public static final class Builder implements io.helidon.common.Builder<SetCookie> {
+        private final String name;
+        private final String value;
+        private ZonedDateTime expires;
+        private Duration maxAge;
+        private String domain;
+        private String path;
+        private Boolean secure;
+        private Boolean httpOnly;
+
+        private Builder(String name, String value) {
+            Objects.requireNonNull(name, "Parameter 'name' is null!");
+            //todo validate accepted characters
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public SetCookie build() {
+            return new SetCookie(this);
+        }
+
+        /**
+         * Sets {@code Expires} parameter.
+         *
+         * @param expires an {@code Expires} parameter.
+         * @return Updated instance.
+         */
+        public Builder expires(ZonedDateTime expires) {
+            this.expires = expires;
+            return this;
+        }
+
+        /**
+         * Sets {@code Expires} parameter.
+         *
+         * @param expires an {@code Expires} parameter.
+         * @return Updated instance.
+         */
+        public Builder expires(Instant expires) {
+            if (expires == null) {
+                this.expires = null;
+            } else {
+                this.expires = ZonedDateTime.ofInstant(expires, ZoneId.systemDefault());
+            }
+            return this;
+        }
+
+        /**
+         * Sets {@code Max-Age} parameter.
+         *
+         * @param maxAge an {@code Max-Age} parameter.
+         * @return Updated instance.
+         */
+        public Builder maxAge(Duration maxAge) {
+            this.maxAge = maxAge;
+            return this;
+        }
+
+        /**
+         * Sets {@code Domain} parameter.
+         *
+         * @param domain an {@code Domain} parameter.
+         * @return Updated instance.
+         */
+        public Builder domain(String domain) {
+            this.domain = domain;
+            return this;
+        }
+
+        /**
+         * Sets {@code Path} parameter.
+         *
+         * @param path an {@code Path} parameter.
+         * @return Updated instance.
+         */
+        public Builder path(String path) {
+            this.path = path;
+            return this;
+        }
+
+        /**
+         * Sets {@code Domain} and {@code Path} parameters.
+         *
+         * @param domainAndPath an URI to specify {@code Domain} and {@code Path} parameters.
+         * @return Updated instance.
+         */
+        public Builder domainAndPath(URI domainAndPath) {
+            if (domainAndPath == null) {
+                this.domain = null;
+                this.path = null;
+            } else {
+                this.domain = domainAndPath.getHost();
+                this.path = domainAndPath.getPath();
+            }
+            return this;
+        }
+
+        /**
+         * Sets {@code Secure} parameter.
+         *
+         * @param secure an {@code Secure} parameter.
+         * @return Updated instance.
+         */
+        public Builder secure(boolean secure) {
+            this.secure = secure;
+            return this;
+        }
+
+        /**
+         * Sets {@code HttpOnly} parameter.
+         *
+         * @param httpOnly an {@code HttpOnly} parameter.
+         * @return Updated instance.
+         */
+        public Builder httpOnly(boolean httpOnly) {
+            this.httpOnly = httpOnly;
+            return this;
+        }
     }
 }

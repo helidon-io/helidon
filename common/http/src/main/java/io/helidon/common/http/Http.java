@@ -288,13 +288,13 @@ public final class Http {
         /**
          * Convert a numerical status code into the corresponding {@code Status} enum value.
          * <p>
-         * As opposed to {@link ResponseStatus#from(int)}, this method returns {@link Optional#empty() no value}
+         * As opposed to {@link ResponseStatus#create(int)}, this method returns {@link Optional#empty() no value}
          * for an unknown status code not represented by a value in this enumeration of standard HTTP response status codes.
          *
          * @param statusCode the numerical status code.
          * @return optionally the matching Status if a matching {@code Status} value is defined.
          */
-        public static Optional<Status> of(int statusCode) {
+        public static Optional<Status> create(int statusCode) {
             for (Status s : Status.values()) {
                 if (s.code == statusCode) {
                     return Optional.of(s);
@@ -453,7 +453,7 @@ public final class Http {
          * @throws NullPointerException     if parameter {@code version} is null.
          * @throws IllegalArgumentException if it is not provided version.
          */
-        public static Version of(String version) {
+        public static Version create(String version) {
             Objects.requireNonNull(version, "Version value is null!");
             for (Version v : Version.values()) {
                 if (version.equals(v.value)) {
@@ -491,7 +491,7 @@ public final class Http {
          * @return HTTP request method instance representing an HTTP method with the provided name.
          * @throws IllegalArgumentException In case of illegal method name or in case the name is empty or {@code null}.
          */
-        static RequestMethod from(String name) {
+        static RequestMethod create(String name) {
             if (name != null && !name.isEmpty()) {
                 for (int i = 0; i < name.length(); i++) {
                     char ch = name.charAt(i);
@@ -550,14 +550,14 @@ public final class Http {
         /**
          * Convert a numerical status code into the corresponding ResponseStatus.
          * <p>
-         * As opposed to {@link Status#of(int)}, this method is guaranteed to always return an instance.
+         * As opposed to {@link Status#create(int)}, this method is guaranteed to always return an instance.
          * For an unknown {@link Status} it creates an ad-hoc {@link ResponseStatus}.
          *
          * @param statusCode the numerical status code
          * @return the matching ResponseStatus; either a {@link Status} or an ad-hoc {@link ResponseStatus}
          */
-        static ResponseStatus from(int statusCode) {
-            return from(statusCode, null);
+        static ResponseStatus create(int statusCode) {
+            return create(statusCode, null);
         }
 
         /**
@@ -571,8 +571,8 @@ public final class Http {
          *                     {@link Status} is returned; otherwise, a new instance is returned
          * @return the matching ResponseStatus; either a {@link Status} or an ad-hoc {@link ResponseStatus}
          */
-        static ResponseStatus from(int statusCode, String reasonPhrase) {
-            Optional<ResponseStatus> existingStatus = Status.of(statusCode).map(ResponseStatus.class::cast);
+        static ResponseStatus create(int statusCode, String reasonPhrase) {
+            Optional<ResponseStatus> existingStatus = Status.create(statusCode).map(ResponseStatus.class::cast);
             Optional<ResponseStatus> responseStatus = reasonPhrase == null
                     || existingStatus.map(ResponseStatus::reasonPhrase)
                     .filter(reasonPhrase::equalsIgnoreCase)
@@ -705,7 +705,7 @@ public final class Http {
      * Utility class with a list of names of standard HTTP headers and related tooling methods.
      */
     @SuppressWarnings({"WeakerAccess", "unused"})
-    public static class Header {
+    public static final class Header {
 
         /**
          * The <tt>{@value}</tt> header name.

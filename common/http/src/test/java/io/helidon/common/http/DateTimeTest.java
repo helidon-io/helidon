@@ -22,7 +22,8 @@ import java.time.ZonedDateTime;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -34,50 +35,50 @@ public class DateTimeTest {
     private static final ZonedDateTime ZDT2 = ZonedDateTime.of(2008, 6, 17, 11, 5, 30, 0, ZoneId.of("Z"));
 
     @Test
-    public void rfc1123() throws Exception {
+    public void rfc1123() {
         String text = "Tue, 3 Jun 2008 11:05:30 GMT";
         ZonedDateTime zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_1123_DATE_TIME);
-        assertEquals(ZDT, zdt);
-        assertEquals(text, zdt.format(Http.DateTime.RFC_1123_DATE_TIME));
+        assertThat(zdt, is(ZDT));
+        assertThat(zdt.format(Http.DateTime.RFC_1123_DATE_TIME), is(text));
 
         text = "Tue, 17 Jun 2008 11:05:30 GMT";
         zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_1123_DATE_TIME);
-        assertEquals(ZDT2, zdt);
-        assertEquals(text, zdt.format(Http.DateTime.RFC_1123_DATE_TIME));
+        assertThat(zdt, is(ZDT2));
+        assertThat(zdt.format(Http.DateTime.RFC_1123_DATE_TIME), is(text));
     }
 
     @Test
-    public void rfc850() throws Exception {
+    public void rfc850() {
         assumeTrue(LocalDate.now().getYear() < 2057);
         String text = "Tuesday, 03-Jun-08 11:05:30 GMT";
         ZonedDateTime zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_850_DATE_TIME);
-        assertEquals(ZDT, zdt);
-        assertEquals(text, zdt.format(Http.DateTime.RFC_850_DATE_TIME));
+        assertThat(zdt, is(ZDT));
+        assertThat(zdt.format(Http.DateTime.RFC_850_DATE_TIME), is(text));
 
         text = "Tuesday, 17-Jun-08 11:05:30 GMT";
         zdt = ZonedDateTime.parse(text, Http.DateTime.RFC_850_DATE_TIME);
-        assertEquals(ZDT2, zdt);
-        assertEquals(text, zdt.format(Http.DateTime.RFC_850_DATE_TIME));
+        assertThat(zdt, is(ZDT2));
+        assertThat(zdt.format(Http.DateTime.RFC_850_DATE_TIME), is(text));
     }
 
     @Test
-    public void rfc851() throws Exception {
+    public void rfc851() {
         String text = "Tue Jun  3 11:05:30 2008";
         ZonedDateTime zdt = ZonedDateTime.parse(text, Http.DateTime.ASCTIME_DATE_TIME);
-        assertEquals(ZDT, zdt);
-        assertEquals(text, zdt.format(Http.DateTime.ASCTIME_DATE_TIME));
+        assertThat(zdt, is(ZDT));
+        assertThat(zdt.format(Http.DateTime.ASCTIME_DATE_TIME), is(text));
 
         text = "Tue Jun 17 11:05:30 2008";
         zdt = ZonedDateTime.parse(text, Http.DateTime.ASCTIME_DATE_TIME);
-        assertEquals(ZDT2, zdt);
-        assertEquals(text, zdt.format(Http.DateTime.ASCTIME_DATE_TIME));
+        assertThat(zdt, is(ZDT2));
+        assertThat(zdt.format(Http.DateTime.ASCTIME_DATE_TIME), is(text));
     }
 
     @Test
-    public void parse() throws Exception {
-        assertEquals(ZDT, Http.DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"));
-        assertEquals(ZDT, Http.DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"));
-        assertEquals(ZDT, Http.DateTime.parse("Tue Jun  3 11:05:30 2008"));
+    public void parse() {
+        assertThat(Http.DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
+        assertThat(Http.DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"), is(ZDT));
+        assertThat(Http.DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
     }
 
 }

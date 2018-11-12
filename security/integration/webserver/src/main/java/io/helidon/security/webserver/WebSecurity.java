@@ -365,7 +365,7 @@ public final class WebSecurity implements Service {
 
         wsConfig.get("paths").nodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
-                List<Http.RequestMethod> methods = pathConfig.get("methods").mapList(Http.RequestMethod::from, listOf());
+                List<Http.RequestMethod> methods = pathConfig.get("methods").mapList(Http.RequestMethod::create, listOf());
                 String path = pathConfig.get("path")
                         .value()
                         .orElseThrow(() -> new SecurityException(pathConfig
