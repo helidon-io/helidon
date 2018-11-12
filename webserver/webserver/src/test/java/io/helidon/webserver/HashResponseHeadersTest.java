@@ -104,22 +104,24 @@ public class HashResponseHeadersTest {
     }
 
     @Test
-    public void addCookie() throws Exception {
+    public void addCookie() {
         HashResponseHeaders h = new HashResponseHeaders(null);
         h.addCookie("foo", "bar");
 
         h.addCookie("aaa", "bbbb", Duration.ofMinutes(10));
         h.addCookie("who", "me", Duration.ofMinutes(0));
 
-        h.addCookie(new SetCookie("itis", "cool")
-                    .domainAndPath(URI.create("http://oracle.com/foo"))
-                    .expires(ZonedDateTime.of(2080, 1, 1, 0, 0, 0, 0, ZoneId.of("Z")))
-                    .secure(true));
+        h.addCookie(SetCookie.builder("itis", "cool")
+                            .domainAndPath(URI.create("http://oracle.com/foo"))
+                            .expires(ZonedDateTime.of(2080, 1, 1, 0, 0, 0, 0, ZoneId.of("Z")))
+                            .secure(true)
+                            .build());
 
         assertThat(h.all(Http.Header.SET_COOKIE), contains("foo=bar",
                                                            "aaa=bbbb; Max-Age=600",
                                                            "who=me",
-                                                           "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com; Path=/foo; Secure"));
+                                                           "itis=cool; Expires=Mon, 1 Jan 2080 00:00:00 GMT; Domain=oracle.com;"
+                                                                   + " Path=/foo; Secure"));
     }
 
     @Test

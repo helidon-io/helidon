@@ -38,29 +38,33 @@ public class HandlerRouteTest {
         assertTrue(rr.accepts(Http.Method.PUT));
         assertFalse(rr.accepts(Http.Method.GET));
         assertFalse(rr.accepts(Http.Method.DELETE));
-        assertFalse(rr.accepts(Http.RequestMethod.from("FOO")));
+        assertFalse(rr.accepts(Http.RequestMethod.create("FOO")));
         assertEquals(2, rr.acceptedMethods().size());
     }
 
     @Test
     public void specialMethodRouting() throws Exception {
-        HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.from("FOO"));
+        HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("FOO"));
         assertFalse(rr.accepts(Http.Method.GET));
         assertFalse(rr.accepts(Http.Method.POST));
-        assertTrue(rr.accepts(Http.RequestMethod.from("FOO")));
-        assertFalse(rr.accepts(Http.RequestMethod.from("BAR")));
+        assertTrue(rr.accepts(Http.RequestMethod.create("FOO")));
+        assertFalse(rr.accepts(Http.RequestMethod.create("BAR")));
         assertEquals(1, rr.acceptedMethods().size());
     }
 
     @Test
     public void combinedMethodRouting() throws Exception {
-        HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.RequestMethod.from("FOO"), Http.Method.PUT);
+        HandlerRoute rr = new HandlerRoute(null,
+                                           VOID_HANDLER,
+                                           Http.Method.POST,
+                                           Http.RequestMethod.create("FOO"),
+                                           Http.Method.PUT);
         assertTrue(rr.accepts(Http.Method.POST));
         assertTrue(rr.accepts(Http.Method.PUT));
         assertFalse(rr.accepts(Http.Method.GET));
         assertFalse(rr.accepts(Http.Method.DELETE));
-        assertTrue(rr.accepts(Http.RequestMethod.from("FOO")));
-        assertFalse(rr.accepts(Http.RequestMethod.from("BAR")));
+        assertTrue(rr.accepts(Http.RequestMethod.create("FOO")));
+        assertFalse(rr.accepts(Http.RequestMethod.create("BAR")));
         assertEquals(3, rr.acceptedMethods().size());
     }
 
@@ -69,8 +73,8 @@ public class HandlerRouteTest {
         HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER);
         assertTrue(rr.accepts(Http.Method.POST));
         assertTrue(rr.accepts(Http.Method.GET));
-        assertTrue(rr.accepts(Http.RequestMethod.from("FOO")));
-        assertTrue(rr.accepts(Http.RequestMethod.from("BAR")));
+        assertTrue(rr.accepts(Http.RequestMethod.create("FOO")));
+        assertTrue(rr.accepts(Http.RequestMethod.create("BAR")));
         assertEquals(0, rr.acceptedMethods().size());
     }
 
