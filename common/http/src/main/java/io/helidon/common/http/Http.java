@@ -294,7 +294,7 @@ public final class Http {
          * @param statusCode the numerical status code.
          * @return optionally the matching Status if a matching {@code Status} value is defined.
          */
-        public static Optional<Status> create(int statusCode) {
+        public static Optional<Status> find(int statusCode) {
             for (Status s : Status.values()) {
                 if (s.code == statusCode) {
                     return Optional.of(s);
@@ -550,7 +550,7 @@ public final class Http {
         /**
          * Convert a numerical status code into the corresponding ResponseStatus.
          * <p>
-         * As opposed to {@link Status#create(int)}, this method is guaranteed to always return an instance.
+         * As opposed to {@link Status#find(int)}, this method is guaranteed to always return an instance.
          * For an unknown {@link Status} it creates an ad-hoc {@link ResponseStatus}.
          *
          * @param statusCode the numerical status code
@@ -572,23 +572,22 @@ public final class Http {
          * @return the matching ResponseStatus; either a {@link Status} or an ad-hoc {@link ResponseStatus}
          */
         static ResponseStatus create(int statusCode, String reasonPhrase) {
-            Optional<ResponseStatus> existingStatus = Status.create(statusCode).map(ResponseStatus.class::cast);
-            Optional<ResponseStatus> responseStatus = reasonPhrase == null
-                    || existingStatus.map(ResponseStatus::reasonPhrase)
-                    .filter(reasonPhrase::equalsIgnoreCase)
-                    .isPresent()
-                    ? existingStatus
-                    : Optional.empty();
-
-            return responseStatus
-                    .orElse(new ResponseStatus() {
+            return Status.find(statusCode)
+                    // keep status that has the same reason phrase or if the supplied phrase is null
+                    .filter(status -> (null == reasonPhrase) || status.reasonPhrase().equalsIgnoreCase(reasonPhrase))
+                    // the next statement returns an instance of ResponseStatus, previous of Status - cast
+                    // to make the mapping work without <? extends>
+                    .map(ResponseStatus.class::cast)
+                    // only create the new ResponseStatus if we did not find an existing Status
+                    .orElseGet(() -> new ResponseStatus() {
+                        // not using a method, as it would be implicitly public (this being an interface)
                         @Override
                         public int code() {
                             return statusCode;
                         }
 
                         @Override
-                        public Status.Family family() {
+                        public Family family() {
                             return Family.of(statusCode);
                         }
 
@@ -604,13 +603,23 @@ public final class Http {
 
                         @Override
                         public boolean equals(Object other) {
-                            return (other instanceof ResponseStatus)
-                                    && code() == (((ResponseStatus) other).code())
-                                    && family() == ((ResponseStatus) other).family()
-                                    && (
-                                    reasonPhrase != null
-                                            ? reasonPhrase.equalsIgnoreCase(((ResponseStatus) other).reasonPhrase())
-                                            : ((ResponseStatus) other).reasonPhrase() == null);
+                            if (other instanceof ResponseStatus) {
+                                ResponseStatus os = (ResponseStatus) other;
+
+                                return (code() == os.code())
+                                        && (family() == os.family())
+                                        && (reasonPhraseEquals(os));
+                            }
+
+                            return false;
+                        }
+
+                        private boolean reasonPhraseEquals(ResponseStatus other) {
+                            if (null == reasonPhrase) {
+                                return null == other.reasonPhrase();
+                            }
+
+                            return reasonPhrase.equalsIgnoreCase(other.reasonPhrase());
                         }
 
                         @Override
