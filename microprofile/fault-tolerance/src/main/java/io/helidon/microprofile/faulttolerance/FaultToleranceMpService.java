@@ -16,11 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
-
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 /**
  * Class FaultToleranceMpService.
@@ -29,7 +26,6 @@ public class FaultToleranceMpService implements MpService {
 
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-        MpConfig config = (MpConfig) ConfigProviderResolver.instance().getConfig();
-        CommandScheduler.create(config.getConfig().get("helidon.fault-tolerance.async-thread-pool"));
+        CommandScheduler.create(mpServiceContext.getHelidonConfig().get("helidon.fault-tolerance.async-thread-pool"));
     }
 }
