@@ -199,7 +199,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
             // Update waiting time histogram
             if (introspector.isAsynchronous() && queuedNanos != -1L) {
-                FaultToleranceMetrics.getHistogram(introspector.getMethod(), FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
+                FaultToleranceMetrics.getHistogram(introspector.getMethod(),
+                                                   FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
                                      .update(System.nanoTime() - queuedNanos);
             }
         }
