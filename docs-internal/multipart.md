@@ -337,4 +337,7 @@ E.g. the example below consumes all parts as a `List<JsonObject>`
 request.content().as(new GenericType<List<JsonObject>>(){}).thenAccept(/* ... */);
 ```
 
+Note that this would rely on generic type mapping support in the webserver which is not implemented yet.
+This will likely be supported in a future release.
+
 ## Open Issues
