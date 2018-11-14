@@ -63,7 +63,7 @@ The following example echoes the multipart request into the response:
 
 ```java
 request.content().as(BufferedMultiPart.class).thenAccept(mp -> {
-    response.send(mp.content());
+    response.send(mp);
 });
 ```
 
@@ -73,7 +73,7 @@ The following example returns a multipart response from a list of `JsonObject`:
 BufferedMultiPart mp = BufferedMultiPart.create(
     Json.createObjectBuilder().add("foo", "bar").build(),
     Json.createObjectBuilder().add("alice", "bob").build());
-response.send(mp.content());
+response.send(mp);
 ```
 
 ### Process a request content with the reactive model
@@ -159,7 +159,7 @@ MultiPart mp = MultiPart.builder()
             .build(),
         new ServerFileReader(filePath2))
     .build();
-response.send(mp.content());
+response.send(mp);
 ```
 
 ## API
@@ -202,7 +202,7 @@ public interface BodyPart {
 
         Builder content(Publisher<DataChunk> content);
 
-        BodyPart builder();
+        BodyPart build();
     }
 }
 ```
@@ -249,8 +249,6 @@ public interface MultiPart extends BodyPart, Publisher<BodyPart> {
 
 ```java
 public interface BufferedMultiPart {
-
-    Content content();
 
     Iterable<BodyPart> bodyParts();
 
