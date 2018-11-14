@@ -167,10 +167,6 @@ response.send(mp);
 ```java
 public interface BodyPart {
 
-    ServerRequest request();
-
-    ServerResponse response();
-
     Content content();
 
     BodyPartHeaders headers();
@@ -319,10 +315,26 @@ public class MultiPartSupport implements Service, Handler {
 }
 ```
 
-## Open Issues
+## Error Handling
 
-- Should we support deserializing from the top level entity, e.g. as a `List<File>` ?
-  - This requires generic type mapping
-- How to handle errors raised during body part processing ?
-  - This can be done with reactive model using a body part subscriber
-- How to support HTTP2 ?
+Error handling should not be different than than for any other media type already supported in Helidon.
+
+The errors will be delegated to the content subscribers and to the webserver error handlers chain.
+
+## HTTP2
+
+We should be able to support the buffered model with HTTP2.
+
+The reactive model relies on generic HTTP/2 streaming support which has some known issues currently.
+
+## Generic type mapping
+
+Having support for generic type mapping could help simplify the use-case of reading a multipart as a list of the same entity type.
+
+E.g. the example below consumes all parts as a `List<JsonObject>`
+
+```java
+request.content().as(new GenericType<List<JsonObject>>(){}).thenAccept(/* ... */);
+```
+
+## Open Issues
