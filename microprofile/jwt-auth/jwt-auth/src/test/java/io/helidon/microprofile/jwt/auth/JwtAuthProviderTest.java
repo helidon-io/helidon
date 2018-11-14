@@ -21,6 +21,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
@@ -90,6 +92,7 @@ public class JwtAuthProviderTest {
                 .addAttribute("given_name", givenName)
                 .addAttribute("full_name", fullName)
                 .addAttribute("locale", locale)
+                .addAttribute("roles", CollectionsHelper.setOf("role1", "role2"))
                 .build();
 
         Subject subject = Subject.builder()

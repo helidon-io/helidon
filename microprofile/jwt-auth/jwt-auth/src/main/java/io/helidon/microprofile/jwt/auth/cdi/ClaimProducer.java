@@ -16,32 +16,23 @@
 
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import io.helidon.common.CollectionsHelper;
+import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
+import org.eclipse.microprofile.jwt.Claim;
+import org.eclipse.microprofile.jwt.Claims;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Provider;
-import javax.json.Json;
-import javax.json.JsonValue;
-
-import io.helidon.common.CollectionsHelper;
-import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
-
-import org.eclipse.microprofile.jwt.Claim;
-import org.eclipse.microprofile.jwt.ClaimValue;
-import org.eclipse.microprofile.jwt.Claims;
-import org.eclipse.microprofile.jwt.JsonWebToken;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Class MetricProducer.
@@ -85,80 +76,30 @@ public class ClaimProducer implements Bean<Object> {
     static Object getClaimValue(String claimName,
                                 JsonWebTokenImpl webToken,
                                 JwtAuthCdiExtension.MpClaimQualifier q) {
-
-        if (q.rawType() == q.typeArg()) {
-            // not a generic
-            //return config.getValue(q.getQualifier().rawType());
-            //TODO
-            if (JsonValue.class.isAssignableFrom(q.rawType())) {
-                return Json.createValue((String)webToken.getClaim(claimName));
-            }
-            return webToken.getClaim(claimName);
-        }
-        // generic declaration
         return getParametrizedClaimValue(claimName,
-                                         webToken,
-                                         q.rawType(),
-                                         q.typeArg(),
-                                         q.typeArg2());
+                webToken,
+                q);
     }
 
     @SuppressWarnings("unchecked")
     static Object getParametrizedClaimValue(String claimName,
-                                            JsonWebToken webToken,
-                                            Class rawType,
-                                            Class typeArg,
-                                            Class typeArg2) {
+                                            JsonWebTokenImpl webToken,
+                                            JwtAuthCdiExtension.MpClaimQualifier claimLiteral) {
 
-        if (rawType.isAssignableFrom(ClaimValue.class)) {
-            if (typeArg == typeArg2) {
-                //ClaimValue
-                return Optional.ofNullable(webToken.claim(claimName));
-            } else {
-                return Optional
-                        .ofNullable(getParametrizedClaimValue(claimName,
-                                                              webToken,
-                                                              typeArg,
-                                                              typeArg2,
-                                                              typeArg2));
-            }
-        } else if (rawType.isAssignableFrom(Optional.class)) {
-            if (typeArg == typeArg2) {
-                return Optional.ofNullable(webToken.claim(claimName));
-            } else {
-                return Optional
-                        .ofNullable(getParametrizedClaimValue(claimName,
-                                                              webToken,
-                                                              typeArg,
-                                                              typeArg2,
-                                                              typeArg2));
-            }
-        } else if (rawType.isAssignableFrom(Set.class)
-                && typeArg.isAssignableFrom(String.class)) {
-            return Stream.of(webToken.claim(claimName)).collect(Collectors.toSet());
-        } else if (rawType.isAssignableFrom(String.class)
-                || rawType.isAssignableFrom(Boolean.class)
-                || rawType.isAssignableFrom(Long.class)) {
-            return webToken.getClaim(claimName);
-        } else {
-            throw new DeploymentException("Type " + rawType + " is not supported.");
-        }
+        Object result = webToken.getClaim(claimName, claimLiteral.typeArg3());
+        if (claimLiteral.optional()) result = Optional.ofNullable(result);
+        if (claimLiteral.claimValue()) result = new ClaimValueWrapper<>(claimName, result);
+        return result;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Object create(CreationalContext<Object> context) {
-        Object value = getClaimValue(context);
-        if (null == value && qualifier.rawType().isPrimitive()) {
-            // primitive field, not configured, no default
-            throw new IllegalStateException("zmenit jeste");
-        }
-
-        return value;
+        return getClaimValue(context);
     }
 
     private Object getClaimValue(CreationalContext<Object> context) {
-        JsonWebTokenImpl token = CDI.current().select(JsonWebTokenImpl.class, new Impl(){
+        JsonWebTokenImpl token = CDI.current().select(JsonWebTokenImpl.class, new Impl() {
             @Override
             public Class<? extends Annotation> annotationType() {
                 return Impl.class;

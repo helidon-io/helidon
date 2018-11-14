@@ -15,22 +15,12 @@
  */
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Supplier;
+import org.eclipse.microprofile.jwt.Claim;
+import org.eclipse.microprofile.jwt.ClaimValue;
+import org.eclipse.microprofile.jwt.Claims;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.Annotated;
@@ -44,10 +34,26 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
-import javax.inject.Provider;
 import javax.inject.Qualifier;
-
-import org.eclipse.microprofile.jwt.Claim;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -56,7 +62,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * TODO javadoc.
+ * JWT Authentication CDI extension class
  */
 public class JwtAuthCdiExtension implements Extension {
 
@@ -65,7 +71,6 @@ public class JwtAuthCdiExtension implements Extension {
     public void before(@Observes BeforeBeanDiscovery discovery) {
         // Register beans manually
         discovery.addAnnotatedType(JsonWebTokenProducer.class, "TokenProducer");
-        //discovery.addAnnotatedType(ClaimProducer.class, "ClaimProducer");
     }
 
     /**
@@ -76,19 +81,26 @@ public class JwtAuthCdiExtension implements Extension {
     public void collectClaimProducer(@Observes ProcessInjectionPoint<?, ?> pip) {
         Claim claim = pip.getInjectionPoint().getAnnotated().getAnnotation(Claim.class);
         if (claim != null) {
+            if (claim.standard() != Claims.UNKNOWN && !claim.value().isEmpty()) {
+                throw new DeploymentException("Claim annotation should not have both values at value and standard! " +
+                        "@Claim(value=" + claim.value() + ", standard=Claims." + claim.standard().name() + ")");
+            }
             InjectionPoint ip = pip.getInjectionPoint();
-
             Type type = ip.getType();
             FieldTypes ft = FieldTypes.forType(type);
 
             ClaimLiteral q = new ClaimLiteral(
-                    ((claim.value() == null) || claim.value().isEmpty())
+                    (claim.standard() != Claims.UNKNOWN)
                             ? claim.standard().name()
                             : claim.value(),
                     ip.getMember().getDeclaringClass().getName() + "." + getFieldName(ip),
+                    ft.isOptional(),
+                    ft.isClaimValue(),
                     ft.getField0().getRawType(),
                     ft.getField1().getRawType(),
-                    ft.getField2().getRawType());
+                    ft.getField2().getRawType(),
+                    ft.getField3().getRawType(),
+                    type.toString());
 
             pip.configureInjectionPoint()
                     .addQualifier(q);
@@ -127,21 +139,7 @@ public class JwtAuthCdiExtension implements Extension {
      */
     public void registerClaimProducers(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // each injection point will have its own bean
-        //qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, bm)));
-        for (ClaimIP q : qualifiers) {
-            abd.addBean(new ClaimProducer(q.qualifier, q.type, bm));
-        }
-
-        // we also must support injection of Config itself
-        /*abd.addBean()
-                .addType(Config.class)
-                .createWith(creationalContext -> ((MpConfig) configResolver.getConfig()).getConfig());
-
-        abd.addBean()
-                .addType(org.eclipse.microprofile.config.Config.class)
-                .createWith(creationalContext -> {
-                    return new SerializableConfig();
-                });*/
+        qualifiers.forEach(q -> abd.addBean(new ClaimProducer(q.qualifier, q.type, bm)));
     }
 
     /**
@@ -152,52 +150,99 @@ public class JwtAuthCdiExtension implements Extension {
     public void validate(@Observes AfterDeploymentValidation add) {
 
         qualifiers.forEach(q -> {
-            System.out.print("");
-            /*try {
-                Class<?> propertyClass = getPropertyClass(q.qualifier);
-                if (!mpConfig.hasConverter(propertyClass)) {
-                    throw new DeploymentException("Config mapper for " + propertyClass.getName() + " does not exist");
-                }
-
-                Object configValue;
-                if (q.qualifier.rawType().isArray()) {
-                    ClaimInternal qualifier = q.qualifier;
-                    String configKey = qualifier.key().isEmpty()
-                            ? qualifier.fullPath().replace('$', '.')
-                            : qualifier.key();
-                    // default values!!!
-                    configValue = mpConfig.getValue(configKey, q.qualifier.rawType());
-                } else {
-                    configValue = ConfigPropertyProducer.getConfigValue(mpConfig, q.qualifier);
-                }
-
-                if (null == configValue) {
-                    throw new DeploymentException("Config value for " + q.qualifier.key() + "(" + q.qualifier
-                            .fullPath() + ") is not defined");
-                }
-                VALUE_LOGGER.finest(() -> "Config value for " + q.qualifier.key() + " (" + q.qualifier
-                        .fullPath() + "), is " + configValue);
-
-            } catch (Exception e) {
-                add.addDeploymentProblem(e);
-            }*/
+            ClaimLiteral claimLiteral = q.getQualifier();
+            validate(claimLiteral);
         });
-
-        //LOGGER.exiting(getClass().getName(), "validate");
     }
 
-    private Class<?> getPropertyClass(MpClaimQualifier qualifier) {
-        if (qualifier.rawType().isArray()) {
-            return qualifier.rawType().getComponentType();
+    private void validate(ClaimLiteral claimLiteral) {
+        Class rawType = claimLiteral.rawType();
+        if (ClaimValue.class == rawType) {
+            validateClaimValue(claimLiteral, claimLiteral.typeArg(), claimLiteral.typeArg2(), claimLiteral.typeArg3());
+        } else if (Optional.class == rawType) {
+            validateOptional(claimLiteral, claimLiteral.typeArg(), claimLiteral.typeArg2());
+        } else if (Set.class == rawType || JsonArray.class == rawType) {
+            validateSet(claimLiteral, rawType, claimLiteral.typeArg());
+        } else {
+            validateBaseType(claimLiteral, rawType);
         }
-        if (qualifier.rawType() == qualifier.typeArg()) {
-            return qualifier.rawType();
-        }
-        if (qualifier.typeArg() == qualifier.typeArg2()) {
-            return qualifier.typeArg();
-        }
+    }
 
-        return qualifier.typeArg2();
+    private void validateClaimValue(ClaimLiteral claimLiteral, Class parameter, Class parameter2, Class parameter3) {
+        if (ClaimValue.class == parameter) {
+            throw new DeploymentException("ClaimValue has to be used as top level wrapper type. It cannot be parameter as it is in " +
+                    "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+        } else if (Optional.class == parameter) {
+            validateOptional(claimLiteral, parameter2, parameter3);
+        } else if (Set.class == parameter || JsonArray.class == parameter) {
+            validateSet(claimLiteral, parameter, parameter2);
+        } else {
+            validateBaseType(claimLiteral, parameter);
+        }
+    }
+
+    private void validateOptional(ClaimLiteral claimLiteral, Class parameter, Class parameter2) {
+        if (ClaimValue.class == parameter) {
+            throw new DeploymentException("ClaimValue has to be used as top level wrapper type. It cannot be parameter of Optional as it is in " +
+                    "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+        } else if (Optional.class == parameter) {
+            throw new DeploymentException("Optional has to be used as top/second level wrapper type. It cannot be parameter of another Optional as it is in " +
+                    "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+        } else if (Set.class == parameter || JsonArray.class == parameter) {
+            validateSet(claimLiteral, parameter, parameter2);
+        } else {
+            validateBaseType(claimLiteral, parameter);
+        }
+    }
+
+    private void validateSet(ClaimLiteral claimLiteral, Class parent, Class parameter) {
+        if (String.class != parameter && NoType.class != parameter) {
+            throw new DeploymentException("Set<" + parameter.getName() + "> is not supported type. Field has to have a Set with a String parameter.");
+        }
+        try {
+            Claims claims = Claims.valueOf(claimLiteral.name);
+            if (!Set.class.isAssignableFrom(claims.getType())
+                    && !JsonArray.class.isAssignableFrom(claims.getType())) {
+                throw new DeploymentException("Cannot assign value of claim " + claimLiteral.name + " (claim type: " + claims.getType().getName() + ") " +
+                        " to the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+            }
+        } catch (IllegalArgumentException e) {
+            //if claim is custom, it has to be JsonArray in case of Set
+            if (JsonArray.class != parent) {
+                throw new DeploymentException("Field type has to be JsonArray (instead of Set<String>) while using custom claim name." +
+                        "Field " + claimLiteral.id + " can not be type: " + claimLiteral.fieldTypeString);
+            }
+        }
+    }
+
+    private void validateBaseType(ClaimLiteral claimLiteral, Class clazz) {
+        if (NoType.class == clazz) return;
+        try {
+            Claims claims = Claims.valueOf(claimLiteral.name);
+            //check if field type and claim type are compatible
+            if ((clazz == Long.class || JsonNumber.class.isAssignableFrom(clazz))
+                    && (Long.class == claims.getType() || JsonNumber.class.isAssignableFrom(claims.getType()))) {
+                return;
+            } else if ((clazz == String.class || JsonString.class.isAssignableFrom(clazz))
+                    && (String.class == claims.getType() || JsonString.class.isAssignableFrom(claims.getType()))) {
+                return;
+            } else if ((clazz == Boolean.class || JsonValue.class.isAssignableFrom(clazz))
+                    && (Boolean.class == claims.getType() || JsonValue.class.isAssignableFrom(claims.getType()))) {
+                return;
+            } else if ((clazz == JsonObject.class && JsonObject.class.isAssignableFrom(claims.getType()))) {
+                return;
+            } else if ((clazz == JsonArray.class && Set.class.isAssignableFrom(claims.getType()))) {
+                return;
+            }
+            throw new DeploymentException("Cannot assign value of claim " + claimLiteral.name + " (claim type: " + claims.getType().getName() + ") " +
+                    " to the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+
+        } catch (IllegalArgumentException e) {
+            //If claim requested claim is the custom claim, its unwrapped field type has to be JsonValue or its subtype
+            if (!JsonValue.class.isAssignableFrom(clazz))
+                throw new DeploymentException("Field type has to be JsonValue or its subtype while using custom claim name." +
+                        "Field " + claimLiteral.id + " can not be type: " + claimLiteral.fieldTypeString);
+        }
     }
 
     @Qualifier
@@ -207,34 +252,50 @@ public class JwtAuthCdiExtension implements Extension {
         @Nonbinding
         String name();
 
-        @Nonbinding
         String id();
 
-        // e.g. String, Producer, Optional
+        @Nonbinding
+        boolean optional();
+
+        @Nonbinding
+        boolean claimValue();
+
         @Nonbinding
         Class rawType();
 
-        // e.g. eq. to raw type, or type argument of Producer, Optional
         @Nonbinding
         Class typeArg();
 
         @Nonbinding
         Class typeArg2();
+
+        @Nonbinding
+        Class typeArg3();
+
+        String fieldTypeString();
     }
 
     static class ClaimLiteral extends AnnotationLiteral<MpClaimQualifier> implements MpClaimQualifier {
         private String name;
         private String id;
+        private boolean optional;
+        private boolean claimValue;
         private Class rawType;
         private Class typeArg;
         private Class typeArg2;
+        private Class typeArg3;
+        private String fieldTypeString;
 
-        ClaimLiteral(String name, String id, Class rawType, Class typeArg, Class typeArg2) {
+        ClaimLiteral(String name, String id, boolean optional, boolean claimValue, Class rawType, Class typeArg, Class typeArg2, Class typeArg3, String fieldTypeString) {
             this.name = name;
             this.id = id;
+            this.optional = optional;
+            this.claimValue = claimValue;
             this.rawType = rawType;
             this.typeArg = typeArg;
             this.typeArg2 = typeArg2;
+            this.typeArg3 = typeArg3;
+            this.fieldTypeString = fieldTypeString;
         }
 
         @Override
@@ -245,6 +306,16 @@ public class JwtAuthCdiExtension implements Extension {
         @Override
         public String id() {
             return id;
+        }
+
+        @Override
+        public boolean optional() {
+            return optional;
+        }
+
+        @Override
+        public boolean claimValue() {
+            return claimValue;
         }
 
         @Override
@@ -263,9 +334,21 @@ public class JwtAuthCdiExtension implements Extension {
         }
 
         @Override
+        public Class typeArg3() {
+            return typeArg3;
+        }
+
+        @Override
+        public String fieldTypeString() {
+            return fieldTypeString;
+        }
+
+        @Override
         public String toString() {
             return "ClaimLiteral{"
                     + "rawType=" + rawType
+                    + ", name=" + name
+                    + ", id=" + id
                     + '}';
         }
     }
@@ -289,29 +372,34 @@ public class JwtAuthCdiExtension implements Extension {
     }
 
     static class FieldTypes {
+        private boolean optional = false;
+        private boolean claimValue = false;
         private TypedField field0;
         private TypedField field1;
         private TypedField field2;
+        private TypedField field3;
 
         static FieldTypes forType(Type type) {
             FieldTypes ft = new FieldTypes();
 
-            // if the first type is a provider, we do not want it and start from its child
+            // if the first type is a Instace.class, we do not want it and start from its child
+            //Fields can have 3 parametes in total -> ClaimValue<Optional<Set<String>>>. That is why we need 4 fields in total.
             TypedField firstType = getTypedField(type);
-            if (firstType.rawType.equals(Provider.class)) {
+            if (firstType.rawType.equals(Instance.class)) {
                 ft.field0 = getTypedField(firstType);
-                firstType = ft.field0;
             } else {
                 ft.field0 = firstType;
             }
-
             ft.field1 = getTypedField(ft.field0);
+            ft.field2 = getTypedField(ft.field1);
+            ft.field3 = getTypedField(ft.field2);
 
-            // now suppliers, optionals may have two levels deep
-            if (firstType.rawType == Optional.class || firstType.rawType == Supplier.class) {
-                ft.field2 = getTypedField(ft.field1);
-            } else {
-                ft.field2 = ft.field1;
+            //check for claim value and optional wrappers
+            if (ft.field0.getRawType() == ClaimValue.class) {
+                ft.claimValue = true;
+            }
+            if (ft.field0.getRawType() == Optional.class || ft.field1.getRawType() == Optional.class) {
+                ft.optional = true;
             }
 
             return ft;
@@ -349,7 +437,7 @@ public class JwtAuthCdiExtension implements Extension {
                         .toString(typeArgs));
             }
 
-            return field;
+            return new TypedField(NoType.class);
         }
 
         TypedField getField0() {
@@ -362,6 +450,18 @@ public class JwtAuthCdiExtension implements Extension {
 
         TypedField getField2() {
             return field2;
+        }
+
+        TypedField getField3() {
+            return field3;
+        }
+
+        public boolean isOptional() {
+            return optional;
+        }
+
+        public boolean isClaimValue() {
+            return claimValue;
         }
 
         static final class TypedField {
@@ -416,6 +516,9 @@ public class JwtAuthCdiExtension implements Extension {
                         + '}';
             }
         }
+    }
+
+    private static class NoType {
     }
 
 }

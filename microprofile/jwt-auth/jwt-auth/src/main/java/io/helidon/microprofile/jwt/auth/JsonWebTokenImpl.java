@@ -27,12 +27,14 @@ import javax.json.JsonValue;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.security.Principal;
+import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.util.AbacSupport;
 
+import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -86,8 +88,32 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getClaim(String claimName) {
-        Claims claims = Claims.valueOf(claimName);
-        return (T) getClaim(claims);
+        try {
+            return (T) getClaim(Claims.valueOf(claimName));
+        } catch (IllegalArgumentException e) {
+            //If claimName is name of the custom claim
+            return (T) getJsonValue(claimName).orElse(null);
+        }
+    }
+
+    public <T> T getClaim(String claimName, Class<T> clazz) {
+        try {
+            Claims claims = Claims.valueOf(claimName);
+            return JsonValue.class.isAssignableFrom(clazz) ?
+                    (T) getJsonValue(claimName).orElse(null) :
+                    (T) getClaim(claims);
+        } catch (IllegalArgumentException e) {
+            //If claimName is name of the custom claim
+            Object value = getJsonValue(claimName).orElse(null);
+            Class verify = clazz;
+            if (value != null
+                    && verify != ClaimValue.class
+                    && verify != Optional.class
+                    && !verify.isAssignableFrom(value.getClass())) {
+                throw new SecurityException("Cannot set instance of " + value.getClass().getName() + " to the field of type " + verify.getName());
+            }
+            return (T) value;
+        }
     }
 
     private Object getClaim(Claims claims) {
@@ -107,14 +133,16 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         }
 
         String claimName = claims.name();
-        JsonObject payloadJson = jwt.getPayloadJson();
-        JsonObject headerJson = jwt.getHeaderJson();
-
-        Optional<JsonValue> json = OptionalHelper.from(Optional.ofNullable(payloadJson.get(claimName)))
-                .or(() -> Optional.ofNullable(headerJson.get(claimName)))
-                .asOptional();
+        Optional<JsonValue> json = getJsonValue(claimName);
 
         return json.map(value -> convert(claims, value)).orElse(null);
+    }
+
+    private Optional<JsonValue> getJsonValue(String claimName) {
+        return OptionalHelper
+                .from(jwt.getPayloadClaim(claimName))
+                .or(() -> jwt.getHeaderClaim(claimName))
+                .asOptional();
     }
 
     private Object convert(Claims claims, JsonValue value) {

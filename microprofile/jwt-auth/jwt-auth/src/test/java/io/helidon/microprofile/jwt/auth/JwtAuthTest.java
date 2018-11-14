@@ -60,7 +60,7 @@ class JwtAuthTest {
     }
 
     @Path("/")
-    @RequestScoped
+    //@RequestScoped
     public static class MyResource {
         @Inject
         private JsonWebToken callerPrincipal;

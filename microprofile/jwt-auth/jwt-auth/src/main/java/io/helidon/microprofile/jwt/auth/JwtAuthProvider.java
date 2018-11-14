@@ -511,9 +511,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private JwkKeys createJwkKeys() {
             return OptionalHelper
                     .from(Optional.ofNullable(publicKeyPath)
-                            .map(this::loadPkcs8FromLocation))
+                            .map(this::loadJwkKeysFromLocation))
                     .or(() -> Optional.ofNullable(publicKey)
-                            .map(this::loadPkcs8))
+                            .map(this::loadJwkKeys))
                     .or(() -> Optional.ofNullable(defaultJwk)
                             .map(jwk -> JwkKeys.builder()
                                     .addKey(jwk)
@@ -522,11 +522,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     .orElseThrow(() -> new SecurityException("No public key or default JWK set."));
         }
 
-        private JwkKeys loadPkcs8FromLocation(String uri) {
+        private JwkKeys loadJwkKeysFromLocation(String uri) {
             Path path = Paths.get(uri);
             if (Files.exists(path)) {
                 try {
-                    return loadPkcs8(new String(Files.readAllBytes(path)));
+                    return loadJwkKeys(new String(Files.readAllBytes(path)));
                 } catch (IOException e) {
                     throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
                 }
@@ -564,10 +564,10 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             while ((bytesRead = bufferedInputStream.read(contents)) != -1) {
                 sb.append(new String(contents, 0, bytesRead));
             }
-            return loadPkcs8(sb.toString());
+            return loadJwkKeys(sb.toString());
         }
 
-        private JwkKeys loadPkcs8(String stringContent) {
+        private JwkKeys loadJwkKeys(String stringContent) {
             Matcher m = PUBLIC_KEY_PATTERN.matcher(stringContent);
             if (m.find()) {
                 return loadPlainPublicKey(stringContent);
@@ -731,22 +731,46 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return this;
         }
 
-        //TODO dokumentace
+        /**
+         * String representation of the public key
+         *
+         * @param publicKey String representation
+         * @return updated builder instance
+         */
         public Builder publicKey(String publicKey) {
             this.publicKey = publicKey;
             return this;
         }
 
+        /**
+         * Path to public key
+         *
+         * @param publicKeyPath Public key path
+         * @return updated builder instance
+         */
         public Builder publicKeyPath(String publicKeyPath) {
             this.publicKeyPath = publicKeyPath;
             return this;
         }
 
+        /**
+         * Default JWK which should be used
+         *
+         * @param defaultJwk Default JWK
+         * @return updated builder instance
+         */
         public Builder defaultJwk(Jwk defaultJwk) {
+            //TODO volani tohohle
             this.defaultJwk = defaultJwk;
             return this;
         }
 
+        /**
+         * Default JWT key ID which should be used
+         *
+         * @param defaultKeyId Default JWT key ID
+         * @return updated builder instance
+         */
         public Builder defaultKeyId(String defaultKeyId) {
             this.defaultKeyId = defaultKeyId;
             return this;
@@ -772,6 +796,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("sign-token").ifExists(this::outbound);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
+            //TODO upravit???
             //mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY, String.class).ifPresent(this::publicKey);
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
 
@@ -799,27 +824,4 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
     }
 
-
-
-    /*@Override
-    protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
-        Map<String, List<String>> headers = providerRequest.getEnv().getHeaders();
-        SignedJwt signedJwt = SignedJwt.parseToken("kid");
-
-        /*
-        Extract header from request (see spec)
-        Create a SignedJwt from it
-        Validate signature against configured key(s) (see spec)
-        Create JsonWebToken implementation
-         */
-
-    /*    return super.syncAuthenticate(providerRequest);
-    }
-
-    @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
-                                                    SecurityEnvironment outboundEnv,
-                                                    EndpointConfig outboundEndpointConfig) {
-        return super.syncOutbound(providerRequest, outboundEnv, outboundEndpointConfig);
-    }*/
 }

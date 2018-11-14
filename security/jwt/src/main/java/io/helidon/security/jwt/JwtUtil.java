@@ -28,6 +28,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -264,6 +265,9 @@ public final class JwtUtil {
         }
         if (object instanceof Address) {
             return ((Address) object).getJson();
+        }
+        if (object instanceof Collection) {
+            return Json.createArrayBuilder((Collection) object).build();
         }
         return Json.createValue(String.valueOf(object));
     }
