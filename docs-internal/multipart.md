@@ -317,7 +317,7 @@ public class MultiPartSupport implements Service, Handler {
 
 ## Error Handling
 
-Error handling should not be different than than for any other media type already supported in Helidon.
+Error handling should not be different than for any other media type already supported in Helidon.
 
 The errors will be delegated to the content subscribers and to the webserver error handlers chain.
 
