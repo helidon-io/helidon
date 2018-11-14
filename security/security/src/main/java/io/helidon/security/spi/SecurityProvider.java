@@ -79,4 +79,5 @@ public interface SecurityProvider {
     default Collection<String> supportedAttributes() {
         return CollectionsHelper.setOf();
     }
+
 }

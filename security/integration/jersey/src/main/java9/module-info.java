@@ -33,4 +33,6 @@ module io.helidon.security.adapter.jersey {
     exports io.helidon.security.jersey;
     // needed for jersey injection
     opens io.helidon.security.jersey to hk2.locator,hk2.utils;
+
+    uses io.helidon.security.jersey.spi.AnnotationAnalyzer;
 }

@@ -20,6 +20,7 @@ import java.util.Set;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.JsonString;
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
@@ -28,27 +29,34 @@ import javax.ws.rs.core.SecurityContext;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.microprofile.server.Server;
-import io.helidon.security.annot.Authenticated;
 
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.junit.jupiter.api.Test;
 
 /**
  * TODO javadoc.
  */
 class JwtAuthTest {
     public static void main(String[] args) {
-        Server server = Server.create(MyApp.class);
+        Server server = Server.create(MyApp.class, PublicApp.class);
         server.start();
         System.out.println();
     }
+
     void testIt() {
         Server server = Server.create(MyApp.class);
         server.start();
         System.out.println();
+    }
+
+    @ApplicationPath("/public")
+    public static class PublicApp extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return CollectionsHelper.setOf(MyResource.class);
+        }
     }
 
     @LoginConfig(authMethod = "MP-JWT", realmName = "Helidon")
@@ -60,7 +68,7 @@ class JwtAuthTest {
     }
 
     @Path("/")
-    //@RequestScoped
+    @RequestScoped
     public static class MyResource {
         @Inject
         private JsonWebToken callerPrincipal;
@@ -79,12 +87,10 @@ class JwtAuthTest {
         //@Claim(standard = Claims.aud)
         //private Optional<ClaimValue<Set<String>>> audience;
 
-
-
         @Path("/hello")
         @GET
         public String hello() {
-            return "Hello " + callerPrincipal.getName();
+            return "Hello " + (null == callerPrincipal ? "Unknown" : callerPrincipal.getName());
         }
     }
 }

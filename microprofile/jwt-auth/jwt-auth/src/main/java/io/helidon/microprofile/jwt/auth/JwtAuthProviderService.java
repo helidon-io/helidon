@@ -23,9 +23,10 @@ import io.helidon.security.spi.SecurityProviderService;
  * {@link java.util.ServiceLoader} service to load {@link JwtAuthProvider}.
  */
 public class JwtAuthProviderService implements SecurityProviderService {
+    static final String PROVIDER_NAME = "mp-jwt-auth";
     @Override
     public String providerConfigKey() {
-        return "mp-jwt-auth";
+        return PROVIDER_NAME;
     }
 
     @Override

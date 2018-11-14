@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
+import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
@@ -546,5 +547,9 @@ abstract class SecurityFilterCommon {
         protected Function<Flow.Publisher<ByteBuffer>, Flow.Publisher<ByteBuffer>> filterFunction() {
             return filterFunction;
         }
+    }
+
+    Config config(String child) {
+        return security.getConfig(child);
     }
 }

@@ -15,9 +15,20 @@
  */
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import org.eclipse.microprofile.jwt.Claim;
-import org.eclipse.microprofile.jwt.ClaimValue;
-import org.eclipse.microprofile.jwt.Claims;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Instance;
@@ -40,20 +51,10 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+
+import org.eclipse.microprofile.jwt.Claim;
+import org.eclipse.microprofile.jwt.ClaimValue;
+import org.eclipse.microprofile.jwt.Claims;
 
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
@@ -81,18 +82,19 @@ public class JwtAuthCdiExtension implements Extension {
     public void collectClaimProducer(@Observes ProcessInjectionPoint<?, ?> pip) {
         Claim claim = pip.getInjectionPoint().getAnnotated().getAnnotation(Claim.class);
         if (claim != null) {
-            if (claim.standard() != Claims.UNKNOWN && !claim.value().isEmpty()) {
+            if ((claim.standard() != Claims.UNKNOWN) && !claim.value().isEmpty()) {
                 throw new DeploymentException("Claim annotation should not have both values at value and standard! " +
-                        "@Claim(value=" + claim.value() + ", standard=Claims." + claim.standard().name() + ")");
+                                                      "@Claim(value=" + claim.value() + ", standard=Claims." + claim.standard()
+                        .name() + ")");
             }
             InjectionPoint ip = pip.getInjectionPoint();
             Type type = ip.getType();
             FieldTypes ft = FieldTypes.forType(type);
 
             ClaimLiteral q = new ClaimLiteral(
-                    (claim.standard() != Claims.UNKNOWN)
-                            ? claim.standard().name()
-                            : claim.value(),
+                    (claim.standard() == Claims.UNKNOWN)
+                            ? claim.value()
+                            : claim.standard().name(),
                     ip.getMember().getDeclaringClass().getName() + "." + getFieldName(ip),
                     ft.isOptional(),
                     ft.isClaimValue(),
@@ -170,8 +172,9 @@ public class JwtAuthCdiExtension implements Extension {
 
     private void validateClaimValue(ClaimLiteral claimLiteral, Class parameter, Class parameter2, Class parameter3) {
         if (ClaimValue.class == parameter) {
-            throw new DeploymentException("ClaimValue has to be used as top level wrapper type. It cannot be parameter as it is in " +
-                    "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+            throw new DeploymentException(
+                    "ClaimValue has to be used as top level wrapper type. It cannot be parameter as it is in " +
+                            "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
         } else if (Optional.class == parameter) {
             validateOptional(claimLiteral, parameter2, parameter3);
         } else if (Set.class == parameter || JsonArray.class == parameter) {
@@ -183,11 +186,14 @@ public class JwtAuthCdiExtension implements Extension {
 
     private void validateOptional(ClaimLiteral claimLiteral, Class parameter, Class parameter2) {
         if (ClaimValue.class == parameter) {
-            throw new DeploymentException("ClaimValue has to be used as top level wrapper type. It cannot be parameter of Optional as it is in " +
-                    "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+            throw new DeploymentException(
+                    "ClaimValue has to be used as top level wrapper type. It cannot be parameter of Optional as it is in " +
+                            "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
         } else if (Optional.class == parameter) {
-            throw new DeploymentException("Optional has to be used as top/second level wrapper type. It cannot be parameter of another Optional as it is in " +
-                    "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+            throw new DeploymentException(
+                    "Optional has to be used as top/second level wrapper type. It cannot be parameter of another Optional as it"
+                            + " is in " +
+                            "the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
         } else if (Set.class == parameter || JsonArray.class == parameter) {
             validateSet(claimLiteral, parameter, parameter2);
         } else {
@@ -197,26 +203,31 @@ public class JwtAuthCdiExtension implements Extension {
 
     private void validateSet(ClaimLiteral claimLiteral, Class parent, Class parameter) {
         if (String.class != parameter && NoType.class != parameter) {
-            throw new DeploymentException("Set<" + parameter.getName() + "> is not supported type. Field has to have a Set with a String parameter.");
+            throw new DeploymentException("Set<" + parameter
+                    .getName() + "> is not supported type. Field has to have a Set with a String parameter.");
         }
         try {
             Claims claims = Claims.valueOf(claimLiteral.name);
             if (!Set.class.isAssignableFrom(claims.getType())
                     && !JsonArray.class.isAssignableFrom(claims.getType())) {
-                throw new DeploymentException("Cannot assign value of claim " + claimLiteral.name + " (claim type: " + claims.getType().getName() + ") " +
-                        " to the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+                throw new DeploymentException("Cannot assign value of claim " + claimLiteral.name + " (claim type: " + claims
+                        .getType().getName() + ") " +
+                                                      " to the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
             }
         } catch (IllegalArgumentException e) {
             //if claim is custom, it has to be JsonArray in case of Set
             if (JsonArray.class != parent) {
-                throw new DeploymentException("Field type has to be JsonArray (instead of Set<String>) while using custom claim name." +
-                        "Field " + claimLiteral.id + " can not be type: " + claimLiteral.fieldTypeString);
+                throw new DeploymentException(
+                        "Field type has to be JsonArray (instead of Set<String>) while using custom claim name." +
+                                "Field " + claimLiteral.id + " can not be type: " + claimLiteral.fieldTypeString);
             }
         }
     }
 
     private void validateBaseType(ClaimLiteral claimLiteral, Class clazz) {
-        if (NoType.class == clazz) return;
+        if (NoType.class == clazz) {
+            return;
+        }
         try {
             Claims claims = Claims.valueOf(claimLiteral.name);
             //check if field type and claim type are compatible
@@ -234,14 +245,16 @@ public class JwtAuthCdiExtension implements Extension {
             } else if ((clazz == JsonArray.class && Set.class.isAssignableFrom(claims.getType()))) {
                 return;
             }
-            throw new DeploymentException("Cannot assign value of claim " + claimLiteral.name + " (claim type: " + claims.getType().getName() + ") " +
-                    " to the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
+            throw new DeploymentException("Cannot assign value of claim " + claimLiteral.name + " (claim type: " + claims
+                    .getType().getName() + ") " +
+                                                  " to the field " + claimLiteral.id + " of type " + claimLiteral.fieldTypeString);
 
         } catch (IllegalArgumentException e) {
             //If claim requested claim is the custom claim, its unwrapped field type has to be JsonValue or its subtype
-            if (!JsonValue.class.isAssignableFrom(clazz))
+            if (!JsonValue.class.isAssignableFrom(clazz)) {
                 throw new DeploymentException("Field type has to be JsonValue or its subtype while using custom claim name." +
-                        "Field " + claimLiteral.id + " can not be type: " + claimLiteral.fieldTypeString);
+                                                      "Field " + claimLiteral.id + " can not be type: " + claimLiteral.fieldTypeString);
+            }
         }
     }
 
@@ -286,7 +299,15 @@ public class JwtAuthCdiExtension implements Extension {
         private Class typeArg3;
         private String fieldTypeString;
 
-        ClaimLiteral(String name, String id, boolean optional, boolean claimValue, Class rawType, Class typeArg, Class typeArg2, Class typeArg3, String fieldTypeString) {
+        ClaimLiteral(String name,
+                     String id,
+                     boolean optional,
+                     boolean claimValue,
+                     Class rawType,
+                     Class typeArg,
+                     Class typeArg2,
+                     Class typeArg3,
+                     String fieldTypeString) {
             this.name = name;
             this.id = id;
             this.optional = optional;

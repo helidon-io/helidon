@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -51,6 +52,7 @@ import io.helidon.security.annot.Audited;
 import io.helidon.security.annot.Authenticated;
 import io.helidon.security.annot.Authorized;
 import io.helidon.security.internal.SecurityAuditEvent;
+import io.helidon.security.jersey.spi.AnnotationAnalyzer;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -67,7 +69,6 @@ import org.glassfish.jersey.server.model.ResourceMethod;
 @Priority(Priorities.AUTHENTICATION)
 @ConstrainedTo(RuntimeType.SERVER)
 public class SecurityFilter extends SecurityFilterCommon implements ContainerRequestFilter, ContainerResponseFilter {
-
     private static final Logger LOGGER = Logger.getLogger(SecurityFilter.class.getName());
 
     private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
@@ -88,10 +89,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     // The filter is in singleton scope, so caching in an instance field is OK
     private SecurityDefinition appWideSecurity;
 
+    private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
+
     /**
      * Default constructor to be used by Jersey when creating an instance of this class.
      */
     public SecurityFilter() {
+        loadAnalyzers();
     }
 
     // due to a bug in Jersey @Context in constructor injection is failing
@@ -109,6 +113,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         this.resourceInfo = resourceInfo;
         this.uriInfo = uriInfo;
         this.securityContext = securityContext;
+
+        loadAnalyzers();
+    }
+
+    private void loadAnalyzers() {
+        ServiceLoader.load(AnnotationAnalyzer.class)
+                .forEach(analyzers::add);
     }
 
     /**
@@ -119,6 +130,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         Class<?> appClass = getOriginalApplication().getClass();
 
         this.appWideSecurity = securityForClass(appClass, null);
+
+        analyzers.forEach(analyzer -> analyzer.init(config("jersey.analyzers")));
     }
 
     @Override
@@ -304,6 +317,18 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
         addCustomAnnotations(customAnnotsMap, theClass);
 
+        for (AnnotationAnalyzer analyzer : analyzers) {
+            AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
+
+            if (null == parent) {
+                analyzerResponse = analyzer.analyze(theClass);
+            } else {
+                analyzerResponse = analyzer.analyze(theClass, parent.analyzerResponse(analyzer));
+            }
+
+            definition.analyzerResponse(analyzer, analyzerResponse);
+        }
+
         return definition;
     }
 
@@ -335,6 +360,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         addCustomAnnotations(methodDef.getOperationScope(), definitionMethod);
 
         resourceMethodSecurity.put(definitionMethod, methodDef);
+
+        for (AnnotationAnalyzer analyzer : analyzers) {
+            AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
+                                                                                    definition.analyzerResponse(analyzer));
+
+            methodDef.analyzerResponse(analyzer, analyzerResponse);
+        }
 
         return methodDef;
     }

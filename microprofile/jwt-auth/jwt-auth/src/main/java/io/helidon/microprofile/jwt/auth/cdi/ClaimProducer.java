@@ -16,10 +16,11 @@
 
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
-import org.eclipse.microprofile.jwt.Claim;
-import org.eclipse.microprofile.jwt.Claims;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
@@ -28,11 +29,12 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Provider;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Optional;
-import java.util.Set;
+
+import io.helidon.common.CollectionsHelper;
+import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
+
+import org.eclipse.microprofile.jwt.Claim;
+import org.eclipse.microprofile.jwt.Claims;
 
 /**
  * Class MetricProducer.
@@ -85,6 +87,11 @@ public class ClaimProducer implements Bean<Object> {
     static Object getParametrizedClaimValue(String claimName,
                                             JsonWebTokenImpl webToken,
                                             JwtAuthCdiExtension.MpClaimQualifier claimLiteral) {
+
+        if (null == webToken) {
+            // not in MP-JWT scope
+            return null;
+        }
 
         Object result = webToken.getClaim(claimName, claimLiteral.typeArg3());
         if (claimLiteral.optional()) result = Optional.ofNullable(result);

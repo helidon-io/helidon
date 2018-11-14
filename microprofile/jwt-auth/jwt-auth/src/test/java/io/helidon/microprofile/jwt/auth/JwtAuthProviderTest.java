@@ -21,8 +21,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
@@ -50,7 +48,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -350,7 +347,7 @@ public class JwtAuthProviderTest {
 
         EndpointConfig ep = mock(EndpointConfig.class);
         LoginConfig lc = mock(LoginConfig.class);
-        when(lc.authMethod()).thenReturn(JwtAuthProvider.LOGIN_CONFIG_METHOD);
+        when(lc.authMethod()).thenReturn(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD);
         when(lc.realmName()).thenReturn("");
 
         when(ep.combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION))

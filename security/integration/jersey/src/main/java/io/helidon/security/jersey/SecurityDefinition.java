@@ -18,6 +18,7 @@ package io.helidon.security.jersey;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import io.helidon.security.AuditEvent;
 import io.helidon.security.annot.Audited;
 import io.helidon.security.annot.Authenticated;
 import io.helidon.security.annot.Authorized;
+import io.helidon.security.jersey.spi.AnnotationAnalyzer;
 
 /**
  * Definition of security for one a method, resource class or application class.
@@ -36,6 +38,7 @@ class SecurityDefinition {
     private final Map<Class<? extends Annotation>, List<Annotation>> applicationScope = new HashMap<>();
     private final Map<Class<? extends Annotation>, List<Annotation>> resourceScope = new HashMap<>();
     private final Map<Class<? extends Annotation>, List<Annotation>> operationScope = new HashMap<>();
+    private final Map<AnnotationAnalyzer, AnnotationAnalyzer.AnalyzerResponse> analyzerResponses = new IdentityHashMap<>();
 
     /*
      * True if authentication is needed to execute.
@@ -193,5 +196,46 @@ class SecurityDefinition {
 
     public AuditEvent.AuditSeverity getAuditErrorSeverity() {
         return auditErrorSeverity;
+    }
+
+    public AnnotationAnalyzer.AnalyzerResponse analyzerResponse(AnnotationAnalyzer analyzer) {
+        return analyzerResponses.get(analyzer);
+    }
+
+    public void analyzerResponse(AnnotationAnalyzer analyzer, AnnotationAnalyzer.AnalyzerResponse analyzerResponse) {
+        analyzerResponses.put(analyzer, analyzerResponse);
+        switch (analyzerResponse.authenticationResponse()) {
+        case REQUIRED:
+            requiresAuthentication = true;
+            break;
+        case OPTIONAL:
+            requiresAuthentication = true;
+            authnOptional = true;
+            break;
+        case FORBIDDEN:
+            requiresAuthentication = false;
+            break;
+        case ABSTAIN:
+        default:
+            break;
+        }
+
+        switch (analyzerResponse.authorizationResponse()) {
+        case REQUIRED:
+            requiresAuthorization = true;
+            break;
+        case OPTIONAL:
+            requiresAuthorization = true;
+            break;
+        case FORBIDDEN:
+            requiresAuthorization = false;
+            break;
+        case ABSTAIN:
+        default:
+            break;
+        }
+
+        this.authenticator = analyzerResponse.authenticator().orElse(this.authenticator);
+        this.authorizer = analyzerResponse.authorizer().orElse(this.authorizer);
     }
 }

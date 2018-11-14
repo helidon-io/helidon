@@ -88,7 +88,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Configure this for outbound requests to override user to use.
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
-    static final String LOGIN_CONFIG_METHOD = "MP-JWT";
+
 
     private final boolean optional;
     private final boolean authenticate;
@@ -163,14 +163,10 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 .combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION);
 
         return loginConfigs.stream()
-                .filter(JwtAuthProvider::isMpJwt)
+                .filter(JwtAuthAnnotationAnalyzer::isMpJwt)
                 .findFirst()
                 .map(loginConfig -> authenticate(providerRequest, loginConfig))
                 .orElseGet(AuthenticationResponse::abstain);
-    }
-
-    private static boolean isMpJwt(LoginConfig config) {
-        return LOGIN_CONFIG_METHOD.equals(config.authMethod());
     }
 
     AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
@@ -796,8 +792,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("sign-token").ifExists(this::outbound);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();
-            //TODO upravit???
-            //mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY, String.class).ifPresent(this::publicKey);
+
+            mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY, String.class).ifPresent(this::publicKey);
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
 
             return this;
