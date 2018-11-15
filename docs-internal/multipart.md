@@ -171,8 +171,6 @@ public interface BodyPart {
 
     BodyPartHeaders headers();
 
-    BodyPart parent();
-
     static <T> BodyPart create(T entity){
         return builder().
             .entity(entity)
