@@ -213,8 +213,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -1100,7 +1100,7 @@
                                         <goal>compile</goal>
                                     </goals>
                                     <configuration>
-                                        <release>${java.version}</release>
+                                        <release>8</release>
                                     </configuration>
                                 </execution>
                                 <execution>
@@ -1109,7 +1109,7 @@
                                         <goal>testCompile</goal>
                                     </goals>
                                     <configuration>
-                                        <release>${java.version}</release>
+                                        <release>8</release>
                                     </configuration>
                                 </execution>
                             </executions>
