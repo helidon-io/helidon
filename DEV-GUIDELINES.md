@@ -7,6 +7,10 @@ reviewing changes done by others.
 
 **Exceptions to these rules should be documented clearly.**
 
+# General coding rules
+1. Use unchecked Throwables - descendants of RuntimeException in API
+    1. our API should never throw a checked exception unless enforced by implemented interface
+
 # Package and module structure
 1. We use flat package structure
     1. Each module (maven and jigsaw) has a single implementation package
