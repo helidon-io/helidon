@@ -15,6 +15,7 @@
 #
 
 box: maven:3.5.4-jdk-9
+command-timeout: 60
 
 copyright:
   steps:
