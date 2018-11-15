@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.json.Json;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
@@ -96,6 +97,7 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getClaim(String claimName, Class<T> clazz) {
         try {
             Claims claims = Claims.valueOf(claimName);
@@ -106,9 +108,9 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
             //If claimName is name of the custom claim
             Object value = getJsonValue(claimName).orElse(null);
             Class verify = clazz;
-            if (value != null
-                    && verify != ClaimValue.class
-                    && verify != Optional.class
+            if ((value != null)
+                    && (verify != ClaimValue.class)
+                    && (verify != Optional.class)
                     && !verify.isAssignableFrom(value.getClass())) {
                 throw new SecurityException("Cannot set instance of " + value.getClass().getName() + " to the field of type " + verify.getName());
             }
@@ -121,13 +123,13 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         case raw_token:
             return signed.getTokenContent();
         case groups:
-            return jwt.getUserGroups().map(HashSet::new).orElseGet(HashSet::new);
+            return jwt.getUserGroups().map(HashSet::new).orElse(null);
         case aud:
-            return jwt.getAudience().map(HashSet::new).orElseGet(HashSet::new);
+            return jwt.getAudience().map(HashSet::new).orElse(null);
         case email_verified:
-            return jwt.getEmailVerified().orElseGet(null);
+            return jwt.getEmailVerified().orElse(null);
         case phone_number_verified:
-            return jwt.getPhoneNumberVerified().orElseGet(null);
+            return jwt.getPhoneNumberVerified().orElse(null);
         default:
             //do nothing, just continue to processing based on type
         }
@@ -139,6 +141,10 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
     }
 
     private Optional<JsonValue> getJsonValue(String claimName) {
+        if (Claims.raw_token.name().equals(claimName)) {
+            // special case, raw token is not really a claim
+            return Optional.of(Json.createValue(signed.getTokenContent()));
+        }
         return OptionalHelper
                 .from(jwt.getPayloadClaim(claimName))
                 .or(() -> jwt.getHeaderClaim(claimName))

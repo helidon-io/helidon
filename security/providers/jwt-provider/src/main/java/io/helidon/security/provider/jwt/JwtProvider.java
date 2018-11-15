@@ -444,6 +444,9 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         private String issuer;
         private String expectedAudience;
 
+        private Builder() {
+        }
+
         @Override
         public JwtProvider build() {
             return new JwtProvider(this);

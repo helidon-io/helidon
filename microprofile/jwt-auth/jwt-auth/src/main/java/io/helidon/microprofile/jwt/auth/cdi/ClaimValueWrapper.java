@@ -17,11 +17,11 @@ class ClaimValueWrapper<T> implements ClaimValue<T> {
 
     @Override
     public String getName() {
-        return null;
+        return name;
     }
 
     @Override
     public T getValue() {
-        return null;
+        return value;
     }
 }

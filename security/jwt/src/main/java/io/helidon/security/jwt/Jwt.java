@@ -477,7 +477,24 @@ public class Jwt {
      * @return claim value if present
      */
     public Optional<JsonValue> getPayloadClaim(String claim) {
-        return Optional.ofNullable(payloadClaims.get(claim));
+        JsonValue rawValue = payloadClaims.get(claim);
+
+        switch (claim) {
+        case "aud":
+            return Optional.ofNullable(ensureJsonArray(rawValue));
+        default:
+            return Optional.ofNullable(rawValue);
+        }
+    }
+
+    private JsonValue ensureJsonArray(JsonValue rawValue) {
+        if (rawValue instanceof JsonArray) {
+            return rawValue;
+        }
+
+        return Json.createArrayBuilder()
+                .add(rawValue)
+                .build();
     }
 
     public Map<String, JsonValue> getPayloadClaims() {

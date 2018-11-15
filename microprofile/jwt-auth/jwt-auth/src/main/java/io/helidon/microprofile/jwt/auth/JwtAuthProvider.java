@@ -54,6 +54,7 @@ import io.helidon.security.Grant;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.Role;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityException;
@@ -88,7 +89,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Configure this for outbound requests to override user to use.
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
-
+    public static final String CONFIG_EXPECTED_ISSUER = "mp.jwt.verify.issuer";
 
     private final boolean optional;
     private final boolean authenticate;
@@ -104,6 +105,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     private final String issuer;
     private final Jwk defaultJwk;
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
+    private final String expectedIssuer;
 
     private JwtAuthProvider(Builder builder) {
         this.optional = builder.optional;
@@ -118,6 +120,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
         this.defaultJwk = builder.defaultJwk;
+        this.expectedIssuer = builder.expectedIssuer;
 
         if (null == atnTokenHandler) {
             defaultTokenHandler = TokenHandler.builder()
@@ -145,7 +148,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * @return provider instance
      */
     public static JwtAuthProvider create(Config config) {
-        return builder().fromConfig(config).build();
+        return builder().config(config).build();
     }
 
     @Override
@@ -162,11 +165,15 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         List<LoginConfig> loginConfigs = providerRequest.getEndpointConfig()
                 .combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION);
 
-        return loginConfigs.stream()
-                .filter(JwtAuthAnnotationAnalyzer::isMpJwt)
-                .findFirst()
-                .map(loginConfig -> authenticate(providerRequest, loginConfig))
-                .orElseGet(AuthenticationResponse::abstain);
+        try {
+            return loginConfigs.stream()
+                    .filter(JwtAuthAnnotationAnalyzer::isMpJwt)
+                    .findFirst()
+                    .map(loginConfig -> authenticate(providerRequest, loginConfig))
+                    .orElseGet(AuthenticationResponse::abstain);
+        } catch (java.lang.SecurityException e) {
+            return AuthenticationResponse.failed("Failed to process authentication header", e);
+        }
     }
 
     AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
@@ -177,7 +184,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     if (errors.isValid()) {
                         Jwt jwt = signedJwt.getJwt();
                         // verify the audience is correct
-                        Errors validate = jwt.validate(null, expectedAudience);
+                        Errors validate = jwt.validate(expectedIssuer, expectedAudience);
                         if (validate.isValid()) {
                             return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                         } else {
@@ -207,12 +214,16 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-        Optional<List<String>> scopes = jwt.getScopes();
+
 
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
 
+        Optional<List<String>> userGroups = jwt.getUserGroups();
+        userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
+
+        Optional<List<String>> scopes = jwt.getScopes();
         scopes.ifPresent(scopeList ->
                                  scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
                                                                                             .name(scope)
@@ -466,6 +477,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
                 Pattern.CASE_INSENSITIVE);
 
+        private String expectedIssuer;
         private boolean optional = false;
         private boolean authenticate = true;
         private boolean propagate = true;
@@ -485,6 +497,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private String publicKeyPath;
         private String publicKey;
 
+        private Builder() {
+        }
+
         @Override
         public JwtAuthProvider build() {
             if (verifyKeys == null) {
@@ -499,6 +514,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 defaultJwk = verifyKeys.forKeyId(defaultKeyId)
                         .orElseThrow(() -> new DeploymentException("Default key id defined as \"" + defaultKeyId + "\" yet the "
                                                                            + "key id is not present in the JWK keys"));
+            }
+
+            if (null == defaultJwk) {
+                List<Jwk> keys = verifyKeys.keys();
+                if (!keys.isEmpty()) {
+                    defaultJwk = keys.get(0);
+                }
             }
 
             return new JwtAuthProvider(this);
@@ -527,15 +549,23 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                     throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
                 }
             } else {
-                URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
-                if (url != null) {
-                    try (InputStream bufferedInputStream = url.openStream()) {
-                        return getPublicKeyFromContent(bufferedInputStream);
-                    } catch (IOException e) {
-                        throw new SecurityException("Failed to load public key(s) from class path: " + url, e);
-                    }
-                } else {
 
+                try (InputStream is = locateStream(uri)) {
+                    return getPublicKeyFromContent(is);
+                } catch (IOException e) {
+                    throw new SecurityException("Failed to load public key(s) from : " + uri, e);
+                }
+            }
+        }
+
+        private InputStream locateStream(String uri) throws IOException {
+            InputStream is;
+
+            URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
+            if (url == null) {
+                is = JwtAuthProvider.class.getResourceAsStream(uri);
+
+                if (null == is) {
                     try {
                         url = new URL(uri);
                     } catch (MalformedURLException ignored2) {
@@ -543,14 +573,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         LOGGER.finest(() -> "Configuration of public key(s) is not a valid URL: " + uri);
                         return null;
                     }
-
-                    try {
-                        return getPublicKeyFromContent(url.openStream());
-                    } catch (IOException e) {
-                        throw new SecurityException("Failed to load public key(s) from URL: " + url, e);
-                    }
+                    is = url.openStream();
                 }
+            } else {
+                is = url.openStream();
             }
+
+            return is;
         }
 
         private JwkKeys getPublicKeyFromContent(InputStream bufferedInputStream) throws IOException {
@@ -728,18 +757,21 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
-         * String representation of the public key
+         * String representation of the public key.
          *
          * @param publicKey String representation
          * @return updated builder instance
          */
         public Builder publicKey(String publicKey) {
+            // from MP specification - if defined, get rid of publicKeyPath from Helidon Config,
+            // as we must fail if both are defined using MP configuration options
             this.publicKey = publicKey;
+            this.publicKeyPath = null;
             return this;
         }
 
         /**
-         * Path to public key
+         * Path to public key.
          *
          * @param publicKeyPath Public key path
          * @return updated builder instance
@@ -750,19 +782,18 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
-         * Default JWK which should be used
+         * Default JWK which should be used.
          *
          * @param defaultJwk Default JWK
          * @return updated builder instance
          */
         public Builder defaultJwk(Jwk defaultJwk) {
-            //TODO volani tohohle
             this.defaultJwk = defaultJwk;
             return this;
         }
 
         /**
-         * Default JWT key ID which should be used
+         * Default JWT key ID which should be used.
          *
          * @param defaultKeyId Default JWT key ID
          * @return updated builder instance
@@ -778,7 +809,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          * @param config configuration to load from
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("optional").asOptional(Boolean.class).ifPresent(this::optional);
             config.get("authenticate").asOptional(Boolean.class).ifPresent(this::authenticate);
             config.get("propagate").asOptional(Boolean.class).ifPresent(this::propagate);
@@ -788,6 +819,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asOptionalString().ifPresent(this::expectedAudience);
             config.get("atn-token.default-key-id").asOptionalString().ifPresent(this::defaultKeyId);
+            config.get("atn-token.verify-key").asOptionalString().ifPresent(this::publicKeyPath);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.parseTargets(outbound)));
             config.get("sign-token").ifExists(this::outbound);
 
@@ -795,7 +827,19 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY, String.class).ifPresent(this::publicKey);
             mpConfig.getOptionalValue(CONFIG_PUBLIC_KEY_PATH, String.class).ifPresent(this::publicKeyPath);
+            mpConfig.getOptionalValue(CONFIG_EXPECTED_ISSUER, String.class).ifPresent(this::expectedIssuer);
 
+            return this;
+        }
+
+        /**
+         * Expected issuer in incoming requests.
+         *
+         * @param issuer name of issuer
+         * @return updated builder instance
+         */
+        public Builder expectedIssuer(String issuer) {
+            this.expectedIssuer = issuer;
             return this;
         }
 
@@ -803,9 +847,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
          * Audience expected in inbound JWTs.
          *
          * @param audience audience string
+         * @return updated builder instance
          */
-        public void expectedAudience(String audience) {
+        public Builder expectedAudience(String audience) {
             this.expectedAudience = audience;
+            return this;
         }
 
         private void verifyKeys(Config config) {

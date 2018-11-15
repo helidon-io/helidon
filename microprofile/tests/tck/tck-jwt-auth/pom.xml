@@ -22,7 +22,7 @@
     <parent>
         <artifactId>tck-project</artifactId>
         <groupId>io.helidon.microprofile.tests</groupId>
-        <version>0.10.2-SNAPSHOT</version>
+        <version>0.10.6-SNAPSHOT</version>
     </parent>
     <artifactId>tck-jwt-auth</artifactId>
     <name>Helidon Microprofile Tests TCK JWT-Auth</name>
@@ -61,6 +61,12 @@
         <dependency>
             <groupId>org.jboss.arquillian.testng</groupId>
             <artifactId>arquillian-testng-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>tck-jwt-auth-config</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -16,14 +16,19 @@
 
 package io.helidon.microprofile.arquillian;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
+
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  * Runner to start server using reflection (as we need to run in a different classloader).
@@ -36,15 +41,21 @@ class ServerRunner {
     ServerRunner() {
     }
 
+    private static String getContextRoot(Class<?> application) {
+        ApplicationPath path = application.getAnnotation(ApplicationPath.class);
+        if (null == path) {
+            return null;
+        }
+        return path.value();
+    }
+
     void start(Config config, HelidonContainerConfiguration containerConfig, Set<String> classNames, ClassLoader cl) {
         //cl.getResources("beans.xml")
         Server.Builder builder = Server.builder()
                 .port(containerConfig.getPort())
                 .config(config);
 
-        for (String className : classNames) {
-            handleClass(cl, className, builder);
-        }
+        handleClasses(cl, classNames, builder);
 
         server = builder.build();
         // this is a blocking operation, we will be released once the server is started
@@ -55,27 +66,44 @@ class ServerRunner {
 
     void stop() {
         if (null != server) {
-            LOGGER.finest(() ->"Stopping server");
+            LOGGER.finest(() -> "Stopping server");
             server.stop();
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void handleClass(ClassLoader classLoader, String className, Server.Builder builder) {
-        try {
-            LOGGER.finest(() -> "Will attempt to add class: " + className);
-            final Class<?> c = classLoader.loadClass(className);
-            if (Application.class.isAssignableFrom(c)) {
-                LOGGER.finest(() -> "Adding application class: " + c.getName());
-                builder.addApplication((Class<? extends Application>) c);
-            } else if (c.isAnnotationPresent(Path.class)) {
-                LOGGER.finest(() -> "Adding resource class: " + c.getName());
-                builder.addResourceClass(c);
-            } else {
-                LOGGER.finest(() -> "Class " + c.getName() + " is neither annotated with Path nor an application.");
+    private void handleClasses(ClassLoader classLoader, Set<String> classNames, Server.Builder builder) {
+        // first create classes end get all applications
+        List<Class<?>> applicationClasses = new LinkedList<>();
+        List<Class<?>> resourceClasses = new LinkedList<>();
+
+        for (String className : classNames) {
+            try {
+                LOGGER.finest(() -> "Will attempt to add class: " + className);
+                final Class<?> c = classLoader.loadClass(className);
+                if (Application.class.isAssignableFrom(c)) {
+                    LOGGER.finest(() -> "Adding application class: " + c.getName());
+                    applicationClasses.add(c);
+                } else if (c.isAnnotationPresent(Path.class)) {
+                    LOGGER.finest(() -> "Adding resource class: " + c.getName());
+                    resourceClasses.add(c);
+                } else {
+                    LOGGER.finest(() -> "Class " + c.getName() + " is neither annotated with Path nor an application.");
+                }
+            } catch (NoClassDefFoundError | ClassNotFoundException e) {
+                throw new HelidonArquillianException("Failed to load class to be added to server: " + className, e);
             }
-        } catch (NoClassDefFoundError | ClassNotFoundException e) {
-            throw new HelidonArquillianException("Failed to load class to be added to server: " + className, e);
+        }
+
+        //TODO this should be configurable - currently required by JWT-Auth spec
+        for (Class<?> aClass : applicationClasses) {
+            ResourceConfig resourceConfig = ResourceConfig.forApplicationClass((Class<? extends Application>) aClass);
+            resourceClasses.forEach(resourceConfig::register);
+            builder.addApplication(getContextRoot(aClass), resourceConfig);
+        }
+        if (applicationClasses.isEmpty()) {
+            for (Class<?> resourceClass : resourceClasses) {
+                builder.addResourceClass(resourceClass);
+            }
         }
     }
 }

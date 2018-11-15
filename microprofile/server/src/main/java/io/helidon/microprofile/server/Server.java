@@ -213,6 +213,8 @@ public interface Server {
                 if (null != resourceConfig) {
                     applications.add(JaxRsApplication.create(resourceConfig));
                 }
+            } else if (!resourceClasses.isEmpty()) {
+                applications.add(JaxRsApplication.create(configForResourceClasses(resourceClasses)));
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");

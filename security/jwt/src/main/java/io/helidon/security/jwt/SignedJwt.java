@@ -271,6 +271,7 @@ public final class SignedJwt {
 
         Jwk jwk;
 
+        // TODO support multiple JWK unders same kid if different alg (see if spec allows this)
         if (null == alg) {
             if (null == kid) {
                 collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
@@ -280,8 +281,13 @@ public final class SignedJwt {
                 //null alg, non-null kid - will use alg of jwk
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    collector.fatal(keys, "Key for key id: " + kid + " not found");
-                } else {
+                    if (null == defaultJwk) {
+                        collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    } else {
+                        jwk = defaultJwk;
+                    }
+                }
+                if (null != jwk) {
                     alg = jwk.getAlgorithm();
                 }
             }
@@ -300,7 +306,12 @@ public final class SignedJwt {
                 //both not null
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    if ((null != defaultJwk) && alg.equals(defaultJwk.getAlgorithm())) {
+                        jwk = defaultJwk;
+                    }
+                    if (null == jwk) {
+                        collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    }
                 }
             }
         }

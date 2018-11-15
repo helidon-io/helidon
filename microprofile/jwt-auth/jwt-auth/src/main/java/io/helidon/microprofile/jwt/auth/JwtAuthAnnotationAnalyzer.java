@@ -15,6 +15,10 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
+import java.lang.reflect.Method;
+
+import javax.annotation.security.PermitAll;
+
 import io.helidon.config.Config;
 import io.helidon.security.jersey.spi.AnnotationAnalyzer;
 
@@ -68,5 +72,30 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
         }
 
         return builder.build();
+    }
+
+    @Override
+    public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
+        //TODO this is not great, though required by TCK
+        PermitAll annotation = maybeAnnotated.getAnnotation(PermitAll.class);
+        if (null == annotation) {
+            return AnalyzerResponse.abstain();
+        }
+
+        return AnalyzerResponse.builder(previousResponse)
+                .authenticationResponse(Flag.OPTIONAL)
+                .build();
+    }
+
+    @Override
+    public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
+        PermitAll annotation = maybeAnnotated.getAnnotation(PermitAll.class);
+        if (null == annotation) {
+            return AnalyzerResponse.abstain();
+        }
+
+        return AnalyzerResponse.builder(previousResponse)
+                .authenticationResponse(Flag.OPTIONAL)
+                .build();
     }
 }

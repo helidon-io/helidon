@@ -93,13 +93,24 @@ public class ClaimProducer implements Bean<Object> {
             return null;
         }
 
-        Object result = webToken.getClaim(claimName, claimLiteral.typeArg3());
+        Object result;
+        if (claimLiteral.claimValue()) {
+            if (claimLiteral.optional()) {
+                result = webToken.getClaim(claimName, claimLiteral.typeArg2());
+            } else {
+                result = webToken.getClaim(claimName, claimLiteral.typeArg());
+            }
+        } else if (claimLiteral.optional()) {
+            result = webToken.getClaim(claimName, claimLiteral.typeArg());
+        } else {
+            result = webToken.getClaim(claimName, claimLiteral.rawType());
+        }
+
         if (claimLiteral.optional()) result = Optional.ofNullable(result);
         if (claimLiteral.claimValue()) result = new ClaimValueWrapper<>(claimName, result);
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Object create(CreationalContext<Object> context) {
         return getClaimValue(context);

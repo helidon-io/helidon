@@ -15,26 +15,17 @@
   limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <modules>
-        <module>jwt-auth</module>
-    </modules>
     <parent>
-        <groupId>io.helidon.microprofile</groupId>
-        <artifactId>helidon-microprofile-project</artifactId>
+        <artifactId>tck-project</artifactId>
+        <groupId>io.helidon.microprofile.tests</groupId>
         <version>0.10.6-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
+    <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.microprofile.jwt</groupId>
-    <artifactId>helidon-microprofile-jwt-project</artifactId>
-    <name>Helidon Microprofile JWT Project</name>
-
-    <description>
-        Microprofile JWT implementation Project
-    </description>
+    <artifactId>tck-jwt-auth-config</artifactId>
+    <name>Helidon Microprofile Tests TCK JWT-Auth Configuration</name>
 
 </project>

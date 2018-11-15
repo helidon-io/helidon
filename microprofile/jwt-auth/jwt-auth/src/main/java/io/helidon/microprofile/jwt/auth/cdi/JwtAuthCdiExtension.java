@@ -45,6 +45,7 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
+import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -406,7 +407,7 @@ public class JwtAuthCdiExtension implements Extension {
             // if the first type is a Instace.class, we do not want it and start from its child
             //Fields can have 3 parametes in total -> ClaimValue<Optional<Set<String>>>. That is why we need 4 fields in total.
             TypedField firstType = getTypedField(type);
-            if (firstType.rawType.equals(Instance.class)) {
+            if (firstType.rawType.equals(Instance.class) || firstType.rawType.equals(Provider.class)) {
                 ft.field0 = getTypedField(firstType);
             } else {
                 ft.field0 = firstType;
