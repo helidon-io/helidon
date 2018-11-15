@@ -89,7 +89,7 @@ public final class JsonSupport implements Service, Handler {
     /**
      * JSONP (JSON with Pending) can have this weired type.
      */
-    private static final MediaType APPLICATION_JAVASCRIPT = new MediaType("application", "javascript");
+    private static final MediaType APPLICATION_JAVASCRIPT = MediaType.create("application", "javascript");
 
     /**
      * A singleton holder for JsonSupport with default (empty) configuration.
@@ -184,7 +184,7 @@ public final class JsonSupport implements Service, Handler {
                             } else if (type.test(APPLICATION_JAVASCRIPT)) {
                                 return APPLICATION_JAVASCRIPT;
                             } else if (type.hasSuffix("json")) {
-                                return new MediaType(type.getType(), type.getSubtype());
+                                return MediaType.create(type.type(), type.subtype());
                             } else {
                                 return null;
                             }
@@ -214,7 +214,7 @@ public final class JsonSupport implements Service, Handler {
     private Charset determineCharset(Parameters headers) {
         return headers.first(Http.Header.CONTENT_TYPE)
                 .map(MediaType::parse)
-                .flatMap(MediaType::getCharset)
+                .flatMap(MediaType::charset)
                 .map(sch -> {
                     try {
                         return Charset.forName(sch);

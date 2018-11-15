@@ -7,6 +7,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+- io.helidon.common.SpiHelper is removed (incompatible with java9+)
+- io.helidon.common.configurable.Resource is refactored to align with development guidelines
+    - factory methods "from" renamed to "create"
+    - factory method "fromPath" removed, use create(Paths.get(pathString))
+    - getters renamed - removed "get" word
+- io.helidon.common.http.Http is refactored to align with development guidelines
+    - factory method "of" renamed to "find", as it returns an Optional
+    - other factory methods renamed to "create"
+- io.helidon.common.http.MediaType is refactored to align with development guidelines
+    - removed constructors - only factory methods and Builder pattern available now
+    - added factory method "create" to support most common use cases
+    - added fluent API Builder to build more complex instances
+    - getters renamed - removed "get" word
+- io.helidon.common.http.SetCookie is refactored to align with development guidelines
+    - class is immutable now
+    - removed constructors - only factory methods and Builder pattern available now
+    - added factory method "create" to support most common use cases
+    - added fluent API Builder to build more complex instances
+- io.helidon.common.pki.KeyConfig is refactored to align with development guidelines
+    - factory methods "from" renamed to "create"
+    - getters renamed - removed "get" word
+    - Builder method "fromConfig" renamed to "config"
+    - Builders now implement io.helidon.common.Builder
+    
 ### Improvements
 
 ### Fixes

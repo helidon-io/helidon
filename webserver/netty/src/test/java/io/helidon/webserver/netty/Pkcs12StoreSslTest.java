@@ -56,7 +56,7 @@ public class Pkcs12StoreSslTest {
     @Test
     public void testPkcs12() throws Exception {
         SSLContext sslContext = SSLContextBuilder.create(KeyConfig.keystoreBuilder()
-                                                                  .keystore(Resource.from("ssl/certificate.p12"))
+                                                                  .keystore(Resource.create("ssl/certificate.p12"))
                                                                   .keystorePassphrase(new char[] {'h', 'e', 'l', 'i', 'd', 'o', 'n'})
                                                                   .build())
                                                  .build();

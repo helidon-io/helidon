@@ -89,7 +89,7 @@ public final class SecureConfigFilter implements ConfigFilter {
                     .orElse(null);
         } else {
             this.requireEncryption = builder.requireEncryption;
-            this.privateKey = builder.privateKeyConfig.getPrivateKey()
+            this.privateKey = builder.privateKeyConfig.privateKey()
                     .orElseThrow(() -> new SecureConfigException("Private key configuration is invalid"));
             this.masterPassword = builder.masterPassword;
         }

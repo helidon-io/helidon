@@ -16,28 +16,30 @@
 
 package io.helidon.common.reactive.valve;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class CloseableSupportTest {
 
     @Test
     void singleThread() {
         CloseableSupport cs = new CloseableSupport();
-        assertFalse(cs.closed());
+        assertThat("Closeable must not be closed by default", cs.closed(), is(false));
+
         cs.close();
-        assertTrue(cs.closed());
+        assertThat("Closeable must be closed when close is callded", cs.closed(), is(true));
     }
 
     @Test
-    void otherThread() throws Exception {
+    void otherThread() throws ExecutionException, InterruptedException {
         CloseableSupport cs = new CloseableSupport();
-        assertFalse(cs.closed());
+        assertThat("Closeable must not be closed by default", cs.closed(), is(false));
         ForkJoinPool.commonPool().submit(cs::close).get();
-        assertTrue(cs.closed());
+        assertThat("Closeable must be closed when close is callded", cs.closed(), is(true));
     }
 }

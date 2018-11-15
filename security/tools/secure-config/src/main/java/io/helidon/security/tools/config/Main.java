@@ -125,12 +125,12 @@ public final class Main {
             }
             String certAlias = cliArgs[3];
             KeyConfig kc = KeyConfig.keystoreBuilder()
-                    .keystore(Resource.from(keyPath))
+                    .keystore(Resource.create(keyPath))
                     .keystorePassphrase(cliArgs[2].toCharArray())
                     .certAlias(certAlias)
                     .build();
 
-            publicKey = kc.getPublicKey()
+            publicKey = kc.publicKey()
                     .orElseThrow(() -> new ValidationException("There is no public key available for cert alias: " + certAlias));
         }
 

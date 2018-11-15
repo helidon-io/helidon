@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
+
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class ValvesTest {
 
@@ -30,33 +32,33 @@ class ValvesTest {
     void fromIterable() throws Exception {
         List<String> list = CollectionsHelper.listOf("a", "b", "c", "d", "e", "f", "g");
         String s = Valves.from(list).collect(Collectors.joining()).toCompletableFuture().get();
-        assertEquals("abcdefg", s);
+        assertThat(s, is("abcdefg"));
     }
 
     @Test
     void fromNullIterable() throws Exception {
         String s = Valves.from((Iterable<String>) null).collect(Collectors.joining()).toCompletableFuture().get();
-        assertEquals("", s);
+        assertThat(s, is(""));
     }
 
     @Test
     void fromArray() throws Exception {
-        String[] array = new String[] {"a", "b", "c", "d", "e", "f", "g"};
+        String[] array = {"a", "b", "c", "d", "e", "f", "g"};
         String s = Valves.from(array).collect(Collectors.joining()).toCompletableFuture().get();
-        assertEquals("abcdefg", s);
+        assertThat(s, is("abcdefg"));
     }
 
     @Test
     void fromNullArray() throws Exception {
         String[] array = null;
         String s = Valves.from(array).collect(Collectors.joining()).toCompletableFuture().get();
-        assertEquals("", s);
+        assertThat(s, is(""));
     }
 
     @Test
     void empty() throws Exception {
         Valve<String> valve = Valves.empty();
         String s = valve.collect(Collectors.joining()).toCompletableFuture().get();
-        assertEquals("", s);
+        assertThat(s, is(""));
     }
 }

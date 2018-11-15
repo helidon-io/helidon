@@ -23,7 +23,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link IteratorValve}.
@@ -100,7 +101,7 @@ public class IteratorValveTest {
 
         void awaitAndAssert(String expected) throws Exception{
             await();
-            assertEquals(expected, stringBuilder.toString());
+            assertThat(stringBuilder.toString(), is(expected));
         }
     }
 

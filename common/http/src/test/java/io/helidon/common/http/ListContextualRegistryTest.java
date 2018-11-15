@@ -17,13 +17,14 @@
 package io.helidon.common.http;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link ListContextualRegistry} and {@link ContextualRegistry}.
@@ -31,89 +32,89 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ListContextualRegistryTest {
 
     @Test
-    public void create() throws Exception {
-        assertNotNull(ContextualRegistry.create());
-        assertNotNull(ContextualRegistry.create(null));
-        assertNotNull(ContextualRegistry.create(ContextualRegistry.create()));
+    public void create() {
+        assertThat(ContextualRegistry.create(), notNullValue());
+        assertThat(ContextualRegistry.create(null), notNullValue());
+        assertThat(ContextualRegistry.create(ContextualRegistry.create()), notNullValue());
     }
 
     @Test
-    public void registerAndGetLast() throws Exception {
+    public void registerAndGetLast() {
         ContextualRegistry context = ContextualRegistry.create();
-        assertFalse(context.get(String.class).isPresent());
-        assertFalse(context.get(Integer.class).isPresent());
+        assertThat(context.get(String.class), is(Optional.empty()));
+        assertThat(context.get(Integer.class), is(Optional.empty()));
         context.register("aaa");
-        assertEquals("aaa", context.get(String.class).orElse(null));
-        assertFalse(context.get(Integer.class).isPresent());
+        assertThat(context.get(String.class), is(Optional.of("aaa")));
+        assertThat(context.get(Integer.class), is(Optional.empty()));
         context.register(1);
-        assertEquals("aaa", context.get(String.class).orElse(null));
-        assertEquals(Integer.valueOf(1), context.get(Integer.class).orElse(null));
-        assertEquals(Integer.valueOf(1), context.get(Object.class).orElse(null));
+        assertThat(context.get(String.class), is(Optional.of("aaa")));
+        assertThat(context.get(Integer.class), is(Optional.of(1)));
+        assertThat(context.get(Object.class), is(Optional.of(1)));
         context.register("bbb");
-        assertEquals("bbb", context.get(String.class).orElse(null));
-        assertEquals("bbb", context.get(Object.class).orElse(null));
+        assertThat(context.get(String.class), is(Optional.of("bbb")));
+        assertThat(context.get(Object.class), is(Optional.of("bbb")));
     }
 
     @Test
-    public void registerAndGetLastClassifier() throws Exception {
+    public void registerAndGetLastClassifier() {
         ContextualRegistry context = ContextualRegistry.create();
         String classifier = "classifier";
-        assertFalse(context.get(classifier, String.class).isPresent());
-        assertFalse(context.get(classifier, Integer.class).isPresent());
+        assertThat(context.get(classifier, String.class), is(Optional.empty()));
+        assertThat(context.get(classifier, Integer.class), is(Optional.empty()));
         context.register(classifier, "aaa");
-        assertEquals("aaa", context.get(classifier, String.class).orElse(null));
-        assertFalse(context.get(String.class).isPresent());
-        assertFalse(context.get(classifier, Integer.class).isPresent());
+        assertThat(context.get(classifier, String.class), is(Optional.of("aaa")));
+        assertThat(context.get(String.class), is(Optional.empty()));
+        assertThat(context.get(classifier, Integer.class), is(Optional.empty()));
         context.register(classifier, 1);
-        assertEquals("aaa", context.get(classifier, String.class).orElse(null));
-        assertEquals(Integer.valueOf(1), context.get(classifier, Integer.class).orElse(null));
-        assertEquals(Integer.valueOf(1), context.get(classifier, Object.class).orElse(null));
+        assertThat(context.get(classifier, String.class), is(Optional.of("aaa")));
+        assertThat(context.get(classifier, Integer.class), is(Optional.of(1)));
+        assertThat(context.get(classifier, Object.class), is(Optional.of(1)));
         context.register(classifier, "bbb");
-        assertEquals("bbb", context.get(classifier, String.class).orElse(null));
+        assertThat(context.get(classifier, String.class), is(Optional.of("bbb")));
         context.register("ccc");
-        assertEquals("bbb", context.get(classifier, String.class).orElse(null));
-        assertEquals("bbb", context.get(classifier, Object.class).orElse(null));
-        assertEquals("ccc", context.get(String.class).orElse(null));
+        assertThat(context.get(classifier, String.class), is(Optional.of("bbb")));
+        assertThat(context.get(classifier, Object.class), is(Optional.of("bbb")));
+        assertThat(context.get(String.class), is(Optional.of("ccc")));
     }
 
     @Test
-    public void emptyParent() throws Exception {
+    public void emptyParent() {
         ContextualRegistry parent = ContextualRegistry.create();
         ContextualRegistry context = ContextualRegistry.create(parent);
-        assertFalse(context.get(String.class).isPresent());
+        assertThat(context.get(String.class), is(Optional.empty()));
         context.register("aaa");
-        assertEquals("aaa", context.get(String.class).orElse(null));
+        assertThat(context.get(String.class), is(Optional.of("aaa")));
     }
 
     @Test
-    public void testParent() throws Exception {
+    public void testParent() {
         ContextualRegistry parent = ContextualRegistry.create();
         parent.register("ppp");
         ContextualRegistry context = ContextualRegistry.create(parent);
-        assertEquals("ppp", context.get(String.class).orElse(null));
+        assertThat(context.get(String.class), is(Optional.of("ppp")));
         context.register(1);
-        assertEquals("ppp", context.get(String.class).orElse(null));
+        assertThat(context.get(String.class), is(Optional.of("ppp")));
         context.register("aaa");
-        assertEquals("aaa", context.get(String.class).orElse(null));
-        assertEquals("ppp", parent.get(String.class).orElse(null));
+        assertThat(context.get(String.class), is(Optional.of("aaa")));
+        assertThat(parent.get(String.class), is(Optional.of("ppp")));
     }
 
     @Test
-    public void testParentWithClassifier() throws Exception {
+    public void testParentWithClassifier() {
         String classifier = "classifier";
         ContextualRegistry parent = ContextualRegistry.create();
         parent.register(classifier, "ppp");
         ContextualRegistry context = ContextualRegistry.create(parent);
-        assertEquals("ppp", context.get(classifier, String.class).orElse(null));
+        assertThat(context.get(classifier, String.class), is(Optional.of("ppp")));
         context.register(classifier, 1);
-        assertEquals("ppp", context.get(classifier, String.class).orElse(null));
+        assertThat(context.get(classifier, String.class), is(Optional.of("ppp")));
         context.register(classifier, "aaa");
-        assertEquals("aaa", context.get(classifier, String.class).orElse(null));
-        assertEquals("ppp", parent.get(classifier, String.class).orElse(null));
+        assertThat(context.get(classifier, String.class), is(Optional.of("aaa")));
+        assertThat(parent.get(classifier, String.class), is(Optional.of("ppp")));
     }
 
     @Test
-    public void testSupply() throws Exception {
+    public void testSupply() {
         AtomicInteger counter = new AtomicInteger(0);
         ContextualRegistry context = ContextualRegistry.create();
         context.register(1);
@@ -125,19 +126,19 @@ public class ListContextualRegistryTest {
             return "bbb";
         });
         context.register(2);
-        assertEquals(date, context.get(Date.class).orElse(null));
-        assertEquals(0, counter.get());
-        assertEquals("bbb", context.get(String.class).orElse(null));
-        assertEquals(1, counter.get());
-        assertEquals("bbb", context.get(String.class).orElse(null));
-        assertEquals(1, counter.get());
-        assertEquals(date, context.get(Date.class).orElse(null));
-        assertEquals("bbb", context.get(String.class).orElse(null));
-        assertEquals(1, counter.get());
+        assertThat(context.get(Date.class), is(Optional.of(date)));
+        assertThat(counter.get(), is(0));
+        assertThat(context.get(String.class), is(Optional.of("bbb")));
+        assertThat(counter.get(), is(1));
+        assertThat(context.get(String.class), is(Optional.of("bbb")));
+        assertThat(counter.get(), is(1));
+        assertThat(context.get(Date.class), is(Optional.of(date)));
+        assertThat(context.get(String.class), is(Optional.of("bbb")));
+        assertThat(counter.get(), is(1));
     }
 
     @Test
-    public void testSupplyClassifier() throws Exception {
+    public void testSupplyClassifier() {
         String classifier = "classifier";
         AtomicInteger counter = new AtomicInteger(0);
         ContextualRegistry context = ContextualRegistry.create();
@@ -150,14 +151,14 @@ public class ListContextualRegistryTest {
             return "bbb";
         });
         context.register(classifier, 2);
-        assertEquals(date, context.get(classifier, Date.class).orElse(null));
-        assertEquals(0, counter.get());
-        assertEquals("bbb", context.get(classifier, String.class).orElse(null));
-        assertEquals(1, counter.get());
-        assertEquals("bbb", context.get(classifier, String.class).orElse(null));
-        assertEquals(1, counter.get());
-        assertEquals(date, context.get(classifier, Date.class).orElse(null));
-        assertEquals("bbb", context.get(classifier, String.class).orElse(null));
-        assertEquals(1, counter.get());
+        assertThat(context.get(classifier, Date.class), is(Optional.of(date)));
+        assertThat(counter.get(), is(0));
+        assertThat(context.get(classifier, String.class), is(Optional.of("bbb")));
+        assertThat(counter.get(), is(1));
+        assertThat(context.get(classifier, String.class), is(Optional.of("bbb")));
+        assertThat(counter.get(), is(1));
+        assertThat(context.get(classifier, Date.class), is(Optional.of(date)));
+        assertThat(context.get(classifier, String.class), is(Optional.of("bbb")));
+        assertThat(counter.get(), is(1));
     }
 }

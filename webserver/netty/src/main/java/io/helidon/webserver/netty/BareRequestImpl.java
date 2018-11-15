@@ -68,12 +68,12 @@ class BareRequestImpl implements BareRequest {
 
     @Override
     public Http.RequestMethod getMethod() {
-        return Http.RequestMethod.from(nettyRequest.method().name());
+        return Http.RequestMethod.create(nettyRequest.method().name());
     }
 
     @Override
     public Http.Version getVersion() {
-        return Http.Version.of(nettyRequest.protocolVersion().text());
+        return Http.Version.create(nettyRequest.protocolVersion().text());
     }
 
     @Override

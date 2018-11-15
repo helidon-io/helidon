@@ -25,12 +25,11 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.reactive.valve.TestUtils.assertException;
 import static io.helidon.common.reactive.valve.TestUtils.generate;
 import static io.helidon.common.reactive.valve.TestUtils.generateList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TankTest {
 
@@ -39,9 +38,10 @@ class TankTest {
         Tank<Integer> tank = new Tank<>(100);
         generate(0, 30, tank::add);
         CompletableFuture<List<Integer>> cf = tank.collect(Collectors.toList()).toCompletableFuture();
-        assertFalse(cf.isDone());
+        assertThat(cf.isDone(), is(false));
+
         tank.close();
-        assertEquals(generateList(0, 30), cf.get());
+        assertThat(cf.get(), is(generateList(0, 30)));
     }
 
     @Test
@@ -50,11 +50,11 @@ class TankTest {
         generate(0, 30, tank::add);
         CompletableFuture<List<Integer>> cf = tank.collect(Collectors.toList()).toCompletableFuture();
         tank.add(30);
-        assertTrue(tank.offer(31));
+        assertThat(tank.offer(31), is(true));
         tank.put(32);
         tank.addAll(generateList(33, 40));
         tank.close();
-        assertEquals(generateList(0, 40), cf.get());
+        assertThat(cf.get(), is(generateList(0, 40)));
     }
 
     @Test
@@ -73,7 +73,7 @@ class TankTest {
         tank.resume();
         generate(40, 50, tank::add);
         tank.close();
-        assertEquals(generateList(0, 50), cf.get());
+        assertThat(cf.get(), is(generateList(0, 50)));
     }
 
     @Test
@@ -91,21 +91,22 @@ class TankTest {
         tank.resume();
         generate(10, 20, tank::add);
         tank.close();
-        assertEquals(generateList(0, 20), cf.get());
+        assertThat(cf.get(), is(generateList(0, 20)));
     }
 
     @Test
     void offerToFull() throws Exception {
         Tank<Integer> tank = new Tank<>(10);
         generate(0, 10, tank::add);
-        assertFalse(tank.offer(10));
+        assertThat(tank.offer(10), is(false));
         ForkJoinTask<Boolean> f = ForkJoinPool.commonPool()
                                               .submit(() -> tank.offer(10, 10, TimeUnit.SECONDS));
         CompletableFuture<List<Integer>> cf = tank.collect(Collectors.toList()).toCompletableFuture();
-        assertTrue(f.get());
-        assertTrue(tank.offer(11));
+        assertThat(f.get(), is(true));
+        assertThat(tank.offer(11), is(true));
+
         tank.close();
-        assertEquals(generateList(0, 12), cf.get());
+        assertThat(cf.get(), is(generateList(0, 12)));
     }
 
     @Test
@@ -113,11 +114,11 @@ class TankTest {
         Tank<Integer> tank = new Tank<>(100);
         generate(0, 10, tank::add);
         tank.close();
-        assertFalse(tank.offer(10));
-        assertException(IllegalStateException.class, () -> tank.add(11));
-        assertException(IllegalStateException.class, () -> tank.put(12));
+        assertThat(tank.offer(10), is(false));
+        assertThrows(IllegalStateException.class, () -> tank.add(11));
+        assertThrows(IllegalStateException.class, () -> tank.put(12));
         CompletableFuture<List<Integer>> cf = tank.collect(Collectors.toList()).toCompletableFuture();
-        assertEquals(generateList(0, 10), cf.get());
+        assertThat(cf.get(), is(generateList(0, 10)));
     }
 
     @Test
@@ -126,7 +127,7 @@ class TankTest {
         CompletableFuture<List<Integer>> cf = tank.collect(Collectors.toList()).toCompletableFuture();
         tank.whenDrain(() -> generate(0, 10, tank::add));
         tank.close();
-        assertEquals(generateList(0, 10), cf.get());
+        assertThat(cf.get(), is(generateList(0, 10)));
     }
 
     @Test
@@ -136,7 +137,7 @@ class TankTest {
         tank.whenDrain(() -> generate(10, 15, tank::add));
         CompletableFuture<List<Integer>> cf = tank.collect(Collectors.toList()).toCompletableFuture();
         tank.close();
-        assertEquals(generateList(0, 15), cf.get());
+        assertThat(cf.get(), is(generateList(0, 15)));
     }
 
 }
