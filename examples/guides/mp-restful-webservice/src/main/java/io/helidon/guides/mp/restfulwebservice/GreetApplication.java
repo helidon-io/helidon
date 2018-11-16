@@ -4,23 +4,27 @@
  */
 package io.helidon.guides.mp.restfulwebservice;
 
-import io.helidon.common.CollectionsHelper;
+// tag::javaImports[]
 import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
+// end::javaImports[]
 
+// tag::helidonImports[]
+import io.helidon.common.CollectionsHelper;
+// end::helidonImports[]
 /**
- *
- * @author tjquinn
+ * JAX-RS application class.
  */
-@ApplicationScoped
-@ApplicationPath("/")
-public class GreetApplication extends Application {
+// tag::greetAppBody[]
+@ApplicationScoped // <1>
+@ApplicationPath("/") // <2>
+public class GreetApplication extends Application { // <3>
 
     @Override
-    public Set<Class<?>> getClasses() {
+    public Set<Class<?>> getClasses() { // <4>
         return CollectionsHelper.setOf(GreetResource.class);
     }
-
 }
+// end::greetAppBody[]

@@ -74,14 +74,14 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
-    // tag::getDefaultMessage
+    // tag::getDefaultMessage[]
     @SuppressWarnings("checkstyle:designforextension")
     @GET // <1>
     @Produces(MediaType.APPLICATION_JSON) // <2>
     public JsonObject getDefaultMessage() {
         return createResponse("World");
     }
-    // end::getDefaultMessage
+    // end::getDefaultMessage[]
 
     /**
      * Return a greeting message using the name that was provided.
@@ -89,13 +89,15 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link JsonObject}
      */
+    // tag::getMessageWithName[]
     @SuppressWarnings("checkstyle:designforextension")
-    @Path("/{name}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getMessage(@PathParam("name") String name) {
+    @Path("/{name}") // <1>
+    @GET // <2>
+    @Produces(MediaType.APPLICATION_JSON) // <3>
+    public JsonObject getMessage(@PathParam("name") String name) { // <4>
         return createResponse(name);
     }
+    // end::getMessageWithName[]
 
     /**
      * Set the greeting to use in future messages.
@@ -103,20 +105,22 @@ public class GreetResource {
      * @param newGreeting the new greeting message
      * @return {@link JsonObject}
      */
+    // tag::setGreeting[]
     @SuppressWarnings("checkstyle:designforextension")
-    @Path("/greeting/{greeting}")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) {
+    @Path("/greeting/{greeting}") // <1>
+    @PUT // <2>
+    @Consumes(MediaType.APPLICATION_JSON) // <3>
+    @Produces(MediaType.APPLICATION_JSON) // <3>
+    public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
         greeting.setMessage(newGreeting);
 
         return Json.createObjectBuilder()
                 .add("greeting", newGreeting)
                 .build();
     }
+    // end::setGreeting[]
 
-    // tag::createResponse
+    // tag::createResponse[]
     private JsonObject createResponse(String who) { // <1>
         String msg = String.format("%s %s!", greeting.getMessage(), who); // <2>
 
@@ -124,5 +128,5 @@ public class GreetResource {
                 .add("message", msg)
                 .build();
     }
-    // end::createResponse
+    // end::createResponse[]
 }

@@ -22,17 +22,23 @@
 :main-class: {java-base}/Main.java
 :greet-resource-class: {java-base}/GreetResource.java
 :greeting-message-class: {java-base}/GreetingMessage.java
+:greet-application-class: {java-base}/GreetApplication.java
 :pom: {adoc-dir}/../../../pom.xml
+:meta-inf-dir: {adoc-dir}/../resources/META-INF
+:beans-xml: {meta-inf-dir}/beans.xml
+:config-file: {meta-inf-dir}/microprofile-config.properties
+:logging-properties-file: {adoc-dir}/../resources/logging.properties
+:se-guide-adoc: {guides-dir}/se-restful-webservice/src/main/docs/index.adoc
 
 
-= The MP ReSTful Web Service Guide
+= The MP RESTful Web Service Guide
 :description: Helidon MP guide restful web service
 :keywords: helidon, guide, example, mp
 
-Create and build a JAX-RS ReSTful web service as your first Helidon MP application.
+Create and build a JAX-RS RESTful web service as your first Helidon MP application.
 
 == What You Will Learn
-You'll learn how to use Helidon MP quickly to create a JAX-RS ReSTful web service that accepts these HTTP requests:
+You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web service that accepts these HTTP requests:
 
 |===
 |Method and URL | Result
@@ -42,7 +48,8 @@ You'll learn how to use Helidon MP quickly to create a JAX-RS ReSTful web servic
 |`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
 |===
 
-We create the app in three main steps:
+We create the app in these main steps:
+
 . Write an application-scoped bean to hold and manage the current greeting.
 . Write a JAX-RS resource to respond to the incoming requests.
 . Write a main class to start the server.
@@ -75,7 +82,12 @@ You can create your maven project in these ways:
 * run the standard maven archetype to create a new Java project using this command:
 +
 [source,bash]
-mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
+----
+mvn archetype:generate \
+    -DarchetypeGroupId=org.apache.maven.archetypes \
+    -DarchetypeArtifactId=maven-archetype-quickstart \
+    -DarchetypeVersion=1.3
+----
 
 === Update Your `pom.xml`
 ==== The Essentials
@@ -88,7 +100,7 @@ include::{pom}[tags=helidonVersion;javaVersions]
 
     <dependencyManagement>
         <dependencies>
-include::{pom}[tag=depMgt]
+include::{pom}[tags=helidonDepMgt;activationDepMgt]
         </dependencies>
     </dependencyManagement>
 ----
@@ -97,22 +109,26 @@ For this example add these dependencies:
 [source,xml]
 ----
     <dependencies>
-include::{pom}[tags=webserverBundleDependency;configYamlDependency]
+include::{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
     </dependencies>
 ----
-<1> Incorporates the Helidon web server.
-<2> Pulls in support for YAML as a config format.
+<1> Incorporates the Helidon MicroProfile bundle.
+<2> Pulls in JSON-B support.
+<3> Adds jandex, a JAX-RS bean search optimizer.
+<4> Adds the activation API.
 
 If you run your project from the IDE, the IDE typically handles the main class and places
 dependent JARs on the runtime classpath for you and your pom is now ready to go. 
 
 === Create a MP Config File
 This file contains settings for the Helidon web server and the 
-application.
+application. Note that the MP Config specification says that 
+configuration data is read, by default, from `META-INF/microprofile-config.properties`;
+the application does not have to do anything in code to load it.
 [source,java]
 .src/main/resources/META-INF/microprofile-config.properties
 ----
-include::../resources/META-INF/microprofile-config.properties[tag=configContent]
+include::{config-file}[tag=configContent]
 ----
 <1> Initial application greeting.
 <2> Web server configuration.
@@ -122,12 +138,12 @@ This file controls logging within the application.
 [source,java]
 .src/main/resources/logging.properties
 ----
-include::../resources/logging.properties
+include::{logging-properties-file}[tag=loggingProps]
 ----
 
 === Create an "empty" `beans.xml` 
 We need to make sure JAX-RS searches for beans and, in particular, our
-resource serving our REST endpoings. 
+resource that serves our REST endpoints. 
 [source,java]
 .src/main/resources/META-INF/beans.xml
 ----
@@ -211,10 +227,10 @@ include::{greet-resource-class}[tag=greetingMessageDecl]
 include::{greet-resource-class}[tag=ctor]
 ----
 <1> Because you annotate the constructor with `@Inject` the Helidon MP
-system will inject the argument because the argument class `GreetingMessage` 
+system injects the argument because the argument class `GreetingMessage` 
 is defined as a JAX-RS bean. Further, because you defined it to have
-application scope, JAX-RS will inject the same instance every time
-it creates a new instance of the `GreetResource` so all will
+application scope, JAX-RS injects the same instance every time
+it creates a new instance of the `GreetResource` so all instances
 share the same greeting message.
 
 . Write a private method to format the message your endpoints
@@ -225,18 +241,60 @@ return to the clients.
 include::{greet-resource-class}[tag=createResponse]
 ----
 <1> `who` is the name of the end-user we want to greet
-<2> Retrieves the message from the `GreetingMessage` bean.
-<3> Formats the response as JSON.
+<2> Retrieves the message from the `GreetingMessage` bean and embeds the end-user name
+in it.
+<3> Prepares the response as JSON.
 
 === Add the code for the resource's endpoints
+. Returning the default message
++
+[source,java]
+----
+include::{greet-resource-class}[tag=getDefaultMessage]
+----
+<1> Indicates the HTTP method: `GET`.
+<2> Tells JAX-RS that this method returns JSON.
 
-==== Write a method to return the default greeting
+. Returning the personalized greeting
++
+[source,java]
+----
+include::{greet-resource-class}[tag=getMessageWithName]
+----
+<1> Declares the path parameter which is the name to use for personalizing
+the returned message.
+<2> Indicates the HTTP method: `GET`.
+<3> Tells JAX-RS that this method returns JSON.
+<4> Triggers injection of the path parameter `name` as an argument to the method.
+
+. Setting a new greeting message
++
+[source,java]
+----
+include::{greet-resource-class}[tag=setGreeting]
+----
+<1> Identifies the path parameter for the new greeting text.
+<2> It's an HTTP `PUT`.
+<3> Tells JAX-RS that this method both consumes and produces JSON.
+<4> JAX-RS injects the new greeting from the path parameter as the method argument.
 
 === Add an `Application` class
-JAX-RS looks for an `Application`. Create `GreetApplication.java` which
-extends `javax.ws.rs.core.Application`, annotate the class with
-`javax.ws.rs.core.Application` and `javax.enterprise.context.ApplicationScoped("/")`.
+JAX-RS looks for an `Application`. Create `GreetApplication.java`.
+You or your IDE will add these imports:
+[source,java]
+----
+include::{greet-application-class}[tags=javaImports;helidonImports]
+----
 
+[source,java]
+.GreetApplication.java
+----
+include::{greet-application-class}[tag=greetAppBody]
+----
+<1> Have JAX-RS create only one instance of this class.
+<2> No path prefix for this application.
+<3> Class must extend `javax.ws.rs.core.Application`.
+<4> Reports the resource classes in the application.
 
 === Write the `Main` class
 You or your IDE will add these imports:
@@ -251,7 +309,8 @@ include::{main-class}[tags=javaImports;helidonMPImports]
 ----
 include::{main-class}[tag=startServer]
 ----
-<1> Automatically reads server configuration from `microprofil-config.properties`
+<1> Automatically reads server configuration from `microprofile-config.properties`
+and then starts the reactive web server.
 
 . Write a method to initialize logging
 +
@@ -261,9 +320,14 @@ include::{main-class}[tag=setupLogging]
 ----
 <1> Loads logging config from `logging.properties`
 
-. Add to the `main` method
+. Add or modify the `main` method
 +
 [source,java]
 ----
 include::{main-class}[tag=main]
 ----
+
+== Build and Run
+include::{se-guide-adoc}[tag=buildAndRun]
+
+

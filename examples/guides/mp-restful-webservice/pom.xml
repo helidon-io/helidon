@@ -12,13 +12,18 @@
     <name>Helidon Guides MP RESTful Web Service</name>
 
     <properties>
+        <!-- tag::helidonVersion[] -->
         <helidon.version>0.10.5-SNAPSHOT</helidon.version>
+        <!-- end::helidonVersion[] -->
+        <!-- tag::javaVersions[] -->
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <!-- end::javaVersions[] -->
     </properties>
     
     <dependencyManagement>
         <dependencies>
+            <!-- tag::helidonDepMgt[] -->
             <dependency>
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
@@ -26,33 +31,44 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- end::helidonDepMgt[] -->
+            <!-- tag::activationDepMgt[] -->
             <dependency>
                 <groupId>javax.activation</groupId>
                 <artifactId>javax.activation-api</artifactId>
                 <version>1.2.0</version>
             </dependency>
+            <!-- end::activationDepMgt[] -->
         </dependencies>
     </dependencyManagement>
     
     <dependencies>
-        <dependency>
+        <!-- tag::helidonMPBundleDep[] -->
+        <dependency> <!--1-->
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile-1.2</artifactId>
         </dependency>
-        <dependency>
+        <!-- end::helidonMPBundleDep[] -->
+        <!-- tag::gfJsonBDep[] -->
+        <dependency> <!--2-->
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-binding</artifactId>
         </dependency>
-        <dependency>
+        <!-- end::gfJsonBDep[] -->
+        <!-- tag::jandexDep[] -->
+        <dependency> <!--3-->
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
+        <!-- end::jandexDep[] -->
+        <!-- tag::activationDep[] -->
+        <dependency> <!--4-->
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- end::activationDep[] -->
     </dependencies>
 </project>

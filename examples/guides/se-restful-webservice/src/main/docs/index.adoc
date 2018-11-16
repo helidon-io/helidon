@@ -270,6 +270,7 @@ include::{main-class}[tag=mainContent]
 to your main method.
 
 == Build and Run
+// tag::buildAndRun[]
 You can use your IDE's features to build and run the project directly.
 
 Or, to use `maven` outside the IDE, build your app this way:
@@ -287,23 +288,24 @@ to access its three functions (order is important for the last two):
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet
-a|[source,bash]
+a|[listing]
 {"message":"Hello World!"}
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Joe
-a|[source,bash]
+a|[listing]
 {"message":"Hello Joe!"}
 
 a|[source,bash]
 curl -X PUT http://localhost:8080/greet/greeting/Hola
-a|[source,bash]
+a|[listing]
 {"greeting":"Hola"}
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
-a|[source,bash]
+a|[listing]
 {"message":"Hola Jose!"}
+// end::buildAndRun[]
 |====
 
 == Add Health Checks
@@ -428,7 +430,7 @@ Our code to update the greeting accepts this and saves it as the new greeting.
 curl -i -X GET http://localhost:8080/alive
 +
 This time you should see
-[source,bash]
+[listing]
 {"error":"greeting is not set or is empty"}
 +
 and with the `-i` added to the `curl` command you would see the 500 status returned.
@@ -542,22 +544,22 @@ Use the same `curl` commands from the beginning to send requests to the server:
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet
-a|[source,bash]
+a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-1
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Joe
-a|[source,bash]
+a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-2
 
 a|[source,bash]
 curl -X PUT http://localhost:8080/greet/greeting/Hola
-a|[source,bash]
+a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-3
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
-a|[source,bash]
+a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-4
 |====
 
@@ -572,12 +574,12 @@ You should see a long JSON result. Note two parts:
 |====
 |Output |Meaning
 
-a|[source,bash]
+a|[listing]
 "application":{"accessctr":4}
 
 |The counter we added to the app
 
-a|[source,bash]
+a|[listing]
 "requests.meter":{"count":5, ...
 
 |The total HTTP requests the Helidon web server received (and several values
