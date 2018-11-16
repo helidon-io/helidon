@@ -258,7 +258,7 @@ public interface MultiPart {
         return new MultiPartBuilder();
     }
 
-    static interface Builder extends MultiPart.Builder {
+    static interface Builder extends StreamingMultiPart.Builder {
 
         MultiPart build();
     }
