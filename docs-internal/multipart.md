@@ -23,7 +23,7 @@ request.content().as(MultiPart.class).thenAccept(/* ... */);
 
 ```java
 // reactive model
-request.content().as(MultiPart.class).thenAccept(/* ... */);
+request.content().as(StreamingMultiPart.class).thenAccept(/* ... */);
 ```
 
 ## Examples
