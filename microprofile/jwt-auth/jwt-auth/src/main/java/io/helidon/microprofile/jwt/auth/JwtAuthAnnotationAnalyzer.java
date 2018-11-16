@@ -76,20 +76,16 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
 
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        //TODO this is not great, though required by TCK
-        PermitAll annotation = maybeAnnotated.getAnnotation(PermitAll.class);
-        if (null == annotation) {
-            return AnalyzerResponse.abstain();
-        }
-
-        return AnalyzerResponse.builder(previousResponse)
-                .authenticationResponse(Flag.OPTIONAL)
-                .build();
+        return analyze(maybeAnnotated.getAnnotation(PermitAll.class), previousResponse);
     }
 
     @Override
     public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
-        PermitAll annotation = maybeAnnotated.getAnnotation(PermitAll.class);
+        return analyze(maybeAnnotated.getAnnotation(PermitAll.class), previousResponse);
+
+    }
+
+    private static AnalyzerResponse analyze(PermitAll annotation, AnalyzerResponse previousResponse) {
         if (null == annotation) {
             return AnalyzerResponse.abstain();
         }
