@@ -102,7 +102,7 @@ class ConfigSourceConfigMapper implements ConfigMapper<ConfigSource> {
         return OptionalHelper.from(config.get(TYPE_KEY).asOptionalString() // `type` is specified
                 .flatMap(type -> OptionalHelper.from(builtin(type, properties)) // return built-in source
                         .or(() -> providers(type, properties)).asOptional())) // or use sources - custom type to class mapping
-                .or(() -> config.get(CLASS_KEY).asOptional(Class.class) // `class` is specified
+                .or(() -> config.get(CLASS_KEY).as(Class.class) // `class` is specified
                         .flatMap(clazz -> custom(clazz, properties))) // return custom source
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted source configuration."));

@@ -131,13 +131,13 @@ public final class GitConfigSourceBuilder
     @Override
     protected GitConfigSourceBuilder init(Config metaConfig) {
         //uri
-        metaConfig.get(URI_KEY).asOptional(URI.class)
+        metaConfig.get(URI_KEY).as(URI.class)
                 .ifPresent(this::uri);
         //branch
         metaConfig.get(BRANCH_KEY).asOptionalString()
                 .ifPresent(this::branch);
         //directory
-        metaConfig.get(DIRECTORY_KEY).asOptional(Path.class)
+        metaConfig.get(DIRECTORY_KEY).as(Path.class)
                 .ifPresent(this::directory);
 
         return super.init(metaConfig);

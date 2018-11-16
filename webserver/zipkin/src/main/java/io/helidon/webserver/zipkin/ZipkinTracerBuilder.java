@@ -125,7 +125,7 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
         config.get("service").value().ifPresent(this::serviceName);
         config.get("protocol").value().ifPresent(this::protocol);
         config.get("host").value().ifPresent(this::zipkinHost);
-        config.get("port").asOptionalInt().ifPresent(this::port);
+        config.get("port").asInt().ifPresent(this::port);
         config.get("path").value().ifPresent(this::path);
         config.get("api-version").value().ifPresent(this::configApiVersion);
 

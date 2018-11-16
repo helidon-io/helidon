@@ -127,7 +127,7 @@ public abstract class ConfigComplexImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptional(TestContext context) {
         init(context);
-        assertThat(config().asOptional(ObjectConfigBean.class).get(),
+        assertThat(config().as(ObjectConfigBean.class).get(),
                    is(new ObjectConfigBean("fromConfig", "key:" + nodeName())));
     }
 
@@ -198,7 +198,7 @@ public abstract class ConfigComplexImplTest extends AbstractConfigImplTest {
         init(context);
         String defaultValue = "default value";
 
-        assertThat(config().asString(defaultValue), is(defaultValue));
+        assertThat(config().asString().getValue(defaultValue), is(defaultValue));
     }
 
     @Override
@@ -215,7 +215,7 @@ public abstract class ConfigComplexImplTest extends AbstractConfigImplTest {
     public void testAsBooleanWithDefault(TestContext context) {
         init(context);
 
-        assertThat(config().asBoolean(true), is(true));
+        assertThat(config().asBoolean().getValue(true), is(true));
     }
 
     @Override
@@ -299,7 +299,7 @@ public abstract class ConfigComplexImplTest extends AbstractConfigImplTest {
     public void testAsOptionalInt(TestContext context) {
         init(context);
 
-        assertThat(config().asOptionalInt(), is(OptionalInt.empty()));
+        assertThat(config().asInt(), is(OptionalInt.empty()));
     }
 
     @Override
@@ -324,7 +324,7 @@ public abstract class ConfigComplexImplTest extends AbstractConfigImplTest {
     public void testAsOptionalLong(TestContext context) {
         init(context);
 
-        assertThat(config().asOptionalLong(), is(OptionalLong.empty()));
+        assertThat(config().asLong(), is(OptionalLong.empty()));
     }
 
     @Override

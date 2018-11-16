@@ -126,7 +126,7 @@ public class DbService {
             clusterBuilder.addContactPoints(
                     serverConfig.get("host").asString());
         });
-        cConfig.get("port").asOptionalInt().ifPresent(clusterBuilder::withPort);
+        cConfig.get("port").asInt().ifPresent(clusterBuilder::withPort);
 
         cluster = clusterBuilder.build();
         session = cluster.connect("backend");

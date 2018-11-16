@@ -75,7 +75,7 @@ public class AtnProviderSync extends SynchronousProvider implements Authenticati
         }
 
         // 2) configuration in request
-        opt = epConfig.getConfig("atn-object").flatMap(conf -> conf.asOptional(AtnObject.class));
+        opt = epConfig.getConfig("atn-object").flatMap(conf -> confas(AtnObject.class));
         if (opt.isPresent()) {
             return opt.get();
         }
@@ -134,7 +134,7 @@ public class AtnProviderSync extends SynchronousProvider implements Authenticati
         public static AtnObject from(Config config) {
             AtnObject result = new AtnObject();
             config.get("value").asOptionalString().ifPresent(result::setValue);
-            config.get("size").asOptionalInt().ifPresent(result::setSize);
+            config.get("size").asInt().ifPresent(result::setSize);
             return result;
         }
 

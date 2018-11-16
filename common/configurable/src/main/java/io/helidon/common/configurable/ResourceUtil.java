@@ -35,8 +35,11 @@ import io.helidon.config.Config;
  * as javadoc fails when using source 8.
  */
 final class ResourceUtil {
+    private static final int DEFAULT_PROXY_PORT = 80;
+
     private ResourceUtil() {
     }
+
     /**
      * Load resource from binary content from an input stream.
      *
@@ -60,7 +63,7 @@ final class ResourceUtil {
         try {
             return Files.newInputStream(fsPath);
         } catch (IOException e) {
-            throw new ResourceException("Resource on path: " + fsPath.toAbsolutePath() + " does not exist");
+            throw new ResourceException("Resource on path: " + fsPath.toAbsolutePath() + " does not exist", e);
         }
     }
 
@@ -108,33 +111,35 @@ final class ResourceUtil {
 
     static Optional<Resource> fromConfigPath(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-path")
-                                           .asOptionalString()
-                                           .map(Paths::get)
-                                           .map(Resource::create);
+                .value()
+                .map(Paths::get)
+                .map(Resource::create);
     }
 
     static Optional<Resource> fromConfigB64Content(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-content")
-                .asOptionalString()
+                .value()
                 .map(Base64.getDecoder()::decode)
                 .map(content -> Resource.create("config:" + keyPrefix + "-content-b64", content));
     }
 
     static Optional<Resource> fromConfigContent(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-content-plain")
-                .asOptionalString()
+                .value()
                 .map(content -> Resource.create("config:" + keyPrefix + "-content", content));
     }
 
     static Optional<Resource> fromConfigUrl(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-url")
-                .asOptional(URI.class)
+                .as(URI.class)
+                .value()
                 .map(uri -> config.get("proxy-host").value()
                         .map(proxyHost -> {
-                            if (config.get(keyPrefix + "-use-proxy").asBoolean(true)) {
+                            if (config.get(keyPrefix + "-use-proxy").asBoolean().getValue(true)) {
                                 Proxy proxy = new Proxy(Proxy.Type.HTTP,
                                                         new InetSocketAddress(proxyHost,
-                                                                              config.get("proxy-port").asInt(80)));
+                                                                              config.get("proxy-port").asInt().getValue(
+                                                                                      DEFAULT_PROXY_PORT)));
                                 return Resource.create(uri, proxy);
                             } else {
                                 return Resource.create(uri);
@@ -145,7 +150,7 @@ final class ResourceUtil {
 
     static Optional<Resource> fromConfigResourcePath(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-resource-path")
-                .asOptionalString()
+                .value()
                 .map(Resource::create);
     }
 }

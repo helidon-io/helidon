@@ -112,7 +112,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptional(TestContext context) {
         init(context);
-	assertThat(config().asOptional(ValueConfigBean.class), is(Optional.empty()));
+	assertThat(config().as(ValueConfigBean.class), is(Optional.empty()));
     }
 
     @Override
@@ -152,7 +152,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalBoolean(TestContext context) {
         init(context);
-	assertThat(config().asOptionalBoolean(), is(Optional.empty()));
+	assertThat(config().asBoolean(), is(Optional.empty()));
     }
 
     @Override
@@ -160,7 +160,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalInt(TestContext context) {
         init(context);
-	assertThat(config().asOptionalInt(), is(OptionalInt.empty()));
+	assertThat(config().asInt(), is(OptionalInt.empty()));
     }
 
     @Override
@@ -168,7 +168,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalLong(TestContext context) {
         init(context);
-	assertThat(config().asOptionalLong(), is(OptionalLong.empty()));
+	assertThat(config().asLong(), is(OptionalLong.empty()));
     }
 
     @Override
@@ -322,7 +322,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsBooleanWithDefault(TestContext context) {
         init(context);
-	assertThat(config().asBoolean(true), is(true));
+	assertThat(config().asBoolean().getValue(true), is(true));
     }
 
     @Override

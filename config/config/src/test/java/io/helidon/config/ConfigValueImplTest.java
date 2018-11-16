@@ -135,7 +135,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptional(TestContext context) {
         init(context);
-        assertBean(key -> config(key).asOptional(ValueConfigBean.class).get(), "fromConfig");
+        assertBean(key -> config(key).as(ValueConfigBean.class).get(), "fromConfig");
     }
 
     @Override
@@ -177,7 +177,7 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalBoolean(TestContext context) {
         init(context);
-        assertThat(config("bool-" + level()).asOptionalBoolean().get(), is(true));
+        assertThat(config("bool-" + level()).asBoolean().get(), is(true));
     }
 
     @Override
@@ -185,14 +185,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalInt(TestContext context) {
         init(context);
-        assertThat(config("int-" + level()).asOptionalInt().getAsInt(), is(2147483640 + level()));
+        assertThat(config("int-" + level()).asInt().getAsInt(), is(2147483640 + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalIntFailing(TestContext context) {
         init(context);
-        getConfigAndExpectException("text-" + level(), config -> config.asOptionalInt());
+        getConfigAndExpectException("text-" + level(), config -> config.asInt());
     }
 
     @Override
@@ -200,14 +200,14 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsOptionalLong(TestContext context) {
         init(context);
-        assertThat(config("long-" + level()).asOptionalLong().getAsLong(), is(9223372036854775800L + level()));
+        assertThat(config("long-" + level()).asLong().getAsLong(), is(9223372036854775800L + level()));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
     public void testAsOptionalLongFailing(TestContext context) {
         init(context);
-        getConfigAndExpectException("text-" + level(), config -> config.asOptionalLong());
+        getConfigAndExpectException("text-" + level(), config -> config.asLong());
     }
 
     @Override
@@ -381,8 +381,8 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsBooleanWithDefault(TestContext context) {
         init(context);
-        assertThat(config("bool-" + level()).asBoolean(false), is(true));
-        assertThat(config("text-" + level()).asBoolean(true), is(false));
+        assertThat(config("bool-" + level()).asBoolean().getValue(false), is(true));
+        assertThat(config("text-" + level()).asBoolean().getValue(true), is(false));
     }
 
     @Override

@@ -806,7 +806,7 @@ public final class Security {
             }
 
             if (auditProviders.isEmpty()) {
-                DefaultAuditProvider provider = config.map(DefaultAuditProvider::fromConfig);
+                DefaultAuditProvider provider = config.as(DefaultAuditProvider::fromConfig).getValue();
                 addAuditProvider(provider);
             }
 
@@ -831,7 +831,7 @@ public final class Security {
          */
         Builder fromConfig(Config config) {
             this.config = config.get("security");
-            config.get("security.environment.server-time").asOptional(SecurityTime.class).ifPresent(this::serverTime);
+            config.get("security.environment.server-time").as(SecurityTime.class).ifPresent(this::serverTime);
             executorSupplier(ThreadPoolSupplier.create(config.get("security.environment.executor-service")));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
@@ -840,9 +840,9 @@ public final class Security {
             //add all providers from service loaders
             String knownKeys = loadProviderServices(configKeyToService, classNameToService);
 
-            config.get("security.tracing.enabled").asOptional(Boolean.class).ifPresent(this::tracingEnabled);
+            config.get("security.tracing.enabled").as(Boolean.class).ifPresent(this::tracingEnabled);
             //iterate through all providers and find them
-            config.get("security.providers").asList(Config.class).forEach(pConf -> {
+            config.get("security.providers").asList(Config.class).getValue().forEach(pConf -> {
                 AtomicReference<SecurityProviderService> service = new AtomicReference<>();
                 AtomicReference<Config> providerSpecific = new AtomicReference<>();
 
@@ -872,11 +872,11 @@ public final class Security {
                 }
 
                 String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
-                boolean isAuthn = pConf.get("is-authentication-provider").asBoolean(true);
-                boolean isAuthz = pConf.get("is-authorization-provider").asBoolean(true);
-                boolean isClientSec = pConf.get("is-client-security-provider").asBoolean(true);
-                boolean isAudit = pConf.get("is-audit-provider").asBoolean(true);
-                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean(true);
+                boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().getValue(true);
+                boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().getValue(true);
+                boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().getValue(true);
+                boolean isAudit = pConf.get("is-audit-provider").asBoolean().getValue(true);
+                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().getValue(true);
 
                 SecurityProvider provider;
                 if (null == providerService) {
@@ -907,7 +907,7 @@ public final class Security {
                         "Security is not configured. At least one security provider MUST be present.");
             }
 
-            String defaultAtnProvider = config.get("security.default-authentication-provider").asString(null);
+            String defaultAtnProvider = config.get("security.default-authentication-provider").asString().getValue(null);
             if (null != defaultAtnProvider) {
                 authenticationProvider(atnProviders.stream()
                                                .filter(nsp -> nsp.getName().equals(defaultAtnProvider))
@@ -920,7 +920,7 @@ public final class Security {
                                                                                                 + "configuration exists")));
             }
 
-            String defaultAtzProvider = config.get("security.default-authorization-provider").asString(null);
+            String defaultAtzProvider = config.get("security.default-authorization-provider").asString().getValue(null);
             if (null != defaultAtzProvider) {
                 authorizationProvider(atzProviders.stream()
                                               .filter(nsp -> nsp.getName().equals(defaultAtzProvider))
@@ -936,7 +936,10 @@ public final class Security {
             // now policy
             config = config.get("security.provider-policy");
             ProviderSelectionPolicyType pType = config.get("type")
-                    .map(ProviderSelectionPolicyType::from, ProviderSelectionPolicyType.FIRST);
+                    .asString()
+                    .value()
+                    .map(ProviderSelectionPolicyType::from)
+                    .orElse(ProviderSelectionPolicyType.FIRST);
 
             switch (pType) {
             case FIRST:
@@ -982,7 +985,7 @@ public final class Security {
 
         private void findProviderSpecificConfig(Config pConf, AtomicReference<Config> providerSpecific) {
             // no service for this class, must choose the configuration by selection
-            pConf.asNodeList().stream().filter(this::notReservedProviderKey).forEach(providerSpecificConf -> {
+            pConf.asNodeList().getValue().stream().filter(this::notReservedProviderKey).forEach(providerSpecificConf -> {
                 if (!providerSpecific.compareAndSet(null, providerSpecificConf)) {
                     throw new SecurityException("More than one provider configurations found, each provider can only"
                                                         + " have one provide specific config. Conflict: "
@@ -998,7 +1001,7 @@ public final class Security {
                                          AtomicReference<SecurityProviderService> service,
                                          AtomicReference<Config> providerSpecific) {
             // everything else is based on provider specific configuration
-            pConf.asNodeList().stream().filter(this::notReservedProviderKey).forEach(providerSpecificConf -> {
+            pConf.asNodeList().getValue().stream().filter(this::notReservedProviderKey).forEach(providerSpecificConf -> {
                 if (!providerSpecific.compareAndSet(null, providerSpecificConf)) {
                     throw new SecurityException("More than one provider configurations found, each provider can only"
                                                         + " have one provider specific config. Conflict: "
@@ -1039,7 +1042,7 @@ public final class Security {
         }
 
         private Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy> findProviderSelectionPolicy(Config config) {
-            Class clazz = config.get("class-name").asOptional(Class.class).orElseThrow(() -> new java.lang.SecurityException(
+            Class clazz = config.get("class-name").as(Class.class).value().orElseThrow(() -> new java.lang.SecurityException(
                     "You have configured a CLASS provider selection without configuring class-name"));
 
             if (!ProviderSelectionPolicy.class.isAssignableFrom(clazz)) {

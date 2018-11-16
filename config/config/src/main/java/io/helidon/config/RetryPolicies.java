@@ -129,16 +129,16 @@ public class RetryPolicies {
             // retries
             Builder builder = new Builder(metaConfig.get(RETRIES_KEY).asInt());
             // delay
-            metaConfig.get("delay").asOptional(Duration.class)
+            metaConfig.get("delay").as(Duration.class)
                     .ifPresent(builder::delay);
             // delay-factor
             metaConfig.get("delay-factor").asOptionalDouble()
                     .ifPresent(builder::delayFactor);
             // call-timeout
-            metaConfig.get("call-timeout").asOptional(Duration.class)
+            metaConfig.get("call-timeout").as(Duration.class)
                     .ifPresent(builder::callTimeout);
             // overall-timeout
-            metaConfig.get("overall-timeout").asOptional(Duration.class)
+            metaConfig.get("overall-timeout").as(Duration.class)
                     .ifPresent(builder::overallTimeout);
 
             return builder;

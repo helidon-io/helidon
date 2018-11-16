@@ -279,15 +279,15 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         static Builder fromConfig(Config config) {
             Builder builder = new Builder();
 
-            builder.realm(config.get("realm").asString("realm"));
-            config.get("principal-type").asOptional(SubjectType.class).ifPresent(builder::subjectType);
+            builder.realm(config.get("realm").asString().getValue("realm"));
+            config.get("principal-type").as(SubjectType.class).ifPresent(builder::subjectType);
 
             // now users may not be configured at all
             Config usersConfig = config.get("users");
             if (usersConfig.exists()) {
                 // or it may be jst an empty list (e.g. users: with no subnodes).
                 if (!usersConfig.isLeaf()) {
-                    builder.userStore(usersConfig.asOptional(ConfigUserStore.class)
+                    builder.userStore(usersConfigas(ConfigUserStore.class)
                                               .orElseThrow(() -> new HttpAuthException(
                                                       "No users configured! Key \"users\" must be in configuration")));
                 }

@@ -102,7 +102,7 @@ public class ChainConfigFilterTest {
                 .build();
 
         assertThat(config.get(key).asString(), is(originalValue));
-        assertThat(config.get("missing-key").asString(defaultValue), is(defaultValue));
+        assertThat(config.get("missing-key").asString().getValue(defaultValue), is(defaultValue));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ChainConfigFilterTest {
                 .build();
 
         assertThat(config.get(key).asString(), is(newValue));
-        assertThat(config.get("missing-key").asString(defaultValue), is(defaultValue));
+        assertThat(config.get("missing-key").asString().getValue(defaultValue), is(defaultValue));
     }
 
     /**

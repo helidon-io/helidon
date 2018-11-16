@@ -58,7 +58,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringDefault() {
-        assertThat(Config.empty().asString("default"), is("default"));
+        assertThat(Config.empty().asString().getValue("default"), is("default"));
     }
 
     @Test

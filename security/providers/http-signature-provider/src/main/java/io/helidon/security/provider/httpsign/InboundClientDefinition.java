@@ -267,8 +267,8 @@ public class InboundClientDefinition {
         public Builder fromConfig(Config config) {
             keyId(config.get("key-id").asString());
             config.get("principal-name").value().ifPresent(this::principalName);
-            config.get("principal-type").asOptional(SubjectType.class).ifPresent(this::subjectType);
-            config.get("public-key").asOptional(KeyConfig.class).ifPresent(this::publicKeyConfig);
+            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
+            config.get("public-key").as(KeyConfig.class).ifPresent(this::publicKeyConfig);
             config.get("hmac.secret").value().ifPresent(this::hmacSecret);
             config.get("algorithm").value().ifPresent(this::algorithm);
 

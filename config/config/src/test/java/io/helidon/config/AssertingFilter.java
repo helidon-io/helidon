@@ -50,7 +50,7 @@ class AssertingFilter implements ConfigFilter {
         if (expectedValueDuringInit != null) {
             assertThat(String.format("AssertingFilter.test failed for key %s, old value %s, and new value %s",
                     key, oldValue, newValue.get()),
-                 rootConfig.get(key).asString(), CoreMatchers.is(expectedValueDuringInit));
+                       rootConfig.get(key).asString(), CoreMatchers.is(expectedValueDuringInit));
         }
     }
 

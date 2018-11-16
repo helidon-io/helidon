@@ -48,7 +48,7 @@ class RetryPolicyConfigMapper implements ConfigMapper<RetryPolicy> {
 
         return OptionalHelper.from(config.get(TYPE_KEY).asOptionalString() // `type` is specified
                 .flatMap(type -> this.builtin(type, properties))) // return built-in retry policy
-                .or(() -> config.get(CLASS_KEY).asOptional(Class.class) // `class` is specified
+                .or(() -> config.get(CLASS_KEY).as(Class.class) // `class` is specified
                         .flatMap(clazz -> custom(clazz, properties))) // return custom retry policy
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted retry-policy configuration."));
@@ -58,7 +58,7 @@ class RetryPolicyConfigMapper implements ConfigMapper<RetryPolicy> {
         final RetryPolicy retryPolicy;
         switch (type) {
         case REPEAT_TYPE:
-            retryPolicy = properties.as(RetryPolicies.Builder.class).get();
+            retryPolicy = properties.as(RetryPolicies.Builder.class).getValue();
             break;
         default:
             retryPolicy = null;

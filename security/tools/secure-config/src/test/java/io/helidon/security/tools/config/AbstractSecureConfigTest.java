@@ -42,10 +42,10 @@ public abstract class AbstractSecureConfigTest {
 
     @Test
     public void testDeep() {
-        String value = getConfig().get("pwd11").asString();
+        String value = getConfig().get("pwd11").getValue();
         assertThat(value, is("known_password"));
 
-        value = getConfig().get("pwd12").asString();
+        value = getConfig().get("pwd12").getValue();
         assertThat(value, is("known_password"));
     }
 
@@ -104,7 +104,7 @@ public abstract class AbstractSecureConfigTest {
 
     @Test
     public void testPasswordArray() {
-        Optional<List<String>> passwordsOpt = getConfig().get("passwords").asOptionalList(String.class);
+        Optional<List<String>> passwordsOpt = getConfig().get("passwords").asList(String.class).value();
         assertThat("Passwords must be present", passwordsOpt.isPresent());
         List<String> passwords = passwordsOpt.get();
         assertEquals(TEST_STRING, passwords.get(0));
@@ -116,7 +116,7 @@ public abstract class AbstractSecureConfigTest {
 
     @Test
     public void testConfigList() {
-        Optional<List<Config>> objects = getConfig().get("objects").asOptionalList(Config.class);
+        Optional<List<Config>> objects = getConfig().get("objects").asNodeList().value();
 
         assertThat("Objects should be present in config", objects.isPresent());
 
@@ -132,13 +132,13 @@ public abstract class AbstractSecureConfigTest {
 
     @Test
     public void testConfigListMissing() {
-        Optional<List<Config>> objects = getConfig().get("notThereAtAll").asOptionalList(Config.class);
+        Optional<List<Config>> objects = getConfig().get("notThereAtAll").asList(Config.class).value();
         assertFalse(objects.isPresent());
     }
 
     @Test
     public void testPasswordArrayMissing() {
-        Optional<List<String>> passwordsOpt = getConfig().get("notThereAtAll").asOptionalList(String.class);
+        Optional<List<String>> passwordsOpt = getConfig().get("notThereAtAll").asList(String.class).value();
         assertFalse(passwordsOpt.isPresent());
     }
 

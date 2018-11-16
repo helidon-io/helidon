@@ -67,7 +67,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.map(String::toString), is(expected));
 
         assertThat(node.value().get(), is(expected));
-        assertThat(node.asOptional(String.class).get(), is(expected));
+        assertThat(nodeas(String.class).get(), is(expected));
         assertThat(node.mapOptional(String::toString).get(), is(expected));
     }
 
@@ -112,7 +112,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(Boolean.class), is(expected));
         assertThat(node.map(ConfigMappers::toBoolean), is(expected));
 
-        assertThat(node.asOptional(Boolean.class).get(), is(expected));
+        assertThat(nodeas(Boolean.class).get(), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toBoolean).get(), is(expected));
     }
 
@@ -156,8 +156,8 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(Integer.class), is(expected));
         assertThat(node.map(ConfigMappers::toInt), is(expected));
 
-        assertThat(node.asOptionalInt().getAsInt(), is(expected));
-        assertThat(node.asOptional(Integer.class).get(), is(expected));
+        assertThat(node.asInt().getAsInt(), is(expected));
+        assertThat(nodeas(Integer.class).get(), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toInt).get(), is(expected));
     }
 
@@ -203,8 +203,8 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(Long.class), is(expected));
         assertThat(node.map(ConfigMappers::toLong), is(expected));
 
-        assertThat(node.asOptionalLong().getAsLong(), is(expected));
-        assertThat(node.asOptional(Long.class).get(), is(expected));
+        assertThat(node.asLong().getAsLong(), is(expected));
+        assertThat(nodeas(Long.class).get(), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toLong).get(), is(expected));
     }
 
@@ -251,7 +251,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.map(ConfigMappers::toDouble), is(expected));
 
         assertThat(node.asOptionalDouble().getAsDouble(), is(expected));
-        assertThat(node.asOptional(Double.class).get(), is(expected));
+        assertThat(nodeas(Double.class).get(), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toDouble).get(), is(expected));
     }
 
@@ -296,7 +296,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(URI.class), is(expected));
         assertThat(node.map(ConfigMappers::toUri), is(expected));
 
-        assertThat(node.asOptional(URI.class).get(), is(expected));
+        assertThat(nodeas(URI.class).get(), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toUri).get(), is(expected));
     }
 
@@ -370,12 +370,12 @@ public abstract class AbstractComplexConfigTest {
         String defaultValue = "default-value";
         String expected = defaultValue;
 
-        assertThat(node.asString(defaultValue), is(expected));
+        assertThat(node.asString().getValue(defaultValue), is(expected));
         assertThat(node.as(String.class, defaultValue), is(expected));
         assertThat(node.map(String::toString, defaultValue), is(expected));
 
         assertThat(node.value().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(String.class).orElse(defaultValue), is(expected));
+        assertThat(nodeas(String.class).orElse(defaultValue), is(expected));
         assertThat(node.mapOptional(String::toString).orElse(defaultValue), is(expected));
     }
 
@@ -399,11 +399,11 @@ public abstract class AbstractComplexConfigTest {
         Boolean defaultValue = true;
         Boolean expected = defaultValue;
 
-        assertThat(node.asBoolean(defaultValue), is(expected));
+        assertThat(node.asBoolean().getValue(defaultValue), is(expected));
         assertThat(node.as(Boolean.class, defaultValue), is(expected));
         assertThat(node.map(ConfigMappers::toBoolean, defaultValue), is(expected));
 
-        assertThat(node.asOptional(Boolean.class).orElse(defaultValue), is(expected));
+        assertThat(nodeas(Boolean.class).orElse(defaultValue), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toBoolean).orElse(defaultValue), is(expected));
     }
 
@@ -430,8 +430,8 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(Integer.class, defaultValue), is(expected));
         assertThat(node.map(ConfigMappers::toInt, defaultValue), is(expected));
 
-        assertThat(node.asOptionalInt().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(Integer.class).orElse(defaultValue), is(expected));
+        assertThat(node.asInt().orElse(defaultValue), is(expected));
+        assertThat(nodeas(Integer.class).orElse(defaultValue), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toInt).orElse(defaultValue), is(expected));
     }
 
@@ -458,8 +458,8 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(Long.class, defaultValue), is(expected));
         assertThat(node.map(ConfigMappers::toLong, defaultValue), is(expected));
 
-        assertThat(node.asOptionalLong().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(Long.class).orElse(defaultValue), is(expected));
+        assertThat(node.asLong().orElse(defaultValue), is(expected));
+        assertThat(nodeas(Long.class).orElse(defaultValue), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toLong).orElse(defaultValue), is(expected));
     }
 
@@ -487,7 +487,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.map(ConfigMappers::toDouble, defaultValue), is(expected));
 
         assertThat(node.asOptionalDouble().orElse(defaultValue), is(expected));
-        assertThat(node.asOptional(Double.class).orElse(defaultValue), is(expected));
+        assertThat(nodeas(Double.class).orElse(defaultValue), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toDouble).orElse(defaultValue), is(expected));
     }
 
@@ -513,7 +513,7 @@ public abstract class AbstractComplexConfigTest {
         assertThat(node.as(URI.class, defaultValue), is(expected));
         assertThat(node.map(ConfigMappers::toUri, defaultValue), is(expected));
 
-        assertThat(node.asOptional(URI.class).orElse(defaultValue), is(expected));
+        assertThat(nodeas(URI.class).orElse(defaultValue), is(expected));
         assertThat(node.mapOptional(ConfigMappers::toUri).orElse(defaultValue), is(expected));
     }
 

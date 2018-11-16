@@ -260,8 +260,8 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("oidc-config").asOptional(OidcConfig.class).ifPresent(this::oidcConfig);
-            config.get("cache-config").asOptional(EvictableCache.class).ifPresent(this::roleCache);
+            config.get("oidc-config").as(OidcConfig.class).ifPresent(this::oidcConfig);
+            config.get("cache-config").as(EvictableCache.class).ifPresent(this::roleCache);
             return this;
         }
 

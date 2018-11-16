@@ -364,8 +364,8 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
         public Builder from(Config config) {
             Builder b = builder().config(config);
 
-            config.get("fail-on-unvalidated").asOptionalBoolean().ifPresent(b::failOnUnvalidated);
-            config.get("fail-if-none-validated").asOptionalBoolean().ifPresent(b::failIfNoneValidated);
+            config.get("fail-on-unvalidated").asBoolean().ifPresent(b::failOnUnvalidated);
+            config.get("fail-if-none-validated").asBoolean().ifPresent(b::failIfNoneValidated);
 
             return b;
         }

@@ -24,7 +24,7 @@ module io.helidon.config {
 
     requires transitive java.annotation;
 
-    requires io.helidon.common;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.common.reactive;
 
     exports io.helidon.config;

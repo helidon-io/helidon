@@ -564,7 +564,7 @@ public final class KeyConfig {
             config.get("key-passphrase").value().map(String::toCharArray).ifPresent(this::keyPassphrase);
             config.get("cert-alias").value().ifPresent(this::certAlias);
             config.get("cert-chain").value().ifPresent(this::certChainAlias);
-            config.get("trust-store").asOptional(Boolean.class).ifPresent(this::trustStore);
+            config.get("trust-store").asBoolean().ifPresent(this::trustStore);
 
             return this;
         }
