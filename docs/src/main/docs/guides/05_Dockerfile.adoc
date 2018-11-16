@@ -53,7 +53,7 @@ mvn clean package
 
 When you run the maven build, you'll notice lines like the following:
 
-[source,bash,subs="verbatim,attributes"]
+[listing]
 ----
 [INFO] Scanning for projects...
 . . .
@@ -70,6 +70,9 @@ application's jar file so it can find those dependencies at runtime:
 [source,bash,subs="verbatim,attributes"]
 ----
 unzip -p target/quickstart-se.jar META-INF/MANIFEST.MF 
+----
+[listing]
+----
 . . .
 Class-Path: libs/helidon-webserver-bundle-0.10.4.jar libs/helidon-webser
  ver-0.10.4.jar libs/helidon-common-reactive-0.10.4.jar libs/helidon-com
@@ -84,11 +87,15 @@ This means you can easily run the application jar:
 java -jar target/quickstart-se.jar
 ----
 
-Now try the applicaion with `curl`:
+Now try the application with `curl`:
 
 [source,bash,subs="verbatim,attributes"]
 ----
 curl -X GET http://localhost:8080/greet
+----
+
+[listing]
+----
 {"message":"Hello World!"}
 ----
 
@@ -100,6 +107,7 @@ find the Dockerfile in the generated project at `src/main/docker/Dockerfile`.
 It should look like this:
 
 [source,yaml,subs="verbatim,attributes"]
+.src/main/docker/Dockerfile
 ----
 FROM openjdk:8-jre-slim 
 
@@ -125,7 +133,10 @@ Since the quickstart project already contains the Dockerfile you can go ahead an
 [source,bash,subs="verbatim,attributes"]
 ----
 docker build -t quickstart-se target
+----
 
+[listing]
+----
 Sending build context to Docker daemon  5.641MB
 Step 1/5 : FROM openjdk:8-jre-slim
  ---> 3e85180d5f58
@@ -163,7 +174,6 @@ docker run --rm -p 8080:8080 quickstart-se:latest
 [source,bash,subs="verbatim,attributes"]
 ----
 curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
 ----
 
 === Why no Fat Jar?
@@ -172,7 +182,7 @@ Fat Jars are jar files that contain the application and all runtime
 dependencies. This is handy because it's one file with all you need
 to run your application.
 
-The problem with fat jars is that they are not optimal when used in
+One problem with fat jars is that they are not optimal when used in
 a docker image. That's because the image layer that contains your
 application also contains all of its runtime dependencies, and that
 means more data to push to a docker registry every time you rebuild
@@ -190,12 +200,11 @@ In the previous Dockerfile example we used Java 8 and got the
 JRE directly from the base OpenJDK docker image. In this section
 we'll build our own custom Java 11 JRE using `jlink`. Here
 is what that Dockerfile looks like. Go ahead and replace the
-Dockerfile in your example project with this one (make sure
-to overwrite the source file in `src/main/docker` and run
-`mvn package` again to expand the maven properties and copy 
-the file to the `target` directory).
+`src/main/docker/Dockerfile` in your example project with
+this one:
 
 [source,yaml,subs="verbatim,attributes"]
+.src/main/docker/Dockerfile
 ----
 # Multistage docker build.
 # Stage 1: Build custom Java 11 JRE and put it in /var/tmp/myjre <1>
@@ -245,11 +254,19 @@ earlier images.
 That's it! You're docker image will now run with a custom JRE. Let's try it:
 
 [source,bash,subs="verbatim,attributes"]
+.Rebuild project to process Dockerfile and copy to target directory
+----
+mvn package
+----
+
+[source,bash,subs="verbatim,attributes"]
 ----
 docker build -t java11-quickstart-se target
-. . .
+----
+
+[source,bash,subs="verbatim,attributes"]
+----
 docker run --rm -p 8080:8080 java11-quickstart-se:latest
-. . .
 ----
 
 The first time you run `docker build` with this Dockerfile it will take a while
@@ -278,7 +295,10 @@ Let's take a look.
 [source,bash,subs="verbatim,attributes"]
 ----
 du -sh target/quickstart-se.jar target/libs
+----
 
+[listing]
+----
  12K	target/quickstart-se.jar
 5.4M	target/libs
 ----
@@ -287,7 +307,10 @@ du -sh target/quickstart-se.jar target/libs
 [source,bash,subs="verbatim,attributes"]
 ----
 docker run -it --rm java11-quickstart-se:latest  du -sh /opt/jre
+----
 
+[listing]
+----
 62M	/opt/jre
 ----
 
@@ -295,8 +318,16 @@ docker run -it --rm java11-quickstart-se:latest  du -sh /opt/jre
 [source,bash,subs="verbatim,attributes"]
 ----
 docker images java11-quickstart-se:latest
-
-REPOSITORY             TAG                 IMAGE ID            CREATED             SIZE
-java11-quickstart-se   latest              1cd7b46bf454        5 days ago          143MB
 ----
 
+[listing]
+----
+REPOSITORY             TAG        IMAGE ID         CREATED             SIZE
+java11-quickstart-se   latest     f07a7b8bda78     About a minute ago  136MB
+----
+
+
+So the application plus Java runtime is less than 70MB which is not
+too bad. And the complete docker image is less than 140MB which is
+smaller than the pre-built OpenJDK slim JRE images. Note that your
+results might differ a bit depending on your platform.
