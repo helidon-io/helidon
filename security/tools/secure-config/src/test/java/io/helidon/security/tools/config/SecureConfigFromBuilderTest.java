@@ -35,7 +35,7 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
     public static void initClass() {
         // fromConfig tests with pkcs12, so here I test with unix like private key
         KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.from(".ssh/keystore.p12"))
+                .keystore(Resource.create(".ssh/keystore.p12"))
                 .keyAlias("1")
                 .keystorePassphrase("j4c".toCharArray())
                 .build();

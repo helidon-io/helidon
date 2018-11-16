@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,8 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
+import io.helidon.common.OptionalHelper;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
@@ -89,6 +92,17 @@ public class ServerImpl implements Server {
         ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder(serverConfig)
                 .port(builder.getPort())
                 .bindAddress(listenHost);
+
+        OptionalHelper.from(Optional.ofNullable(builder.basePath()))
+                .or(() -> config.get("server.base-path").value())
+                .asOptional()
+                .ifPresent(basePath -> {
+                    routingBuilder.any("/", (req, res) -> {
+                        res.status(Http.Status.MOVED_PERMANENTLY_301);
+                        res.headers().put(Http.Header.LOCATION, basePath);
+                        res.send();
+                    });
+                });
 
         STARTUP_LOGGER.finest("Builders ready");
 

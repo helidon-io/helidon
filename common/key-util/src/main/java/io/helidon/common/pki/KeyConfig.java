@@ -69,7 +69,7 @@ import io.helidon.config.Config;
  * cert-chain-path = "path/to/cert/chain/path"
  * </pre>
  */
-public class KeyConfig {
+public final class KeyConfig {
     private static final String DEFAULT_PRIVATE_KEY_ALIAS = "1";
     private static final Logger LOGGER = Logger.getLogger(KeyConfig.class.getName());
     private static final char[] EMPTY_CHARS = new char[0];
@@ -100,9 +100,9 @@ public class KeyConfig {
      * @return KeyConfig loaded from config
      * @throws PkiException when keys or certificates fail to load from keystore or when misconfigured
      */
-    public static KeyConfig fromConfig(Config config) throws PkiException {
+    public static KeyConfig create(Config config) throws PkiException {
         try {
-            return fullBuilder().fromConfig(config).build();
+            return fullBuilder().config(config).build();
         } catch (ResourceException e) {
             throw new PkiException("Failed to load from config", e);
         }
@@ -139,23 +139,48 @@ public class KeyConfig {
         return new KeystoreBuilder();
     }
 
-    public Optional<PublicKey> getPublicKey() {
+    /**
+     * The public key of this config if configured.
+     *
+     * @return the public key of this config or empty if not configured
+     */
+    public Optional<PublicKey> publicKey() {
         return Optional.ofNullable(publicKey);
     }
 
-    public Optional<PrivateKey> getPrivateKey() {
+    /**
+     * The private key of this config if configured.
+     *
+     * @return the private key of this config or empty if not configured
+     */
+    public Optional<PrivateKey> privateKey() {
         return Optional.ofNullable(privateKey);
     }
 
-    public Optional<X509Certificate> getPublicCert() {
+    /**
+     * The public X.509 Certificate if configured.
+     *
+     * @return the public certificate of this config or empty if not configured
+     */
+    public Optional<X509Certificate> publicCert() {
         return Optional.ofNullable(publicCert);
     }
 
-    public List<X509Certificate> getCertChain() {
+    /**
+     * The X.509 Certificate Chain.
+     *
+     * @return the certificate chain or empty list if not configured
+     */
+    public List<X509Certificate> certChain() {
         return Collections.unmodifiableList(certChain);
     }
 
-    public List<X509Certificate> getCerts() {
+    /**
+     * The X.509 Certificates.
+     *
+     * @return the certificates configured or empty list if none configured
+     */
+    public List<X509Certificate> certs() {
         return Collections.unmodifiableList(certificates);
     }
 
@@ -173,8 +198,8 @@ public class KeyConfig {
         private PrivateKey explicitPrivateKey;
         private PublicKey explicitPublicKey;
         private X509Certificate explicitPublicCert;
-        private List<X509Certificate> explicitCertChain = new LinkedList<>();
-        private List<X509Certificate> explicitCertificates = new LinkedList<>();
+        private final List<X509Certificate> explicitCertChain = new LinkedList<>();
+        private final List<X509Certificate> explicitCertificates = new LinkedList<>();
 
         /**
          * Build a new instance of the configuration based on this builder.
@@ -283,9 +308,9 @@ public class KeyConfig {
          * @param config configuration to update this builder from
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
-            updateWith(pemBuilder().from(config));
-            updateWith(keystoreBuilder().from(config));
+        public Builder config(Config config) {
+            updateWith(pemBuilder().config(config));
+            updateWith(keystoreBuilder().config(config));
 
             return this;
         }
@@ -295,7 +320,7 @@ public class KeyConfig {
      * Builder for resources from a java keystore (PKCS12, JKS etc.). Obtain an instance through {@link
      * KeyConfig#keystoreBuilder()}.
      */
-    public static class KeystoreBuilder {
+    public static final class KeystoreBuilder implements io.helidon.common.Builder<KeyConfig> {
         private static final String DEFAULT_KEYSTORE_TYPE = "PKCS12";
 
         private String keystoreType = DEFAULT_KEYSTORE_TYPE;
@@ -305,9 +330,11 @@ public class KeyConfig {
         private String certAlias;
         private String certChainAlias;
         private boolean addAllCertificates;
-        private List<String> certificateAliases = new LinkedList<>();
+        private final List<String> certificateAliases = new LinkedList<>();
+        private final StreamHolder keystoreStream = new StreamHolder("keystore");
 
-        private StreamHolder keystoreStream = new StreamHolder("keystore");
+        private KeystoreBuilder() {
+        }
 
         /**
          * If you want to build a trust store, call this method to add all
@@ -423,6 +450,7 @@ public class KeyConfig {
          *
          * @return new key config based on a keystore
          */
+        @Override
         public KeyConfig build() {
             return toFullBuilder().build();
         }
@@ -446,9 +474,9 @@ public class KeyConfig {
 
                 try {
                     keyStore = PkiUtil.loadKeystore(keystoreType,
-                                                    keystoreStream.getInputStream(),
+                                                    keystoreStream.stream(),
                                                     keystorePassphrase,
-                                                    keystoreStream.getMessage());
+                                                    keystoreStream.message());
                 } finally {
                     keystoreStream.closeStream();
                 }
@@ -528,8 +556,8 @@ public class KeyConfig {
          * @param config configuration instance
          * @return updated builder instance
          */
-        public KeystoreBuilder from(Config config) {
-            Resource.from(config, "keystore").ifPresent(this::keystore);
+        public KeystoreBuilder config(Config config) {
+            Resource.create(config, "keystore").ifPresent(this::keystore);
             config.get("keystore-type").value().ifPresent(this::keystoreType);
             config.get("keystore-passphrase").value().map(String::toCharArray).ifPresent(this::keystorePassphrase);
             config.get("key-alias").value().ifPresent(this::keyAlias);
@@ -553,9 +581,9 @@ public class KeyConfig {
      * The only supported format is PKCS#8. If you have a different format, you must to transform it to PKCS8 PEM format (to
      * use this builder), or to PKCS#12 keystore format (and use {@link KeystoreBuilder}).
      */
-    public static class PemBuilder {
-        private StreamHolder privateKeyStream = new StreamHolder("privateKey");
-        private StreamHolder certChainStream = new StreamHolder("certChain");
+    public static final class PemBuilder implements io.helidon.common.Builder<KeyConfig> {
+        private final StreamHolder privateKeyStream = new StreamHolder("privateKey");
+        private final StreamHolder certChainStream = new StreamHolder("certChain");
         private char[] pemKeyPassphrase;
 
         private PemBuilder() {
@@ -601,6 +629,7 @@ public class KeyConfig {
          *
          * @return new instance configured from this builder
          */
+        @Override
         public KeyConfig build() {
             return toFullBuilder().build();
         }
@@ -616,11 +645,11 @@ public class KeyConfig {
 
         private Builder updateBuilder(Builder builder) {
             if (privateKeyStream.isSet()) {
-                builder.privateKey(PemReader.readPrivateKey(privateKeyStream.getInputStream(), pemKeyPassphrase));
+                builder.privateKey(PemReader.readPrivateKey(privateKeyStream.stream(), pemKeyPassphrase));
             }
 
             if (certChainStream.isSet()) {
-                List<X509Certificate> chain = PemReader.readCertificates(certChainStream.getInputStream());
+                List<X509Certificate> chain = PemReader.readCertificates(certChainStream.stream());
                 chain.forEach(builder::addCertChain);
                 if (!chain.isEmpty()) {
                     builder.publicKeyCert(chain.get(0));
@@ -644,16 +673,16 @@ public class KeyConfig {
          * @param config configuration to update builder from
          * @return updated builder instance
          */
-        public PemBuilder from(Config config) {
-            Resource.from(config, "pem-key").ifPresent(this::key);
+        public PemBuilder config(Config config) {
+            Resource.create(config, "pem-key").ifPresent(this::key);
             config.get("pem-key-passphrase").value().map(String::toCharArray).ifPresent(this::keyPassphrase);
-            Resource.from(config, "pem-cert-chain").ifPresent(this::certChain);
+            Resource.create(config, "pem-cert-chain").ifPresent(this::certChain);
 
             return this;
         }
     }
 
-    private static class StreamHolder {
+    private static final class StreamHolder {
         private final String baseMessage;
         private InputStream inputStream;
         private String message;
@@ -671,15 +700,15 @@ public class KeyConfig {
             closeStream();
             Objects.requireNonNull(resource, "Resource for \"" + message + "\" must not be null");
 
-            this.inputStream = resource.getStream();
-            this.message = message + ":" + resource.getSourceType() + ":" + resource.getLocation();
+            this.inputStream = resource.stream();
+            this.message = message + ":" + resource.sourceType() + ":" + resource.location();
         }
 
-        private InputStream getInputStream() {
+        private InputStream stream() {
             return inputStream;
         }
 
-        private String getMessage() {
+        private String message() {
             return message;
         }
 

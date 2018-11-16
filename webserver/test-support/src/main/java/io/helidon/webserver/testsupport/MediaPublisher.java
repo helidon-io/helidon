@@ -71,7 +71,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
      */
     static MediaPublisher of(MediaType publishedType, CharSequence charSequence) {
         ByteBuffer data = Optional.ofNullable(publishedType)
-                .flatMap(MediaType::getCharset)
+                .flatMap(MediaType::charset)
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());

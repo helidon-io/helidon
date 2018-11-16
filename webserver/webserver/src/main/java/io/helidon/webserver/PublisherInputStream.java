@@ -78,7 +78,7 @@ public class PublisherInputStream extends InputStream implements Flow.Publisher<
 
                 if (currentBuffer != null && currentBuffer.remaining() > 0) {
                     // if there is anything to read, then read one byte...
-                    return currentBuffer.get();
+                    return currentBuffer.get() & 0xFF;
                 } else if (!closed.get()) {
                     // reinitialize the processed buffer future and request more data
                     processed = new CompletableFuture<>();

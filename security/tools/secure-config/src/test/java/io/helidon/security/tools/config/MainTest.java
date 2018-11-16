@@ -71,11 +71,11 @@ public class MainTest {
 
         String[] args = new String[] {"rsa", keystorePath, keystorePass, certAlias, secret};
         PrivateKey pk = KeyConfig.keystoreBuilder()
-                .keystore(Resource.from(Paths.get(keystorePath)))
+                .keystore(Resource.create(Paths.get(keystorePath)))
                 .keyAlias("1")
                 .keystorePassphrase(keystorePass.toCharArray())
                 .build()
-                .getPrivateKey().orElseThrow(AssertionError::new);
+                .privateKey().orElseThrow(AssertionError::new);
 
         Main.EncryptionCliProcessor ecp = new Main.EncryptionCliProcessor();
         ecp.parse(args);

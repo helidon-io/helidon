@@ -16,6 +16,7 @@
 
 package io.helidon.security.examples.signatures;
 
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -170,8 +171,8 @@ public class SignatureExampleBuilderMain {
                                      .addInbound(InboundClientDefinition.builder("service1-rsa")
                                                          .principalName("Service1 - RSA signature")
                                                          .publicKeyConfig(KeyConfig.keystoreBuilder()
-                                                                                  .keystore(Resource.fromPath(
-                                                                                          "src/main/resources/keystore.p12"))
+                                                                                  .keystore(Resource.create(Paths.get(
+                                                                                          "src/main/resources/keystore.p12")))
                                                                                   .keystorePassphrase("password".toCharArray())
                                                                                   .certAlias("service_cert")
                                                                                   .build())
@@ -207,7 +208,8 @@ public class SignatureExampleBuilderMain {
                 .customObject(OutboundTargetDefinition.class,
                               OutboundTargetDefinition.builder("service1-rsa")
                                       .privateKeyConfig(KeyConfig.keystoreBuilder()
-                                                                .keystore(Resource.fromPath("src/main/resources/keystore.p12"))
+                                                                .keystore(Resource.create(Paths.get(
+                                                                        "src/main/resources/keystore.p12")))
                                                                 .keystorePassphrase("password".toCharArray())
                                                                 .keyAlias("myPrivateKey")
                                                                 .build())

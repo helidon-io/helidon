@@ -127,7 +127,7 @@ class ResponseWriter implements ContainerResponseWriter {
             };
         }
 
-        res.status(Http.ResponseStatus.from(context.getStatus(), context.getStatusInfo().getReasonPhrase()));
+        res.status(Http.ResponseStatus.create(context.getStatus(), context.getStatusInfo().getReasonPhrase()));
 
         if (contentLength >= 0) {
             res.headers().put(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));

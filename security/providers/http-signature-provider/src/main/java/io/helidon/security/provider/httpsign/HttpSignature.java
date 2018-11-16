@@ -259,7 +259,7 @@ class HttpSignature {
     private byte[] signRsaSha256(SecurityEnvironment env, KeyConfig keyConfig, Map<String, List<String>> newHeaders) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initSign(keyConfig.getPrivateKey().orElseThrow(() ->
+            signature.initSign(keyConfig.privateKey().orElseThrow(() ->
                                                                              new HttpSignatureException(
                                                                                      "Private key is required, yet not "
                                                                                              + "configured")));
@@ -277,7 +277,7 @@ class HttpSignature {
             signature.initVerify(clientDefinition.getKeyConfig()
                                          .orElseThrow(() -> new HttpSignatureException("RSA public key configuration is "
                                                                                                + "required"))
-                                         .getPublicKey()
+                                         .publicKey()
                                          .orElseThrow(() -> new HttpSignatureException(
                                                  "Public key is required, yet not configured")));
             signature.update(getBytesToSign(env, null));

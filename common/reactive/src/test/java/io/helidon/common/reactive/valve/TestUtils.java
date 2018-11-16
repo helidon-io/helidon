@@ -35,21 +35,4 @@ class TestUtils {
         }
         return result;
     }
-
-    static void assertException(Class<? extends Throwable> expected, ExceptionalRunnable runnable) {
-        try {
-            runnable.run();
-            throw new AssertionError("Expecting " + expected.getName() + " but no exception thrown!");
-        } catch (Throwable thr) {
-            Class<? extends Throwable> thrClass = thr.getClass();
-            if (!thrClass.isAssignableFrom(expected)) {
-                throw new AssertionError("Expecting " + expected.getName() + " but has " + thrClass.getName());
-            }
-        }
-    }
-
-    @FunctionalInterface
-    public interface ExceptionalRunnable {
-        void run() throws Throwable;
-    }
 }

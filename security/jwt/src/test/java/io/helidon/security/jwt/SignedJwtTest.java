@@ -45,11 +45,11 @@ public class SignedJwtTest {
     @BeforeAll
     public static void init() {
         auth0Keys = JwkKeys.builder()
-                .resource(Resource.from("auth0-jwk.json"))
+                .resource(Resource.create("auth0-jwk.json"))
                 .build();
 
         customKeys = JwkKeys.builder()
-                .resource(Resource.from("jwk_data.json"))
+                .resource(Resource.create("jwk_data.json"))
                 .build();
     }
 

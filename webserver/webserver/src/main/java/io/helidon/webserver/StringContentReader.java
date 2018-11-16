@@ -111,7 +111,7 @@ public class StringContentReader implements Reader<String> {
     static String requestContentCharset(ServerRequest request) {
         return request.headers()
                       .contentType()
-                      .map(MediaType::getCharset)
+                .map(MediaType::charset)
                       .map(optionalCharset -> optionalCharset.orElse(DEFAULT_CHARSET))
                       .orElse(DEFAULT_CHARSET);
     }

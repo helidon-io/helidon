@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.common.configurable;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,7 +29,7 @@ import io.helidon.config.Config;
 /**
  * Supplier of a custom thread pool.
  */
-public class ThreadPoolSupplier implements Supplier<ExecutorService> {
+public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final int EXECUTOR_DEFAULT_CORE_POOL_SIZE = 10;
     private static final int EXECUTOR_DEFAULT_MAX_POOL_SIZE = 50;
     private static final int EXECUTOR_DEFAULT_KEEP_ALIVE_MINUTES = 3;
@@ -72,9 +72,18 @@ public class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * @param config config instance
      * @return a new thread pool supplier configured from config
      */
-    public static ThreadPoolSupplier from(Config config) {
-        return builder().fromConfig(config.get("server.executor-service"))
+    public static ThreadPoolSupplier create(Config config) {
+        return builder().config(config)
                 .build();
+    }
+
+    /**
+     * Create a new thread pool supplier with default configuration.
+     *
+     * @return a new thread pool supplier with default configuration
+     */
+    public static ThreadPoolSupplier create() {
+        return builder().build();
     }
 
     @Override
@@ -107,7 +116,7 @@ public class ThreadPoolSupplier implements Supplier<ExecutorService> {
     /**
      * A fluent API builder for {@link ThreadPoolSupplier}.
      */
-    public static class Builder implements io.helidon.common.Builder<ThreadPoolSupplier> {
+    public static final class Builder implements io.helidon.common.Builder<ThreadPoolSupplier> {
         private int corePoolSize = EXECUTOR_DEFAULT_CORE_POOL_SIZE;
         private int maxPoolSize = EXECUTOR_DEFAULT_MAX_POOL_SIZE;
         private int keepAliveMinutes = EXECUTOR_DEFAULT_KEEP_ALIVE_MINUTES;
@@ -115,6 +124,10 @@ public class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private boolean isDaemon = EXECUTOR_DEFAULT_IS_DAEMON;
         private String threadNamePrefix = EXECUTOR_DEFAULT_THREAD_NAME_PREFIX;
         private boolean prestart = EXECUTOR_DEFAULT_PRESTART;
+
+        private Builder() {
+
+        }
 
         @Override
         public ThreadPoolSupplier build() {
@@ -214,7 +227,7 @@ public class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param config config located on the key of executor-service
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("core-pool-size").asOptionalInt().ifPresent(this::corePoolSize);
             config.get("max-pool-size").asOptionalInt().ifPresent(this::maxPoolSize);
             config.get("keep-alive-minutes").asOptionalInt().ifPresent(this::keepAliveMinutes);

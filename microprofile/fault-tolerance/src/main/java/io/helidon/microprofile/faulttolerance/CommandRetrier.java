@@ -19,7 +19,6 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
@@ -29,9 +28,11 @@ import javax.interceptor.InvocationContext;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeFuture;
 import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.SyncFailsafe;
 import net.jodah.failsafe.function.CheckedFunction;
+import net.jodah.failsafe.util.concurrent.Scheduler;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -113,12 +114,10 @@ public class CommandRetrier {
      * Retries running a command according to retry policy.
      *
      * @return Object returned by command.
-     * @throws Throwable If something fails.
      */
     @SuppressWarnings("unchecked")
-    public Object execute() throws Throwable {
+    public Object execute() {
         LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
-        final ScheduledExecutorService executor = CommandExecutor.getExecutorService();
 
         CheckedFunction fallbackFunction = t -> {
             final CommandFallback fallback = new CommandFallback(context, introspector);
@@ -126,10 +125,12 @@ public class CommandRetrier {
         };
 
         if (isAsynchronous) {
-            AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(executor);
-            return introspector.hasFallback()
-                   ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                   : failsafe.get(this::retryExecute);
+            Scheduler scheduler = CommandScheduler.create();
+            AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
+            FailsafeFuture<?> chainedFuture = (FailsafeFuture<?>) (introspector.hasFallback()
+                               ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                               : failsafe.get(this::retryExecute));
+            return new FailsafeChainedFuture<>(chainedFuture);
         } else {
             SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
             return introspector.hasFallback()
@@ -151,7 +152,7 @@ public class CommandRetrier {
 
         Object result;
         try {
-            LOGGER.info("About to execute command with key " + commandKey);
+            LOGGER.info("About to execute command with key " + command.getCommandKey());
             updateMetricsBefore();
             result = command.execute();
             updateMetricsAfter(null);

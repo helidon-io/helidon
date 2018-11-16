@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-project</artifactId>
-    <version>0.10.5-SNAPSHOT</version>
+    <version>0.11.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Project</name>
@@ -81,8 +81,6 @@
     </scm>
 
     <properties>
-        <java.version>8</java.version>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -117,7 +115,7 @@
         <version.lib.guava>25.0-jre</version.lib.guava>
         <version.lib.h2>1.4.197</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.HikariCP>2.7.8</version.lib.HikariCP>
+        <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
         <version.lib.jackson>2.9.4</version.lib.jackson>
         <version.lib.jandex>2.0.4.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
@@ -215,8 +213,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                         </compilerArgs>
@@ -227,11 +225,25 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${version.plugin.javadoc}</version>
                     <configuration>
+                        <links>
+                            <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                            <link>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</link>
+                            <link>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</link>
+                            <link>https://jersey.github.io/apidocs/${version.lib.jersey}/jersey</link>
+                            <link>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</link>
+                            <link>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</link>
+                            <link>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</link>
+                            <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
+                            <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
+                            <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
+                        </links>
                         <doclint>all</doclint>
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
-                        <source>8</source>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
@@ -819,6 +831,11 @@
                 <version>${version.lib.microprofile-fault-tolerance-api}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
+                <artifactId>microprofile-fault-tolerance-tck</artifactId>
+                <version>${version.lib.microprofile-fault-tolerance-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.netflix.hystrix</groupId>
                 <artifactId>hystrix-core</artifactId>
                 <version>${version.lib.hystrix}</version>
@@ -927,7 +944,7 @@
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
-                <version>${version.lib.HikariCP}</version>
+                <version>${version.lib.hikaricp}</version>
             </dependency>
             <dependency>
                 <groupId>redis.clients</groupId>
@@ -1083,7 +1100,7 @@
                                         <goal>compile</goal>
                                     </goals>
                                     <configuration>
-                                        <release>${java.version}</release>
+                                        <release>8</release>
                                     </configuration>
                                 </execution>
                                 <execution>
@@ -1092,7 +1109,7 @@
                                         <goal>testCompile</goal>
                                     </goals>
                                     <configuration>
-                                        <release>${java.version}</release>
+                                        <release>8</release>
                                     </configuration>
                                 </execution>
                             </executions>
