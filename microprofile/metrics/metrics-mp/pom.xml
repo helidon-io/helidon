@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.metrics</groupId>
         <artifactId>helidon-microprofile-metrics-project</artifactId>
-        <version>0.10.5-SNAPSHOT</version>
+        <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-metrics</artifactId>
     <name>Helidon Microprofile Metrics Core</name>

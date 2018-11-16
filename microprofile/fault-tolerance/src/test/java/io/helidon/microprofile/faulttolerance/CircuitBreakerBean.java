@@ -32,12 +32,19 @@ public class CircuitBreakerBean {
     static final int DELAY = 1000;
     static final double FAILURE_RATIO = 0.75;
 
+    private int counter = 0;
+
+    public int getCounter() {
+        return counter;
+    }
+
     @CircuitBreaker(
         successThreshold = SUCCESS_THRESHOLD,
         requestVolumeThreshold = REQUEST_VOLUME_THRESHOLD,
         failureRatio = FAILURE_RATIO,
         delay = DELAY)
     public void exerciseBreaker(boolean success) {
+        counter++;
         if (success) {
             FaultToleranceTest.printStatus("CircuitBreakerBean::exerciseBreaker", "success");
         } else {
@@ -53,6 +60,7 @@ public class CircuitBreakerBean {
         failureRatio = FAILURE_RATIO,
         delay = DELAY)
     public void exerciseBreaker(boolean success, RuntimeException e) {
+        counter++;
         if (success) {
             FaultToleranceTest.printStatus("CircuitBreakerBean::exerciseBreaker", "success");
         } else {
@@ -68,6 +76,7 @@ public class CircuitBreakerBean {
         failureRatio = FAILURE_RATIO,
         delay = DELAY)
     public void openOnTimeouts() throws InterruptedException {
+        counter++;
         FaultToleranceTest.printStatus("CircuitBreakerBean::openOnTimeouts", "failure");
         Thread.sleep(1000);     // forces timeout
     }

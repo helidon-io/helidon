@@ -29,14 +29,13 @@ public class StatusTypeTest {
 
     @Test
     public void adHocStatusTypeObjectPropertiesTest() throws Exception {
-        assertTrue(Http.ResponseStatus.from(200) == Http.Status.OK_200);
-        assertTrue(Http.ResponseStatus.from(200).hashCode() == Http.Status.OK_200.hashCode());
-        assertTrue(Http.ResponseStatus.from(200).equals(Http.Status.OK_200));
+        assertTrue(Http.ResponseStatus.create(200) == Http.Status.OK_200);
+        assertTrue(Http.ResponseStatus.create(200).hashCode() == Http.Status.OK_200.hashCode());
+        assertTrue(Http.ResponseStatus.create(200).equals(Http.Status.OK_200));
 
-
-        assertTrue(Http.ResponseStatus.from(999).equals(Http.ResponseStatus.from(999)));
+        assertTrue(Http.ResponseStatus.create(999).equals(Http.ResponseStatus.create(999)));
         // TODO if we were able to maintain even the '==' property, it would be awesome (cache the created ones?)
-        assertTrue(Http.ResponseStatus.from(999) != Http.ResponseStatus.from(999));
-        assertTrue(Http.ResponseStatus.from(999).hashCode() == Http.ResponseStatus.from(999).hashCode());
+        assertTrue(Http.ResponseStatus.create(999) != Http.ResponseStatus.create(999));
+        assertTrue(Http.ResponseStatus.create(999).hashCode() == Http.ResponseStatus.create(999).hashCode());
     }
 }

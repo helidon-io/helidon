@@ -606,13 +606,13 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         }
 
         private void verifyKeys(Config config) {
-            verifyJwk(Resource.from(config, "jwk")
+            verifyJwk(Resource.create(config, "jwk")
                               .orElseThrow(() -> new JwtException("Failed to extract verify JWK from configuration")));
         }
 
         private void outbound(Config config) {
             // jwk is optional, we may be propagating existing token
-            Resource.from(config, "jwk").ifPresent(this::signJwk);
+            Resource.create(config, "jwk").ifPresent(this::signJwk);
             config.get("jwt-issuer").asOptionalString().ifPresent(this::issuer);
         }
     }

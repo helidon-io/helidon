@@ -58,16 +58,19 @@ public class RouteListTest {
         Collection<Route> routes = new ArrayList<>();
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.PUT));
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.DELETE));
-        routes.add(new RouteList(CollectionsHelper.listOf(new HandlerRoute(null, VOID_HANDLER, Http.Method.GET, Http.RequestMethod.from("FOO")))));
-        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.from("BAR")));
+        routes.add(new RouteList(CollectionsHelper.listOf(new HandlerRoute(null,
+                                                                           VOID_HANDLER,
+                                                                           Http.Method.GET,
+                                                                           Http.RequestMethod.create("FOO")))));
+        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
         assertTrue(r.accepts(Http.Method.POST));
         assertTrue(r.accepts(Http.Method.PUT));
         assertTrue(r.accepts(Http.Method.DELETE));
         assertTrue(r.accepts(Http.Method.GET));
-        assertTrue(r.accepts(Http.RequestMethod.from("FOO")));
-        assertTrue(r.accepts(Http.RequestMethod.from("BAR")));
+        assertTrue(r.accepts(Http.RequestMethod.create("FOO")));
+        assertTrue(r.accepts(Http.RequestMethod.create("BAR")));
         assertFalse(r.accepts(Http.Method.OPTIONS));
         assertEquals(6, r.acceptedMethods().size());
     }
@@ -77,18 +80,21 @@ public class RouteListTest {
         Collection<Route> routes = new ArrayList<>();
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.PUT));
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.DELETE));
-        routes.add(new RouteList(CollectionsHelper.listOf(new HandlerRoute(null, VOID_HANDLER, Http.Method.GET, Http.RequestMethod.from("FOO")),
-                                         new HandlerRoute(null, VOID_HANDLER))));
-        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.from("BAR")));
+        routes.add(new RouteList(CollectionsHelper.listOf(new HandlerRoute(null,
+                                                                           VOID_HANDLER,
+                                                                           Http.Method.GET,
+                                                                           Http.RequestMethod.create("FOO")),
+                                                          new HandlerRoute(null, VOID_HANDLER))));
+        routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
         assertTrue(r.accepts(Http.Method.POST));
         assertTrue(r.accepts(Http.Method.PUT));
         assertTrue(r.accepts(Http.Method.DELETE));
         assertTrue(r.accepts(Http.Method.GET));
-        assertTrue(r.accepts(Http.RequestMethod.from("FOO")));
-        assertTrue(r.accepts(Http.RequestMethod.from("BAR")));
-        assertTrue(r.accepts(Http.RequestMethod.from("BAZ")));
+        assertTrue(r.accepts(Http.RequestMethod.create("FOO")));
+        assertTrue(r.accepts(Http.RequestMethod.create("BAR")));
+        assertTrue(r.accepts(Http.RequestMethod.create("BAZ")));
         assertTrue(r.accepts(Http.Method.OPTIONS));
         assertEquals(0, r.acceptedMethods().size());
     }

@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests {@link Utils}.
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class UtilsTest {
 
     @Test
-    void tokenize() throws Exception {
+    void tokenize() {
         String text = ",aa,,fo\"oooo\",\"bar\",co\"o'l,e\"c,df'hk,lm',";
         List<String> tokens = Utils.tokenize(',', null, false, text);
         assertThat(tokens, contains("aa", "fo\"oooo\"", "\"bar\"", "co\"o'l", "e\"c", "df'hk", "lm'"));
@@ -48,8 +48,8 @@ class UtilsTest {
         tokens = Utils.tokenize(',', "\"'", true, text);
         assertThat(tokens, contains("", "aa", "", "fo\"oooo\"", "\"bar\"", "co\"o'l,e\"c", "df'hk,lm'", ""));
         tokens = Utils.tokenize(';', "\"'", true, text);
-        assertEquals(1, tokens.size());
-        assertEquals(text, tokens.get(0));
+        assertThat(tokens, iterableWithSize(1));
+        assertThat(tokens.get(0), is(text));
     }
 
     @Test

@@ -79,10 +79,10 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
     @Override
     public List<MediaType> acceptPatches() {
         List<MediaType> result = all(Http.Header.ACCEPT_PATCH).stream()
-                    .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
-                    .map(String::trim)
-                    .map(MediaType::parse)
-                    .collect(Collectors.toList());
+                .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
+                .map(String::trim)
+                .map(MediaType::parse)
+                .collect(Collectors.toList());
         return Collections.unmodifiableList(result);
     }
 
@@ -185,14 +185,17 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
 
     @Override
     public void addCookie(String name, String value) {
-        add(Http.Header.SET_COOKIE, new SetCookie(name, value).toString());
+        add(Http.Header.SET_COOKIE, SetCookie.create(name, value).toString());
     }
 
     @Override
     public void addCookie(String name, String value, Duration maxAge) {
-        add(Http.Header.SET_COOKIE, new SetCookie(name, value).maxAge(maxAge).toString());
+        add(Http.Header.SET_COOKIE,
+            SetCookie.builder(name, value)
+                    .maxAge(maxAge)
+                    .build()
+                    .toString());
     }
-
 
     @Override
     public void addCookie(SetCookie cookie) {
@@ -360,7 +363,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
         /**
          * If not completed then runs provided {@link Runnable}, otherwise throws {@link AlreadyCompletedException}.
          *
-         * @param runnable to run.
+         * @param runnable         to run.
          * @param exceptionMessage a detail message of potential {@link AlreadyCompletedException}.
          * @throws AlreadyCompletedException if resource is already completed.
          */
@@ -386,7 +389,7 @@ class HashResponseHeaders extends HashParameters implements ResponseHeaders {
          * If not completed then executes provided {@link Supplier} and returns it's result,
          * otherwise throws {@link AlreadyCompletedException}.
          *
-         * @param supplier to execute.
+         * @param supplier         to execute.
          * @param exceptionMessage a detail message of potential {@link AlreadyCompletedException}.
          * @throws AlreadyCompletedException if resource is already completed.
          */

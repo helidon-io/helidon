@@ -20,21 +20,23 @@
 module io.helidon.webserver.zipkin {
     requires io.helidon.webserver;
     requires io.helidon.common;
-    requires opentracing.api;
-    requires jersey.client;
-    requires jersey.server;
-    requires jersey.common;
+    requires transitive opentracing.api;
 
     requires java.logging;
-    requires java.ws.rs;
     requires opentracing.util;
     requires java.annotation;
-    requires javax.inject;
     requires brave.opentracing;
     requires zipkin2.reporter;
     requires zipkin2.reporter.urlconnection;
     requires zipkin2;
     requires brave;
+
+    // Support for injection and outbound context propagation
+    requires static javax.inject;
+    requires static jersey.client;
+    requires static jersey.server;
+    requires static jersey.common;
+    requires static java.ws.rs;
 
     exports io.helidon.webserver.opentracing;
     exports io.helidon.webserver.zipkin;

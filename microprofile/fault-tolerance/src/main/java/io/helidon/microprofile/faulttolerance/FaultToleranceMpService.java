@@ -16,22 +16,16 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import io.helidon.microprofile.server.spi.MpService;
+import io.helidon.microprofile.server.spi.MpServiceContext;
 
 /**
- * Class CommandExecutor.
+ * Class FaultToleranceMpService.
  */
-public class CommandExecutor {
+public class FaultToleranceMpService implements MpService {
 
-    private static final int THREAD_POOL_SIZE = 5;      // TODO config
-
-    private static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
-
-    public static ScheduledExecutorService getExecutorService() {
-        return EXECUTOR;
-    }
-
-    private CommandExecutor() {
+    @Override
+    public void configure(MpServiceContext mpServiceContext) {
+        CommandScheduler.create(mpServiceContext.getHelidonConfig().get("helidon.fault-tolerance.async-thread-pool"));
     }
 }

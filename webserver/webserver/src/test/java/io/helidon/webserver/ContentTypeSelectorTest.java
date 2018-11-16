@@ -38,14 +38,14 @@ public class ContentTypeSelectorTest {
     @Test
     public void testContentTypeSelection() throws Exception {
         Map<String, MediaType> map = new HashMap<>();
-        map.put("txt", new MediaType("foo", "bar"));
+        map.put("txt", MediaType.create("foo", "bar"));
         ContentTypeSelector selector = new ContentTypeSelector(map);
         // Empty headers
         RequestHeaders headers = mock(RequestHeaders.class);
         when(headers.isAccepted(any())).thenReturn(true);
         when(headers.acceptedTypes()).thenReturn(Collections.emptyList());
         assertEquals(MediaType.APPLICATION_XML, selector.determine("foo.xml", headers));
-        assertEquals(new MediaType("foo", "bar"), selector.determine("foo.txt", headers));
+        assertEquals(MediaType.create("foo", "bar"), selector.determine("foo.txt", headers));
         assertEquals(MediaType.APPLICATION_OCTET_STREAM, selector.determine("foo.undefined", headers));
         assertEquals(MediaType.APPLICATION_OCTET_STREAM, selector.determine("undefined", headers));
         // Accept text/html

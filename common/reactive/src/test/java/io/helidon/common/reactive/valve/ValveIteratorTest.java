@@ -23,9 +23,9 @@ import java.util.concurrent.ForkJoinPool;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ValveIteratorTest {
@@ -45,19 +45,20 @@ class ValveIteratorTest {
     @Test
     void failing() {
         Valve<Integer> valve = Valves.from(ValveTest.LIST_0_10)
-                                     .peek(i -> {
-                                         if (i == 5) {
-                                             throw new IllegalStateException("Test exception");
-                                         }
-                                     });
+                .peek(i -> {
+                    if (i == 5) {
+                        throw new IllegalStateException("Test exception");
+                    }
+                });
         ValveIterator<Integer> iterator = valve.toIterator();
         int lastValue = -1;
         while (iterator.hasNext()) {
             lastValue = iterator.next();
         }
-        assertEquals(4, lastValue);
-        assertNotNull(iterator.getThrowable());
-        assertEquals("Test exception", iterator.getThrowable().getMessage());
+        assertThat(lastValue, is(4));
+
+        assertThat(iterator.getThrowable(), notNullValue());
+        assertThat(iterator.getThrowable().getMessage(), is("Test exception"));
     }
 
     @Test
@@ -66,8 +67,8 @@ class ValveIteratorTest {
         while (iterator.hasNext()) {
             iterator.next();
         }
-        assertFalse(iterator.hasNext());
-        assertFalse(iterator.hasNext());
+        assertThat(iterator.hasNext(), is(false));
+        assertThat(iterator.hasNext(), is(false));
     }
 
     @Test
@@ -84,7 +85,7 @@ class ValveIteratorTest {
         for (C item : toIterable(valve)) {
             result.add(item);
         }
-        assertEquals(data, result);
+        assertThat(result, is(data));
     }
 
     private static <T> Iterable<T> toIterable(Valve<T> valve) {

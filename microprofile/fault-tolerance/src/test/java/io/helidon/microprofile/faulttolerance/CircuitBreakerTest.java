@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CircuitBreakerTest extends FaultToleranceTest {
 
     @Test
-    public void testTripCircuit() throws Exception {
+    public void testTripCircuit() {
         tripCircuit();
     }
 
@@ -44,7 +44,7 @@ public class CircuitBreakerTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testNotTripCircuit() throws Exception {
+    public void testNotTripCircuit() {
         CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
 
         // Iterate a few times to test circuit
@@ -52,24 +52,18 @@ public class CircuitBreakerTest extends FaultToleranceTest {
             bean.exerciseBreaker(true);
         }
 
-        // Sleep to give time for circuit breaker to react
-        Thread.sleep(1000);
-
         // Now check circuit is still closed
         bean.exerciseBreaker(true);
     }
 
     @Test
-    public void testOpenOnTimeouts() throws Exception {
+    public void testOpenOnTimeouts() {
         CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
 
         // Iterate a few times to test circuit
         for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(TimeoutException.class, () -> bean.openOnTimeouts());
         }
-
-        // Sleep to give time for circuit breaker to react
-        Thread.sleep(1000);
 
         // Now check circuit is opened
         assertThrows(CircuitBreakerOpenException.class, () -> bean.openOnTimeouts());
@@ -89,15 +83,12 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         // Now a failed invocation => OPEN_MP
         assertThrows(RuntimeException.class, () ->bean.exerciseBreaker(false));
 
-        // Sleep to give time for circuit breaker to react
-        Thread.sleep(1000);
-
         // Now it should be a circuit breaker exception
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(true));
     }
 
     @Test
-    public void testNotOpenWrongException() throws Exception {
+    public void testNotOpenWrongException() {
         CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
 
         // Should not trip circuit since it is a superclass exception
@@ -106,9 +97,6 @@ public class CircuitBreakerTest extends FaultToleranceTest {
                          () -> bean.exerciseBreaker(false,
                                                     new RuntimeException("Oops")));
         }
-
-        // Sleep to give time for circuit breaker to react
-        Thread.sleep(1000);
 
         // Should not throw CircuitBreakerOpenException
         try {
@@ -120,16 +108,13 @@ public class CircuitBreakerTest extends FaultToleranceTest {
 
     // -- Private methods -----------------------------------------------------
 
-    private CircuitBreakerBean tripCircuit() throws Exception {
+    private CircuitBreakerBean tripCircuit() {
         CircuitBreakerBean bean = newBean(CircuitBreakerBean.class);
 
         // Iterate a few times to test circuit
         for (int i = 0; i < bean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
-
-        // Sleep to give time for circuit breaker to react
-        Thread.sleep(1000);
 
         // Now check circuit is opened
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(false));
@@ -150,8 +135,7 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         // Open circuit breaker
         CircuitBreakerBean bean = tripCircuit();
 
-        // Not enough sleep for breaker to allow new invocations
-        Thread.sleep(100);
+        // Should get exception
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(true));
         return bean;
     }

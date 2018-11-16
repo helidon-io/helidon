@@ -117,7 +117,13 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
                 });
     }
 
-    void initWatchServiceModifiers(WatchEvent.Modifier... modifiers) {
+    /**
+     * Add modifiers to be used when registering the {@link WatchService}.
+     * See {@link Path#register(WatchService, WatchEvent.Kind[],
+     * WatchEvent.Modifier...) Path.register}.
+     * @param modifiers the modifiers to add
+     */
+    public void initWatchServiceModifiers(WatchEvent.Modifier... modifiers) {
         watchServiceModifiers.addAll(Arrays.asList(modifiers));
     }
 

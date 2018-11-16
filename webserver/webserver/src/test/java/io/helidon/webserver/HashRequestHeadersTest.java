@@ -97,12 +97,20 @@ public class HashRequestHeadersTest {
         HashRequestHeaders hs = withHeader(Http.Header.ACCEPT,
                              "text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4");
         assertEquals(4, hs.acceptedTypes().size());
-        assertEquals(new MediaType("text", "*", CollectionsHelper.mapOf("q", "0.3")), hs.acceptedTypes().get(0));
+        assertEquals(createMt("text", "*", CollectionsHelper.mapOf("q", "0.3")), hs.acceptedTypes().get(0));
         assertEquals(0, hs.acceptedTypes().get(0).qualityFactor(), 0.3);
-        assertEquals(new MediaType("text", "html", CollectionsHelper.mapOf("q", "0.7")), hs.acceptedTypes().get(1));
-        assertEquals(new MediaType("text", "html", CollectionsHelper.mapOf("level", "1")), hs.acceptedTypes().get(2));
-        assertEquals(new MediaType("text", "html", CollectionsHelper.mapOf("level", "2", "q", "0.4")),
+        assertEquals(createMt("text", "html", CollectionsHelper.mapOf("q", "0.7")), hs.acceptedTypes().get(1));
+        assertEquals(createMt("text", "html", CollectionsHelper.mapOf("level", "1")), hs.acceptedTypes().get(2));
+        assertEquals(createMt("text", "html", CollectionsHelper.mapOf("level", "2", "q", "0.4")),
                      hs.acceptedTypes().get(3));
+    }
+
+    private MediaType createMt(String type, String subtype, Map<String, String> params) {
+        return MediaType.builder()
+                .type(type)
+                .subtype(subtype)
+                .parameters(params)
+                .build();
     }
 
     @Test

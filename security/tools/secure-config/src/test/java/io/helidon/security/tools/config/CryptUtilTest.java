@@ -54,14 +54,14 @@ public class CryptUtilTest {
     @BeforeAll
     public static void staticInit() {
         KeyConfig kc = KeyConfig.keystoreBuilder()
-                .keystore(Resource.from(".ssh/keystore.p12"))
+                .keystore(Resource.create(".ssh/keystore.p12"))
                 .keystorePassphrase("j4c".toCharArray())
                 .keyAlias("1")
                 .certAlias("1")
                 .build();
 
-        privateKey = kc.getPrivateKey().orElseThrow(AssertionError::new);
-        publicKey = kc.getPublicKey().orElseThrow(AssertionError::new);
+        privateKey = kc.privateKey().orElseThrow(AssertionError::new);
+        publicKey = kc.publicKey().orElseThrow(AssertionError::new);
     }
 
     @Test

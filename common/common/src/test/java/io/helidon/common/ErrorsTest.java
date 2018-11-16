@@ -22,11 +22,10 @@ import java.util.logging.Logger;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link Errors}.
@@ -34,12 +33,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ErrorsTest {
     private static final Logger LOGGER = Logger.getLogger(ErrorsTest.class.getName());
 
-    private static void assertErrorMessage(Optional<Errors.ErrorMessage> actual, String expected, String message){
-        if(actual.isPresent()){
-            assertThat(actual.get().getMessage(), is(expected));
-        } else {
-            fail(message);
-        }
+    private static void assertErrorMessage(Optional<Errors.ErrorMessage> actual, String expected, String message) {
+        assertThat(actual, not(Optional.empty()));
+        assertThat(actual.get().getMessage(), is(expected));
     }
 
     @Test
@@ -58,19 +54,22 @@ class ErrorsTest {
         errors.log(LOGGER);
 
         assertErrorMessage(errors.stream()
-                .filter(it -> it.getSeverity() == Severity.FATAL)
-                .findFirst(),
-                fatalMessage, "Fatal message should be present");
+                                   .filter(it -> it.getSeverity() == Severity.FATAL)
+                                   .findFirst(),
+                           fatalMessage,
+                           "Fatal message should be present");
 
         assertErrorMessage(errors.stream()
-                .filter(it -> it.getSeverity() == Severity.WARN)
-                .findFirst(),
-                warnMessage, "Warn message should be present");
+                                   .filter(it -> it.getSeverity() == Severity.WARN)
+                                   .findFirst(),
+                           warnMessage,
+                           "Warn message should be present");
 
         assertErrorMessage(errors.stream()
-                .filter(it -> it.getSeverity() == Severity.HINT)
-                .findFirst(),
-                hintMessage, "Hint message should be present");
+                                   .filter(it -> it.getSeverity() == Severity.HINT)
+                                   .findFirst(),
+                           hintMessage,
+                           "Hint message should be present");
 
         assertThat(errors.hasFatal(), is(true));
         assertThat(errors.hasWarning(), is(true));
@@ -80,13 +79,9 @@ class ErrorsTest {
 
         assertThat(errors.log(LOGGER), is(false));
 
-        try {
-            errors.checkValid();
-            fail("Should have thrown an exception, as we have a fatal message");
-        } catch (Errors.ErrorMessagesException e) {
-            // expected
-            assertThat(e.getMessages(), sameInstance(errors));
-        }
+        Errors.ErrorMessagesException thrown = assertThrows(Errors.ErrorMessagesException.class,
+                                                            errors::checkValid);
+        assertThat(thrown.getMessages(), sameInstance(errors));
     }
 
     @Test
@@ -110,7 +105,7 @@ class ErrorsTest {
         Errors.ErrorMessage msg = errors.get(0);
         assertThat(msg.getMessage(), is(messageContent));
         assertThat(msg.getSeverity(), is(Severity.HINT));
-        assertEquals(ErrorsTest.class, msg.getSource());
+        assertThat(msg.getSource(), sameInstance(ErrorsTest.class));
     }
 
     @Test
@@ -134,7 +129,7 @@ class ErrorsTest {
         Errors.ErrorMessage msg = errors.get(0);
         assertThat(msg.getMessage(), is(messageContent));
         assertThat(msg.getSeverity(), is(Severity.HINT));
-        assertEquals(ErrorsTest.class, msg.getSource());
+        assertThat(msg.getSource(), sameInstance(ErrorsTest.class));
     }
 
     @Test
@@ -150,13 +145,9 @@ class ErrorsTest {
 
         assertThat(errors.isValid(), is(false));
 
-        try {
-            errors.checkValid();
-            fail("Should have thrown an exception, as we have a fatal message");
-        } catch (Errors.ErrorMessagesException e) {
-            // expected
-            assertThat(e.getMessages(), sameInstance(errors));
-        }
+        Errors.ErrorMessagesException thrown = assertThrows(Errors.ErrorMessagesException.class,
+                                                            errors::checkValid);
+        assertThat(thrown.getMessages(), sameInstance(errors));
 
         assertThat(errors.log(LOGGER), is(false));
         assertThat(errors.size(), is(1));
@@ -164,7 +155,7 @@ class ErrorsTest {
         Errors.ErrorMessage msg = errors.get(0);
         assertThat(msg.getMessage(), is(messageContent));
         assertThat(msg.getSeverity(), is(Severity.FATAL));
-        assertEquals(ErrorsTest.class, msg.getSource());
+        assertThat(msg.getSource(), sameInstance(ErrorsTest.class));
     }
 
     @Test
@@ -189,7 +180,7 @@ class ErrorsTest {
         Errors.ErrorMessage msg = errors.get(0);
         assertThat(msg.getMessage(), is(messageContent));
         assertThat(msg.getSeverity(), is(Severity.WARN));
-        assertEquals(source, msg.getSource());
+        assertThat(msg.getSource(), sameInstance(source));
     }
 
     @Test
@@ -216,7 +207,7 @@ class ErrorsTest {
         Errors.ErrorMessage msg = errors.get(0);
         assertThat(msg.getMessage(), is(messageContent));
         assertThat(msg.getSeverity(), is(Severity.HINT));
-        assertEquals(source, msg.getSource());
+        assertThat(msg.getSource(), sameInstance(source));
     }
 
     @Test

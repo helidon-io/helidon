@@ -635,7 +635,7 @@ public final class OidcConfig {
                                                  null);
                     if (null != jwkUri) {
                         this.signJwk = JwkKeys.builder()
-                                .resource(Resource.from(jwkUri))
+                                .resource(Resource.create(jwkUri))
                                 .build();
                     }
                 }
@@ -698,7 +698,7 @@ public final class OidcConfig {
             if ((null == oidcMetadata) && oidcMetadataWellKnown) {
                 try {
                     String wellKnown = identityUri + OidcConfig.DEFAULT_OIDC_METADATA_URI;
-                    oidcMetadata = Json.createReader(Resource.from(URI.create(wellKnown)).getStream()).readObject();
+                    oidcMetadata = Json.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
                     LOGGER.finest(() -> "OIDC Metadata loaded from well known URI: " + wellKnown);
                 } catch (Exception e) {
                     collector.fatal(e, "Failed to load metadata: " + e.getClass().getName() + ": " + e.getMessage());
@@ -744,9 +744,9 @@ public final class OidcConfig {
 
             // OIDC server configuration
             config.get("base-scopes").value().ifPresent(this::baseScopes);
-            Resource.from(config, "oidc-metadata").ifPresent(this::oidcMetadata);
+            Resource.create(config, "oidc-metadata").ifPresent(this::oidcMetadata);
             config.get("oidc-metadata-well-known").asOptionalBoolean().ifPresent(this::oidcMetadataWellKnown);
-            Resource.from(config, "sign-jwk").ifPresent(this::signJwk);
+            Resource.create(config, "sign-jwk").ifPresent(this::signJwk);
             config.get("token-endpoint-uri").asOptional(URI.class).ifPresent(this::tokenEndpointUri);
             config.get("authorization-endpoint-uri").asOptional(URI.class).ifPresent(this::authorizationEndpointUri);
 
@@ -892,7 +892,7 @@ public final class OidcConfig {
          * @return udpated builder instance
          */
         public Builder oidcMetadata(Resource resource) {
-            this.oidcMetadata = Json.createReader(resource.getStream()).readObject();
+            this.oidcMetadata = Json.createReader(resource.stream()).readObject();
             return this;
         }
 

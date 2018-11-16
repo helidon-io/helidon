@@ -78,7 +78,7 @@ public class BulkheadBean {
         return Thread.currentThread().getName();
     }
 
-    public String onFailure() {
+    public String onFailure(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::onFailure()", "success");
         return Thread.currentThread().getName();
     }

@@ -49,15 +49,15 @@ public class JwkKeysTest {
     @BeforeAll
     public static void init() {
         customKeys = JwkKeys.builder()
-                .resource(Resource.from("jwk_data.json"))
+                .resource(Resource.create("jwk_data.json"))
                 .build();
 
         auth0Keys = JwkKeys.builder()
-                .resource(Resource.from("auth0-jwk.json"))
+                .resource(Resource.create("auth0-jwk.json"))
                 .build();
 
         googleKeys = JwkKeys.builder()
-                .resource(Resource.from("google-jwk.json"))
+                .resource(Resource.create("google-jwk.json"))
                 .build();
     }
 

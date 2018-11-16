@@ -26,11 +26,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.common.reactive.SubmissionPublisher;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.reactive.valve.TestUtils.generate;
 import static io.helidon.common.reactive.valve.TestUtils.generateList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PublisherValveTest {
@@ -42,7 +44,7 @@ class PublisherValveTest {
         CompletableFuture<List<Integer>> cf = valve.collect(Collectors.toList()).toCompletableFuture();
         generate(0, 10, pub::submit);
         pub.close();
-        assertEquals(generateList(0, 10), cf.get());
+        assertThat(cf.get(), is(generateList(0, 10)));
     }
 
     @Test
@@ -73,12 +75,12 @@ class PublisherValveTest {
         if (!latch.await(10, TimeUnit.SECONDS)) {
             throw new AssertionError("Wait timeout!");
         }
-        assertEquals(generateList(0, 6), buffer);
-        assertEquals(1, doneLatch.getCount());
+        assertThat(buffer, is(generateList(0, 6)));
+        assertThat(doneLatch.getCount(), is(1L));
         valve.resume();
         if (!doneLatch.await(10, TimeUnit.SECONDS)) {
             throw new AssertionError("Wait timeout!");
         }
-        assertEquals(generateList(0, 10), buffer);
+        assertThat(buffer, is(generateList(0, 10)));
     }
 }

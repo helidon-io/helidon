@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.integrations.examples</groupId>
         <artifactId>helidon-integrations-examples-project</artifactId>
-        <version>0.10.5-SNAPSHOT</version>
+        <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-examples-jedis</artifactId>
     <name>Helidon Integrations Examples Jedis</name>

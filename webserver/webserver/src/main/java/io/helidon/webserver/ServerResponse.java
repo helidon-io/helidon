@@ -65,7 +65,7 @@ public interface ServerResponse {
      * @return this instance of {@link ServerResponse}
      */
     default ServerResponse status(int statusCode) throws AlreadyCompletedException {
-        return status(Http.ResponseStatus.from(statusCode));
+        return status(Http.ResponseStatus.create(statusCode));
     }
 
     /**

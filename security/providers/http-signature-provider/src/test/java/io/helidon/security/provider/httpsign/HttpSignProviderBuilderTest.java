@@ -16,6 +16,8 @@
 
 package io.helidon.security.provider.httpsign;
 
+import java.nio.file.Paths;
+
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
@@ -73,9 +75,9 @@ public class HttpSignProviderBuilderTest extends HttpSignProviderTest {
                         .signedHeaders(inboundRequiredHeaders("host", SignedHeadersConfig
                                 .REQUEST_TARGET))
                         .privateKeyConfig(KeyConfig.keystoreBuilder()
-                                                  .keystore(Resource.fromPath(
+                                                  .keystore(Resource.create(Paths.get(
                                                           "src/test/resources/keystore"
-                                                                  + ".p12"))
+                                                                  + ".p12")))
                                                   .keystorePassphrase("password"
                                                                               .toCharArray())
                                                   .keyAlias("myPrivateKey")
@@ -89,7 +91,7 @@ public class HttpSignProviderBuilderTest extends HttpSignProviderTest {
                 .principalName("aUser")
                 .subjectType(SubjectType.USER)
                 .publicKeyConfig(KeyConfig.keystoreBuilder()
-                                         .keystore(Resource.fromPath("src/test/resources/keystore.p12"))
+                                         .keystore(Resource.create(Paths.get("src/test/resources/keystore.p12")))
                                          .keystorePassphrase("password".toCharArray())
                                          .certAlias("service_cert")
                                          .build())

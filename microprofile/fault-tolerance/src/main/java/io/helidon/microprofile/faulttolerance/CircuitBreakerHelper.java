@@ -18,7 +18,9 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
+import com.netflix.hystrix.HystrixCommand;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 
 /**
@@ -27,6 +29,9 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
  * in Hystrix, but we cannot easily access them.
  */
 public class CircuitBreakerHelper {
+    private static final Logger LOGGER = Logger.getLogger(CircuitBreakerHelper.class.getName());
+
+    private static final long MAX_DELAY_CIRCUIT_BREAKER_OPEN = 1000;
 
     /**
      * Internal state of a circuit breaker. We need to track this to implement
@@ -44,6 +49,10 @@ public class CircuitBreakerHelper {
         }
     }
 
+    /**
+     * Data associated with a command for the purpose of tracking a circuit
+     * breaker state.
+     */
     static class CommandData {
 
         private int size;
@@ -138,13 +147,27 @@ public class CircuitBreakerHelper {
 
     private final FaultToleranceCommand command;
 
-    private final CommandData commandData;
+    private final CircuitBreaker circuitBreaker;
 
     CircuitBreakerHelper(FaultToleranceCommand command, CircuitBreaker circuitBreaker) {
         this.command = command;
-        this.commandData = COMMAND_STATS.computeIfAbsent(
-            command.getCommandKey().toString(),
-            d -> new CommandData(circuitBreaker.requestVolumeThreshold()));
+        this.circuitBreaker = circuitBreaker;
+    }
+
+    private CommandData getCommandData() {
+        return COMMAND_STATS.computeIfAbsent(
+                command.getCommandKey().toString(),
+                d -> new CommandData(circuitBreaker.requestVolumeThreshold()));
+    }
+
+    /**
+     * Reset internal state of command data. Normally, this should be called when
+     * returning to {@link State#CLOSED_MP} state. Since this is the same as the
+     * initial state, we remove it from the map and re-create it later if needed.
+     */
+    void resetCommandData() {
+        COMMAND_STATS.remove(command.getCommandKey().toString());
+        LOGGER.info("Discarded command data for " + command.getCommandKey());
     }
 
     /**
@@ -154,7 +177,7 @@ public class CircuitBreakerHelper {
      * @param result New result to push.
      */
     void pushResult(boolean result) {
-        commandData.pushResult(result);
+        getCommandData().pushResult(result);
     }
 
     /**
@@ -163,7 +186,7 @@ public class CircuitBreakerHelper {
      * @return Success ratio or -1 if window is not complete.
      */
     double getSuccessRatio() {
-        return commandData.getSuccessRatio();
+        return getCommandData().getSuccessRatio();
     }
 
     /**
@@ -172,7 +195,7 @@ public class CircuitBreakerHelper {
      * @return Failure ratio or -1 if window is not complete.
      */
     double getFailureRatio() {
-        return commandData.getFailureRatio();
+        return getCommandData().getFailureRatio();
     }
 
     /**
@@ -181,7 +204,7 @@ public class CircuitBreakerHelper {
      * @return The state.
      */
     State getState() {
-        return commandData.getState();
+        return getCommandData().getState();
     }
 
     /**
@@ -189,7 +212,8 @@ public class CircuitBreakerHelper {
      * @param newState
      */
     void setState(State newState) {
-        commandData.setState(newState);
+        getCommandData().setState(newState);
+        LOGGER.info("Circuit breaker for " + command.getCommandKey() + " now in state " + getState());
     }
 
     /**
@@ -198,14 +222,14 @@ public class CircuitBreakerHelper {
      * @return Success count.
      */
     int getSuccessCount() {
-        return commandData.getSuccessCount();
+        return getCommandData().getSuccessCount();
     }
 
     /**
      * Increments success counter for breaker.
      */
     void incSuccessCount() {
-        commandData.incSuccessCount();
+        getCommandData().incSuccessCount();
     }
 
     /**
@@ -214,7 +238,7 @@ public class CircuitBreakerHelper {
      * @return Command data as an object.
      */
     Object getSyncObject() {
-        return commandData;
+        return getCommandData();
     }
 
     /**
@@ -224,13 +248,31 @@ public class CircuitBreakerHelper {
      * @return The time spent in nanos.
      */
     long getInStateNanos(State queryState) {
-        return commandData.getInStateNanos(queryState);
+        return getCommandData().getInStateNanos(queryState);
     }
 
     /**
-     * Clear underlying command cache.
+     * Ensure that our internal state matches Hystrix when a breaker in OPEN
+     * state. For some reason Hystrix does not set the breaker in OPEN state
+     * right away, and calling {@link HystrixCommand#isCircuitBreakerOpen()}
+     * appears to fix the problem.
      */
-    static void clearCache() {
-        COMMAND_STATS.clear();
+    void ensureConsistentState() {
+        if (getState() == State.OPEN_MP) {
+            long delayTotal = 0L;
+            while (!command.isCircuitBreakerOpen() && delayTotal < MAX_DELAY_CIRCUIT_BREAKER_OPEN) {
+                long delayPeriod = MAX_DELAY_CIRCUIT_BREAKER_OPEN / 10;
+                try {
+                    LOGGER.fine("Waiting for Hystrix to open circuit breaker (" + delayPeriod + " ms)");
+                    Thread.sleep(delayPeriod);
+                } catch (InterruptedException e) {
+                    // falls through
+                }
+                delayTotal += delayPeriod;
+            }
+            if (delayTotal >= MAX_DELAY_CIRCUIT_BREAKER_OPEN) {
+                throw new InternalError("Inconsistent state for circuit breaker in " + command.getCommandKey());
+            }
+        }
     }
 }

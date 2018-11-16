@@ -101,7 +101,7 @@ abstract class Response implements ServerResponse {
         // Char sequence
         Writer<CharSequence> charSequenceWriter = new Writer<>(CharSequence.class, null, s -> {
             MediaType mediaType = headers.contentType().orElse(MediaType.TEXT_PLAIN);
-            String charset = mediaType.getCharset().orElse(StandardCharsets.UTF_8.name());
+            String charset = mediaType.charset().orElse(StandardCharsets.UTF_8.name());
             headers.contentType(mediaType.withCharset(charset));
             return ContentWriters.charSequenceWriter(Charset.forName(charset)).apply(s);
         });

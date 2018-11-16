@@ -1,0 +1,333 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+:adoc-dir: {guides-dir}
+
+= Creating Docker Images 
+:description: Helidon guide docker
+:keywords: helidon, guide, docker
+
+Building Docker images for Helidon applications.
+
+=== What You Will Learn
+
+You'll learn how to package your Helidon application and its runtime dependencies into a Docker
+image that also contains the Java runtime.
+
+=== What You Need
+
+|===
+|About 10 minutes
+| <<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
+|You'll also need Java 11 if you want to create custom JRE's using `jlink`
+|===
+
+=== Create Your Application Using The Helidon Quickstart
+
+Follow the instructions on the <<getting-started/02_base-example.adoc,Quickstart page>>
+to create a Helidon SE example. Once you've run the archetype to create
+the project come back here.
+
+=== Handling Runtime Dependencies
+
+Build the example:
+
+[source,bash,subs="verbatim,attributes"]
+----
+mvn clean package
+----
+
+When you run the maven build, you'll notice lines like the following:
+
+[listing]
+----
+[INFO] Scanning for projects...
+. . .
+[INFO]
+[INFO] --- maven-dependency-plugin:2.9:copy-dependencies (copy-dependencies) @ quickstart-se ---
+[INFO] Copying netty-transport-4.1.22.Final.jar to /tmp/quickstart-se/target/libs/netty-transport-4.1.22.Final.jar
+. . .
+----
+
+The project uses the `maven-dependency-plugin` to copy the runtime dependencies to
+`target/libs/`. Additionally the `maven-jar-plugin` adds a `Class-Path` entry to the
+application's jar file so it can find those dependencies at runtime:
+
+[source,bash,subs="verbatim,attributes"]
+----
+unzip -p target/quickstart-se.jar META-INF/MANIFEST.MF 
+----
+[listing]
+----
+. . .
+Class-Path: libs/helidon-webserver-bundle-0.10.4.jar libs/helidon-webser
+ ver-0.10.4.jar libs/helidon-common-reactive-0.10.4.jar libs/helidon-com
+ mon-http-0.10.4.jar libs/helidon-common-key-util-0.10.4.jar libs/helido
+. . .
+----
+
+This means you can easily run the application jar:
+
+[source,bash,subs="verbatim,attributes"]
+----
+java -jar target/quickstart-se.jar
+----
+
+Now try the application with `curl`:
+
+[source,bash,subs="verbatim,attributes"]
+----
+curl -X GET http://localhost:8080/greet
+----
+
+[listing]
+----
+{"message":"Hello World!"}
+----
+
+=== Creating a Docker Image
+
+Since the `target` directory has the runtime dependencies, the
+Dockerfile for our application is pretty simple. You can
+find the Dockerfile in the generated project at `src/main/docker/Dockerfile`.
+It should look like this:
+
+[source,yaml,subs="verbatim,attributes"]
+.src/main/docker/Dockerfile
+----
+FROM openjdk:8-jre-slim 
+
+RUN mkdir /app
+COPY libs /app/libs 
+COPY ${project.artifactId}.jar /app
+
+CMD ["java", "-jar", "/app/${project.artifactId}.jar"]
+----
+
+* We use a Java 8 JRE image provided by the OpenJDK project.
+* We then create a directory to hold our application and copy the `libs` directory
+  into it followed by the application jar. The command to start the application is
+  just like the one we used when running natively on our desktop. 
+
+What is `${project.artifactId}`? It's a Maven property. The project uses
+the `maven-resources-plugin` to filter the Dockerfile while copying it to the
+target directory. So this property gets expanded to the project artifactId
+(`quickstart-se` for example).
+
+Since the quickstart project already contains the Dockerfile you can go ahead and try it:
+
+[source,bash,subs="verbatim,attributes"]
+----
+docker build -t quickstart-se target
+----
+
+[listing]
+----
+Sending build context to Docker daemon  5.641MB
+Step 1/5 : FROM openjdk:8-jre-slim
+ ---> 3e85180d5f58
+Step 2/5 : RUN mkdir /app
+ ---> Using cache
+ ---> d24e2f320e6b
+Step 3/5 : COPY libs /app/libs
+ ---> Using cache <1>
+ ---> 9772d4c5d4a0
+Step 4/5 : COPY quickstart-se.jar /app
+ ---> f156df1d0338
+Step 5/5 : CMD ["java", "-jar", "/app/quickstart-se.jar"]
+ ---> Running in 29838194f452
+Removing intermediate container 29838194f452
+ ---> 6a634dbe3ecf
+Successfully built 6a634dbe3ecf
+Successfully tagged quickstart-se:latest
+----
+
+<1> The first time you run `docker build` you won't see `Using cache` for this
+    layer, but on subsequent builds you should. This is good. It
+    means that the image layer that contains our runtime dependencies is
+    not modified every time we build our application. Only the layer containing
+    the application jar is. That means if we're pushing our docker image to a
+    remote registry then the layer with our runtime dependencies does not 
+    need to be pushed every time we rebuild.
+
+You can now run the docker container:
+
+[source,bash,subs="verbatim,attributes"]
+----
+docker run --rm -p 8080:8080 quickstart-se:latest
+----
+
+[source,bash,subs="verbatim,attributes"]
+----
+curl -X GET http://localhost:8080/greet
+----
+
+=== Why no Fat Jar?
+
+Fat Jars are jar files that contain the application and all runtime
+dependencies. This is handy because it's one file with all you need
+to run your application.
+
+One problem with fat jars is that they are not optimal when used in
+a docker image. That's because the image layer that contains your
+application also contains all of its runtime dependencies, and that
+means more data to push to a docker registry every time you rebuild
+your application.
+
+But Fat Jars can be convenient if you're not running in Docker
+containers. There is nothing that prevents you from building a
+fat jar for your Helidon application. You just need to know what
+you are doing and, for example, make sure you aggregate
+`META-INF/services/` from all the individual jar files.
+
+=== Building a Custom JRE with Java 11 `jlink`
+
+In the previous Dockerfile example we used Java 8 and got the
+JRE directly from the base OpenJDK docker image. In this section
+we'll build our own custom Java 11 JRE using `jlink`. Here
+is what that Dockerfile looks like. Go ahead and replace the
+`src/main/docker/Dockerfile` in your example project with
+this one:
+
+[source,yaml,subs="verbatim,attributes"]
+.src/main/docker/Dockerfile
+----
+# Multistage docker build.
+# Stage 1: Build custom Java 11 JRE and put it in /var/tmp/myjre <1>
+FROM openjdk:11-slim AS myjre   
+RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \ 
+     "--add-modules", "java.base,java.logging,java.sql,java.desktop,java.management", \
+     "--output", "/var/tmp/myjre"]
+
+# Work around for https://github.com/docker-library/openjdk/issues/217 <2>
+RUN [ "apt", "update"]
+RUN [ "apt-get", "install", "-y", "binutils"]
+RUN ["strip", "-p", "--strip-unneeded", "/var/tmp/myjre/lib/server/libjvm.so"]
+# End work-around
+
+# Stage 2: Build application image using JRE from Stage 1 <3>
+FROM debian:sid-slim 
+COPY --from=myjre /var/tmp/myjre /opt/jre
+ENV PATH=$PATH:/opt/jre/bin
+
+RUN mkdir /app
+COPY libs /app/libs
+COPY ${project.artifactId}.jar /app
+
+CMD ["java", "-jar", "/app/${project.artifactId}.jar"]
+----
+
+This is a little bit more complicated than our first Dockerfile, in part
+because of a work-around for an openjdk issue. The first thing to notice
+is that this is a multi-stage docker build. That means we're going to
+build multiple docker images -- with later images using content from
+earlier images. 
+
+<1> For the first stage of the build we use a Java 11 base image and we name the image 
+    we are building `myjre`. We then run `jlink` to create a JRE with only the modules
+    we need. We generate that JRE in `/var/tmp/myjre`. The modules listed in this
+    example are for Helidon SE. See below for Helidon MP.
+<2> Ack! We need to work-around an issue in the openjdk base image -- basically run
+    `strip` on `libjvm.so`. Why? Go see https://github.com/docker-library/openjdk/issues/217.
+    After doing that we have a nice shiny new JRE to use.
+<3> Now we build the image for our application. We use `debian:sid-slim` because
+    that matches the base image used by `openjdk:11-slim`, so we can be confident
+    we won't have any runtime compatibility issues with the JRE we created.
+    We copy the JRE from the first image (`myjre`) into our second image, and
+    set our `PATH` so we can find the new JRE. The rest of the file is the same
+    as before.
+
+That's it! You're docker image will now run with a custom JRE. Let's try it:
+
+[source,bash,subs="verbatim,attributes"]
+.Rebuild project to process Dockerfile and copy to target directory
+----
+mvn package
+----
+
+[source,bash,subs="verbatim,attributes"]
+----
+docker build -t java11-quickstart-se target
+----
+
+[source,bash,subs="verbatim,attributes"]
+----
+docker run --rm -p 8080:8080 java11-quickstart-se:latest
+----
+
+The first time you run `docker build` with this Dockerfile it will take a while
+as it downloads stuff and installs `binutils` for the workaround. But subsequent
+runs will be much faster, because all those layers will be cached except for
+the little layer that contains your application jar.
+
+=== What about Helidon MP?
+
+The only difference for Helidon MP is that you need to add a couple more
+modules to the `jlink` command:
+
+[source,yaml,subs="verbatim,attributes"]
+----
+RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files" \ 
+     "--add-modules", \
+     "java.base,java.logging,java.sql,java.desktop,java.management,java.naming,jdk.unsupported", \
+     "--output", "/var/tmp/myjre"]
+----
+
+=== How Big is This Stuff?
+
+Let's take a look.
+
+.Helidon SE Quickstart Application and Runtime Dependencies
+[source,bash,subs="verbatim,attributes"]
+----
+du -sh target/quickstart-se.jar target/libs
+----
+
+[listing]
+----
+ 12K	target/quickstart-se.jar
+5.4M	target/libs
+----
+
+.Java 11 JRE for Helidon SE
+[source,bash,subs="verbatim,attributes"]
+----
+docker run -it --rm java11-quickstart-se:latest  du -sh /opt/jre
+----
+
+[listing]
+----
+62M	/opt/jre
+----
+
+.Java 11 Docker Image for Helidon SE Quickstart Example
+[source,bash,subs="verbatim,attributes"]
+----
+docker images java11-quickstart-se:latest
+----
+
+[listing]
+----
+REPOSITORY             TAG        IMAGE ID         CREATED             SIZE
+java11-quickstart-se   latest     f07a7b8bda78     About a minute ago  136MB
+----
+
+
+So the application plus Java runtime is less than 70MB which is not
+too bad. And the complete docker image is less than 140MB which is
+smaller than the pre-built OpenJDK slim JRE images. Note that your
+results might differ a bit depending on your platform.

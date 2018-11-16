@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.arquillian;
 
+import javax.enterprise.context.control.RequestContextController;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
@@ -40,14 +41,33 @@ class HelidonContainerExtension implements LoadableExtension {
      */
     static class HelidonCDIInjectionEnricher extends CDIInjectionEnricher {
 
+        private BeanManager beanManager;
+        private RequestContextController requestContextController;
+
         @Override
         public BeanManager getBeanManager() {
-            return CDI.current().getBeanManager();
+            if (beanManager == null) {
+                CDI<Object> cdi = CDI.current();
+                if (cdi != null) {
+                    beanManager = cdi.getBeanManager();
+                }
+            }
+            return beanManager;
         }
 
         @Override
         public CreationalContext<Object> getCreationalContext() {
-            return getBeanManager().createCreationalContext(null);
+            return getBeanManager() != null ? getBeanManager().createCreationalContext(null) : null;
+        }
+
+        public RequestContextController getRequestContextController() {
+            if (requestContextController == null) {
+                CDI<Object> cdi = CDI.current();
+                if (cdi != null) {
+                    requestContextController = cdi.select(RequestContextController.class).get();
+                }
+            }
+            return requestContextController;
         }
     }
 

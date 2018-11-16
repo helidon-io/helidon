@@ -316,7 +316,7 @@ final class PathPattern {
             Objects.requireNonNull(path, "Parameter 'path' is null!");
             String s = path.toString();
             if (s.startsWith(pattern)) {
-                String rightPart = s.substring(pattern.length());
+                String rightPart = pattern.equals("/") ? s : s.substring(pattern.length());
                 if (rightPart.isEmpty()) {
                     rightPart = "/";
                 }
@@ -471,6 +471,24 @@ final class PathPattern {
         @Override
         public String remainingPart() {
             return rightPart;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PositiveResult that = (PositiveResult) o;
+            return Objects.equals(params, that.params)
+                    && Objects.equals(rightPart, that.rightPart);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(params, rightPart);
         }
     }
 

@@ -222,12 +222,12 @@ public final class CryptUtil {
 
     static Optional<PrivateKey> resolvePrivateKey(Config config) {
         // load configuration values
-        KeyConfig.PemBuilder pemBuilder = KeyConfig.pemBuilder().from(config);
-        KeyConfig.KeystoreBuilder keystoreBuilder = KeyConfig.keystoreBuilder().from(config);
+        KeyConfig.PemBuilder pemBuilder = KeyConfig.pemBuilder().config(config);
+        KeyConfig.KeystoreBuilder keystoreBuilder = KeyConfig.keystoreBuilder().config(config);
 
         getEnv(ConfigProperties.PRIVATE_KEY_PEM_PATH_ENV_VARIABLE)
                 .map(Paths::get)
-                .ifPresent(path -> pemBuilder.key(Resource.from(path)));
+                .ifPresent(path -> pemBuilder.key(Resource.create(path)));
 
         getEnv(ConfigProperties.PRIVATE_KEY_PASS_ENV_VARIABLE)
                 .map(String::toCharArray)
@@ -236,7 +236,7 @@ public final class CryptUtil {
         // override the ones defined in environment variables
         getEnv(ConfigProperties.PRIVATE_KEYSTORE_PATH_ENV_VARIABLE)
                 .map(Paths::get)
-                .ifPresent(path -> keystoreBuilder.keystore(Resource.from(path)));
+                .ifPresent(path -> keystoreBuilder.keystore(Resource.create(path)));
 
         getEnv(ConfigProperties.PRIVATE_KEYSTORE_TYPE_ENV_VARIABLE)
                 .ifPresent(keystoreBuilder::keystoreType);
@@ -256,7 +256,7 @@ public final class CryptUtil {
                 .updateWith(pemBuilder)
                 .updateWith(keystoreBuilder)
                 .build()
-                .getPrivateKey();
+                .privateKey();
 
         if (!result.isPresent()) {
             LOGGER.fine("Securing properties using asymmetric cipher is not available, as private key is not configured");

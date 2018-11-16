@@ -23,13 +23,14 @@ import java.util.stream.Collectors;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
+
 import org.hamcrest.core.IsCollectionContaining;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -40,9 +41,9 @@ class ValvePublisherTest {
     @Test
     void simpleTest() {
         List<Integer> list = ReactiveStreamsAdapter.publisherFromFlow(Valves.from(1, 2, 3, 4)
-                                                                      .toPublisher())
-                                           .collect(Collectors.toList())
-                                           .block();
+                                                                              .toPublisher())
+                .collect(Collectors.toList())
+                .block();
 
         assertThat(list, IsCollectionContaining.hasItems(1, 2, 3, 4));
     }
@@ -53,15 +54,15 @@ class ValvePublisherTest {
         Tank<Integer> integerTank = new Tank<>(10);
 
         ReactiveStreamsAdapter.publisherFromFlow(integerTank.toPublisher())
-                      .subscribe(sb::append);
+                .subscribe(sb::append);
 
         integerTank.add(1);
         integerTank.add(2);
-        assertEquals("12", sb.toString());
+        assertThat(sb.toString(), is("12"));
 
         integerTank.add(3);
         integerTank.add(4);
-        assertEquals("1234", sb.toString());
+        assertThat(sb.toString(), is("1234"));
     }
 
     @Test
@@ -72,58 +73,59 @@ class ValvePublisherTest {
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
 
         integerTank.toPublisher()
-                   .subscribe(new Flow.Subscriber<Integer>() {
-                       @Override
-                       public void onSubscribe(Flow.Subscription subscription) {
-                           subscriptionRef.set(subscription);
-                       }
+                .subscribe(new Flow.Subscriber<Integer>() {
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        subscriptionRef.set(subscription);
+                    }
 
-                       @Override
-                       public void onNext(Integer item) {
-                           sb.append(item);
-                       }
+                    @Override
+                    public void onNext(Integer item) {
+                        sb.append(item);
+                    }
 
-                       @Override
-                       public void onError(Throwable throwable) {
-                           fail("Not expected: " + throwable);
-                       }
+                    @Override
+                    public void onError(Throwable throwable) {
+                        fail("Not expected: " + throwable);
+                    }
 
-                       @Override
-                       public void onComplete() {
-                           sb.append("$");
-                       }
-                   });
+                    @Override
+                    public void onComplete() {
+                        sb.append("$");
+                    }
+                });
 
         integerTank.add(1);
         integerTank.add(2);
-        assertEquals("", sb.toString());
+
+        assertThat(sb.toString(), is(""));
 
         subscriptionRef.get().request(1);
-        assertEquals("1", sb.toString());
+        assertThat(sb.toString(), is("1"));
 
         subscriptionRef.get().request(2);
         integerTank.add(3);
         integerTank.add(4);
-        assertEquals("123", sb.toString());
+        assertThat(sb.toString(), is("123"));
 
         integerTank.add(5);
-        assertEquals("123", sb.toString());
+        assertThat(sb.toString(), is("123"));
         subscriptionRef.get().request(2);
-        assertEquals("12345", sb.toString());
+        assertThat(sb.toString(), is("12345"));
 
         // request additional 2 more ahead
         subscriptionRef.get().request(2);
-        assertEquals("12345", sb.toString());
+        assertThat(sb.toString(), is("12345"));
         integerTank.add(6);
-        assertEquals("123456", sb.toString());
+        assertThat(sb.toString(), is("123456"));
         integerTank.add(7);
-        assertEquals("1234567", sb.toString());
+        assertThat(sb.toString(), is("1234567"));
 
         // TODO webserver#22 close itself doesn't complete the subscriber; change the test once the issue is solved
         integerTank.close();
-        assertEquals("1234567", sb.toString());
+        assertThat(sb.toString(), is("1234567"));
         subscriptionRef.get().request(1);
-        assertEquals("1234567$", sb.toString());
+        assertThat(sb.toString(), is("1234567$"));
     }
 
     @Test
@@ -134,27 +136,27 @@ class ValvePublisherTest {
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
 
         integerTank.toPublisher()
-                   .subscribe(new Flow.Subscriber<Integer>() {
-                       @Override
-                       public void onSubscribe(Flow.Subscription subscription) {
-                           subscriptionRef.set(subscription);
-                       }
+                .subscribe(new Flow.Subscriber<Integer>() {
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        subscriptionRef.set(subscription);
+                    }
 
-                       @Override
-                       public void onNext(Integer item) {
-                           throw new RuntimeException("Exception in onNext()");
-                       }
+                    @Override
+                    public void onNext(Integer item) {
+                        throw new RuntimeException("Exception in onNext()");
+                    }
 
-                       @Override
-                       public void onError(Throwable throwable) {
-                           exception.set(throwable);
-                       }
+                    @Override
+                    public void onError(Throwable throwable) {
+                        exception.set(throwable);
+                    }
 
-                       @Override
-                       public void onComplete() {
-                           fail("onComplete not expected");
-                       }
-                   });
+                    @Override
+                    public void onComplete() {
+                        fail("onComplete not expected");
+                    }
+                });
 
         integerTank.add(1);
         subscriptionRef.get().request(1);
@@ -170,7 +172,8 @@ class ValvePublisherTest {
         stringTank.addAll(CollectionsHelper.listOf("1", "2", "3"));
         stringTank.close();
 
-        assertEquals("123", flux.collect(Collectors.joining()).block());
+        assertThat(flux.collect(Collectors.joining()).block(), is("123"));
+
         try {
             flux.collect(Collectors.joining()).block();
             fail("Should have thrown an exception!");
@@ -186,8 +189,8 @@ class ValvePublisherTest {
         stringTank.addAll(CollectionsHelper.listOf("1", "2", "3"));
         stringTank.close();
 
-        assertEquals("123", ReactiveStreamsAdapter.publisherFromFlow(stringTank.toPublisher())
-                                                 .collect(Collectors.joining()).block());
+        assertThat(ReactiveStreamsAdapter.publisherFromFlow(stringTank.toPublisher())
+                .collect(Collectors.joining()).block(), is("123"));
         try {
             ReactiveStreamsAdapter.publisherFromFlow(stringTank.toPublisher()).collect(Collectors.joining()).block();
             fail("Should have thrown an exception!");
