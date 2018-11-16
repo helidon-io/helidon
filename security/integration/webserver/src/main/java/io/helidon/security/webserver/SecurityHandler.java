@@ -205,14 +205,14 @@ public final class SecurityHandler implements Handler {
                 .ifPresent(builder::authenticator);
         OptionalHelper.from(config.get(KEY_AUTHORIZER).value()).or(() -> defaults.explicitAuthorizer).asOptional()
                 .ifPresent(builder::authorizer);
-        OptionalHelper.from(config.get(KEY_AUTHENTICATE).asOptional(Boolean.class)).or(() -> defaults.authenticate).asOptional()
+        OptionalHelper.from(config.get(KEY_AUTHENTICATE).as(Boolean.class)).or(() -> defaults.authenticate).asOptional()
                 .ifPresent(builder::authenticate);
-        OptionalHelper.from(config.get(KEY_AUTHENTICATION_OPTIONAL).asOptional(Boolean.class))
+        OptionalHelper.from(config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class))
                 .or(() -> defaults.authenticationOptional)
                 .asOptional().ifPresent(builder::authenticationOptional);
-        OptionalHelper.from(config.get(KEY_AUDIT).asOptional(Boolean.class)).or(() -> defaults.audited).asOptional()
+        OptionalHelper.from(config.get(KEY_AUDIT).as(Boolean.class)).or(() -> defaults.audited).asOptional()
                 .ifPresent(builder::audit);
-        OptionalHelper.from(config.get(KEY_AUTHORIZE).asOptional(Boolean.class)).or(() -> defaults.authorize).asOptional()
+        OptionalHelper.from(config.get(KEY_AUTHORIZE).as(Boolean.class)).or(() -> defaults.authorize).asOptional()
                 .ifPresent(builder::authorize);
         OptionalHelper.from(config.get(KEY_AUDIT_EVENT_TYPE).value()).or(() -> defaults.auditEventType).asOptional()
                 .ifPresent(builder::auditEventType);
@@ -235,7 +235,7 @@ public final class SecurityHandler implements Handler {
         }
 
         // optional atn implies atn
-        config.get(KEY_AUTHENTICATION_OPTIONAL).asOptional(Boolean.class).ifPresent(aBoolean -> {
+        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class).ifPresent(aBoolean -> {
             if (aBoolean) {
                 if (!config.get(KEY_AUTHENTICATE).exists()) {
                     builder.authenticate(true);

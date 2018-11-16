@@ -234,12 +234,12 @@ public final class SecurityFeature implements Feature {
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("prematching-authentication").asOptionalBoolean().ifPresent(this::usePrematchingAuthentication);
-            config.get("prematching-authorization").asOptionalBoolean().ifPresent(this::usePrematchingAuthorization);
+            config.get("prematching-authentication").asBoolean().ifPresent(this::usePrematchingAuthentication);
+            config.get("prematching-authorization").asBoolean().ifPresent(this::usePrematchingAuthorization);
             Config myConfig = config.get("defaults");
-            myConfig.get("authorize-annotated-only").asOptionalBoolean().ifPresent(this::authorizeAnnotatedOnly);
+            myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
             myConfig.get("query-params").asOptionalList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
-            myConfig.get("debug").asOptionalBoolean().filter(bool -> bool).ifPresent(bool -> this.debug());
+            myConfig.get("debug").asBoolean().filter(bool -> bool).ifPresent(bool -> this.debug());
             return this;
         }
 

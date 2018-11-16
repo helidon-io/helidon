@@ -22,8 +22,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpRequest;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
@@ -363,9 +365,14 @@ public final class WebSecurity implements Service {
         Config wsConfig = config.get("security.web-server");
         SecurityHandler defaults = SecurityHandler.from(wsConfig.get("defaults"), defaultHandler);
 
-        wsConfig.get("paths").nodeList().ifPresent(configs -> {
+        wsConfig.get("paths").asNodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
-                List<Http.RequestMethod> methods = pathConfig.get("methods").mapList(Http.RequestMethod::create, listOf());
+                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().getValue(listOf())
+                        .stream()
+                        .map(Config::getValue)
+                        .map(Http.RequestMethod::create)
+                        .collect(Collectors.toList());
+
                 String path = pathConfig.get("path")
                         .value()
                         .orElseThrow(() -> new SecurityException(pathConfig

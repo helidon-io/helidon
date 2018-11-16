@@ -53,9 +53,9 @@ public abstract class AbstractDifferentIntMapperServicesTest {
         assertThat(config.as(BigInteger.class), is(BigInteger.valueOf(expected())));
 
         assertThat(config.as(OptionalInt.class).getAsInt(), is(expected()));
-        assertThat(config.asOptionalInt().getAsInt(), is(expected()));
-        assertThat(config.asOptional(Integer.class).get(), is(expected()));
-        assertThat(config.asOptional(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
+        assertThat(config.asInt().getAsInt(), is(expected()));
+        assertThat(configas(Integer.class).get(), is(expected()));
+        assertThat(configas(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
     }
 
 }

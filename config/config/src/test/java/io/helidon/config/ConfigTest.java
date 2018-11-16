@@ -545,11 +545,11 @@ public class ConfigTest {
             assertThat(actual, is(expected));
         }
         {
-            CharSequence actual = config.<CharSequence>asOptional(String.class).orElse(fallback);
+            CharSequence actual = config.<CharSequenceas(String.class).orElse(fallback);
             assertThat(actual, is(expected));
         }
         {
-            CharSequence actual = config.<CharSequence>asOptional(String.class).orElseGet(() -> fallback);
+            CharSequence actual = config.<CharSequenceas(String.class).orElseGet(() -> fallback);
             assertThat(actual, is(expected));
         }
     }

@@ -59,7 +59,7 @@ class PollingStrategyConfigMapper {
 
         return OptionalHelper.from(config.get(TYPE_KEY).asOptionalString() // `type` is specified
                 .flatMap(type -> this.builtin(type, properties, targetType))) // return built-in polling strategy
-                .or(() -> config.get(CLASS_KEY).asOptional(Class.class) // `class` is specified
+                .or(() -> config.get(CLASS_KEY).as(Class.class) // `class` is specified
                         .flatMap(clazz -> custom(clazz, properties, targetType))) // return custom polling strategy
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted polling-strategy configuration."));
@@ -71,7 +71,7 @@ class PollingStrategyConfigMapper {
         final Function<T, Supplier<PollingStrategy>> pollingStrategy;
         switch (type) {
         case REGULAR_TYPE:
-            pollingStrategy = target -> () -> properties.as(PollingStrategies.ScheduledBuilder.class).get();
+            pollingStrategy = target -> () -> properties.as(PollingStrategies.ScheduledBuilder.class).getValue();
             break;
         case WATCH_TYPE:
             pollingStrategy = PollingStrategyConfigMapper::watchSupplier;

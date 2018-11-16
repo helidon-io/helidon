@@ -55,7 +55,7 @@ import io.helidon.webserver.WebServer;
  * as {@link javax.json.JsonObject JsonObject} or {@link javax.json.JsonArray JsonArray}. If registered on the
  * {@code Web Server} {@link Routing}, then all {@link Handler Handlers} can use
  * {@code ServerRequest.}{@link ServerRequest#content() content()}{@code .}
- * {@link Content#as(java.lang.Class) as(...)} and
+ * {@link Content#as(java.lang.Class).as(...)} and
  * {@code ServerResponse.}{@link ServerResponse#send(Object) send()}
  * with {@link JsonStructure JSON} objects.
  *

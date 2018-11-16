@@ -265,8 +265,8 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
         static Builder fromConfig(Config config) {
             Builder builder = new Builder();
 
-            builder.realm(config.get("realm").asString("realm"))
-                    .userStore(config.get("users").asOptional(ConfigUserStore.class)
+            builder.realm(config.get("realm").asString().getValue("realm"))
+                    .userStore(config.get("users").as(ConfigUserStore.class)
                                        .orElseThrow(() -> new HttpAuthException(
                                                "No users configured! Key \"users\" must be in configuration")))
                     .digestAlgorithm(config.get("algorithm")
@@ -278,7 +278,7 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
                                                 .map(String::toCharArray)
                                                 .orElse(randomSecret()));
 
-            config.get("principal-type").asOptional(SubjectType.class).ifPresent(builder::subjectType);
+            config.get("principal-type").as(SubjectType.class).ifPresent(builder::subjectType);
 
             config.get("qop").asOptionalList(HttpDigest.Qop.class).ifPresent(qop -> {
                 if (qop.isEmpty()) {

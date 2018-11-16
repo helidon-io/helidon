@@ -423,12 +423,12 @@ public interface ServerConfiguration extends SocketConfiguration {
             }
             configureSocket(config, defaultSocketBuilder);
 
-            config.get("workers").asOptionalInt().ifPresent(this::workersCount);
+            config.get("workers").asInt().ifPresent(this::workersCount);
 
             // sockets
             Config socketsConfig = config.get("sockets");
             if (socketsConfig.exists()) {
-                for (Config socketConfig : socketsConfig.asNodeList(CollectionsHelper.listOf())) {
+                for (Config socketConfig : socketsConfig.asNodeList().getValue(CollectionsHelper.listOf())) {
                     String socketName = socketConfig.name();
                     sockets.put(socketName, configureSocket(socketConfig, SocketConfiguration.builder()).build());
                 }
@@ -440,8 +440,8 @@ public interface ServerConfiguration extends SocketConfiguration {
                 ExperimentalConfiguration.Builder experimentalBuilder = new ExperimentalConfiguration.Builder();
                 Config http2Config = experimentalConfig.get("http2");
                 if (http2Config.exists()) {
-                    Optional<Boolean> enable = http2Config.get("enable").asOptional(Boolean.class);
-                    Optional<Integer> maxContentLength = http2Config.get("maxContentLength").asOptional(Integer.class);
+                    Optional<Boolean> enable = http2Config.get("enable").asBoolean().value();
+                    Optional<Integer> maxContentLength = http2Config.get("maxContentLength").asInt().value();
                     Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
                     enable.ifPresent(http2Builder::enable);
                     maxContentLength.ifPresent(http2Builder::maxContentLength);
@@ -455,12 +455,12 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         private SocketConfiguration.Builder configureSocket(Config config, SocketConfiguration.Builder soConfigBuilder) {
 
-            config.get("port").asOptionalInt().ifPresent(soConfigBuilder::port);
-            config.get("bind-address").asOptional(String.class).map(this::string2InetAddress)
+            config.get("port").asInt().ifPresent(soConfigBuilder::port);
+            config.get("bind-address").asString().value().map(this::string2InetAddress)
                   .ifPresent(soConfigBuilder::bindAddress);
-            config.get("backlog").asOptionalInt().ifPresent(soConfigBuilder::backlog);
-            config.get("timeout").asOptionalInt().ifPresent(soConfigBuilder::timeoutMillis);
-            config.get("receive-buffer").asOptionalInt().ifPresent(soConfigBuilder::receiveBufferSize);
+            config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
+            config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
+            config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);
 
             // ssl
             Config sslConfig = config.get("ssl");

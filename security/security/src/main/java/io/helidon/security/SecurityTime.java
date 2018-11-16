@@ -191,16 +191,16 @@ public class SecurityTime {
         public Builder fromConfig(Config config) {
             // modification, time flows as usual
             config.get("time-zone").asOptionalString().map(ZoneId::of).ifPresent(this::timeZone);
-            config.get("shift-by-seconds").asOptionalLong().ifPresent(this::shiftBySeconds);
+            config.get("shift-by-seconds").asLong().ifPresent(this::shiftBySeconds);
 
             // explicit values, specific value is fixed in time
-            config.get("year").asOptionalLong().ifPresent(it -> value(ChronoField.YEAR, it));
-            config.get("month").asOptionalLong().ifPresent(it -> value(ChronoField.MONTH_OF_YEAR, it));
-            config.get("day-of-month").asOptionalLong().ifPresent(it -> value(ChronoField.DAY_OF_MONTH, it));
-            config.get("hour-of-day").asOptionalLong().ifPresent(it -> value(ChronoField.HOUR_OF_DAY, it));
-            config.get("minute").asOptionalLong().ifPresent(it -> value(ChronoField.MINUTE_OF_HOUR, it));
-            config.get("second").asOptionalLong().ifPresent(it -> value(ChronoField.SECOND_OF_MINUTE, it));
-            config.get("millisecond").asOptionalLong().ifPresent(it -> value(ChronoField.MILLI_OF_SECOND, it));
+            config.get("year").asLong().ifPresent(it -> value(ChronoField.YEAR, it));
+            config.get("month").asLong().ifPresent(it -> value(ChronoField.MONTH_OF_YEAR, it));
+            config.get("day-of-month").asLong().ifPresent(it -> value(ChronoField.DAY_OF_MONTH, it));
+            config.get("hour-of-day").asLong().ifPresent(it -> value(ChronoField.HOUR_OF_DAY, it));
+            config.get("minute").asLong().ifPresent(it -> value(ChronoField.MINUTE_OF_HOUR, it));
+            config.get("second").asLong().ifPresent(it -> value(ChronoField.SECOND_OF_MINUTE, it));
+            config.get("millisecond").asLong().ifPresent(it -> value(ChronoField.MILLI_OF_SECOND, it));
 
             return this;
         }

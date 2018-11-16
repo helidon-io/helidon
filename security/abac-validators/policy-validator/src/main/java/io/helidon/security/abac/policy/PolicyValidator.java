@@ -352,7 +352,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
              */
             public Builder from(Config config) {
 
-                config.get("inherit").asOptionalBoolean().ifPresent(this::inherit);
+                config.get("inherit").asBoolean().ifPresent(this::inherit);
                 config.get("statement").asOptionalString().ifPresent(this::statement);
 
                 return this;

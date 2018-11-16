@@ -256,7 +256,7 @@ public final class TokenHandler {
         public Builder fromConfig(Config config) {
             config.get("header").value().ifPresent(this::tokenHeader);
             config.get("prefix").value().ifPresent(this::tokenPrefix);
-            config.get("regexp").asOptional(Pattern.class).ifPresent(this::tokenPattern);
+            config.get("regexp").as(Pattern.class).ifPresent(this::tokenPattern);
             config.get("format").value().ifPresent(this::tokenFormat);
 
             return this;

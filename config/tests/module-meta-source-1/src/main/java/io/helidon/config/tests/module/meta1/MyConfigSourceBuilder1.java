@@ -64,7 +64,7 @@ public class MyConfigSourceBuilder1
 
     @Override
     protected MyConfigSourceBuilder1 init(Config metaConfig) {
-        metaConfig.get("myProp3").asOptionalBoolean().ifPresent(this::myProp3);
+        metaConfig.get("myProp3").asBoolean().ifPresent(this::myProp3);
         return super.init(metaConfig);
     }
 

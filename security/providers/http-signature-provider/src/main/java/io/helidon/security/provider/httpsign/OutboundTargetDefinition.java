@@ -271,9 +271,9 @@ public class OutboundTargetDefinition {
 
             // mandatory
             builder.keyId(config.get("key-id").asString());
-            config.get("header").asOptional(HttpSignHeader.class).ifPresent(builder::header);
-            config.get("sign-headers").asOptional(SignedHeadersConfig.class).ifPresent(builder::signedHeaders);
-            config.get("private-key").asOptional(KeyConfig.class).ifPresent(builder::privateKeyConfig);
+            config.get("header").as(HttpSignHeader.class).ifPresent(builder::header);
+            config.get("sign-headers").as(SignedHeadersConfig.class).ifPresent(builder::signedHeaders);
+            config.get("private-key").as(KeyConfig.class).ifPresent(builder::privateKeyConfig);
             config.get("hmac.secret").value().ifPresent(builder::hmacSecret);
 
             // last, as we configure defaults based on configuration

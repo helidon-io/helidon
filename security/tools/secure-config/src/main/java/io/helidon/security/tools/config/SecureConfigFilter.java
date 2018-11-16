@@ -80,7 +80,7 @@ public final class SecureConfigFilter implements ConfigFilter {
 
             this.requireEncryption = OptionalHelper.from(CryptUtil.getEnv(ConfigProperties.REQUIRE_ENCRYPTION_ENV_VARIABLE)
                                                                  .map(Boolean::parseBoolean))
-                    .or(() -> config.get(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY).asOptional(Boolean.class))
+                    .or(() -> config.get(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY).asBoolean().value())
                     .asOptional()
                     .orElse(true);
 
