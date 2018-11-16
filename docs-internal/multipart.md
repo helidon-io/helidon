@@ -14,11 +14,11 @@ This model enables advanced streaming use-cases with large size parts.
 
 Supporting multipart in the webserver means adding support for a new media type. This is done by adding a new entity type with readers and writers.
 
-Each of the 2 models above will be represented by different entity types: `BufferedMultiPart` and `MultiPart`.
+Each of the 2 models above will be represented by different entity types: `MultiPart` and `StreamingMultiPart`.
 
 ```java
 // buffered model
-request.content().as(BufferedMultiPart.class).thenAccept(/* ... */);
+request.content().as(MultiPart.class).thenAccept(/* ... */);
 ```
 
 ```java
@@ -47,7 +47,7 @@ Routing.builder()
 The following example consumes each part content as a `JsonObject`:
 
 ```java
-request.content().as(BufferedMultiPart.class).thenAccept(mp -> {
+request.content().as(MultiPart.class).thenAccept(mp -> {
     for(BodyPart bodyPart : mp.bodyParts()){
         JsonObject json = bodyPart.content().as(JsonObject.class);
         System.out.println("File uploaded: " + bodyPart.headers().filename());
@@ -62,7 +62,7 @@ request.content().as(BufferedMultiPart.class).thenAccept(mp -> {
 The following example echoes the multipart request into the response:
 
 ```java
-request.content().as(BufferedMultiPart.class).thenAccept(mp -> {
+request.content().as(MultiPart.class).thenAccept(mp -> {
     response.send(mp);
 });
 ```
@@ -70,7 +70,7 @@ request.content().as(BufferedMultiPart.class).thenAccept(mp -> {
 The following example returns a multipart response from a list of `JsonObject`:
 
 ```java
-BufferedMultiPart mp = BufferedMultiPart.create(
+MultiPart mp = MultiPart.create(
     Json.createObjectBuilder().add("foo", "bar").build(),
     Json.createObjectBuilder().add("alice", "bob").build());
 response.send(mp);
@@ -81,7 +81,7 @@ response.send(mp);
 The following example consumes each part content as a `JsonObject`:
 
 ```java
-req.content().as(MultiPart.class).thenAccept((multiPart) -> {
+req.content().as(StreamingMultiPart.class).thenAccept((multiPart) -> {
     multiPart.subscribe(new Flow.Subscriber<BodyPart>(){
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
@@ -113,7 +113,7 @@ req.content().as(MultiPart.class).thenAccept((multiPart) -> {
 The following example consumes each part content using reactive stream subscribers, `ServerFileWriter` is inspired from the streaming example at `webserver/examples/streaming`:
 
 ```java
-req.content().as(MultiPart.class).thenAccept((multiPart) -> {
+req.content().as(StreamingMultiPart.class).thenAccept((multiPart) -> {
     multiPart.subscribe(new Flow.Subscriber<BodyPart>(){
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
@@ -145,7 +145,7 @@ req.content().as(MultiPart.class).thenAccept((multiPart) -> {
 The following example returns a multipart response using publishers of `Datachunk`, `ServerFileReader` is inspired from the streaming example at `webserver/examples/streaming`:
 
 ```java
-MultiPart mp = MultiPart.builder()
+StreamingMultiPart mp = StreamingMultiPart.builder()
     .bodyPart(BodyPart.create(
         BodyPartHeaders.builder().
             .contentType(MediaType.APPLICATION_JSON)
@@ -202,9 +202,9 @@ public interface BodyPart {
 ```
 
 ```java
-public interface MultiPart extends BodyPart, Publisher<BodyPart> {
+public interface StreamingMultiPart extends BodyPart, Publisher<BodyPart> {
 
-    static <T> MultiPart create(T ... entities){
+    static <T> StreamingMultiPart create(T ... entities){
         Builder builder = builder();
         for(T entity : entities){
             builder.bodyPart(BodyPart.create(entity));
@@ -212,11 +212,11 @@ public interface MultiPart extends BodyPart, Publisher<BodyPart> {
         return builder.build();
     }
 
-    static MultiPart create(Publisher<BodyPart> publisher){
+    static StreamingMultiPart create(Publisher<BodyPart> publisher){
         return builder().bodyParts(publisher).builder();
     }
 
-    static MultiPart create(BodyPart ... bodyParts){
+    static StreamingMultiPart create(BodyPart ... bodyParts){
         Builder builder = builder();
         for(BodyPart bodyPart : bodyParts){
             builder.bodyPart(bodyPart);
@@ -225,10 +225,10 @@ public interface MultiPart extends BodyPart, Publisher<BodyPart> {
     }
 
     static Builder builder(){
-        return new MultiPartBuilder();
+        return new StreamingMultiPartBuilder();
     }
 
-    static interface Builder extends io.helidon.common.Builder<MultiPart> {
+    static interface Builder extends io.helidon.common.Builder<StreamingMultiPart> {
 
         Builder bodyPart(BodyPart bodyPart);
 
@@ -236,13 +236,13 @@ public interface MultiPart extends BodyPart, Publisher<BodyPart> {
 
         Builder bodyParts(Publisher<BodyPart> bodyParts);
 
-        MultiPart build();
+        StreamingMultiPart build();
     }
 }
 ```
 
 ```java
-public interface BufferedMultiPart {
+public interface MultiPart {
 
     Iterable<BodyPart> bodyParts();
 
@@ -255,12 +255,12 @@ public interface BufferedMultiPart {
     }
 
     static Builder builder(){
-        return new BufferedMultiPartBuilder();
+        return new MultiPartBuilder();
     }
 
     static interface Builder extends MultiPart.Builder {
 
-        BufferedMultiPart build();
+        MultiPart build();
     }
 }
 ```
