@@ -15,6 +15,7 @@ Summary table:
 | Java Beans        | None          | Low                | None          | High    |
 | No reflection as()| None          | High               | None          | High    |
 | Remove ConfigMapper| Medium       | None               | Medium        | High    |
+| Source is Supplier| Compatible    | None               | Low or None   | Medium  |
 
 ### Too Many Methods
 Too many methods are part of public API - this makes it very complicated to test, maintain and (sometimes) use
@@ -167,3 +168,15 @@ config.as(SomeClass::new);
 
 ### Remove ConfigMapper
 Remove ConfigMapper interface, as it is in fact a Function<Config, T>.
+
+### Source is Supplier
+Currently the ConfigSource interface extends Supplier and default implementation
+of the `get()` method returns `this`.
+Reason behind this (probably) is to have a single set of methods on `Builder`, that
+only accept `Supplier<ConfigSource>` and you can send in either a `Builder<? extends ConfigSource`
+or an actual instance of a `ConfigSource`.
+
+This is confusing and it is hard to clearly understand the behavior of such methods.
+
+We should introduce builder methods for `ConfigSource` instances and remove the `Supplier` from
+`ConfigSource` interface.  
