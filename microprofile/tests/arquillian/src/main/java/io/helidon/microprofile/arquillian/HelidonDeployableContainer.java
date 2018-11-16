@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
@@ -195,21 +196,24 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         configSources.add(ConfigSources.file(context.deployDir.resolve("application.yaml").toString()).optional());
         configSources.add(ConfigSources.classpath("tck-application.yaml").optional());
 
-        Config.Builder builder = Config.builder();
+        // workaround for tck-fault-tolerance
+        if (containerConfig.getReplaceConfigSourcesWithMp()) {
+            URL mpConfigProps = context.classLoader.getResource("META-INF/microprofile-config.properties");
+            if (mpConfigProps != null) {
+                try {
+                    Properties props = new Properties();
+                    props.load(mpConfigProps.openStream());
+                    configSources.clear();
+                    configSources.add(ConfigSources.from(props));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
 
-        //        URL mpConfigProps = context.classLoader.getResource("META-INF/microprofile-config.properties");
-        //        if (mpConfigProps != null) {
-        //            try {
-        //                Properties props = new Properties();
-        //                props.load(mpConfigProps.openStream());
-        //                configSources.add(ConfigSources.from(props));
-        //            } catch (IOException e) {
-        //                throw new RuntimeException(e);
-        //            }
-        //        }
-
-        builder.sources(configSources);
-        Config config = builder.build();
+        Config config = Config.builder()
+                .sources(configSources)
+                .build();
 
         context.runnerClass = context.classLoader
                 .loadClass("io.helidon.microprofile.arquillian.ServerRunner");
@@ -292,7 +296,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
             // Try to clean up the deploy directory
             if (context.deployDir != null) {
                 try {
-                    //noinspection ResultOfMethodCallIgnored
                     Files.walk(context.deployDir)
                             .sorted(Comparator.reverseOrder())
                             .forEach(path -> {

@@ -24,7 +24,8 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
 /**
- * TODO javadoc.
+ * TCKs use addition when creating URL for a client. The default Arquillian implementation returns url without the trailing
+ * /.
  */
 public class UrlResourceProvider implements ResourceProvider {
     @Override

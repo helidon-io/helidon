@@ -55,7 +55,7 @@ class ServerRunner {
                 .port(containerConfig.getPort())
                 .config(config);
 
-        handleClasses(cl, classNames, builder);
+        handleClasses(cl, classNames, builder, containerConfig.getAddResourcesToApps());
 
         server = builder.build();
         // this is a blocking operation, we will be released once the server is started
@@ -71,7 +71,11 @@ class ServerRunner {
         }
     }
 
-    private void handleClasses(ClassLoader classLoader, Set<String> classNames, Server.Builder builder) {
+    private void handleClasses(ClassLoader classLoader,
+                               Set<String> classNames,
+                               Server.Builder builder,
+                               boolean addResourcesToApps) {
+
         // first create classes end get all applications
         List<Class<?>> applicationClasses = new LinkedList<>();
         List<Class<?>> resourceClasses = new LinkedList<>();
@@ -94,15 +98,17 @@ class ServerRunner {
             }
         }
 
-        //TODO this should be configurable - currently required by JWT-Auth spec
-        for (Class<?> aClass : applicationClasses) {
-            ResourceConfig resourceConfig = ResourceConfig.forApplicationClass((Class<? extends Application>) aClass);
-            resourceClasses.forEach(resourceConfig::register);
-            builder.addApplication(getContextRoot(aClass), resourceConfig);
-        }
-        if (applicationClasses.isEmpty()) {
-            for (Class<?> resourceClass : resourceClasses) {
-                builder.addResourceClass(resourceClass);
+        // workaround for tck-jwt-auth
+        if (addResourcesToApps) {
+            for (Class<?> aClass : applicationClasses) {
+                ResourceConfig resourceConfig = ResourceConfig.forApplicationClass((Class<? extends Application>) aClass);
+                resourceClasses.forEach(resourceConfig::register);
+                builder.addApplication(getContextRoot(aClass), resourceConfig);
+            }
+            if (applicationClasses.isEmpty()) {
+                for (Class<?> resourceClass : resourceClasses) {
+                    builder.addResourceClass(resourceClass);
+                }
             }
         }
     }

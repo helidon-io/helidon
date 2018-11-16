@@ -23,10 +23,14 @@ import org.jboss.arquillian.container.spi.client.container.ContainerConfiguratio
  * Configuration for the Helidon arquillian container.
  *
  * <ul>
- *     <li>appClassName: (Optional) used to load a specific Application in the container</li>
- *     <li>resourceClassName: (Optional) used to load a specific Resource in the container</li>
- *     <li>port: (Optional) defaults to 8080</li>
- *     <li>deleteTmp: (Optional) defaults to true: whether to remove temporary directories of tests or leave them in temp</li>
+ * <li>appClassName: (Optional) used to load a specific Application in the container</li>
+ * <li>resourceClassName: (Optional) used to load a specific Resource in the container</li>
+ * <li>port: (Optional) defaults to 8080</li>
+ * <li>deleteTmp: (Optional) defaults to true: whether to remove temporary directories of tests or leave them in temp</li>
+ * <li>addResourcesToApps: (Optional) defaults to false: whether to add resources classes to application (e.g. the application
+ * is empty)</li>
+ * <li>replaceConfigSourcesWithMp: (Optional) defaults to false: whether to replace config sources with microprofile if it
+ * exists</li>
  * </ul>
  */
 public class HelidonContainerConfiguration implements ContainerConfiguration {
@@ -34,6 +38,8 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private String resourceClassName = null;
     private int port = 8080;
     private boolean deleteTmp = true;
+    private boolean addResourcesToApps = false;
+    private boolean replaceConfigSourcesWithMp = false;
 
     public String getApp() {
         return appClassName;
@@ -65,6 +71,22 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setDeleteTmp(boolean b) {
         this.deleteTmp = b;
+    }
+
+    public boolean getAddResourcesToApps() {
+        return addResourcesToApps;
+    }
+
+    public void setAddResourcesToApps(boolean addResourcesToApps) {
+        this.addResourcesToApps = addResourcesToApps;
+    }
+
+    public void setReplaceConfigSourcesWithMp(boolean replaceConfigSourcesWithMp) {
+        this.replaceConfigSourcesWithMp = replaceConfigSourcesWithMp;
+    }
+
+    public boolean getReplaceConfigSourcesWithMp() {
+        return replaceConfigSourcesWithMp;
     }
 
     @Override
