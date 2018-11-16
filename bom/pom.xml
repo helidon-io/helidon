@@ -273,6 +273,58 @@
                 <artifactId>helidon-common-key-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- integrations -->
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-config-source</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-system-kubernetes</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-system-oracle-accs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jedis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
