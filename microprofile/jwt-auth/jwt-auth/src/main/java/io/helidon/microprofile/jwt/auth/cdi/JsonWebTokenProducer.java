@@ -16,6 +16,7 @@
 package io.helidon.microprofile.jwt.auth.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.ws.rs.core.Context;
@@ -28,13 +29,14 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 /**
  * TODO javadoc.
  */
-@ApplicationScoped
+// must be in RequestScoped - ApplicationScoped fails some tests
+@RequestScoped
 public class JsonWebTokenProducer {
     @Context
     private SecurityContext securityContext;
 
     @Produces
-    public JsonWebToken produceToken(InjectionPoint ip) {
+    public JsonWebToken produceToken() {
         return securityContext.getUserPrincipal()
                 .map(JsonWebToken.class::cast)
                 .orElse(null);
@@ -42,7 +44,7 @@ public class JsonWebTokenProducer {
 
     @Produces
     @Impl
-    public JsonWebTokenImpl produceTokenImpl(InjectionPoint ip) {
-        return (JsonWebTokenImpl) produceToken(ip);
+    public JsonWebTokenImpl produceTokenImpl() {
+        return (JsonWebTokenImpl) produceToken();
     }
 }
