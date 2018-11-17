@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.nio.file.Path;
+import java.nio.file.WatchEvent.Modifier;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -26,7 +27,6 @@ import io.helidon.config.internal.FilesystemWatchPollingStrategy;
 import io.helidon.config.internal.ScheduledPollingStrategy;
 import io.helidon.config.internal.ScheduledPollingStrategy.RegularRecurringPolicy;
 import io.helidon.config.spi.PollingStrategy;
-import java.nio.file.WatchEvent.Modifier;
 
 /**
  * Built-in {@link io.helidon.config.spi.PollingStrategy} implementations.
@@ -164,7 +164,7 @@ public final class PollingStrategies {
         }
 
         /**
-         * Add modifiers to be used when registering the {@link WatchService}.
+         * Add modifiers to be used when registering the {@link java.nio.file.WatchService}.
          * See {@link Path#register(WatchService, WatchEvent.Kind[], WatchEvent.Modifier[])
          * Path.register}.
          *
@@ -184,7 +184,7 @@ public final class PollingStrategies {
         public PollingStrategy build() {
             FilesystemWatchPollingStrategy strategy =
                     new FilesystemWatchPollingStrategy(path, executor);
-            if(modifiers != null && modifiers.length > 0){
+            if (modifiers != null && modifiers.length > 0) {
                 strategy.initWatchServiceModifiers(modifiers);
             }
             return strategy;
