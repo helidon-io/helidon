@@ -52,7 +52,7 @@ request.content().asList(JsonObject.class)
 Get the request content as `Pet<Dog>`:
 
 ```java
-request.content().as(new GenericType(Pet<Dog>)(){})
+request.content().as(new GenericType<Pet<Dog>>(){})
     .thenAccept((Pet<Dog> pet) ->  { /* ... */ });
 ```
 
