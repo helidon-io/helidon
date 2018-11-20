@@ -28,12 +28,12 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 /**
  * {@link Source} of configuration.
  *
- * @see io.helidon.config.Config.Builder#sources(Supplier)
- * @see io.helidon.config.Config.Builder#sources(Supplier, Supplier)
- * @see io.helidon.config.Config.Builder#sources(Supplier, Supplier, Supplier)
- * @see io.helidon.config.Config.Builder#sources(java.util.List)
- * @see io.helidon.config.spi.AbstractConfigSource
- * @see io.helidon.config.spi.AbstractParsableConfigSource
+ * @see Config.Builder#sources(Supplier)
+ * @see Config.Builder#sources(Supplier, Supplier)
+ * @see Config.Builder#sources(Supplier, Supplier, Supplier)
+ * @see Config.Builder#sources(java.util.List)
+ * @see AbstractConfigSource
+ * @see AbstractParsableConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
 @FunctionalInterface
@@ -64,7 +64,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * system ignores the {@code class} information.
      * <p>
      * As the config system loads configuration it uses mappers to convert the
-     * raw data into Java types. See {@link io.helidon.config.ConfigMapper} for
+     * raw data into Java types. See {@link ConfigMapperProvider} for
      * details about mapping.
      * <p>
      * The meta-config can modify a {@code type} or {@code class} source
@@ -251,7 +251,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
     /**
      * Initialize the config source with a {@link ConfigContext}.
      * <p>
-     * The method is executed during {@link io.helidon.config.Config} bootstrapping by {@link io.helidon.config.Config.Builder}.
+     * The method is executed during {@link Config} bootstrapping by {@link Config.Builder}.
      *
      * @param context a config context
      */

@@ -363,7 +363,9 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          */
         protected B init(Config metaConfig) {
             //optional / mandatory
-            metaConfig.get(OPTIONAL_KEY).asBoolean()
+            metaConfig.get(OPTIONAL_KEY)
+                    .asBoolean()
+                    .value()
                     .filter(value -> value) //filter `true` only
                     .ifPresent(value -> optional());
             //polling-strategy
@@ -371,7 +373,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
                     .ifExists(cfg -> pollingStrategy(PollingStrategyConfigMapper.instance().apply(cfg, targetType)));
             //retry-policy
             metaConfig.get(RETRY_POLICY_KEY)
-                    as(RetryPolicy.class)
+                    .as(RetryPolicy.class)
                     .ifPresent(this::retryPolicy);
 
             return thisBuilder;

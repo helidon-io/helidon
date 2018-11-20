@@ -176,7 +176,7 @@ public class ValueResolvingFilter implements ConfigFilter {
         Matcher m = PATTERN_REFERENCE.matcher(template);
         final StringBuffer sb = new StringBuffer();
         while (m.find()) {
-            m.appendReplacement(sb, Matcher.quoteReplacement(root.get(m.group(1)).asString()));
+            m.appendReplacement(sb, Matcher.quoteReplacement(root.get(m.group(1)).getValue()));
         }
         m.appendTail(sb);
         // remove all backslash that encodes ${...}

@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -31,8 +32,8 @@ class ConfigMissingImpl extends AbstractConfigImpl {
 
     ConfigMissingImpl(ConfigKeyImpl prefix,
                       ConfigKeyImpl key,
-                      ConfigFactory factory) {
-        super(Type.MISSING, prefix, key, factory);
+                      ConfigFactory factory, ConfigMapperManager mapperManager) {
+        super(Type.MISSING, prefix, key, factory, mapperManager);
     }
 
     @Override
@@ -46,23 +47,28 @@ class ConfigMissingImpl extends AbstractConfigImpl {
     }
 
     @Override
-    public <T> Optional<T> asOptional(Class<? extends T> type) throws ConfigMappingException {
-        return Optional.empty();
+    public <T> ConfigValue<T> as(Class<T> type) {
+        return ConfigValues.empty(this);
     }
 
     @Override
-    public Optional<List<Config>> nodeList() throws ConfigMappingException {
-        return Optional.empty();
+    public <T> ConfigValue<T> as(Function<Config, T> mapper) {
+        return ConfigValues.empty(this);
     }
 
     @Override
-    public <T> Optional<List<T>> asOptionalList(Class<? extends T> type) throws ConfigMappingException {
-        return Optional.empty();
+    public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
+        return ConfigValues.empty(this);
     }
 
     @Override
-    public Optional<Map<String, String>> asOptionalMap() {
-        return Optional.empty();
+    public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+        return ConfigValues.empty(this);
+    }
+
+    @Override
+    public ConfigValue<Map<String, String>> asMap() {
+        return ConfigValues.empty(this);
     }
 
     @Override

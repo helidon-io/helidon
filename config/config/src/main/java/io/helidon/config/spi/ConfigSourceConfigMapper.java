@@ -24,11 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
@@ -41,7 +41,7 @@ import io.helidon.config.internal.UrlConfigSource;
 /**
  * Mapper to convert meta-configuration to a {@link ConfigSource} instance.
  */
-class ConfigSourceConfigMapper implements ConfigMapper<ConfigSource> {
+class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
 
     private static final String META_CONFIG_SOURCES_PROPERTIES = "META-INF/resources/meta-config-sources.properties";
 
@@ -97,12 +97,15 @@ class ConfigSourceConfigMapper implements ConfigMapper<ConfigSource> {
     @Override
     public ConfigSource apply(Config config) throws ConfigMappingException, MissingValueException {
         Config properties = config.get(PROPERTIES_KEY) // use properties config node
-                .node().orElse(Config.empty()); // or empty config node
+                .asNode().value().orElse(Config.empty()); // or empty config node
 
-        return OptionalHelper.from(config.get(TYPE_KEY).asOptionalString() // `type` is specified
+        return OptionalHelper.from(config.get(TYPE_KEY)
+                                           .value() // `type` is specified
                 .flatMap(type -> OptionalHelper.from(builtin(type, properties)) // return built-in source
                         .or(() -> providers(type, properties)).asOptional())) // or use sources - custom type to class mapping
-                .or(() -> config.get(CLASS_KEY).as(Class.class) // `class` is specified
+                .or(() -> config.get(CLASS_KEY)
+                        .as(Class.class) // `class` is specified
+                        .value()
                         .flatMap(clazz -> custom(clazz, properties))) // return custom source
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted source configuration."));
@@ -110,6 +113,7 @@ class ConfigSourceConfigMapper implements ConfigMapper<ConfigSource> {
 
     private Optional<ConfigSource> builtin(String type, Config properties) {
         final ConfigSource configSource;
+
         switch (type) {
         case SYSTEM_PROPERTIES_TYPE:
             configSource = ConfigSources.systemProperties();
@@ -118,20 +122,20 @@ class ConfigSourceConfigMapper implements ConfigMapper<ConfigSource> {
             configSource = ConfigSources.environmentVariables();
             break;
         case PREFIXED_TYPE:
-            configSource = ConfigSources.prefixed(properties.get(KEY_KEY).asString(""),
-                                                  properties.as(ConfigSource.class));
+            configSource = ConfigSources.prefixed(properties.get(KEY_KEY).getValue(""),
+                                                  properties.as(ConfigSource.class).getValue());
             break;
         case CLASSPATH_TYPE:
-            configSource = properties.as(ClasspathConfigSource.class);
+            configSource = properties.as(ClasspathConfigSource.class).getValue();
             break;
         case FILE_TYPE:
-            configSource = properties.as(FileConfigSource.class);
+            configSource = properties.as(FileConfigSource.class).getValue();
             break;
         case DIRECTORY_TYPE:
-            configSource = properties.as(DirectoryConfigSource.class);
+            configSource = properties.as(DirectoryConfigSource.class).getValue();
             break;
         case URL_TYPE:
-            configSource = properties.as(UrlConfigSource.class);
+            configSource = properties.as(UrlConfigSource.class).getValue();
             break;
         default:
             configSource = null;
@@ -146,20 +150,24 @@ class ConfigSourceConfigMapper implements ConfigMapper<ConfigSource> {
     }
 
     private Optional<ConfigSource> custom(Class<?> clazz, Config properties) {
-        final ConfigSource configSource;
-        if (ConfigSource.class.isAssignableFrom(clazz)) {
-            configSource = properties.as((Class<ConfigSource>) clazz);
-        } else {
-            configSource = properties.map(ConfigMappers.from(ConfigSource.class, clazz));
+        Object source = properties.as(clazz).getValue();
+
+        if (source instanceof ConfigSource) {
+            return Optional.of((ConfigSource)source);
         }
-        return Optional.of(configSource);
+
+        throw new ConfigException("Failed to process configuration metadata, configured class " + clazz.getName() + " does "
+                                          + "not implement ConfigSource");
     }
 
     /**
      * Singleton holder for {@link ConfigSourceConfigMapper}.
      */
-    static class SingletonHolder {
+    static final class SingletonHolder {
         private static final ConfigSourceConfigMapper INSTANCE = new ConfigSourceConfigMapper();
+
+        private SingletonHolder() {
+        }
     }
 
 }

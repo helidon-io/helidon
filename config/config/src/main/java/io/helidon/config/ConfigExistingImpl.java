@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
@@ -42,7 +43,7 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
                        ConfigFilter filter,
                        ConfigFactory factory,
                        ConfigMapperManager mapperManager) {
-        super(type, prefix, key, factory);
+        super(type, prefix, key, factory, mapperManager);
         this.filter = filter;
 
         Objects.requireNonNull(node, "node argument is null.");
@@ -70,26 +71,23 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
     }
 
     @Override
-    public final <T> Optional<T> asOptional(Class<? extends T> type) throws ConfigMappingException {
-        try {
-            return Optional.ofNullable(mapperManager.map(type, this));
-        } catch (MissingValueException ignored) {
-            // if we are missing a value, we return empty, should not propagate it further!
-            return Optional.empty();
-        }
+    public <T> ConfigValue<T> as(Class<T> type) {
+        return ConfigValues.create(this, type, mapperManager);
     }
 
     @Override
-    public final Optional<Map<String, String>> asOptionalMap() {
-        Map map = mapperManager.map(Map.class, this);
-        if (map instanceof ConfigMappers.StringMap) {
-            return Optional.of((ConfigMappers.StringMap) map);
-        }
-        return Optional.of(new ConfigMappers.StringMap(map));
+    public <T> ConfigValue<T> as(Function<Config, T> mapper) {
+        return ConfigValues.create(this, mapper);
+    }
+
+    @Override
+    public ConfigValue<Map<String, String>> asMap() {
+        return ConfigValues.createMap(this, mapperManager);
     }
 
     protected final N getNode() {
         return node;
     }
+
 
 }

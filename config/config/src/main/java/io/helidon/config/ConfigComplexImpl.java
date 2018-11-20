@@ -17,9 +17,8 @@
 package io.helidon.config;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.internal.ConfigKeyImpl;
@@ -42,35 +41,40 @@ abstract class ConfigComplexImpl<N extends ConfigNode> extends ConfigExistingImp
     }
 
     @Override
-    public final <T> Optional<List<T>> asOptionalList(Class<? extends T> type) throws ConfigMappingException {
-        try {
-            return nodeList()
-                    .map(list -> list.stream()
-                            .map(config -> config.as(type))
-                            .collect(Collectors.toList()));
-        } catch (MissingValueException | ConfigMappingException ex) {
-            throw new ConfigMappingException(key(),
-                                             "Error to map complex node item to list. " + ex.getLocalizedMessage(),
-                                             ex);
-        }
+    public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
+        return ConfigValues.createList(this,
+                                   config -> config.as(type),
+                                   config -> config.asList(type));
+    }
+
+    @Override
+    public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+        return ConfigValues.createList(this,
+                                   config -> config.as(mapper),
+                                   config -> config.asList(mapper));
     }
 
     @Override
     public final Stream<Config> traverse(Predicate<Config> predicate) {
-        return asNodeList().stream()
-                .filter(predicate)
-                .map(node -> traverseSubNodes(node, predicate))
-                .reduce(Stream.empty(), Stream::concat);
+        return asNodeList().value()
+                .map(list -> list.stream()
+                        .filter(predicate)
+                        .map(node -> traverseSubNodes(node, predicate))
+                        .reduce(Stream.empty(), Stream::concat))
+                .orElseThrow(MissingValueException.supplierForKey(key()));
+
     }
 
-    private static Stream<Config> traverseSubNodes(Config config, Predicate<Config> predicate) {
+    private Stream<Config> traverseSubNodes(Config config, Predicate<Config> predicate) {
         if (config.type().isLeaf()) {
             return Stream.of(config);
         } else {
-            return config.asNodeList().stream()
-                    .filter(predicate)
-                    .map(node -> traverseSubNodes(node, predicate))
-                    .reduce(Stream.of(config), Stream::concat);
+            return config.asNodeList().value()
+                    .map(list -> list.stream()
+                            .filter(predicate)
+                            .map(node -> traverseSubNodes(node, predicate))
+                            .reduce(Stream.of(config), Stream::concat))
+                    .orElseThrow(MissingValueException.supplierForKey(key()));
         }
     }
 

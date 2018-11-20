@@ -33,7 +33,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
 public class Mappers2Priority50ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
-    public Map<Class<?>, ConfigMapper<?>> getMappers() {
+    public Map<Class<?>, Function<Config, ?>> getMappers() {
         return CollectionsHelper.mapOf(OptionalInt.class, new OptionalIntConfigMapper(),
                       Integer.class, new IntegerConfigMapper(),
                       BigInteger.class, new BigIntegerConfigMapper());

@@ -72,7 +72,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
     public static FileConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (FileConfigSource) new FileBuilder(metaConfig.get(PATH_KEY).as(Path.class))
+        return (FileConfigSource) new FileBuilder(metaConfig.get(PATH_KEY).as(Path.class).getValue())
                 .init(metaConfig)
                 .build();
     }

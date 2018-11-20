@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -87,7 +88,6 @@ import io.helidon.config.spi.OverrideSource;
  * </tr>
  * <tr>
  * <td>{@link Builder#addMapper}</td>
- * <td>{@link ConfigMapper}</td>
  * <td>Implements conversion from a {@code Config} node (typically with
  * children) to an application-specific Java type.</td>
  * </tr>
@@ -136,7 +136,7 @@ import io.helidon.config.spi.OverrideSource;
  * }</pre>
  * <p>
  * To retrieve children of a config node use
- * {@link #nodeList()}, {@link #asNodeList()} or {@link #asNodeList(List)}
+ * {@link #asNodeList()}
  * <ul>
  * <li>on an {@link Type#OBJECT object} node to get all object members,</li>
  * <li>on a {@link Type#LIST list} node to get all list elements.</li>
@@ -181,7 +181,7 @@ import io.helidon.config.spi.OverrideSource;
  * }</pre>
  * </ul>
  * <h3>Using Built-in and Custom Mappers</h3>
- * Each {@code as*} method delegates to a {@link ConfigMapper} to convert a
+ * Each {@code as*} method delegates to a conversion function to convert a
  * config node to a type. The config system provides mappers for primitive
  * datatypes, {@code List}s, and {@code Map}s, and automatically registers them
  * with each {@code Config.Builder} instance.
@@ -189,11 +189,11 @@ import io.helidon.config.spi.OverrideSource;
  * To deal with application-specific types, the application can provide its own
  * mapping logic by:
  * <ul>
- * <li>invoking one of the {@link Config#map} method variants, </li>
- * <li>adding custom {@code ConfigMapper} implementations using the
+ * <li>invoking the {@link Config#as(Function)} method variants, </li>
+ * <li>adding custom mapping function implementations using the
  * {@link Builder#addMapper} method,</li>
  * <li>registering custom mappers using the Java service loader mechanism. (See
- * {@link ConfigMapper} for details.)
+ * {@link ConfigMapperProvider} for details.)
  * </li>
  * </ul>
  * <p>
@@ -206,10 +206,11 @@ import io.helidon.config.spi.OverrideSource;
  * {@code ConfigMapper}. The {@link ConfigMappers} class implements many useful
  * conversions; check there before writing your own custom mapper.
  * <p>
- * If there is no explicitly registered {@link ConfigMapper} instance in a
- * {@link Builder} for converting a given type then the config system uses
- * generic mapping. See {@link ConfigMapperManager} for details on how generic
- * mapping works.
+ * If there is no explicitly registered mapping function in a
+ * {@link Builder} for converting a given type then the config system
+ * throws {@link ConfigMappingException}, unless you use the config beans support,
+ * that can handle classes that fulfill some requirements (see documentation).
+ *
  * <h2><a name="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
@@ -678,6 +679,22 @@ public interface Config extends ConfigValue<String> {
      */
     Stream<Config> traverse(Predicate<Config> predicate);
 
+    // instance utility
+
+    /**
+     * Convert a String to a specific type.
+     * This is a helper method to allow for processing of default values that cannot be typed (e.g. in annotations).
+     *
+     * @param type type of the property
+     * @param value String value
+     * @param <T> type
+     * @return instance of the correct type
+     * @throws ConfigMappingException in case the String provided cannot be converted to the type expected
+     *
+     * @see Config#as(Class)
+     */
+    <T> T convert(Class<T> type, String value) throws ConfigMappingException;
+
     //
     // accessors
     //
@@ -691,9 +708,9 @@ public interface Config extends ConfigValue<String> {
      * @see ConfigValue#value()
      * @see ConfigValue#asSupplier()
      * @see ConfigValue#getValue()
-     * @see ConfigValue#get(Object)
+     * @see ConfigValue#getValue(Object)
      */
-    <T> ConfigValue<T> as(Class<? extends T> type);
+    <T> ConfigValue<T> as(Class<T> type);
 
     /**
      * Typed value as a {@link ConfigValue} created from factory method.
@@ -758,7 +775,7 @@ public interface Config extends ConfigValue<String> {
      * @return a typed list with values
      * @throws ConfigMappingException in case of problem to map property value.
      */
-    <T> ConfigValue<List<T>> asList(Class<? extends T> type) throws ConfigMappingException;
+    <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException;
 
     <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException;
 
@@ -769,7 +786,9 @@ public interface Config extends ConfigValue<String> {
      * @return current config node as a {@link Optional} instance
      * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
      */
-    ConfigValue<Config> asNode();
+    default ConfigValue<Config> asNode() {
+        return as(Config.class);
+    }
 
     /**
      * Returns a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
@@ -780,7 +799,9 @@ public interface Config extends ConfigValue<String> {
      * @return a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
      * @throws ConfigMappingException in case the node is {@link Type#VALUE}
      */
-    ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
+    default ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        return asList(Config.class);
+    }
 
     /**
      * Transform all leaf nodes (values) into Map instance.
@@ -818,6 +839,66 @@ public interface Config extends ConfigValue<String> {
     //
     // config changes
     //
+    /**
+     * Allows to subscribe on change on whole Config as well as on particular Config node.
+     * <p>
+     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
+     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
+     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
+     * with a node you are subscribed on.
+     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
+     * submitted to new-subscriber.
+     * <p>
+     * The {@code Config} notification support is based on {@link ConfigSource#changes() ConfigSource changes support}.
+     * <p>
+     * Method {@link Flow.Subscriber#onError(Throwable)} is never called.
+     * Method {@link Flow.Subscriber#onComplete()} is called in case an associated
+     * {@link ConfigSource#changes() ConfigSource's changes Publisher} signals {@code onComplete} as well.
+     * <p>
+     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
+     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
+     * There is no added value to subscribe again on new Config instance.
+     *
+     * @return {@link Flow.Publisher} to be subscribed in. Never returns {@code null}.
+     * @see Config#onChange(Function)
+     */
+    @Deprecated
+    default Flow.Publisher<Config> changes() {
+        return Flow.Subscriber::onComplete;
+    }
+
+    /**
+     * Directly subscribes {@code onNextFunction} function on change on whole Config or on particular Config node.
+     * <p>
+     * It automatically creates {@link ConfigHelper#subscriber(Function) Flow.Subscriber} that will
+     * delegate {@link Flow.Subscriber#onNext(Object)} to specified {@code onNextFunction} function.
+     * Created subscriber automatically {@link Flow.Subscription#request(long) requests} {@link Long#MAX_VALUE all events}
+     * in it's {@link Flow.Subscriber#onSubscribe(Flow.Subscription)} method.
+     * Function {@code onNextFunction} returns {@code false} in case user wants to {@link Flow.Subscription#cancel() cancel}
+     * current subscription.
+     * <p>
+     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
+     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
+     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
+     * with a node you are subscribed on.
+     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
+     * submitted to new-subscriber.
+     * <p>
+     * The {@code Config} notification support is based on {@link ConfigSource#changes() ConfigSource changes support}.
+     * <p>
+     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
+     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
+     * There is no added value to subscribe again on new Config instance.
+     *
+     * @param onNextFunction {@link Flow.Subscriber#onNext(Object)} functionality
+     * @see Config#changes()
+     * @see ConfigHelper#subscriber(Function)
+     * @deprecated use {@link #onChange(Consumer)} instead
+     */
+    @Deprecated
+    default void onChange(Function<Config, Boolean> onNextFunction) {
+        changes().subscribe(ConfigHelper.subscriber(onNextFunction));
+    }
 
     /**
      * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
@@ -835,7 +916,13 @@ public interface Config extends ConfigValue<String> {
      *
      * @param onChangeConsumer consumer invoked on change
      */
-    void onChange(Consumer<Config> onChangeConsumer);
+    default void onChange(Consumer<Config> onChangeConsumer) {
+        // temporary workaround before change support is replaced by one not using Flow API
+        changes().subscribe(ConfigHelper.subscriber(config -> {
+            onChangeConsumer.accept(config);
+            return true;
+        }));
+    }
 
     /**
      * Object represents fully-qualified key of config node.
@@ -1063,9 +1150,9 @@ public interface Config extends ConfigValue<String> {
      * <ul>
      * <li>{@code overrides} - instance of {@link OverrideSource override source};</li>
      * <li>{@code sources} - instances of {@link ConfigSource configuration source};</li>
-     * <li>{@code mappers} - ordered list of {@link ConfigMapper configuration node mappers}.
+     * <li>{@code mappers} - ordered list of mapper functions.
      * It is also possible to {@link #disableMapperServices disable} loading of
-     * {@link ConfigMapper}s as a {@link java.util.ServiceLoader service}.</li>
+     * {@link ConfigMapperProvider}s as a {@link java.util.ServiceLoader service}.</li>
      * <li>{@code parsers} - ordered list of {@link ConfigParser configuration content parsers}.
      * It is also possible to {@link #disableParserServices disable} loading of
      * {@link ConfigParser}s as a {@link java.util.ServiceLoader service}.</li>
@@ -1077,9 +1164,8 @@ public interface Config extends ConfigValue<String> {
      * <li>{@code caching} - can be elementary configuration value processed by filter cached?</li>
      * </ul>
      * <p>
-     * In case of {@link ConfigMapper}s, if there is no one that could be used to map appropriate {@code type},
-     * it uses {@link java.lang.reflect reflection API} to find public constructor or a public static method
-     * to construct {@code type} instance from config {@code node}:
+     * In case of {@link ConfigMapperProvider}s, if there is no one that could be used to map appropriate {@code type},
+     * the mapping attempt throws a {@link ConfigMappingException}.
      * <ol>
      * <li>a static method named {@code from} with a single {@code Config} argument that return an instance of the {@code
      * type};</li>
@@ -1343,7 +1429,6 @@ public interface Config extends ConfigValue<String> {
          * @param mapper mapper instance
          * @param <T>    type the {@code mapper} is registered for
          * @return an updated builder instance
-         * @see #addMapper(Class, ConfigMapper)
          * @see #addMapper(ConfigMapperProvider)
          * @see ConfigMappers
          * @see #disableMapperServices
@@ -1351,7 +1436,7 @@ public interface Config extends ConfigValue<String> {
         <T> Builder addMapper(Class<T> type, Function<String, T> mapper);
 
         /**
-         * Registers a {@link ConfigMapper} provider with a map of {@code String} to specified {@code type}.
+         * Registers a {@link ConfigMapperProvider} with a map of {@code String} to specified {@code type}.
          * The last registration of same {@code type} overwrites previous one.
          * Programmatically registered mappers have priority over other options.
          * <p>
@@ -1362,7 +1447,6 @@ public interface Config extends ConfigValue<String> {
          *
          * @param configMapperProvider mapper provider instance
          * @return modified builder instance
-         * @see #addMapper(Class, ConfigMapper)
          * @see #addMapper(Class, Function)
          * @see ConfigMappers
          * @see #disableMapperServices

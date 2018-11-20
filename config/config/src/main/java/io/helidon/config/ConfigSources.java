@@ -49,9 +49,9 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
 /**
- * Provides access to built-in {@link io.helidon.config.spi.ConfigSource} implementations.
+ * Provides access to built-in {@link ConfigSource} implementations.
  *
- * @see io.helidon.config.spi.ConfigSource
+ * @see ConfigSource
  */
 public final class ConfigSources {
 
@@ -78,7 +78,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for the same {@code Config} as the original
      */
     public static ConfigSource from(Config config) {
-        return ConfigSources.from(config.asMap()).get();
+        return ConfigSources.from(config.asMap().getValue()).get();
     }
 
     /**
@@ -374,8 +374,11 @@ public final class ConfigSources {
      */
     public static CompositeBuilder load(Config metaConfig) {
         List<Supplier<ConfigSource>> sources = metaConfig.get(SOURCES_KEY)
-                .asNodeList(CollectionsHelper.listOf()).stream()
+                .asNodeList()
+                .getValue(CollectionsHelper.listOf())
+                .stream()
                 .map(node -> node.as(ConfigSource.class))
+                .map(ConfigValue::getValue)
                 .collect(Collectors.toList());
 
         return ConfigSources.from(sources);
@@ -407,7 +410,7 @@ public final class ConfigSources {
      * app      = app-name
      * }</pre>
      * <p>
-     * The {@code MapConfigSource} returned by {@link #build} and {@link get}
+     * The {@code MapConfigSource} returned by {@link #build} and {@link #get}
      * works with an immutable copy of original map; it does
      * <strong>not</strong> support
      * {@link ConfigSource#changes() ConfigSource mutability}.

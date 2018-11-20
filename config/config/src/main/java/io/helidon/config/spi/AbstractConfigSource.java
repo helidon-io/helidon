@@ -192,7 +192,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         @Override
         protected B init(Config metaConfig) {
             //media-type-mapping
-            metaConfig.get(MEDIA_TYPE_MAPPING_KEY).detach().asOptionalMap()
+            metaConfig.get(MEDIA_TYPE_MAPPING_KEY).detach().asMap()
                     .ifPresent(this::initMediaTypeMapping);
 
             return super.init(metaConfig);

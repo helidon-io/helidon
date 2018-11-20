@@ -114,7 +114,7 @@ public class ConfigAsciidocGenerator {
     }
 
     private static List<String> builtinMappers() {
-        Map<Class<?>, ConfigMapper<?>> mappers = new HashMap<>();
+        Map<Class<?>, Function<Config, ?>> mappers = new HashMap<>();
         mappers.putAll(ConfigMappers.essentialMappers());
         mappers.putAll(ConfigMappers.builtInMappers());
 

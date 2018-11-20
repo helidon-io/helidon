@@ -18,9 +18,11 @@ package io.helidon.config;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +31,7 @@ import io.helidon.config.internal.ConfigKeyImpl;
 
 /**
  * Abstract common implementation of {@link Config} extended by appropriate Config node types:
- * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigValueImpl}.
+ * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigLeafImpl}.
  */
 abstract class AbstractConfigImpl implements Config {
 
@@ -42,21 +44,24 @@ abstract class AbstractConfigImpl implements Config {
     private final Type type;
     private final Flow.Publisher<Config> changesPublisher;
     private final Context context;
+    private final ConfigMapperManager mapperManager;
     private volatile Flow.Subscriber<ConfigDiff> subscriber;
     private final ReentrantReadWriteLock subscriberLock = new ReentrantReadWriteLock();
 
     /**
      * Initializes Config implementation.
-     *
-     * @param type    a type of config node.
+     *  @param type    a type of config node.
      * @param prefix  prefix key for the new config node.
      * @param key     a key to this config.
      * @param factory a config factory.
+     * @param mapperManager mapper manager
      */
     AbstractConfigImpl(Type type,
                        ConfigKeyImpl prefix,
                        ConfigKeyImpl key,
-                       ConfigFactory factory) {
+                       ConfigFactory factory,
+                       ConfigMapperManager mapperManager) {
+        this.mapperManager = mapperManager;
         Objects.requireNonNull(prefix, "prefix argument is null.");
         Objects.requireNonNull(key, "key argument is null.");
         Objects.requireNonNull(factory, "factory argument is null.");
@@ -70,6 +75,29 @@ abstract class AbstractConfigImpl implements Config {
         changesPublisher = new FilteringConfigChangeEventPublisher(factory.changes());
         context = new NodeContextImpl();
     }
+
+    @Override
+    public Supplier<String> asSupplier() {
+        return () -> context()
+                .last()
+                .getValue();
+    }
+
+    @Override
+    public Supplier<Optional<String>> asOptionalSupplier() {
+        return () -> context()
+                .last()
+                .value();
+    }
+
+    @Override
+    public Supplier<String> asSupplier(String defaultValue) {
+        return () -> context()
+                .last()
+                .getValue(defaultValue);
+    }
+
+
 
     @Override
     public Context context() {
@@ -93,6 +121,11 @@ abstract class AbstractConfigImpl implements Config {
     @Override
     public final Type type() {
         return type;
+    }
+
+    @Override
+    public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
+        return mapperManager.map("", type, value);
     }
 
     @Override
@@ -180,6 +213,7 @@ abstract class AbstractConfigImpl implements Config {
     ConfigFactory getFactory() {
         return factory;
     }
+
 
     @Override
     public Flow.Publisher<Config> changes() {

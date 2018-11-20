@@ -231,7 +231,7 @@ public class MpConfigBuilder implements ConfigBuilder {
     public Config build() {
         orderLists();
 
-        Map<Class<?>, ConfigMapper<?>> configMappers = new IdentityHashMap<>();
+        Map<Class<?>, Function<Config, ?>> configMappers = new IdentityHashMap<>();
 
         Set<Class> converterClasses = new HashSet<>();
 

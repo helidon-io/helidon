@@ -90,13 +90,9 @@ public interface ConfigValue<T> {
         return value().orElse(defaultValue);
     }
 
-    default Supplier<T> asSupplier() {
-        return this::getValue;
-    }
+    Supplier<T> asSupplier();
 
-    default Supplier<T> asSupplier(T defaultValue) {
-        return () -> getValue(defaultValue);
-    }
+    Supplier<T> asSupplier(T defaultValue);
 
     /**
      * Returns a {@link Supplier} of an {@link Optional Optional&lt;T&gt;} of the configuration node.
@@ -108,9 +104,7 @@ public interface ConfigValue<T> {
      * @see #value()
      * @see #asSupplier()
      */
-    default Supplier<Optional<T>> asOptionalSupplier() {
-        return this::value;
-    }
+    Supplier<Optional<T>> asOptionalSupplier();
 
     default void ifPresent(Consumer<? super T> consumer) {
         value().ifPresent(consumer);
