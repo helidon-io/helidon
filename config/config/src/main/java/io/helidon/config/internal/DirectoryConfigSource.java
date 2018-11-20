@@ -69,7 +69,7 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
      * @see io.helidon.config.spi.AbstractParsableConfigSource.Builder#init(Config)
      */
     public static DirectoryConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (DirectoryConfigSource) new DirectoryBuilder(metaConfig.get(PATH_KEY).as(Path.class))
+        return (DirectoryConfigSource) new DirectoryBuilder(metaConfig.get(PATH_KEY).as(Path.class).getValue())
                 .init(metaConfig)
                 .build();
     }

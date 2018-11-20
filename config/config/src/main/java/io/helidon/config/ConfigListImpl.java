@@ -40,14 +40,16 @@ class ConfigListImpl extends ConfigComplexImpl<ListNode> {
     }
 
     @Override
-    public Optional<List<Config>> nodeList() {
-        return Optional.of(
-                IntStream.range(0, getNode().size())
-                        .boxed()
-                        .map(index -> get(Integer.toString(index)))
-                        .collect(Collectors.toList())
-        );
+    public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        return ConfigValues.create(this,
+                                   () -> Optional.of(
+                                           IntStream.range(0, getNode().size())
+                                                   .boxed()
+                                                   .map(index -> get(Integer.toString(index)))
+                                                   .collect(Collectors.toList())),
+                                   Config::asNodeList);
     }
+
 
     @Override
     public String toString() {

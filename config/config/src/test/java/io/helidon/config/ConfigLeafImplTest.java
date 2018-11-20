@@ -44,9 +44,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests {@link Config} API in case the node is {@link Config.Type#VALUE} type, i.e. {@link ConfigValueImpl}.
+ * Tests {@link Config} API in case the node is {@link Config.Type#VALUE} type, i.e. {@link ConfigLeafImpl}.
  */
-public class ConfigValueImplTest extends AbstractConfigImplTest {
+public class ConfigLeafImplTest extends AbstractConfigImplTest {
 
     public static Stream<TestContext> initParams() {
         return Stream.of(
@@ -69,22 +69,22 @@ public class ConfigValueImplTest extends AbstractConfigImplTest {
     @MethodSource("initParams")
     public void testToArray(TestContext context) {
         init(context);
-        String[] array = ConfigValueImpl.toArray("a,b,");
+        String[] array = ConfigLeafImpl.toArray("a,b,");
         assertThat(array, arrayContaining("a", "b", ""));
 
-        array = ConfigValueImpl.toArray("large:cheese\\,mushroom,medium:chicken,small:pepperoni");
+        array = ConfigLeafImpl.toArray("large:cheese\\,mushroom,medium:chicken,small:pepperoni");
         assertThat(array, arrayContaining("large:cheese,mushroom", "medium:chicken", "small:pepperoni"));
 
-        array = ConfigValueImpl.toArray("microservice,microprofile,m\\,f,microservice");
+        array = ConfigLeafImpl.toArray("microservice,microprofile,m\\,f,microservice");
         assertThat(array, arrayContaining("microservice", "microprofile", "m,f", "microservice"));
 
-        array = ConfigValueImpl.toArray(",a,b");
+        array = ConfigLeafImpl.toArray(",a,b");
         assertThat(array, arrayContaining("", "a", "b"));
 
-        array = ConfigValueImpl.toArray("a\\,");
+        array = ConfigLeafImpl.toArray("a\\,");
         assertThat(array, arrayContaining("a,"));
 
-        array = ConfigValueImpl.toArray("\\,");
+        array = ConfigLeafImpl.toArray("\\,");
         assertThat(array, arrayContaining(","));
     }
 

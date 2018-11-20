@@ -104,7 +104,7 @@ public final class PollingStrategies {
          * @see PollingStrategies#regular(Duration)
          */
         public static ScheduledBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-            return PollingStrategies.regular(metaConfig.get(INTERVAL_KEY).as(Duration.class));
+            return PollingStrategies.regular(metaConfig.get(INTERVAL_KEY).as(Duration.class).getValue());
         }
 
         /**

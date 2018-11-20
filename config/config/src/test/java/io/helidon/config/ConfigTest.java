@@ -58,7 +58,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * @see ConfigObjectImplTest
  * @see ConfigListImplTest
  * @see ConfigMissingImplTest
- * @see ConfigValueImplTest
+ * @see ConfigLeafImplTest
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 public class ConfigTest {
@@ -589,7 +589,7 @@ public class ConfigTest {
             CharSequence actual = config.<CharSequence>mapOptional(functionMapper).orElseGet(() -> fallback);
             assertThat(actual, is(expected));
         }
-        // MAP ConfigMapper<T>
+        // MAP Function<Config, T>
         ConfigMapper<String> configMapper = new ConfigMapper<String>() {
             @Override
             public String apply(Config config) throws ConfigMappingException, MissingValueException {
@@ -694,7 +694,7 @@ public class ConfigTest {
                     .orElseGet(() -> new LinkedList<>(fallback));
             assertThat(actual, is(expected));
         }
-        // MAP LIST ConfigMapper<T>
+        // MAP LIST Function<Config, T>
         ConfigMapper<String> configMapper = new ConfigMapper<String>() {
             @Override
             public String apply(Config config) throws ConfigMappingException, MissingValueException {

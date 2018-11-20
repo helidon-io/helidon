@@ -32,7 +32,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
 public class Mappers2Priority300ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
-    public Map<Class<?>, ConfigMapper<?>> getMappers() {
+    public Map<Class<?>, Function<Config, ?>> getMappers() {
         return CollectionsHelper.mapOf(Locale.class, new LocaleConfigMapper());
     }
 

@@ -29,7 +29,6 @@ import java.util.logging.Logger;
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.PollingStrategies;
@@ -55,11 +54,16 @@ class PollingStrategyConfigMapper {
     public <T> Function<T, Supplier<PollingStrategy>> apply(Config config, Class<T> targetType)
             throws ConfigMappingException, MissingValueException {
         Config properties = config.get(PROPERTIES_KEY) // use properties config node
-                .node().orElse(Config.empty()); // or empty config node
+                .asNode()
+                .value()
+                .orElse(Config.empty()); // or empty config node
 
-        return OptionalHelper.from(config.get(TYPE_KEY).asOptionalString() // `type` is specified
-                .flatMap(type -> this.builtin(type, properties, targetType))) // return built-in polling strategy
-                .or(() -> config.get(CLASS_KEY).as(Class.class) // `class` is specified
+        return OptionalHelper.from(config.get(TYPE_KEY).value() // `type` is specified
+                                           .flatMap(type -> this
+                                                   .builtin(type, properties, targetType))) // return built-in polling strategy
+                .or(() -> config.get(CLASS_KEY)
+                        .as(Class.class) // `class` is specified
+                        .value()
                         .flatMap(clazz -> custom(clazz, properties, targetType))) // return custom polling strategy
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted polling-strategy configuration."));
@@ -71,7 +75,7 @@ class PollingStrategyConfigMapper {
         final Function<T, Supplier<PollingStrategy>> pollingStrategy;
         switch (type) {
         case REGULAR_TYPE:
-            pollingStrategy = target -> () -> properties.as(PollingStrategies.ScheduledBuilder.class).getValue();
+            pollingStrategy = target -> properties.as(PollingStrategies.ScheduledBuilder.class).getValue();
             break;
         case WATCH_TYPE:
             pollingStrategy = PollingStrategyConfigMapper::watchSupplier;
@@ -111,8 +115,9 @@ class PollingStrategyConfigMapper {
             }
         } else {
             // use builder pattern as a fallback
-            pollingStrategyFunction = target -> (Supplier<PollingStrategy>)
-                    properties.map(ConfigMappers.from(PollingStrategy.class, clazz));
+            throw new ConfigException("Configured polling strategy class "
+                                              + clazz.getName()
+                                              + " does not implement PollingStrategy");
         }
         return Optional.ofNullable(pollingStrategyFunction);
     }

@@ -78,7 +78,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
     public static UrlConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (UrlConfigSource) new UrlBuilder(metaConfig.get(URL_KEY).as(URL.class))
+        return (UrlConfigSource) new UrlBuilder(metaConfig.get(URL_KEY).as(URL.class).getValue())
                 .init(metaConfig)
                 .build();
     }

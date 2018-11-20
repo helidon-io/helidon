@@ -78,7 +78,7 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
     public static ClasspathConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return (ClasspathConfigSource) new ClasspathBuilder(metaConfig.get(RESOURCE_KEY).asString())
+        return (ClasspathConfigSource) new ClasspathBuilder(metaConfig.get(RESOURCE_KEY).getValue())
                 .init(metaConfig)
                 .build();
     }
