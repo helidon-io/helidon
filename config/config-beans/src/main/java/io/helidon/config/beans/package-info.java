@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * config module.
+ * Mappers that can map {@link io.helidon.config.Config} to classes with factory methods, classes with Builders and
+ * general "bean" classes with constructor and setters.
+ * The magic is happening in {@link io.helidon.config.beans.BeansConfigMapperProvider} which is a service implementing
+ * {@link io.helidon.config.spi.ConfigMapperProvider}.
  */
-module io.helidon.config.beans {
-    requires java.logging;
-    requires io.helidon.config;
-
-    provides io.helidon.config.spi.ConfigMapperProvider with io.helidon.config.beans.BeansConfigMapperProvider;
-}
+package io.helidon.config.beans;
