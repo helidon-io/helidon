@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.config.beans;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -20,15 +22,35 @@ import java.util.function.Function;
 import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
+import io.helidon.config.beans.ConfigMappers.BuilderConfigMapper;
+import io.helidon.config.beans.ConfigMappers.ConfigMethodHandleConfigMapper;
+import io.helidon.config.beans.ConfigMappers.FactoryMethodConfigMapper;
+import io.helidon.config.beans.ConfigMappers.GenericConfigMapper;
+import io.helidon.config.beans.ConfigMappers.StringMethodHandleConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
+
+import static io.helidon.config.beans.ReflectionUtil.findBuilderConstructor;
+import static io.helidon.config.beans.ReflectionUtil.findBuilderMethod;
+import static io.helidon.config.beans.ReflectionUtil.findConstructor;
+import static io.helidon.config.beans.ReflectionUtil.findConstructorWithParameters;
+import static io.helidon.config.beans.ReflectionUtil.findStaticMethod;
+import static io.helidon.config.beans.ReflectionUtil.findStaticMethodWithParameters;
 
 /**
  * Java beans support for configuration.
  */
-@Priority(0) // priority should be low to be the last one used
+@Priority(10) // priority should be low to be one of the last ones used
 public class BeansConfigMapperProvider implements ConfigMapperProvider {
-    Map<Class<?>, Function<Config, ?>> EMPTY_MAP = CollectionsHelper.mapOf();
+    private static final Map<Class<?>, Function<Config, ?>> EMPTY_MAP = CollectionsHelper.mapOf();
+
+    private static final String METHOD_FROM = "from";
+    private static final String METHOD_VALUE_OF = "valueOf";
+    private static final String METHOD_FROM_CONFIG = "fromConfig";
+    private static final String METHOD_FROM_STRING = "fromString";
+    private static final String METHOD_PARSE = "parse";
+    private static final String METHOD_CREATE = "create";
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
@@ -37,7 +59,103 @@ public class BeansConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
     public <T> Optional<Function<Config, T>> mapper(Class<T> type) {
-        // TODO check if class can be automatically created through reflection from config
-        return Optional.empty();
+        return OptionalHelper
+                // T create(Config)
+                .from(findStaticConfigMethodMapper(type, METHOD_CREATE))
+                // T from(Config)
+                .or(() -> findStaticConfigMethodMapper(type, METHOD_FROM))
+                // Config constructor
+                .or(() -> findConfigConstructorMapper(type))
+                // T valueOf(Config)
+                .or(() -> findStaticConfigMethodMapper(type, METHOD_VALUE_OF))
+                // T fromConfig(Config)
+                .or(() -> findStaticConfigMethodMapper(type, METHOD_FROM_CONFIG))
+                // T from(String)
+                .or(() -> findStaticStringMethodMapper(type, METHOD_FROM))
+                // T parse(String)
+                .or(() -> findStaticStringMethodMapper(type, METHOD_PARSE))
+                // T parse(CharSequence)
+                .or(() -> findParseCharSequenceMethodMapper(type))
+                // String constructor
+                .or(() -> findStringConstructorMapper(type))
+                // T valueOf(String)
+                .or(() -> findStaticStringMethodMapper(type, METHOD_VALUE_OF))
+                // T fromString(String)
+                .or(() -> findStaticStringMethodMapper(type, METHOD_FROM_STRING))
+                // static Builder builder()
+                .or(() -> findBuilderMethodMapper(type))
+                // new T.Builder()
+                .or(() -> findBuilderClassMapper(type))
+                // static T from(param, params...)
+                .or(() -> findStaticMethodWithParamsMapper(type, METHOD_FROM))
+                // static T create(param, params...)
+                .or(() -> findStaticMethodWithParamsMapper(type, METHOD_CREATE))
+                // constructor(param, params...)
+                .or(() -> findConstructorWithParamsMapper(type))
+                // generic mapping support
+                .or(() -> findGenericMapper(type))
+                // we could not find anything, let config decide what to do
+                .asOptional();
+    }
+
+    private static <T> Optional<Function<Config, T>> findStaticConfigMethodMapper(Class<T> type,
+                                                                                  String methodName) {
+        return findStaticMethod(type, methodName, Config.class)
+                .map(handle -> new ConfigMethodHandleConfigMapper<>(
+                        type,
+                        methodName + "(Config) method",
+                        handle));
+    }
+
+    private static <T> Optional<Function<Config, T>> findStaticStringMethodMapper(Class<T> type,
+                                                                                  String methodName) {
+        return findStaticMethod(type, methodName, String.class)
+                .map(handle -> new StringMethodHandleConfigMapper<>(
+                        type,
+                        methodName + "(String) method",
+                        handle));
+    }
+
+    private static <T> Optional<Function<Config, T>> findParseCharSequenceMethodMapper(Class<T> type) {
+        return findStaticMethod(type, METHOD_PARSE, CharSequence.class)
+                .map(handle -> new StringMethodHandleConfigMapper<>(
+                        type,
+                        "parse(CharSequence) method",
+                        handle));
+    }
+
+    private static <T> Optional<Function<Config, T>> findConfigConstructorMapper(Class<T> type) {
+        return findConstructor(type, Config.class)
+                .map(handle -> new ConfigMethodHandleConfigMapper<>(type, "Config constructor", handle));
+    }
+
+    private static <T> Optional<Function<Config, T>> findStringConstructorMapper(Class<T> type) {
+        return findConstructor(type, String.class)
+                .map(handle -> new StringMethodHandleConfigMapper<>(type, "String constructor", handle));
+    }
+
+    private static <T> Optional<Function<Config, T>> findBuilderMethodMapper(Class<T> type) {
+        return findBuilderMethod(type)
+                .map(builderAccessor -> new BuilderConfigMapper<>(builderAccessor));
+    }
+
+    private static <T> Optional<Function<Config, T>> findBuilderClassMapper(Class<T> type) {
+        return findBuilderConstructor(type)
+                .map(builderAccessor -> new BuilderConfigMapper<>(builderAccessor));
+    }
+
+    private static <T> Optional<Function<Config, T>> findStaticMethodWithParamsMapper(Class<T> type, String methodName) {
+        return findStaticMethodWithParameters(type, methodName)
+                .map(factoryAccessor -> new FactoryMethodConfigMapper<>(factoryAccessor));
+    }
+
+    private static <T> Optional<Function<Config, T>> findConstructorWithParamsMapper(Class<T> type) {
+        return findConstructorWithParameters(type)
+                .map(factoryAccessor -> new FactoryMethodConfigMapper<>(factoryAccessor));
+    }
+
+    private static <T> Optional<Function<Config, T>> findGenericMapper(Class<T> type) {
+        return findConstructor(type)
+                .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
     }
 }
