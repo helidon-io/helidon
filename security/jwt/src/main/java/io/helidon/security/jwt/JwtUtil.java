@@ -419,6 +419,11 @@ public final class JwtUtil {
             return country;
         }
 
+        /**
+         * Create a json representation of this address.
+         *
+         * @return Address as a Json object
+         */
         public JsonObject getJson() {
             JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
 

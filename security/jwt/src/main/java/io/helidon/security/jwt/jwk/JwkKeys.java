@@ -77,6 +77,11 @@ public class JwkKeys {
         return Optional.ofNullable(keyMap.get(keyId));
     }
 
+    /**
+     * List of keys in this instance.
+     *
+     * @return all keys configured
+     */
     public List<Jwk> keys() {
         List<Jwk> result = new LinkedList<>();
         result.addAll(noKeyIdKeys);

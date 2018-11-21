@@ -70,13 +70,28 @@ public interface AnnotationAnalyzer {
         return AnalyzerResponse.abstain(previousResponse);
     }
 
+    /**
+     * Flag for security type.
+     */
     enum Flag {
+        /**
+         * Security MUST be enforced.
+         */
         // must atz/atn
         REQUIRED,
+        /**
+         * Security MAY be used (e.g. for authentication - we may authenticate, though we may access as not-authenticated user).
+         */
         // I do not care
         OPTIONAL,
+        /**
+         * Security MUST NOT be used (strictly public endpoint - do not invoke security).
+         */
         // must not atz/atn
         FORBIDDEN,
+        /**
+         * This analyzer is not capable of asserting the need to do security - carry on as if it did not exist.
+         */
         // I do not know
         ABSTAIN
     }
