@@ -15,6 +15,6 @@
  */
 
 /**
- * CDI extension implementing support for Microprofile JWT Authenticaion.
+ * CDI extension implementing support for Microprofile JWT Authentication.
  */
 package io.helidon.microprofile.jwt.auth.cdi;

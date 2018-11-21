@@ -1,6 +1,0 @@
-Create a jwt-auth-cdi module and move the CDI extension to it
-Add module-info.java (including services)
-Add package-info.java
-Fix javadocs
-Add to bom pom
-Add to microprofile 1.2 bundle

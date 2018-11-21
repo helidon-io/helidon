@@ -60,12 +60,6 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
             <version>${project.version}</version>
@@ -75,6 +69,12 @@
             <artifactId>helidon-security-providers-common</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>internal-test-libs</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

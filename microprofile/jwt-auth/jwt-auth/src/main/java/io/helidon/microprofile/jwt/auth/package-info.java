@@ -15,6 +15,6 @@
  */
 
 /**
- * JWT Authentication provided by our Microprofile implementation.
+ * Implementation of Microprofile JWT Auth specification.
  */
 package io.helidon.microprofile.jwt.auth;

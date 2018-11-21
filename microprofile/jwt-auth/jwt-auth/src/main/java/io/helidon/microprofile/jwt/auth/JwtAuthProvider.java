@@ -44,6 +44,7 @@ import javax.json.JsonObject;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
+import io.helidon.common.InputStreamHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
@@ -79,6 +80,8 @@ import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Provider that provides JWT authentication.
  */
@@ -89,6 +92,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
      * Configure this for outbound requests to override user to use.
      */
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
+    /**
+     * Configuration key for expected issuer of incoming tokens. Used for validation of JWT.
+     */
     public static final String CONFIG_EXPECTED_ISSUER = "mp.jwt.verify.issuer";
 
     private final boolean optional;
@@ -234,7 +240,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     JsonWebTokenImpl buildPrincipal(Jwt jwt, SignedJwt signedJwt) {
-        return new JsonWebTokenImpl(jwt, signedJwt);
+        return JsonWebTokenImpl.create(signedJwt);
     }
 
     @Override
@@ -245,7 +251,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     @Override
-    protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
+    public OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
 
@@ -544,7 +550,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             Path path = Paths.get(uri);
             if (Files.exists(path)) {
                 try {
-                    return loadJwkKeys(new String(Files.readAllBytes(path)));
+                    return loadJwkKeys(new String(Files.readAllBytes(path), UTF_8));
                 } catch (IOException e) {
                     throw new SecurityException("Failed to load public key(s) from path: " + path.toAbsolutePath(), e);
                 }
@@ -583,13 +589,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys getPublicKeyFromContent(InputStream bufferedInputStream) throws IOException {
-            byte[] contents = new byte[1024];
-            int bytesRead;
-            StringBuilder sb = new StringBuilder();
-            while ((bytesRead = bufferedInputStream.read(contents)) != -1) {
-                sb.append(new String(contents, 0, bytesRead));
-            }
-            return loadJwkKeys(sb.toString());
+            return loadJwkKeys(new String(InputStreamHelper.readAllBytes(bufferedInputStream), UTF_8));
         }
 
         private JwkKeys loadJwkKeys(String stringContent) {
@@ -617,7 +617,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys loadPublicKeyJWKBase64(String base64Encoded) {
-            return loadPublicKeyJWK(new String(Base64.getUrlDecoder().decode(base64Encoded)));
+            return loadPublicKeyJWK(new String(Base64.getUrlDecoder().decode(base64Encoded), UTF_8));
         }
 
         private JwkKeys loadPublicKeyJWK(String jwkJson) {

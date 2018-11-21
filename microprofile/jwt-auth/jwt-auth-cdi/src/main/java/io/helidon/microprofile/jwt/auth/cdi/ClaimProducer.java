@@ -39,7 +39,7 @@ import org.eclipse.microprofile.jwt.Claims;
 /**
  * Class ClaimProducer.
  */
-public class ClaimProducer implements Bean<Object> {
+class ClaimProducer implements Bean<Object> {
     private static final Annotation QUALIFIER = new Claim() {
         @Override
         public String value() {

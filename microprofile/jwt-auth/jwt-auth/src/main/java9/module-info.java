@@ -17,13 +17,21 @@
 /**
  * Microprofile jwt module.
  */
-//TODO neni final
 module io.helidon.mp.jwt.auth {
     requires java.logging;
-    requires java.management;
 
     requires cdi.api;
-    requires javax.inject;
+    requires microprofile.config.api;
+    requires microprofile.jwt.auth.api;
+
+    requires io.helidon.common;
+    requires io.helidon.common.pki;
+    requires io.helidon.config;
+    requires transitive io.helidon.security;
+    requires io.helidon.security.providers;
+    requires io.helidon.security.util;
+    requires transitive io.helidon.security.jwt;
+    requires io.helidon.security.adapter.jersey;
 
     exports io.helidon.microprofile.jwt.auth;
 }

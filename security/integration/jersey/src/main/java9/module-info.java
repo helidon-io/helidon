@@ -31,6 +31,8 @@ module io.helidon.security.adapter.jersey {
     requires javax.inject;
 
     exports io.helidon.security.jersey;
+    exports io.helidon.security.jersey.spi;
+
     // needed for jersey injection
     opens io.helidon.security.jersey to hk2.locator,hk2.utils;
 

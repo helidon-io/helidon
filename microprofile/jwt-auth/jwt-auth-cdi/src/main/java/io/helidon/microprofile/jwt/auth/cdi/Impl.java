@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 /**
- * Internal annotation for CDI injection
+ * Internal annotation for CDI injection.
  */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)

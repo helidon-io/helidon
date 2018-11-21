@@ -22,12 +22,10 @@ module io.helidon.mp.jwt.auth.cdi {
     requires cdi.api;
     requires javax.inject;
     requires microprofile.config.api;
-    requires io.helidon.mp.metrics;
-    requires javax.interceptor.api;
-    requires java.annotation;
-    requires io.helidon.metrics;
 
-    exports io.helidon.microprofile.metrics.cdi;
+    requires io.helidon.mp.jwt.auth;
 
-    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.cdi.MetricsCdiExtension;
+    exports io.helidon.microprofile.jwt.auth.cdi;
+
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.jwt.auth.cdi.JwtAuthCdiExtension;
 }

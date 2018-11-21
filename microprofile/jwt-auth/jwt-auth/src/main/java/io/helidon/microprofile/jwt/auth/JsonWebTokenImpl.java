@@ -42,7 +42,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 /**
  * Implementation of {@link JsonWebToken} with additional support of {@link AbacSupport}.
  */
-public class JsonWebTokenImpl implements JsonWebToken, Principal {
+public final class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final Jwt jwt;
     private final SignedJwt signed;
     private final String id;
@@ -50,8 +50,8 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final AbacSupport properties;
     private final String name;
 
-    public JsonWebTokenImpl(Jwt jwt, SignedJwt signed) {
-        this.jwt = jwt;
+    private JsonWebTokenImpl(SignedJwt signed) {
+        this.jwt = signed.getJwt();
         this.signed = signed;
         BasicAttributes container = new BasicAttributes();
         jwt.getPayloadClaims()
@@ -76,6 +76,16 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         this.id = subject;
     }
 
+    /**
+     * Creates a new instance based on the signed JWT instance.
+     *
+     * @param signed singed JWT retrieved from request
+     * @return a json web token.
+     */
+    static JsonWebTokenImpl create(SignedJwt signed) {
+        return new JsonWebTokenImpl(signed);
+    }
+
     @Override
     public String getName() {
         return name;
@@ -97,22 +107,30 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
         }
     }
 
+    /**
+     * Produce a claim based on its name and expected class.
+     *
+     * @param claimName name of the claim
+     * @param clazz     expected type
+     * @param <T>       type
+     * @return claim value
+     */
     @SuppressWarnings("unchecked")
     public <T> T getClaim(String claimName, Class<T> clazz) {
         try {
             Claims claims = Claims.valueOf(claimName);
-            return JsonValue.class.isAssignableFrom(clazz) ?
-                    (T) getJsonValue(claimName).orElse(null) :
-                    (T) getClaim(claims);
-        } catch (IllegalArgumentException e) {
+            return JsonValue.class.isAssignableFrom(clazz)
+                    ? (T) getJsonValue(claimName).orElse(null)
+                    : (T) getClaim(claims);
+        } catch (IllegalArgumentException ignored) {
             //If claimName is name of the custom claim
             Object value = getJsonValue(claimName).orElse(null);
-            Class verify = clazz;
             if ((value != null)
-                    && (verify != ClaimValue.class)
-                    && (verify != Optional.class)
-                    && !verify.isAssignableFrom(value.getClass())) {
-                throw new SecurityException("Cannot set instance of " + value.getClass().getName() + " to the field of type " + verify.getName());
+                    && (clazz != ClaimValue.class)
+                    && (clazz != Optional.class)
+                    && !clazz.isAssignableFrom(value.getClass())) {
+                throw new SecurityException("Cannot set instance of " + value.getClass().getName()
+                                                    + " to the field of type " + clazz.getName());
             }
             return (T) value;
         }
@@ -130,6 +148,8 @@ public class JsonWebTokenImpl implements JsonWebToken, Principal {
             return jwt.getEmailVerified().orElse(null);
         case phone_number_verified:
             return jwt.getPhoneNumberVerified().orElse(null);
+        case upn:
+            return jwt.getUserPrincipal().orElse(null);
         default:
             //do nothing, just continue to processing based on type
         }

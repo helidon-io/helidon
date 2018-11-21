@@ -30,7 +30,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
-            <artifactId>helidon-microprofile-jwt-auth</artifactId>
+            <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

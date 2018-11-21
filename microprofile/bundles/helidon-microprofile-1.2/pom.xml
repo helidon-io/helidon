@@ -50,13 +50,14 @@
             <artifactId>helidon-microprofile-metrics-cdi</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>io.helidon.microprofile.fault-tolerance</groupId>-->
-        <!--<artifactId>helidon-microprofile-fault-tolerance-cdi</artifactId>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>io.helidon.microprofile</groupId>
+            <artifactId>helidon-microprofile-fault-tolerance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.jwt</groupId>
-            <artifactId>helidon-microprofile-jwt-auth</artifactId>
+            <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

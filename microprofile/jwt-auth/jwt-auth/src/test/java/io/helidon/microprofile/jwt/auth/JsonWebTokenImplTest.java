@@ -41,7 +41,7 @@ class JsonWebTokenImplTest {
                 .build();
         SignedJwt signed = SignedJwt.sign(jwt, Jwk.NONE_JWK);
 
-        JsonWebTokenImpl impl = new JsonWebTokenImpl(jwt, signed);
+        JsonWebTokenImpl impl = JsonWebTokenImpl.create(signed);
 
         assertThat(impl.getName(), is(name));
         assertThat(impl.getClaim(Claims.upn.name()), is(name));
@@ -57,7 +57,7 @@ class JsonWebTokenImplTest {
                 .build();
         SignedJwt signed = SignedJwt.sign(jwt, Jwk.NONE_JWK);
 
-        JsonWebTokenImpl impl = new JsonWebTokenImpl(jwt, signed);
+        JsonWebTokenImpl impl = JsonWebTokenImpl.create(signed);
 
         assertThat(impl.getName(), is(name));
         assertThat(impl.getClaim(Claims.upn.name()), is(name));
@@ -75,7 +75,7 @@ class JsonWebTokenImplTest {
                 .build();
         SignedJwt signed = SignedJwt.sign(jwt, Jwk.NONE_JWK);
 
-        JsonWebTokenImpl impl = new JsonWebTokenImpl(jwt, signed);
+        JsonWebTokenImpl impl = JsonWebTokenImpl.create(signed);
 
         assertThat(impl.getName(), is(name));
         assertThat(impl.getClaim(Claims.upn.name()), is(name));
@@ -92,7 +92,7 @@ class JsonWebTokenImplTest {
 
         SignedJwt signed = SignedJwt.sign(jwt, Jwk.NONE_JWK);
 
-        JsonWebTokenImpl impl = new JsonWebTokenImpl(jwt, signed);
+        JsonWebTokenImpl impl = JsonWebTokenImpl.create(signed);
 
         Assertions.assertAll(
                 () -> testClaimType(impl, Claims.sub),

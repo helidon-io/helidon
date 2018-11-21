@@ -15,20 +15,21 @@
  */
 package io.helidon.microprofile.jwt.auth.cdi;
 
-import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
-import io.helidon.security.SecurityContext;
-import org.eclipse.microprofile.jwt.JsonWebToken;
-
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.ws.rs.core.Context;
+
+import io.helidon.microprofile.jwt.auth.JsonWebTokenImpl;
+import io.helidon.security.SecurityContext;
+
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
  * Producer of JsonWebTokenImpl for CDI.
  */
 // must be in RequestScoped - ApplicationScoped fails some tests
 @RequestScoped
-public class JsonWebTokenProducer {
+class JsonWebTokenProducer {
     @Context
     private SecurityContext securityContext;
 
