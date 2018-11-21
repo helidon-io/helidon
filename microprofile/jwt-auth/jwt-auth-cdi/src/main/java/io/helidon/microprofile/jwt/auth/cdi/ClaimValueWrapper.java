@@ -3,7 +3,7 @@ package io.helidon.microprofile.jwt.auth.cdi;
 import org.eclipse.microprofile.jwt.ClaimValue;
 
 /**
- * Created by David Kral.
+ * Implementation of {@link ClaimValue} interface.
  */
 class ClaimValueWrapper<T> implements ClaimValue<T> {
 

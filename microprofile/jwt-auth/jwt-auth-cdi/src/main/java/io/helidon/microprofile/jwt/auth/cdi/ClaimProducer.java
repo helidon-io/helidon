@@ -37,7 +37,7 @@ import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.Claims;
 
 /**
- * Class MetricProducer.
+ * Class ClaimProducer.
  */
 public class ClaimProducer implements Bean<Object> {
     private static final Annotation QUALIFIER = new Claim() {

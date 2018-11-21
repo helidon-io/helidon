@@ -27,7 +27,8 @@ import org.eclipse.microprofile.auth.LoginConfig;
 import static io.helidon.microprofile.jwt.auth.JwtAuthProviderService.PROVIDER_NAME;
 
 /**
- * TODO javadoc.
+ * Implementation of {@link AnnotationAnalyzer} which checks for {@link LoginConfig} annotation if
+ * JWT Authentication should be enabled.
  */
 public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     static final String LOGIN_CONFIG_METHOD = "MP-JWT";

@@ -54,9 +54,10 @@
         <!--<groupId>io.helidon.microprofile.fault-tolerance</groupId>-->
         <!--<artifactId>helidon-microprofile-fault-tolerance-cdi</artifactId>-->
         <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>io.helidon.microprofile.security</groupId>-->
-        <!--<artifactId>helidon-microprofile-security-jwt</artifactId>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>io.helidon.microprofile.jwt</groupId>
+            <artifactId>helidon-microprofile-jwt-auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

@@ -40,7 +40,7 @@ import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
- * TODO javadoc.
+ * Implementation of {@link JsonWebToken} with additional support of {@link AbacSupport}.
  */
 public class JsonWebTokenImpl implements JsonWebToken, Principal {
     private final Jwt jwt;

@@ -80,7 +80,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 /**
- * TODO javadoc.
+ * Provider that provides JWT authentication.
  */
 public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(JwtAuthProvider.class.getName());

@@ -21,6 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <modules>
         <module>jwt-auth</module>
+        <module>jwt-auth-cdi</module>
     </modules>
     <parent>
         <groupId>io.helidon.microprofile</groupId>
