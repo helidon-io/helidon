@@ -660,7 +660,7 @@ public final class KeyConfig {
                 builder.privateKey(PemReader.readPrivateKey(privateKeyStream.stream(), pemKeyPassphrase));
             }
             if (publicKeyStream.isSet()) {
-                builder.publicKey(PemReader.readPublicKey(publicKeyStream.getInputStream()));
+                builder.publicKey(PemReader.readPublicKey(publicKeyStream.stream()));
             }
 
             if (certChainStream.isSet()) {

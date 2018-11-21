@@ -268,7 +268,6 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                                                    .build());
                     }
 
-                    // TODO allow additional claims from config?
                     Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
 
                     return maybeTarget.flatMap(target -> {
@@ -607,9 +606,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return JwkKeys.builder()
                     .addKey(JwkRSA.builder()
                                     .publicKey((RSAPublicKey) KeyConfig.pemBuilder()
-                                            .publicKey(Resource.fromContent("public key from PKCS8", stringContent))
+                                            .publicKey(Resource.create("public key from PKCS8", stringContent))
                                             .build()
-                                            .getPublicKey()
+                                            .publicKey()
                                             .orElseThrow(() -> new DeploymentException(
                                                     "Failed to load public key from string content")))
                                     .build())
@@ -623,7 +622,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private JwkKeys loadPublicKeyJWK(String jwkJson) {
             if (jwkJson.contains("keys")) {
                 return JwkKeys.builder()
-                        .resource(Resource.fromContent("public key from PKCS8", jwkJson))
+                        .resource(Resource.create("public key from PKCS8", jwkJson))
                         .build();
             }
             JsonObject jsonObject = Json.createReader(new StringReader(jwkJson)).readObject();
@@ -855,13 +854,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private void verifyKeys(Config config) {
-            Resource.from(config, "jwk")
+            Resource.create(config, "jwk")
                     .map(this::verifyJwk);
         }
 
         private void outbound(Config config) {
             // jwk is optional, we may be propagating existing token
-            Resource.from(config, "jwk").ifPresent(this::signJwk);
+            Resource.create(config, "jwk").ifPresent(this::signJwk);
             config.get("jwt-issuer").asOptionalString().ifPresent(this::issuer);
         }
     }

@@ -66,7 +66,7 @@ public class JwtAuthProviderTest {
     @BeforeAll
     public static void initClass() {
         verifyKeys = JwkKeys.builder()
-                .resource(Resource.from("verify-jwk.json"))
+                .resource(Resource.create("verify-jwk.json"))
                 .build();
     }
 
