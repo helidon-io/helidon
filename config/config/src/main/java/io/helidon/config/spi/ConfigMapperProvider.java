@@ -36,7 +36,7 @@ import io.helidon.config.Config;
  * Each {@code ConfigMapperProvider} can specify a
  * {@link javax.annotation.Priority}. The default priority is {@value PRIORITY}.
  *
- * @see Config.Builder#addMapper(Class, Function)
+ * @see Config.Builder#addStringMapper(Class, Function)
  * @see Config.Builder#addMapper(ConfigMapperProvider)
  * @see Config.Builder#disableMapperServices()
  */

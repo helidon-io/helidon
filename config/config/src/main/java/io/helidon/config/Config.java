@@ -39,7 +39,7 @@ import io.helidon.config.spi.OverrideSource;
 
 /**
  * Immutable tree-structured configuration.
- * <h2>Loading Configuration</h2>
+ * <h1>Loading Configuration</h1>
  * Load the default configuration using the {@link #create} method.
  * <pre>{@code
  * Config config = Config.create();
@@ -87,7 +87,7 @@ import io.helidon.config.spi.OverrideSource;
  * {@code Map}.</td>
  * </tr>
  * <tr>
- * <td>{@link Builder#addMapper}</td>
+ * <td>{@link Builder#addStringMapper}</td>
  * <td>Implements conversion from a {@code Config} node (typically with
  * children) to an application-specific Java type.</td>
  * </tr>
@@ -143,7 +143,7 @@ import io.helidon.config.spi.OverrideSource;
  * </ul>
  * <p>
  * On a leaf {@link Type#VALUE value} node get the {@code String} value using
- * {@link #value()}, {@link #asString()} or {@link .asString().getValue(String)}.
+ * {@link #value()}, or {@link .asString().getValue(String)}.
  *
  * <h2>Converting Configuration Values to Types</h2>
  * <h3>Explicit Conversion by the Application</h3>
@@ -191,7 +191,7 @@ import io.helidon.config.spi.OverrideSource;
  * <ul>
  * <li>invoking the {@link Config#as(Function)} method variants, </li>
  * <li>adding custom mapping function implementations using the
- * {@link Builder#addMapper} method,</li>
+ * {@link Builder#addStringMapper} method,</li>
  * <li>registering custom mappers using the Java service loader mechanism. (See
  * {@link ConfigMapperProvider} for details.)
  * </li>
@@ -231,17 +231,14 @@ import io.helidon.config.spi.OverrideSource;
  * <p>
  * Your application can set a different strategy by constructing its own
  * {@code CompositeBuilder} and invoking
- * {@link ConfigSources.CompositeBuilder#mergingStrategy}, passing the strategy
+ * {@link ConfigSources.CompositeBuilder#mergingStrategy(ConfigSources.MergingStrategy)}, passing the strategy
  * to be used:
  * <pre>
  * Config.withSources(ConfigSources.from(source1, source2, source3)
  *                      .mergingStrategy(new MyMergingStrategy());
  * </pre>
- *
- *
  */
-public interface Config extends ConfigValue<String> {
-
+public interface Config {
     /**
      * Returns empty instance of {@code Config}.
      *
@@ -250,6 +247,27 @@ public interface Config extends ConfigValue<String> {
     static Config empty() {
         return BuilderImpl.EmptyConfigHolder.EMPTY;
     }
+
+    /**
+     * Create an empty configuration with mappers copied from another config.
+     *
+     * @param config config to get mappers from
+     * @return an empty config instance (empty Object)
+     */
+    static Config empty(Config config) {
+
+        return new BuilderImpl()
+                .sources(ConfigSources.empty())
+                .overrides(OverrideSources.empty())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableMapperServices()
+                .disableParserServices()
+                .disableFilterServices()
+                .mappersFrom(config)
+                .build();
+    }
+
 
     //
     // tree (config nodes) method
@@ -674,7 +692,7 @@ public interface Config extends ConfigValue<String> {
      * returned {@code Stream<Config>}.
      *
      * @param predicate predicate evaluated on each visited {@code Config} node
-     * to continue or stop visiting the node
+     *                  to continue or stop visiting the node
      * @return stream of deepening depth-first subnodes
      */
     Stream<Config> traverse(Predicate<Config> predicate);
@@ -685,12 +703,11 @@ public interface Config extends ConfigValue<String> {
      * Convert a String to a specific type.
      * This is a helper method to allow for processing of default values that cannot be typed (e.g. in annotations).
      *
-     * @param type type of the property
+     * @param type  type of the property
      * @param value String value
-     * @param <T> type
+     * @param <T>   type
      * @return instance of the correct type
      * @throws ConfigMappingException in case the String provided cannot be converted to the type expected
-     *
      * @see Config#as(Class)
      */
     <T> T convert(Class<T> type, String value) throws ConfigMappingException;
@@ -700,28 +717,42 @@ public interface Config extends ConfigValue<String> {
     //
 
     /**
+     * Returns a {@code String} value as {@link Optional} of configuration node if the node a leaf or "hybrid" node.
+     * Returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type or if the node does not contain a direct
+     * value.
+     * This is "raw" accessor method for String value of this config node. To have nicer variety of value accessors,
+     * see {@link #asString()} and in general {@link #as(Class)}.
+     *
+     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have a value
+     */
+    Optional<String> value();
+
+    /**
      * Typed value as a {@link ConfigValue}.
      *
      * @param type type class
      * @param <T>  type
      * @return typed value
-     * @see ConfigValue#value()
-     * @see ConfigValue#asSupplier()
-     * @see ConfigValue#getValue()
-     * @see ConfigValue#getValue(Object)
+     * @see ConfigValue#map(Function)
+     * @see ConfigValue#supplier()
+     * @see ConfigValue#get()
+     * @see ConfigValue#get(Object)
      */
     <T> ConfigValue<T> as(Class<T> type);
 
     /**
      * Typed value as a {@link ConfigValue} created from factory method.
+     * To convert from String, you can use
+     * {@link #asString() config.asString()}{@link ConfigValue#as(Function) .as(Function)}.
      *
      * @param mapper method to create an instance from config
-     * @param <T>           type
+     * @param <T>    type
      * @return typed value
      */
     <T> ConfigValue<T> as(Function<Config, T> mapper);
 
     // shortcut methods
+
     /**
      * Boolean typed value.
      *
@@ -787,7 +818,9 @@ public interface Config extends ConfigValue<String> {
      * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
      */
     default ConfigValue<Config> asNode() {
-        return as(Config.class);
+        return ConfigValues.create(this,
+                                   () -> exists() ? Optional.of(this) : Optional.empty(),
+                                   Config::asNode);
     }
 
     /**
@@ -839,6 +872,7 @@ public interface Config extends ConfigValue<String> {
     //
     // config changes
     //
+
     /**
      * Allows to subscribe on change on whole Config as well as on particular Config node.
      * <p>
@@ -994,6 +1028,8 @@ public interface Config extends ConfigValue<String> {
         @Override
         String toString();
 
+        Key child(Key key);
+
         /**
          * Creates new instance of Key for specified {@code key} literal.
          * <p>
@@ -1006,6 +1042,7 @@ public interface Config extends ConfigValue<String> {
         static Key of(String key) {
             return ConfigKeyImpl.of(key);
         }
+
 
         /**
          * Escape {@code '~'} to {@code ~0} and {@code '.'} to {@code ~1} in specified name.
@@ -1166,44 +1203,9 @@ public interface Config extends ConfigValue<String> {
      * <p>
      * In case of {@link ConfigMapperProvider}s, if there is no one that could be used to map appropriate {@code type},
      * the mapping attempt throws a {@link ConfigMappingException}.
-     * <ol>
-     * <li>a static method named {@code from} with a single {@code Config} argument that return an instance of the {@code
-     * type};</li>
-     * <li>a constructor that accepts a single {@code Config} argument;</li>
-     * <li>a static method named {@code valueOf} with a single {@code Config} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method named {@code fromConfig} with a single {@code Config} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method named {@code from} with a single {@code String} argument that return an instance of the {@code
-     * type};</li>
-     * <li>a constructor that accepts a single {@code String} argument;</li>
-     * <li>a static method named {@code valueOf} with a single {@code String} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method named {@code fromString} with a single {@code String} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method {@code builder()} that creates instance of a builder class.
-     * Generic JavaBean deserialization is applied on the builder instance using config sub-nodes.
-     * See the last list item for more details about generic deserialization support.
-     * Builder has {@code build()} method to create new instance of a bean.
-     * </li>
-     * TODO this part relates to java beans that are moved to a separate module
-     * <li>a factory method {@code from} with parameters (loaded from config sub-nodes) creates new instance of a bean;
-     * Annotation {@link Config.Value} is used on parameters to customize sub-key and/or default value.
-     * </li>
-     * <li>a "factory" constructor with parameters (loaded from config sub-nodes);
-     * Annotation {@link Config.Value} is used on parameters to customize sub-key and/or default value.
-     * </li>
-     * <li>a no-parameter constructor to create new instance of type and apply recursively same mapping behaviour
-     * described above on each JavaBean property of such object, a.k.a. JavaBean deserialization.
-     * Public property setter is used by default to set a property value loaded from appropriate config sub-node.
-     * By default a setter pattern is required - public method named {@code set*} with single parameter that returns {@code void}.
-     * It is possible to suppress returned {@code void} and {@code set*} name requirements
-     * by marking a method by {@link Value} annotation.
-     * If there is no public setter, a public property field is used to set a property value.
-     * Generic mapping behaviour can be customized by {@link Config.Value} and {@link Config.Transient} annotations.
-     * </li>
-     * </ol>
-     * See {@link Config.Value} documentation for more details about generic deserialization feature.
+     * <p>
+     * A more sophisticated approach can be achieved using the "config beans" module, that provides reflection access
+     * and mapping for static factory methods, constructors, builder patterns and more.
      * <p>
      * If {@link ConfigSource} not specified, following default config source is used. Same as {@link #create()} uses.
      * It builds composite config source from following sources, checked in order:
@@ -1433,7 +1435,9 @@ public interface Config extends ConfigValue<String> {
          * @see ConfigMappers
          * @see #disableMapperServices
          */
-        <T> Builder addMapper(Class<T> type, Function<String, T> mapper);
+        <T> Builder addStringMapper(Class<T> type, Function<String, T> mapper);
+
+        <T> Builder addMapper(Class<T> type, Function<Config, T> mapper);
 
         /**
          * Registers a {@link ConfigMapperProvider} with a map of {@code String} to specified {@code type}.
@@ -1447,7 +1451,7 @@ public interface Config extends ConfigValue<String> {
          *
          * @param configMapperProvider mapper provider instance
          * @return modified builder instance
-         * @see #addMapper(Class, Function)
+         * @see #addStringMapper(Class, Function)
          * @see ConfigMappers
          * @see #disableMapperServices
          */
@@ -1624,5 +1628,7 @@ public interface Config extends ConfigValue<String> {
          * @return new instance of {@link Config}.
          */
         Config build();
+
+        Builder mappersFrom(Config config);
     }
 }

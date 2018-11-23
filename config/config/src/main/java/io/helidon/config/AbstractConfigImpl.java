@@ -17,12 +17,11 @@
 package io.helidon.config;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,28 +75,9 @@ abstract class AbstractConfigImpl implements Config {
         context = new NodeContextImpl();
     }
 
-    @Override
-    public Supplier<String> asSupplier() {
-        return () -> context()
-                .last()
-                .getValue();
+    ConfigMapperManager mapperManager() {
+        return mapperManager;
     }
-
-    @Override
-    public Supplier<Optional<String>> asOptionalSupplier() {
-        return () -> context()
-                .last()
-                .value();
-    }
-
-    @Override
-    public Supplier<String> asSupplier(String defaultValue) {
-        return () -> context()
-                .last()
-                .getValue(defaultValue);
-    }
-
-
 
     @Override
     public Context context() {
@@ -146,6 +126,11 @@ abstract class AbstractConfigImpl implements Config {
         } else {
             return factory.getConfig(realKey(), ConfigKeyImpl.of());
         }
+    }
+
+    @Override
+    public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        return asList(Config.class);
     }
 
     private void subscribe() {

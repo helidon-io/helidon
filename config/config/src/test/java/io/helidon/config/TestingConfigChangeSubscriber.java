@@ -17,7 +17,7 @@
 package io.helidon.config;
 
 /**
- * Testing implementation of {@link Flow.Subscriber} on {@link Config#changes()} events.
+ * Testing implementation of {@link io.helidon.common.reactive.Flow.Subscriber} on {@link Config#changes()} events.
  */
 public class TestingConfigChangeSubscriber extends TestingSubscriber<Config> {
 }

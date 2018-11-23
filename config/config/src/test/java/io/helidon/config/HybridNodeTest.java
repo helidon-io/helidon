@@ -24,11 +24,12 @@ import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -65,7 +66,7 @@ public class HybridNodeTest {
     @Test
     public void testNodeValue() {
         assertThat("app1.node.value value should be present",
-                   config.get("app1.node.value").asBoolean(),
+                   config.get("app1.node.value").asBoolean().get(),
                    is(true));
         assertThat("app1.node.value value should be present",
                    config.get("app1.node.value").hasValue(),
@@ -75,25 +76,25 @@ public class HybridNodeTest {
     @Test
     public void testSubnodeValue() {
         assertThat("app1.node.value.sub1 value should be present",
-                   config.get("app1.node.value.sub1").asString(),
+                   config.get("app1.node.value.sub1").asString().get(),
                    is("subvalue1"));
 
         assertThat("app1.node.value.sub2 value should be present",
-                   config.get("app1.node.value.sub2").asString(),
+                   config.get("app1.node.value.sub2").asString().get(),
                    is("subvalue2"));
     }
 
     @Test
     public void testListNodeValue() {
         assertThat("app1.node1.value should be present",
-                   config.get("app1.node1.value").asBoolean(),
+                   config.get("app1.node1.value").asBoolean().get(),
                    is(true));
     }
 
     @Test
     public void testListValue() {
         assertThat("app1.node1.value should be reachable as list",
-                   config.get("app1.node1.value").asList(Integer.class),
+                   config.get("app1.node1.value").asList(Integer.class).get(),
                    is(CollectionsHelper.listOf(14, 15, 16)));
     }
 }

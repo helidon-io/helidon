@@ -97,7 +97,8 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
     @Override
     public ConfigSource apply(Config config) throws ConfigMappingException, MissingValueException {
         Config properties = config.get(PROPERTIES_KEY) // use properties config node
-                .asNode().value().orElse(Config.empty()); // or empty config node
+                .asNode()
+                .orElse(Config.empty(config)); // or empty config node
 
         return OptionalHelper.from(config.get(TYPE_KEY)
                                            .value() // `type` is specified
@@ -105,7 +106,6 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
                         .or(() -> providers(type, properties)).asOptional())) // or use sources - custom type to class mapping
                 .or(() -> config.get(CLASS_KEY)
                         .as(Class.class) // `class` is specified
-                        .value()
                         .flatMap(clazz -> custom(clazz, properties))) // return custom source
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted source configuration."));
@@ -122,20 +122,20 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
             configSource = ConfigSources.environmentVariables();
             break;
         case PREFIXED_TYPE:
-            configSource = ConfigSources.prefixed(properties.get(KEY_KEY).getValue(""),
-                                                  properties.as(ConfigSource.class).getValue());
+            configSource = ConfigSources.prefixed(properties.get(KEY_KEY).asString().get(""),
+                                                  properties.as(ConfigSource::from).get());
             break;
         case CLASSPATH_TYPE:
-            configSource = properties.as(ClasspathConfigSource.class).getValue();
+            configSource = properties.as(ClasspathConfigSource::from).get();
             break;
         case FILE_TYPE:
-            configSource = properties.as(FileConfigSource.class).getValue();
+            configSource = properties.as(FileConfigSource::from).get();
             break;
         case DIRECTORY_TYPE:
-            configSource = properties.as(DirectoryConfigSource.class).getValue();
+            configSource = properties.as(DirectoryConfigSource::from).get();
             break;
         case URL_TYPE:
-            configSource = properties.as(UrlConfigSource.class).getValue();
+            configSource = properties.as(UrlConfigSource::from).get();
             break;
         default:
             configSource = null;
@@ -150,7 +150,7 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
     }
 
     private Optional<ConfigSource> custom(Class<?> clazz, Config properties) {
-        Object source = properties.as(clazz).getValue();
+        Object source = properties.as(clazz).get();
 
         if (source instanceof ConfigSource) {
             return Optional.of((ConfigSource)source);

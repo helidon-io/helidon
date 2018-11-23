@@ -21,13 +21,14 @@ import java.util.function.Supplier;
 
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.OverrideSource;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests the resolving of key token on config sources like:
@@ -51,11 +52,11 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.asMap().entrySet(), hasSize(3));
+        assertThat(config.asMap().get().entrySet(), hasSize(3));
 
-        assertThat(config.get("ad").asString(), is("ad1"));
-        assertThat(config.get("region").asString(), is("region-eu1"));
-        assertThat(config.get("region-eu1.ad1.url").asString(), is("http://localhost:8080"));
+        assertThat(config.get("ad").asString().get(), is("ad1"));
+        assertThat(config.get("region").asString().get(), is("region-eu1"));
+        assertThat(config.get("region-eu1.ad1.url").asString().get(), is("http://localhost:8080"));
         assertThat(config.get("$region").exists(), is(false));
         assertThat(config.get("$region.$ad").exists(), is(false));
     }
@@ -73,13 +74,13 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.asMap().entrySet(), hasSize(3));
+        assertThat(config.asMap().get().entrySet(), hasSize(3));
 
-        assertThat(config.get("ad").asString(), is("ad1"));
-        assertThat(config.get("region").asString(), is("region-eu1"));
+        assertThat(config.get("ad").asString().get(), is("ad1"));
+        assertThat(config.get("region").asString().get(), is("region-eu1"));
         assertThat(config.get("$region").exists(), is(true));
         assertThat(config.get("$region.$ad").exists(), is(true));
-        assertThat(config.get("$region.$ad.url").asString(), is("http://localhost:8080"));
+        assertThat(config.get("$region.$ad.url").asString().get(), is("http://localhost:8080"));
     }
 
     @Test
@@ -94,11 +95,11 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.asMap().entrySet(), hasSize(3));
+        assertThat(config.asMap().get().entrySet(), hasSize(3));
 
-        assertThat(config.get("env.ad").asString(), is("ad1"));
-        assertThat(config.get("env.region").asString(), is("region-eu1"));
-        assertThat(config.get("region-eu1.ad1.url").asString(), is("http://localhost:8080"));
+        assertThat(config.get("env.ad").asString().get(), is("ad1"));
+        assertThat(config.get("env.region").asString().get(), is("region-eu1"));
+        assertThat(config.get("region-eu1.ad1.url").asString().get(), is("http://localhost:8080"));
         assertThat(config.get("$region").exists(), is(false));
         assertThat(config.get("$region.$ad").exists(), is(false));
     }
@@ -119,11 +120,11 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.asMap().entrySet(), hasSize(3));
+        assertThat(config.asMap().get().entrySet(), hasSize(3));
 
-        assertThat(config.get("env.ad").asString(), is("ad1"));
-        assertThat(config.get("env.region").asString(), is("region-eu1"));
-        assertThat(config.get("region-eu1.ad1.url").asString(), is("http://localhost:8080"));
+        assertThat(config.get("env.ad").asString().get(), is("ad1"));
+        assertThat(config.get("env.region").asString().get(), is("region-eu1"));
+        assertThat(config.get("region-eu1.ad1.url").asString().get(), is("http://localhost:8080"));
         assertThat(config.get("$region").exists(), is(false));
         assertThat(config.get("$region.$ad").exists(), is(false));
     }
@@ -165,10 +166,10 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(testConfig.asMap().entrySet(), hasSize(3));
+        assertThat(testConfig.asMap().get().entrySet(), hasSize(3));
 
-        assertThat(testConfig.get("test.inventory.logging.level").asString(), is("FINE"));
-        assertThat(prodConfig.get("prod.inventory.logging.level").asString(), is("WARN"));
+        assertThat(testConfig.get("test.inventory.logging.level").asString().get(), is("FINE"));
+        assertThat(prodConfig.get("prod.inventory.logging.level").asString().get(), is("WARN"));
     }
 
     @Test
@@ -243,12 +244,12 @@ public class KeyTokenResolvingTest {
         assertThat(config.get("oracle").exists(), is(false));
         assertThat(config.get("oracle~1com").exists(), is(true));
         assertThat(config.get("oracle~1com").type(), is(Config.Type.OBJECT));
-        assertThat(config.get("oracle~1com.sso").asString(), is("on"));
+        assertThat(config.get("oracle~1com.sso").asString().get(), is("on"));
 
         assertThat(config.get("seznam").exists(), is(false));
         assertThat(config.get("seznam~1cz").exists(), is(true));
         assertThat(config.get("seznam~1cz").type(), is(Config.Type.OBJECT));
-        assertThat(config.get("seznam~1cz.sso").asString(), is("off"));
+        assertThat(config.get("seznam~1cz.sso").asString().get(), is("off"));
 
     }
 

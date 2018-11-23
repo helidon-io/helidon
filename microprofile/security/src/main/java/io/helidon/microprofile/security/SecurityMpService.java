@@ -59,7 +59,7 @@ public class SecurityMpService implements MpService {
         }
 
         Config jerseyConfig = config.get("security.jersey");
-        if (jerseyConfig.get("enabled").asBoolean().getValue(true)) {
+        if (jerseyConfig.get("enabled").asBoolean().get(true)) {
             SecurityFeature feature = SecurityFeature.builder(security)
                     .fromConfig(jerseyConfig)
                     .build();
@@ -68,7 +68,7 @@ public class SecurityMpService implements MpService {
         }
 
         Config webServerConfig = config.get("security.web-server");
-        if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().getValue(true)) {
+        if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().get(true)) {
             context.getServerRoutingBuilder()
                     .register(WebSecurity.from(security, config));
         }

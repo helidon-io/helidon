@@ -41,7 +41,7 @@ import io.helidon.config.spi.ConfigFilter;
  * will be resolved as:
  * <pre>
  * {@code message = "Hello Joachim!"}</pre>
- * <h2>How to Activate This Filter</h2>
+ * <h1>How to Activate This Filter</h1>
  * Use any of the following techniques to create a {@code ValueResolvingFilter} and
  * use it for config look-ups.
  * <ol>
@@ -147,7 +147,8 @@ public class ValueResolvingFilter implements ConfigFilter {
             failOnMissingReferenceSetting = Optional.of(
                     config
                         .get(ConfigFilters.ValueResolvingBuilder.FAIL_ON_MISSING_REFERENCE_KEY_NAME)
-                        .asBoolean().getValue(DEFAULT_FAIL_ON_MISSING_REFERENCE_BEHAVIOR));
+                        .asBoolean()
+                        .get(DEFAULT_FAIL_ON_MISSING_REFERENCE_BEHAVIOR));
         }
         failOnMissingReference = failOnMissingReferenceSetting.get();
     }
@@ -176,7 +177,7 @@ public class ValueResolvingFilter implements ConfigFilter {
         Matcher m = PATTERN_REFERENCE.matcher(template);
         final StringBuffer sb = new StringBuffer();
         while (m.find()) {
-            m.appendReplacement(sb, Matcher.quoteReplacement(root.get(m.group(1)).getValue()));
+            m.appendReplacement(sb, Matcher.quoteReplacement(root.get(m.group(1)).asString().get()));
         }
         m.appendTail(sb);
         // remove all backslash that encodes ${...}

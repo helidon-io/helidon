@@ -263,7 +263,7 @@ public class HoconConfigParserTest {
         Config config = Config
                 .withSources(ConfigSources.from(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
                 .addParser(new HoconConfigParser())
-                .addMapper(AppType.class, new AppTypeMapper())
+                .addStringMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()

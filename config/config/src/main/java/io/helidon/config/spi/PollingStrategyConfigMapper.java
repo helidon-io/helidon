@@ -55,15 +55,13 @@ class PollingStrategyConfigMapper {
             throws ConfigMappingException, MissingValueException {
         Config properties = config.get(PROPERTIES_KEY) // use properties config node
                 .asNode()
-                .value()
-                .orElse(Config.empty()); // or empty config node
+                .orElse(Config.empty(config)); // or empty config node
 
         return OptionalHelper.from(config.get(TYPE_KEY).value() // `type` is specified
                                            .flatMap(type -> this
                                                    .builtin(type, properties, targetType))) // return built-in polling strategy
                 .or(() -> config.get(CLASS_KEY)
                         .as(Class.class) // `class` is specified
-                        .value()
                         .flatMap(clazz -> custom(clazz, properties, targetType))) // return custom polling strategy
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted polling-strategy configuration."));
@@ -75,7 +73,7 @@ class PollingStrategyConfigMapper {
         final Function<T, Supplier<PollingStrategy>> pollingStrategy;
         switch (type) {
         case REGULAR_TYPE:
-            pollingStrategy = target -> properties.as(PollingStrategies.ScheduledBuilder.class).getValue();
+            pollingStrategy = target -> properties.as(PollingStrategies.ScheduledBuilder.class).get();
             break;
         case WATCH_TYPE:
             pollingStrategy = PollingStrategyConfigMapper::watchSupplier;
@@ -111,7 +109,7 @@ class PollingStrategyConfigMapper {
                 LOGGER.log(Level.FINE, ex, () -> clazz.getName() + " does not have public constructor with single parameter ("
                         + targetType.getName() + "). Generic instance from Config will be used.");
                 // use generic mapping as a fallback
-                pollingStrategyFunction = target -> (Supplier<PollingStrategy>) properties.as(clazz);
+                pollingStrategyFunction = target -> (Supplier<PollingStrategy>) properties.as(clazz).get();
             }
         } else {
             // use builder pattern as a fallback

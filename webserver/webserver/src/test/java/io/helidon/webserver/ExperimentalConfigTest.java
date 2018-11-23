@@ -54,7 +54,7 @@ public class ExperimentalConfigTest {
                 .get("webserver")
                 .get("experimental")
                 .get("http2");
-        assertTrue(http2.get("enable").asBoolean().getValue());
-        assertEquals(16 * 1024, (int) http2.get("max-content-length").asInt().getValue());
+        assertTrue(http2.get("enable").asBoolean().get());
+        assertEquals(16 * 1024, (int) http2.get("max-content-length").asInt().get());
     }
 }

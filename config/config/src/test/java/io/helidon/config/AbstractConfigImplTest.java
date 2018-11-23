@@ -22,9 +22,12 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThat;
+
 
 /**
  * General tests of {@link Config} to be extended by test classes for missing, value, object and list node types.
@@ -74,13 +77,23 @@ public abstract class AbstractConfigImplTest {
     }
 
     protected Config configViaSupplier(String key) {
-        return config.get(key).nodeSupplier().get().get();
+        return config.get(key).asNode().supplier().get();
     }
 
     protected void testTimestamp(Config config) {
         Instant timestamp = config.timestamp();
         assertThat(timestamp, greaterThan(Instant.now().minusSeconds(60)));
         assertThat(timestamp, lessThan(Instant.now()));
+    }
+
+    @Test
+    void testMappingManagerConvert() {
+        // TODO implement
+    }
+
+    @Test
+    void testConfigValueConvert() {
+        // TODO implement
     }
     
     public abstract void testTimestamp(TestContext context);
@@ -91,97 +104,29 @@ public abstract class AbstractConfigImplTest {
 
     public abstract void testTypeIsLeaf(TestContext context);
 
-    public abstract void testNode(TestContext context);
+    public abstract void testAsNode(TestContext context);
 
     public abstract void testIfExists(TestContext context);
 
-    public abstract void testIfExistsOrElse(TestContext context);
-
     public abstract void testValue(TestContext context);
-
-    public abstract void testAsOptionalString(TestContext context);
-
-    public abstract void testNodeList(TestContext context);
-
-    public abstract void testAsOptional(TestContext context);
-
-    public abstract void testAsOptionalList(TestContext context);
-
-    public abstract void testAsOptionalStringList(TestContext context);
-
-    public abstract void testMapOptionalWithFunction(TestContext context);
-
-    public abstract void testMapOptionalWithConfigMapper(TestContext context);
-
-    public abstract void testAsOptionalBoolean(TestContext context);
-
-    public abstract void testAsOptionalInt(TestContext context);
-
-    public abstract void testAsOptionalLong(TestContext context);
-
-    public abstract void testAsOptionalDouble(TestContext context);
-
-    public abstract void testAsOptionalMap(TestContext context);
-
-    public abstract void testMapOptionalListWithFunction(TestContext context);
-
-    public abstract void testMapOptionalListWithConfigMapper(TestContext context);
 
     public abstract void testAs(TestContext context);
 
-    public abstract void testAsWithDefault(TestContext context);
-
-    public abstract void testMapWithFunction(TestContext context);
-
-    public abstract void testMapWithFunctionAndDefault(TestContext context);
-
-    public abstract void testMapWithConfigMapper(TestContext context);
-
-    public abstract void testMapWithConfigMapperAndDefault(TestContext context);
-
     public abstract void testAsList(TestContext context);
-
-    public abstract void testAsListWithDefault(TestContext context);
-
-    public abstract void testMapListWithFunction(TestContext context);
-
-    public abstract void testMapListWithFunctionAndDefault(TestContext context);
-
-    public abstract void testMapListWithConfigMapper(TestContext context);
-
-    public abstract void testMapListWithConfigMapperAndDefault(TestContext context);
 
     public abstract void testAsString(TestContext context);
 
-    public abstract void testAsStringWithDefault(TestContext context);
-
     public abstract void testAsBoolean(TestContext context);
-
-    public abstract void testAsBooleanWithDefault(TestContext context);
 
     public abstract void testAsInt(TestContext context);
 
-    public abstract void testAsIntWithDefault(TestContext context);
-
     public abstract void testAsLong(TestContext context);
-
-    public abstract void testAsLongWithDefault(TestContext context);
 
     public abstract void testAsDouble(TestContext context);
 
-    public abstract void testAsDoubleWithDefault(TestContext context);
-
-    public abstract void testAsStringList(TestContext context);
-
-    public abstract void testAsStringListWithDefault(TestContext context);
-
     public abstract void testAsNodeList(TestContext context);
 
-    public abstract void testAsNodeListWithDefault(TestContext context);
-
     public abstract void testAsMap(TestContext context);
-
-    public abstract void testAsMapWithDefault(TestContext context);
 
     public abstract void testTraverse(TestContext context);
 
@@ -200,92 +145,6 @@ public abstract class AbstractConfigImplTest {
     public abstract void testNodeSupplier(TestContext context);
 
     public abstract void testIfExistsSupplier(TestContext context);
-
-    public abstract void testIfExistsOrElseSupplier(TestContext context);
-
-    public abstract void testOptionalStringSupplier(TestContext context);
-
-    public abstract void testNodeListSupplier(TestContext context);
-
-    public abstract void testAsOptionalSupplier(TestContext context);
-
-    public abstract void testAsOptionalListSupplier(TestContext context);
-
-    public abstract void testAsOptionalStringListSupplier(TestContext context);
-
-    public abstract void testMapOptionalWithFunctionSupplier(TestContext context);
-
-    public abstract void testMapOptionalWithConfigMapperSupplier(TestContext context);
-
-    public abstract void testAsOptionalBooleanSupplier(TestContext context);
-
-    public abstract void testAsOptionalIntSupplier(TestContext context);
-
-    public abstract void testAsOptionalLongSupplier(TestContext context);
-
-    public abstract void testAsOptionalDoubleSupplier(TestContext context);
-
-    public abstract void testAsOptionalMapSupplier(TestContext context);
-
-    public abstract void testMapOptionalListWithFunctionSupplier(TestContext context);
-
-    public abstract void testMapOptionalListWithConfigMapperSupplier(TestContext context);
-
-    public abstract void testAsSupplier(TestContext context);
-
-    public abstract void testAsWithDefaultSupplier(TestContext context);
-
-    public abstract void testMapWithFunctionSupplier(TestContext context);
-
-    public abstract void testMapWithFunctionAndDefaultSupplier(TestContext context);
-
-    public abstract void testMapWithConfigMapperSupplier(TestContext context);
-
-    public abstract void testMapWithConfigMapperAndDefaultSupplier(TestContext context);
-
-    public abstract void testAsListSupplier(TestContext context);
-
-    public abstract void testAsListWithDefaultSupplier(TestContext context);
-
-    public abstract void testMapListWithFunctionSupplier(TestContext context);
-
-    public abstract void testMapListWithFunctionAndDefaultSupplier(TestContext context);
-
-    public abstract void testMapListWithConfigMapperSupplier(TestContext context);
-
-    public abstract void testMapListWithConfigMapperAndDefaultSupplier(TestContext context);
-
-    public abstract void testAsStringSupplier(TestContext context);
-
-    public abstract void testAsStringWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsBooleanSupplier(TestContext context);
-
-    public abstract void testAsBooleanWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsIntSupplier(TestContext context);
-
-    public abstract void testAsIntWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsLongSupplier(TestContext context);
-
-    public abstract void testAsLongWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsDoubleSupplier(TestContext context);
-
-    public abstract void testAsDoubleWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsStringListSupplier(TestContext context);
-
-    public abstract void testAsStringListWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsNodeListSupplier(TestContext context);
-
-    public abstract void testAsNodeListWithDefaultSupplier(TestContext context);
-
-    public abstract void testAsMapSupplier(TestContext context);
-
-    public abstract void testAsMapWithDefaultSupplier(TestContext context);
 
     public abstract void testTraverseSupplier(TestContext context);
 
@@ -348,7 +207,7 @@ public abstract class AbstractConfigImplTest {
         }
 
         public static ValueConfigBean fromConfig(Config config) {
-            return new ValueConfigBean("fromConfig", config.asString());
+            return new ValueConfigBean("fromConfig", config.asString().get());
         }
 
         @Override

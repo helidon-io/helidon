@@ -405,9 +405,9 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
 
             return new JwtOutboundTarget(
                     tokenHandler,
-                    config.get("jwt-kid").asString().getValue(null),
-                    config.get("jwk-kid").asString().getValue(null),
-                    config.get("jwt-audience").asString().getValue(null),
+                    config.get("jwt-kid").asString().get(null),
+                    config.get("jwk-kid").asString().get(null),
+                    config.get("jwt-audience").asString().get(null),
                     config.get("jwt-not-before-seconds").asInt(5),
                     config.get("jwt-validity-seconds").asLong(60 * 60 * 24));
         }

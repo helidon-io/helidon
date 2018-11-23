@@ -107,6 +107,7 @@ public class ConfigKeyImpl implements Config.Key {
      * @param key sub-key
      * @return new child instance of ConfigKeyImpl.
      */
+    @Override
     public ConfigKeyImpl child(Config.Key key) {
         final List<String> path;
         if (key instanceof ConfigKeyImpl) {

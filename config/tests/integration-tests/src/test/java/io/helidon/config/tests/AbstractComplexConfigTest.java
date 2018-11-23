@@ -370,7 +370,7 @@ public abstract class AbstractComplexConfigTest {
         String defaultValue = "default-value";
         String expected = defaultValue;
 
-        assertThat(node.asString().getValue(defaultValue), is(expected));
+        assertThat(node.asString().get(defaultValue), is(expected));
         assertThat(node.as(String.class, defaultValue), is(expected));
         assertThat(node.map(String::toString, defaultValue), is(expected));
 
@@ -399,7 +399,7 @@ public abstract class AbstractComplexConfigTest {
         Boolean defaultValue = true;
         Boolean expected = defaultValue;
 
-        assertThat(node.asBoolean().getValue(defaultValue), is(expected));
+        assertThat(node.asBoolean().get(defaultValue), is(expected));
         assertThat(node.as(Boolean.class, defaultValue), is(expected));
         assertThat(node.map(ConfigMappers::toBoolean, defaultValue), is(expected));
 

@@ -29,6 +29,81 @@ final class ConfigValues {
     private ConfigValues() {
     }
 
+    /**
+     * Simple empty value that can be used e.g. for unit testing.
+     * All ConfigValues use equals method that only cares about the optional value.
+     *
+     * @param <T> type of the value
+     * @return a config value that is empty
+     */
+    static <T> ConfigValue<T> empty() {
+        return new ConfigValueBase<T>(Config.Key.of("")) {
+            @Override
+            public Optional<T> asOptional() {
+                return Optional.empty();
+            }
+
+            @Override
+            public <N> ConfigValue<N> as(Function<T, N> mapper) {
+                return empty();
+            }
+
+            @Override
+            public Supplier<T> supplier() {
+                return () -> {
+                    throw MissingValueException.forKey(key());
+                };
+            }
+
+            @Override
+            public Supplier<T> supplier(T defaultValue) {
+                return () -> defaultValue;
+            }
+
+            @Override
+            public Supplier<Optional<T>> optionalSupplier() {
+                return Optional::empty;
+            }
+        };
+    }
+
+    /**
+     * Simple value that can be used e.g. for unit testing.
+     * All ConfigValues use equals method that only cares about the optional value.
+     *
+     * @param value value to use
+     * @param <T> type of the value
+     * @return a config value that uses the value provided
+     */
+    static <T> ConfigValue<T> simple(T value) {
+        return new ConfigValueBase<T>(Config.Key.of("")) {
+            @Override
+            public Optional<T> asOptional() {
+                return Optional.ofNullable(value);
+            }
+
+            @Override
+            public <N> ConfigValue<N> as(Function<T, N> mapper) {
+                return simple(mapper.apply(value));
+            }
+
+            @Override
+            public Supplier<T> supplier() {
+                return () -> value;
+            }
+
+            @Override
+            public Supplier<T> supplier(T defaultValue) {
+                return () -> asOptional().orElse(defaultValue);
+            }
+
+            @Override
+            public Supplier<Optional<T>> optionalSupplier() {
+                return this::asOptional;
+            }
+        };
+    }
+
     static <T> ConfigValue<T> create(Config config,
                                      Supplier<Optional<T>> supplier,
                                      Function<Config, ConfigValue<T>> configMethod) {
@@ -58,9 +133,9 @@ final class ConfigValues {
 
         Supplier<Optional<List<T>>> valueSupplier = () -> {
             try {
-                return config.asNodeList().value()
+                return config.asNodeList()
                         .map(list -> list.stream()
-                                .map(theConfig -> getValue.apply(theConfig).getValue())
+                                .map(theConfig -> getValue.apply(theConfig).get())
                                 .collect(Collectors.toList())
                         );
             } catch (MissingValueException | ConfigMappingException ex) {
@@ -87,11 +162,33 @@ final class ConfigValues {
         return new GenericConfigValueImpl<>(config, valueSupplier, Config::asMap);
     }
 
-    public static <T> ConfigValue<T> empty(Config config) {
-        return new GenericConfigValueImpl<>(config, Optional::empty, ConfigValues::empty);
+    private abstract static class ConfigValueBase<T> implements ConfigValue<T> {
+        private final Config.Key key;
+
+        protected ConfigValueBase(Config.Key key) {
+            this.key = key;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof ConfigValue) {
+                return ((ConfigValue<?>)obj).asOptional().equals(this.asOptional());
+            }
+            return false;
+        }
+
+        @Override
+        public Config.Key key() {
+            return key;
+        }
+
+        @Override
+        public int hashCode() {
+            return asOptional().hashCode();
+        }
     }
 
-    private static final class GenericConfigValueImpl<T> implements ConfigValue<T> {
+    private static final class GenericConfigValueImpl<T> extends ConfigValueBase<T> {
         private final Supplier<Optional<T>> valueSupplier;
         private final Function<Config, ConfigValue<T>> configMethod;
         private final Config owningConfig;
@@ -99,39 +196,46 @@ final class ConfigValues {
         private GenericConfigValueImpl(Config owningConfig,
                                        Supplier<Optional<T>> valueSupplier,
                                        Function<Config, ConfigValue<T>> configMethod) {
+            super(owningConfig.key());
             this.owningConfig = owningConfig;
             this.valueSupplier = valueSupplier;
             this.configMethod = configMethod;
         }
 
         @Override
-        public Config.Key key() {
-            return owningConfig.key();
+        public Optional<T> asOptional() {
+            try {
+                return valueSupplier.get();
+            } catch (MissingValueException e) {
+                return Optional.empty();
+            }
         }
 
         @Override
-        public Optional<T> value() {
-            return valueSupplier.get();
+        public Supplier<T> supplier() {
+            return () -> configMethod.apply(latest()).get();
         }
 
         @Override
-        public Supplier<T> asSupplier() {
-            return () -> configMethod.apply(latest()).getValue();
+        public Supplier<T> supplier(T defaultValue) {
+            return () -> configMethod.apply(latest()).get(defaultValue);
         }
 
         @Override
-        public Supplier<T> asSupplier(T defaultValue) {
-            return () -> configMethod.apply(latest()).getValue(defaultValue);
-        }
-
-        @Override
-        public Supplier<Optional<T>> asOptionalSupplier() {
-            return () -> configMethod.apply(latest()).value();
+        public Supplier<Optional<T>> optionalSupplier() {
+            return () -> configMethod.apply(latest()).asOptional();
         }
 
 
         private Config latest() {
             return owningConfig.context().last();
+        }
+
+        @Override
+        public <N> ConfigValue<N> as(Function<T, N> mapper) {
+            return new GenericConfigValueImpl<>(owningConfig,
+                                                () -> map(mapper),
+                                                config -> configMethod.apply(config).as(mapper));
         }
     }
 

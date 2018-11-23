@@ -16,6 +16,7 @@
 
 package io.helidon.config.internal;
 
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -67,29 +68,27 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testString() {
-        Properties properties = new Properties() {{
-            put("app.name", "app-name");
-        }};
+        Properties properties = new Properties();
+        properties.setProperty("app.name", "app-name");
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(properties))
                 .build();
 
-        assertThat(config.get("app.name").asString(), CoreMatchers.is("app-name"));
+        assertThat(config.get("app.name").asString().get(), CoreMatchers.is("app-name"));
     }
 
     @Test
     public void testInt() {
-        Properties properties = new Properties() {{
-            put("app.port", "8080");
-        }};
+        Properties properties = new Properties();
+        properties.setProperty("app.port", "8080");
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(properties))
                 .build();
 
-        assertThat(config.get("app").get("port").asInt(), CoreMatchers.is(8080));
-        assertThat(config.get("app.port").asInt(), CoreMatchers.is(8080));
+        assertThat(config.get("app").get("port").asInt().get(), is(8080));
+        assertThat(config.get("app.port").asInt().get(), is(8080));
     }
 
     @Test
@@ -101,17 +100,16 @@ public class MapConfigSourcePropertiesTest {
                     .sources(ConfigSources.from(properties))
                     .build();
 
-            config.get("app.port").asInt();
+            config.get("app.port").asInt().get();
         });
     }
 
     @Test
     public void testTraverse() {
-        Properties properties = new Properties() {{
-            put("app.name", "app-name");
-            put("app.port", "8080");
-            put("security", "on");
-        }};
+        Properties properties = new Properties();
+        properties.setProperty("app.name", "app-name");
+        properties.setProperty("app.port", "8080");
+        properties.setProperty("security", "on");
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(properties))
@@ -126,49 +124,51 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testChildren() {
-        Properties properties = new Properties() {{
-            put("app.name", "app-name");
-            put("app.port", "8080");
-        }};
+        Properties properties = new Properties();
+        properties.setProperty("app.name", "app-name");
+        properties.setProperty("app.port", "8080");
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(properties))
                 .build()
                 .get("app");
 
-        assertThat(config.asNodeList().size(), is(2));
-        assertThat(config.asNodeList().stream().map(Config::key).map(Config.Key::toString).collect(Collectors.toList()),
+        assertThat(config.asNodeList().get().size(), is(2));
+        assertThat(config.asNodeList().get()
+                           .stream()
+                           .map(Config::key)
+                           .map(Config.Key::toString)
+                           .collect(Collectors.toList()),
                    Matchers.containsInAnyOrder("app.name", "app.port"));
     }
 
     @Test
     public void testMapToCustomClass() {
-        Properties properties = new Properties() {{
-            put("app.name", "app-name");
-        }};
+        Properties properties = new Properties();
+        properties.setProperty("app.name", "app-name");
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(properties))
                 .build();
 
         assertThat(config.get("app.name")
+                           .value()
                            .map(Name::fromString)
-                           .getName(),
-                   CoreMatchers.is("app-name"));
+                           .map(Name::getName),
+                   is(Optional.of("app-name")));
     }
 
     @Test
     public void testMapToArray() {
-        Properties properties = new Properties() {{
-            put("app.0", "zero");
-            put("app.1", "one");
-        }};
+        Properties properties = new Properties();
+        properties.setProperty("app.0", "zero");
+        properties.setProperty("app.1", "one");
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(properties))
                 .build();
 
-        assertThat(config.get("app").asNodeList().size(), CoreMatchers.is(2));
+        assertThat(config.get("app").asNodeList().get().size(), CoreMatchers.is(2));
     }
 
     @Test
@@ -188,13 +188,13 @@ public class MapConfigSourcePropertiesTest {
                 .addParser(ConfigParsers.properties())
                 .build();
 
-        assertThat(config.get("uri").asNodeList().size(), CoreMatchers.is(2));
-        assertThat(config.get("uri.array").asNodeList().size(), CoreMatchers.is(3));
-        assertThat(config.get("uri-array").asNodeList().size(), CoreMatchers.is(3));
+        assertThat(config.get("uri").asNodeList().get().size(), CoreMatchers.is(2));
+        assertThat(config.get("uri.array").asNodeList().get().size(), CoreMatchers.is(3));
+        assertThat(config.get("uri-array").asNodeList().get().size(), CoreMatchers.is(3));
     }
 
-    private static class Name {
-        private String name;
+    private static final class Name {
+        private final String name;
 
         private Name(String name) {
             this.name = name;

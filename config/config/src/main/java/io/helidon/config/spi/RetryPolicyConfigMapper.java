@@ -45,14 +45,12 @@ class RetryPolicyConfigMapper implements Function<Config, RetryPolicy> {
     public RetryPolicy apply(Config config) throws ConfigMappingException, MissingValueException {
         Config properties = config.get(PROPERTIES_KEY) // use properties config node
                 .asNode()
-                .value()
-                .orElse(Config.empty()); // or empty config node
+                .orElse(Config.empty(config)); // or empty config node
 
         return OptionalHelper.from(config.get(TYPE_KEY).value() // `type` is specified
                 .flatMap(type -> this.builtin(type, properties))) // return built-in retry policy
                 .or(() -> config.get(CLASS_KEY)
                         .as(Class.class) // `class` is specified
-                        .value()
                         .flatMap(clazz -> custom(clazz, properties))) // return custom retry policy
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted retry-policy configuration."));
@@ -62,7 +60,7 @@ class RetryPolicyConfigMapper implements Function<Config, RetryPolicy> {
         final RetryPolicy retryPolicy;
         switch (type) {
         case REPEAT_TYPE:
-            retryPolicy = properties.as(RetryPolicies.Builder.class).getValue().get();
+            retryPolicy = properties.as(RetryPolicies.Builder.class).get().get();
             break;
         default:
             retryPolicy = null;
@@ -73,7 +71,7 @@ class RetryPolicyConfigMapper implements Function<Config, RetryPolicy> {
     private Optional<RetryPolicy> custom(Class<?> clazz, Config properties) {
         final RetryPolicy retryPolicy;
         if (RetryPolicy.class.isAssignableFrom(clazz)) {
-            retryPolicy = properties.as((Class<RetryPolicy>) clazz).getValue();
+            retryPolicy = properties.as((Class<RetryPolicy>) clazz).get();
         } else {
             throw new ConfigException("Configured retry policy class " + clazz.getName() + " does not implement RetryPolicy");
         }

@@ -28,7 +28,7 @@ import io.helidon.config.beans.ReflectionUtil.PropertyAccessor;
 /**
  * Various mappers used in {@link BeansConfigMapperProvider}.
  */
-class ConfigMappers {
+class BeansConfigMappers {
     abstract static class MethodHandleConfigMapper<T, P> implements Function<Config, T> {
         private final Class<T> type;
         private final String methodName;
@@ -73,7 +73,7 @@ class ConfigMappers {
 
         @Override
         protected String invokeParameter(Config config) {
-            return config.getValue();
+            return config.asString().get();
         }
     }
 

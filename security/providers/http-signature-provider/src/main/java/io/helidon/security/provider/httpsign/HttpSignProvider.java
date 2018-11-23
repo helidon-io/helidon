@@ -325,8 +325,8 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          */
         public Builder fromConfig(Config config) {
             acceptHeaders.addAll(config.get("headers").asList(HttpSignHeader.class, CollectionsHelper.listOf()));
-            optional = config.get("optional").asBoolean().getValue(false);
-            realm = config.get("realm").asString().getValue("prime");
+            optional = config.get("optional").asBoolean().get(false);
+            realm = config.get("realm").asString().get("prime");
             inboundRequiredHeaders = config.get("sign-headers").as(SignedHeadersConfig.class, DEFAULT_REQUIRED_HEADERS);
             outboundConfig = OutboundConfig.parseTargets(config);
 

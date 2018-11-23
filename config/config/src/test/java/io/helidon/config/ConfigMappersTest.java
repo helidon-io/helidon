@@ -59,12 +59,12 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ConfigMappers}.
@@ -94,7 +94,9 @@ public class ConfigMappersTest {
 
     @Test
     public void testEssentialMappers() {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
+                                                               Collections.emptyMap(),
+                                                               ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(CollectionsHelper.mapOf(
@@ -112,7 +114,9 @@ public class ConfigMappersTest {
     }
 
     private <T> void assertMapper(String stringValue, Class<T> type, T expectedValue) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
+                                                               Collections.emptyMap(),
+                                                               ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(CollectionsHelper.mapOf("key", stringValue)))
@@ -199,7 +203,9 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersPattern() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
+                                                               Collections.emptyMap(),
+                                                               ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
                 .sources(ConfigSources.from(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
@@ -211,7 +217,9 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersRootProperties() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
+                                                               Collections.emptyMap(),
+                                                               ConfigMapperManager.MapperProviders.create());
         Config config = createConfig();
 
         Properties rootProperties = manager.map(Properties.class, config);
@@ -225,7 +233,9 @@ public class ConfigMappersTest {
 
     @Test
     public void testBuiltinMappersSubNodeProperties() throws MalformedURLException {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
+                                                               Collections.emptyMap(),
+                                                               ConfigMapperManager.MapperProviders.create());
         Config config = createConfig().get("key2");
 
         Properties key2Properties = manager.map(Properties.class, config);
