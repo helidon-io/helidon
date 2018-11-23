@@ -27,13 +27,13 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.TestingConfigSource;
 
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.config.ConfigTest.waitFor;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -83,7 +83,7 @@ public class ConfigChangesTest {
         // new: key exists
         assertThat(newConfig.exists(), is(true));
         assertThat(newConfig.type(), is(Config.Type.OBJECT));
-        assertThat(newConfig.get("sub1").asString(), is("string value"));
+        assertThat(newConfig.get("sub1").asString().get(), is("string value"));
     }
 
     @Test
@@ -166,17 +166,17 @@ public class ConfigChangesTest {
         // wait for event1
         Config last1 = subscriber1.getLastOnNext(200, true);
         assertThat(last1.key().toString(), is("key-1-1.key-2-1"));
-        assertThat(last1.asString(), is("NEW item 1"));
+        assertThat(last1.asString().get(), is("NEW item 1"));
 
         // wait for event2
         Config last2 = subscriber2.getLastOnNext(200, true);
         assertThat(last2.key().toString(), is("key-2-1"));
-        assertThat(last2.asString(), is("NEW item 1"));
+        assertThat(last2.asString().get(), is("NEW item 1"));
 
         // wait for event3
         Config last3 = subscriber3.getLastOnNext(200, true);
         assertThat(last3.key().toString(), is(""));
-        assertThat(last3.asString(), is("NEW item 1"));
+        assertThat(last3.asString().get(), is("NEW item 1"));
 
         // timestamp 1==2==3
 
@@ -225,12 +225,12 @@ public class ConfigChangesTest {
         // wait for event1
         Config last1 = subscriber1.getLastOnNext(200, true);
         assertThat(last1.key().toString(), is("key-1-1"));
-        assertThat(last1.get("key-2-1").asString(), is("NEW item 1"));
+        assertThat(last1.get("key-2-1").asString().get(), is("NEW item 1"));
 
         // wait for event2
         Config last2 = subscriber2.getLastOnNext(200, true);
         assertThat(last2.key().toString(), is(""));
-        assertThat(last2.get("key-2-1").asString(), is("NEW item 1"));
+        assertThat(last2.get("key-2-1").asString().get(), is("NEW item 1"));
 
         // no other events
         subscriber1.request1();
@@ -265,7 +265,7 @@ public class ConfigChangesTest {
         // wait for event
         Config last1 = subscriber1.getLastOnNext(200, true);
         assertThat(last1.key().toString(), is(""));
-        assertThat(last1.get("key-1-1.key-2-1").asString(), is("NEW item 1"));
+        assertThat(last1.get("key-1-1.key-2-1").asString().get(), is("NEW item 1"));
 
         // no other events
         subscriber1.request1();
@@ -358,7 +358,7 @@ public class ConfigChangesTest {
         // new: key exists
         assertThat(newConfig.exists(), is(true));
         assertThat(newConfig.type(), is(Config.Type.LIST));
-        assertThat(newConfig.asStringList(), contains("item 1", "item 2"));
+        assertThat(newConfig.asList(String.class).get(), contains("item 1", "item 2"));
     }
 
     @Test
@@ -390,7 +390,7 @@ public class ConfigChangesTest {
         // new: key exists
         assertThat(newConfig.exists(), is(true));
         assertThat(newConfig.type(), is(Config.Type.VALUE));
-        assertThat(newConfig.asString(), is("string value"));
+        assertThat(newConfig.asString().get(), is("string value"));
     }
 
     @Test
@@ -409,7 +409,7 @@ public class ConfigChangesTest {
         // key exists
         assertThat(config.get("key1").exists(), is(true));
         assertThat(config.get("key1").type(), is(Config.Type.OBJECT));
-        assertThat(config.get("key1").get("sub1").asString(), is("string value"));
+        assertThat(config.get("key1").get("sub1").asString().get(), is("string value"));
 
         // register subscriber
         TestingConfigChangeSubscriber subscriber = new TestingConfigChangeSubscriber();
@@ -448,7 +448,7 @@ public class ConfigChangesTest {
         // key exists
         assertThat(config.get("key1").exists(), is(true));
         assertThat(config.get("key1").type(), is(Config.Type.LIST));
-        assertThat(config.get("key1").asStringList(), contains("item 1", "item 2"));
+        assertThat(config.get("key1").asList(String.class).get(), contains("item 1", "item 2"));
 
         // register subscriber
         TestingConfigChangeSubscriber subscriber = new TestingConfigChangeSubscriber();
@@ -484,7 +484,7 @@ public class ConfigChangesTest {
         // key does not exist
         assertThat(config.get("key1").exists(), is(true));
         assertThat(config.get("key1").type(), is(Config.Type.VALUE));
-        assertThat(config.get("key1").asString(), is("string value"));
+        assertThat(config.get("key1").asString().get(), is("string value"));
 
         // register subscriber
         TestingConfigChangeSubscriber subscriber = new TestingConfigChangeSubscriber();
@@ -518,7 +518,7 @@ public class ConfigChangesTest {
         // key does not exist
         assertThat(config.get("key1").exists(), is(true));
         assertThat(config.get("key1").type(), is(Config.Type.VALUE));
-        assertThat(config.get("key1").asString(), is("string value"));
+        assertThat(config.get("key1").asString().get(), is("string value"));
 
         //MOCK onNextFunction
         Function<Config, Boolean> onNextFunction = mock(Function.class);
@@ -546,7 +546,7 @@ public class ConfigChangesTest {
             // new: key does exist
             assertThat(newConfig.exists(), is(true));
             assertThat(newConfig.type(), is(Config.Type.VALUE));
-            assertThat(newConfig.asString(), is("string value 2"));
+            assertThat(newConfig.asString().get(), is("string value 2"));
 
             return true;
         }));
@@ -567,7 +567,7 @@ public class ConfigChangesTest {
                 .build()
                 .get("parent");
 
-        assertThat(v1.get(key1).asString(), is("value"));
+        assertThat(v1.get(key1).asString().get(), is("value"));
         // subscribe s1 on v1
         TestingConfigChangeSubscriber s1 = new TestingConfigChangeSubscriber();
         v1.changes().subscribe(s1);
@@ -580,7 +580,7 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue(fullKey, "value 2").build());
         // s1 receives v2
         Config v2 = s1.getLastOnNext(200, true);
-        assertThat(v2.get(key1).asString(), is("value 2"));
+        assertThat(v2.get(key1).asString().get(), is("value 2"));
         s1.request1();
 
         ///////////////////// subscribing on old Config -> subscriber receives (OLD) already fired event
@@ -590,7 +590,7 @@ public class ConfigChangesTest {
         s2.request1();
         // s2 receives v2
         Config s2v2 = s2.getLastOnNext(1200, true);
-        assertThat(s2v2.get(key1).asString(), is("value 2"));
+        assertThat(s2v2.get(key1).asString(), is(ConfigValues.simple("value 2")));
         //same v2s
         assertThat(v2, is(s2v2));
         s2.request1();
@@ -602,11 +602,11 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue(fullKey, "value 3").build());
         // s1 receives v3
         Config v3 = s1.getLastOnNext(200, true);
-        assertThat(v3.get(key1).asString(), is("value 3"));
+        assertThat(v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
         s1.request1();
         // s2 receives v3
         Config s2v3 = s2.getLastOnNext(200, true);
-        assertThat(s2v3.get(key1).asString(), is("value 3"));
+        assertThat(s2v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
         s2.request1();
         //same v3s
         assertThat(v3, is(s2v3));
@@ -618,7 +618,7 @@ public class ConfigChangesTest {
         s3.request1();
         // s3 receives v3
         Config s3v3 = s3.getLastOnNext(200, true);
-        assertThat(s3v3.get(key1).asString(), is("value 3"));
+        assertThat(s3v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
         s3.request1();
         //same v3s
         assertThat(v3, is(s2v3));
@@ -631,7 +631,7 @@ public class ConfigChangesTest {
         s4.request1();
         // s4 receives v3
         Config s4v3 = s4.getLastOnNext(200, true);
-        assertThat(s4v3.get(key1).asString(), is("value 3"));
+        assertThat(s4v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
         s4.request1();
         //same v3s
         assertThat(v3, is(s2v3));
@@ -645,19 +645,19 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue(fullKey, "value 4").build());
         // s1 receives v4
         Config v4 = s1.getLastOnNext(200, true);
-        assertThat(v4.get(key1).asString(), is("value 4"));
+        assertThat(v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
         s1.request1();
         // s2 receives v4
         Config s2v4 = s2.getLastOnNext(200, true);
-        assertThat(s2v4.get(key1).asString(), is("value 4"));
+        assertThat(s2v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
         s2.request1();
         // s3 receives v4
         Config s3v4 = s3.getLastOnNext(200, true);
-        assertThat(s3v4.get(key1).asString(), is("value 4"));
+        assertThat(s3v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
         s3.request1();
         // s4 receives v4
         Config s4v4 = s4.getLastOnNext(200, true);
-        assertThat(s4v4.get(key1).asString(), is("value 4"));
+        assertThat(s4v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
         s4.request1();
         //same v4s
         assertThat(v4, is(s2v4));
@@ -680,24 +680,27 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue(fullKey, "value 5").build());
         // s1 receives v5
         Config v5 = s1.getLastOnNext(200, true);
-        assertThat(v5.get(key1).asString(), is("value 5"));
+        assertConfigValue(v5.get(key1).asString(), "value 5");
         // s2 receives v5
         Config s2v5 = s2.getLastOnNext(200, true);
-        assertThat(s2v5.get(key1).asString(), is("value 5"));
+        assertConfigValue(s2v5.get(key1).asString(), "value 5");
         // s3 receives v5
         Config s3v5 = s3.getLastOnNext(200, true);
-        assertThat(s3v5.get(key1).asString(), is("value 5"));
+        assertConfigValue(s3v5.get(key1).asString(), "value 5");
         // s4 receives v5
         Config s4v5 = s4.getLastOnNext(200, true);
-        assertThat(s4v5.get(key1).asString(), is("value 5"));
+        assertConfigValue(s4v5.get(key1).asString(), "value 5");
         // s5 receives v5
         Config s5v5 = s5.getLastOnNext(200, true);
-        assertThat(s5v5.get(key1).asString(), is("value 5"));
+        assertConfigValue(s5v5.get(key1).asString(), "value 5");
         //same v5s
         assertThat(v5, is(s2v5));
         assertThat(v5, is(s3v5));
         assertThat(v5, is(s4v5));
         assertThat(v5, is(s5v5));
     }
-
+    // todo maybe move to a shared place, so we can play around with method singatures
+    public static <T> void assertConfigValue(ConfigValue<T> value, T expectedValue) {
+        assertThat(value, is(ConfigValues.simple(expectedValue)));
+    }
 }

@@ -626,11 +626,11 @@ public final class ConfigMappers {
      */
     public static Map<String, String> toMap(Config config) {
         if (config.isLeaf()) {
-            return new StringMap(config.key().toString(), config.getValue());
+            return new StringMap(config.key().toString(), config.value().get());
         } else {
             return new StringMap(config.traverse()
                                          .filter(Config::isLeaf)
-                                         .map(node -> new AbstractMap.SimpleEntry<>(node.key().toString(), node.getValue()))
+                                         .map(node -> new AbstractMap.SimpleEntry<>(node.key().toString(), node.value().get()))
                                          .collect(Collectors.toSet()));
         }
     }

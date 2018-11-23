@@ -50,7 +50,7 @@ public class Main {
         Config config = Config.from(
                 from("application.conf")
                         .uri(URI.create("https://github.com/okosatka/test-config.git"))
-                        .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().getValue("master"))
+                        .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().get("master"))
                         .build());
 
         assert config.get("greeting").asString().equals("hello");

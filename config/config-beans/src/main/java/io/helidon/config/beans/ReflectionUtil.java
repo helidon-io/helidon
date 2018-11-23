@@ -521,7 +521,7 @@ final class ReflectionUtil {
             String name = propertyName(field, field::getName);
             if (isTransient(field, "single field " + field.getName())) {
                 if (propertyAccessors.containsKey(name)) {
-                    throw new ConfigException("Illegal use of both @Config.Value (method) and @Config.Transient (field) "
+                    throw new ConfigException("Illegal use of both @Value (method) and @Transient (field) "
                                                       + "annotations on single '" + name + "' property.");
                 }
                 continue;
@@ -529,7 +529,7 @@ final class ReflectionUtil {
 
             if (transientProps.contains(name)) {
                 if (field.isAnnotationPresent(Value.class)) {
-                    throw new ConfigException("Illegal use of both @Config.Value (field) and @Config.Transient (method) "
+                    throw new ConfigException("Illegal use of both @Value (field) and @Transient (method) "
                                                       + "annotations on single '" + name + "' property.");
                 }
                 continue;
@@ -540,7 +540,7 @@ final class ReflectionUtil {
                 if (field.getAnnotation(Value.class) != null) {
                     PropertyAccessor<?> propertyAccessor = propertyAccessors.get(name);
                     if (propertyAccessor.hasValueAnnotation()) {
-                        LOGGER.fine(() -> "Annotation @Config.Value on '" + name
+                        LOGGER.fine(() -> "Annotation @Value on '" + name
                                 + "' field is ignored because setter method already has one.");
                     } else {
                         propertyAccessor.setValueAnnotation(field.getAnnotation(Value.class));
@@ -636,6 +636,11 @@ final class ReflectionUtil {
             return true;
         }
 
+        // we must ignore methods from Object itself
+        if (method.getDeclaringClass().equals(Object.class)) {
+            return false;
+        }
+
         // we either look for "void setSometing(T t)" or "void something(T t)"
         if (method.getReturnType().equals(void.class)) {
             return true;
@@ -646,18 +651,16 @@ final class ReflectionUtil {
     }
 
     static String propertyName(Method method) {
-        Value value = method.getAnnotation(Value.class);
-        String name = Optional.ofNullable(value)
+        return Optional.ofNullable(method.getAnnotation(Value.class))
                 .map(Value::key)
-                .filter(((Predicate<String>) String::isEmpty).negate())
-                .orElse(null);
-        if (name == null) {
-            name = method.getName();
-            if (name.startsWith("set") && (name.length() > 3)) {
-                name = decapitalize(name.substring("set".length()));
-            }
-        }
-        return name;
+                .filter(string -> !string.isEmpty())
+                .orElseGet(() -> {
+                    String result = method.getName();
+                    if (result.startsWith("set") && (result.length() > 3)) {
+                        result = decapitalize(result.substring("set".length()));
+                    }
+                    return result;
+                });
     }
 
     static String propertyName(AnnotatedElement element, Supplier<String> nameSupplier) {
@@ -704,9 +707,9 @@ final class ReflectionUtil {
             try {
                 if (configNode.exists()) {
                     if (list) {
-                        return Optional.of(propertyType.cast(configNode.asList(configAsType)));
+                        return Optional.of(propertyType.cast(configNode.asList(configAsType).get()));
                     } else {
-                        return Optional.of(propertyType.cast(configNode.as(configAsType)));
+                        return Optional.of(propertyType.cast(configNode.as(configAsType).get()));
                     }
                 } else {
                     if (defaultSupplier != null) {

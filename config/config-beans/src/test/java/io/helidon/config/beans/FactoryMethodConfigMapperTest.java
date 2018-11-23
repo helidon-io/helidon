@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config;
+package io.helidon.config.beans;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -24,21 +24,24 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.config.Config.Transient;
-import io.helidon.config.Config.Value;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigMappers;
+import io.helidon.config.ConfigMappingException;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
+
 /**
- * Tests {@link ConfigMappers} with focus on factory method and constructor initialization,
- * see {@link FactoryMethodConfigMapper}.
+ * Tests {@link ConfigMappers} with focus on factory method and constructor initialization.
  */
 public class FactoryMethodConfigMapperTest {
 
@@ -50,9 +53,13 @@ public class FactoryMethodConfigMapperTest {
     public void testAmbiguousConstructors() {
         Config config = Config.empty();
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            config.as(AmbiguousConstructorsBean.class);
+            config.as(AmbiguousConstructorsBean.class).get();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("no compatible config value mapper found")).matches(ex.getMessage()));
+
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper
+                                                 .listOf(AmbiguousConstructorsBean.class.getName(),
+                                                         "No mapper configured")));
     }
 
     @Test
@@ -78,7 +85,8 @@ public class FactoryMethodConfigMapperTest {
                         .build()));
 
         ConstructorBean bean = config.get("app")
-                .as(ConstructorBean.class);
+                .as(ConstructorBean.class)
+                .get();
 
         assertThat(bean.getNumber(), is(1));
         assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
@@ -110,7 +118,8 @@ public class FactoryMethodConfigMapperTest {
                         .build()));
 
         NoConfigValueConstructorBean bean = config.get("app")
-                .as(NoConfigValueConstructorBean.class);
+                .as(NoConfigValueConstructorBean.class)
+                .get();
 
         assertThat(bean.getNumber(), is(1));
         assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
@@ -128,7 +137,8 @@ public class FactoryMethodConfigMapperTest {
 
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
             config.get("app")
-                .as(ConstructorBean.class);
+                    .as(ConstructorBean.class)
+                    .get();
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
                 "'app'", "ConstructorBean", "Missing value for parameter 'uri'.")).matches(ex.getMessage()));
@@ -141,7 +151,8 @@ public class FactoryMethodConfigMapperTest {
         )));
 
         DefaultsConstructorBean bean = config.get("app")
-                .as(DefaultsConstructorBean.class);
+                .as(DefaultsConstructorBean.class)
+                .get();
 
         assertThat(bean.getNumber(), is(1));
         assertThat(bean.getUri(), is(URI.create("default:uri")));
@@ -160,9 +171,13 @@ public class FactoryMethodConfigMapperTest {
         Config config = Config.empty();
 
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            config.as(AmbiguousFromMethodsBean.class);
+            config.as(AmbiguousFromMethodsBean.class).get();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("no compatible config value mapper found")).matches(ex.getMessage()));
+
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper
+                                                 .listOf(AmbiguousFromMethodsBean.class.getName(),
+                                                         "No mapper configured")));
     }
 
     @Test
@@ -188,7 +203,8 @@ public class FactoryMethodConfigMapperTest {
                         .build()));
 
         FromMethodBean bean = config.get("app")
-                .as(FromMethodBean.class);
+                .as(FromMethodBean.class)
+                .get();
 
         assertThat(bean.getNumber(), is(1));
         assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
@@ -220,7 +236,8 @@ public class FactoryMethodConfigMapperTest {
                         .build()));
 
         NoConfigValueFromMethodBean bean = config.get("app")
-                .as(NoConfigValueFromMethodBean.class);
+                .as(NoConfigValueFromMethodBean.class)
+                .get();
 
         assertThat(bean.getNumber(), is(1));
         assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
@@ -238,7 +255,8 @@ public class FactoryMethodConfigMapperTest {
 
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
             config.get("app")
-                .as(FromMethodBean.class);
+                    .as(FromMethodBean.class)
+                    .get();
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
                 "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")).matches(ex.getMessage()));
@@ -251,7 +269,8 @@ public class FactoryMethodConfigMapperTest {
         )));
 
         DefaultsFromMethodBean bean = config.get("app")
-                .as(DefaultsFromMethodBean.class);
+                .as(DefaultsFromMethodBean.class)
+                .get();
 
         assertThat(bean.getNumber(), is(1));
         assertThat(bean.getUri(), is(URI.create("default:uri")));

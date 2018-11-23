@@ -90,7 +90,7 @@
  * or an {@code Optional} of any of these.
  * <p>
  * The program can provide its own {@link io.helidon.config.ConfigMapper} implementations
- * to deal with more complicated value mapping needs. See also {@link io.helidon.config.Config.Builder#addMapper}.
+ * to deal with more complicated value mapping needs. See also {@link io.helidon.config.Config.Builder#addStringMapper}.
  *
  * <h3>Navigation</h3>
  *

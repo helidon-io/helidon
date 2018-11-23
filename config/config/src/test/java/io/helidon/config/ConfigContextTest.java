@@ -16,22 +16,23 @@
 
 package io.helidon.config;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.TestingConfigSource;
-
-import static io.helidon.config.ConfigTest.waitForAssert;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.config.spi.TestingConfigSource;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static io.helidon.config.ConfigTest.waitForAssert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests {@link Config.Context} and {@link Config#context()}.
@@ -130,7 +131,7 @@ public class ConfigContextTest {
         subscriber1.request1();
 
         // config contains old data
-        assertThat(c.config.get(PROP1).asString(), is(c.oldValue));
+        assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
 
         // RELOAD config
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure the timestamp changes.
@@ -139,7 +140,7 @@ public class ConfigContextTest {
         // new config -> new timestamp
         assertThat(reloaded.timestamp(), greaterThan(c.config.timestamp()));
         // config same -> old data
-        assertThat(reloaded.get(PROP1).asString(), is(c.oldValue));
+        assertThat(reloaded.get(PROP1).asString(), is(ConfigValues.simple(c.oldValue)));
         // context references the last reloaded config
         assertConfigIsTheLast(c.config.context(), reloaded);
 
@@ -163,7 +164,7 @@ public class ConfigContextTest {
         subscriber1.request1();
 
         // config contains old data
-        assertThat(c.config.get(PROP1).asString(), is(c.oldValue));
+        assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
 
         // CHANGE source
         c.changeSource(false, "new");
@@ -175,14 +176,14 @@ public class ConfigContextTest {
         // new config -> new timestamp
         assertThat(reloaded.timestamp(), greaterThan(c.config.timestamp()));
         // config same -> new data
-        assertThat(reloaded.get(PROP1).asString(), is(c.newValue));
+        assertThat(reloaded.get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
         // context references the last reloaded config
         assertConfigIsTheLast(c.config.context(), reloaded);
 
         // change event
         Config last1 = subscriber1.getLastOnNext(200, true);
         assertThat(last1.key().toString(), is(c.key));
-        assertThat(last1.get(PROP1).asString(), is(c.newValue));
+        assertThat(last1.get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
     }
 
     @ParameterizedTest(name = "{index}: detachKey= {0}, key: {1}")
@@ -196,7 +197,7 @@ public class ConfigContextTest {
         subscriber1.request1();
 
         // config contains old data
-        assertThat(c.config.get(PROP1).asString(), is(c.oldValue));
+        assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
 
         // CHANGE source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
@@ -218,7 +219,7 @@ public class ConfigContextTest {
         subscriber1.request1();
 
         // config contains old data
-        assertThat(c.config.get(PROP1).asString(), is(c.oldValue));
+        assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
 
         // CHANGE source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure time changes to trigger notification.
@@ -227,12 +228,12 @@ public class ConfigContextTest {
         // change event
         Config last1 = subscriber1.getLastOnNext(200, true);
         assertThat(last1.key().toString(), is(c.key));
-        assertThat(last1.get(PROP1).asString(), is(c.newValue));
+        assertThat(last1.get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
 
         // new config -> new timestamp
         assertThat(last1.timestamp(), greaterThan(c.config.timestamp()));
         // config same -> new data
-        assertThat(last1.get(PROP1).asString(), is(c.newValue));
+        assertThat(last1.get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
         // context references the last reloaded config
         assertConfigIsTheLast(c.config.context(), last1);
     }
@@ -242,24 +243,24 @@ public class ConfigContextTest {
     public void testContextLastWithSourceChanged(Map.Entry<String,String> e) throws InterruptedException {
         TestContext c = new TestContext(e);// subscribe on changes
         // config contains old data
-        assertThat(c.config.get(PROP1).asString(), is(c.oldValue));
+        assertThat(c.config.get(PROP1).asString().get(), is(c.oldValue));
 
         // CHANGE source
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure time changes to trigger notification.
         c.changeSource(true, "new");
 
         //wait for a new configuration is loaded
-        waitForAssert(() -> c.config.context().last().get(PROP1).asString(), is(c.newValue));
+        waitForAssert(() -> c.config.context().last().get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
 
         Config last1 = c.config.context().last();
 
         assertThat(last1.key().toString(), is(c.key));
-        assertThat(last1.get(PROP1).asString(), is(c.newValue));
+        assertThat(last1.get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
 
         // new config -> new timestamp
         assertThat(last1.timestamp(), greaterThan(c.config.timestamp()));
         // config same -> new data
-        assertThat(last1.get(PROP1).asString(), is(c.newValue));
+        assertThat(last1.get(PROP1).asString(), is(ConfigValues.simple(c.newValue)));
         // context references the last reloaded config
         assertConfigIsTheLast(c.config.context(), last1);
     }

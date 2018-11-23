@@ -37,7 +37,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     private Instant timestamp;
  *     private String greeting;
  *
- *     {@literal @}Config.Transient
+ *     {@literal @}Transient
  *     public void setTimestamp(Instant timestamp) { // {@literal <1>}
  *         this.timestamp = timestamp;
  *     }

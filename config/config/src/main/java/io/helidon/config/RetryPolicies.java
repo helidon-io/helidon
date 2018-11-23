@@ -127,7 +127,7 @@ public class RetryPolicies {
          */
         public static Builder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
             // retries
-            Builder builder = new Builder(metaConfig.get(RETRIES_KEY).asInt().getValue());
+            Builder builder = new Builder(metaConfig.get(RETRIES_KEY).asInt().get());
             // delay
             metaConfig.get("delay").as(Duration.class)
                     .ifPresent(builder::delay);

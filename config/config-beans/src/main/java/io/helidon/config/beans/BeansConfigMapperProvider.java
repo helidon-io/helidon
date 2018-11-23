@@ -24,11 +24,11 @@ import javax.annotation.Priority;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
-import io.helidon.config.beans.ConfigMappers.BuilderConfigMapper;
-import io.helidon.config.beans.ConfigMappers.ConfigMethodHandleConfigMapper;
-import io.helidon.config.beans.ConfigMappers.FactoryMethodConfigMapper;
-import io.helidon.config.beans.ConfigMappers.GenericConfigMapper;
-import io.helidon.config.beans.ConfigMappers.StringMethodHandleConfigMapper;
+import io.helidon.config.beans.BeansConfigMappers.BuilderConfigMapper;
+import io.helidon.config.beans.BeansConfigMappers.ConfigMethodHandleConfigMapper;
+import io.helidon.config.beans.BeansConfigMappers.FactoryMethodConfigMapper;
+import io.helidon.config.beans.BeansConfigMappers.GenericConfigMapper;
+import io.helidon.config.beans.BeansConfigMappers.StringMethodHandleConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 import static io.helidon.config.beans.ReflectionUtil.findBuilderConstructor;
@@ -136,22 +136,22 @@ public class BeansConfigMapperProvider implements ConfigMapperProvider {
 
     private static <T> Optional<Function<Config, T>> findBuilderMethodMapper(Class<T> type) {
         return findBuilderMethod(type)
-                .map(builderAccessor -> new BuilderConfigMapper<>(builderAccessor));
+                .map(BuilderConfigMapper::new);
     }
 
     private static <T> Optional<Function<Config, T>> findBuilderClassMapper(Class<T> type) {
         return findBuilderConstructor(type)
-                .map(builderAccessor -> new BuilderConfigMapper<>(builderAccessor));
+                .map(BuilderConfigMapper::new);
     }
 
     private static <T> Optional<Function<Config, T>> findStaticMethodWithParamsMapper(Class<T> type, String methodName) {
         return findStaticMethodWithParameters(type, methodName)
-                .map(factoryAccessor -> new FactoryMethodConfigMapper<>(factoryAccessor));
+                .map(FactoryMethodConfigMapper::new);
     }
 
     private static <T> Optional<Function<Config, T>> findConstructorWithParamsMapper(Class<T> type) {
         return findConstructorWithParameters(type)
-                .map(factoryAccessor -> new FactoryMethodConfigMapper<>(factoryAccessor));
+                .map(FactoryMethodConfigMapper::new);
     }
 
     private static <T> Optional<Function<Config, T>> findGenericMapper(Class<T> type) {

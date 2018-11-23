@@ -56,7 +56,7 @@ abstract class ConfigComplexImpl<N extends ConfigNode> extends ConfigExistingImp
 
     @Override
     public final Stream<Config> traverse(Predicate<Config> predicate) {
-        return asNodeList().value()
+        return asNodeList()
                 .map(list -> list.stream()
                         .filter(predicate)
                         .map(node -> traverseSubNodes(node, predicate))
@@ -69,7 +69,7 @@ abstract class ConfigComplexImpl<N extends ConfigNode> extends ConfigExistingImp
         if (config.type().isLeaf()) {
             return Stream.of(config);
         } else {
-            return config.asNodeList().value()
+            return config.asNodeList()
                     .map(list -> list.stream()
                             .filter(predicate)
                             .map(node -> traverseSubNodes(node, predicate))

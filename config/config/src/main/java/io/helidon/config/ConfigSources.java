@@ -78,7 +78,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for the same {@code Config} as the original
      */
     public static ConfigSource from(Config config) {
-        return ConfigSources.from(config.asMap().getValue()).get();
+        return ConfigSources.from(config.asMap().get()).get();
     }
 
     /**
@@ -338,7 +338,6 @@ public final class ConfigSources {
      */
     @SafeVarargs
     public static CompositeBuilder load(Supplier<ConfigSource>... metaSources) {
-
         return load(Config.withSources(metaSources)
                             .disableEnvironmentVariablesSource()
                             .disableSystemPropertiesSource()
@@ -375,10 +374,10 @@ public final class ConfigSources {
     public static CompositeBuilder load(Config metaConfig) {
         List<Supplier<ConfigSource>> sources = metaConfig.get(SOURCES_KEY)
                 .asNodeList()
-                .getValue(CollectionsHelper.listOf())
+                .get(CollectionsHelper.listOf())
                 .stream()
-                .map(node -> node.as(ConfigSource.class))
-                .map(ConfigValue::getValue)
+                .map(node -> node.as(ConfigSource::from))
+                .map(ConfigValue::get)
                 .collect(Collectors.toList());
 
         return ConfigSources.from(sources);

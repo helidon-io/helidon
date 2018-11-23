@@ -32,7 +32,8 @@ class ConfigMissingImpl extends AbstractConfigImpl {
 
     ConfigMissingImpl(ConfigKeyImpl prefix,
                       ConfigKeyImpl key,
-                      ConfigFactory factory, ConfigMapperManager mapperManager) {
+                      ConfigFactory factory,
+                      ConfigMapperManager mapperManager) {
         super(Type.MISSING, prefix, key, factory, mapperManager);
     }
 
@@ -48,27 +49,27 @@ class ConfigMissingImpl extends AbstractConfigImpl {
 
     @Override
     public <T> ConfigValue<T> as(Class<T> type) {
-        return ConfigValues.empty(this);
+        return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.as(type));
     }
 
     @Override
     public <T> ConfigValue<T> as(Function<Config, T> mapper) {
-        return ConfigValues.empty(this);
+        return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.as(mapper));
     }
 
     @Override
     public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
-        return ConfigValues.empty(this);
+        return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(type));
     }
 
     @Override
     public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
-        return ConfigValues.empty(this);
+        return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(mapper));
     }
 
     @Override
     public ConfigValue<Map<String, String>> asMap() {
-        return ConfigValues.empty(this);
+        return ConfigValues.create(this, Optional::empty, Config::asMap);
     }
 
     @Override

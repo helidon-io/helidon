@@ -60,12 +60,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *         this.greeting = greeting;
  *     }
  *
- *     {@literal @}Config.Value(key = "page-size", withDefault = "10") // {@literal <3>}
+ *     {@literal @}Value(key = "page-size", withDefault = "10") // {@literal <3>}
  *     public void setPageSize(int pageSize) {
  *         this.pageSize = pageSize;
  *     }
  *
- *     {@literal @}Config.Value(withDefaultSupplier = DefaultRangeSupplier.class) // {@literal <4>}
+ *     {@literal @}Value(withDefaultSupplier = DefaultRangeSupplier.class) // {@literal <4>}
  *     public void setRange(List{@literal <Integer>} basicRange) {
  *         this.range = basicRange;
  *     }
@@ -110,11 +110,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     //...
  *
  *     // FACTORY METHOD
- *     public static AppConfig from({@literal @}Config.Value(key = "greeting", withDefault = "Hi")
+ *     public static AppConfig from({@literal @}Value(key = "greeting", withDefault = "Hi")
  *                                  String greeting,
- *                                  {@literal @}Config.Value(key = "page-size", withDefault = "10")
+ *                                  {@literal @}Value(key = "page-size", withDefault = "10")
  *                                  int pageSize,
- *                                  {@literal @}Config.Value(key = "basic-range",
+ *                                  {@literal @}Value(key = "basic-range",
  *                                          withDefaultSupplier = DefaultBasicRangeSupplier.class)
  *                                  List{@literal <Integer>} basicRange) {
  *         return new AppConfig(greeting, pageSize, basicRange);
@@ -150,17 +150,17 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *         private Builder() {
  *         }
  *
- *         {@literal @}Config.Value(withDefault = "Hi")
+ *         {@literal @}Value(withDefault = "Hi")
  *         public void setGreeting(String greeting) {
  *             this.greeting = greeting;
  *         }
  *
- *         {@literal @}Config.Value(key = "page-size", withDefault = "10")
+ *         {@literal @}Value(key = "page-size", withDefault = "10")
  *         public void setPageSize(int pageSize) {
  *             this.pageSize = pageSize;
  *         }
  *
- *         {@literal @}Config.Value(key = "basic-range",
+ *         {@literal @}Value(key = "basic-range",
  *                 withDefaultSupplier = DefaultBasicRangeSupplier.class)
  *         public void setBasicRange(List{@literal <Integer>} basicRange) {
  *             this.basicRange = basicRange;

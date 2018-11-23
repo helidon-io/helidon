@@ -89,7 +89,7 @@ public class ConfigFilters {
          */
         public static ValueResolvingBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
             ValueResolvingBuilder builder = new ValueResolvingBuilder();
-            builder.failOnMissingReference(metaConfig.get(FAIL_ON_MISSING_REFERENCE_KEY_NAME).asBoolean().getValue(false));
+            builder.failOnMissingReference(metaConfig.get(FAIL_ON_MISSING_REFERENCE_KEY_NAME).asBoolean().get(false));
             return builder;
         }
 

@@ -20,14 +20,15 @@ import java.util.concurrent.Executor;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
-import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
+import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.spy;
@@ -125,11 +126,11 @@ public class BuilderImplTest {
                 .sources(CompositeConfigSourceTest.initBuilder().build())
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(TEST_SYS_PROP_VALUE));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(TEST_ENV_VAR_VALUE));
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
     }
 
     @Test
@@ -141,14 +142,10 @@ public class BuilderImplTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(TEST_SYS_PROP_VALUE));
-        Config c = config.get(TEST_ENV_VAR_NAME);
-        System.err.println("BuilderImplTest: envVar type is " + c.type().toString());
-        System.err.println("  and value is " + (c.value().isPresent() ? c.value().toString() : "value not present"));
-        
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
         assertThat(config.get(TEST_ENV_VAR_NAME).type(), is(Config.Type.MISSING));
     }
 
@@ -161,11 +158,11 @@ public class BuilderImplTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
         assertThat(config.get(TEST_SYS_PROP_NAME).type(), is(Config.Type.MISSING));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(TEST_ENV_VAR_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
     }
 
     @Test
@@ -178,9 +175,9 @@ public class BuilderImplTest {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        assertThat(config.get("prop1").asString(), is("source-1"));
-        assertThat(config.get("prop2").asString(), is("source-2"));
-        assertThat(config.get("prop3").asString(), is("source-3"));
+        assertThat(config.get("prop1").asString().get(), is("source-1"));
+        assertThat(config.get("prop2").asString().get(), is("source-2"));
+        assertThat(config.get("prop3").asString().get(), is("source-3"));
         assertThat(config.get(TEST_SYS_PROP_NAME).type(), is(Config.Type.MISSING));
         assertThat(config.get(TEST_ENV_VAR_NAME).type(), is(Config.Type.MISSING));
     }

@@ -83,19 +83,19 @@ class BeansConfigMapperProviderTest {
 
         assertThat(instance, notNullValue());
 
-        assertThat(instance.value(), is(Optional.empty()));
+        assertThat(instance.asOptional(), is(Optional.empty()));
         Configurables.WithCreateConfig defaultValue = new Configurables.WithCreateConfig("default");
-        assertThat(instance.getValue(defaultValue), sameInstance(defaultValue));
-        Assertions.assertThrows(MissingValueException.class, instance::getValue);
+        assertThat(instance.get(defaultValue), sameInstance(defaultValue));
+        Assertions.assertThrows(MissingValueException.class, instance::get);
 
-        Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.asOptionalSupplier();
+        Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.optionalSupplier();
         assertThat(optionalSupplier, notNullValue());
         assertThat(optionalSupplier.get(), is(Optional.empty()));
 
-        Supplier<Configurables.WithCreateConfig> supplier = instance.asSupplier();
+        Supplier<Configurables.WithCreateConfig> supplier = instance.supplier();
         Assertions.assertThrows(MissingValueException.class, supplier::get);
 
-        supplier = instance.asSupplier(defaultValue);
+        supplier = instance.supplier(defaultValue);
         assertThat(supplier.get(), sameInstance(defaultValue));
 
         assertThat(instance.key(), is(Config.Key.of(expectedConfigKey)));
@@ -110,20 +110,20 @@ class BeansConfigMapperProviderTest {
 
         assertThat(instance, notNullValue());
 
-        assertThat(instance.value(), not(Optional.empty()));
+        assertThat(instance.asOptional(), not(Optional.empty()));
         Configurables.WithCreateConfig defaultValue = new Configurables.WithCreateConfig("default");
-        assertThat(instance.getValue(defaultValue), not(sameInstance(defaultValue)));
-        assertThat(instance.getValue().message(), is(TEST_MESSAGE));
+        assertThat(instance.get(defaultValue), not(sameInstance(defaultValue)));
+        assertThat(instance.get().message(), is(TEST_MESSAGE));
 
-        Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.asOptionalSupplier();
+        Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.optionalSupplier();
         assertThat(optionalSupplier, notNullValue());
         assertThat(optionalSupplier.get(), not(Optional.empty()));
         assertThat(optionalSupplier.get().get().message(), is(TEST_MESSAGE));
 
-        Supplier<Configurables.WithCreateConfig> supplier = instance.asSupplier();
+        Supplier<Configurables.WithCreateConfig> supplier = instance.supplier();
         assertThat(supplier.get().message(), is(TEST_MESSAGE));
 
-        supplier = instance.asSupplier(defaultValue);
+        supplier = instance.supplier(defaultValue);
         assertThat(supplier.get(), not(sameInstance(defaultValue)));
         assertThat(supplier.get().message(), is(TEST_MESSAGE));
 

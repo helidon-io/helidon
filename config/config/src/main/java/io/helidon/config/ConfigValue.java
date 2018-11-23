@@ -17,10 +17,13 @@ package io.helidon.config;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * A typed value (may be empty).
+ * A typed value that has all the methods of {@link Optional}.
+ * In addition it has methods to access config values as {@link #supplier()}, to access values with defaults etc.
  */
 // A top level class, as Config must implement it (and if internal, we have a cyclic dependency)
 public interface ConfigValue<T> {
@@ -72,27 +75,31 @@ public interface ConfigValue<T> {
     }
 
     /**
-     * Returns a {@code String} value as {@link Optional} of configuration node if the node is {@link Config.Type#VALUE}.
+     * Returns a typed value as {@link Optional}.
      * Returns a {@link Optional#empty() empty} for nodes without a value.
+     * As this class implements all methods of {@link Optional}, this is only a utility method if an actual {@link Optional}
+     * instance is needed.
      *
      * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have
      * a direct value
-     * @see #getValue()
+     * @see #get()
      */
-    Optional<T> value();
+    Optional<T> asOptional();
 
-    default T getValue() throws MissingValueException {
-        return value()
+    default T get() throws MissingValueException {
+        return asOptional()
                 .orElseThrow(() -> MissingValueException.forKey(key()));
     }
 
-    default T getValue(T defaultValue) {
-        return value().orElse(defaultValue);
+    default T get(T defaultValue) {
+        return asOptional().orElse(defaultValue);
     }
 
-    Supplier<T> asSupplier();
+    <N> ConfigValue<N> as(Function<T, N> mapper);
 
-    Supplier<T> asSupplier(T defaultValue);
+    Supplier<T> supplier();
+
+    Supplier<T> supplier(T defaultValue);
 
     /**
      * Returns a {@link Supplier} of an {@link Optional Optional&lt;T&gt;} of the configuration node.
@@ -101,12 +108,41 @@ public interface ConfigValue<T> {
      *
      * @return a supplier of the value as an {@link Optional} typed instance, {@link Optional#empty() empty} in case the node
      * does not have a direct value
-     * @see #value()
-     * @see #asSupplier()
+     * @see #asOptional()
+     * @see #supplier()
      */
-    Supplier<Optional<T>> asOptionalSupplier();
+    Supplier<Optional<T>> optionalSupplier();
+
+    // it is a pity that Optional is not an interface :(
+    default boolean isPresent() {
+        return asOptional().isPresent();
+    }
 
     default void ifPresent(Consumer<? super T> consumer) {
-        value().ifPresent(consumer);
+        asOptional().ifPresent(consumer);
+    }
+
+    default Optional<T> filter(Predicate<? super T> predicate) {
+        return asOptional().filter(predicate);
+    }
+
+    default <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
+        return asOptional().map(mapper);
+    }
+
+    default <U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
+        return asOptional().flatMap(mapper);
+    }
+
+    default T orElse(T other) {
+        return asOptional().orElse(other);
+    }
+
+    default T orElseGet(Supplier<? extends T> other) {
+        return asOptional().orElseGet(other);
+    }
+
+    default <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
+        return asOptional().orElseThrow(exceptionSupplier);
     }
 }

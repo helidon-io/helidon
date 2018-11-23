@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,13 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSourceConfigMapperTest.MyConfigSource;
 import io.helidon.config.spi.ConfigSourceConfigMapperTest.MyConfigSourceBuilder;
 import io.helidon.config.spi.ConfigSourceConfigMapperTest.MyEndpoint;
-import static io.helidon.config.spi.ConfigSourceConfigMapperTest.justFrom;
 
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.config.spi.ConfigSourceConfigMapperTest.justFrom;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link PollingStrategyConfigMapper}.
@@ -59,7 +60,7 @@ public class PollingStrategyConfigMapperTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(MyConfigSource.class)));
 
@@ -82,7 +83,7 @@ public class PollingStrategyConfigMapperTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(PathConfigSource.class)));
 
@@ -108,7 +109,7 @@ public class PollingStrategyConfigMapperTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(MyConfigSource.class)));
 
@@ -138,7 +139,7 @@ public class PollingStrategyConfigMapperTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(MyConfigSource.class)));
 
@@ -168,7 +169,7 @@ public class PollingStrategyConfigMapperTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(MyConfigSource.class)));
 
@@ -211,7 +212,7 @@ public class PollingStrategyConfigMapperTest {
         }
 
         public static PathConfigSourceBuilder from(Config metaConfig) {
-            return new PathConfigSourceBuilder(metaConfig.get("path").as(Path.class))
+            return new PathConfigSourceBuilder(metaConfig.get("path").as(Path.class).get())
                     .init(metaConfig);
         }
 
@@ -253,8 +254,8 @@ public class PollingStrategyConfigMapperTest {
         }
 
         public static TestingPollingStrategy from(Config metaConfig) {
-            return new TestingPollingStrategy(metaConfig.get("retries").asInt(),
-                                              metaConfig.get("interval").as(Duration.class));
+            return new TestingPollingStrategy(metaConfig.get("retries").asInt().get(),
+                                              metaConfig.get("interval").as(Duration.class).get());
         }
 
         public int getRetries() {
@@ -281,8 +282,8 @@ public class PollingStrategyConfigMapperTest {
         }
 
         public static TestingPollingStrategyBuilder from(Config metaConfig) {
-            return new TestingPollingStrategyBuilder(metaConfig.get("retries").asInt(),
-                                                     metaConfig.get("interval").as(Duration.class));
+            return new TestingPollingStrategyBuilder(metaConfig.get("retries").asInt().get(),
+                                                     metaConfig.get("interval").as(Duration.class).get());
         }
 
         public TestingPollingStrategy build() {

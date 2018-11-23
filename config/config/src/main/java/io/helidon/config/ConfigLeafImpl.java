@@ -38,7 +38,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
  */
 class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
-    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\\\,", Pattern.LITERAL);
+    private static final Pattern ESCAPED_COMMA_PATTERN = Pattern.compile("\\,", Pattern.LITERAL);
 
     private final ConfigMapperManager mapperManager;
 
@@ -63,7 +63,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
         
         Optional<String> value = value();
         if (!value.isPresent()) {
-            return ConfigValues.empty(this);
+            return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(type));
         }
 
         String stringValue = value.get();
@@ -93,7 +93,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
     public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
         Optional<String> value = value();
         if (!value.isPresent()) {
-            return ConfigValues.empty(this);
+            return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(mapper));
         }
 
         String stringValue = value.get();

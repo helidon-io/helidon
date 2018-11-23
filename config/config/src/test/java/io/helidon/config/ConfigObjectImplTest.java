@@ -21,15 +21,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
-
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.config.Config.Type.OBJECT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -61,49 +59,6 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
     @Override
     @MethodSource("initParams")
     @ParameterizedTest
-    public void testValue(TestContext context) {
-        init(context);
-        assertValue(key -> config(key).value().get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsOptionalString(TestContext context) {
-        init(context);
-        assertValue(key -> config(key).asOptionalString().get());
-    }
-
-
-
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsOptionalStringList(TestContext context) {
-        init(context);
-        getConfigAndExpectMappingException(Config::asOptionalStringList);
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsStringList(TestContext context) {
-        init(context);
-        getConfigAndExpectMappingException(Config::asStringList);
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsStringListWithDefault(TestContext context) {
-        init(context);
-        getConfigAndExpectMappingException(config -> config.asStringList(CollectionsHelper.listOf("default", "value")));
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
     public void testDetach(TestContext context) {
         init(context);
         Config detached = config().detach();
@@ -128,59 +83,10 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
     @Override
     @MethodSource("initParams")
     @ParameterizedTest
-    public void testOptionalStringSupplier(TestContext context) {
+    public void testValue(TestContext context) {
         init(context);
-        assertValue(key -> config(key).asOptionalStringSupplier().get().get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsOptionalStringListSupplier(TestContext context) {
-        init(context);
-        getConfigAndExpectMappingException(config -> config.asOptionalStringListSupplier().get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsStringSupplier(TestContext context) {
-        init(context);
-        assertValue(key -> config(key).asStringSupplier().get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsStringWithDefaultSupplier(TestContext context) {
-        init(context);
-        assertValue(key -> config(key).asStringSupplier("default value").get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsStringListSupplier(TestContext context) {
-        init(context);
-        getConfigAndExpectMappingException(config -> config.asStringListSupplier().get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsStringListWithDefaultSupplier(TestContext context) {
-        init(context);
-        getConfigAndExpectMappingException(config -> config.asStringListSupplier(CollectionsHelper.listOf("default", "value"))
-                .get());
-    }
-
-    @Override
-    @MethodSource("initParams")
-    @ParameterizedTest
-    public void testAsNodeListWithDefaultSupplier(TestContext context) {
-        init(context);
-        assertThat(nodeNames(config().asNodeListSupplier(CollectionsHelper.listOf(Config.empty())).get()),
-                   containsInAnyOrder(itemNames()));
+        assertValue(key -> config(key).value().get());
+        assertValue(key -> config(key).asString().get());
     }
 
     @Override
@@ -188,7 +94,7 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
     @ParameterizedTest
     public void testDetachSupplier(TestContext context) {
         init(context);
-        Config detached = config().detach().nodeSupplier().get().get();
+        Config detached = config().detach().asNode().supplier().get();
         assertThat(detached.type(), is(OBJECT));
         assertThat(detached.key().toString(), is(""));
     }
@@ -199,8 +105,8 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
     public void testTraverseWithPredicateSupplier(TestContext context) {
         init(context);
         List<Config.Key> allSubKeys = config()
-                .nodeSupplier()
-                .get()
+                .asNode()
+                .supplier()
                 .get()
                 // ignore whole list nodes
                 .traverse(node -> node.type() != Config.Type.LIST)
@@ -225,7 +131,7 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
             LIST	object-2.list-3
             VALUE	object-2.int-3
          */
-        assertThat(config().nodeSupplier().get().get().toString(), both(startsWith("["))
+        assertThat(config().asNode().supplier().get().toString(), both(startsWith("["))
                 .and(endsWith(key() + "] OBJECT (members: 8)")));
     }
 
@@ -326,7 +232,7 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
 
     @Override
     protected ObjectConfigBean[] expectedObjectConfigBeans() {
-        return CollectionsHelper.listOf(
+        return listOf(
                 new ObjectConfigBean("fromConfig", "key:double-" + level() + "@VALUE"),
                 new ObjectConfigBean("fromConfig", "key:bool-" + level() + "@VALUE"),
                 new ObjectConfigBean("fromConfig", "key:object-" + level() + "@OBJECT"),
