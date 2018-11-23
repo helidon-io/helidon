@@ -265,7 +265,7 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
         static Builder fromConfig(Config config) {
             Builder builder = new Builder();
 
-            builder.realm(config.get("realm").asString().getValue("realm"))
+            builder.realm(config.get("realm").asString().get("realm"))
                     .userStore(config.get("users").as(ConfigUserStore.class)
                                        .orElseThrow(() -> new HttpAuthException(
                                                "No users configured! Key \"users\" must be in configuration")))

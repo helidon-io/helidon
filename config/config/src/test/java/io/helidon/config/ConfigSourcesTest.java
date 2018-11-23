@@ -25,18 +25,18 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.config.ConfigSources.from;
 import static io.helidon.config.ConfigSources.prefixed;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
-import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -88,7 +88,7 @@ public class ConfigSourcesTest {
         assertThat(Config.from(prefixed("security", from(CollectionsHelper.mapOf("credentials.username", "libor"))))
                            .get("security.credentials.username")
                            .asString(),
-                   is("libor"));
+                   is(ConfigValues.simple("libor")));
 
     }
 

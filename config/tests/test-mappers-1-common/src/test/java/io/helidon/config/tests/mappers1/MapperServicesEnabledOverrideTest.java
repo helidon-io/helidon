@@ -33,8 +33,8 @@ public class MapperServicesEnabledOverrideTest extends AbstractMapperServicesTes
     @Override
     protected Config.Builder configBuilder() {
         return super.configBuilder()
-                .addMapper(Logger.class, new MyLoggerConfigMapper())
-                .addMapper(Locale.class, new MyLocaleConfigMapper());
+                .addStringMapper(Logger.class, new MyLoggerConfigMapper())
+                .addStringMapper(Locale.class, new MyLocaleConfigMapper());
     }
 
     @Test

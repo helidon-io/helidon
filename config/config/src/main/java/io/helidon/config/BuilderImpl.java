@@ -72,7 +72,7 @@ class BuilderImpl implements Config.Builder {
         sources = null;
         overrideSource = OverrideSources.empty();
         mappers = new HashMap<>();
-        mapperProviders = new MapperProviders();
+        mapperProviders = MapperProviders.create();
         mapperServicesEnabled = true;
         parsers = new ArrayList<>();
         parserServicesEnabled = true;
@@ -106,11 +106,20 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
-    public <T> Config.Builder addMapper(Class<T> type, Function<String, T> mapper) {
+    public <T> Config.Builder addStringMapper(Class<T> type, Function<String, T> mapper) {
         Objects.requireNonNull(type);
         Objects.requireNonNull(mapper);
 
         mappers.put(type, Mapper.create(ConfigMappers.wrap(mapper)));
+        return this;
+    }
+
+    @Override
+    public <T> Config.Builder addMapper(Class<T> type, Function<Config, T> mapper) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(mapper);
+
+        mappers.put(type, Mapper.create(mapper));
         return this;
     }
 
@@ -215,6 +224,30 @@ class BuilderImpl implements Config.Builder {
         return buildProvider().newConfig();
     }
 
+    @Override
+    public Config.Builder mappersFrom(Config config) {
+        if (config instanceof AbstractConfigImpl) {
+            ConfigMapperManager mapperManager = ((AbstractConfigImpl) config).mapperManager();
+            addMapper(new ConfigMapperProvider() {
+                @Override
+                public Map<Class<?>, Function<Config, ?>> mappers() {
+                    return Collections.emptyMap();
+                }
+
+                @Override
+                public <T> Optional<Function<Config, T>> mapper(Class<T> type) {
+                    Optional<? extends Function<Config, T>> mapper = mapperManager.mapper(type);
+                    return Optional.ofNullable(mapper.orElse(null));
+                }
+            });
+        } else {
+            throw new ConfigException("Unexpected configuration implementation used to copy mappers: "
+                                              + config.getClass().getName());
+        }
+
+        return this;
+    }
+
     private ProviderImpl buildProvider() {
 
         //context
@@ -317,7 +350,7 @@ class BuilderImpl implements Config.Builder {
                                             Map<Class<?>, Mapper<?>> userDefinedMappers,
                                             MapperProviders userDefinedProviders) {
         Map<Class<?>, Mapper<?>> mappers = new HashMap<>();
-        MapperProviders providers = new MapperProviders();
+        MapperProviders providers = MapperProviders.create();
 
         ConfigMappers.essentialMappers()
                 .forEach((clazz, function) -> mappers.put(clazz, Mapper.create(function)));
@@ -422,7 +455,6 @@ class BuilderImpl implements Config.Builder {
                 .overrides(OverrideSources.empty())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
-                .disableMapperServices()
                 .disableParserServices()
                 .disableFilterServices()
                 .build();

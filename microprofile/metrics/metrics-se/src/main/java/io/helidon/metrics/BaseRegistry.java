@@ -243,7 +243,7 @@ final class BaseRegistry extends Registry {
                                  Metadata meta,
                                  Metric metric) {
 
-        if (registry.config.get(CONFIG_METRIC_ENABLED_BASE + meta.getName() + ".enabled").asBoolean().getValue(true)) {
+        if (registry.config.get(CONFIG_METRIC_ENABLED_BASE + meta.getName() + ".enabled").asBoolean().get(true)) {
             registry.register(meta, metric);
         }
     }

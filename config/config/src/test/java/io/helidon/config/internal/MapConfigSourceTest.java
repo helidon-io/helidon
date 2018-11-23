@@ -19,6 +19,7 @@ package io.helidon.config.internal;
 import java.net.MalformedURLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
@@ -30,15 +31,15 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
-import static io.helidon.config.ValueNodeMatcher.valueNode;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.Is.is;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static io.helidon.config.ValueNodeMatcher.valueNode;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -61,7 +62,7 @@ public class MapConfigSourceTest {
                 .sources(ConfigSources.from(map))
                 .build();
 
-        assertThat(config.get("app.name").asString(), is("app-name"));
+        assertThat(config.get("app.name").asString().get(), is("app-name"));
     }
 
     @Test
@@ -72,8 +73,8 @@ public class MapConfigSourceTest {
                 .sources(ConfigSources.from(map))
                 .build();
 
-        assertThat(config.get("app").get("port").asInt(), is(8080));
-        assertThat(config.get("app.port").asInt(), is(8080));
+        assertThat(config.get("app").get("port").asInt().get(), is(8080));
+        assertThat(config.get("app.port").asInt().get(), is(8080));
     }
 
     @Test
@@ -85,7 +86,7 @@ public class MapConfigSourceTest {
                     .sources(ConfigSources.from(map))
                     .build();
 
-            config.get("app.port").asInt();
+            config.get("app.port").asInt().get();
         });
     }
 
@@ -118,8 +119,17 @@ public class MapConfigSourceTest {
                 .build()
                 .get("app");
 
-        assertThat(config.asNodeList().size(), is(2));
-        assertThat(config.asNodeList().stream().map(Config::key).map(Config.Key::toString).collect(Collectors.toList()),
+        assertThat(config.asNodeList()
+                           .get()
+                           .size(),
+                   is(2));
+
+        assertThat(config.asNodeList()
+                           .get()
+                           .stream()
+                           .map(Config::key)
+                           .map(Config.Key::toString)
+                           .collect(Collectors.toList()),
                    containsInAnyOrder("app.name", "app.port"));
     }
 
@@ -131,7 +141,11 @@ public class MapConfigSourceTest {
                 .sources(ConfigSources.from(map))
                 .build();
 
-        assertThat(config.get("app.name").map(Name::fromString).getName(), is("app-name"));
+        assertThat(config.get("app.name")
+                           .value()
+                           .map(Name::fromString)
+                           .map(Name::getName),
+                   is(Optional.of("app-name")));
     }
 
     @Test

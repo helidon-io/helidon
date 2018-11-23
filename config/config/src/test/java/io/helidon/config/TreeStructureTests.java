@@ -49,7 +49,7 @@ public class TreeStructureTests {
 
         assertThat(config.get("c").value(), is(Optional.empty()));
         assertThat(config.get("c.a").value(), is(Optional.empty()));
-        assertThat(config.get("c.a").asList(String.class), is(CollectionsHelper.listOf("first", "second", "third")));
+        assertThat(config.get("c.a").asList(String.class).get(), is(CollectionsHelper.listOf("first", "second", "third")));
     }
 
     @Test
@@ -63,6 +63,6 @@ public class TreeStructureTests {
 
         assertThat(config.get("c").value(), is(Optional.empty()));
         assertThat(config.get("c.a").value(), is(Optional.of("treeAndLeafNode")));
-        assertThat(config.get("c.a").asList(String.class), is(CollectionsHelper.listOf("first", "second", "third")));
+        assertThat(config.get("c.a").asList(String.class).get(), is(CollectionsHelper.listOf("first", "second", "third")));
     }
 }

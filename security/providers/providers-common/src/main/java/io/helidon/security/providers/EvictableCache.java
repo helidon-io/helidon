@@ -308,9 +308,9 @@ public interface EvictableCache<K, V> {
             if (cacheEnabled) {
                 config.get("cache-timeout-millis").asLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
                 long evictDelay = config.get("cache-evict-delay-millis").asLong()
-                        .getValue(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
+                        .get(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
                 long evictPeriod = config.get("cache-evict-period-millis").asLong()
-                        .getValue(cacheEvictTimeUnit.toMillis(cacheEvictPeriod));
+                        .get(cacheEvictTimeUnit.toMillis(cacheEvictPeriod));
                 evictSchedule(evictDelay, evictPeriod, TimeUnit.MILLISECONDS);
                 config.get("parallelism-treshold").asLong().ifPresent(this::parallelismThreshold);
                 config.get("evictor-class").as(Class.class).ifPresent(this::evictorClass);

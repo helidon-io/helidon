@@ -100,7 +100,7 @@ public class Main {
      * Initialize logging from config.
      */
     private static boolean initLogging(Config loggingConfig) {
-        String level = loggingConfig.get("level").asString().getValue("WARNING");
+        String level = loggingConfig.get("level").asString().get("WARNING");
         //e.g. initialize logging using configured level...
 
         System.out.println("Set logging level to " + level + ".");

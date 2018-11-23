@@ -53,8 +53,8 @@ public final class Main {
         // Load configuration
         Config config = loadConfig();
 
-        boolean acceptAnonymousUsers = config.get("anonymous-enabled").asBoolean().getValue(false);
-        ServerConfiguration serverConfig = config.get("webserver").as(ServerConfiguration::fromConfig).getValue();
+        boolean acceptAnonymousUsers = config.get("anonymous-enabled").asBoolean().get(false);
+        ServerConfiguration serverConfig = config.get("webserver").as(ServerConfiguration::fromConfig).get();
 
         WebServer server = WebServer.create(serverConfig, createRouting(acceptAnonymousUsers));
 

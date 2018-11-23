@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -77,19 +76,27 @@ class ConfigMapperManager {
         return cast(type, converter.apply(config), config.key());
     }
 
+    @SuppressWarnings("unchecked")
+    <T> Optional<? extends Function<Config, T>> mapper(Class<T> type) {
+        Mapper<T> mapper = (Mapper<T>) mappers.get(type);
+        if (null == mapper) {
+            return mapperProviders.findMapper(type, Config.Key.of(""));
+        } else {
+            return Optional.of(mapper);
+        }
+    }
+
     <T> T map(String key, Class<T> type, String value) throws MissingValueException, ConfigMappingException {
         return map(type, new SingleValueConfigImpl(this, key, value));
     }
 
     private <T> Mapper<T> findMapper(Class<T> type, Config.Key key) {
         return mapperProviders.findMapper(type, key)
-                .orElseGet(() -> noMapper(type, key));
+                .orElseGet(() -> noMapper(type));
     }
 
-    private <T> Mapper<T> noMapper(Class<T> type, Config.Key key) {
-        return Mapper.create(config -> {
-            throw new ConfigMappingException(key, type, "No mapper configured");
-        });
+    private <T> Mapper<T> noMapper(Class<T> type) {
+        return new NoMapperFound<>(type);
     }
 
     public static <T> T cast(Class<T> type, Object instance, Config.Key key) throws ConfigMappingException {
@@ -112,25 +119,22 @@ class ConfigMapperManager {
         return new SingleValueConfigImpl(this, name, stringValue);
     }
 
-    static final class Mapper<T> implements Function<Config, T> {
-        private final Function<Config, T> function;
-
-        private Mapper(Function<Config, T> function) {
-            this.function = function;
-        }
-
+    @FunctionalInterface
+    interface Mapper<T> extends Function<Config, T> {
         static <T> Mapper<T> create(Function<Config, T> function) {
-            return new Mapper<>(function);
-        }
-
-        @Override
-        public T apply(Config config) {
-            return function.apply(config);
+            return function::apply;
         }
     }
 
     static final class MapperProviders {
         private final List<Function<Class<?>, Optional<? extends Function<Config, ?>>>> providers = new LinkedList<>();
+
+        private MapperProviders() {
+        }
+
+        static MapperProviders create() {
+            return new MapperProviders();
+        }
 
         void add(Function<Class<?>, Optional<? extends Function<Config, ?>>> function) {
             this.providers.add(function);
@@ -266,20 +270,25 @@ class ConfigMapperManager {
         public ConfigValue<Config> asNode() {
             return as(Config.class);
         }
+    }
 
-        @Override
-        public Supplier<String> asSupplier() {
-            return this::getValue;
+    // this class exists for debugging purposes - it is clearly seen that this mapper was not found
+    // rather then having a lambda as a mapper
+    private static final class NoMapperFound<T> implements Mapper<T> {
+        private final Class<T> type;
+
+        private NoMapperFound(Class<T> type) {
+            this.type = type;
         }
 
         @Override
-        public Supplier<String> asSupplier(String defaultValue) {
-            return () -> getValue(defaultValue);
+        public T apply(Config config) {
+            throw new ConfigMappingException(config.key(), type, "No mapper configured");
         }
 
         @Override
-        public Supplier<Optional<String>> asOptionalSupplier() {
-            return null;
+        public String toString() {
+            return "Mapper for " + type.getSimpleName() + " is not defined";
         }
     }
 }

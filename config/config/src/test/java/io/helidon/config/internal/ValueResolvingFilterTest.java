@@ -16,24 +16,26 @@
 
 package io.helidon.config.internal;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigFilters;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ValueResolvingFilter}.
@@ -55,7 +57,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("message").asString(), is("Hallo Joachim!"));
+        assertThat(config.get("message").asString().get(), is("Hallo Joachim!"));
     }
 
     @Test
@@ -73,7 +75,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("message").asString(), is("Hallo Joachim!"));
+        assertThat(config.get("message").asString().get(), is("Hallo Joachim!"));
     }
 
     @Test
@@ -92,7 +94,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("message").asString(), is("Hallo Joachim!"));
+        assertThat(config.get("message").asString().get(), is("Hallo Joachim!"));
     }
 
     @Test
@@ -111,7 +113,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("message").asString(), is("Hallo ${name}!"));
+        assertThat(config.get("message").asString().get(), is("Hallo ${name}!"));
     }
 
     @Test
@@ -129,7 +131,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("message").asString(), is("Hallo \\ Joachim!"));
+        assertThat(config.get("message").asString().get(), is("Hallo \\ Joachim!"));
     }
 
     @Test
@@ -148,7 +150,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("message").asString(), is("Hallo \\ Joachim!"));
+        assertThat(config.get("message").asString().get(), is("Hallo \\ Joachim!"));
     }
 
     private static class LoopTestResult {
@@ -178,7 +180,7 @@ public class ValueResolvingFilterTest {
 
                 try {
                     // The following should trigger the exception.
-                    result.message = config.get("message").asString();
+                    result.message = config.get("message").asString().get();
                 } catch (IllegalStateException ex) {
                     // We expect this.
                     result.ex = ex;
@@ -210,7 +212,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("wrong").asString(), is("${missing}"));
+        assertThat(config.get("wrong").asString().get(), is("${missing}"));
     }
 
     @Test
@@ -225,7 +227,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("wrong").asString(), is("${missing}"));
+        assertThat(config.get("wrong").asString().get(), is("${missing}"));
     }
 
     @Test
@@ -244,7 +246,7 @@ public class ValueResolvingFilterTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-            config.get("wrong").asString();
+            config.get("wrong").asString().get();
         });
         assertTrue(ex.getMessage().startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
         assertTrue(instanceOf(MissingValueException.class).matches(ex.getCause()));
@@ -263,7 +265,7 @@ public class ValueResolvingFilterTest {
                 .disableFilterServices()
                 .build();
 
-        assertThat(config.get("wrong").asString(), is("${missing}"));
+        assertThat(config.get("wrong").asString().get(), is("${missing}"));
     }
 
     @Test
@@ -280,7 +282,7 @@ public class ValueResolvingFilterTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-            config.get("wrong").asString();
+            config.get("wrong").asString().get();
         });
         assertTrue(ex.getMessage().startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
         assertTrue(instanceOf(MissingValueException.class).matches(ex.getCause()));
@@ -299,7 +301,7 @@ public class ValueResolvingFilterTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-            config.get("wrong").asString();
+            config.get("wrong").asString().get();
         });
         assertTrue(ex.getMessage().startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
         assertTrue(instanceOf(MissingValueException.class).matches(ex.getCause()));
@@ -316,7 +318,7 @@ public class ValueResolvingFilterTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("wrong").asString(), is("${missing}"));
+        assertThat(config.get("wrong").asString().get(), is("${missing}"));
     }
 
     @Test
@@ -331,6 +333,6 @@ public class ValueResolvingFilterTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("correct").asString(), is("answer"));
+        assertThat(config.get("correct").asString().get(), is("answer"));
     }
 }
