@@ -22,11 +22,12 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.tests.module.meta1.MyConfigSource1;
 import io.helidon.config.tests.module.meta2.MyConfigSource2;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests custom config source type registration.
@@ -47,7 +48,7 @@ public class CustomConfigSourceTypesTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(sourceClass)));
 

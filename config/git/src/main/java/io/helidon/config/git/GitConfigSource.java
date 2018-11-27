@@ -34,11 +34,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
+import io.helidon.config.spi.ConfigSource;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
@@ -50,16 +52,16 @@ import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import static io.helidon.config.internal.FileSourceHelper.digest;
-
 import static java.util.Collections.singleton;
+
+import static io.helidon.config.internal.FileSourceHelper.digest;
 
 /**
  * A config source which loads a configuration document from Git repository.
  * <p>
  * Config source is initialized by {@link GitConfigSourceBuilder}.
  */
-class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
+public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     private static final Logger LOGGER = Logger.getLogger(GitConfigSource.class.getName());
 
@@ -75,6 +77,15 @@ class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     private boolean isTempDirectory = false;
     private boolean isClosed = false;
     private final List<Git> gits = Collections.synchronizedList(new ArrayList<>());
+
+    /**
+     * Create an instance from meta configuration.
+     * @param config meta configuration of this source
+     * @return config source configured from the meta configuration
+     */
+    public static ConfigSource create(Config config) {
+        return GitConfigSourceBuilder.from(config).build();
+    }
 
     /**
      * Initializes config source from builder.

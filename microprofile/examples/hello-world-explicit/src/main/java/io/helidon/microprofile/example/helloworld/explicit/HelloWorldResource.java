@@ -88,7 +88,7 @@ public class HelloWorldResource {
                 .add("name", name)
                 .add("appName", applicationName)
                 .add("appUri", String.valueOf(applicationUri))
-                .add("config", config.get("my.property").asString())
+                .add("config", config.get("my.property").asString().get())
                 .add("beanManager", beanManager.toString())
                 .build();
     }

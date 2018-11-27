@@ -17,22 +17,23 @@
 package io.helidon.config.tests.module.mappers2;
 
 import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
+import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 /**
- * Registers {@link ConfigMapper}s for {@link Logger}.
+ * Registers Config mappers for {@link Logger}.
  */
 @Priority(100)
 public class Mappers2Priority100ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
-    public Map<Class<?>, Function<Config, ?>> getMappers() {
+    public Map<Class<?>, Function<Config, ?>> mappers() {
         return CollectionsHelper.mapOf(Logger.class, new LoggerConfigMapper());
     }
 

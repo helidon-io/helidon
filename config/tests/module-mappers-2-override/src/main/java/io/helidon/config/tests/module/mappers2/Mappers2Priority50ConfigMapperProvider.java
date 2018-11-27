@@ -19,21 +19,22 @@ package io.helidon.config.tests.module.mappers2;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Function;
 
 import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
+import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 /**
- * Registers {@link ConfigMapper}s for {@link OptionalInt}, {@link Integer} and {@link java.math.BigInteger}.
+ * Registers config mapper for {@link OptionalInt}, {@link Integer} and {@link java.math.BigInteger}.
  */
 @Priority(50)
 public class Mappers2Priority50ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
-    public Map<Class<?>, Function<Config, ?>> getMappers() {
+    public Map<Class<?>, Function<Config, ?>> mappers() {
         return CollectionsHelper.mapOf(OptionalInt.class, new OptionalIntConfigMapper(),
                       Integer.class, new IntegerConfigMapper(),
                       BigInteger.class, new BigIntegerConfigMapper());

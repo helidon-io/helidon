@@ -336,8 +336,8 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
              * @return updated builder instance
              */
             public Builder from(Config config) {
-                config.get("user").asOptionalStringList().ifPresent(this::addRoles);
-                config.get("service").asOptionalStringList().ifPresent(this::addServiceRoles);
+                config.get("user").asList(String.class).ifPresent(this::addRoles);
+                config.get("service").asList(String.class).ifPresent(this::addServiceRoles);
                 return this;
             }
         }

@@ -51,7 +51,7 @@ public class InMemoryOverrideSourceTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simple("app-name")));
+        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simpleValue("app-name")));
         assertThat(config.get("aaa.bbb.url").asString().get(), is("URL1"));
         assertThat(config.get("aaa.ccc.url").exists(), is(false));
         assertThat(config.get("aaa.anything").asInt().get(), is(1));
@@ -74,11 +74,11 @@ public class InMemoryOverrideSourceTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simple("app-name")));
-        assertThat(config.get("aaa.bbb.url").asString(), is(ConfigValues.simple("URL0")));
+        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simpleValue("app-name")));
+        assertThat(config.get("aaa.bbb.url").asString(), is(ConfigValues.simpleValue("URL0")));
         assertThat(config.get("aaa.ccc.url").exists(), is(false));
-        assertThat(config.get("aaa.anything").asInt(), is(ConfigValues.simple(1)));
-        assertThat(config.get("bbb").asString(), is(ConfigValues.simple("ahoy")));
+        assertThat(config.get("aaa.anything").asInt(), is(ConfigValues.simpleValue(1)));
+        assertThat(config.get("bbb").asString(), is(ConfigValues.simpleValue("ahoy")));
         assertThat(config.get("bbb.ccc.url").exists(), is(false));
     }
 
@@ -102,11 +102,11 @@ public class InMemoryOverrideSourceTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simple("app-name")));
-        assertThat(config.get("aaa.bbb.url").asString(), is(ConfigValues.simple("URL1")));
+        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simpleValue("app-name")));
+        assertThat(config.get("aaa.bbb.url").asString(), is(ConfigValues.simpleValue("URL1")));
         assertThat(config.get("aaa.ccc.url").exists(), is(false));
-        assertThat(config.get("aaa.anything").asInt(), is(ConfigValues.simple(1)));
-        assertThat(config.get("bbb").asString(), is(ConfigValues.simple("ahoy")));
+        assertThat(config.get("aaa.anything").asInt(), is(ConfigValues.simpleValue(1)));
+        assertThat(config.get("bbb").asString(), is(ConfigValues.simpleValue("ahoy")));
         assertThat(config.get("bbb.ccc.url").exists(), is(false));
     }
 

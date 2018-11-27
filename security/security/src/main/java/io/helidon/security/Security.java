@@ -937,7 +937,6 @@ public final class Security {
             config = config.get("security.provider-policy");
             ProviderSelectionPolicyType pType = config.get("type")
                     .asString()
-                    .value()
                     .map(ProviderSelectionPolicyType::from)
                     .orElse(ProviderSelectionPolicyType.FIRST);
 
@@ -1042,7 +1041,7 @@ public final class Security {
         }
 
         private Function<ProviderSelectionPolicy.Providers, ProviderSelectionPolicy> findProviderSelectionPolicy(Config config) {
-            Class clazz = config.get("class-name").as(Class.class).value().orElseThrow(() -> new java.lang.SecurityException(
+            Class clazz = config.get("class-name").as(Class.class).orElseThrow(() -> new java.lang.SecurityException(
                     "You have configured a CLASS provider selection without configuring class-name"));
 
             if (!ProviderSelectionPolicy.class.isAssignableFrom(clazz)) {

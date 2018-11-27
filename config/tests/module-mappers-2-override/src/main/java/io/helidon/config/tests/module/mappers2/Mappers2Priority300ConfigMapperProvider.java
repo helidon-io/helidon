@@ -18,21 +18,22 @@ package io.helidon.config.tests.module.mappers2;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
+import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 /**
- * Registers {@link ConfigMapper}s for {@link Locale}.
+ * Registers Config mappers for {@link Locale}.
  */
 @Priority(300)
 public class Mappers2Priority300ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
-    public Map<Class<?>, Function<Config, ?>> getMappers() {
+    public Map<Class<?>, Function<Config, ?>> mappers() {
         return CollectionsHelper.mapOf(Locale.class, new LocaleConfigMapper());
     }
 

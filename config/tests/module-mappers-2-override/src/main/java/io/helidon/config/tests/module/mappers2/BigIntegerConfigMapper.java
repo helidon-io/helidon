@@ -17,20 +17,20 @@
 package io.helidon.config.tests.module.mappers2;
 
 import java.math.BigInteger;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 
 /**
- * {@link ConfigMapper}s implementation for {@link BigInteger}, but returns a value minus 1.
+ * Config mapper implementation for {@link BigInteger}, but returns a value minus 1.
  */
-public class BigIntegerConfigMapper implements ConfigMapper<BigInteger> {
+public class BigIntegerConfigMapper implements Function<Config, BigInteger> {
 
     @Override
     public BigInteger apply(Config config) throws ConfigMappingException, MissingValueException {
-        return (new BigInteger(config.asString())).subtract(BigInteger.ONE);
+        return (new BigInteger(config.asString().get())).subtract(BigInteger.ONE);
     }
 
 }

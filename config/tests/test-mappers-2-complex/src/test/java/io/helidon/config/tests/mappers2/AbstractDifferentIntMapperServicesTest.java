@@ -16,16 +16,17 @@
 
 package io.helidon.config.tests.mappers2;
 
-import io.helidon.common.CollectionsHelper;
 import java.math.BigInteger;
 import java.util.OptionalInt;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Module {@code module-mappers-2-override} overrides built-in mappers for {@link Integer}, {@link OptionalInt}
@@ -52,10 +53,10 @@ public abstract class AbstractDifferentIntMapperServicesTest {
         assertThat(config.as(Integer.class), is(expected()));
         assertThat(config.as(BigInteger.class), is(BigInteger.valueOf(expected())));
 
-        assertThat(config.as(OptionalInt.class).getAsInt(), is(expected()));
-        assertThat(config.asInt().getAsInt(), is(expected()));
-        assertThat(configas(Integer.class).get(), is(expected()));
-        assertThat(configas(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
+        assertThat(config.as(OptionalInt.class).get(), is(expected()));
+        assertThat(config.asInt().get(), is(expected()));
+        assertThat(config.as(Integer.class).get(), is(expected()));
+        assertThat(config.as(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
     }
 
 }

@@ -220,7 +220,7 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
 
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
         config.getConfig("abac")
-                .ifPresent(abacConfig -> abacConfig.asOptionalMap()
+                .ifPresent(abacConfig -> abacConfig.asMap()
                         .ifPresent(theMap -> {
                             int attributes = 0;
                             int unsupported = 0;

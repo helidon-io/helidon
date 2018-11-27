@@ -234,9 +234,9 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
          */
         public Builder from(Config config) {
             this.config = config;
-            config.get("validators").asOptionalList(Config.class).ifPresent(configs -> {
+            config.get("validators").asList(Config.class).ifPresent(configs -> {
                 for (Config validatorConfig : configs) {
-                    OptionalHelper.from(validatorConfig.get("class").asOptionalString())
+                    OptionalHelper.from(validatorConfig.get("class").value())
                             .ifPresentOrElse(clazz -> {
                                 //attempt to instantiate
                                 addExecutor(instantiate(clazz));
@@ -353,7 +353,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
             public Builder from(Config config) {
 
                 config.get("inherit").asBoolean().ifPresent(this::inherit);
-                config.get("statement").asOptionalString().ifPresent(this::statement);
+                config.get("statement").asString().ifPresent(this::statement);
 
                 return this;
             }

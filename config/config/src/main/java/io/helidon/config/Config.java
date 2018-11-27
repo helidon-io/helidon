@@ -177,7 +177,7 @@ import io.helidon.config.spi.OverrideSource;
  * <pre>{@code
  * Long l1 = config.as(Long.class);
  * Long l2 = config.as(Long.class, 42L);
- * Optional<Long> l3 = configas(Long.class);
+ * Optional<Long> l3 = config.as(Long.class);
  * }</pre>
  * </ul>
  * <h3>Using Built-in and Custom Mappers</h3>
@@ -802,12 +802,20 @@ public interface Config {
      * Returns list of specified type.
      *
      * @param type type class
-     * @param <T>  type
+     * @param <T>  type of list elements
      * @return a typed list with values
      * @throws ConfigMappingException in case of problem to map property value.
      */
     <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException;
 
+    /**
+     * Returns this node as a list converting each list value using the provided mapper.
+     *
+     * @param mapper mapper to convert each list node into a typed value
+     * @param <T> type of list elements
+     * @return a typed list with values
+     * @throws ConfigMappingException in case the mapper fails to map the values
+     */
     <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException;
 
     /**
@@ -832,9 +840,7 @@ public interface Config {
      * @return a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
      * @throws ConfigMappingException in case the node is {@link Type#VALUE}
      */
-    default ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
-        return asList(Config.class);
-    }
+    ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
 
     /**
      * Transform all leaf nodes (values) into Map instance.
@@ -867,7 +873,7 @@ public interface Config {
      * @see #traverse()
      * @see #detach()
      */
-    ConfigValue<Map<String, String>> asMap();
+    ConfigValue<Map<String, String>> asMap() throws MissingValueException;
 
     //
     // config changes
@@ -1610,7 +1616,7 @@ public interface Config {
          * Specifies maximum capacity for each subscriber's buffer to be used by by {@link Config#changes()}
          * to deliver new Config instance.
          * <p>
-         * By default {@link io.helidon.common.reactive.Flow#DEFAULT_BUFFER_SIZE} is used.
+         * By default {@link Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Not consumed events will be dropped off.
          *

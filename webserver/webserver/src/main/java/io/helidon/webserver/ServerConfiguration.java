@@ -318,8 +318,8 @@ public interface ServerConfiguration extends SocketConfiguration {
         public Builder addSocket(String name, int port, InetAddress bindAddress) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
             return addSocket(name, SocketConfiguration.builder()
-                                                      .port(port)
-                                                      .bindAddress(bindAddress));
+                    .port(port)
+                    .bindAddress(bindAddress));
         }
 
         /**
@@ -440,11 +440,9 @@ public interface ServerConfiguration extends SocketConfiguration {
                 ExperimentalConfiguration.Builder experimentalBuilder = new ExperimentalConfiguration.Builder();
                 Config http2Config = experimentalConfig.get("http2");
                 if (http2Config.exists()) {
-                    Optional<Boolean> enable = http2Config.get("enable").asBoolean().value();
-                    Optional<Integer> maxContentLength = http2Config.get("maxContentLength").asInt().value();
                     Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
-                    enable.ifPresent(http2Builder::enable);
-                    maxContentLength.ifPresent(http2Builder::maxContentLength);
+                    http2Config.get("enable").asBoolean().ifPresent(http2Builder::enable);
+                    http2Config.get("maxContentLength").asInt().ifPresent(http2Builder::maxContentLength);
                     experimentalBuilder.http2(http2Builder.build());
                 }
                 experimental = experimentalBuilder.build();
@@ -456,8 +454,10 @@ public interface ServerConfiguration extends SocketConfiguration {
         private SocketConfiguration.Builder configureSocket(Config config, SocketConfiguration.Builder soConfigBuilder) {
 
             config.get("port").asInt().ifPresent(soConfigBuilder::port);
-            config.get("bind-address").asString().value().map(this::string2InetAddress)
-                  .ifPresent(soConfigBuilder::bindAddress);
+            config.get("bind-address")
+                    .asString()
+                    .map(this::string2InetAddress)
+                    .ifPresent(soConfigBuilder::bindAddress);
             config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
             config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
             config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);

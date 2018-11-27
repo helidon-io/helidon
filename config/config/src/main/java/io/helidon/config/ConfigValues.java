@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Factory for config values.
  */
-final class ConfigValues {
+public final class ConfigValues {
     private ConfigValues() {
     }
 
@@ -36,7 +36,7 @@ final class ConfigValues {
      * @param <T> type of the value
      * @return a config value that is empty
      */
-    static <T> ConfigValue<T> empty() {
+    public static <T> ConfigValue<T> empty() {
         return new ConfigValueBase<T>(Config.Key.of("")) {
             @Override
             public Optional<T> asOptional() {
@@ -64,6 +64,11 @@ final class ConfigValues {
             public Supplier<Optional<T>> optionalSupplier() {
                 return Optional::empty;
             }
+
+            @Override
+            public String toString() {
+                return "ConfigValue(empty)";
+            }
         };
     }
 
@@ -72,10 +77,10 @@ final class ConfigValues {
      * All ConfigValues use equals method that only cares about the optional value.
      *
      * @param value value to use
-     * @param <T> type of the value
+     * @param <T>   type of the value
      * @return a config value that uses the value provided
      */
-    static <T> ConfigValue<T> simple(T value) {
+    public static <T> ConfigValue<T> simpleValue(T value) {
         return new ConfigValueBase<T>(Config.Key.of("")) {
             @Override
             public Optional<T> asOptional() {
@@ -84,7 +89,7 @@ final class ConfigValues {
 
             @Override
             public <N> ConfigValue<N> as(Function<T, N> mapper) {
-                return simple(mapper.apply(value));
+                return simpleValue(mapper.apply(value));
             }
 
             @Override
@@ -100,6 +105,11 @@ final class ConfigValues {
             @Override
             public Supplier<Optional<T>> optionalSupplier() {
                 return this::asOptional;
+            }
+
+            @Override
+            public String toString() {
+                return "ConfigValue(" + value + ")";
             }
         };
     }
@@ -147,7 +157,7 @@ final class ConfigValues {
         return new GenericConfigValueImpl<>(config, valueSupplier, getListValue);
     }
 
-    public static ConfigValue<Map<String, String>> createMap(Config config,
+    static ConfigValue<Map<String, String>> createMap(Config config,
                                                              ConfigMapperManager mapperManager) {
 
         Supplier<Optional<Map<String, String>>> valueSupplier = () -> {
@@ -172,7 +182,7 @@ final class ConfigValues {
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof ConfigValue) {
-                return ((ConfigValue<?>)obj).asOptional().equals(this.asOptional());
+                return ((ConfigValue<?>) obj).asOptional().equals(this.asOptional());
             }
             return false;
         }
@@ -226,7 +236,6 @@ final class ConfigValues {
             return () -> configMethod.apply(latest()).asOptional();
         }
 
-
         private Config latest() {
             return owningConfig.context().last();
         }
@@ -236,6 +245,11 @@ final class ConfigValues {
             return new GenericConfigValueImpl<>(owningConfig,
                                                 () -> map(mapper),
                                                 config -> configMethod.apply(config).as(mapper));
+        }
+
+        @Override
+        public String toString() {
+            return "ConfigValue for key " + key();
         }
     }
 

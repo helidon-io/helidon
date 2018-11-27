@@ -627,7 +627,7 @@ public final class ConfigSources {
          * Specifies maximum capacity for each subscriber's buffer to be used to deliver
          * {@link ConfigSource#changes() config source changes}.
          * <p>
-         * By default {@link io.helidon.common.reactive.Flow#DEFAULT_BUFFER_SIZE} is used.
+         * By default {@link Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Any events not consumed by a subscriber will be lost.
          *

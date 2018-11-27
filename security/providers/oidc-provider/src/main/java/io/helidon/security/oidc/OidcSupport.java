@@ -216,7 +216,8 @@ public final class OidcSupport implements Service {
         }
 
         return rootConfig.get("security.providers")
-                .asList(Config.class)
+                .asNodeList()
+                .get()
                 .stream()
                 .filter(it -> it.get(providerName).exists())
                 .findFirst()

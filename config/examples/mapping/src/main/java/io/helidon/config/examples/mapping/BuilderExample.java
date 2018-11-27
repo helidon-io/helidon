@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.beans.Value;
 
 /**
  * This example shows how to automatically deserialize configuration instance into POJO beans
@@ -44,7 +45,9 @@ public class BuilderExample {
                 // get "app" sub-node
                 .get("app")
                 // let config automatically deserialize the node to new AppConfig instance
-                .as(AppConfig.class);
+                // note that this requires additional dependency - config-beans
+                .as(AppConfig.class)
+                .get();
 
         System.out.println(appConfig);
 
@@ -120,12 +123,12 @@ public static class AppConfig {
              * Set greeting property.
              * <p>
              * POJO property and config key are same, no need to customize it.
-             * {@link Config.Value} is used just to specify default value
+             * {@link Value} is used just to specify default value
              * in case configuration does not contain appropriate value.
              *
              * @param greeting greeting value
              */
-            @Config.Value(withDefault = "Hi")
+            @Value(withDefault = "Hi")
             public void setGreeting(String greeting) {
                 this.greeting = greeting;
             }
@@ -133,14 +136,14 @@ public static class AppConfig {
             /**
              * Set a page size.
              * <p>
-             * {@link Config.Value} is used to specify correct config key and default value
+             * {@link Value} is used to specify correct config key and default value
              * in case configuration does not contain appropriate value.
              * Original string value is mapped to target int using appropriate
              * {@link io.helidon.config.ConfigMappers ConfigMapper}.
              *
              * @param pageSize page size
              */
-            @Config.Value(key = "page-size", withDefault = "10")
+            @Value(key = "page-size", withDefault = "10")
             public void setPageSize(int pageSize) {
                 this.pageSize = pageSize;
             }
@@ -148,13 +151,13 @@ public static class AppConfig {
             /**
              * Set a basic range.
              * <p>
-             * {@link Config.Value} is used to specify correct config key and default value supplier
+             * {@link Value} is used to specify correct config key and default value supplier
              * in case configuration does not contain appropriate value.
              * Supplier already returns default value in target type of a property.
              *
              * @param basicRange basic range
              */
-            @Config.Value(key = "basic-range", withDefaultSupplier = DefaultBasicRangeSupplier.class)
+            @Value(key = "basic-range", withDefaultSupplier = DefaultBasicRangeSupplier.class)
             public void setBasicRange(List<Integer> basicRange) {
                 this.basicRange = basicRange;
             }

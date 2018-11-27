@@ -41,7 +41,7 @@ public class ProviderForTesting extends SynchronousProvider
     }
 
     public static ProviderForTesting fromConfig(Config config) {
-        return new ProviderForTesting(config.asString());
+        return new ProviderForTesting(config.asString().get());
     }
 
     @Override

@@ -16,10 +16,10 @@
 
 package io.helidon.config.etcd;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import java.net.URI;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
@@ -30,13 +30,13 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
-import org.junit.jupiter.api.Assertions;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -175,7 +175,7 @@ public class EtcdConfigSourceBuilderTest {
     @Test
     public void testSourceFromConfigByClass() {
         Config metaConfig = Config.from(ConfigSources.from(ObjectNode.builder()
-                                                                   .addValue("class", EtcdConfigSourceBuilder.class.getName())
+                                                                   .addValue("class", EtcdConfigSource.class.getName())
                                                                    .addObject("properties", ObjectNode.builder()
                                                                            .addValue("uri", "http://localhost:2379")
                                                                            .addValue("key", "/registry")
@@ -183,7 +183,7 @@ public class EtcdConfigSourceBuilderTest {
                                                                            .build())
                                                                    .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(EtcdConfigSource.class)));
 
@@ -204,9 +204,9 @@ public class EtcdConfigSourceBuilderTest {
                                                                            .build())
                                                                    .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
-        assertThat(source, is(instanceOf(EtcdConfigSource.class)));
+        assertThat(source.get(), is(instanceOf(EtcdConfigSource.class)));
 
         EtcdConfigSource etcdSource = (EtcdConfigSource) source;
         assertThat(etcdSource.getEtcdEndpoint().getUri(), is(URI.create("http://localhost:2379")));

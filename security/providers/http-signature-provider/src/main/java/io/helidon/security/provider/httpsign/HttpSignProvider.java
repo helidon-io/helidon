@@ -91,7 +91,9 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.outboundConfig = builder.outboundConfig;
 
         outboundConfig.getTargets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
-            OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature").as(OutboundTargetDefinition.class);
+            OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
+                    .as(OutboundTargetDefinition.class)
+                    .get();
             targetKeys.put(target.getName(), outboundTargetDefinition);
         }));
     }
@@ -265,7 +267,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
         return targetOpt.map(target -> {
             OutboundTargetDefinition targetConfig = this.targetKeys.computeIfAbsent(target.getName(), key -> target.getConfig()
-                    .flatMap(config -> config.get("signature").as(OutboundTargetDefinition.class))
+                    .flatMap(config -> config.get("signature").as(OutboundTargetDefinition.class).asOptional())
                     .orElse(target.getCustomObject(OutboundTargetDefinition.class).orElseThrow(() -> new HttpSignatureException(
                             "Failed to find configuration for outbound signatures for target " + target.getName()))));
 
@@ -306,7 +308,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
      */
     public static class Builder implements io.helidon.common.Builder<HttpSignProvider> {
         private boolean optional = true;
-        private String realm = "prime";
+        private String realm = "Helidon";
         private final Set<HttpSignHeader> acceptHeaders = EnumSet.noneOf(HttpSignHeader.class);
         private SignedHeadersConfig inboundRequiredHeaders = SignedHeadersConfig.builder().build();
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
@@ -324,15 +326,15 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * @return builder instance configured from config
          */
         public Builder fromConfig(Config config) {
-            acceptHeaders.addAll(config.get("headers").asList(HttpSignHeader.class, CollectionsHelper.listOf()));
-            optional = config.get("optional").asBoolean().get(false);
-            realm = config.get("realm").asString().get("prime");
-            inboundRequiredHeaders = config.get("sign-headers").as(SignedHeadersConfig.class, DEFAULT_REQUIRED_HEADERS);
+            config.get("headers").asList(HttpSignHeader.class).ifPresent(list -> list.forEach(this::addAcceptHeader));
+            config.get("optional").asBoolean().ifPresent(this::optional);
+            config.get("realm").asString().ifPresent(this::realm);
+            config.get("sign-headers").as(SignedHeadersConfig::fromConfig).ifPresent(this::inboundRequiredHeaders);
             outboundConfig = OutboundConfig.parseTargets(config);
 
             config.get("inbound.keys")
-                    .asList(InboundClientDefinition.class, CollectionsHelper.listOf())
-                    .forEach(inbound -> inboundKeys.put(inbound.getKeyId(), inbound));
+                    .asList(InboundClientDefinition::create)
+                    .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.getKeyId(), inbound)));
 
             return this;
         }

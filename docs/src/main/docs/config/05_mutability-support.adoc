@@ -254,7 +254,7 @@ as stored in the config source.
 // Construct a Config with the appropriate PollingStrategy on each config source.
 
 Supplier<String> greetingSupplier = config.get("greeting")                     // <1>
-        .asStringSupplier();                                                   // <2>
+        .asString().supplier();                                                   // <2>
 
 System.out.println("Always actual greeting value: " + greetingSupplier.get()); // <3>
 ----

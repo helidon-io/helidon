@@ -120,7 +120,7 @@ public class SecurityTime {
     /**
      * Fluent API builder for {@link SecurityTime}.
      */
-    public static class Builder implements io.helidon.common.Builder<SecurityTime> {
+    public static final class Builder implements io.helidon.common.Builder<SecurityTime> {
         private ZoneId timeZone = ZoneId.systemDefault();
         private long shiftBySeconds = 0;
         private List<ChronoValues> values = new ArrayList<>();
@@ -190,7 +190,7 @@ public class SecurityTime {
          */
         public Builder fromConfig(Config config) {
             // modification, time flows as usual
-            config.get("time-zone").asOptionalString().map(ZoneId::of).ifPresent(this::timeZone);
+            config.get("time-zone").asString().map(ZoneId::of).ifPresent(this::timeZone);
             config.get("shift-by-seconds").asLong().ifPresent(this::shiftBySeconds);
 
             // explicit values, specific value is fixed in time
