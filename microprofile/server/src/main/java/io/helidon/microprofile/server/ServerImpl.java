@@ -130,14 +130,14 @@ public class ServerImpl implements Server {
         serverConfig.get("static.classpath").ifExists(cpConfig -> {
             Config context = cpConfig.get("context");
 
-            StaticContentSupport.Builder cpBuilder = StaticContentSupport.builder(cpConfig.get("location").asString());
+            StaticContentSupport.Builder cpBuilder = StaticContentSupport.builder(cpConfig.get("location").asString().get());
             cpBuilder.welcomeFileName(cpConfig.get("welcome")
                                               .value()
                                               .orElse("index.html"));
             StaticContentSupport staticContent = cpBuilder.build();
 
             if (context.exists()) {
-                routingBuilder.register(context.asString(), staticContent);
+                routingBuilder.register(context.asString().get(), staticContent);
             } else {
                 routingBuilder.register(staticContent);
             }
@@ -147,14 +147,14 @@ public class ServerImpl implements Server {
 
         serverConfig.get("static.path").ifExists(pathConfig -> {
             Config context = pathConfig.get("context");
-            StaticContentSupport.Builder pBuilder = StaticContentSupport.builder(pathConfig.get("location").as(Path.class));
+            StaticContentSupport.Builder pBuilder = StaticContentSupport.builder(pathConfig.get("location").as(Path.class).get());
             pathConfig.get("welcome")
                     .value()
                     .ifPresent(pBuilder::welcomeFileName);
             StaticContentSupport staticContent = pBuilder.build();
 
             if (context.exists()) {
-                routingBuilder.register(context.asString(), staticContent);
+                routingBuilder.register(context.asString().get(), staticContent);
             } else {
                 routingBuilder.register(staticContent);
             }

@@ -280,7 +280,7 @@ public final class Flow {
     public interface Processor<T, R> extends Subscriber<T>, Publisher<R> {
     }
 
-    public static final int DEFAULT_BUFFER_SIZE = 256;
+    static final int DEFAULT_BUFFER_SIZE = 256;
 
     /**
      * Returns a default value for Publisher or Subscriber buffering,

@@ -101,7 +101,7 @@ public class ChainConfigFilterTest {
                 }}))
                 .build();
 
-        assertThat(config.get(key).asString(), is(ConfigValues.simple(originalValue)));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue)));
         assertThat(config.get("missing-key").asString().get(defaultValue), is(defaultValue));
     }
 
@@ -120,7 +120,7 @@ public class ChainConfigFilterTest {
                         () -> newValue))
                 .build();
 
-        assertThat(config.get(key).asString(), is(ConfigValues.simple(newValue)));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(newValue)));
         assertThat(config.get("missing-key").asString().get(defaultValue), is(defaultValue));
     }
 
@@ -203,8 +203,8 @@ public class ChainConfigFilterTest {
 
         Config config = builder.build();
 
-        assertThat(config.get(Quad.key).asString(), is(ConfigValues.simple(expectedValue)));
-        assertThat(config.get(Quad.referenceKey).asString(), is(ConfigValues.simple(expectedValue)));
+        assertThat(config.get(Quad.key).asString(), is(ConfigValues.simpleValue(expectedValue)));
+        assertThat(config.get(Quad.referenceKey).asString(), is(ConfigValues.simpleValue(expectedValue)));
         assertThat(config.get("missing-key").asString().get(Quad.defaultValue), is(Quad.defaultValue));
     }
 
@@ -224,10 +224,10 @@ public class ChainConfigFilterTest {
                 .build();
 
         //first call -> value cached cached
-        assertThat(config.get(key).asString(), is(ConfigValues.simple(originalValue + ":1")));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":1")));
         assertThat(counter.get(), is(1));
         //second call <- used cached value
-        assertThat(config.get(key).asString(), is(ConfigValues.simple(originalValue + ":1")));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":1")));
         assertThat(counter.get(), is(1));
     }
 
@@ -248,10 +248,10 @@ public class ChainConfigFilterTest {
                 .build();
 
         //first call
-        assertThat(config.get(key).asString(), is(ConfigValues.simple(originalValue + ":1")));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":1")));
         assertThat(counter.get(), is(1));
         //second call
-        assertThat(config.get(key).asString(), is(ConfigValues.simple(originalValue + ":2")));
+        assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue + ":2")));
         assertThat(counter.get(), is(2));
     }
 

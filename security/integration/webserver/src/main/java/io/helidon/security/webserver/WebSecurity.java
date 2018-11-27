@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -368,7 +369,8 @@ public final class WebSecurity implements Service {
             for (Config pathConfig : configs) {
                 List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().get(listOf())
                         .stream()
-                        .map(Config::getValue)
+                        .map(Config::asString)
+                        .map(ConfigValue::get)
                         .map(Http.RequestMethod::create)
                         .collect(Collectors.toList());
 

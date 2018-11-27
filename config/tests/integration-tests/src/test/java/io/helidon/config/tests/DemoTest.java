@@ -19,19 +19,20 @@ package io.helidon.config.tests;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.hocon.HoconConfigParserBuilder;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import org.junit.jupiter.api.Test;
 
 /**
  * This test shows Client API use-cases.
@@ -61,7 +62,7 @@ public class DemoTest {
         // List<String>, List<T>, Optional<List<String>>
 
         assertThat( // INT
-                    config.get("app.page-size").asInt(),
+                    config.get("app.page-size").asInt().get(),
                     is(20));
 
         assertThat( // boolean + DEFAULT
@@ -69,11 +70,11 @@ public class DemoTest {
                     is(false));
 
         assertThat( // LIST <Integer>
-                    config.get("app.basic-range").asList(Integer.class),
+                    config.get("app.basic-range").asList(Integer.class).get(),
                     contains(-20, 20));
 
         assertThat( // BUILT-IN mapper for PATH
-                    config.get("logging.outputs.file.name").as(Path.class),
+                    config.get("logging.outputs.file.name").as(Path.class).get(),
                     is(Paths.get("target/root.log")));
 
         // BUILT-IN MAPPERS:
@@ -91,7 +92,7 @@ public class DemoTest {
 
         // list of objects
         List<Config> securityProviders = config.get("security.providers")
-                .asList(Config.class);
+                .asList(Config.class).get();
 
         assertThat(securityProviders.size(),
                    is(2)); // with 2 items
@@ -115,6 +116,7 @@ public class DemoTest {
         // find out all configured logging outputs
         config.get("logging.outputs")
                 .asNodeList() // DIRECT CHILDREN NODES
+                .get()
                 .forEach(node -> System.out.println("\t\t" + node.key()));
         //i.e. setup Logging Handler ...
 
@@ -207,17 +209,17 @@ public class DemoTest {
     }
 
     /**
-     * Custom {@link ConfigMapper} for {@link AppConfig} type.
+     * Custom config mapper for {@link AppConfig} type.
      */
-    public static class AppConfigMapper implements ConfigMapper<AppConfig> {
+    public static class AppConfigMapper implements Function<Config, AppConfig> {
         @Override
         public AppConfig apply(Config node) throws ConfigMappingException, MissingValueException {
-            String greeting = node.get("greeting").asString();
-            String name = node.get("name").asString();
-            int pageSize = node.get("page-size").asInt();
-            List<Integer> basicRange = node.get("basic-range").asList(Integer.class);
+            String greeting = node.get("greeting").asString().get();
+            String name = node.get("name").asString().get();
+            int pageSize = node.get("page-size").asInt().get();
+            List<Integer> basicRange = node.get("basic-range").asList(Integer.class).get();
             boolean storageEnabled = node.get("storageEnabled").asBoolean().get(false);
-            String storagePassphrase = node.get("storagePassphrase").asString();
+            String storagePassphrase = node.get("storagePassphrase").asString().get();
 
             return new AppConfig(greeting, name, pageSize, basicRange, storageEnabled, storagePassphrase);
         }
@@ -232,7 +234,8 @@ public class DemoTest {
                 .build();
 
         AppConfig appConfig = config.get("app")
-                .map(new AppConfigMapper()); // MAP using provided Mapper
+                .as(new AppConfigMapper()) // MAP using provided Mapper
+                .get();
 
         assertThat(appConfig.getGreeting(), is("Hello"));
         assertThat(appConfig.getName(), is("Demo"));
@@ -247,12 +250,13 @@ public class DemoTest {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("application.conf"))
                 .addParser(HoconConfigParserBuilder.buildDefault())
-                .addStringMapper(AppConfig.class, new AppConfigMapper())
+                .addMapper(AppConfig.class, new AppConfigMapper())
                 .disableValueResolving()
                 .build();
 
         AppConfig appConfig = config.get("app")
-                .as(AppConfig.class); // get AS type
+                .as(AppConfig.class) // get AS type
+                .get();
 
         assertThat(appConfig.getGreeting(), is("Hello"));
         assertThat(appConfig.getName(), is("Demo"));

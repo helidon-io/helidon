@@ -48,7 +48,7 @@ public class HttpDigest {
          * @return enum instance
          */
         public static Algorithm fromConfig(Config config) {
-            return fromString(config.asString());
+            return fromString(config.asString().get());
         }
 
         static Algorithm fromString(String value) {
@@ -105,7 +105,7 @@ public class HttpDigest {
          * @return enum instance
          */
         public static Qop fromConfig(Config config) {
-            return fromString(config.asString());
+            return fromString(config.asString().get());
         }
 
         static Qop fromString(String value) {

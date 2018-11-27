@@ -16,21 +16,21 @@
 
 package io.helidon.config.tests.module.mappers1;
 
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 
 /**
- * {@link ConfigMapper}s implementation for {@link Logger}.
+ * Config mappers implementation for {@link Logger}.
  */
-public class LoggerConfigMapper implements ConfigMapper<Logger> {
+public class LoggerConfigMapper implements Function<Config, Logger> {
 
     @Override
     public Logger apply(Config config) throws ConfigMappingException, MissingValueException {
-        return Logger.getLogger(config.asString());
+        return Logger.getLogger(config.asString().get());
     }
 
 }

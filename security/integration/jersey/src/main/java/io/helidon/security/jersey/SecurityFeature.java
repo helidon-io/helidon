@@ -253,7 +253,7 @@ public final class SecurityFeature implements Feature {
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asBoolean().ifPresent(this::authorizeAnnotatedOnly);
             myConfig.get("authenticate-annotated-only").asBoolean().ifPresent(this::authenticateAnnotatedOnly);
-            myConfig.get("query-params").asOptionalList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
+            myConfig.get("query-params").asList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
             myConfig.get("debug").asBoolean().filter(bool -> bool).ifPresent(bool -> this.debug());
             return this;
         }

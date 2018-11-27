@@ -111,7 +111,7 @@ public class ConfigSourcePollingTest {
                    is("subvalue1"));
         assertThat("value retrieved for app1.node.value not as expected",
                    config.get("app1.node.value").asBoolean(),
-                   is(ConfigValues.simple(true)));
+                   is(ConfigValues.simpleValue(true)));
     }
 
     private class MyPollingStrategy implements PollingStrategy {

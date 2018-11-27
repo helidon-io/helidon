@@ -88,7 +88,7 @@ public class ConfigSourcesTest {
         assertThat(Config.from(prefixed("security", from(CollectionsHelper.mapOf("credentials.username", "libor"))))
                            .get("security.credentials.username")
                            .asString(),
-                   is(ConfigValues.simple("libor")));
+                   is(ConfigValues.simpleValue("libor")));
 
     }
 

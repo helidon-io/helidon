@@ -101,7 +101,7 @@ public class HelloWorldResource {
                 .add("requestId", requestId)
                 .add("appName", applicationName)
                 .add("appUri", String.valueOf(applicationUri))
-                .add("config", config.get("server.port").asInt())
+                .add("config", config.get("server.port").asInt().get())
                 .add("beanManager", beanManager.toString())
                 .add("logger", logger.getName())
                 .build();

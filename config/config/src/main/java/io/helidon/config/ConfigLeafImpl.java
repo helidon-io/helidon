@@ -60,7 +60,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
         if (Config.class.equals(type)) {
             throw new ConfigMappingException(key(), "The Config node represents single value.");
         }
-        
+
         Optional<String> value = value();
         if (!value.isPresent()) {
             return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.asList(type));

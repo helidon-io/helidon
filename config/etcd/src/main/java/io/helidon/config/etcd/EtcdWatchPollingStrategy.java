@@ -27,7 +27,6 @@ import io.helidon.config.ConfigHelper;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.etcd.internal.client.EtcdUtils;
 import io.helidon.config.spi.PollingStrategy;
 
 /**
@@ -51,7 +50,9 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
      */
     public EtcdWatchPollingStrategy(EtcdEndpoint endpoint) {
         this.endpoint = endpoint;
-        etcdClient = EtcdUtils.getClient(EtcdUtils.getClientClass(endpoint.getApi()), endpoint.getUri());
+        etcdClient = endpoint.getApi()
+                .clientFactory()
+                .createClient(endpoint.getUri());
 
         ticksSubmitter = new SubmissionPublisher<>(Runnable::run, //deliver events on current thread
                                                    1); //(almost) do not buffer events

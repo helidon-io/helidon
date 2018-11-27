@@ -241,7 +241,6 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
                                                        LocalTime.parse(tod.get("to").asString().get("24:00:00"))));
 
             config.get("days-of-week").asList(DayOfWeek.class)
-                    .value()
                     .ifPresent(builder::addDaysOfWeek);
 
             return builder.build();

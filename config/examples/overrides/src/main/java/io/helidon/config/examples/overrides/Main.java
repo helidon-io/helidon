@@ -20,11 +20,12 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.OverrideSources;
+
+import static java.time.Duration.ofSeconds;
+
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.config.PollingStrategies.regular;
-
-import static java.time.Duration.ofSeconds;
 
 /**
  * Overrides example.
@@ -78,8 +79,8 @@ public class Main {
                 .build();
 
         // Resolve current runtime context
-        String env = config.get("env").asString();
-        String pod = config.get("pod").asString();
+        String env = config.get("env").asString().get();
+        String pod = config.get("pod").asString().get();
 
         // get logging config for the current runtime
         Config loggingConfig = config

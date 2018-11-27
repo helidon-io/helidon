@@ -26,11 +26,12 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
+
+import static java.time.Duration.ofSeconds;
+
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.config.PollingStrategies.regular;
-
-import static java.time.Duration.ofSeconds;
 
 /**
  * Example shows how to use Config accessor methods that return {@link Supplier}.
@@ -61,9 +62,9 @@ public class AsSupplierExample {
                               .pollingStrategy(regular(ofSeconds(10))));
 
         // greeting.get() always return up-to-date value
-        final Supplier<String> greeting = config.get("app.greeting").asStringSupplier();
+        final Supplier<String> greeting = config.get("app.greeting").asString().supplier();
         // name.get() always return up-to-date value
-        final Supplier<String> name = config.get("app.name").asStringSupplier();
+        final Supplier<String> name = config.get("app.name").asString().supplier();
 
         // first greeting
         printIfChanged(greeting.get() + " " + name.get() + ".");

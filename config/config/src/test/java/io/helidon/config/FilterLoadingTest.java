@@ -55,9 +55,9 @@ public class FilterLoadingTest {
                 .build();
 
         assertThat(config.get(UNAFFECTED_KEY).asString(),
-                   is(ConfigValues.simple(UNAFFECTED_VALUE)));
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
         assertThat(config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
-                   is(ConfigValues.simple(AutoLoadedConfigFilter.EXPECTED_FILTERED_VALUE)));
+                   is(ConfigValues.simpleValue(AutoLoadedConfigFilter.EXPECTED_FILTERED_VALUE)));
     }
 
     @Test
@@ -76,9 +76,9 @@ public class FilterLoadingTest {
                 .build();
 
         assertThat(config.get(UNAFFECTED_KEY).asString(),
-                   is(ConfigValues.simple(UNAFFECTED_VALUE)));
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
         assertThat(config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
-                   is(ConfigValues.simple(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
+                   is(ConfigValues.simpleValue(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
     }
 
     @Test
@@ -96,9 +96,9 @@ public class FilterLoadingTest {
                 .build();
 
         assertThat(config.get(UNAFFECTED_KEY).asString(),
-                   is(ConfigValues.simple(UNAFFECTED_VALUE)));
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
         assertThat(config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
-                   is(ConfigValues.simple(AutoLoadedConfigHighPriority.EXPECTED_FILTERED_VALUE)));
+                   is(ConfigValues.simpleValue(AutoLoadedConfigHighPriority.EXPECTED_FILTERED_VALUE)));
     }
 
     @Test
@@ -117,8 +117,8 @@ public class FilterLoadingTest {
                 .build();
 
         assertThat(config.get(UNAFFECTED_KEY).asString(),
-                   is(ConfigValues.simple(UNAFFECTED_VALUE)));
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
         assertThat(config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
-                   is(ConfigValues.simple(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
+                   is(ConfigValues.simpleValue(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
     }
 }

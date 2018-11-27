@@ -57,8 +57,8 @@ public class MyConfigSourceBuilder2
      * @return new builder instance
      */
     public static MyConfigSourceBuilder2 from(Config metaConfig) {
-        return from(metaConfig.get("myProp1").asString(),
-                    metaConfig.get("myProp2").asInt())
+        return from(metaConfig.get("myProp1").asString().get(),
+                    metaConfig.get("myProp2").asInt().get())
                 .init(metaConfig);
     }
 

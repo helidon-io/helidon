@@ -462,7 +462,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          * Specifies maximum capacity for each subscriber's buffer to be used to deliver
          * {@link ConfigSource#changes() config source changes}.
          * <p>
-         * By default {@link Flow#DEFAULT_BUFFER_SIZE} is used.
+         * By default {@link Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Not consumed events will be dropped off.
          *
