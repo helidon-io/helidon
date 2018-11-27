@@ -27,10 +27,13 @@ import java.util.stream.Collectors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValue;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.spi.ConfigParser;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.ConfigValues.simpleValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -62,14 +65,11 @@ public abstract class AbstractComplexConfigTest {
     // text
     //
 
-    private void testString(Config node, String expected) {
-        assertThat(node.asString().get(), is(expected));
-        assertThat(node.as(String.class).get(), is(expected));
-        assertThat(node.as(String::valueOf).get(), is(expected));
-
-        assertThat(node.value().get(), is(expected));
-        assertThat(node.as(String.class).get(), is(expected));
-        assertThat(node.as(String::valueOf).asOptional().get(), is(expected));
+    private void testString(Config node, String expectedString) {
+        ConfigValue<String> expected = simpleValue(expectedString);
+        assertThat(node.asString(), is(expected));
+        assertThat(node.as(String.class), is(expected));
+        assertThat(node.asString().as(String::toString), is(expected));
     }
 
     private void testString(String key, String expected) {
@@ -78,7 +78,7 @@ public abstract class AbstractComplexConfigTest {
 
     private void testStringList(String key, String... expected) {
         assertThat(getConfig().get(key).asList(String.class).get(), contains(expected));
-        assertThat(getConfig().get(key).asList(String::valueOf).get(), contains(expected));
+        assertThat(getConfig().get(key).asList(config -> config.asString().get()).get(), contains(expected));
     }
 
     private void testString(String prefix) {
@@ -184,9 +184,10 @@ public abstract class AbstractComplexConfigTest {
     //
 
     private void testLong(Config node, long expected) {
-        assertThat(node.asLong(), is(expected));
-        assertThat(node.as(Long.class), is(expected));
-        assertThat(node.asString().as(ConfigMappers::toLong), is(expected));
+        ConfigValue<Long> expectedValue = simpleValue(expected);
+        assertThat(node.asLong(), is(expectedValue));
+        assertThat(node.as(Long.class), is(expectedValue));
+        assertThat(node.asString().as(ConfigMappers::toLong), is(expectedValue));
     }
 
     private void testLong(String key, long expected) {
@@ -222,9 +223,10 @@ public abstract class AbstractComplexConfigTest {
     // double
     //
 
-    private void testDouble(Config node, double expected) {
-        assertThat(node.asDouble().get(), is(expected));
-        assertThat(node.as(Double.class).get(), is(expected));
+    private void testDouble(Config node, double expectedDouble) {
+        ConfigValue<Double> expected = simpleValue(expectedDouble);
+        assertThat(node.asDouble(), is(expected));
+        assertThat(node.as(Double.class), is(expected));
         assertThat(node.asString().as(ConfigMappers::toDouble), is(expected));
     }
 
@@ -261,7 +263,9 @@ public abstract class AbstractComplexConfigTest {
     // URI
     //
 
-    private void testUri(Config node, URI expected) {
+    private void testUri(Config node, URI expectedUri) {
+        ConfigValue<URI> expected = simpleValue(expectedUri);
+
         assertThat(node.as(URI.class), is(expected));
         assertThat(node.asString().as(ConfigMappers::toUri), is(expected));
     }
@@ -535,10 +539,10 @@ public abstract class AbstractComplexConfigTest {
         Config config = getConfig().get("escaped").detach();
 
         //key
-        assertThat(config.get("oracle~1com.prop1").asString(), is("val1"));
-        assertThat(config.get("oracle~1com.prop2").asString(), is("val2"));
-        assertThat(config.get("oracle.com").asString(), is("1"));
-        assertThat(config.get("oracle.cz").asString(), is("2"));
+        assertThat(config.get("oracle~1com.prop1").asString(), is(simpleValue("val1")));
+        assertThat(config.get("oracle~1com.prop2").asString(), is(simpleValue("val2")));
+        assertThat(config.get("oracle.com").asString(), is(simpleValue("1")));
+        assertThat(config.get("oracle.cz").asString(), is(simpleValue("2")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));

@@ -186,7 +186,7 @@ public final class GitConfigSourceBuilder
     }
 
     @Override
-    public ConfigSource build() {
+    public GitConfigSource build() {
         return new GitConfigSource(this, getTarget());
     }
 

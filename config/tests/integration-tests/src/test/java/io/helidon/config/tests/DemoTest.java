@@ -25,11 +25,13 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.hocon.HoconConfigParserBuilder;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.ConfigValues.simpleValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -46,7 +48,7 @@ public class DemoTest {
 
         assertThat( // STRING
                     config.get("app.greeting").asString(),
-                    is("Hello"));
+                    is(simpleValue("Hello")));
     }
 
     @Test
@@ -98,10 +100,10 @@ public class DemoTest {
                    is(2)); // with 2 items
 
         assertThat(securityProviders.get(0).get("name").asString(),
-                   is("BMCS")); // name of 1st provider
+                   is(simpleValue("BMCS"))); // name of 1st provider
 
         assertThat(securityProviders.get(1).get("name").asString(),
-                   is("ForEndUsers")); // name of 2nd provider
+                   is(simpleValue("ForEndUsers"))); // name of 2nd provider
     }
 
     @Test
@@ -145,11 +147,11 @@ public class DemoTest {
 
         assertThat( // value from HOCON
                     config.get("app.greeting").asString(),
-                    is("Hello"));
+                    is(simpleValue("Hello")));
 
         assertThat( // value from PROPERTIES
                     config.get("app.page-size").asInt(),
-                    is(10));
+                    is(simpleValue(10)));
 
         assertThat( // value from PROPERTIES
                     config.get("app.storageEnabled").asBoolean().orElse(false),
@@ -277,7 +279,7 @@ public class DemoTest {
 
         assertThat( // decrypted passphrase
                     config.get("app.storagePassphrase").asString(),
-                    is("Password1."));
+                    is(simpleValue("Password1.")));
     }
 
 }

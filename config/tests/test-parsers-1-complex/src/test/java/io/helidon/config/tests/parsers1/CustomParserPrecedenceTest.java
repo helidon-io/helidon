@@ -17,11 +17,13 @@
 package io.helidon.config.tests.parsers1;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.tests.module.parsers1.Parsers1Priority100ConfigParser;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Parser tests with custom parser registered.
@@ -38,7 +40,8 @@ public class CustomParserPrecedenceTest extends AbstractParserServicesTest {
     public void testCustomParserOverride() {
         Config config = configBuilder().build();
 
-        assertThat(config.get(Parsers1Priority100ConfigParser.KEY_PREFIX + KEY).asString(), is(VALUE));
+        assertThat(config.get(Parsers1Priority100ConfigParser.KEY_PREFIX + KEY).asString(),
+                   is(ConfigValues.simpleValue(VALUE)));
     }
 
 }

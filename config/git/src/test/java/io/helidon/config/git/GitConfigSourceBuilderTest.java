@@ -351,7 +351,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
         Config metaConfig = Config.withSources(ConfigSources.from(ObjectNode.builder()
                                                                           .addValue("class",
-                                                                                    GitConfigSourceBuilder.class.getName())
+                                                                                    GitConfigSource.class.getName())
                                                                           .addObject("properties", ObjectNode.builder()
                                                                                   .addValue("path", "application.properties")
                                                                                   .addValue("uri", fileUri())

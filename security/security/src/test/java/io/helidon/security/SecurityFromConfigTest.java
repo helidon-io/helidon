@@ -45,7 +45,7 @@ public class SecurityFromConfigTest {
     }
 
     @Test
-    public void testSecurityProviderAuthn() throws ExecutionException, InterruptedException {
+    public void testSecurityProviderAuthn() {
         SecurityContext context = security.contextBuilder("unitTest").build();
 
         assertThat(context.isAuthenticated(), is(false));

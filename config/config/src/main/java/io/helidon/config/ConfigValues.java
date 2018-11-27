@@ -249,7 +249,8 @@ public final class ConfigValues {
 
         @Override
         public String toString() {
-            return "ConfigValue for key " + key();
+            // we do not use value in toString, as that may throw a MappingException
+            return "ConfigValue for key \"" + key() + "\"";
         }
     }
 

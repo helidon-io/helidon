@@ -82,7 +82,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
      * @param config meta configuration of this source
      * @return config source configured from the meta configuration
      */
-    public static ConfigSource create(Config config) {
+    public static GitConfigSource create(Config config) {
         return GitConfigSourceBuilder.from(config).build();
     }
 

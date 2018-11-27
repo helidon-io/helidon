@@ -47,6 +47,11 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-beans</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-hocon</artifactId>
             <version>${project.version}</version>
         </dependency>

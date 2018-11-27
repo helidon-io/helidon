@@ -49,11 +49,11 @@ public abstract class AbstractDifferentIntMapperServicesTest {
     public void testDifferentInts() {
         Config config = configBuilder().build().get(KEY);
 
-        assertThat(config.asInt(), is(expected()));
-        assertThat(config.as(Integer.class), is(expected()));
-        assertThat(config.as(BigInteger.class), is(BigInteger.valueOf(expected())));
+        assertThat(config.asInt().get(), is(expected()));
+        assertThat(config.as(Integer.class).get(), is(expected()));
+        assertThat(config.as(BigInteger.class).get(), is(BigInteger.valueOf(expected())));
 
-        assertThat(config.as(OptionalInt.class).get(), is(expected()));
+        assertThat(config.as(OptionalInt.class).get(), is(OptionalInt.of(expected())));
         assertThat(config.asInt().get(), is(expected()));
         assertThat(config.as(Integer.class).get(), is(expected()));
         assertThat(config.as(BigInteger.class).get(), is(BigInteger.valueOf(expected())));

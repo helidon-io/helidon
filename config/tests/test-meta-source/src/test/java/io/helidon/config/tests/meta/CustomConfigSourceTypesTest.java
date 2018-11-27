@@ -18,11 +18,13 @@ package io.helidon.config.tests.meta;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.tests.module.meta1.MyConfigSource1;
 import io.helidon.config.tests.module.meta2.MyConfigSource2;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,8 +56,8 @@ public class CustomConfigSourceTypesTest {
 
         Config config = justFrom(source);
 
-        assertThat(config.get("key1").asInt(), is(23));
-        assertThat(config.get("enabled").asBoolean(), is(true));
+        assertThat(config.get("key1").asInt(), is(ConfigValues.simpleValue(23)));
+        assertThat(config.get("enabled").asBoolean(), is(ConfigValues.simpleValue(true)));
     }
 
     @Test
@@ -63,7 +65,12 @@ public class CustomConfigSourceTypesTest {
         testCustomType("meta1class", MyConfigSource1.class);
     }
 
+    // this test is intentionaly disabled and the feature no longer works
+    // this is too much magic - use the builder internally in config source,
+    // rather than having a public builder and hidden source
+    // expecting ConfigSourceImpl.create(Config)
     @Test
+    @Disabled
     public void testCustomTypeBuilder1() {
         testCustomType("meta1builder", MyConfigSource1.class);
     }
@@ -73,6 +80,11 @@ public class CustomConfigSourceTypesTest {
         testCustomType("meta2class", MyConfigSource2.class);
     }
 
+    // this test is intentionaly disabled and the feature no longer works
+    // this is too much magic - use the builder internally in config source,
+    // rather than having a public builder and hidden source
+    // expecting ConfigSourceImpl.create(Config)
+    @Disabled
     @Test
     public void testCustomTypeBuilder2() {
         testCustomType("meta2builder", MyConfigSource2.class);
