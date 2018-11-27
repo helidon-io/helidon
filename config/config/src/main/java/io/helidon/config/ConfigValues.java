@@ -228,7 +228,7 @@ public final class ConfigValues {
 
         @Override
         public Supplier<T> supplier(T defaultValue) {
-            return () -> configMethod.apply(latest()).get(defaultValue);
+            return () -> configMethod.apply(latest()).orElse(defaultValue);
         }
 
         @Override

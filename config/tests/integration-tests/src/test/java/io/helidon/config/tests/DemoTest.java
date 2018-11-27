@@ -66,7 +66,7 @@ public class DemoTest {
                     is(20));
 
         assertThat( // boolean + DEFAULT
-                    config.get("app.storageEnabled").asBoolean().get(false),
+                    config.get("app.storageEnabled").asBoolean().orElse(false),
                     is(false));
 
         assertThat( // LIST <Integer>
@@ -152,7 +152,7 @@ public class DemoTest {
                     is(10));
 
         assertThat( // value from PROPERTIES
-                    config.get("app.storageEnabled").asBoolean().get(false),
+                    config.get("app.storageEnabled").asBoolean().orElse(false),
                     is(true));
     }
 
@@ -218,7 +218,7 @@ public class DemoTest {
             String name = node.get("name").asString().get();
             int pageSize = node.get("page-size").asInt().get();
             List<Integer> basicRange = node.get("basic-range").asList(Integer.class).get();
-            boolean storageEnabled = node.get("storageEnabled").asBoolean().get(false);
+            boolean storageEnabled = node.get("storageEnabled").asBoolean().orElse(false);
             String storagePassphrase = node.get("storagePassphrase").asString().get();
 
             return new AppConfig(greeting, name, pageSize, basicRange, storageEnabled, storagePassphrase);

@@ -31,8 +31,8 @@ public class LocaleConfigMapper implements Function<Config, Locale> {
     @Override
     public Locale apply(Config config) throws ConfigMappingException, MissingValueException {
         String language = config.get("language").asString().get();
-        String country = config.get("country").asString().get("");
-        String variant = config.get("variant").asString().get("");
+        String country = config.get("country").asString().orElse("");
+        String variant = config.get("variant").asString().orElse("");
 
         return new Locale(language, country, variant);
     }

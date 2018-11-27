@@ -199,8 +199,8 @@ public class SignedHeadersConfig {
          * @return instance configured from config
          */
         public static HeadersConfig fromConfig(Config config) {
-            return create(config.get("always").asList(String.class).get(CollectionsHelper.listOf()),
-                          config.get("if-present").asList(String.class).get(CollectionsHelper.listOf()));
+            return create(config.get("always").asList(String.class).orElse(CollectionsHelper.listOf()),
+                          config.get("if-present").asList(String.class).orElse(CollectionsHelper.listOf()));
         }
 
         List<String> getHeaders(Map<String, List<String>> transportHeaders) {

@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,7 +60,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsStringDefault() {
-        assertThat(Config.empty().asString().get("default"), is("default"));
+        assertThat(Config.empty().asString().orElse("default"), is("default"));
     }
 
     @Test
@@ -73,7 +72,7 @@ public class ConfigEmptyTest {
 
     @Test
     public void testAsIntDefault() {
-        assertThat(Config.empty().asInt().get(5), is(5));
+        assertThat(Config.empty().asInt().orElse(5), is(5));
     }
 
     @Test
@@ -85,7 +84,7 @@ public class ConfigEmptyTest {
     public void testAsStringListDefault() {
         List<String> list = CollectionsHelper.listOf("record");
 
-        assertThat(Config.empty().asList(String.class).get(list), is(empty()));
+        assertThat(Config.empty().asList(String.class).orElse(list), is(empty()));
     }
 
     @Test
@@ -97,7 +96,7 @@ public class ConfigEmptyTest {
     public void testAsIntListDefault() {
         List<Integer> list = CollectionsHelper.listOf(5);
 
-        assertThat(Config.empty().asList(Integer.class).get(list), is(empty()));
+        assertThat(Config.empty().asList(Integer.class).orElse(list), is(empty()));
     }
 
     @Test

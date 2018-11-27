@@ -358,7 +358,7 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
             String name = config.get("name").asString().get();
             CompositeProviderFlag flag = config.get("flag")
                     .as(CompositeProviderFlag.class)
-                    .get(CompositeProviderFlag.REQUIRED);
+                    .orElse(CompositeProviderFlag.REQUIRED);
 
             return new FlaggedProvider(flag, name);
         }

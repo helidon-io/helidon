@@ -37,7 +37,7 @@ final class DefaultAuditProvider implements AuditProvider {
     }
 
     public static DefaultAuditProvider fromConfig(Config config) {
-        return new DefaultAuditProvider(config.get("security.audit.defaultProvider.logger").asString().get("AUDIT"));
+        return new DefaultAuditProvider(config.get("security.audit.defaultProvider.logger").asString().orElse("AUDIT"));
     }
 
     @Override

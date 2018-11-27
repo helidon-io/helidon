@@ -148,7 +148,7 @@ public class ValueResolvingFilter implements ConfigFilter {
                     config
                         .get(ConfigFilters.ValueResolvingBuilder.FAIL_ON_MISSING_REFERENCE_KEY_NAME)
                         .asBoolean()
-                        .get(DEFAULT_FAIL_ON_MISSING_REFERENCE_BEHAVIOR));
+                        .orElse(DEFAULT_FAIL_ON_MISSING_REFERENCE_BEHAVIOR));
         }
         failOnMissingReference = failOnMissingReferenceSetting.get();
     }

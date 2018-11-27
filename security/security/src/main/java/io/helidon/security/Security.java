@@ -872,11 +872,11 @@ public final class Security {
                 }
 
                 String name = resolveProviderName(pConf, className, providerSpecificConfig, providerService);
-                boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().get(true);
-                boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().get(true);
-                boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().get(true);
-                boolean isAudit = pConf.get("is-audit-provider").asBoolean().get(true);
-                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().get(true);
+                boolean isAuthn = pConf.get("is-authentication-provider").asBoolean().orElse(true);
+                boolean isAuthz = pConf.get("is-authorization-provider").asBoolean().orElse(true);
+                boolean isClientSec = pConf.get("is-client-security-provider").asBoolean().orElse(true);
+                boolean isAudit = pConf.get("is-audit-provider").asBoolean().orElse(true);
+                boolean isSubjectMapper = pConf.get("is-subject-mapper").asBoolean().orElse(true);
 
                 SecurityProvider provider;
                 if (null == providerService) {
@@ -907,7 +907,7 @@ public final class Security {
                         "Security is not configured. At least one security provider MUST be present.");
             }
 
-            String defaultAtnProvider = config.get("security.default-authentication-provider").asString().get(null);
+            String defaultAtnProvider = config.get("security.default-authentication-provider").asString().orElse(null);
             if (null != defaultAtnProvider) {
                 authenticationProvider(atnProviders.stream()
                                                .filter(nsp -> nsp.getName().equals(defaultAtnProvider))
@@ -920,7 +920,7 @@ public final class Security {
                                                                                                 + "configuration exists")));
             }
 
-            String defaultAtzProvider = config.get("security.default-authorization-provider").asString().get(null);
+            String defaultAtzProvider = config.get("security.default-authorization-provider").asString().orElse(null);
             if (null != defaultAtzProvider) {
                 authorizationProvider(atzProviders.stream()
                                               .filter(nsp -> nsp.getName().equals(defaultAtzProvider))
