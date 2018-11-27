@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.helidon.guides</groupId>
         <artifactId>helidon-guides-project</artifactId>
-        <version>0.10.5-SNAPSHOT</version>
+        <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>mp-restful-webservice</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -13,7 +13,7 @@
 
     <properties>
         <!-- tag::helidonVersion[] -->
-        <helidon.version>0.10.5-SNAPSHOT</helidon.version>
+        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <!-- end::helidonVersion[] -->
         <!-- tag::javaVersions[] -->
         <maven.compiler.source>8</maven.compiler.source>

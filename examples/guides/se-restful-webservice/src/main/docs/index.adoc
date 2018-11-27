@@ -305,10 +305,11 @@ a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
 a|[listing]
 {"message":"Hola Jose!"}
-// end::buildAndRun[]
 |====
+// end::buildAndRun[]
 
 == Add Health Checks
+// tag::addHealthChecksIntro[]
 A well-behaved microservice reports on its own health.
 Two common approaches for checking health, often used together, are:
 
@@ -345,6 +346,7 @@ sure that a newly-assigned greeting is non-empty _before_
 accepting it. But omitting that validation lets us create an easy health check
 that we can use by simply setting the greeting to blank from 
 a `curl` command.
+// end::addHealthChecksIntro[]
 
 === Add code to `GreetService.java`
 

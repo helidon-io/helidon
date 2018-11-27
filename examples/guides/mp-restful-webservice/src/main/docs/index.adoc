@@ -34,6 +34,7 @@
 = The MP RESTful Web Service Guide
 :description: Helidon MP guide restful web service
 :keywords: helidon, guide, example, mp
+:toc:
 
 Create and build a JAX-RS RESTful web service as your first Helidon MP application.
 
@@ -50,13 +51,11 @@ You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web servic
 
 We create the app in these main steps:
 
-. Write an application-scoped bean to hold and manage the current greeting.
-. Write a JAX-RS resource to respond to the incoming requests.
-. Write a main class to start the server.
+. <<create_your_application,Write a basic Helidon MP app to respond to the HTTP requests.>>
 . Add code to perform simple health checks.
 . Add code to record simple metrics.
 
-(See the last section to find out how to get the entire finished code for this example.)
+(See the <<or_download_the_example_source,last section>> to find out how to get the entire finished code for this example.)
 
 == What You Need
 
@@ -330,4 +329,19 @@ include::{main-class}[tag=main]
 == Build and Run
 include::{se-guide-adoc}[tag=buildAndRun]
 
+== Add Health Checks
+include::{se-guide-adoc}[tag=addHealthChecksIntro] 
+
+== Or Download the Example Source
+We think the guide is most useful if you follow along step-by-step, building
+up the app and understanding what each part of the code is doing as you go. 
+
+But if you prefer, you can get the finished code for this example by cloning the link:https://github.com/oracle/helidon[`git` workspace
+for Helidon], navigating to the `examples/guides/mp-restful-webservice` directory, and
+running
+[source,bash]
+----
+mvn package
+java -jar target/mp-restful-webservice.jar
+----
 
