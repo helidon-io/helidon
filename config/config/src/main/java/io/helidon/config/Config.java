@@ -736,7 +736,7 @@ public interface Config {
      * @see ConfigValue#map(Function)
      * @see ConfigValue#supplier()
      * @see ConfigValue#get()
-     * @see ConfigValue#get(Object)
+     * @see ConfigValue#orElse(Object)
      */
     <T> ConfigValue<T> as(Class<T> type);
 

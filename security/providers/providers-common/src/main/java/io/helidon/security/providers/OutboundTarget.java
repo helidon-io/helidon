@@ -96,11 +96,11 @@ public final class OutboundTarget {
 
         builder.config(c);
         builder.name(c.get(CONFIG_NAME).asString().get());
-        c.get(CONFIG_TRANSPORTS).asList(String.class).get(CollectionsHelper.listOf())
+        c.get(CONFIG_TRANSPORTS).asList(String.class).orElse(CollectionsHelper.listOf())
                 .forEach(builder::addTransport);
-        c.get(CONFIG_HOSTS).asList(String.class).get(CollectionsHelper.listOf())
+        c.get(CONFIG_HOSTS).asList(String.class).orElse(CollectionsHelper.listOf())
                 .forEach(builder::addHost);
-        c.get(CONFIG_PATHS).asList(String.class).get(CollectionsHelper.listOf())
+        c.get(CONFIG_PATHS).asList(String.class).orElse(CollectionsHelper.listOf())
                 .forEach(builder::addPath);
 
         return builder.build();

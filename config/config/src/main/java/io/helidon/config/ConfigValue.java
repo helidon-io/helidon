@@ -109,17 +109,6 @@ public interface ConfigValue<T> {
     }
 
     /**
-     * Typed value of the represented {@link Config} node with a default value.
-     *
-     * @param defaultValue a value to be returned if this value represents a {@link Config} node that has no direct value
-     * @return direct value of this node converted to the expected type, or the provided default value if there is no value
-     * @throws ConfigMappingException in case the value cannot be converted to the expected type
-     */
-    default T get(T defaultValue) throws ConfigMappingException {
-        return asOptional().orElse(defaultValue);
-    }
-
-    /**
      * Convert this {@code ConfigValue} to a different type using a mapper function.
      *
      * @param mapper mapper to map the type of this {@code ConfigValue} to a type of the returned {@code ConfigValue}
@@ -143,10 +132,10 @@ public interface ConfigValue<T> {
     /**
      * Returns a supplier of a typed value with a default. The value provided from the supplier is the latest value available.
      * E.g. in case there is a file config source that is being watched and a value is changed, this supplier
-     * would return the latest value, whereas {@link #get(Object)} would return the original value.
+     * would return the latest value, whereas {@link #orElse(Object)} would return the original value.
      * <p>
      * Note that {@link Supplier#get()} can throw a {@link ConfigMappingException} as the
-     * {@link #get(Object)} method.
+     * {@link #orElse(Object)} method.
      *
      * @param defaultValue a value to be returned if the supplied value represents a {@link Config} node that has no direct
      *                     value

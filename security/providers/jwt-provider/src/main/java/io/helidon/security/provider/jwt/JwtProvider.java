@@ -405,11 +405,11 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
 
             return new JwtOutboundTarget(
                     tokenHandler,
-                    config.get("jwt-kid").asString().get(null),
-                    config.get("jwk-kid").asString().get(null),
-                    config.get("jwt-audience").asString().get(null),
-                    config.get("jwt-not-before-seconds").asInt().get(5),
-                    config.get("jwt-validity-seconds").asLong().get(60L * 60 * 24));
+                    config.get("jwt-kid").asString().orElse(null),
+                    config.get("jwk-kid").asString().orElse(null),
+                    config.get("jwt-audience").asString().orElse(null),
+                    config.get("jwt-not-before-seconds").asInt().orElse(5),
+                    config.get("jwt-validity-seconds").asLong().orElse(60L * 60 * 24));
         }
 
         private void update(Jwt.Builder builder) {

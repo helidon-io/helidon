@@ -70,7 +70,7 @@ class ConfigValuesTest {
 
     private <T> void assertValue(ConfigValue<T> as, T defaultValue, String key, T expectedValue) {
         assertThat(as.get(), is(expectedValue));
-        assertThat(as.get(defaultValue), is(expectedValue));
+        assertThat(as.orElse(defaultValue), is(expectedValue));
         assertThat(as.asOptional(), is(Optional.of(expectedValue)));
         assertThat(as.name(), is(key));
         assertThat(as.key(), is(Config.Key.of(key)));
@@ -87,7 +87,7 @@ class ConfigValuesTest {
 
     private <T> void assertEmpty(ConfigValue<T> as, T defaultValue, String key) {
         assertThrows(MissingValueException.class, as::get);
-        assertThat(as.get(defaultValue), is(defaultValue));
+        assertThat(as.orElse(defaultValue), is(defaultValue));
         assertThat(as.asOptional(), is(Optional.empty()));
         assertThat(as.name(), is(key));
         assertThat(as.key(), is(Config.Key.of(key)));

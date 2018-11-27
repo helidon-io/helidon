@@ -85,7 +85,7 @@ class BeansConfigMapperProviderTest {
 
         assertThat(instance.asOptional(), is(Optional.empty()));
         Configurables.WithCreateConfig defaultValue = new Configurables.WithCreateConfig("default");
-        assertThat(instance.get(defaultValue), sameInstance(defaultValue));
+        assertThat(instance.orElse(defaultValue), sameInstance(defaultValue));
         Assertions.assertThrows(MissingValueException.class, instance::get);
 
         Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.optionalSupplier();
@@ -112,7 +112,7 @@ class BeansConfigMapperProviderTest {
 
         assertThat(instance.asOptional(), not(Optional.empty()));
         Configurables.WithCreateConfig defaultValue = new Configurables.WithCreateConfig("default");
-        assertThat(instance.get(defaultValue), not(sameInstance(defaultValue)));
+        assertThat(instance.orElse(defaultValue), not(sameInstance(defaultValue)));
         assertThat(instance.get().message(), is(TEST_MESSAGE));
 
         Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.optionalSupplier();

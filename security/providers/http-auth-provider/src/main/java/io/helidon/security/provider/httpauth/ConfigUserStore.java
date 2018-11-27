@@ -78,8 +78,8 @@ public class ConfigUserStore implements UserStore {
             ConfigUser cu = new ConfigUser();
 
             cu.login = config.get("login").asString().get();
-            cu.password = config.get("password").asString().get("").toCharArray();
-            cu.roles.addAll(config.get("roles").asList(String.class).get(CollectionsHelper.listOf()));
+            cu.password = config.get("password").asString().orElse("").toCharArray();
+            cu.roles.addAll(config.get("roles").asList(String.class).orElse(CollectionsHelper.listOf()));
 
             return cu;
         }

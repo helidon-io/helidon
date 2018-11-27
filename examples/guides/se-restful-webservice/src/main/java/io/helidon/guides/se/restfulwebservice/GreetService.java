@@ -65,7 +65,7 @@ public class GreetService implements Service {
      * The config value for the key {@code greeting}.
      */
     // tag::greetingDef[]
-    private String greeting = CONFIG.get("greeting").asString().get("Ciao"); // <2>
+    private String greeting = CONFIG.get("greeting").asString().orElse("Ciao"); // <2>
     // end::greetingDef[]
 
     /**

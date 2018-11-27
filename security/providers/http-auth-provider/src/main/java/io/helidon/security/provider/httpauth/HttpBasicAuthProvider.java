@@ -279,7 +279,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         static Builder fromConfig(Config config) {
             Builder builder = new Builder();
 
-            builder.realm(config.get("realm").asString().get("realm"));
+            builder.realm(config.get("realm").asString().orElse("realm"));
             config.get("principal-type").as(SubjectType.class).ifPresent(builder::subjectType);
 
             // now users may not be configured at all

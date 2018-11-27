@@ -288,7 +288,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @return configuration based on the config
          */
         public static ScopesConfig from(Config config) {
-            return new ScopesConfig(config.asList(String.class).get(CollectionsHelper.listOf()));
+            return new ScopesConfig(config.asList(String.class).orElse(CollectionsHelper.listOf()));
         }
 
         /**
