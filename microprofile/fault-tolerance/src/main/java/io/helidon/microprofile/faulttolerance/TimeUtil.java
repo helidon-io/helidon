@@ -95,6 +95,18 @@ public class TimeUtil {
         return TimeUnit.MILLISECONDS.convert(duration, timeUnit);
     }
 
+    /**
+     * Converts a duration and its chrono unit to nanos.
+     *
+     * @param duration The duration.
+     * @param chronoUnit The unit of the duration.
+     * @return Nanoseconds.
+     */
+    public static long convertToNanos(long duration, ChronoUnit chronoUnit) {
+        final TimeUnit timeUnit = chronoUnitToTimeUnit(chronoUnit);
+        return TimeUnit.NANOSECONDS.convert(duration, timeUnit);
+    }
+
     private TimeUtil() {
     }
 }
