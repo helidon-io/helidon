@@ -191,7 +191,7 @@ public class ConfigLeafImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsIntWithDefaultFailing(TestContext context) {
         init(context);
-        getConfigAndExpectException("text-" + level(), config -> config.asInt().get(42));
+        getConfigAndExpectException("text-" + level(), config -> config.asInt().orElse(42));
     }
 
     @Override
@@ -214,7 +214,7 @@ public class ConfigLeafImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsLongWithDefaultFailing(TestContext context) {
         init(context);
-        getConfigAndExpectException("text-" + level(), config -> config.asLong().get(42L));
+        getConfigAndExpectException("text-" + level(), config -> config.asLong().orElse(42L));
     }
 
     @Override
@@ -236,7 +236,7 @@ public class ConfigLeafImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testAsDoubleWithDefaultFailing(TestContext context) {
         init(context);
-        getConfigAndExpectException("text-" + level(), config -> config.asDouble().get(Math.PI));
+        getConfigAndExpectException("text-" + level(), config -> config.asDouble().orElse(Math.PI));
     }
 
     @Override

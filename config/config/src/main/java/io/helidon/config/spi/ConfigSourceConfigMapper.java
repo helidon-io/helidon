@@ -124,7 +124,7 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
             configSource = ConfigSources.environmentVariables();
             break;
         case PREFIXED_TYPE:
-            configSource = ConfigSources.prefixed(properties.get(KEY_KEY).asString().get(""),
+            configSource = ConfigSources.prefixed(properties.get(KEY_KEY).asString().orElse(""),
                                                   properties.as(ConfigSource::from).get());
             break;
         case CLASSPATH_TYPE:

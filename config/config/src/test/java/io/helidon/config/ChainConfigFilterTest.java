@@ -102,7 +102,7 @@ public class ChainConfigFilterTest {
                 .build();
 
         assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(originalValue)));
-        assertThat(config.get("missing-key").asString().get(defaultValue), is(defaultValue));
+        assertThat(config.get("missing-key").asString().orElse(defaultValue), is(defaultValue));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ChainConfigFilterTest {
                 .build();
 
         assertThat(config.get(key).asString(), is(ConfigValues.simpleValue(newValue)));
-        assertThat(config.get("missing-key").asString().get(defaultValue), is(defaultValue));
+        assertThat(config.get("missing-key").asString().orElse(defaultValue), is(defaultValue));
     }
 
     /**
@@ -205,7 +205,7 @@ public class ChainConfigFilterTest {
 
         assertThat(config.get(Quad.key).asString(), is(ConfigValues.simpleValue(expectedValue)));
         assertThat(config.get(Quad.referenceKey).asString(), is(ConfigValues.simpleValue(expectedValue)));
-        assertThat(config.get("missing-key").asString().get(Quad.defaultValue), is(Quad.defaultValue));
+        assertThat(config.get("missing-key").asString().orElse(Quad.defaultValue), is(Quad.defaultValue));
     }
 
     @Test

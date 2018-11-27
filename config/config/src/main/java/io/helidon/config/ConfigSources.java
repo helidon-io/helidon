@@ -374,7 +374,7 @@ public final class ConfigSources {
     public static CompositeBuilder load(Config metaConfig) {
         List<Supplier<ConfigSource>> sources = metaConfig.get(SOURCES_KEY)
                 .asNodeList()
-                .get(CollectionsHelper.listOf())
+                .orElse(CollectionsHelper.listOf())
                 .stream()
                 .map(node -> node.as(ConfigSource::from))
                 .map(ConfigValue::get)

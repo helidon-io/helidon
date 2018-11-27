@@ -134,10 +134,10 @@ final class ResourceUtil {
                 .as(URI.class)
                 .map(uri -> config.get("proxy-host").value()
                         .map(proxyHost -> {
-                            if (config.get(keyPrefix + "-use-proxy").asBoolean().get(true)) {
+                            if (config.get(keyPrefix + "-use-proxy").asBoolean().orElse(true)) {
                                 Proxy proxy = new Proxy(Proxy.Type.HTTP,
                                                         new InetSocketAddress(proxyHost,
-                                                                              config.get("proxy-port").asInt().get(
+                                                                              config.get("proxy-port").asInt().orElse(
                                                                                       DEFAULT_PROXY_PORT)));
                                 return Resource.create(uri, proxy);
                             } else {

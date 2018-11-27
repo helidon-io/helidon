@@ -367,7 +367,7 @@ public final class WebSecurity implements Service {
 
         wsConfig.get("paths").asNodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
-                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().get(listOf())
+                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().orElse(listOf())
                         .stream()
                         .map(Config::asString)
                         .map(ConfigValue::get)

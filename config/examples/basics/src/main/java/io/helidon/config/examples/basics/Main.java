@@ -40,7 +40,7 @@ public class Main {
 
         int pageSize = config.get("app.page-size").asInt().get();
 
-        boolean storageEnabled = config.get("app.storageEnabled").asBoolean().get(false);
+        boolean storageEnabled = config.get("app.storageEnabled").asBoolean().orElse(false);
 
         List<Integer> basicRange = config.get("app.basic-range").asList(Integer.class).get();
 

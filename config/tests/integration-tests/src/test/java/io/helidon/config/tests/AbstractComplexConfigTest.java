@@ -330,8 +330,8 @@ public abstract class AbstractComplexConfigTest {
         String defaultValue = "default-value";
         String expected = defaultValue;
 
-        assertThat(node.asString().get(defaultValue), is(expected));
-        assertThat(node.as(String.class).get(defaultValue), is(expected));
+        assertThat(node.asString().orElse(defaultValue), is(expected));
+        assertThat(node.as(String.class).orElse(defaultValue), is(expected));
 
         assertThat(node.value().orElse(defaultValue), is(expected));
         assertThat(node.as(String.class).orElse(defaultValue), is(expected));
@@ -343,8 +343,8 @@ public abstract class AbstractComplexConfigTest {
         List<String> defaultValue = Arrays.asList("def-1", "def-2", "def-3");
         String[] expected = defaultValue.toArray(new String[0]);
 
-        assertThat(node.asList(String.class).get(defaultValue), contains(expected));
-        assertThat(node.asList(aConfig -> aConfig.asString().get()).get(defaultValue), contains(expected));
+        assertThat(node.asList(String.class).orElse(defaultValue), contains(expected));
+        assertThat(node.asList(aConfig -> aConfig.asString().get()).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -353,9 +353,9 @@ public abstract class AbstractComplexConfigTest {
         Boolean defaultValue = true;
         Boolean expected = defaultValue;
 
-        assertThat(node.asBoolean().get(defaultValue), is(expected));
-        assertThat(node.as(Boolean.class).get(defaultValue), is(expected));
-        assertThat(node.asString().as(ConfigMappers::toBoolean).get(defaultValue), is(expected));
+        assertThat(node.asBoolean().orElse(defaultValue), is(expected));
+        assertThat(node.as(Boolean.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toBoolean).orElse(defaultValue), is(expected));
 
         assertThat(node.as(Boolean.class).orElse(defaultValue), is(expected));
     }
@@ -366,7 +366,7 @@ public abstract class AbstractComplexConfigTest {
         List<Boolean> defaultValue = Arrays.asList(true, false, true);
         Boolean[] expected = defaultValue.toArray(new Boolean[0]);
 
-        assertThat(node.asList(Boolean.class).get(defaultValue), contains(expected));
+        assertThat(node.asList(Boolean.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -375,9 +375,9 @@ public abstract class AbstractComplexConfigTest {
         int expected = 42;
         int defaultValue = expected;
 
-        assertThat(node.asInt().get(defaultValue), is(expected));
-        assertThat(node.as(Integer.class).get(defaultValue), is(expected));
-        assertThat(node.asString().as(ConfigMappers::toInt).get(defaultValue), is(expected));
+        assertThat(node.asInt().orElse(defaultValue), is(expected));
+        assertThat(node.as(Integer.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toInt).orElse(defaultValue), is(expected));
 
         assertThat(node.asInt().orElse(defaultValue), is(expected));
         assertThat(node.as(Integer.class).orElse(defaultValue), is(expected));
@@ -389,7 +389,7 @@ public abstract class AbstractComplexConfigTest {
         List<Integer> defaultValue = Arrays.asList(Integer.MIN_VALUE, 0, Integer.MAX_VALUE);
         Integer[] expected = defaultValue.toArray(new Integer[0]);
 
-        assertThat(node.asList(Integer.class).get(defaultValue), contains(expected));
+        assertThat(node.asList(Integer.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -398,9 +398,9 @@ public abstract class AbstractComplexConfigTest {
         long expected = 42;
         long defaultValue = expected;
 
-        assertThat(node.asLong().get(defaultValue), is(expected));
-        assertThat(node.as(Long.class).get(defaultValue), is(expected));
-        assertThat(node.asString().as(ConfigMappers::toLong).get(defaultValue), is(expected));
+        assertThat(node.asLong().orElse(defaultValue), is(expected));
+        assertThat(node.as(Long.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toLong).orElse(defaultValue), is(expected));
 
         assertThat(node.asLong().orElse(defaultValue), is(expected));
         assertThat(node.as(Long.class).orElse(defaultValue), is(expected));
@@ -412,7 +412,7 @@ public abstract class AbstractComplexConfigTest {
         List<Long> defaultValue = Arrays.asList(Long.MIN_VALUE, 0L, Long.MAX_VALUE);
         Long[] expected = defaultValue.toArray(new Long[0]);
 
-        assertThat(node.asList(Long.class).get(defaultValue), contains(expected));
+        assertThat(node.asList(Long.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -421,9 +421,9 @@ public abstract class AbstractComplexConfigTest {
         double expected = -1234.5678;
         double defaultValue = expected;
 
-        assertThat(node.asDouble().get(defaultValue), is(expected));
-        assertThat(node.as(Double.class).get(defaultValue), is(expected));
-        assertThat(node.asString().as(ConfigMappers::toDouble).get(defaultValue), is(expected));
+        assertThat(node.asDouble().orElse(defaultValue), is(expected));
+        assertThat(node.as(Double.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toDouble).orElse(defaultValue), is(expected));
 
         assertThat(node.asDouble().orElse(defaultValue), is(expected));
         assertThat(node.as(Double.class).orElse(defaultValue), is(expected));
@@ -435,7 +435,7 @@ public abstract class AbstractComplexConfigTest {
         List<Double> defaultValue = Arrays.asList(-1234.5678, 0.0, 1234.5678);
         Double[] expected = defaultValue.toArray(new Double[0]);
 
-        assertThat(node.asList(Double.class).get(defaultValue), contains(expected));
+        assertThat(node.asList(Double.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -444,8 +444,8 @@ public abstract class AbstractComplexConfigTest {
         URI expected = URI.create("http://localhost");
         URI defaultValue = expected;
 
-        assertThat(node.as(URI.class).get(defaultValue), is(expected));
-        assertThat(node.asString().as(ConfigMappers::toUri).get(defaultValue), is(expected));
+        assertThat(node.as(URI.class).orElse(defaultValue), is(expected));
+        assertThat(node.asString().as(ConfigMappers::toUri).orElse(defaultValue), is(expected));
 
         assertThat(node.as(URI.class).orElse(defaultValue), is(expected));
         assertThat(node.asString().as(ConfigMappers::toUri).orElse(defaultValue), is(expected));
@@ -457,7 +457,7 @@ public abstract class AbstractComplexConfigTest {
         List<URI> defaultValue = Arrays.asList(URI.create("http://localhost"), URI.create("http://localhost"));
         URI[] expected = defaultValue.toArray(new URI[0]);
 
-        assertThat(node.asList(URI.class).get(defaultValue), contains(expected));
+        assertThat(node.asList(URI.class).orElse(defaultValue), contains(expected));
     }
 
     @Test
@@ -466,7 +466,7 @@ public abstract class AbstractComplexConfigTest {
         List<Config> defaultValue = Arrays.asList(Config.create(), Config.create());
         Config[] expected = defaultValue.toArray(new Config[0]);
 
-        assertThat(node.asNodeList().get(defaultValue), contains(expected));
+        assertThat(node.asNodeList().orElse(defaultValue), contains(expected));
         assertThat(node.asList(Config.class).orElse(defaultValue), contains(expected));
     }
 

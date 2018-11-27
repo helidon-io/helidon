@@ -48,7 +48,7 @@ public class GreetService implements Service {
     private String greeting;
 
     GreetService(Config config) {
-        this.greeting = config.get("app.greeting").asString("Ciao").get();
+        this.greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
 
     /**
