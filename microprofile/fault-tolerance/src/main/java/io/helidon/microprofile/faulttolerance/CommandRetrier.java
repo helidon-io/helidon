@@ -84,8 +84,8 @@ public class CommandRetrier {
 
             // Processing for jitter and delay
             if (retry.jitter() > 0) {
-                long delay = TimeUtil.convertToMillis(retry.delay(), retry.delayUnit());
-                long jitter = TimeUtil.convertToMillis(retry.jitter(), retry.jitterDelayUnit());
+                long delay = TimeUtil.convertToNanos(retry.delay(), retry.delayUnit());
+                long jitter = TimeUtil.convertToNanos(retry.jitter(), retry.jitterDelayUnit());
 
                 /*
                  * We need jitter <= delay so we compute factor for Failsafe so we split
@@ -100,7 +100,7 @@ public class CommandRetrier {
                 } else {
                     factor = ((double) jitter) / delay;
                 }
-                this.retryPolicy.withDelay(delay, TimeUnit.MILLISECONDS);
+                this.retryPolicy.withDelay(delay, TimeUnit.NANOSECONDS);
                 this.retryPolicy.withJitter(factor);
             } else if (retry.delay() > 0) {
                 this.retryPolicy.withDelay(retry.delay(), TimeUtil.chronoUnitToTimeUnit(retry.delayUnit()));
