@@ -23,10 +23,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValues;
+import io.helidon.config.MissingValueException;
 import io.helidon.config.hocon.internal.HoconConfigParser;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
@@ -36,14 +41,12 @@ import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import com.typesafe.config.ConfigResolveOptions;
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
-import io.helidon.config.ConfigMappingException;
-import io.helidon.config.MissingValueException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.ConfigValues.simpleValue;
 import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
@@ -51,8 +54,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link HoconConfigParser}.
@@ -217,10 +218,10 @@ public class HoconConfigParserTest {
                 .build();
 
         //key
-        assertThat(config.get("oracle~1com.prop1").asString(), is("val1"));
-        assertThat(config.get("oracle~1com.prop2").asString(), is("val2"));
-        assertThat(config.get("oracle.com").asString(), is("1"));
-        assertThat(config.get("oracle.cz").asString(), is("2"));
+        assertThat(config.get("oracle~1com.prop1").asString(), is(simpleValue("val1")));
+        assertThat(config.get("oracle~1com.prop2").asString(), is(simpleValue("val2")));
+        assertThat(config.get("oracle.com").asString(), is(simpleValue("1")));
+        assertThat(config.get("oracle.cz").asString(), is(simpleValue("2")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));
@@ -231,7 +232,7 @@ public class HoconConfigParserTest {
         assertThat(config.get("oracle.cz").name(), is("cz"));
 
         //child nodes
-        List<Config> children = config.asNodeList();
+        List<Config> children = config.asNodeList().get();
         assertThat(children, hasSize(2));
         assertThat(children.stream().map(Config::name).collect(Collectors.toSet()),
                    containsInAnyOrder("oracle.com", "oracle"));
@@ -243,7 +244,7 @@ public class HoconConfigParserTest {
                                             "oracle", "oracle.com", "oracle.cz"));
 
         //map
-        Map<String, String> map = config.asMap();
+        Map<String, String> map = config.asMap().get();
         assertThat(map.keySet(), hasSize(4));
         assertThat(map.get("oracle~1com.prop1"), is("val1"));
         assertThat(map.get("oracle~1com.prop2"), is("val2"));
@@ -263,14 +264,14 @@ public class HoconConfigParserTest {
         Config config = Config
                 .withSources(ConfigSources.from(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
                 .addParser(new HoconConfigParser())
-                .addStringMapper(AppType.class, new AppTypeMapper())
+                .addMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()
                 .disableMapperServices()
                 .disableFilterServices()
                 .build();
-        AppType app = config.get("app").as(AppType.class);
+        AppType app = config.get("app").as(AppType.class).get();
         assertThat("greeting", app.getGreeting(), is(AppType.GREETING));
         assertThat("name", app.getName(), is(AppType.NAME));
         assertThat("page-size", app.getPageSize(), is(AppType.PAGE_SIZE));
@@ -357,16 +358,16 @@ public class HoconConfigParserTest {
         }
     }
 
-    private static class AppTypeMapper implements ConfigMapper<AppType> {
+    private static class AppTypeMapper implements Function<Config, AppType> {
 
         @Override
         public AppType apply(Config config) throws ConfigMappingException, MissingValueException {
             AppType app = new AppType(
-                config.get("name").asString(),
-                config.get("greeting").asString(),
-                config.get("page-size").asInt(),
-                config.get("basic-range").asList(Integer.class),
-                config.get("storagePassphrase").asString()
+                config.get("name").asString().get(),
+                config.get("greeting").asString().get(),
+                config.get("page-size").asInt().get(),
+                config.get("basic-range").asList(Integer.class).get(),
+                config.get("storagePassphrase").asString().get()
             );
 
             return app;

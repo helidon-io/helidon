@@ -64,7 +64,7 @@ public class ConfigSupplierTest {
         // new: key exists
         waitForAssert(() -> supplier.get().isPresent(), is(true));
         waitForAssert(() -> supplier.get().get().type(), is(Config.Type.OBJECT));
-        waitForAssert(() -> supplier.get().get().get("sub1").asString(), is(ConfigValues.simple("string value")));
+        waitForAssert(() -> supplier.get().get().get("sub1").asString(), is(ConfigValues.simpleValue("string value")));
     }
 
     @Test
@@ -142,10 +142,10 @@ public class ConfigSupplierTest {
 
         // wait for event
         waitForAssert(() -> configSupplier.get().isPresent(), is(true));
-        waitForAssert(() -> configSupplier.get().get().get("key-2-1").asString(), is(ConfigValues.simple("NEW item 1")));
+        waitForAssert(() -> configSupplier.get().get().get("key-2-1").asString(), is(ConfigValues.simpleValue("NEW item 1")));
 
         waitForAssert(() -> detachedConfigSupplier.get().isPresent(), is(true));
-        waitForAssert(() -> detachedConfigSupplier.get().get().get("key-2-1").asString(), is(ConfigValues.simple("NEW item 1")));
+        waitForAssert(() -> detachedConfigSupplier.get().get().get("key-2-1").asString(), is(ConfigValues.simpleValue("NEW item 1")));
     }
 
     @Test
@@ -172,7 +172,7 @@ public class ConfigSupplierTest {
         waitForAssert(() -> optionalSupplier.get().isPresent(), is(true));
         waitForAssert(() -> optionalSupplier.get().get().key().toString(), is(""));
         waitForAssert(() -> optionalSupplier.get().get().get("key-1-1.key-2-1").asString(),
-                      is(ConfigValues.simple("NEW item 1")));
+                      is(ConfigValues.simpleValue("NEW item 1")));
     }
 
     @Test

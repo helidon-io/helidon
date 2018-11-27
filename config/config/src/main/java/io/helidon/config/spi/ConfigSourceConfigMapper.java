@@ -102,8 +102,10 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
 
         return OptionalHelper.from(config.get(TYPE_KEY)
                                            .value() // `type` is specified
-                .flatMap(type -> OptionalHelper.from(builtin(type, properties)) // return built-in source
-                        .or(() -> providers(type, properties)).asOptional())) // or use sources - custom type to class mapping
+                                           .flatMap(type -> OptionalHelper
+                                                   .from(builtin(type, properties)) // return built-in source
+                                                   .or(() -> providers(type, properties))
+                                                   .asOptional())) // or use sources - custom type to class mapping
                 .or(() -> config.get(CLASS_KEY)
                         .as(Class.class) // `class` is specified
                         .flatMap(clazz -> custom(clazz, properties))) // return custom source
@@ -153,7 +155,7 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
         Object source = properties.as(clazz).get();
 
         if (source instanceof ConfigSource) {
-            return Optional.of((ConfigSource)source);
+            return Optional.of((ConfigSource) source);
         }
 
         throw new ConfigException("Failed to process configuration metadata, configured class " + clazz.getName() + " does "

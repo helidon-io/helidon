@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,7 +68,6 @@ import javax.annotation.Priority;
 
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
@@ -87,12 +87,12 @@ public class MpConfigBuilder implements ConfigBuilder {
     private static final List<OrdinalConverter<?>> BUILT_IN_CONVERTERS = initBuiltInConverters();
 
     private final List<ConfigSource> mpConfigSources = new LinkedList<>();
-
     private final List<OrdinalConverter<?>> converters = new LinkedList<>();
     private final List<io.helidon.config.spi.ConfigSource> helidonConfigSources = new LinkedList<>();
+    private final io.helidon.config.Config.Builder helidonConfigBuilder = io.helidon.config.Config.builder();
+
     private ClassLoader classLoader;
     private io.helidon.config.Config helidonConfig;
-    private io.helidon.config.Config.Builder helidonConfigBuilder = io.helidon.config.Config.builder();
 
     MpConfigBuilder() {
         helidonConfigBuilder.disableEnvironmentVariablesSource();
@@ -168,7 +168,6 @@ public class MpConfigBuilder implements ConfigBuilder {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public ConfigBuilder addDiscoveredConverters() {
         ServiceLoader.load(Converter.class, getClassLoader())
                 .forEach(this::addConverter);
@@ -231,9 +230,9 @@ public class MpConfigBuilder implements ConfigBuilder {
     public Config build() {
         orderLists();
 
-        Map<Class<?>, Function<Config, ?>> configMappers = new IdentityHashMap<>();
+        Map<Class<?>, Function<io.helidon.config.Config, ?>> configMappers = new IdentityHashMap<>();
 
-        Set<Class> converterClasses = new HashSet<>();
+        Set<Class<?>> converterClasses = new HashSet<>();
 
         // add built-in converters of Helidon config
         converterClasses.add(String.class);
@@ -284,7 +283,7 @@ public class MpConfigBuilder implements ConfigBuilder {
 
         converters.forEach(oc -> {
             Class<?> c = oc.type;
-            ConfigMapper mapper = config -> oc.converter.convert(config.asString());
+            Function<io.helidon.config.Config, ?> mapper = config -> oc.converter.convert(config.asString().get());
             configMappers.put(c, mapper);
             converterClasses.add(c);
         });
@@ -393,9 +392,9 @@ public class MpConfigBuilder implements ConfigBuilder {
         }
     }
 
-    private static class OrdinalConfigSource implements io.helidon.config.spi.ConfigSource {
-        private io.helidon.config.spi.ConfigSource configSource;
-        private int ordinal;
+    private static final class OrdinalConfigSource implements io.helidon.config.spi.ConfigSource {
+        private final io.helidon.config.spi.ConfigSource configSource;
+        private final int ordinal;
 
         private OrdinalConfigSource(io.helidon.config.spi.ConfigSource configSource, int ordinal) {
             this.configSource = configSource;

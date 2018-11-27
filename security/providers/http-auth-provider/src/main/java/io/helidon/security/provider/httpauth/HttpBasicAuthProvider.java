@@ -287,7 +287,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
             if (usersConfig.exists()) {
                 // or it may be jst an empty list (e.g. users: with no subnodes).
                 if (!usersConfig.isLeaf()) {
-                    builder.userStore(usersConfigas(ConfigUserStore.class)
+                    builder.userStore(usersConfig.as(ConfigUserStore::fromConfig)
                                               .orElseThrow(() -> new HttpAuthException(
                                                       "No users configured! Key \"users\" must be in configuration")));
                 }

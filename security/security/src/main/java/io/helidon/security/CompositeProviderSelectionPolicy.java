@@ -320,7 +320,9 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
             config.get("authorization").asList(FlaggedProvider::fromConfig)
                     .ifPresent(this.authorizers::addAll);
             config.get("outbound").asNodeList()
-                    .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name").getValue())));
+                    .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name")
+                                                                                                   .asString()
+                                                                                                   .get())));
 
             return this;
         }
@@ -353,7 +355,7 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          * @return instance configured from config
          */
         static FlaggedProvider fromConfig(Config config) {
-            String name = config.get("name").getValue();
+            String name = config.get("name").asString().get();
             CompositeProviderFlag flag = config.get("flag")
                     .as(CompositeProviderFlag.class)
                     .get(CompositeProviderFlag.REQUIRED);

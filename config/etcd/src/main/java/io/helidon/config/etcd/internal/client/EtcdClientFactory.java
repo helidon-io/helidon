@@ -13,26 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.config.etcd.internal.client;
 
-package io.helidon.security.tools.config;
-
-import io.helidon.config.Config;
-
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import java.net.URI;
 
 /**
- * Test for automatic filter loading.
+ * TODO javadoc.
  */
-class TestFilterService {
-    @Test
-    void testFiltering() {
-        Config config = Config.create();
-
-        String value = config.get("pwd3").asString().get();
-
-        assertThat(value, is(AbstractSecureConfigTest.TEST_STRING));
-    }
+public interface EtcdClientFactory {
+    EtcdClient createClient(URI uri);
 }

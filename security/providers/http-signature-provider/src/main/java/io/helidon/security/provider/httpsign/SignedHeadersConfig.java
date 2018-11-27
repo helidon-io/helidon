@@ -72,7 +72,7 @@ public class SignedHeadersConfig {
      */
     public static SignedHeadersConfig fromConfig(Config config) {
         Builder builder = builder();
-        config.asNodeList().forEach(methodConfig -> {
+        config.asNodeList().get().forEach(methodConfig -> {
             HeadersConfig mc = HeadersConfig.fromConfig(methodConfig);
 
             OptionalHelper.from(methodConfig.get("method")
@@ -199,8 +199,8 @@ public class SignedHeadersConfig {
          * @return instance configured from config
          */
         public static HeadersConfig fromConfig(Config config) {
-            return create(config.get("always").asStringList(CollectionsHelper.listOf()),
-                          config.get("if-present").asStringList(CollectionsHelper.listOf()));
+            return create(config.get("always").asList(String.class).get(CollectionsHelper.listOf()),
+                          config.get("if-present").asList(String.class).get(CollectionsHelper.listOf()));
         }
 
         List<String> getHeaders(Map<String, List<String>> transportHeaders) {

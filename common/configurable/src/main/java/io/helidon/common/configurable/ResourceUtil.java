@@ -132,7 +132,6 @@ final class ResourceUtil {
     static Optional<Resource> fromConfigUrl(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-url")
                 .as(URI.class)
-                .value()
                 .map(uri -> config.get("proxy-host").value()
                         .map(proxyHost -> {
                             if (config.get(keyPrefix + "-use-proxy").asBoolean().get(true)) {

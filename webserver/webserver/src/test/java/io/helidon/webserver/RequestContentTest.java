@@ -76,7 +76,7 @@ public class RequestContentTest {
         Request request = requestTestStub(flux);
 
         ReactiveStreamsAdapter.publisherFromFlow(request.content())
-                      .subscribe(chunk -> sb.append(TestUtils.requestChun.asString().getValue(chunk))
+                      .subscribe(chunk -> sb.append(TestUtils.requestChunkAsString(chunk))
                                             .append("-"));
 
         assertEquals("first-second-third-", sb.toString());
@@ -103,7 +103,7 @@ public class RequestContentTest {
         assertEquals("", sb.toString(), "Apply filter is expected to be called after a subscription!");
 
         ReactiveStreamsAdapter.publisherFromFlow(request.content())
-                      .subscribe(chunk -> sb.append(TestUtils.requestChun.asString().getValue(chunk))
+                      .subscribe(chunk -> sb.append(TestUtils.requestChunkAsString(chunk))
                                             .append("-"));
 
         assertEquals("apply_filter-FIRST-SECOND-THIRD-", sb.toString());
@@ -148,7 +148,7 @@ public class RequestContentTest {
                        // mapping the on next call only
                        subscriberDelegate.onNext(
                                DataChunk.create(
-                                       TestUtils.requestChun.asString().getValue(item).toUpperCase().getBytes()));
+                                       TestUtils.requestChunkAsString(item).toUpperCase().getBytes()));
                    }
 
                    @Override
@@ -187,7 +187,7 @@ public class RequestContentTest {
 
                        @Override
                        public void onNext(DataChunk item) {
-                           list.add(TestUtils.requestChun.asString().getValue(item));
+                           list.add(TestUtils.requestChunkAsString(item));
                        }
 
                        @Override

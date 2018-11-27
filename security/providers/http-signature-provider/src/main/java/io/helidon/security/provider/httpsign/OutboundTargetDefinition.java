@@ -270,14 +270,14 @@ public class OutboundTargetDefinition {
             Builder builder = new Builder();
 
             // mandatory
-            builder.keyId(config.get("key-id").asString());
+            builder.keyId(config.get("key-id").asString().get());
             config.get("header").as(HttpSignHeader.class).ifPresent(builder::header);
             config.get("sign-headers").as(SignedHeadersConfig.class).ifPresent(builder::signedHeaders);
             config.get("private-key").as(KeyConfig.class).ifPresent(builder::privateKeyConfig);
-            config.get("hmac.secret").value().ifPresent(builder::hmacSecret);
+            config.get("hmac.secret").asString().ifPresent(builder::hmacSecret);
 
             // last, as we configure defaults based on configuration
-            config.get("algorithm").value().ifPresent(builder::algorithm);
+            config.get("algorithm").asString().ifPresent(builder::algorithm);
 
             return builder;
         }

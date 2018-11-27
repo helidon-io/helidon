@@ -86,7 +86,7 @@ public class ConfigTest {
     private void testKeyFromSysProps(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(ConfigValues.simple(TEST_SYS_PROP_VALUE)));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(ConfigValues.simpleValue(TEST_SYS_PROP_VALUE)));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class ConfigTest {
     private void testKeyFromEnvVars(Config config) {
         assertThat(config, not(nullValue()));
         assertThat(config.traverse().collect(Collectors.toList()), not(empty()));
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simple(TEST_ENV_VAR_VALUE)));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(ConfigValues.simpleValue(TEST_ENV_VAR_VALUE)));
     }
 
     @Test
@@ -548,10 +548,10 @@ public class ConfigTest {
                 .build();
 
         //key
-        assertThat(config.get("oracle~1com.prop1").asString(), is(ConfigValues.simple("val1")));
-        assertThat(config.get("oracle~1com.prop2").asString(), is(ConfigValues.simple("val2")));
-        assertThat(config.get("oracle.com").asString(), is(ConfigValues.simple("1")));
-        assertThat(config.get("oracle.cz").asString(), is(ConfigValues.simple("2")));
+        assertThat(config.get("oracle~1com.prop1").asString(), is(ConfigValues.simpleValue("val1")));
+        assertThat(config.get("oracle~1com.prop2").asString(), is(ConfigValues.simpleValue("val2")));
+        assertThat(config.get("oracle.com").asString(), is(ConfigValues.simpleValue("1")));
+        assertThat(config.get("oracle.cz").asString(), is(ConfigValues.simpleValue("2")));
 
         //name
         assertThat(config.get("oracle~1com").name(), is("oracle.com"));
@@ -612,9 +612,9 @@ public class ConfigTest {
 
         testKeyAndTypeAndGet(config);
 
-        assertThat(config.get("object-1").asString(), is(ConfigValues.simple(obj1Value)));
-        assertThat(config.get("object-1.object-2").asString(), is(ConfigValues.simple(obj1_2Value)));
-        assertThat(config.get("list-1").asString(), is(ConfigValues.simple(LIST_VALUE_PREFIX + valueQual + "-2")));
+        assertThat(config.get("object-1").asString(), is(ConfigValues.simpleValue(obj1Value)));
+        assertThat(config.get("object-1.object-2").asString(), is(ConfigValues.simpleValue(obj1_2Value)));
+        assertThat(config.get("list-1").asString(), is(ConfigValues.simpleValue(LIST_VALUE_PREFIX + valueQual + "-2")));
     }
 
     private void testConfigKeyEscapeUnescapeName(String name, String escapedName) {

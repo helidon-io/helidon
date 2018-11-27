@@ -20,10 +20,11 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import static io.helidon.config.ConfigSources.directory;
-import static io.helidon.config.PollingStrategies.regular;
 
 import static java.time.Duration.ofSeconds;
+
+import static io.helidon.config.ConfigSources.directory;
+import static io.helidon.config.PollingStrategies.regular;
 
 /**
  * Example shows how to listen on Config node changes using simplified API, {@link Config#onChange(Function)}.
@@ -54,8 +55,8 @@ public class OnChangeExample {
     }
 
     private static boolean logSecrets(Config secrets) {
-        LOGGER.info("Loaded secrets are u: " + secrets.get("username").asString()
-                            + ", p: " + secrets.get("password").asString());
+        LOGGER.info("Loaded secrets are u: " + secrets.get("username").asString().get()
+                            + ", p: " + secrets.get("password").asString().get());
         return true; // -> continue listening on config changes
     }
 

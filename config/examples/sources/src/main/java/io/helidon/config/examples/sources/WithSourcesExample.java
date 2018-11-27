@@ -59,17 +59,17 @@ public class WithSourcesExample {
         assert env.get().equals("DEV");
 
         // Default value (default.yaml): Config Sources Example
-        String appName = config.get("app.name").asString();
+        String appName = config.get("app.name").asString().get();
         System.out.println("Name: " + appName);
         assert appName.equals("Config Sources Example");
 
         // Page size, from config.yaml: 10
-        int pageSize = config.get("app.page-size").asInt();
+        int pageSize = config.get("app.page-size").asInt().get();
         System.out.println("Page size: " + pageSize);
         assert pageSize == 10;
 
         // Applied filter (uppercase logging level), from dev.yaml: finest -> FINEST
-        String level = config.get("component.audit.logging.level").asString();
+        String level = config.get("component.audit.logging.level").asString().get();
         System.out.println("Level: " + level);
         assert level.equals("FINE");
     }

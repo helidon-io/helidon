@@ -590,7 +590,7 @@ public class ConfigChangesTest {
         s2.request1();
         // s2 receives v2
         Config s2v2 = s2.getLastOnNext(1200, true);
-        assertThat(s2v2.get(key1).asString(), is(ConfigValues.simple("value 2")));
+        assertThat(s2v2.get(key1).asString(), is(ConfigValues.simpleValue("value 2")));
         //same v2s
         assertThat(v2, is(s2v2));
         s2.request1();
@@ -602,11 +602,11 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue(fullKey, "value 3").build());
         // s1 receives v3
         Config v3 = s1.getLastOnNext(200, true);
-        assertThat(v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
+        assertThat(v3.get(key1).asString(), is(ConfigValues.simpleValue("value 3")));
         s1.request1();
         // s2 receives v3
         Config s2v3 = s2.getLastOnNext(200, true);
-        assertThat(s2v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
+        assertThat(s2v3.get(key1).asString(), is(ConfigValues.simpleValue("value 3")));
         s2.request1();
         //same v3s
         assertThat(v3, is(s2v3));
@@ -618,7 +618,7 @@ public class ConfigChangesTest {
         s3.request1();
         // s3 receives v3
         Config s3v3 = s3.getLastOnNext(200, true);
-        assertThat(s3v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
+        assertThat(s3v3.get(key1).asString(), is(ConfigValues.simpleValue("value 3")));
         s3.request1();
         //same v3s
         assertThat(v3, is(s2v3));
@@ -631,7 +631,7 @@ public class ConfigChangesTest {
         s4.request1();
         // s4 receives v3
         Config s4v3 = s4.getLastOnNext(200, true);
-        assertThat(s4v3.get(key1).asString(), is(ConfigValues.simple("value 3")));
+        assertThat(s4v3.get(key1).asString(), is(ConfigValues.simpleValue("value 3")));
         s4.request1();
         //same v3s
         assertThat(v3, is(s2v3));
@@ -645,19 +645,19 @@ public class ConfigChangesTest {
                 ObjectNode.builder().addValue(fullKey, "value 4").build());
         // s1 receives v4
         Config v4 = s1.getLastOnNext(200, true);
-        assertThat(v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
+        assertThat(v4.get(key1).asString(), is(ConfigValues.simpleValue("value 4")));
         s1.request1();
         // s2 receives v4
         Config s2v4 = s2.getLastOnNext(200, true);
-        assertThat(s2v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
+        assertThat(s2v4.get(key1).asString(), is(ConfigValues.simpleValue("value 4")));
         s2.request1();
         // s3 receives v4
         Config s3v4 = s3.getLastOnNext(200, true);
-        assertThat(s3v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
+        assertThat(s3v4.get(key1).asString(), is(ConfigValues.simpleValue("value 4")));
         s3.request1();
         // s4 receives v4
         Config s4v4 = s4.getLastOnNext(200, true);
-        assertThat(s4v4.get(key1).asString(), is(ConfigValues.simple("value 4")));
+        assertThat(s4v4.get(key1).asString(), is(ConfigValues.simpleValue("value 4")));
         s4.request1();
         //same v4s
         assertThat(v4, is(s2v4));
@@ -701,6 +701,6 @@ public class ConfigChangesTest {
     }
     // todo maybe move to a shared place, so we can play around with method singatures
     public static <T> void assertConfigValue(ConfigValue<T> value, T expectedValue) {
-        assertThat(value, is(ConfigValues.simple(expectedValue)));
+        assertThat(value, is(ConfigValues.simpleValue(expectedValue)));
     }
 }

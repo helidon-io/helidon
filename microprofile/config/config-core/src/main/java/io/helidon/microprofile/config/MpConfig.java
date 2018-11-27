@@ -57,7 +57,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
     private final Supplier<Config> config;
     private final List<ConfigSource> mpConfigSources;
     private final Iterable<String> propertyNames;
-    private final Set<Class> converterClasses;
+    private final Set<Class<?>> converterClasses;
     private final Map<Class<?>, Converter<?>> converters;
 
     /**
@@ -70,7 +70,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      */
     public MpConfig(Config config,
                     List<ConfigSource> mpConfigSources,
-                    Set<Class> converterClasses,
+                    Set<Class<?>> converterClasses,
                     Map<Class<?>, Converter<?>> converters) {
 
         final AtomicReference<Config> ref = new AtomicReference<>(config);
@@ -86,9 +86,9 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
         this.propertyNames =
                 Stream.concat(mpConfigSources.stream()
                                       .flatMap(cs -> cs.getPropertyNames().stream()),
-                              config.traverse(io.helidon.config.Config::isLeaf)
-                                      .map(io.helidon.config.Config::key)
-                                      .map(io.helidon.config.Config.Key::toString))
+                              config.traverse(Config::isLeaf)
+                                      .map(Config::key)
+                                      .map(Config.Key::toString))
                         .collect(Collectors.toSet());
 
         this.converterClasses = new HashSet<>(converterClasses);
@@ -153,7 +153,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      */
     public <T> List<T> asList(String propertyName, Class<T> typeArg) {
         if (typeArg == Config.class) {
-            return config.get().get(propertyName).asList(typeArg);
+            return config.get().get(propertyName).asList(typeArg).get();
         }
         return findInMpSources(propertyName)
                 .map(value -> {
@@ -164,17 +164,17 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
                     }
                     return result;
                 })
-                .orElseGet(() -> config.get().get(propertyName).asList(typeArg));
+                .orElseGet(() -> config.get().get(propertyName).asList(typeArg).get());
     }
 
     private <T> T findValue(String propertyName, Class<T> propertyType) {
         if (propertyType == Config.class) {
-            return config.get().get(propertyName).as(propertyType);
+            return config.get().get(propertyName).as(propertyType).get();
         }
         //first iterate over mp sources, than use config
         return findInMpSources(propertyName)
                 .map(value -> convert(propertyType, value))
-                .orElseGet(() -> config.get().get(propertyName).as(propertyType));
+                .orElseGet(() -> config.get().get(propertyName).as(propertyType).get());
     }
 
     private Object findArrayValue(String propertyName, Class<?> element) {
@@ -184,9 +184,9 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
                 .orElseGet(() -> {
                     Config arrayConfig = config.get().get(propertyName);
                     if (arrayConfig.isLeaf()) {
-                        return asArray(arrayConfig.asString(), element);
+                        return asArray(arrayConfig.asString().get(), element);
                     }
-                    List<?> objects = arrayConfig.asList(element);
+                    List<?> objects = arrayConfig.asList(element).get();
                     Object array = Array.newInstance(element, objects.size());
                     for (int i = 0; i < objects.size(); i++) {
                         Array.set(array, i, objects.get(i));
@@ -304,7 +304,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
                     .build();
 
             try {
-                return c.get("key").as(type);
+                return c.get("key").as(type).get();
             } catch (ConfigMappingException e) {
                 throw new IllegalArgumentException("Failed to convert " + value + " to " + type.getName(), e);
             }
@@ -338,7 +338,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      */
     public Map<String, String> asMap() {
         // config from helidon config instance
-        Map<String, String> map = new HashMap<>(config.get().asMap());
+        Map<String, String> map = new HashMap<>(config.get().asMap().get());
         // now add all properties from sources of MP config
         List<ConfigSource> configSources = new ArrayList<>(mpConfigSources);
         Collections.reverse(configSources);
@@ -350,6 +350,6 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
 
     @Override
     public String toString() {
-        return "microprofileConfig: " + config.toString();
+        return "microprofileConfig: " + config;
     }
 }

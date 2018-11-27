@@ -23,12 +23,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.etcd.internal.client.EtcdUtils;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 
@@ -39,7 +39,7 @@ import io.helidon.config.spi.ConfigParser;
  *
  * @see EtcdConfigSourceBuilder
  */
-class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
+public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
 
     private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());
 
@@ -50,7 +50,9 @@ class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
         super(builder);
 
         endpoint = builder.getTarget();
-        client = EtcdUtils.getClient(EtcdUtils.getClientClass(endpoint.getApi()), endpoint.getUri());
+        client = endpoint.getApi()
+                .clientFactory()
+                .createClient(endpoint.getUri());
     }
 
     @Override
@@ -103,4 +105,15 @@ class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
         return client;
     }
 
+    /**
+     * Create a new instance from configuration.
+     *
+     * @param config configuration to load from
+     * @return configured source instance
+     */
+    public static EtcdConfigSource create(Config config) {
+        return EtcdConfigSourceBuilder
+                .from(config)
+                .build();
+    }
 }
