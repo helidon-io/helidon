@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static io.helidon.config.ConfigValues.simpleValue;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -77,7 +78,7 @@ public class OutboundConfigTest {
             fail("Config was expected to be non-null");
             return null;
         });
-        assertThat(targetsConfig.get("type").asString(), is("S2S"));
+        assertThat(targetsConfig.get("type").asString(), is(simpleValue("S2S")));
 
         target = targetList.get(1);
         assertThat(target.getName(), is("obo"));
@@ -88,7 +89,7 @@ public class OutboundConfigTest {
             fail("Config was expected to be non-null");
             return null;
         });
-        assertThat(targetsConfig.get("type").asString(), is("S2S_OBO"));
+        assertThat(targetsConfig.get("type").asString(), is(simpleValue("S2S_OBO")));
     }
 
     @Test
@@ -112,7 +113,7 @@ public class OutboundConfigTest {
             fail("Config was expected to be non-null");
             return null;
         });
-        assertThat(targetsConfig.get("type").asString(), is("S2S"));
+        assertThat(targetsConfig.get("type").asString(), is(simpleValue("S2S")));
 
         target = targetList.get(1);
         assertThat(target.getName(), is("obo"));
@@ -123,7 +124,7 @@ public class OutboundConfigTest {
             fail("Config was expected to be non-null");
             return null;
         });
-        assertThat(targetsConfig.get("type").asString(), is("S2S_OBO"));
+        assertThat(targetsConfig.get("type").asString(), is(simpleValue("S2S_OBO")));
     }
 
     @Test
@@ -166,7 +167,7 @@ public class OutboundConfigTest {
             fail("Config was expected to be non-null");
             return null;
         });
-        assertThat(config.get("type").asString(), is("S2S_OBO"));
+        assertThat(config.get("type").asString(), is(simpleValue("S2S_OBO")));
     }
 
     @Test
@@ -231,7 +232,7 @@ public class OutboundConfigTest {
 
         expectedProps.forEach((key, value) -> {
             Config keyConfig = config.get(key);
-            assertThat(keyConfig.asString(), is(value));
+            assertThat(keyConfig.asString(), is(simpleValue(value)));
         });
     }
 

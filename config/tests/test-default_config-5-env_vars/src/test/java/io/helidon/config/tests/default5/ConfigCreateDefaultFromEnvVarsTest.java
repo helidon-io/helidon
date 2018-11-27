@@ -17,12 +17,14 @@
 package io.helidon.config.tests.default5;
 
 import io.helidon.config.Config;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import static org.hamcrest.Matchers.is;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static io.helidon.config.ConfigValues.simpleValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link Config#create()} and ENV VAR is used first, has top priority.
@@ -38,7 +40,7 @@ public class ConfigCreateDefaultFromEnvVarsTest {
     public void testCreate() {
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(ENV_VALUE));
+        assertThat(config.get(KEY).asString(), is(simpleValue(ENV_VALUE)));
     }
 
     @Test
@@ -47,7 +49,7 @@ public class ConfigCreateDefaultFromEnvVarsTest {
 
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(ENV_VALUE));
+        assertThat(config.get(KEY).asString(), is(simpleValue(ENV_VALUE)));
     }
 
 }

@@ -91,9 +91,10 @@ public interface ConfigValue<T> {
      *
      * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have
      * a direct value
+     * @throws ConfigMappingException in case the value cannot be converted to the expected type
      * @see #get()
      */
-    Optional<T> asOptional();
+    Optional<T> asOptional() throws ConfigMappingException;
 
     /**
      * Typed value of the represented {@link Config} node.
@@ -195,12 +196,12 @@ public interface ConfigValue<T> {
      * If a value is present, performs the given action with the value,
      * otherwise performs the given empty-based action.
      *
-     * @param action the action to be performed, if a value is present
+     * @param action      the action to be performed, if a value is present
      * @param emptyAction the empty-based action to be performed, if no value is
-     *        present
+     *                    present
      * @throws NullPointerException if a value is present and the given action
-     *         is {@code null}, or no value is present and the given empty-based
-     *         action is {@code null}.
+     *                              is {@code null}, or no value is present and the given empty-based
+     *                              action is {@code null}.
      */
     default void ifPresentOrElse(Consumer<T> action, Runnable emptyAction) {
         Optional<T> optional = asOptional();
@@ -358,7 +359,7 @@ public interface ConfigValue<T> {
      *
      * @return the optional value as a {@code Stream}
      */
-    default Stream<T> stream(){
+    default Stream<T> stream() {
         return asOptional().map(Stream::of).orElseGet(Stream::empty);
     }
 }

@@ -30,7 +30,7 @@ public class MyLoggerConfigMapper implements Function<Config, Logger> {
 
     @Override
     public Logger apply(Config config) throws ConfigMappingException, MissingValueException {
-        return Logger.getLogger("TEST." + config.asString());
+        return Logger.getLogger("TEST." + config.asString().get());
     }
 
 }
