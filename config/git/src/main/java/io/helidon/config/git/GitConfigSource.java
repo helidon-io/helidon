@@ -54,8 +54,6 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import static java.util.Collections.singleton;
 
-import static io.helidon.config.internal.FileSourceHelper.digest;
-
 /**
  * A config source which loads a configuration document from Git repository.
  * <p>
@@ -80,6 +78,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
 
     /**
      * Create an instance from meta configuration.
+     *
      * @param config meta configuration of this source
      * @return config source configured from the meta configuration
      */
@@ -222,7 +221,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         } catch (GitAPIException e) {
             LOGGER.log(Level.WARNING, "Pull failed.", e);
         }
-        return Optional.ofNullable(digest(targetPath));
+        return Optional.ofNullable(FileSourceHelper.digest(targetPath));
     }
 
     private Instant getLastModifiedTime(Path path) {

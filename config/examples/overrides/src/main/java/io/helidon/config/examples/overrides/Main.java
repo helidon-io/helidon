@@ -16,12 +16,11 @@
 
 package io.helidon.config.examples.overrides;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.OverrideSources;
-
-import static java.time.Duration.ofSeconds;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -71,11 +70,11 @@ public class Main {
         Config config = Config
                 .builder()
                 // specify config sources
-                .sources(file("conf/priority-config.yaml").pollingStrategy(regular(ofSeconds(1))),
+                .sources(file("conf/priority-config.yaml").pollingStrategy(regular(Duration.ofSeconds(1))),
                          classpath("application.yaml"))
                 // specify overrides source
                 .overrides(OverrideSources.file("conf/overrides.properties")
-                                   .pollingStrategy(regular(ofSeconds(1))))
+                                   .pollingStrategy(regular(Duration.ofSeconds(1))))
                 .build();
 
         // Resolve current runtime context

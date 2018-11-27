@@ -160,6 +160,10 @@ public final class EtcdConfigSourceBuilder
             this.clientFactory = clientFactory;
         }
 
+        /**
+         * The client factory for this version of etcd.
+         * @return client factory
+         */
         public EtcdClientFactory clientFactory() {
             return clientFactory;
         }

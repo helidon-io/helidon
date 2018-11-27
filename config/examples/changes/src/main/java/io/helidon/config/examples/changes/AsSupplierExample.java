@@ -16,6 +16,7 @@
 
 package io.helidon.config.examples.changes;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,8 +27,6 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
-
-import static java.time.Duration.ofSeconds;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -57,9 +56,9 @@ public class AsSupplierExample {
                               .pollingStrategy(PollingStrategies::watch),
                       file("conf/config.yaml")
                               .optional()
-                              .pollingStrategy(regular(ofSeconds(2))),
+                              .pollingStrategy(regular(Duration.ofSeconds(2))),
                       classpath("default.yaml")
-                              .pollingStrategy(regular(ofSeconds(10))));
+                              .pollingStrategy(regular(Duration.ofSeconds(10))));
 
         // greeting.get() always return up-to-date value
         final Supplier<String> greeting = config.get("app.greeting").asString().supplier();
