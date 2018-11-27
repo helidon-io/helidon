@@ -20,7 +20,6 @@ import java.util.Locale;
 import java.util.function.Function;
 
 import io.helidon.config.Config;
-
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 

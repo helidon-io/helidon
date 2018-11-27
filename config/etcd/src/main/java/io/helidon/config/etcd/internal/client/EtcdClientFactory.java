@@ -18,8 +18,14 @@ package io.helidon.config.etcd.internal.client;
 import java.net.URI;
 
 /**
- * TODO javadoc.
+ * A factory to create {@link EtcdClient}s based on URI.
  */
+@FunctionalInterface
 public interface EtcdClientFactory {
+    /**
+     * Create a new client.
+     * @param uri URI of etcd
+     * @return client
+     */
     EtcdClient createClient(URI uri);
 }

@@ -20,11 +20,10 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.PollingStrategies;
 
 import static java.time.Duration.ofSeconds;
-
-import static io.helidon.config.ConfigSources.directory;
-import static io.helidon.config.PollingStrategies.regular;
 
 /**
  * Example shows how to listen on Config node changes using simplified API, {@link Config#onChange(Function)}.
@@ -42,8 +41,8 @@ public class OnChangeExample {
      */
     public void run() {
         Config secrets = Config
-                .withSources(directory("conf/secrets")
-                                     .pollingStrategy(regular(ofSeconds(5))))
+                .withSources(ConfigSources.directory("conf/secrets")
+                                     .pollingStrategy(PollingStrategies.regular(ofSeconds(5))))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
