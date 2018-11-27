@@ -142,16 +142,16 @@ include::{logging-properties-file}[tag=loggingProps]
 ----
 
 === Create an "empty" `beans.xml` 
-We need to make sure JAX-RS searches for beans and, in particular, our
-resource that serves our REST endpoints. 
+We need to make sure JAX-RS searches for beans. This file accomplishes that.
 [source,java]
 .src/main/resources/META-INF/beans.xml
 ----
 include::{beans-xml}[tags=prolog;beans]
 ----
 
-=== Create a JAX-RS bean to hold the greeting message
-The app contains a default greeting which the user can set via HTTP. 
+=== Create a bean to hold the greeting message
+The app contains a default greeting loaded from configuration which the user 
+can set via HTTP. 
 The app stores the current message in a JAX-RS bean.
 
 You or your IDE will add these imports along the way:
