@@ -9,7 +9,10 @@ reviewing changes done by others.
 
 # General coding rules
 1. Use unchecked Throwables - descendants of RuntimeException in API
-    1. our API should never throw a checked exception unless enforced by implemented interface
+    1. Never use RuntimeException directly - always create a descendant appropriate for your module, or
+        use an existing exception declared in the module
+    1. Our APIs should never throw a checked exception unless enforced by implemented/extended interface - e.g. when
+        we implement a java.io.Closeable, we must declare the checked exception. 
 
 # Package and module structure
 1. We use flat package structure
