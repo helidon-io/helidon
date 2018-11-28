@@ -89,7 +89,7 @@
  * {@code long}, {@code double}, a {@code List} of any of these,
  * or an {@code Optional} of any of these.
  * <p>
- * The program can provide its own {@link io.helidon.config.ConfigMapper} implementations
+ * The program can provide its own {@link io.helidon.config.spi.ConfigMapperProvider} implementations
  * to deal with more complicated value mapping needs. See also {@link io.helidon.config.Config.Builder#addStringMapper}.
  *
  * <h3>Navigation</h3>
@@ -114,15 +114,14 @@
  * to {@link io.helidon.config.Config#onChange}.
  *
  * <h3 id="conversions">Converting Configuration to Java Types</h3>
- * The {@link Config} class provides many methods for converting config
+ * The {@link io.helidon.config.Config} class provides many methods for converting config
  * {@code String} values to Java primitives and simple Java types, as well as
  * mapping parts of the config tree to {@code List}s and {@code Map}s.
  * <p>
  * The application can convert config data to arbitrary types using the
- * {@link Config#as} method, and can provide its own conversions to handle
- * custom types by implementing the
- * {@link io.helidon.config.ConfigMapper} interface and registering the mapper
- * with a {@code Config.Builder} using the {@code addMapper} method.
+ * {@link io.helidon.config.Config#as} method, and can provide its own conversions to handle
+ * custom types by implementing a mapping function and registering it
+ * with a {@code Config.Builder} using the {@link io.helidon.config.Config .io.helidon.config.Config.Builder#addMapper} method.
  * <p>
  * If the {@code Config.as} method finds no matching registered mapper it will
  * follow the logic described in the {@code ConfigMapperManager} class to try to

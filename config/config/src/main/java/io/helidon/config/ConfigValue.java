@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * A typed value of a {@link Config} node.
  * <p>
  * You can use accessor methods on {@link Config} to obtain this value, such as {@link Config#as(Class)}.
- * A typed value that has all the methods of {@link Optional}.
+ * A typed value that has all the methods of {@link Optional} - including the ones added in JDK9 and newer.
  * In addition it has methods to access config values as {@link #supplier()}, to access values with defaults etc.
  *
  * @param <T> type of the value
@@ -187,6 +187,7 @@ public interface ConfigValue<T> {
      * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
      *
      * @return {@code true} if there is a value present, otherwise {@code false}
+     * @see Optional#isPresent()
      */
     default boolean isPresent() {
         return asOptional().isPresent();
@@ -221,6 +222,7 @@ public interface ConfigValue<T> {
      * @param consumer block to be executed if a value is present
      * @throws NullPointerException if value is present and {@code consumer} is
      *                              null
+     * @see Optional#ifPresent(Consumer)
      */
     default void ifPresent(Consumer<? super T> consumer) {
         asOptional().ifPresent(consumer);
@@ -238,6 +240,7 @@ public interface ConfigValue<T> {
      * if a value is present and the value matches the given predicate,
      * otherwise an empty {@code Optional}
      * @throws NullPointerException if the predicate is null
+     * @see Optional#filter(Predicate)
      */
     default Optional<T> filter(Predicate<? super T> predicate) {
         return asOptional().filter(predicate);
@@ -254,25 +257,10 @@ public interface ConfigValue<T> {
      * function to the value of this {@code Optional}, if a value is present,
      * otherwise an empty {@code Optional}
      * @throws NullPointerException if the mapping function is null
-     * @apiNote This method supports post-processing on optional values, without
-     * the need to explicitly check for a return status.  For example, the
-     * following code traverses a stream of file names, selects one that has
-     * not yet been processed, and then opens that file, returning an
-     * {@code Optional<FileInputStream>}:
      *
-     * <pre>{@code
-     *     Optional<FileInputStream> fis =
-     *         names.stream().filter(name -> !isProcessedYet(name))
-     *                       .findFirst()
-     *                       .map(name -> new FileInputStream(name));
-     * }</pre>
-     *
-     * Here, {@code findFirst} returns an {@code Optional<String>}, and then
-     * {@code map} returns an {@code Optional<FileInputStream>} for the desired
-     * file if one exists.
-     *
-     * <p>
-     * Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
+     *                              <p>
+     *                              Copied from {@link Optional}. You can get real optional from {@link #asOptional()}.
+     * @see Optional#map(Function)
      */
     default <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
         return asOptional().map(mapper);
@@ -297,6 +285,7 @@ public interface ConfigValue<T> {
      * otherwise an empty {@code Optional}
      * @throws NullPointerException if the mapping function is null or returns
      *                              a null result
+     * @see Optional#flatMap(Function)
      */
     default <U> Optional<U> flatMap(Function<? super T, Optional<U>> mapper) {
         return asOptional().flatMap(mapper);
@@ -310,6 +299,7 @@ public interface ConfigValue<T> {
      * @param other the value to be returned if there is no value present, may
      *              be null
      * @return the value, if present, otherwise {@code other}
+     * @see Optional#orElse(Object)
      */
     default T orElse(T other) {
         return asOptional().orElse(other);
@@ -326,6 +316,7 @@ public interface ConfigValue<T> {
      * @return the value if present otherwise the result of {@code other.get()}
      * @throws NullPointerException if value is not present and {@code other} is
      *                              null
+     * @see Optional#orElseGet(Supplier)
      */
     default T orElseGet(Supplier<? extends T> other) {
         return asOptional().orElseGet(other);
@@ -345,9 +336,7 @@ public interface ConfigValue<T> {
      * @throws X                    if there is no value present
      * @throws NullPointerException if no value is present and
      *                              {@code exceptionSupplier} is null
-     * @apiNote A method reference to the exception constructor with an empty
-     * argument list can be used as the supplier. For example,
-     * {@code IllegalStateException::new}
+     * @see Optional#orElseThrow(Supplier)
      */
     default <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         return asOptional().orElseThrow(exceptionSupplier);

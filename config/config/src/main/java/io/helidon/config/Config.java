@@ -142,8 +142,9 @@ import io.helidon.config.spi.OverrideSource;
  * <li>on a {@link Type#LIST list} node to get all list elements.</li>
  * </ul>
  * <p>
- * On a leaf {@link Type#VALUE value} node get the {@code String} value using
- * {@link #value()}, or {@link .asString().getValue(String)}.
+ * To get the direct value, use
+ * {@link #value()} to access the optional value of this node,
+ * or {@link #as(Class)} to access this config node as a {@link ConfigValue}
  *
  * <h2>Converting Configuration Values to Types</h2>
  * <h3>Explicit Conversion by the Application</h3>
