@@ -23,6 +23,7 @@
 :greet-resource-class: {java-base}/GreetResource.java
 :greeting-message-class: {java-base}/GreetingMessage.java
 :greet-application-class: {java-base}/GreetApplication.java
+:health-resource-class: {java-base}/HealthResource.java
 :pom: {adoc-dir}/../../../pom.xml
 :meta-inf-dir: {adoc-dir}/../resources/META-INF
 :beans-xml: {meta-inf-dir}/beans.xml
@@ -51,11 +52,11 @@ You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web servic
 
 We create the app in these main steps:
 
-. <<create_your_application,Write a basic Helidon MP app to respond to the HTTP requests.>>
+. Write a basic Helidon MP app to respond to the HTTP requests.
 . Add code to perform simple health checks.
 . Add code to record simple metrics.
 
-(See the <<or_download_the_example_source,last section>> to find out how to get the entire finished code for this example.)
+(See the last section to find out how to get the entire finished code for this example.)
 
 == What You Need
 
@@ -145,7 +146,8 @@ We need to make sure JAX-RS searches for beans. This file accomplishes that.
 [source,java]
 .src/main/resources/META-INF/beans.xml
 ----
-include::{beans-xml}[tags=prolog;beans]
+<?xml version="1.0" encoding="UTF-8"?>
+include::{beans-xml}[tag=beans]
 ----
 
 === Create a bean to hold the greeting message
@@ -330,7 +332,62 @@ include::{main-class}[tag=main]
 include::{se-guide-adoc}[tag=buildAndRun]
 
 == Add Health Checks
-include::{se-guide-adoc}[tag=addHealthChecksIntro] 
+include::{se-guide-adoc}[tag=addHealthChecksIntro]
+
+=== Add a new JAX-RS resource class
+Create `HealthResource.java` to define the endpoints for checking activeness and readiness.
+You or your IDE will add these imports:
+[source,java]
+----
+include::{health-resource-class}[tag=javaxImports]
+----
+
+. Declare the class with these annotations:
++
+[source,java]
+----
+include::{health-resource-class}[tag=classDecl]
+----
+
+. Declare an injected instance field to refer to the greeting message resource. This
+is the only input in our simple implementation to the activeness check.
++
+[source,java]
+----
+include::{health-resource-class}[tag=greetingDecl]
+----
+<1> Indicates that JAX-RS should inject the field.
+<2> Because `GreetingMessage` is an application-scoped bean, JAX-RS will inject a
+reference to the single instance every time it creates this request-scoped resource.
+
+. Add the `checkHealth` method which decides whether the greeting resource is active
+(health) or not.
++
+[source,java]
+----
+include::{health-resource-class}[tag=checkHealthMethod]
+----
+
+. Add the method to implement the `/alive` endpoint
++
+[source,java]
+----
+include::{health-resource-class}[tag=aliveMethod]
+----
+<1> Implements the path `/alive`.
+<2> It's an HTTP `GET`.
+<3> Gets a `String` describing why the resource should _not_ be considered alive;
+null if the resource is OK.
+<4> Build the `Response` object for return accordingly.
+
+. Add the method to implement `/ready`
++
+[source,java]
+----
+include::{health-resource-class}[tag=readyMethod]
+----
+
+include::{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
 
 == Or Download the Example Source
 We think the guide is most useful if you follow along step-by-step, building

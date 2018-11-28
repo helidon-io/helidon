@@ -396,9 +396,13 @@ include::{main-class}[tag=createRoutingHealth]
 ----
 These link the health-related endpoints your code is exposing to the new methods.
 
+// tag::rebuildAndRerunService[]
 === Rebuild and rerun your service
 Follow the same steps you did before. Make sure you have stopped any earlier 
 instance of your service to free up the port.
+// end::rebuildAndRerunService[]
+
+// tag::tryReadiness[]
 
 === Try the readiness check
 Access the readiness check endpoint:
@@ -408,6 +412,9 @@ curl -i -X GET http://localhost:8080/ready
 Our readiness check returns no payload, just the 200 status, so you won't see any data
 displayed. The `-i` option shows the
 200 status in the response.
+// end::tryReadiness[]
+
+// tag::tryLiveness[]
 
 === Try the liveness check
 . Ping the health check endpoint
@@ -436,6 +443,7 @@ This time you should see
 {"error":"greeting is not set or is empty"}
 +
 and with the `-i` added to the `curl` command you would see the 500 status returned.
+// end::tryLiveness[]
 
 == Add Metrics Support
 As a simple illustration of using metrics, we revise our greeting service to count how many times
