@@ -43,28 +43,26 @@ This is caused by:
         1. asOptionalBooleanSupplier()
         
 #### Proposal
-Create a typed config value `Config.Value<T>` (requires the @Value to be moved as part of "Java Beans") that 
-would be returned by typed methods. 
+Create a typed config value `ConfigValue<T>`.
 This would leave config with the following accessor methods:
 1. Required: 
-    1. `Value<T> as(Class<? extends T> type) throws ConfigMappingException`
-    2. `Value<List<T>> asList(Class<? extends T> type) throws ConfigMappingException`
-    3. `Value<Map<String, String>> asMap()`
+    1. `ConfigValue<T> as(Class<? extends T> type) throws ConfigMappingException`
+    2. `ConfigValue<List<T>> asList(Class<? extends T> type) throws ConfigMappingException`
+    3. `ConfigValue<Map<String, String>> asMap()`
 2. Optional (shortcut):
-    1. `T as(Class<? extends T> type, T defaultValue) throws ConfigMappingException`
-    2. `Value<Config> asNode()`
-    3. `Value<List<Config>> asNodeList()`
-    4. `Value<Boolean> asBoolean() throws ConfigMappingException`
+    2. `ConfigValue<Config> asNode()`
+    3. `ConfigValue<List<Config>> asNodeList()`
+    4. `ConfigValue<Boolean> asBoolean() throws ConfigMappingException`
     5. other shortcut methods for primitive types
     
-The `Value` interface would have the following methods to access typed value (as supported in original API):
-1. `Optional<T> value()`
-2. `T get() throws MissingValueException`
-2. `T get(T defaultValue)`
-3. `Supplier<T> asSupplier()`
-4. `Supplier<T> asSupplier(T defaultValue)`
-5. `Supplier<Optional<T>> asOptionalSupplier()`
-6. and a shortcut method `void ifPresent(Consumer<? super T> consumer)`
+The `ConfigValue` interface would have the following methods to access typed value (as supported in original API):
+1. `Optional<T> asOptional()` - to get the "real" Optional value
+3. `Supplier<T> asSupplier()` - supplier of current value (if config changes)
+4. `Supplier<T> asSupplier(T defaultValue)` - supplier of current value with default
+5. `Supplier<Optional<T>> asOptionalSupplier()` - supplier of current value as an optional
+2. `T get() throws MissingValueException` - same as in java.util.Optional, just throws a different exception
+6. and all methods of java.util.Optional<T> (unfortunatelly optional is a final class, so we have no choice but to copy 
+    the methods) - including the methods from java9+ (stream(), ifPresentOrElse(), or())
 
 Example:
 ```java
@@ -158,7 +156,7 @@ Add SPI to allow for such (more complex) config.as(AClass.class) transformation
 ### No reflection as()
 Do not use reflection in T Config.as(Class<T> type) method. Currently there is a complicated
 code that introspects the class to find suitable constructor or factory method.
-Create a new method `T as(Function<Config, T> factoryMethod)`.
+Create a new method `ConfigValue<T> as(Function<Config, T> factoryMethod)`.
 
 We can then use:
 ```java
