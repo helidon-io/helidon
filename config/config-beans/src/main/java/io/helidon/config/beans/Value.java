@@ -25,8 +25,7 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation used to customize behaviour of JavaBean deserialization support, generic {@link io.helidon.config.ConfigMapper}
- * implementation.
+ * Annotation used to customize behaviour of JavaBean deserialization support.
  * <p>
  * The first option for generic Config to JavaBean deserialization works just with class with no-parameter constructor.
  * Each JavaBean property value is then set by value mapped from appropriate configuration node.
@@ -43,7 +42,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <ul>
  * <li>{@link #withDefaultSupplier()} - instance of supplier class is used to get default value of target type; or</li>
  * <li>{@link #withDefault()} - default value in {@code String} form that will be mapped to target type
- * by associated {@link io.helidon.config.ConfigMapper}</li>
+ * by associated config mapping function</li>
  * </ul>
  * In case of both <i>default</i> attributes are set the {@code withDefaultSupplier} is used
  * and {@code withDefault} is ignored.
