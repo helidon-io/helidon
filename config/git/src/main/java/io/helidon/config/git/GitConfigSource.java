@@ -40,7 +40,6 @@ import io.helidon.config.ConfigHelper;
 import io.helidon.config.internal.FileSourceHelper;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
-import io.helidon.config.spi.ConfigSource;
 
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
