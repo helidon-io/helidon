@@ -67,7 +67,7 @@ public final class QueryParamMapping {
      */
     public static QueryParamMapping from(Config config) {
         String name = config.get("name").asString().get();
-        TokenHandler handler = config.as(TokenHandler.class).get();
+        TokenHandler handler = config.as(TokenHandler::fromConfig).get();
         return create(name, handler);
     }
 

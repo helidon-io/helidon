@@ -314,7 +314,7 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          */
         public Builder fromConfig(Config config) {
             config.get("name").value().ifPresent(this::name);
-            config.get("default").as(Boolean.class).ifPresent(this::isDefault);
+            config.get("default").asBoolean().ifPresent(this::isDefault);
             config.get("authentication").asList(FlaggedProvider::fromConfig)
                     .ifPresent(this.authenticators::addAll);
             config.get("authorization").asList(FlaggedProvider::fromConfig)
@@ -357,7 +357,8 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
         static FlaggedProvider fromConfig(Config config) {
             String name = config.get("name").asString().get();
             CompositeProviderFlag flag = config.get("flag")
-                    .as(CompositeProviderFlag.class)
+                    .asString()
+                    .as(CompositeProviderFlag::valueOf)
                     .orElse(CompositeProviderFlag.REQUIRED);
 
             return new FlaggedProvider(flag, name);

@@ -195,7 +195,7 @@ public final class SecurityHandler implements Handler {
     static SecurityHandler from(Config config, SecurityHandler defaults) {
         Builder builder = builder(defaults);
 
-        OptionalHelper.from(config.get(KEY_ROLES_ALLOWED).asList(String.class).asOptional())
+        config.get(KEY_ROLES_ALLOWED).asList(String.class)
                 .ifPresentOrElse(builder::rolesAllowed,
                                  () -> defaults.rolesAllowed.ifPresent(builder::rolesAllowed));
         if (config.exists()) {

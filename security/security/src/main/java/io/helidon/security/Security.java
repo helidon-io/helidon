@@ -831,7 +831,7 @@ public final class Security {
          */
         Builder fromConfig(Config config) {
             this.config = config.get("security");
-            config.get("security.environment.server-time").as(SecurityTime.class).ifPresent(this::serverTime);
+            config.get("security.environment.server-time").as(SecurityTime::from).ifPresent(this::serverTime);
             executorSupplier(ThreadPoolSupplier.create(config.get("security.environment.executor-service")));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
