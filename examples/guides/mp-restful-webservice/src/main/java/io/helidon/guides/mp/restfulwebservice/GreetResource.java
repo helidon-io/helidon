@@ -30,6 +30,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 // end::javaxImports[]
 
+// tag::metricsImports[]
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+// end::metricsImports[]
+
 /**
  * A simple JAX-RS resource to greet you. Examples:
  *
@@ -74,6 +79,15 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
+    // tag::countedAnno[]
+    @Counted(                   // <1>
+            name = "accessctr", // <2>
+            reusable = true,    // <3>
+            description = "Total greetings accesses",
+            displayName = "Access Counter",
+            monotonic = true,   // <4>
+            unit = MetricUnits.NONE)
+    // end::countedAnno[]
     // tag::getDefaultMessage[]
     @SuppressWarnings("checkstyle:designforextension")
     @GET // <1>
@@ -89,6 +103,13 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link JsonObject}
      */
+    @Counted(                   // <1>
+            name = "accessctr", // <2>
+            reusable = true,    // <3>
+            description = "Total greetings accesses",
+            displayName = "Access Counter",
+            monotonic = true,   // <4>
+            unit = MetricUnits.NONE)
     // tag::getMessageWithName[]
     @SuppressWarnings("checkstyle:designforextension")
     @Path("/{name}") // <1>
@@ -105,6 +126,13 @@ public class GreetResource {
      * @param newGreeting the new greeting message
      * @return {@link JsonObject}
      */
+    @Counted(                   // <1>
+            name = "accessctr", // <2>
+            reusable = true,    // <3>
+            description = "Total greetings accesses",
+            displayName = "Access Counter",
+            monotonic = true,   // <4>
+            unit = MetricUnits.NONE)
     // tag::setGreeting[]
     @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting/{greeting}") // <1>

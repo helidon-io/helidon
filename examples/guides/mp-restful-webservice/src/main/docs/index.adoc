@@ -402,9 +402,16 @@ include::{pom}[tag=metricsDependency]
 . Annotate each method to be measured, in our case `getDefaultMessage`, 
 `getMessage`, and `updateGreeting`. (We annotate `updateGreeting` for simplicity
 and so the metrics
-reported have the same values for this example and for the Helidon SE RESTful web 
-service example. In a real application we would probably measure the `get` methods and
-the `update` method separately.)
+reported here have the same values as for the Helidon SE RESTful web 
+service example. In a real application we might measure the `update` method separately
+from the `get` methods.)
++
+Your or your IDE will add these imports:
++
+[source,java]
+----
+include::{greet-resource-class}[tag=metricsImports]
+----
 +
 [source,java]
 ----
@@ -429,6 +436,55 @@ Run this `curl` command to retrieve the collected metrics:
 curl -X GET http://localhost:8080/metrics
 ----
 
+=== Send some requests
+Use the same `curl` commands from the beginning of the guide to send requests to
+the server:
+
+|====
+|Command 
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Joe
+
+a|[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/Hola
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Jose
+|====
+
+=== Retrieve metrics
+Run this `curl` command to retrieve the collected metrics:
+[source,bash]
+----
+curl -X GET http://localhost:8080/metrics/application <1>
+----
+<1> Requests all application-scoped metrics.
+
+You should see this output in Prometheus format:
+[listing]
+----
+# TYPE application:io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr counter
+# HELP application:io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr Total greetings accesses
+application:io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr 4
+----
+Note that:
+. The name of the counter is automatically qualified with the package and class name of our JAX-RS
+resource (`io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr`). If we
+had used `absolute=true` in the `@Counted` annotation then the name would be
+simply `accessctr`.
+. The first two lines are gathered from the metadata we included in the `@Counted` 
+annotation.
+. As expected, the value for the counter is 4.
+
+A `curl` to `http://localhost:8080/metrics` lists not only our application-scoped 
+metric but all the _base_ and _vendor_ metrics. For example, you will see a `vendor:requests_count` 
+counter. This will be larger than our counter because that counter also tracks 
+requests to the `/metrics` path; our `accessctr` counter tracks only requests to
+our application endpoints.
 
 == Or Download the Example Source
 We think the guide is most useful if you follow along step-by-step, building

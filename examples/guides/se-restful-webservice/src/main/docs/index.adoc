@@ -548,7 +548,6 @@ include::{greet-service}[tag=updateForCounter]
 Follow the same steps as before, remembering to stop any instance
 of your application that is still running.
 
-// tag::sendRequestsForMetrics[]
 === Send some requests
 Use the same `curl` commands from the beginning to send requests to the server:
 
@@ -575,8 +574,6 @@ curl -X GET http://localhost:8080/greet/Jose
 a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-4
 |====
-
-// end::sendRequestsForMetrics[]
 
 === Retrieve metrics
 Run this `curl` command to retrieve the collected metrics:

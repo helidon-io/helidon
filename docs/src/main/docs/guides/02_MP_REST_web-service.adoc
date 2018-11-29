@@ -20,7 +20,7 @@
 :example-src-url: https://github.com/oracle/helidon/tree/master/examples/guides/mp-rest-web-service/src/main/java
 
 
-= Creating a RESTful Web Service using Helidon MP
+= Helidon MP RESTful Web Service
 :description: Helidon guide restful web service MP
 :keywords: helidon, guide, rest, web, service, example, MP
 

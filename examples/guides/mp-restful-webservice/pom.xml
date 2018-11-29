@@ -73,7 +73,7 @@
         <!-- tag::metricsDependency[] -->
         <dependency>
             <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-microprofile-metrics-cdi</artifactId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
         </dependency>
         <!-- end::metricsDependency[] -->
         
