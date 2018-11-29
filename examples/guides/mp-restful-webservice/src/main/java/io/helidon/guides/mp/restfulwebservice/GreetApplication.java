@@ -17,12 +17,13 @@ package io.helidon.guides.mp.restfulwebservice;
 
 // tag::javaImports[]
 import java.util.Set;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 // end::javaImports[]
-
 // tag::helidonImports[]
+
 import io.helidon.common.CollectionsHelper;
 // end::helidonImports[]
 /**
@@ -35,7 +36,12 @@ public class GreetApplication extends Application { // <3>
 
     @Override
     public Set<Class<?>> getClasses() { // <4>
-        return CollectionsHelper.setOf(GreetResource.class, HealthResource.class);
+        return CollectionsHelper.setOf(
+                GreetResource.class
+                // tag::healthAdditionToGetClasses[]
+                , HealthResource.class
+                // end::healthAdditionToGetClasses[]
+        );
     }
 }
 // end::greetAppBody[]

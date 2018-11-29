@@ -125,7 +125,7 @@ This file contains settings for the Helidon web server and the
 application. Note that the MP Config specification says that 
 configuration data is read, by default, from `META-INF/microprofile-config.properties`;
 the application does not have to do anything in code to load it.
-[source,java]
+[source]
 .src/main/resources/META-INF/microprofile-config.properties
 ----
 include::{config-file}[tag=configContent]
@@ -153,7 +153,8 @@ include::{beans-xml}[tag=beans]
 === Create a bean to hold the greeting message
 The app contains a default greeting loaded from configuration which the user 
 can set via HTTP. 
-The app stores the current message in a JAX-RS bean.
+The app stores the current message in a JAX-RS bean so we can inject it where
+we need it.
 
 You or your IDE will add these imports along the way:
 [source,java]
@@ -174,7 +175,7 @@ try to modify the message. One way is to add an `AtomicReference` for a `String`
 ----
 include::{greeting-message-class}[tag=messageDecl]
 ----
-. Add a constructor annotated with `javax.inject.Inject`and which
+. Add a constructor annotated with `javax.inject.Inject` and which
 accepts the initial message value as a `String`.
 +
 [source,java]
@@ -220,19 +221,8 @@ include::{greet-resource-class}[tag=classDecl]
 ----
 include::{greet-resource-class}[tag=greetingMessageDecl]
 ----
-
-. Create a public constructor, annotated with `javax.inject.Inject`
-+
-[source,java]
-----
-include::{greet-resource-class}[tag=ctor]
-----
-<1> Because you annotate the constructor with `@Inject` the Helidon MP
-system injects the argument because the argument class `GreetingMessage` 
-is defined as a JAX-RS bean. Further, because you defined it to have
-application scope, JAX-RS injects the same instance every time
-it creates a new instance of the `GreetResource` so all instances
-share the same greeting message.
+The system injects our application-scoped `GreetingMessage`
+instance.
 
 . Write a private method to format the message your endpoints
 return to the clients.
@@ -290,7 +280,7 @@ include::{greet-application-class}[tags=javaImports;helidonImports]
 [source,java]
 .GreetApplication.java
 ----
-include::{greet-application-class}[tag=greetAppBody]
+include::{greet-application-class}[tags=greetAppBody;!healthAdditionToGetClasses]
 ----
 <1> Have JAX-RS create only one instance of this class.
 <2> No path prefix for this application.
@@ -350,7 +340,7 @@ include::{health-resource-class}[tag=classDecl]
 ----
 
 . Declare an injected instance field to refer to the greeting message resource. This
-is the only input in our simple implementation to the activeness check.
+is the only input to the activeness check in our simple implementation.
 +
 [source,java]
 ----
@@ -386,6 +376,10 @@ null if the resource is OK.
 ----
 include::{health-resource-class}[tag=readyMethod]
 ----
+
+=== Update `GreetApplication`
+In the `getClasses` method add `HealthResource.class` to the arguments
+passed to `CollectionsHelper.setOf`. 
 
 include::{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
 
@@ -429,29 +423,18 @@ that is still running.
 
 include::{se-guide-adoc}[tag=sendRequestsForMetrics]
 
-=== Retrieve metrics
-Run this `curl` command to retrieve the collected metrics:
-[source,bash]
-----
-curl -X GET http://localhost:8080/metrics
-----
-
 === Send some requests
 Use the same `curl` commands from the beginning of the guide to send requests to
 the server:
 
 |====
 |Command 
-
 a|[source,bash]
 curl -X GET http://localhost:8080/greet
-
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Joe
-
 a|[source,bash]
 curl -X PUT http://localhost:8080/greet/greeting/Hola
-
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
 |====
@@ -462,9 +445,8 @@ Run this `curl` command to retrieve the collected metrics:
 ----
 curl -X GET http://localhost:8080/metrics/application <1>
 ----
-<1> Requests all application-scoped metrics.
-
-You should see this output in Prometheus format:
+<1> Requests all application-scoped metrics (we only have one).
+You should see this output (in Prometheus format):
 [listing]
 ----
 # TYPE application:io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr counter
@@ -472,18 +454,22 @@ You should see this output in Prometheus format:
 application:io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr 4
 ----
 Note that:
-. The name of the counter is automatically qualified with the package and class name of our JAX-RS
-resource (`io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr`). If we
-had used `absolute=true` in the `@Counted` annotation then the name would be
+
+. The name of the counter is automatically qualified with the package and class name of the JAX-RS
+resource that records the metric (`io_helidon_guides_mp_restfulwebservice_greet_resource_accessctr`). If we
+had added `absolute=true` to the `@Counted` annotation attributes then the name would be
 simply `accessctr`.
+
 . The first two lines are gathered from the metadata we included in the `@Counted` 
 annotation.
+
 . As expected, the value for the counter is 4.
 
 A `curl` to `http://localhost:8080/metrics` lists not only our application-scoped 
-metric but all the _base_ and _vendor_ metrics. For example, you will see a `vendor:requests_count` 
+metric but all the _base_ and _vendor_ metrics as defined in the MP metrics spec. 
+For example, you will see a `vendor:requests_count` 
 counter. This will be larger than our counter because that counter also tracks 
-requests to the `/metrics` path; our `accessctr` counter tracks only requests to
+requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
 == Or Download the Example Source

@@ -58,21 +58,9 @@ public class GreetResource {
      * The greeting message provider.
      */
     // tag::greetingMessageDecl[]
-    private final GreetingMessage greeting;
-    // end::greetingMessageDecl[]
-
-    /**
-     * Using constructor injection to get a configuration property.
-     * By default this gets the value from META-INF/microprofile-config
-     *
-     * @param greetingConfig the configured greeting message
-     */
-    // tag::ctor[]
     @Inject
-    public GreetResource(GreetingMessage greetingConfig) { // <1>
-        greeting = greetingConfig;
-    }
-    // end::ctor[]
+    private GreetingMessage greeting;
+    // end::greetingMessageDecl[]
 
     /**
      * Return a wordly greeting message.
@@ -80,7 +68,7 @@ public class GreetResource {
      * @return {@link JsonObject}
      */
     // tag::countedAnno[]
-    @Counted(                   // <1>
+    @Counted(// <1>
             name = "accessctr", // <2>
             reusable = true,    // <3>
             description = "Total greetings accesses",
@@ -103,7 +91,7 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link JsonObject}
      */
-    @Counted(                   // <1>
+    @Counted(// <1>
             name = "accessctr", // <2>
             reusable = true,    // <3>
             description = "Total greetings accesses",
@@ -126,7 +114,7 @@ public class GreetResource {
      * @param newGreeting the new greeting message
      * @return {@link JsonObject}
      */
-    @Counted(                   // <1>
+    @Counted(// <1>
             name = "accessctr", // <2>
             reusable = true,    // <3>
             description = "Total greetings accesses",

@@ -69,7 +69,7 @@ public class HealthResource {
 
     /**
      * Implements a very simple readiness check.
-     * @return
+     * @return response (200)
      */
     // tag::readyMethod[]
     @SuppressWarnings("checkstyle:designforextension")

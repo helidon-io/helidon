@@ -17,10 +17,12 @@ package io.helidon.guides.mp.restfulwebservice;
 
 // tag::mainImports[]
 import java.util.concurrent.atomic.AtomicReference;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 // end::mainImports[]
 // tag::mpImports[]
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 // end::mpImports[]
 
