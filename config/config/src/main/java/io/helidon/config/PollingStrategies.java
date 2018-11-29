@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.nio.file.Path;
+import java.nio.file.WatchEvent.Modifier;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -141,8 +142,9 @@ public final class PollingStrategies {
      */
     public static final class FilesystemWatchBuilder implements Supplier<PollingStrategy> {
 
-        private Path path;
-        private ScheduledExecutorService executor;
+        private final Path path;
+        private ScheduledExecutorService executor = null;
+        private Modifier[] modifiers = null;
 
         /*private*/ FilesystemWatchBuilder(Path path) {
             this.path = path;
@@ -162,12 +164,30 @@ public final class PollingStrategies {
         }
 
         /**
+         * Add modifiers to be used when registering the {@link java.nio.file.WatchService}.
+         * See {@link Path#register(WatchService, WatchEvent.Kind[], WatchEvent.Modifier[])
+         * Path.register}.
+         *
+         * @param modifiers the modifiers to add
+         * @return a modified builder instance
+         */
+        public FilesystemWatchBuilder modifiers(Modifier ... modifiers){
+            this.modifiers = modifiers;
+            return this;
+        }
+
+        /**
          * Builds a new polling strategy.
          *
          * @return the new instance
          */
         public PollingStrategy build() {
-            return new FilesystemWatchPollingStrategy(path, executor);
+            FilesystemWatchPollingStrategy strategy =
+                    new FilesystemWatchPollingStrategy(path, executor);
+            if (modifiers != null && modifiers.length > 0) {
+                strategy.initWatchServiceModifiers(modifiers);
+            }
+            return strategy;
         }
 
         @Override
