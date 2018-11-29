@@ -446,8 +446,10 @@ and with the `-i` added to the `curl` command you would see the 500 status retur
 // end::tryLiveness[]
 
 == Add Metrics Support
+// tag::metricsIntro[]
 As a simple illustration of using metrics, we revise our greeting service to count how many times
 a client sends a request to the app.
+// end::metricsIntro[]
 
 . Add the metrics dependency to `pom.xml`
 +
@@ -546,7 +548,8 @@ include::{greet-service}[tag=updateForCounter]
 Follow the same steps as before, remembering to stop any instance
 of your application that is still running.
 
-=== Sends some requests
+// tag::sendRequestsForMetrics[]
+=== Send some requests
 Use the same `curl` commands from the beginning to send requests to the server:
 
 |====
@@ -572,6 +575,8 @@ curl -X GET http://localhost:8080/greet/Jose
 a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-4
 |====
+
+// end::sendRequestsForMetrics[]
 
 === Retrieve metrics
 Run this `curl` command to retrieve the collected metrics:

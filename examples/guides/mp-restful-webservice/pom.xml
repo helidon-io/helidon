@@ -70,5 +70,12 @@
             <scope>runtime</scope>
         </dependency>
         <!-- end::activationDep[] -->
+        <!-- tag::metricsDependency[] -->
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics-cdi</artifactId>
+        </dependency>
+        <!-- end::metricsDependency[] -->
+        
     </dependencies>
 </project>

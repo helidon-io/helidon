@@ -389,6 +389,47 @@ include::{health-resource-class}[tag=readyMethod]
 
 include::{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
 
+== Add Metrics Support
+include::{se-guide-adoc}[tag=metricsIntro]
+
+. Add the metrics dependency to `pom.xml`
++
+[source,xml]
+----
+include::{pom}[tag=metricsDependency]
+----
+
+. Annotate each method to be measured, in our case `getDefaultMessage`, 
+`getMessage`, and `updateGreeting`. (We annotate `updateGreeting` for simplicity
+and so the metrics
+reported have the same values for this example and for the Helidon SE RESTful web 
+service example. In a real application we would probably measure the `get` methods and
+the `update` method separately.)
++
+[source,java]
+----
+include::{greet-resource-class}[tag=countedAnno]
+----
+<1> Marks this method as measured by a `Counter` metric.
+<2> Declares the unique name for this counter among all metrics.
+<3> Allows the same counter to accumulate uses of multiple methods.
+<4> Indicates that the metrics system should increment the counter on each invocation but
+_not_ decrement it when the method returns. 
+
+=== Rebuild and rerun your application
+Follow the same steps as before, remembering to stop any instance of your application
+that is still running.
+
+include::{se-guide-adoc}[tag=sendRequestsForMetrics]
+
+=== Retrieve metrics
+Run this `curl` command to retrieve the collected metrics:
+[source,bash]
+----
+curl -X GET http://localhost:8080/metrics
+----
+
+
 == Or Download the Example Source
 We think the guide is most useful if you follow along step-by-step, building
 up the app and understanding what each part of the code is doing as you go. 
