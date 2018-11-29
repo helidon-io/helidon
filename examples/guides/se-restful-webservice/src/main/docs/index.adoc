@@ -40,8 +40,11 @@ You'll learn how to use Helidon quickly to create a ReSTful web service that acc
 |===
 
 We create the app in three main steps:
+
 . Write a basic app to respond to the HTTP requests.
+
 . Add code to perform simple health checks.
+
 . Add code to record simple metrics.
 
 (See the last section to find out how to get the entire finished code for this example.)
