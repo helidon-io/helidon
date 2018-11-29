@@ -24,7 +24,6 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>mp-restful-webservice</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Helidon Guides MP RESTful Web Service</name>
 
