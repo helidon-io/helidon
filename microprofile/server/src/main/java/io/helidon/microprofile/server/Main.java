@@ -21,6 +21,8 @@ package io.helidon.microprofile.server;
  * configuration or from classpath.
  */
 public final class Main {
+    private static int port = 0;
+
     private Main() {
     }
 
@@ -33,5 +35,19 @@ public final class Main {
     public static void main(String[] args) {
         Server server = Server.create();
         server.start();
+        port = server.getPort();
+    }
+
+    /**
+     * Once the server is started (e.g. the main method finished), the
+     * server port can be obtained with this method.
+     * This method will return a reasonable value only if the
+     * server is started through {@link #main(String[])} method.
+     * Otherwise use {@link Server#getPort()}.
+     *
+     * @return port the server started on
+     */
+    public static int serverPort() {
+        return port;
     }
 }

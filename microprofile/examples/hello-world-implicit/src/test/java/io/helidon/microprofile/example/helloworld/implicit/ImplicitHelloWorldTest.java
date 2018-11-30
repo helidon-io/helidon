@@ -21,6 +21,8 @@ import javax.enterprise.inject.spi.CDI;
 import javax.json.JsonObject;
 import javax.ws.rs.client.ClientBuilder;
 
+import io.helidon.microprofile.server.Main;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -47,7 +49,7 @@ class ImplicitHelloWorldTest {
     @Test
     void testJsonResource() {
         JsonObject jsonObject = ClientBuilder.newClient()
-                .target("http://localhost:" + Main.getPort() + "/helloworld/unit")
+                .target("http://localhost:" + Main.serverPort() + "/helloworld/unit")
                 .request()
                 .get(JsonObject.class);
 

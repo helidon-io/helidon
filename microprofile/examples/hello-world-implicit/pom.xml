@@ -33,6 +33,10 @@
         Microprofile 1.2 example with implicit bootstrapping (server.Main(new String[0])
     </description>
 
+    <properties>
+        <example.main-class>io.helidon.microprofile.server.Main</example.main-class>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -71,6 +75,33 @@
                         <phase>process-classes</phase>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>${example.main-class}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <executable>java</executable>
+                    <longClasspath>true</longClasspath>
+                    <arguments>
+                        <argument>-enableassertions</argument>
+                        <argument>-Djava.util.logging.config.file=src/main/resources/logging.properties</argument>
+                        <argument>-classpath</argument>
+                        <classpath/>
+                        <argument>${example.main-class}</argument>
+                    </arguments>
+                </configuration>
             </plugin>
         </plugins>
     </build>
