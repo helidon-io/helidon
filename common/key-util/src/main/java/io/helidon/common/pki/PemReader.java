@@ -24,10 +24,12 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -58,8 +60,33 @@ final class PemReader {
                     "([a-z0-9+/=\\r\\n]+)" +                       // Base64 text
                     "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",            // Footer
             Pattern.CASE_INSENSITIVE);
+    private static final Pattern PUBLIC_KEY_PATTERN = Pattern.compile(
+            "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+" + // Header
+                    "([a-z0-9+/=\\r\\n\\s]+)" +                       // Base64 text
+                    "-+END\\s+.*PUBLIC\\s+KEY[^-]*-+",            // Footer
+            Pattern.CASE_INSENSITIVE);
 
     private PemReader() {
+    }
+
+    static PublicKey readPublicKey(InputStream input) {
+        byte[] pkBytes = readPublicKeyBytes(input);
+
+        X509EncodedKeySpec keySpec = generatePublicKeySpec(pkBytes);
+
+        try {
+            return KeyFactory.getInstance("RSA").generatePublic(keySpec);
+        } catch (Exception ignore) {
+            try {
+                return KeyFactory.getInstance("DSA").generatePublic(keySpec);
+            } catch (Exception ignore2) {
+                try {
+                    return KeyFactory.getInstance("EC").generatePublic(keySpec);
+                } catch (Exception e) {
+                    throw new PkiException("Failed to get public key. It is not RSA, DSA or EC.", e);
+                }
+            }
+        }
     }
 
     static PrivateKey readPrivateKey(InputStream input, char[] password) {
@@ -144,6 +171,10 @@ final class PemReader {
         }
     }
 
+    private static X509EncodedKeySpec generatePublicKeySpec(byte[] bytes) {
+        return new X509EncodedKeySpec(bytes);
+    }
+
     private static byte[] readPrivateKeyBytes(InputStream in) {
         String content;
         try {
@@ -157,6 +188,25 @@ final class PemReader {
         Matcher m = KEY_PATTERN.matcher(content);
         if (!m.find()) {
             throw new PkiException("Could not find a PKCS#8 private key in input stream");
+        }
+
+        byte[] base64 = m.group(1).getBytes(StandardCharsets.US_ASCII);
+        return Base64.getMimeDecoder().decode(base64);
+    }
+
+    private static byte[] readPublicKeyBytes(InputStream in) {
+        String content;
+        try {
+            content = readContent(in);
+        } catch (IOException e) {
+            throw new PkiException("Failed to read key input stream", e);
+        } finally {
+            safeClose(in);
+        }
+
+        Matcher m = PUBLIC_KEY_PATTERN.matcher(content);
+        if (!m.find()) {
+            throw new PkiException("Could not find a X509 public key in input stream");
         }
 
         byte[] base64 = m.group(1).getBytes(StandardCharsets.US_ASCII);

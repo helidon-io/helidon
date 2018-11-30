@@ -131,6 +131,7 @@
         <version.lib.microprofile-config-api>1.2.1</version.lib.microprofile-config-api>
         <version.lib.microprofile-config-tck>1.2.1</version.lib.microprofile-config-tck>
         <version.lib.microprofile-health-api>1.0</version.lib.microprofile-health-api>
+        <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>1.1</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-fault-tolerance-api>1.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.mockito>2.15.0</version.lib.mockito>
@@ -819,6 +820,23 @@
                 <groupId>org.eclipse.microprofile.health</groupId>
                 <artifactId>microprofile-health-api</artifactId>
                 <version>${version.lib.microprofile-health-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.jwt</groupId>
+                <artifactId>microprofile-jwt-auth-api</artifactId>
+                <version>${version.lib.microprofile-jwt}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.jwt</groupId>
+                <artifactId>microprofile-jwt-auth-tck</artifactId>
+                <version>${version.lib.microprofile-jwt}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.jwt</groupId>
+                <artifactId>microprofile-jwt-auth-tck</artifactId>
+                <version>${version.lib.microprofile-jwt}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.metrics</groupId>

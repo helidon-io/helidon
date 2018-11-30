@@ -134,6 +134,7 @@ public final class JaxRsApplication {
          */
         public Builder application(Application app) {
             this.config = toConfig(app);
+
             if (null == this.contextRoot) {
                 this.contextRoot = getContextRoot(app.getClass());
             }

@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
@@ -155,7 +157,6 @@ public interface Server {
         private boolean containerCreated;
         private Supplier<? extends ExecutorService> defaultExecutorService;
 
-
         private Builder() {
         }
 
@@ -212,6 +213,8 @@ public interface Server {
                 if (null != resourceConfig) {
                     applications.add(JaxRsApplication.create(resourceConfig));
                 }
+            } else if (!resourceClasses.isEmpty()) {
+                applications.add(JaxRsApplication.create(configForResourceClasses(resourceClasses)));
             }
 
             STARTUP_LOGGER.finest("Jersey resource configuration");
@@ -278,10 +281,30 @@ public interface Server {
                                                               .asOptionalMap()
                                                               .orElse(CollectionsHelper.mapOf()));
             initializer.setProperties(props);
+
+            // add resource classes explicitly configured without CDI annotations
+            this.resourceClasses.stream()
+                    .filter(this::notACdiBean)
+                    .forEach(initializer::addBeanClasses);
+
             STARTUP_LOGGER.finest("Initializer");
             SeContainer container = initializer.initialize();
             STARTUP_LOGGER.finest("Initalizer.initialize()");
             return container;
+        }
+
+        private boolean notACdiBean(Class<?> clazz) {
+            if (clazz.getAnnotation(RequestScoped.class) != null) {
+                // CDI bean
+                return false;
+            }
+
+            if (clazz.getAnnotation(ApplicationScoped.class) != null) {
+                //CDI bean
+                return false;
+            }
+
+            return true;
         }
 
         /**
