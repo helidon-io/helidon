@@ -36,18 +36,6 @@ public final class Main {
     private Main() { }
 
     /**
-     * Creates new {@link Routing}.
-     *
-     * @return the new instance
-     */
-    private static Routing createRouting() {
-        return Routing.builder()
-                .register(JsonSupport.get())
-                .register("/greet", new GreetService())
-                .build();
-    }
-
-    /**
      * Application main entry point.
      * @param args command line arguments.
      * @throws IOException if there are problems reading logging properties
@@ -61,7 +49,7 @@ public final class Main {
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
-    protected static WebServer startServer() throws IOException {
+    static WebServer startServer() throws IOException {
 
         // load logging configuration
         LogManager.getLogManager().readConfiguration(
@@ -74,18 +62,32 @@ public final class Main {
         ServerConfiguration serverConfig =
                 ServerConfiguration.fromConfig(config.get("server"));
 
-        WebServer server = WebServer.create(serverConfig, createRouting());
+        WebServer server = WebServer.create(serverConfig, createRouting(config));
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
             System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port());
+                    "WEB server is up! http://localhost:" + ws.port() + "/greet");
         });
 
-        // Server threads are not demon. NO need to block. Just react.
+        // Server threads are not daemon. NO need to block. Just react.
         server.whenShutdown().thenRun(()
                 -> System.out.println("WEB server is DOWN. Good bye!"));
 
         return server;
     }
+
+    /**
+     * Creates new {@link Routing}.
+     *
+     * @return routing configured with JSON support and a service
+     * @param config configuration of this server
+     */
+    private static Routing createRouting(Config config) {
+        return Routing.builder()
+                .register(JsonSupport.get())
+                .register("/greet", new GreetService(config))
+                .build();
+    }
+
 }

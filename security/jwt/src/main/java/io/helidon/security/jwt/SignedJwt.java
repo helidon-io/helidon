@@ -34,7 +34,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated
  * with a dot.
  */
-public class SignedJwt {
+public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
@@ -252,6 +252,18 @@ public class SignedJwt {
      * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
      */
     public Errors verifySignature(JwkKeys keys) {
+        return verifySignature(keys, null);
+    }
+
+    /**
+     * Verify signature against the provided keys (the kid of thisPrincipal
+     * JWT should be present in the {@link JwkKeys} provided).
+     *
+     * @param keys JwkKeys to obtain a key to verify signature
+     * @param defaultJwk Default value of JWK
+     * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
+     */
+    public Errors verifySignature(JwkKeys keys, Jwk defaultJwk) {
         Errors.Collector collector = Errors.collector();
 
         String alg = JwtUtil.getString(headerJson, "alg").orElse(null);
@@ -259,17 +271,23 @@ public class SignedJwt {
 
         Jwk jwk;
 
+        // TODO support multiple JWK unders same kid if different alg (see if spec allows this)
         if (null == alg) {
             if (null == kid) {
                 collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
-                jwk = Jwk.NONE_JWK;
+                jwk = (defaultJwk == null) ? Jwk.NONE_JWK : defaultJwk;
                 alg = jwk.getAlgorithm();
             } else {
                 //null alg, non-null kid - will use alg of jwk
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    collector.fatal(keys, "Key for key id: " + kid + " not found");
-                } else {
+                    if (null == defaultJwk) {
+                        collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    } else {
+                        jwk = defaultJwk;
+                    }
+                }
+                if (null != jwk) {
                     alg = jwk.getAlgorithm();
                 }
             }
@@ -279,14 +297,21 @@ public class SignedJwt {
                 if (Jwk.ALG_NONE.equals(alg)) {
                     jwk = Jwk.NONE_JWK;
                 } else {
-                    collector.fatal("Algorithm is " + alg + ", yet no kid is defined in JWT header, cannot validate");
-                    jwk = null;
+                    jwk = defaultJwk;
+                    if (null == jwk) {
+                        collector.fatal("Algorithm is " + alg + ", yet no kid is defined in JWT header, cannot validate");
+                    }
                 }
             } else {
                 //both not null
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    if ((null != defaultJwk) && alg.equals(defaultJwk.getAlgorithm())) {
+                        jwk = defaultJwk;
+                    }
+                    if (null == jwk) {
+                        collector.fatal(keys, "Key for key id: " + kid + " not found");
+                    }
                 }
             }
         }

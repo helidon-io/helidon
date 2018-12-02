@@ -119,10 +119,11 @@ public final class SecurityFeature implements Feature {
     public static final class Builder implements io.helidon.common.Builder<SecurityFeature> {
         private final Security security;
         private final List<QueryParamHandler> queryParamHandlers = new LinkedList<>();
-        private boolean authorizeAnnotatedOnly;
-        private boolean debug;
-        private boolean prematchingAuthorization = false;
-        private boolean prematchingAuthentication = false;
+        private boolean authorizeAnnotatedOnly = FeatureConfig.DEFAULT_ATZ_ANNOTATED_ONLY;
+        private boolean authenticateAnnotatedOnly = FeatureConfig.DEFAULT_ATN_ANNOTATED_ONLY;
+        private boolean debug = FeatureConfig.DEFAULT_DEBUG;
+        private boolean prematchingAuthorization = FeatureConfig.DEFAULT_PREMATCHING_ATZ;
+        private boolean prematchingAuthentication = FeatureConfig.DEFAULT_PREMATCHING_ATN;
 
         private Builder(Security security) {
             this.security = security;
@@ -133,11 +134,24 @@ public final class SecurityFeature implements Feature {
          * When using {@link #usePrematchingAuthorization(boolean)}
          * this method is ignored.
          *
-         * @param authzOnly if set to true, authorization will be performed on annotated methods only
+         * @param authzOnly if set to true, authorization will be performed on annotated methods only, defaults to false
          * @return updated builder instance
          */
         public Builder authorizeAnnotatedOnly(boolean authzOnly) {
             this.authorizeAnnotatedOnly = authzOnly;
+            return this;
+        }
+
+        /**
+         * Whether to authorize only annotated methods (with {@link io.helidon.security.annot.Authenticated} annotation or all.
+         * When using {@link #usePrematchingAuthentication(boolean)} this method is ignored.
+         * By default only annotated methods (annotation may be also on Application class or resource class) are authenticated.
+         *
+         * @param authnOnly if set to false, authentication will be performed for all requests, defaults to true
+         * @return updated builder instance
+         */
+        public Builder authenticateAnnotatedOnly(boolean authnOnly) {
+            this.authenticateAnnotatedOnly = authnOnly;
             return this;
         }
 
@@ -238,6 +252,7 @@ public final class SecurityFeature implements Feature {
             config.get("prematching-authorization").asOptionalBoolean().ifPresent(this::usePrematchingAuthorization);
             Config myConfig = config.get("defaults");
             myConfig.get("authorize-annotated-only").asOptionalBoolean().ifPresent(this::authorizeAnnotatedOnly);
+            myConfig.get("authenticate-annotated-only").asOptional(Boolean.class).ifPresent(this::authenticateAnnotatedOnly);
             myConfig.get("query-params").asOptionalList(QueryParamHandler.class).ifPresent(this::addQueryParamHandlers);
             myConfig.get("debug").asOptionalBoolean().filter(bool -> bool).ifPresent(bool -> this.debug());
             return this;
@@ -263,6 +278,10 @@ public final class SecurityFeature implements Feature {
 
         boolean isAuthorizeAnnotatedOnly() {
             return authorizeAnnotatedOnly;
+        }
+
+        boolean isAuthenticateAnnotatedOnly() {
+            return authenticateAnnotatedOnly;
         }
 
         boolean isDebug() {

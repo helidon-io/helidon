@@ -19,6 +19,8 @@ package io.helidon.security.jwt.jwk;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -48,10 +50,12 @@ import io.helidon.common.configurable.Resource;
 public class JwkKeys {
     private static final Logger LOGGER = Logger.getLogger(JwkKeys.class.getName());
 
-    private final Map<String, Jwk> keyMap;
+    private final Map<String, Jwk> keyMap = new HashMap<>();
+    private final List<Jwk> noKeyIdKeys = new LinkedList<>();
 
-    private JwkKeys(Map<String, Jwk> keyMap) {
-        this.keyMap = keyMap;
+    private JwkKeys(Builder builder) {
+        this.keyMap.putAll(builder.keyMap);
+        this.noKeyIdKeys.addAll(builder.noKeyIdKeys);
     }
 
     /**
@@ -74,10 +78,23 @@ public class JwkKeys {
     }
 
     /**
+     * List of keys in this instance.
+     *
+     * @return all keys configured
+     */
+    public List<Jwk> keys() {
+        List<Jwk> result = new LinkedList<>();
+        result.addAll(noKeyIdKeys);
+        result.addAll(keyMap.values());
+        return result;
+    }
+
+    /**
      * Builder of {@link JwkKeys}.
      */
     public static class Builder implements io.helidon.common.Builder<JwkKeys> {
-        private Map<String, Jwk> keyMap = new HashMap<>();
+        private final List<Jwk> noKeyIdKeys = new LinkedList<>();
+        private final Map<String, Jwk> keyMap = new HashMap<>();
 
         /**
          * Build a new keys instance.
@@ -86,7 +103,7 @@ public class JwkKeys {
          */
         @Override
         public JwkKeys build() {
-            return new JwkKeys(new HashMap<>(keyMap));
+            return new JwkKeys(this);
         }
 
         /**
@@ -97,9 +114,11 @@ public class JwkKeys {
          */
         public Builder addKey(Jwk key) {
             Objects.requireNonNull(key, "Key must not be null");
-            Objects.requireNonNull(key.getKeyId(), "Key id must not be null for key: " + key);
-
-            keyMap.put(key.getKeyId(), key);
+            if (null == key.getKeyId()) {
+                noKeyIdKeys.add(key);
+            } else {
+                keyMap.put(key.getKeyId(), key);
+            }
             return this;
         }
 

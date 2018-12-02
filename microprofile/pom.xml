@@ -42,5 +42,6 @@
         <module>fault-tolerance</module>
         <module>bundles</module>
         <module>tests</module>
+        <module>jwt-auth</module>
     </modules>
 </project>

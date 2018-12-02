@@ -49,7 +49,7 @@ import io.helidon.security.util.AbacSupport;
  * @see SecurityProvider#supportedConfigKeys
  * @see SecurityProvider#supportedAttributes
  */
-public final class EndpointConfig implements AbacSupport {
+public class EndpointConfig implements AbacSupport {
     private final Map<AnnotationScope, Map<Class<? extends Annotation>, List<Annotation>>> annotations;
     private final AbacSupport attributes;
     private final ClassToInstanceStore<Object> customObjects;

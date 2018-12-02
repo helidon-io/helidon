@@ -20,7 +20,5 @@ app:
   uri: "http://www.google.com"
   ints: [12, 12, 32, 12, 44]
 
-
-# Use a random, available port
-server.port: 0
+server.port: 7001
 

@@ -43,22 +43,20 @@ import io.helidon.webserver.Service;
 public class GreetService implements Service {
 
     /**
-     * This gets config from application.yaml on classpath
-     * and uses "app" section.
-     */
-    private static final Config CONFIG = Config.create().get("app");
-
-    /**
      * The config value for the key {@code greeting}.
      */
-    private static String greeting = CONFIG.get("greeting").asString("Ciao");
+    private String greeting;
+
+    GreetService(Config config) {
+        this.greeting = config.get("app.greeting").asString("Ciao");
+    }
 
     /**
      * A service registers itself by updating the routine rules.
      * @param rules the routing rules.
      */
     @Override
-    public final void update(final Routing.Rules rules) {
+    public void update(Routing.Rules rules) {
         rules
             .get("/", this::getDefaultMessage)
             .get("/{name}", this::getMessage)
@@ -70,14 +68,9 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void getDefaultMessage(final ServerRequest request,
-                                   final ServerResponse response) {
-        String msg = String.format("%s %s!", greeting, "World");
-
-        JsonObject returnObject = Json.createObjectBuilder()
-                .add("message", msg)
-                .build();
-        response.send(returnObject);
+    private void getDefaultMessage(ServerRequest request,
+                                   ServerResponse response) {
+        sendResponse(response, "World");
     }
 
     /**
@@ -85,9 +78,13 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void getMessage(final ServerRequest request,
-                            final ServerResponse response) {
+    private void getMessage(ServerRequest request,
+                            ServerResponse response) {
         String name = request.path().param("name");
+        sendResponse(response, name);
+    }
+
+    private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting, name);
 
         JsonObject returnObject = Json.createObjectBuilder()
@@ -101,8 +98,8 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void updateGreeting(final ServerRequest request,
-                                final ServerResponse response) {
+    private void updateGreeting(ServerRequest request,
+                                ServerResponse response) {
         greeting = request.path().param("greeting");
 
         JsonObject returnObject = Json.createObjectBuilder()

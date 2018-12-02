@@ -25,4 +25,10 @@
     <engine>
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
+
+    <container qualifier="helidon-embedded" default="true">
+        <configuration>
+            <property name="replaceConfigSourcesWithMp">true</property>
+        </configuration>
+    </container>
 </arquillian>
