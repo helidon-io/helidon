@@ -32,6 +32,8 @@ class CommandFallback {
 
     private final InvocationContext context;
 
+    private final Throwable throwable;
+
     private Class<? extends FallbackHandler<?>> handlerClass;
 
     private Method fallbackMethod;
@@ -41,9 +43,11 @@ class CommandFallback {
      *
      * @param context Invocation context.
      * @param introspector Method introspector.
+     * @param throwable Throwable that resulted in this fallback being called.
      */
-    CommandFallback(InvocationContext context, MethodIntrospector introspector) {
+    CommandFallback(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
         this.context = context;
+        this.throwable = throwable;
 
         // Establish fallback strategy
         final Fallback fallback = introspector.getFallback();
@@ -86,6 +90,11 @@ class CommandFallback {
                     @Override
                     public Object[] getParameters() {
                         return context.getParameters();
+                    }
+
+                    @Override
+                    public Throwable getFailure() {
+                        return throwable;
                     }
                 }
             );

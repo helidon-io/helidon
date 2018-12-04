@@ -231,7 +231,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         // Ensure our internal state is consistent with Hystrix
         if (introspector.hasCircuitBreaker()) {
             breakerHelper.ensureConsistentState();
-            LOGGER.info("Circuit breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
+            LOGGER.info("Enter: breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
         }
 
         // Record state of breaker
@@ -282,27 +282,32 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
             /*
              * Special logic for MP circuit breakers to support an arbitrary success
-             * threshold use to return a breaker back to its CLOSED state. Hystrix
+             * threshold used to return a breaker back to its CLOSED state. Hystrix
              * only supports a threshold of 1 here, so additional logic is required.
              */
             synchronized (breakerHelper.getSyncObject()) {
+                // If failure ratio exceeded, then switch state to OPEN_MP
+                if (breakerHelper.getState() == CircuitBreakerHelper.State.CLOSED_MP) {
+                    double failureRatio = breakerHelper.getFailureRatio();
+                    if (failureRatio >= introspector.getCircuitBreaker().failureRatio()) {
+                        breakerWillOpen = true;
+                        breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
+                        runTripBreaker();
+                    }
+                }
+
+                // If latest run failed, may need to switch state to OPEN_MP
                 if (hasFailed) {
                     if (breakerHelper.getState() == CircuitBreakerHelper.State.HALF_OPEN_MP) {
                         // If failed and in HALF_OPEN_MP, we need to force breaker to open
                         runTripBreaker();
                         breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
-                    } else if (breakerHelper.getState() == CircuitBreakerHelper.State.CLOSED_MP) {
-                        // Determine if breaker will open given failure ratio
-                        double failureRatio = breakerHelper.getFailureRatio();
-                        if (failureRatio >= introspector.getCircuitBreaker().failureRatio()) {
-                            breakerWillOpen = true;
-                            breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
-                        }
                     }
                     updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
                     throw ExceptionUtil.wrapThrowable(throwable);
                 }
 
+                // Check next state of breaker based on outcome
                 if (wasBreakerOpen && isClosedNow) {
                     // Last called was successful
                     breakerHelper.incSuccessCount();
@@ -323,6 +328,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         // Untrack invocation in a bulkhead
         if (introspector.hasBulkhead()) {
             bulkheadHelper.untrackInvocation(this);
+        }
+
+        // Display circuit breaker state at exit
+        if (introspector.hasCircuitBreaker()) {
+            LOGGER.info("Exit: breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
         }
 
         // Outcome of execution
@@ -355,44 +365,50 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     }
 
     /**
-     * Run a failing command for an entire window to force a circuit breaker to
-     * open. Unfortunately, there is no access to the underlying circuit breaker
+     * Run a failing command for an entire window plus one to force a circuit breaker
+     * to open. Unfortunately, there is no access to the underlying circuit breaker
      * so this is the only way to control its internal state. Notice the use of
      * the same {@code commandKey}.
      */
     private void runTripBreaker() {
-        LOGGER.fine("Attempting to trip circuit breaker for command " + commandKey);
-        final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
-        for (int i = 0; i < windowSize; i++) {
-            try {
-                new RunnableCommand(commandKey, () -> {
-                    throw new RuntimeException("Oops");
-                }).execute();
-            } catch (Throwable t) {
-                // ignore
-            }
-        }
         if (!isCircuitBreakerOpen()) {
-            LOGGER.fine("Attempt to manually open breaker failed for command "
+            LOGGER.info("Attempting to trip circuit breaker for command " + commandKey);
+            final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
+            for (int i = 0; i <= windowSize; i++) {
+                try {
+                    new RunnableCommand(commandKey, () -> {
+                        throw new RuntimeException("Oops");
+                    }).execute();
+                } catch (Throwable t) {
+                    LOGGER.info("### t = " + t);
+                    // ignore
+                }
+            }
+            if (!isCircuitBreakerOpen()) {
+                LOGGER.info("Attempt to manually open breaker failed for command "
                         + commandKey);
+            }
         }
     }
 
     /**
-     * Run a successful command for an entire window to force a circuit breaker
+     * Run a successful command for an entire window plus one to force a circuit breaker
      * to close. Unfortunately, there is no access to the underlying circuit breaker
      * so this is the only way to control its internal state. Notice the use of
      * the same {@code commandKey}.
      */
     private void restoreBreaker() {
-        LOGGER.fine("Attempting to restore circuit breaker for command " + commandKey);
-        final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
-        for (int i = 0; i < windowSize; i++) {
-            new RunnableCommand(commandKey, () -> {}).execute();
-        }
         if (isCircuitBreakerOpen()) {
-            LOGGER.fine("Attempt to manually close breaker failed for command "
+            LOGGER.info("Attempting to restore circuit breaker for command " + commandKey);
+            final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
+            for (int i = 0; i <= windowSize; i++) {
+                new RunnableCommand(commandKey, () -> {
+                }).execute();
+            }
+            if (isCircuitBreakerOpen()) {
+                LOGGER.info("Attempt to manually close breaker failed for command "
                         + commandKey);
+            }
         }
     }
 

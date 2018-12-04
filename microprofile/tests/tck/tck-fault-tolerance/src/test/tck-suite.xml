@@ -60,7 +60,6 @@
                 <methods>
                     <exclude name="testBulkheadClassAsynchronous55RetryOverload"/>
                     <exclude name="testBulkheadMethodAsynchronous55RetryOverload"/>
-                    <exclude name="testBulkheadMethodAsynchronousRetry55Trip"/>
                 </methods>
             </class>
         </classes>

@@ -119,15 +119,15 @@ public class CommandRetrier {
     public Object execute() {
         LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
 
-        CheckedFunction fallbackFunction = t -> {
-            final CommandFallback fallback = new CommandFallback(context, introspector);
+        CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
+            final CommandFallback fallback = new CommandFallback(context, introspector, t);
             return fallback.execute();
         };
 
         if (isAsynchronous) {
             Scheduler scheduler = CommandScheduler.create();
             AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
-            FailsafeFuture<?> chainedFuture = (FailsafeFuture<?>) (introspector.hasFallback()
+            FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
                                ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
                                : failsafe.get(this::retryExecute));
             return new FailsafeChainedFuture<>(chainedFuture);
