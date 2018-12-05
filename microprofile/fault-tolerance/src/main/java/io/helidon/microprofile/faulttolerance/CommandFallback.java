@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import javax.enterprise.inject.spi.CDI;
@@ -75,38 +76,56 @@ class CommandFallback {
     public Object execute() throws Exception {
         assert handlerClass != null || fallbackMethod != null;
 
-        updateMetrics();
+        Object result;
+        try {
+            if (handlerClass != null) {
+                // Instantiate handler using CDI
+                FallbackHandler<?> handler = CDI.current().select(handlerClass).get();
+                result = handler.handle(
+                        new ExecutionContext() {
+                            @Override
+                            public Method getMethod() {
+                                return context.getMethod();
+                            }
 
-        if (handlerClass != null) {
-            // Instantiate handler using CDI
-            FallbackHandler<?> handler = CDI.current().select(handlerClass).get();
-            return handler.handle(
-                new ExecutionContext() {
-                    @Override
-                    public Method getMethod() {
-                        return context.getMethod();
-                    }
+                            @Override
+                            public Object[] getParameters() {
+                                return context.getParameters();
+                            }
 
-                    @Override
-                    public Object[] getParameters() {
-                        return context.getParameters();
-                    }
+                            @Override
+                            public Throwable getFailure() {
+                                return throwable;
+                            }
+                        }
+                );
+            } else {
+                result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
+            }
+        } catch (Throwable t) {
+            updateMetrics(t);
 
-                    @Override
-                    public Throwable getFailure() {
-                        return throwable;
-                    }
-                }
-            );
-        } else {
-            return fallbackMethod.invoke(context.getTarget(), context.getParameters());
+            // If InvocationTargetException, then unwrap underlying cause
+            if (t instanceof InvocationTargetException) {
+                t = t.getCause();
+            }
+            throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
         }
+
+        updateMetrics(null);
+        return result;
     }
 
     /**
-     * Updates fallback metrics.
+     * Updates fallback metrics and adjust failed invocations based on outcome of fallback.
      */
-    private void updateMetrics() {
-        FaultToleranceMetrics.getCounter(context.getMethod(), FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
+    private void updateMetrics(Throwable throwable) {
+        final Method method = context.getMethod();
+        FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
+
+        // If fallback was successful, it is not a failed invocation
+        if (throwable == null) {
+            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).dec();
+        }
     }
 }

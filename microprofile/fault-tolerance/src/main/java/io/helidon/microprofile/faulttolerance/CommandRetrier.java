@@ -192,8 +192,10 @@ public class CommandRetrier {
      */
     private void updateMetricsAfter(Throwable cause) {
         // Global method counters
-        FaultToleranceMetrics.getCounter(method, cause == null ? FaultToleranceMetrics.INVOCATIONS_TOTAL
-                                                               : FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
+        FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
+        if (cause != null) {
+            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
+        }
 
         // Retry counters
         if (introspector.hasRetry()) {

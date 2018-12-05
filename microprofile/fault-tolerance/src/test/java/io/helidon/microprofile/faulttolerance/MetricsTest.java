@@ -93,7 +93,7 @@ public class MetricsTest extends FaultToleranceTest {
     public void testGlobalCountersSuccess() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         bean.retryOne(5);
-        assertEquals(1, getCounter(bean, "retryOne",
+        assertEquals(6, getCounter(bean, "retryOne",
                                    INVOCATIONS_TOTAL, int.class));
         assertEquals(5, getCounter(bean, "retryOne",
                                    INVOCATIONS_FAILED_TOTAL, int.class));
@@ -107,7 +107,7 @@ public class MetricsTest extends FaultToleranceTest {
         } catch (Exception e) {
             // falls through
         }
-        assertEquals(0, getCounter(bean, "retryTwo",
+        assertEquals(6, getCounter(bean, "retryTwo",
                                    INVOCATIONS_TOTAL, int.class));
         assertEquals(6, getCounter(bean, "retryTwo",
                                    INVOCATIONS_FAILED_TOTAL, int.class));
