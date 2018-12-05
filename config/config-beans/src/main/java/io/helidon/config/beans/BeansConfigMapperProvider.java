@@ -43,8 +43,6 @@ import static io.helidon.config.beans.ReflectionUtil.findStaticMethodWithParamet
  */
 @Priority(10) // priority should be low to be one of the last ones used
 public class BeansConfigMapperProvider implements ConfigMapperProvider {
-    private static final Map<Class<?>, Function<Config, ?>> EMPTY_MAP = CollectionsHelper.mapOf();
-
     private static final String METHOD_FROM = "from";
     private static final String METHOD_VALUE_OF = "valueOf";
     private static final String METHOD_FROM_CONFIG = "fromConfig";
@@ -54,7 +52,7 @@ public class BeansConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return EMPTY_MAP;
+        return CollectionsHelper.mapOf();
     }
 
     @Override

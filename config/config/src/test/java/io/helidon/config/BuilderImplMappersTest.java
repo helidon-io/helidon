@@ -45,8 +45,8 @@ public class BuilderImplMappersTest {
                 .sources(ConfigSources.from(mapOf("int-p", "2147483647")))
                 .build();
 
-        assertThat(manager.map(Integer.class, config.get("int-p")), is(42));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(2147483647));
+        assertThat(manager.map(config.get("int-p"), Integer.class), is(42));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(2147483647));
     }
 
     @Test
@@ -58,8 +58,8 @@ public class BuilderImplMappersTest {
                 .sources(ConfigSources.from(mapOf("int-p", "2147483647")))
                 .build();
 
-        assertThat(manager.map(Integer.class, config.get("int-p")), is(2147483647));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(42));
+        assertThat(manager.map(config.get("int-p"), Integer.class), is(2147483647));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(42));
     }
 
     @Test

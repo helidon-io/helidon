@@ -61,7 +61,7 @@ public class ConfigMappersFailingTest {
                 .build();
 
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            manager.map(type, config.get(key));
+            manager.map(config.get(key), type);
         });
         Assertions.assertTrue(containsString(key).matches(ex.getMessage()));
     }

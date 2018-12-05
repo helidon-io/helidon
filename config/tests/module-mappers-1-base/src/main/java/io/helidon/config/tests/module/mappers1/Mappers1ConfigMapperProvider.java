@@ -38,5 +38,4 @@ public class Mappers1ConfigMapperProvider implements ConfigMapperProvider {
         return CollectionsHelper.mapOf(Logger.class, new LoggerConfigMapper(),
                       Locale.class, new LocaleConfigMapper());
     }
-
 }

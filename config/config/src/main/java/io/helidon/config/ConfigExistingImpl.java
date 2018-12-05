@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
@@ -68,6 +69,11 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
     @Override
     public boolean hasValue() {
         return null != getNode().get();
+    }
+
+    @Override
+    public <T> ConfigValue<T> as(GenericType<T> genericType) {
+        return ConfigValues.create(this, genericType, mapperManager);
     }
 
     @Override

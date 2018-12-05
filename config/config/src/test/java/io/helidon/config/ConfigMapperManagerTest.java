@@ -16,12 +16,19 @@
 
 package io.helidon.config;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
+import io.helidon.config.spi.ConfigMapper;
+import io.helidon.config.spi.ConfigMapperProvider;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -51,13 +58,13 @@ public class ConfigMapperManagerTest {
 
     @Test
     public void testUnknownMapper() {
-        assertThrows(ConfigMappingException.class, () -> managerNoServices.map(CustomClass.class, mock(Config.class)));
-        assertThrows(ConfigMappingException.class, () -> managerWithServices.map(CustomClass.class, mock(Config.class)));
+        assertThrows(ConfigMappingException.class, () -> managerNoServices.map(mock(Config.class), CustomClass.class));
+        assertThrows(ConfigMappingException.class, () -> managerWithServices.map(mock(Config.class), CustomClass.class));
     }
 
     @Test
     public void testBuiltInMappers() {
-        Integer builtIn = managerWithServices.map(Integer.class, managerWithServices.simpleConfig("builtIn", "49"));
+        Integer builtIn = managerWithServices.map(managerWithServices.simpleConfig("builtIn", "49"), Integer.class);
         assertThat(builtIn, is(49));
     }
 
@@ -105,9 +112,48 @@ public class ConfigMapperManagerTest {
         assertThat(context.last(), sameInstance(config));
     }
 
+    @Test
+    void testGenericTypeMapper() {
+        MapperProviders providers = MapperProviders.create();
+        providers.add(new MapConfigMapper());
+        BuilderImpl.buildMappers(true, Collections.emptyMap(), providers);
+    }
+
     // this will not work, as beans are moved away from core
     public static class CustomClass {
         public CustomClass() {
+        }
+    }
+
+    private static class MapConfigMapper implements ConfigMapperProvider {
+        @Override
+        public <T> Optional<BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
+            if (type.rawType().equals(Map.class)) {
+                // this is our class - we support Map<String, ?>
+                Type theType = type.type();
+                if (theType instanceof ParameterizedType) {
+                    ParameterizedType ptype = (ParameterizedType) theType;
+                    Type[] typeArgs = ptype.getActualTypeArguments();
+                    if (typeArgs.length == 2) {
+                        if (typeArgs[0].equals(String.class)) {
+                            return Optional.of((config, mapper) -> {
+                                Map<String, ?> theMap = new HashMap<>();
+
+                                config.asMap().ifPresent(configMap -> {
+                                    configMap.forEach((key, value) -> {
+                                        theMap.put(key, mapper.map(mapper.singleValueConfig(config.key().toString(),
+                                                                                            value),
+                                                                   GenericType.create(typeArgs[1])));
+                                    });
+                                });
+
+                                return type.cast(theMap);
+                            });
+                        }
+                    }
+                }
+            }
+            return Optional.empty();
         }
     }
 }

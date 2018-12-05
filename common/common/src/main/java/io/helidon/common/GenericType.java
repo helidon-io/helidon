@@ -126,6 +126,19 @@ public class GenericType<T> implements Type {
         return rawType;
     }
 
+    /**
+     * Casts the parameter to the type of this generic type.
+     * This is a utility method to use in stream processing etc.
+     *
+     * @param object instance to cast
+     * @return typed instance
+     * @throws ClassCastException in case the object is not of the expected type
+     */
+    @SuppressWarnings("unchecked")
+    public T cast(Object object) throws ClassCastException {
+        return (T) object;
+    }
+
     @Override
     public String getTypeName() {
         return type().toString();

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigSources;
@@ -227,6 +228,7 @@ public abstract class AbstractComplexConfigTest {
         ConfigValue<Double> expected = simpleValue(expectedDouble);
         assertThat(node.asDouble(), is(expected));
         assertThat(node.as(Double.class), is(expected));
+        assertThat(node.as(new GenericType<Double>(){}), is(expected));
         assertThat(node.asString().as(ConfigMappers::toDouble), is(expected));
     }
 

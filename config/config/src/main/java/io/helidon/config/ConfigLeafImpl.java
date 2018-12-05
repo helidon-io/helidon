@@ -75,14 +75,14 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
                                            String[] parts = toArray(stringValue);
                                            List<T> result = new LinkedList<>();
                                            for (String part : parts) {
-                                               result.add(mapperManager.map(name(), type, part));
+                                               result.add(mapperManager.map(part, type, name()));
                                            }
                                            return Optional.of(result);
                                        },
                                        aConfig -> aConfig.asList(type));
         } else {
             return ConfigValues.create(this,
-                                       () -> Optional.of(listOf(mapperManager.map(name(), type, stringValue))),
+                                       () -> Optional.of(listOf(mapperManager.map(stringValue, type, name()))),
                                        aConfig -> aConfig.asList(type));
 
         }

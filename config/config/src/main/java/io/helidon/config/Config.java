@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
@@ -727,6 +728,26 @@ public interface Config {
      * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have a value
      */
     Optional<String> value();
+
+    /**
+     * Typed value as a {@link ConfigValue} for a generic type.
+     * If appropriate mapper exists, returns a properly typed generic instance.
+     * <p>
+     * Example:
+     * <pre>
+     * {@code
+     * ConfigValue<Map<String, Integer>> myMapValue = config.as(new GenericType<Map<String, Integer>>(){});
+     * myMapValue.ifPresent(map -> {
+     *      Integer port = map.get("service.port");
+     *  }
+     * }
+     * </pre>
+     *
+     * @param genericType a (usually anonymous) instance of generic type to prevent type erasure
+     * @param <T> type of the returned value
+     * @return properly typed config value
+     */
+    <T> ConfigValue<T> as(GenericType<T> genericType);
 
     /**
      * Typed value as a {@link ConfigValue}.

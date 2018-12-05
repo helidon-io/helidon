@@ -105,7 +105,7 @@ abstract class AbstractConfigImpl implements Config {
 
     @Override
     public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
-        return mapperManager.map("", type, value);
+        return mapperManager.map(value, type, "");
     }
 
     @Override

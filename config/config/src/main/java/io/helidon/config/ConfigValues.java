@@ -22,6 +22,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
+
 /**
  * Factory for config values.
  */
@@ -125,8 +127,16 @@ public final class ConfigValues {
                                      ConfigMapperManager mapperManager) {
 
         return new GenericConfigValueImpl<>(config,
-                                            () -> Optional.ofNullable(mapperManager.map(type, config)),
+                                            () -> Optional.ofNullable(mapperManager.map(config, type)),
                                             aConfig -> aConfig.as(type));
+    }
+
+    static <T> ConfigValue<T> create(Config config,
+                                     GenericType<T> genericType,
+                                     ConfigMapperManager mapperManager) {
+        return new GenericConfigValueImpl<>(config,
+                                            () -> Optional.ofNullable(mapperManager.map(config, genericType)),
+                                            aConfig -> aConfig.as(genericType));
     }
 
     static <T> ConfigValue<T> create(Config config,
@@ -161,7 +171,7 @@ public final class ConfigValues {
                                                              ConfigMapperManager mapperManager) {
 
         Supplier<Optional<Map<String, String>>> valueSupplier = () -> {
-            Map<?, ?> map = mapperManager.map(Map.class, config);
+            Map<?, ?> map = mapperManager.map(config, Map.class);
 
             if (map instanceof ConfigMappers.StringMap) {
                 return Optional.of((ConfigMappers.StringMap) map);

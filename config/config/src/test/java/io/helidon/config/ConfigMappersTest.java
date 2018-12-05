@@ -106,11 +106,11 @@ public class ConfigMappersTest {
                         "double-p", "1234.5678")))
                 .build();
 
-        assertThat(manager.map(Config.class, config), is(config));
-        assertThat(manager.map(String.class, config.get("text-text")), is("string value"));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(2147483647));
-        assertThat(manager.map(OptionalLong.class, config.get("long-p")).getAsLong(), is(9223372036854775807L));
-        assertThat(manager.map(OptionalDouble.class, config.get("double-p")).getAsDouble(), is(1234.5678));
+        assertThat(manager.map(config, Config.class), is(config));
+        assertThat(manager.map(config.get("text-text"), String.class), is("string value"));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(2147483647));
+        assertThat(manager.map(config.get("long-p"), OptionalLong.class).getAsLong(), is(9223372036854775807L));
+        assertThat(manager.map(config.get("double-p"), OptionalDouble.class).getAsDouble(), is(1234.5678));
     }
 
     private <T> void assertMapper(String stringValue, Class<T> type, T expectedValue) {
@@ -122,7 +122,7 @@ public class ConfigMappersTest {
                 .sources(ConfigSources.from(CollectionsHelper.mapOf("key", stringValue)))
                 .build();
 
-        assertThat(manager.map(type, config.get("key")), is(expectedValue));
+        assertThat(manager.map(config.get("key"), type), is(expectedValue));
     }
 
     @Test
@@ -211,7 +211,7 @@ public class ConfigMappersTest {
                 .sources(ConfigSources.from(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
                 .build();
 
-        assertThat(manager.map(Pattern.class, config.get("key")).toString(),
+        assertThat(manager.map(config.get("key"), Pattern.class).toString(),
                    is(Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$").toString()));
     }
 
@@ -222,7 +222,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
         Config config = createConfig();
 
-        Properties rootProperties = manager.map(Properties.class, config);
+        Properties rootProperties = manager.map(config, Properties.class);
         assertThat(rootProperties.entrySet(), hasSize(5));
         assertThat(rootProperties, hasEntry("key1", "value1"));
         assertThat(rootProperties, hasEntry("key2.key21", "value21"));
@@ -238,7 +238,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
         Config config = createConfig().get("key2");
 
-        Properties key2Properties = manager.map(Properties.class, config);
+        Properties key2Properties = manager.map(config, Properties.class);
         assertThat(key2Properties.entrySet(), hasSize(3));
         assertThat(key2Properties, hasEntry("key2.key21", "value21"));
         assertThat(key2Properties, hasEntry("key2.key22", "value22"));
