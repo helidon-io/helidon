@@ -77,7 +77,7 @@ See the <<downloading,downloading>> section for instructions.
 
 == Develop Your Application
 
-=== Create a new Maven Project
+=== Create a New Maven Project
 You can create your maven project in these ways:
 
 * use your IDE to create a new Java maven project, or
@@ -147,7 +147,7 @@ include::{config-file}[tag=configContent]
 <1> Initial application greeting.
 <2> Web server configuration.
 
-=== Create a logging config file
+=== Create a Logging Config File
 This file controls logging within the application.
 [source,java]
 .src/main/resources/logging.properties
@@ -155,7 +155,7 @@ This file controls logging within the application.
 include::{logging-properties-file}[tag=loggingProps]
 ----
 
-=== Create an "empty" `beans.xml` 
+=== Create an "Empty" `beans.xml` 
 We need to make sure JAX-RS searches for beans. This file accomplishes that.
 [source,java]
 .src/main/resources/META-INF/beans.xml
@@ -164,7 +164,7 @@ We need to make sure JAX-RS searches for beans. This file accomplishes that.
 include::{beans-xml}[tag=beans]
 ----
 
-=== Create a bean to hold the greeting message
+=== Create a Bean to Hold the Greeting Message
 The app contains a default greeting loaded from configuration which the user 
 can set via HTTP. 
 The app stores the current message in a JAX-RS bean so we can inject it where
@@ -250,7 +250,7 @@ include::{greet-resource-class}[tag=createResponse]
 in it.
 <3> Prepares the response as JSON.
 
-=== Add the code for the resource's endpoints
+=== Add the Code for the Resource's Endpoints
 . Returning the default message
 +
 [source,java]
@@ -338,7 +338,7 @@ include::{se-guide-adoc}[tag=buildAndRun]
 == Add Health Checks
 include::{se-guide-adoc}[tag=addHealthChecksIntro]
 
-=== Add a new JAX-RS resource class
+=== Add a New JAX-RS Resource Class
 Create `HealthResource.java` to define the endpoints for checking if the service is
 active and if it is ready. You or your IDE will add these imports:
 [source,java]
@@ -431,13 +431,13 @@ include::{greet-resource-class}[tag=countedAnno]
 <4> Indicates that the metrics system should increment the counter on each invocation but
 _not_ decrement it when the method returns. 
 
-=== Rebuild and rerun your application
+=== Rebuild and Rerun Your Application
 Follow the same steps as before, remembering to stop any instance of your application
 that is still running.
 
 include::{se-guide-adoc}[tag=sendRequestsForMetrics]
 
-=== Send some requests
+=== Send Some Requests
 Use the same `curl` commands as before to send requests to
 the server:
 
@@ -453,7 +453,7 @@ a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
 |====
 
-=== Retrieve metrics
+=== Retrieve Metrics
 Run this `curl` command to retrieve the collected metrics:
 [source,bash]
 ----
