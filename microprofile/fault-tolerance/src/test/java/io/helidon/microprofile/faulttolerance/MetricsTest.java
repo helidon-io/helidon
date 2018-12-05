@@ -253,13 +253,13 @@ public class MetricsTest extends FaultToleranceTest {
         CompletableFuture<String>[] calls = getConcurrentCalls(
             () -> bean.concurrent(100), BulkheadBean.MAX_CONCURRENT_CALLS);
         CompletableFuture.allOf(calls).get();
-        assertEquals(0,
+        assertEquals(0L,
                      getGauge(bean, "concurrent",
                               BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue());
         assertEquals(BulkheadBean.MAX_CONCURRENT_CALLS,
                      getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_ACCEPTED_TOTAL, long.class));
-        assertEquals(0,
+        assertEquals(0L,
                      getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_REJECTED_TOTAL, long.class));
         assertEquals(BulkheadBean.MAX_CONCURRENT_CALLS,
