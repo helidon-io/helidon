@@ -84,8 +84,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF8</surefire.argLine>
-        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF8</failsafe.argLine>
+        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
+        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
         <surefire.coverage.argline />
         <failsafe.coverage.argline />
 
