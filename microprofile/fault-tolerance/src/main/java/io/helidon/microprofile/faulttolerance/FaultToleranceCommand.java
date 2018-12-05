@@ -167,12 +167,12 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 FaultToleranceMetrics.registerGauge(introspector.getMethod(),
                         FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS,
                         "Number of currently running executions",
-                        () -> bulkheadHelper.runningInvocations());
+                        () -> (long) bulkheadHelper.runningInvocations());
                 if (introspector.isAsynchronous()) {
                     FaultToleranceMetrics.registerGauge(introspector.getMethod(),
                             FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION,
                             "Number of executions currently waiting in the queue",
-                            () -> bulkheadHelper.waitingInvocations());
+                            () -> (long) bulkheadHelper.waitingInvocations());
                 }
             }
         }
