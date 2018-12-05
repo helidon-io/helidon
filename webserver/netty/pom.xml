@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <surefire.argLine>-Xmx128m -Dfile.encoding=UTF8</surefire.argLine>
+        <surefire.argLine>-Xmx128m -Dfile.encoding=UTF-8</surefire.argLine>
     </properties>
 
     <build>
