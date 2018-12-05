@@ -56,14 +56,16 @@ We create the app in these main steps:
 . Add code to perform simple health checks.
 . Add code to record simple metrics.
 
-(See the last section to find out how to get the entire finished code for this example.)
+This guide walks you through the code and helps you understand what each part of the 
+code does as you write the app. But if you prefer, you can get the finished code for this example.
+See the <<downloading,downloading>> section for instructions.
 
 == What You Need
 
 |===
 |About 15 minutes
 |An IDE or text editor
-|JDK 1.8 or later
+|JDK 8 or later
 |Maven 3.5 or later
 |===
 
@@ -73,7 +75,7 @@ We create the app in these main steps:
 //|`kubectl` 1.7.4
 //|===
 
-== Create Your Application
+== Develop Your Application
 
 === Create a new Maven Project
 You can create your maven project in these ways:
@@ -82,15 +84,27 @@ You can create your maven project in these ways:
 * run the standard maven archetype to create a new Java project using this command:
 +
 [source,bash]
+.Unix-style
 ----
 mvn archetype:generate \
     -DarchetypeGroupId=org.apache.maven.archetypes \
     -DarchetypeArtifactId=maven-archetype-quickstart \
     -DarchetypeVersion=1.3
 ----
++
+[source,bash]
+.Windows-style
+----
+mvn archetype:generate ^
+    -DarchetypeGroupId=org.apache.maven.archetypes ^
+    -DarchetypeArtifactId=maven-archetype-quickstart ^
+    -DarchetypeVersion=1.3
+----
++
+Answer the prompts for your module's group ID, artifact ID, and version,
+then `cd` to the `<artifactId>` directory you specified.
 
 === Update Your `pom.xml`
-==== The Essentials
 Make sure your POM contains these sections:
 [source,xml,subs="verbatim,attributes"]
 ----
@@ -120,7 +134,7 @@ include::{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
 If you run your project from the IDE, the IDE typically handles the main class and places
 dependent JARs on the runtime classpath for you and your pom is now ready to go. 
 
-=== Create a MP Config File
+=== Create an MP Config File
 This file contains settings for the Helidon web server and the 
 application. Note that the MP Config specification says that 
 configuration data is read, by default, from `META-INF/microprofile-config.properties`;
@@ -325,8 +339,8 @@ include::{se-guide-adoc}[tag=buildAndRun]
 include::{se-guide-adoc}[tag=addHealthChecksIntro]
 
 === Add a new JAX-RS resource class
-Create `HealthResource.java` to define the endpoints for checking activeness and readiness.
-You or your IDE will add these imports:
+Create `HealthResource.java` to define the endpoints for checking if the service is
+active and if it is ready. You or your IDE will add these imports:
 [source,java]
 ----
 include::{health-resource-class}[tag=javaxImports]
@@ -340,7 +354,7 @@ include::{health-resource-class}[tag=classDecl]
 ----
 
 . Declare an injected instance field to refer to the greeting message resource. This
-is the only input to the activeness check in our simple implementation.
+is the only input to the active check in our simple implementation.
 +
 [source,java]
 ----
@@ -351,7 +365,7 @@ include::{health-resource-class}[tag=greetingDecl]
 reference to the single instance every time it creates this request-scoped resource.
 
 . Add the `checkHealth` method which decides whether the greeting resource is active
-(health) or not.
+(healthy) or not.
 +
 [source,java]
 ----
@@ -424,7 +438,7 @@ that is still running.
 include::{se-guide-adoc}[tag=sendRequestsForMetrics]
 
 === Send some requests
-Use the same `curl` commands from the beginning of the guide to send requests to
+Use the same `curl` commands as before to send requests to
 the server:
 
 |====
@@ -472,13 +486,14 @@ counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
-== Or Download the Example Source
-We think the guide is most useful if you follow along step-by-step, building
-up the app and understanding what each part of the code is doing as you go. 
+== Download the Example Source (optional) [[downloading]]
+Instead of writing the application yourself, you can download it.
 
-But if you prefer, you can get the finished code for this example by cloning the link:https://github.com/oracle/helidon[`git` workspace
-for Helidon], navigating to the `examples/guides/mp-restful-webservice` directory, and
-running
+. Clone the link:https://github.com/oracle/helidon[`git` workspace
+for Helidon]
+. `cd` to the `examples/guides/mp-restful-webservice` directory.
+. Run:
++
 [source,bash]
 ----
 mvn package

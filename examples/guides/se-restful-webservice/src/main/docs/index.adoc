@@ -286,6 +286,7 @@ java -jar target/your-jar-name.jar
 
 Once you have started your app, from another command window run these commands 
 to access its three functions (order is important for the last two):
+[[curl-command-table]]
 |====
 |Command |Result
 
