@@ -37,6 +37,8 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
+
 /**
  * Class CommandRetrier.
  */
@@ -53,7 +55,7 @@ public class CommandRetrier {
 
     private final Method method;
 
-    private boolean firstInvocation = true;
+    private int invocationCount = 0;
 
     private FaultToleranceCommand command;
 
@@ -153,6 +155,7 @@ public class CommandRetrier {
         Object result;
         try {
             LOGGER.info("About to execute command with key " + command.getCommandKey());
+            invocationCount++;
             updateMetricsBefore();
             result = command.execute();
             updateMetricsAfter(null);
@@ -180,8 +183,10 @@ public class CommandRetrier {
      * Update metrics before method is called.
      */
     private void updateMetricsBefore() {
-        if (introspector.hasRetry() && !firstInvocation) {
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.RETRY_RETRIES_TOTAL).inc();
+        if (isFaultToleranceMetricsEnabled()) {
+            if (introspector.hasRetry() && invocationCount > 1) {
+                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.RETRY_RETRIES_TOTAL).inc();
+            }
         }
     }
 
@@ -191,20 +196,30 @@ public class CommandRetrier {
      * @param cause Exception cause or {@code null} if execution successful.
      */
     private void updateMetricsAfter(Throwable cause) {
-        // Global method counters
-        FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
-        if (cause != null) {
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
         }
 
-        // Retry counters
+        // Special logic for methods with retries
         if (introspector.hasRetry()) {
+            final Retry retry = introspector.getRetry();
+            boolean firstInvocation = (invocationCount == 1);
+
             if (cause == null) {
+                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
                 FaultToleranceMetrics.getCounter(method, firstInvocation
                                    ? FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL
                                    : FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
-            } else if (!firstInvocation) {
+            } else if (retry.maxRetries() == invocationCount - 1) {
                 FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.RETRY_CALLS_FAILED_TOTAL).inc();
+                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
+                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
+            }
+        } else {
+            // Global method counters
+            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
+            if (cause != null) {
+                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
             }
         }
 
@@ -225,9 +240,6 @@ public class CommandRetrier {
                                ? FaultToleranceMetrics.BULKHEAD_CALLS_REJECTED_TOTAL
                                : FaultToleranceMetrics.BULKHEAD_CALLS_ACCEPTED_TOTAL).inc();
         }
-
-        // Update firstInvocation flag
-        firstInvocation = false;
     }
 
     /**

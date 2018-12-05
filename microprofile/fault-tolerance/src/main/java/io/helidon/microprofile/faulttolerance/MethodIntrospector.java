@@ -57,7 +57,7 @@ class MethodIntrospector {
         this.method = method;
 
         // Only process annotations if FT is enabled
-        if (FaultToleranceExtension.isIsFaultToleranceEnabled()) {
+        if (FaultToleranceExtension.isFaultToleranceEnabled()) {
             this.retry = isAnnotationPresent(Retry.class) ? new RetryAntn(method) : null;
             this.circuitBreaker = isAnnotationPresent(CircuitBreaker.class) ? new CircuitBreakerAntn(method) : null;
             this.timeout = isAnnotationPresent(Timeout.class) ? new TimeoutAntn(method) : null;

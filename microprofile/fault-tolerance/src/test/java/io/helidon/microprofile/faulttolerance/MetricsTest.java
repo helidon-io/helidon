@@ -93,9 +93,9 @@ public class MetricsTest extends FaultToleranceTest {
     public void testGlobalCountersSuccess() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
         bean.retryOne(5);
-        assertEquals(6, getCounter(bean, "retryOne",
+        assertEquals(1, getCounter(bean, "retryOne",
                                    INVOCATIONS_TOTAL, int.class));
-        assertEquals(5, getCounter(bean, "retryOne",
+        assertEquals(0, getCounter(bean, "retryOne",
                                    INVOCATIONS_FAILED_TOTAL, int.class));
     }
 
@@ -107,9 +107,9 @@ public class MetricsTest extends FaultToleranceTest {
         } catch (Exception e) {
             // falls through
         }
-        assertEquals(6, getCounter(bean, "retryTwo",
+        assertEquals(1, getCounter(bean, "retryTwo",
                                    INVOCATIONS_TOTAL, int.class));
-        assertEquals(6, getCounter(bean, "retryTwo",
+        assertEquals(1, getCounter(bean, "retryTwo",
                                    INVOCATIONS_FAILED_TOTAL, int.class));
     }
 
@@ -121,7 +121,7 @@ public class MetricsTest extends FaultToleranceTest {
                                    RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL, int.class));
         assertEquals(1, getCounter(bean, "retryThree",
                                    RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL, int.class));
-        assertEquals(4, getCounter(bean, "retryThree",
+        assertEquals(0, getCounter(bean, "retryThree",
                                    RETRY_CALLS_FAILED_TOTAL, int.class));
         assertEquals(5, getCounter(bean, "retryThree",
                                    RETRY_RETRIES_TOTAL, int.class));
@@ -139,7 +139,7 @@ public class MetricsTest extends FaultToleranceTest {
                                    RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL, int.class));
         assertEquals(0, getCounter(bean, "retryFour",
                                    RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL, int.class));
-        assertEquals(5, getCounter(bean, "retryFour",
+        assertEquals(1, getCounter(bean, "retryFour",
                                    RETRY_CALLS_FAILED_TOTAL, int.class));
         assertEquals(5, getCounter(bean, "retryFour",
                                    RETRY_RETRIES_TOTAL, int.class));

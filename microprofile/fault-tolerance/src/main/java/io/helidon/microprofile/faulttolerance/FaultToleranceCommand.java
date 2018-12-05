@@ -32,6 +32,7 @@ import com.netflix.hystrix.HystrixThreadPoolProperties;
 import org.apache.commons.configuration.AbstractConfiguration;
 
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 
 /**
  * Class FaultToleranceCommand.
@@ -138,18 +139,20 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             this.breakerHelper = new CircuitBreakerHelper(this, introspector.getCircuitBreaker());
 
             // Register gauges for this method
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BREAKER_OPEN_TOTAL,
-                                                "Amount of time the circuit breaker has spent in open state",
-                                                () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.OPEN_MP));
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL,
-                                                "Amount of time the circuit breaker has spent in half-open state",
-                                                () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.HALF_OPEN_MP));
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BREAKER_CLOSED_TOTAL,
-                                                "Amount of time the circuit breaker has spent in closed state",
-                                                () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.CLOSED_MP));
+            if (isFaultToleranceMetricsEnabled()) {
+                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
+                        FaultToleranceMetrics.BREAKER_OPEN_TOTAL,
+                        "Amount of time the circuit breaker has spent in open state",
+                        () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.OPEN_MP));
+                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
+                        FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL,
+                        "Amount of time the circuit breaker has spent in half-open state",
+                        () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.HALF_OPEN_MP));
+                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
+                        FaultToleranceMetrics.BREAKER_CLOSED_TOTAL,
+                        "Amount of time the circuit breaker has spent in closed state",
+                        () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.CLOSED_MP));
+            }
         }
 
         if (introspector.hasBulkhead()) {
@@ -159,16 +162,18 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 queuedNanos = System.nanoTime();
             }
 
-            // Register gauges for this method
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS,
-                                                "Number of currently running executions",
-                                                () -> bulkheadHelper.runningInvocations());
-            if (introspector.isAsynchronous()) {
+            if (isFaultToleranceMetricsEnabled()) {
+                // Register gauges for this method
                 FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                    FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION,
-                                                    "Number of executions currently waiting in the queue",
-                                                    () -> bulkheadHelper.waitingInvocations());
+                        FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS,
+                        "Number of currently running executions",
+                        () -> bulkheadHelper.runningInvocations());
+                if (introspector.isAsynchronous()) {
+                    FaultToleranceMetrics.registerGauge(introspector.getMethod(),
+                            FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION,
+                            "Number of executions currently waiting in the queue",
+                            () -> bulkheadHelper.waitingInvocations());
+                }
             }
         }
     }
@@ -197,11 +202,13 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         if (introspector.hasBulkhead()) {
             bulkheadHelper.markAsRunning(this);
 
-            // Update waiting time histogram
-            if (introspector.isAsynchronous() && queuedNanos != -1L) {
-                FaultToleranceMetrics.getHistogram(introspector.getMethod(),
-                                                   FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
-                                     .update(System.nanoTime() - queuedNanos);
+            if (isFaultToleranceMetricsEnabled()) {
+                // Update waiting time histogram
+                if (introspector.isAsynchronous() && queuedNanos != -1L) {
+                    FaultToleranceMetrics.getHistogram(introspector.getMethod(),
+                            FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
+                            .update(System.nanoTime() - queuedNanos);
+                }
             }
         }
 
@@ -275,7 +282,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                        .anyMatch(c -> c.isAssignableFrom(throwableFinal.getClass()));
                 if (!failOn) {
                     restoreBreaker();       // clears Hystrix counters
-                    updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
+                    updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
                     throw ExceptionUtil.wrapThrowable(throwable);
                 }
             }
@@ -303,7 +310,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                         runTripBreaker();
                         breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
                     }
-                    updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
+                    updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
                     throw ExceptionUtil.wrapThrowable(throwable);
                 }
 
@@ -322,7 +329,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 }
             }
 
-            updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
+            updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
         }
 
         // Untrack invocation in a bulkhead
@@ -343,7 +350,12 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         }
     }
 
-    private void updateMetricsAfter(Throwable throwable, boolean wasBreakerOpen, boolean breakerWillOpen) {
+    private void updateMetricsAfter(Throwable throwable, boolean wasBreakerOpen, boolean isClosedNow,
+                                    boolean breakerWillOpen) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         assert introspector.hasCircuitBreaker();
         Method method = introspector.getMethod();
 
@@ -358,8 +370,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_OPENED_TOTAL).inc();
             }
         }
-        if (wasBreakerOpen) {
-            // If breaker was open, increment prevented counter
+        // If breaker was open and still is, increment prevented counter
+        if (wasBreakerOpen && !isClosedNow) {
             FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL).inc();
         }
     }

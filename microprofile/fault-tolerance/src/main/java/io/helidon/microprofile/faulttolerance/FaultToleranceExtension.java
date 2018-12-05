@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -35,6 +34,7 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
@@ -48,7 +48,12 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
  */
 public class FaultToleranceExtension implements Extension {
 
+    static final String MP_FT_NON_FALLBACK_ENABLED = "MP_Fault_Tolerance_NonFallback_Enabled";
+    static final String MP_FT_METRICS_ENABLED = "MP_Fault_Tolerance_Metrics_Enabled";
+
     private static boolean isFaultToleranceEnabled = true;
+
+    private static boolean isFaultToleranceMetricsEnabled = true;
 
     private Set<Method> registeredMethods;
 
@@ -57,8 +62,17 @@ public class FaultToleranceExtension implements Extension {
      *
      * @return Fault tolerance enabled or disabled.
      */
-    static boolean isIsFaultToleranceEnabled() {
+    static boolean isFaultToleranceEnabled() {
         return isFaultToleranceEnabled;
+    }
+
+    /**
+     * Returns a boolean indicating if FT metrics are enabled.
+     *
+     * @return Fault tolerance metrics enabled or disabled.
+     */
+    static boolean isFaultToleranceMetricsEnabled() {
+        return isFaultToleranceMetricsEnabled;
     }
 
     /**
@@ -68,10 +82,12 @@ public class FaultToleranceExtension implements Extension {
      * @param bm Bean manager instance.
      */
     void registerInterceptorBindings(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
-        // Check if fault tolerance is enabled
-        Optional<Boolean> enabled = ConfigProvider.getConfig().getOptionalValue(
-                "MP_Fault_Tolerance_NonFallback_Enabled", Boolean.class);
-        isFaultToleranceEnabled = enabled.isPresent() ? enabled.get() : true;
+        // Check if fault tolerance and its metrics are enabled
+        final Config config = ConfigProvider.getConfig();
+        config.getOptionalValue(MP_FT_NON_FALLBACK_ENABLED, Boolean.class)
+                .ifPresent(v -> isFaultToleranceEnabled = v);
+        config.getOptionalValue(MP_FT_METRICS_ENABLED, Boolean.class)
+                .ifPresent(v -> isFaultToleranceMetricsEnabled = v);
 
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Retry.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(CircuitBreaker.class)));
