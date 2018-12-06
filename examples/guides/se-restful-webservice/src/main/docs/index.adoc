@@ -337,6 +337,7 @@ for the service to operate
 - health of other, dependent services - if other services on which this service
 depends are themselves OK.
 
+For this example we define our service as "active" in a very trivial way. 
 Our greeting service does not depend on any
 host resources (like disk space) or any other services. So we choose to define our
 greeting service to be OK if the greeting text has been assigned
