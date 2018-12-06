@@ -43,7 +43,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.OptionalDouble;
@@ -95,7 +94,6 @@ public class ConfigMappersTest {
     @Test
     public void testEssentialMappers() {
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               Collections.emptyMap(),
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
@@ -115,7 +113,6 @@ public class ConfigMappersTest {
 
     private <T> void assertMapper(String stringValue, Class<T> type, T expectedValue) {
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               Collections.emptyMap(),
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
@@ -204,7 +201,6 @@ public class ConfigMappersTest {
     @Test
     public void testBuiltinMappersPattern() throws MalformedURLException {
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               Collections.emptyMap(),
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
@@ -218,7 +214,6 @@ public class ConfigMappersTest {
     @Test
     public void testBuiltinMappersRootProperties() throws MalformedURLException {
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               Collections.emptyMap(),
                                                                ConfigMapperManager.MapperProviders.create());
         Config config = createConfig();
 
@@ -234,7 +229,6 @@ public class ConfigMappersTest {
     @Test
     public void testBuiltinMappersSubNodeProperties() throws MalformedURLException {
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               Collections.emptyMap(),
                                                                ConfigMapperManager.MapperProviders.create());
         Config config = createConfig().get("key2");
 

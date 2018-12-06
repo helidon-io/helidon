@@ -45,6 +45,19 @@ class GenericTypeTest {
     }
 
     @Test
+    void testIsClass() {
+        GenericType<String> type = new GenericType<String>(){};
+        assertThat(type.isClass(), is(true));
+
+        GenericType<List<String>> type2 = new GenericType<List<String>>(){};
+        assertThat(type2.isClass(), is(false));
+
+        GenericType<List> type3 = new GenericType<List>(){};
+        assertThat(type3.isClass(), is(true));
+    }
+
+
+    @Test
     void testTypeArguments() {
         GenericType<String> type = new TypeArgs();
 

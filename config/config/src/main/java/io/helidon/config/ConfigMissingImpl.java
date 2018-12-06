@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.helidon.common.GenericType;
 import io.helidon.config.internal.ConfigKeyImpl;
 
 /**
@@ -55,6 +56,11 @@ class ConfigMissingImpl extends AbstractConfigImpl {
     @Override
     public <T> ConfigValue<T> as(Function<Config, T> mapper) {
         return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.as(mapper));
+    }
+
+    @Override
+    public <T> ConfigValue<T> as(GenericType<T> genericType) {
+        return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.as(genericType));
     }
 
     @Override

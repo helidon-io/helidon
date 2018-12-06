@@ -18,7 +18,6 @@ package io.helidon.config;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,17 +26,22 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
+
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
 import io.helidon.common.reactive.Flow;
-import io.helidon.config.ConfigMapperManager.Mapper;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.internal.ConfigThreadFactory;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -53,7 +57,6 @@ class BuilderImpl implements Config.Builder {
     static final Executor DEFAULT_CHANGES_EXECUTOR = Executors.newCachedThreadPool(new ConfigThreadFactory("config"));
 
     private List<ConfigSource> sources;
-    private final Map<Class<?>, Mapper<?>> mappers;
     private final MapperProviders mapperProviders;
     private boolean mapperServicesEnabled;
     private final List<ConfigParser> parsers;
@@ -71,7 +74,6 @@ class BuilderImpl implements Config.Builder {
     BuilderImpl() {
         sources = null;
         overrideSource = OverrideSources.empty();
-        mappers = new HashMap<>();
         mapperProviders = MapperProviders.create();
         mapperServicesEnabled = true;
         parsers = new ArrayList<>();
@@ -110,7 +112,8 @@ class BuilderImpl implements Config.Builder {
         Objects.requireNonNull(type);
         Objects.requireNonNull(mapper);
 
-        mappers.put(type, Mapper.create(ConfigMappers.wrap(mapper)));
+        addMapper(type, config -> mapper.apply(config.asString().get()));
+
         return this;
     }
 
@@ -119,16 +122,15 @@ class BuilderImpl implements Config.Builder {
         Objects.requireNonNull(type);
         Objects.requireNonNull(mapper);
 
-        mappers.put(type, Mapper.create(mapper));
+        addMapper(() -> CollectionsHelper.mapOf(type, mapper));
+
         return this;
     }
 
     @Override
     public Config.Builder addMapper(ConfigMapperProvider mapperProvider) {
         Objects.requireNonNull(mapperProvider);
-
-        mapperProvider.mappers().forEach((clazz, function) -> mappers.put(clazz, Mapper.create(function)));
-        mapperProviders.add(mapperProvider::mapper);
+        mapperProviders.add(mapperProvider);
         return this;
     }
 
@@ -231,12 +233,12 @@ class BuilderImpl implements Config.Builder {
             addMapper(new ConfigMapperProvider() {
                 @Override
                 public Map<Class<?>, Function<Config, ?>> mappers() {
-                    return Collections.emptyMap();
+                    return CollectionsHelper.mapOf();
                 }
 
                 @Override
-                public <T> Optional<Function<Config, T>> mapper(Class<T> type) {
-                    Optional<? extends Function<Config, T>> mapper = mapperManager.mapper(type);
+                public <T> Optional<BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
+                    Optional<? extends BiFunction<Config, ConfigMapper, T>> mapper = mapperManager.mapper(type);
                     return Optional.ofNullable(mapper.orElse(null));
                 }
             });
@@ -257,7 +259,7 @@ class BuilderImpl implements Config.Builder {
         ConfigSource targetConfigSource = targetConfigSource(context);
 
         //mappers
-        ConfigMapperManager configMapperManager = buildMappers(mapperServicesEnabled, mappers, mapperProviders);
+        ConfigMapperManager configMapperManager = buildMappers(mapperServicesEnabled, mapperProviders);
 
         if (filterServicesEnabled) {
             addAutoLoadedFilters();
@@ -347,38 +349,39 @@ class BuilderImpl implements Config.Builder {
     }
 
     static ConfigMapperManager buildMappers(boolean servicesEnabled,
-                                            Map<Class<?>, Mapper<?>> userDefinedMappers,
                                             MapperProviders userDefinedProviders) {
-        Map<Class<?>, Mapper<?>> mappers = new HashMap<>();
+
         MapperProviders providers = MapperProviders.create();
 
-        ConfigMappers.essentialMappers()
-                .forEach((clazz, function) -> mappers.put(clazz, Mapper.create(function)));
-        ConfigMappers.builtInMappers()
-                .forEach((clazz, function) -> mappers.put(clazz, Mapper.create(function)));
+        List<ConfigMapperProvider> prioritizedProviders = new LinkedList<>();
+
+        // we must add default mappers using a known priority (49), so they can be overridden by services
+        // and yet we can still define a service that is only used after these (such as config beans)
+        prioritizedProviders.add(new InternalPriorityMapperProvider(ConfigMappers.essentialMappers()));
+        prioritizedProviders.add(new InternalPriorityMapperProvider(ConfigMappers.builtInMappers()));
 
         if (servicesEnabled) {
-            loadMapperServices(mappers, providers);
+            loadMapperServices(prioritizedProviders);
         }
 
-        mappers.putAll(userDefinedMappers);
+        prioritizedProviders = ConfigUtils
+                .asPrioritizedStream(prioritizedProviders, ConfigMapperProvider.PRIORITY)
+                .collect(Collectors.toList());
+
+        Collections.reverse(prioritizedProviders);
+
+        // add built in converters and converters from service loader
+        prioritizedProviders.forEach(providers::add);
+
+        // user defined converters always have priority over anything else
         providers.addAll(userDefinedProviders);
 
-        return new ConfigMapperManager(mappers, providers);
+        return new ConfigMapperManager(providers);
     }
 
-    private static void loadMapperServices(Map<Class<?>, Mapper<?>> mappers,
-                                           MapperProviders providers) {
-
-        List<ConfigMapperProvider> loadedProviders = loadPrioritizedServices(ConfigMapperProvider.class,
-                                                                             ConfigMapperProvider.PRIORITY);
-
-        Collections.reverse(loadedProviders);
-        loadedProviders.forEach(provider -> {
-            provider.mappers()
-                    .forEach((clazz, function) -> mappers.put(clazz, Mapper.create(function)));
-            providers.add(provider::mapper);
-        });
+    private static void loadMapperServices(List<ConfigMapperProvider> providers) {
+        ServiceLoader.load(ConfigMapperProvider.class)
+                .forEach(providers::add);
     }
 
     private static List<ConfigParser> loadParserServices() {
@@ -461,4 +464,20 @@ class BuilderImpl implements Config.Builder {
 
     }
 
+    /**
+     * Internal mapper with low priority to enable overrides.
+     */
+    @Priority(49)
+    static class InternalPriorityMapperProvider implements ConfigMapperProvider {
+        private final Map<Class<?>, Function<Config, ?>> converterMap;
+
+        InternalPriorityMapperProvider(Map<Class<?>, Function<Config, ?>> converterMap) {
+            this.converterMap = converterMap;
+        }
+
+        @Override
+        public Map<Class<?>, Function<Config, ?>> mappers() {
+            return converterMap;
+        }
+    }
 }

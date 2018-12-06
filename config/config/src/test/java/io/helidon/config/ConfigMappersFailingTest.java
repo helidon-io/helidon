@@ -18,7 +18,6 @@ package io.helidon.config;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -52,7 +51,6 @@ public class ConfigMappersFailingTest {
     @MethodSource("builtInMapperTypes")
     public void testMappingFails(Class<?> type) {
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               Collections.emptyMap(),
                                                                ConfigMapperManager.MapperProviders.create());
 
         String key = "config.key.with.wrong.format";
