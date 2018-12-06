@@ -17,20 +17,27 @@
 package io.helidon.config;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
+import io.helidon.config.spi.ConfigMapper;
+import io.helidon.config.spi.ConfigMapperProvider;
+
 /**
  * Manages registered Mappers to be used by Config implementation.
  */
-class ConfigMapperManager {
+public class ConfigMapperManager implements ConfigMapper {
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
 
     static {
@@ -44,40 +51,38 @@ class ConfigMapperManager {
         REPLACED_TYPES.put(char.class, Character.class);
     }
 
-    private final Map<Class<?>, Mapper<?>> mappers;
+    private final Map<GenericType<?>, Mapper<?>> mappers;
     private final MapperProviders mapperProviders;
 
-    ConfigMapperManager(Map<Class<?>, Mapper<?>> mappers,
-                        MapperProviders mapperProviders) {
-        this.mappers = new ConcurrentHashMap<>(mappers);
+    ConfigMapperManager(MapperProviders mapperProviders) {
+        this.mappers = new ConcurrentHashMap<>();
         this.mapperProviders = mapperProviders;
     }
 
-    /**
-     * Transforms the specified {@code Config} node into the target type.
-     * <p>
-     * The method uses the mapper function instance associated with the
-     * specified {@code type} to convert the {@code Config} subtree. If there is
-     * none it tries to find one from {@link io.helidon.config.spi.ConfigMapperProvider#mapper(Class)} from configured
-     * mapper providers.
-     * If none is found, mapping will throw a {@link ConfigMappingException}.
-     *
-     * @param type   type to which the config node is to be transformed
-     * @param config config node to be transformed
-     * @param <T>    type to which the config node is to be transformed
-     * @return transformed value of type {@code T}; never returns {@code null}
-     * @throws MissingValueException  in case the configuration node does not represent an existing configuration node
-     * @throws ConfigMappingException in case the mapper fails to map the existing configuration value
-     *                                to an instance of a given Java type
-     */
-    public <T> T map(Class<T> type, Config config) throws MissingValueException, ConfigMappingException {
-        type = supportedType(type);
-        Function<Config, ?> converter = mappers.computeIfAbsent(type, theType -> findMapper(theType, config.key()));
-        return cast(type, converter.apply(config), config.key());
+    @Override
+    public <T> T map(Config config, Class<T> type) throws MissingValueException, ConfigMappingException {
+        return map(config, GenericType.create(supportedType(type)));
+    }
+
+    @Override
+    public <T> T map(Config config, GenericType<T> type) throws MissingValueException, ConfigMappingException {
+        Mapper<?> mapper = mappers.computeIfAbsent(type, theType -> findMapper(theType, config.key()));
+
+        return cast(type, mapper.apply(config, this), config.key());
+    }
+
+    @Override
+    public <T> T map(String value, Class<T> type, String key) throws MissingValueException, ConfigMappingException {
+        return map(simpleConfig(key, value), type);
+    }
+
+    @Override
+    public <T> T map(String value, GenericType<T> type, String key) throws MissingValueException, ConfigMappingException {
+        return map(simpleConfig(key, value), type);
     }
 
     @SuppressWarnings("unchecked")
-    <T> Optional<? extends Function<Config, T>> mapper(Class<T> type) {
+    <T> Optional<? extends BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
         Mapper<T> mapper = (Mapper<T>) mappers.get(type);
         if (null == mapper) {
             return mapperProviders.findMapper(type, Config.Key.of(""));
@@ -86,22 +91,19 @@ class ConfigMapperManager {
         }
     }
 
-    <T> T map(String key, Class<T> type, String value) throws MissingValueException, ConfigMappingException {
-        return map(type, new SingleValueConfigImpl(this, key, value));
-    }
-
-    private <T> Mapper<T> findMapper(Class<T> type, Config.Key key) {
+    private <T> Mapper<T> findMapper(GenericType<T> type, Config.Key key) {
         return mapperProviders.findMapper(type, key)
                 .orElseGet(() -> noMapper(type));
     }
 
-    private <T> Mapper<T> noMapper(Class<T> type) {
+    private <T> Mapper<T> noMapper(GenericType<T> type) {
         return new NoMapperFound<>(type);
     }
 
-    public static <T> T cast(Class<T> type, Object instance, Config.Key key) throws ConfigMappingException {
+    @SuppressWarnings("unchecked")
+    static <T> T cast(GenericType<T> type, Object instance, Config.Key key) throws ConfigMappingException {
         try {
-            return type.cast(instance);
+            return (T) instance;
         } catch (ClassCastException ex) {
             throw new ConfigMappingException(key,
                                              type,
@@ -115,19 +117,25 @@ class ConfigMapperManager {
         return (Class<T>) REPLACED_TYPES.getOrDefault(type, type);
     }
 
-    public Config simpleConfig(String name, String stringValue) {
+    Config simpleConfig(String name, String stringValue) {
         return new SingleValueConfigImpl(this, name, stringValue);
     }
 
     @FunctionalInterface
-    interface Mapper<T> extends Function<Config, T> {
-        static <T> Mapper<T> create(Function<Config, T> function) {
+    interface Mapper<T> extends BiFunction<Config, ConfigMapper, T> {
+        static <T> Mapper<T> create(BiFunction<Config, ConfigMapper, T> function) {
             return function::apply;
+        }
+
+        static <T> Mapper<T> create(Function<Config, T> function) {
+            return (config, configMapper) -> function.apply(config);
         }
     }
 
     static final class MapperProviders {
-        private final List<Function<Class<?>, Optional<? extends Function<Config, ?>>>> providers = new LinkedList<>();
+        // functions that provide mapping functions based on the type expected
+        private final LinkedList<Function<GenericType<?>,
+                Optional<? extends BiFunction<Config, ConfigMapper, ?>>>> providers = new LinkedList<>();
 
         private MapperProviders() {
         }
@@ -136,15 +144,57 @@ class ConfigMapperManager {
             return new MapperProviders();
         }
 
-        void add(Function<Class<?>, Optional<? extends Function<Config, ?>>> function) {
-            this.providers.add(function);
+        void add(Function<GenericType<?>, Optional<? extends BiFunction<Config, ConfigMapper, ?>>> function) {
+            this.providers.addFirst(function);
         }
 
-        public void addAll(MapperProviders other) {
-            this.providers.addAll(other.providers);
+        void add(ConfigMapperProvider provider) {
+            add(genericType -> {
+                // first try to get it from generic type mappers map
+                BiFunction<Config, ConfigMapper, ?> converter = provider.genericTypeMappers().get(genericType);
+
+                if (null != converter) {
+                    return Optional.of(converter);
+                }
+
+                // second try to get it from generic type method
+                Optional<? extends BiFunction<Config, ConfigMapper, ?>> mapper1 = provider.mapper(genericType);
+
+                if (mapper1.isPresent()) {
+                    return mapper1;
+                }
+
+                if (!genericType.isClass()) {
+                    return Optional.empty();
+                }
+
+                // third try the specific class map
+                Class<?> rawType = genericType.rawType();
+
+                Function<Config, ?> configConverter = provider.mappers().get(rawType);
+
+                if (null != configConverter) {
+                    return Optional.of((config, mapper) -> configConverter.apply(config));
+                }
+
+                // and last, the specific class method
+                return provider.mapper(rawType)
+                        .map(funct -> (config, mapper) -> funct.apply(config));
+            });
         }
 
-        public <T> Optional<Mapper<T>> findMapper(Class<T> type, Config.Key key) {
+        void addAll(MapperProviders other) {
+            LinkedList<Function<GenericType<?>,
+                    Optional<? extends BiFunction<Config, ConfigMapper, ?>>>> otherProviders = new LinkedList<>(other.providers);
+
+            Collections.reverse(otherProviders);
+
+            otherProviders
+                    .forEach(this::add);
+        }
+
+        // generic type map, generic type method, specific type map, specific type method
+        <T> Optional<Mapper<T>> findMapper(GenericType<T> type, Config.Key key) {
             return providers.stream()
                     .map(provider -> provider.apply(type))
                     .filter(Optional::isPresent)
@@ -155,9 +205,11 @@ class ConfigMapperManager {
         }
 
         @SuppressWarnings("unchecked")
-        private static <T> Function<Config, T> castMapper(Class<T> type, Function<Config, ?> mapper, Config.Key key) {
+        private static <T> BiFunction<Config, ConfigMapper, T> castMapper(GenericType<T> type,
+                                                                          BiFunction<Config, ConfigMapper, ?> mapper,
+                                                                          Config.Key key) {
             try {
-                return (Function<Config, T>) mapper;
+                return (BiFunction<Config, ConfigMapper, T>) mapper;
             } catch (ClassCastException e) {
                 throw new ConfigMappingException(key, type, "Mapper provider returned wrong mapper type", e);
             }
@@ -165,8 +217,8 @@ class ConfigMapperManager {
     }
 
     /**
-     * This simplified implementation of Config VALUE node to be used to represent a single string value to
-     * map using {@link #map(String, Class, String)}.
+     * This simplified implementation of Config VALUE node to be used to represent a single string value,
+     * to support easy mapping of String using methods expecting a Config.
      */
     static class SingleValueConfigImpl implements Config {
 
@@ -242,18 +294,23 @@ class ConfigMapperManager {
         }
 
         @Override
+        public <T> ConfigValue<T> as(GenericType<T> genericType) {
+            return ConfigValues.create(this, genericType, mapperManager);
+        }
+
+        @Override
         public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
-            throw new ConfigMappingException(key(), "The Config node represents single value.");
+            return ConfigValues.create(this, () -> Optional.of(CollectionsHelper.listOf(this)), Config::asNodeList);
         }
 
         @Override
         public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
-            throw new ConfigMappingException(key(), "The Config node represents single value.");
+            return ConfigValues.create(this, () -> as(type).map(CollectionsHelper::listOf), config -> config.asList(type));
         }
 
         @Override
         public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
-            throw new ConfigMappingException(key(), "The Config node represents single value.");
+            return ConfigValues.create(this, () -> as(mapper).map(CollectionsHelper::listOf), config -> config.asList(mapper));
         }
 
         @Override
@@ -263,7 +320,9 @@ class ConfigMapperManager {
 
         @Override
         public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
-            return mapperManager.map("", type, value);
+            return mapperManager.map(
+                    mapperManager.simpleConfig("", value),
+                    type);
         }
 
         @Override
@@ -275,20 +334,21 @@ class ConfigMapperManager {
     // this class exists for debugging purposes - it is clearly seen that this mapper was not found
     // rather then having a lambda as a mapper
     private static final class NoMapperFound<T> implements Mapper<T> {
-        private final Class<T> type;
+        private final GenericType<T> type;
 
-        private NoMapperFound(Class<T> type) {
+        private NoMapperFound(GenericType<T> type) {
             this.type = type;
         }
 
         @Override
-        public T apply(Config config) {
+        public T apply(Config config, ConfigMapper configMapper) {
             throw new ConfigMappingException(config.key(), type, "No mapper configured");
         }
 
         @Override
         public String toString() {
-            return "Mapper for " + type.getSimpleName() + " is not defined";
+            return "Mapper for " + type.getTypeName() + " is not defined";
         }
     }
+
 }

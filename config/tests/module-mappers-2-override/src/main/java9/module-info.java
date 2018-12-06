@@ -27,7 +27,7 @@ module io.helidon.config.tests.module.mappers2 {
 
     provides io.helidon.config.spi.ConfigMapperProvider with
             io.helidon.config.tests.module.mappers2.Mappers2Priority100ConfigMapperProvider,
-            io.helidon.config.tests.module.mappers2.Mappers2Priority300ConfigMapperProvider,
+            io.helidon.config.tests.module.mappers2.Mappers2Priority150ConfigMapperProvider,
             io.helidon.config.tests.module.mappers2.Mappers2Priority50ConfigMapperProvider;
 
 }

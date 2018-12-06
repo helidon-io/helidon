@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
@@ -729,6 +730,26 @@ public interface Config {
     Optional<String> value();
 
     /**
+     * Typed value as a {@link ConfigValue} for a generic type.
+     * If appropriate mapper exists, returns a properly typed generic instance.
+     * <p>
+     * Example:
+     * <pre>
+     * {@code
+     * ConfigValue<Map<String, Integer>> myMapValue = config.as(new GenericType<Map<String, Integer>>(){});
+     * myMapValue.ifPresent(map -> {
+     *      Integer port = map.get("service.port");
+     *  }
+     * }
+     * </pre>
+     *
+     * @param genericType a (usually anonymous) instance of generic type to prevent type erasure
+     * @param <T> type of the returned value
+     * @return properly typed config value
+     */
+    <T> ConfigValue<T> as(GenericType<T> genericType);
+
+    /**
      * Typed value as a {@link ConfigValue}.
      *
      * @param type type class
@@ -1425,6 +1446,26 @@ public interface Config {
         Builder disableSystemPropertiesSource();
 
         /**
+         * Registers mapping function for specified {@code type}.
+         * The last registration of same {@code type} overwrites previous one.
+         * Programmatically registered mappers have priority over other options.
+         * <p>
+         * As another option, mappers are loaded automatically as a {@link java.util.ServiceLoader service}
+         * via {@link io.helidon.config.spi.ConfigMapperProvider} SPI unless it is {@link #disableMapperServices() disabled}.
+         * <p>
+         * And the last option, {@link ConfigMappers built-in mappers} are registered.
+         *
+         * @param type   class of type the {@code mapper} is registered for
+         * @param mapper mapping function
+         * @param <T>    type the {@code mapper} is registered for
+         * @return an updated builder instance
+         * @see #addStringMapper(Class, Function)
+         * @see #addMapper(ConfigMapperProvider)
+         * @see #disableMapperServices
+         */
+        <T> Builder addMapper(Class<T> type, Function<Config, T> mapper);
+
+        /**
          * Registers simple {@link Function} from {@code String} for specified {@code type}.
          * The last registration of same {@code type} overwrites previous one.
          * Programmatically registered mappers have priority over other options.
@@ -1443,8 +1484,6 @@ public interface Config {
          * @see #disableMapperServices
          */
         <T> Builder addStringMapper(Class<T> type, Function<String, T> mapper);
-
-        <T> Builder addMapper(Class<T> type, Function<Config, T> mapper);
 
         /**
          * Registers a {@link ConfigMapperProvider} with a map of {@code String} to specified {@code type}.

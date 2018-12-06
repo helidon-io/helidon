@@ -120,10 +120,33 @@ public class GenericType<T> implements Type {
      * {@code interface java.util.List}.
      *
      * @return the class or interface that declared the type represented by this
-     * generic type instance.
+     *         generic type instance.
      */
     public Class<?> rawType() {
         return rawType;
+    }
+
+    /**
+     * Whether this generic type represents a simple class with no generic information.
+     *
+     * @return true if this is a class, false if this is a generic type (e.g. returns true for {@code List}, false for {@code
+     *         List<String>}
+     */
+    public boolean isClass() {
+        return rawType.equals(type);
+    }
+
+    /**
+     * Casts the parameter to the type of this generic type.
+     * This is a utility method to use in stream processing etc.
+     *
+     * @param object instance to cast
+     * @return typed instance
+     * @throws ClassCastException in case the object is not of the expected type
+     */
+    @SuppressWarnings("unchecked")
+    public T cast(Object object) throws ClassCastException {
+        return (T) object;
     }
 
     @Override

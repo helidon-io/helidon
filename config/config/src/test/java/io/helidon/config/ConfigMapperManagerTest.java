@@ -16,14 +16,23 @@
 
 package io.helidon.config;
 
-import java.util.Collections;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
+import io.helidon.config.spi.ConfigMapper;
+import io.helidon.config.spi.ConfigMapperProvider;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -42,22 +51,20 @@ import static org.mockito.Mockito.mock;
  */
 public class ConfigMapperManagerTest {
     private static final ConfigMapperManager managerNoServices = BuilderImpl.buildMappers(false,
-                                                                                          Collections.emptyMap(),
                                                                                           MapperProviders.create());
 
     private static final ConfigMapperManager managerWithServices = BuilderImpl.buildMappers(true,
-                                                                                            Collections.emptyMap(),
                                                                                             MapperProviders.create());
 
     @Test
     public void testUnknownMapper() {
-        assertThrows(ConfigMappingException.class, () -> managerNoServices.map(CustomClass.class, mock(Config.class)));
-        assertThrows(ConfigMappingException.class, () -> managerWithServices.map(CustomClass.class, mock(Config.class)));
+        assertThrows(ConfigMappingException.class, () -> managerNoServices.map(mock(Config.class), CustomClass.class));
+        assertThrows(ConfigMappingException.class, () -> managerWithServices.map(mock(Config.class), CustomClass.class));
     }
 
     @Test
     public void testBuiltInMappers() {
-        Integer builtIn = managerWithServices.map(Integer.class, managerWithServices.simpleConfig("builtIn", "49"));
+        Integer builtIn = managerWithServices.map(managerWithServices.simpleConfig("builtIn", "49"), Integer.class);
         assertThat(builtIn, is(49));
     }
 
@@ -72,21 +79,21 @@ public class ConfigMapperManagerTest {
     void testSingleValueConfigImpl() {
         Config config = managerNoServices.simpleConfig("key1", "42");
 
-        assertThat(config.key(), Matchers.is(Config.Key.of("key1")));
-        assertThat(config.value(), Matchers.is(Optional.of("42")));
-        assertThat(config.type(), Matchers.is(Config.Type.VALUE));
+        assertThat(config.key(), is(Config.Key.of("key1")));
+        assertThat(config.value(), is(Optional.of("42")));
+        assertThat(config.type(), is(Config.Type.VALUE));
         assertThat(config.timestamp(), not(nullValue()));
         {
             Config sub = config.get("sub");
-            assertThat(sub.key(), Matchers.is(Config.Key.of("key1.sub")));
-            assertThat(sub.value(), Matchers.is(Optional.empty()));
-            assertThat(sub.type(), Matchers.is(Config.Type.MISSING));
+            assertThat(sub.key(), is(Config.Key.of("key1.sub")));
+            assertThat(sub.value(), is(Optional.empty()));
+            assertThat(sub.type(), is(Config.Type.MISSING));
         }
         {
             Config detached = config.detach();
-            assertThat(detached.key(), Matchers.is(Config.Key.of("")));
-            assertThat(detached.value(), Matchers.is(Optional.of("42")));
-            assertThat(detached.type(), Matchers.is(Config.Type.VALUE));
+            assertThat(detached.key(), is(Config.Key.of("")));
+            assertThat(detached.value(), is(Optional.of("42")));
+            assertThat(detached.type(), is(Config.Type.VALUE));
         }
         assertThat(config.traverse().collect(Collectors.toList()), empty());
         {
@@ -94,9 +101,9 @@ public class ConfigMapperManagerTest {
             assertThat(map.entrySet(), hasSize(1));
             assertThat(map, hasEntry("key1", "42"));
         }
-        assertThat(config.as(Integer.class).get(), Matchers.is(42));
-        assertThrows(ConfigMappingException.class, () -> config.asNodeList().get());
-        assertThrows(ConfigMappingException.class, () -> config.asList(String.class).asOptional());
+        assertThat(config.as(Integer.class).get(), is(42));
+        assertThat(config.asNodeList().get(), is(CollectionsHelper.listOf(config)));
+        assertThat(config.asList(String.class).get(), is(CollectionsHelper.listOf("42")));
 
         Config.Context context = config.context();
 
@@ -105,9 +112,101 @@ public class ConfigMapperManagerTest {
         assertThat(context.last(), sameInstance(config));
     }
 
+    @Test
+    void testGenericTypeMapperMap() {
+        MapperProviders providers = MapperProviders.create();
+        providers.add(new ParametrizedConfigMapper());
+        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(true, providers);
+
+        Config config = configMapperManager.simpleConfig("test", "1");
+
+        ConfigValue<Map<String, Integer>> map = config.as(new GenericType<Map<String, Integer>>() { });
+
+        assertThat(map.get(), is(CollectionsHelper.mapOf("test", 1)));
+    }
+
+    @Test
+    void testGenericTypeMapperList() {
+        MapperProviders providers = MapperProviders.create();
+        providers.add(new ParametrizedConfigMapper());
+        ConfigMapperManager configMapperManager = BuilderImpl.buildMappers(true, providers);
+
+        Config config = configMapperManager.simpleConfig("test", "1");
+
+        ConfigValue<Map<String, List<Integer>>> map = config.as(new GenericType<Map<String, List<Integer>>>() { });
+
+        assertThat(map.get(), is(CollectionsHelper.mapOf("test", CollectionsHelper.listOf(1))));
+    }
+
     // this will not work, as beans are moved away from core
     public static class CustomClass {
         public CustomClass() {
+        }
+    }
+
+    private static class ParametrizedConfigMapper implements ConfigMapperProvider {
+        @Override
+        public Map<Class<?>, Function<Config, ?>> mappers() {
+            return CollectionsHelper.mapOf();
+        }
+
+        @Override
+        public <T> Optional<BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
+            Class<?> rawType = type.rawType();
+
+            if (rawType.equals(Map.class)) {
+                // this is our class - we support Map<String, ?>
+                Type theType = type.type();
+                if (theType instanceof ParameterizedType) {
+                    ParameterizedType ptype = (ParameterizedType) theType;
+                    Type[] typeArgs = ptype.getActualTypeArguments();
+                    if (typeArgs.length == 2) {
+                        if (typeArgs[0].equals(String.class)) {
+                            return Optional.of((config, mapper) -> {
+                                Map<String, ?> theMap = new HashMap<>();
+
+                                config.asMap().ifPresent(configMap -> {
+                                    configMap.forEach((key, value) -> {
+                                        theMap.put(key, mapper.map(value,
+                                                                   GenericType.create(typeArgs[1]),
+                                                                   key));
+                                    });
+                                });
+
+                                return type.cast(theMap);
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (rawType.equals(List.class)) {
+                // we support List<?>, defaults to List<String>
+                Type theType = type.type();
+                if (theType instanceof ParameterizedType) {
+                    ParameterizedType ptype = (ParameterizedType) theType;
+                    Type[] typeArgs = ptype.getActualTypeArguments();
+                    if (typeArgs.length == 1) {
+                        Type elementType = typeArgs[0];
+                        return Optional.of((config, mapper) -> {
+                            List<Object> theList = new LinkedList<>();
+
+                            config.asNodeList()
+                                    .ifPresent(nodes -> {
+                                        nodes.forEach(confNode -> {
+                                            theList.add(confNode.as(GenericType.create(elementType)).get());
+                                        });
+                                    });
+
+                            return type.cast(theList);
+                        });
+                    }
+                } else {
+                    return Optional.of((config, mapper) -> type.cast(config.asList(String.class).get()));
+                }
+            }
+
+            return Optional.empty();
         }
     }
 }

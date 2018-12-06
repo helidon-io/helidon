@@ -30,7 +30,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
 /**
  * Registers Config mappers for {@link Logger} and {@link Locale}.
  */
-@Priority(200)
+@Priority(90) // higher than default
 public class Mappers1ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
@@ -38,5 +38,4 @@ public class Mappers1ConfigMapperProvider implements ConfigMapperProvider {
         return CollectionsHelper.mapOf(Logger.class, new LoggerConfigMapper(),
                       Locale.class, new LocaleConfigMapper());
     }
-
 }

@@ -140,8 +140,9 @@ public class FactoryMethodConfigMapperTest {
                     .as(ConstructorBean.class)
                     .get();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "'app'", "ConstructorBean", "Missing value for parameter 'uri'.")).matches(ex.getMessage()));
+
+        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+                "'app'", "ConstructorBean", "Missing value for parameter 'uri'.")));
     }
 
     @Test

@@ -16,6 +16,8 @@
 
 package io.helidon.config;
 
+import java.lang.reflect.Type;
+
 /**
  * Configuration value mapping exception.
  * <p>
@@ -55,7 +57,7 @@ public class ConfigMappingException extends ConfigException {
      * @param type   requested mapping type.
      * @param detail detailed information of mapping failure.
      */
-    public ConfigMappingException(Config.Key key, Class<?> type, String detail) {
+    public ConfigMappingException(Config.Key key, Type type, String detail) {
         this(key, type, detail, null);
     }
 
@@ -67,8 +69,8 @@ public class ConfigMappingException extends ConfigException {
      * @param detail detailed information about the configuration value mapping failure.
      * @param cause  root exception cause.
      */
-    public ConfigMappingException(Config.Key key, Class<?> type, String detail, Throwable cause) {
-        super("Mapping of value stored under key '" + key + "' to type '" + type.getName() + "' has failed: " + detail,
+    public ConfigMappingException(Config.Key key, Type type, String detail, Throwable cause) {
+        super("Mapping of value stored under key '" + key + "' to type '" + type.getTypeName() + "' has failed: " + detail,
               cause);
     }
 

@@ -38,28 +38,30 @@ public class BuilderImplMappersTest {
 
     @Test
     public void testUserDefinedHasPrecedenceInteger() {
+        MapperProviders providers = MapperProviders.create();
+        providers.add(() -> CollectionsHelper.mapOf(Integer.class, config -> 42));
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               mapOf(Integer.class, node -> 42),
-                                                               MapperProviders.create());
+                                                               providers);
         Config config = Config.builder()
                 .sources(ConfigSources.from(mapOf("int-p", "2147483647")))
                 .build();
 
-        assertThat(manager.map(Integer.class, config.get("int-p")), is(42));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(2147483647));
+        assertThat(manager.map(config.get("int-p"), Integer.class), is(42));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(2147483647));
     }
 
     @Test
     public void testUserDefinedHasPrecedenceOptionalInt() {
+        MapperProviders providers = MapperProviders.create();
+        providers.add(() -> CollectionsHelper.mapOf(OptionalInt.class, config -> OptionalInt.of(42)));
         ConfigMapperManager manager = BuilderImpl.buildMappers(false,
-                                                               mapOf(OptionalInt.class, node -> OptionalInt.of(42)),
-                                                               MapperProviders.create());
+                                                               providers);
         Config config = Config.builder()
                 .sources(ConfigSources.from(mapOf("int-p", "2147483647")))
                 .build();
 
-        assertThat(manager.map(Integer.class, config.get("int-p")), is(2147483647));
-        assertThat(manager.map(OptionalInt.class, config.get("int-p")).getAsInt(), is(42));
+        assertThat(manager.map(config.get("int-p"), Integer.class), is(2147483647));
+        assertThat(manager.map(config.get("int-p"), OptionalInt.class).getAsInt(), is(42));
     }
 
     @Test
