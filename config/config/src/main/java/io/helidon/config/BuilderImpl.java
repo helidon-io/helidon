@@ -368,8 +368,6 @@ class BuilderImpl implements Config.Builder {
                 .asPrioritizedStream(prioritizedProviders, ConfigMapperProvider.PRIORITY)
                 .collect(Collectors.toList());
 
-        Collections.reverse(prioritizedProviders);
-
         // add built in converters and converters from service loader
         prioritizedProviders.forEach(providers::add);
 
@@ -467,7 +465,7 @@ class BuilderImpl implements Config.Builder {
     /**
      * Internal mapper with low priority to enable overrides.
      */
-    @Priority(49)
+    @Priority(200)
     static class InternalPriorityMapperProvider implements ConfigMapperProvider {
         private final Map<Class<?>, Function<Config, ?>> converterMap;
 

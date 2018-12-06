@@ -16,8 +16,9 @@
 
 package io.helidon.config.tests.module.mappers2;
 
-import java.util.Locale;
+import java.math.BigInteger;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.function.Function;
 
 import javax.annotation.Priority;
@@ -27,14 +28,16 @@ import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 /**
- * Registers Config mappers for {@link Locale}.
+ * Registers config mapper for {@link OptionalInt}, {@link Integer} and {@link java.math.BigInteger}.
  */
-@Priority(300)
-public class Mappers2Priority300ConfigMapperProvider implements ConfigMapperProvider {
+@Priority(150) // lower than default priority
+public class Mappers2Priority150ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {
-        return CollectionsHelper.mapOf(Locale.class, new LocaleConfigMapper());
+        return CollectionsHelper.mapOf(OptionalInt.class, new OptionalIntConfigMapper(),
+                      Integer.class, new IntegerConfigMapper(),
+                      BigInteger.class, new BigIntegerConfigMapper());
     }
 
 }

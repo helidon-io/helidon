@@ -41,7 +41,7 @@ import static io.helidon.config.beans.ReflectionUtil.findStaticMethodWithParamet
 /**
  * Java beans support for configuration.
  */
-@Priority(10) // priority should be low to be one of the last ones used
+@Priority(1000) // priority should be low to be one of the last ones used
 public class BeansConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_FROM = "from";
     private static final String METHOD_VALUE_OF = "valueOf";

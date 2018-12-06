@@ -29,7 +29,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
 /**
  * Registers Config mappers for {@link Logger}.
  */
-@Priority(100)
+@Priority(100) // default priority
 public class Mappers2Priority100ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
