@@ -22,14 +22,14 @@
 :pom: {adoc-dir}/../../../pom.xml
 
 
-= The ReSTful Web Service Guide
+= The RESTful Web Service Guide
 :description: Helidon guide restful web service
 :keywords: helidon, guide, example
 
-Create and build a ReSTful web service as your first Helidon SE application.
+Create and build a RESTful web service as your first Helidon SE application.
 
-== What You Will Learn
-You'll learn how to use Helidon quickly to create a ReSTful web service that accepts these HTTP requests:
+== What you will learn
+You'll learn how to use Helidon quickly to create a RESTful web service that accepts these HTTP requests:
 
 |===
 |Method and URL | Result
@@ -41,15 +41,18 @@ You'll learn how to use Helidon quickly to create a ReSTful web service that acc
 
 We create the app in three main steps:
 
-. Write a basic app to respond to the HTTP requests.
+. Write a basic Helidon SE app to respond to the HTTP requests.
 
 . Add code to perform simple health checks.
 
 . Add code to record simple metrics.
 
-(See the last section to find out how to get the entire finished code for this example.)
+This guide walks you through the code and helps you understand what each part of the 
+code does as you write the app. But if you prefer, you can get the finished code for this example.
+See the <<downloading,downloading>> section for instructions.
 
-== What You Need
+
+== What you need
 
 |===
 |About 15 minutes
@@ -64,9 +67,9 @@ We create the app in three main steps:
 //|`kubectl` 1.7.4
 //|===
 
-== Create Your Application
+== Develop your application
 
-=== Create a new Maven Project
+=== Create a new maven project
 You can create your maven project in these ways:
 
 * use your IDE to create a new Java maven project, or
@@ -75,9 +78,7 @@ You can create your maven project in these ways:
 [source,bash]
 mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.3
 
-=== Update Your `pom.xml`
-==== The Essentials
-
+=== Update your `pom.xml`
 Make sure your POM contains these sections:
 [source,xml,subs="verbatim,attributes"]
 ----
@@ -105,7 +106,7 @@ include::{pom}[tags=webserverBundleDependency;configYamlDependency]
 If you run your project from the IDE, the IDE typically handles the main class and places
 dependent JARs on the runtime classpath for you and your pom is now ready to go. 
 
-==== To Run `maven` Outside your IDE
+==== To run `maven` outside your IDE
 If you want to use `maven` yourself,
 outside the IDE, then add the following to your pom. (This is typical with maven
 projects and is not specific to Helidon or this example):
@@ -134,7 +135,7 @@ include::{pom}[tag=copyDependencies]
 copied dependency JARs.
 <3> Tells maven to package the dependency JARs in the specified directory relative to the project's JAR.
 
-=== Create a Config Resource File
+=== Create a config resource file
 Your app will use the Helidon config support to initialize the greeting and set up HTTP
 listening.
 
@@ -272,7 +273,7 @@ include::{main-class}[tag=mainContent]
 +
 to your main method.
 
-== Build and Run
+== Build and run
 // tag::buildAndRun[]
 You can use your IDE's features to build and run the project directly.
 
@@ -312,7 +313,7 @@ a|[listing]
 |====
 // end::buildAndRun[]
 
-== Add Health Checks
+== Add health checks
 // tag::addHealthChecksIntro[]
 A well-behaved microservice reports on its own health.
 Two common approaches for checking health, often used together, are:
@@ -450,7 +451,7 @@ This time you should see
 and with the `-i` added to the `curl` command you would see the 500 status returned.
 // end::tryLiveness[]
 
-== Add Metrics Support
+== Add metrics support
 // tag::metricsIntro[]
 As a simple illustration of using metrics, we revise our greeting service to count how many times
 a client sends a request to the app.
@@ -606,13 +607,15 @@ The request count is higher because the access to `/metrics` to retrieve the
 monitoring data is _not_ handled by our app's rules and filters but by the 
 metrics infrastructure.
 
-== (Or, Download the Example Source)
-We think the guide is most useful if you follow along step-by-step, building
-up the app and understanding what each part of the code is doing as you go. 
+== Download the example source (optional) [[downloading]]
+Instead of writing the application yourself, you can download it.
 
-But if you prefer, you can get the finished code for this example by cloning the link:https://github.com/oracle/helidon[`git` workspace
-for Helidon], navigating to the `examples/guides/se-restful-webservice` directory, and
-running
+
+. Clone the link:https://github.com/oracle/helidon[`git` workspace
+for Helidon]
+. `cd` to the `examples/guides/se-restful-webservice` directory.
+. Run:
++
 [source,bash]
 ----
 mvn package

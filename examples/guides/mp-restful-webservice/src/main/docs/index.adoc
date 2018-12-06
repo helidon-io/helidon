@@ -39,7 +39,7 @@
 
 Create and build a JAX-RS RESTful web service as your first Helidon MP application.
 
-== What You Will Learn
+== What you will learn
 You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web service that accepts these HTTP requests:
 
 |===
@@ -53,14 +53,16 @@ You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web servic
 We create the app in these main steps:
 
 . Write a basic Helidon MP app to respond to the HTTP requests.
+
 . Add code to perform simple health checks.
+
 . Add code to record simple metrics.
 
 This guide walks you through the code and helps you understand what each part of the 
 code does as you write the app. But if you prefer, you can get the finished code for this example.
 See the <<downloading,downloading>> section for instructions.
 
-== What You Need
+== What you need
 
 |===
 |About 15 minutes
@@ -75,9 +77,9 @@ See the <<downloading,downloading>> section for instructions.
 //|`kubectl` 1.7.4
 //|===
 
-== Develop Your Application
+== Develop your application
 
-=== Create a New Maven Project
+=== Create a new maven project
 You can create your maven project in these ways:
 
 * use your IDE to create a new Java maven project, or
@@ -104,7 +106,7 @@ mvn archetype:generate ^
 Answer the prompts for your module's group ID, artifact ID, and version,
 then `cd` to the `<artifactId>` directory you specified.
 
-=== Update Your `pom.xml`
+=== Update your `pom.xml`
 Make sure your POM contains these sections:
 [source,xml,subs="verbatim,attributes"]
 ----
@@ -134,7 +136,7 @@ include::{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
 If you run your project from the IDE, the IDE typically handles the main class and places
 dependent JARs on the runtime classpath for you and your pom is now ready to go. 
 
-=== Create an MP Config File
+=== Create an MP config file
 This file contains settings for the Helidon web server and the 
 application. Note that the MP Config specification says that 
 configuration data is read, by default, from `META-INF/microprofile-config.properties`;
@@ -147,7 +149,7 @@ include::{config-file}[tag=configContent]
 <1> Initial application greeting.
 <2> Web server configuration.
 
-=== Create a Logging Config File
+=== Create a logging config file
 This file controls logging within the application.
 [source,java]
 .src/main/resources/logging.properties
@@ -155,7 +157,7 @@ This file controls logging within the application.
 include::{logging-properties-file}[tag=loggingProps]
 ----
 
-=== Create an "Empty" `beans.xml` 
+=== Create an "empty" `beans.xml` 
 We need to make sure JAX-RS searches for beans. This file accomplishes that.
 [source,java]
 .src/main/resources/META-INF/beans.xml
@@ -164,7 +166,7 @@ We need to make sure JAX-RS searches for beans. This file accomplishes that.
 include::{beans-xml}[tag=beans]
 ----
 
-=== Create a Bean to Hold the Greeting Message
+=== Create a bean to hold the greeting message
 The app contains a default greeting loaded from configuration which the user 
 can set via HTTP. 
 The app stores the current message in a JAX-RS bean so we can inject it where
@@ -211,7 +213,7 @@ include::{greeting-message-class}[tag=getter]
 include::{greeting-message-class}[tag=setter]
 ----
 
-=== Create a JAX-RS Root Resource for the Application
+=== Create a JAX-RS root resource for the application
 This class defines the endpoints for the application.
 
 You or your IDE will add these imports along the way:
@@ -250,7 +252,7 @@ include::{greet-resource-class}[tag=createResponse]
 in it.
 <3> Prepares the response as JSON.
 
-=== Add the Code for the Resource's Endpoints
+=== Add the code for the resource's endpoints
 . Returning the default message
 +
 [source,java]
@@ -332,13 +334,13 @@ include::{main-class}[tag=setupLogging]
 include::{main-class}[tag=main]
 ----
 
-== Build and Run
+== Build and run
 include::{se-guide-adoc}[tag=buildAndRun]
 
-== Add Health Checks
+== Add health checks
 include::{se-guide-adoc}[tag=addHealthChecksIntro]
 
-=== Add a New JAX-RS Resource Class
+=== Add a new JAX-RS resource class
 Create `HealthResource.java` to define the endpoints for checking if the service is
 active and if it is ready. You or your IDE will add these imports:
 [source,java]
@@ -397,7 +399,7 @@ passed to `CollectionsHelper.setOf`.
 
 include::{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
 
-== Add Metrics Support
+== Add metrics support
 include::{se-guide-adoc}[tag=metricsIntro]
 
 . Add the metrics dependency to `pom.xml`
@@ -431,13 +433,13 @@ include::{greet-resource-class}[tag=countedAnno]
 <4> Indicates that the metrics system should increment the counter on each invocation but
 _not_ decrement it when the method returns. 
 
-=== Rebuild and Rerun Your Application
+=== Rebuild and rerun your application
 Follow the same steps as before, remembering to stop any instance of your application
 that is still running.
 
 include::{se-guide-adoc}[tag=sendRequestsForMetrics]
 
-=== Send Some Requests
+=== Send some requests
 Use the same `curl` commands as before to send requests to
 the server:
 
@@ -453,7 +455,7 @@ a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
 |====
 
-=== Retrieve Metrics
+=== Retrieve metrics
 Run this `curl` command to retrieve the collected metrics:
 [source,bash]
 ----
@@ -486,7 +488,7 @@ counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
-== Download the Example Source (optional) [[downloading]]
+== Download the example source (optional) [[downloading]]
 Instead of writing the application yourself, you can download it.
 
 . Clone the link:https://github.com/oracle/helidon[`git` workspace
