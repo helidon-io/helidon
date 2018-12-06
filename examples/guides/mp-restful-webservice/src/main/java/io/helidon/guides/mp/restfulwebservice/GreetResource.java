@@ -125,7 +125,6 @@ public class GreetResource {
     @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting/{greeting}") // <1>
     @PUT // <2>
-    @Consumes(MediaType.APPLICATION_JSON) // <3>
     @Produces(MediaType.APPLICATION_JSON) // <3>
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
         greeting.setMessage(newGreeting);
