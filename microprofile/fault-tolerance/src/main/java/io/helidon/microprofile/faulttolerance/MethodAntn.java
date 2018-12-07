@@ -157,24 +157,26 @@ public abstract class MethodAntn {
         // Annotation type
         final String annotationType = getClass().getInterfaces()[0].getSimpleName();
 
-        // Check if property defined at method level
+        // Check property depending on matching type
         if (type == MatchingType.METHOD) {
             String methodLevel = String.format("%s/%s/%s/%s",
                     method.getDeclaringClass().getName(),
                     method.getName(),
                     annotationType,
                     parameter);
-            return getProperty(methodLevel);
-        }
-
-        // Check if property defined a class level
-        String classLevel = String.format("%s/%s/%s",
-                method.getDeclaringClass().getName(),
-                annotationType,
-                parameter);
-        value = getProperty(classLevel);
-        if (value != null) {
-            return value;
+            value = getProperty(methodLevel);
+            if (value != null) {
+                return value;
+            }
+        } else if (type == MatchingType.CLASS) {
+            String classLevel = String.format("%s/%s/%s",
+                    method.getDeclaringClass().getName(),
+                    annotationType,
+                    parameter);
+            value = getProperty(classLevel);
+            if (value != null) {
+                return value;
+            }
         }
 
         // Check if property defined at global level
