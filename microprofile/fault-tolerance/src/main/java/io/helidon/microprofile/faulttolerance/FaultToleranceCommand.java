@@ -30,9 +30,11 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
 import org.apache.commons.configuration.AbstractConfiguration;
+import org.eclipse.microprofile.metrics.Histogram;
 
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
 
 /**
  * Class FaultToleranceCommand.
@@ -140,16 +142,16 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
             // Register gauges for this method
             if (isFaultToleranceMetricsEnabled()) {
-                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                        FaultToleranceMetrics.BREAKER_OPEN_TOTAL,
+                registerGauge(introspector.getMethod(),
+                        BREAKER_OPEN_TOTAL,
                         "Amount of time the circuit breaker has spent in open state",
                         () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.OPEN_MP));
-                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                        FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL,
+                registerGauge(introspector.getMethod(),
+                        BREAKER_HALF_OPEN_TOTAL,
                         "Amount of time the circuit breaker has spent in half-open state",
                         () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.HALF_OPEN_MP));
-                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                        FaultToleranceMetrics.BREAKER_CLOSED_TOTAL,
+                registerGauge(introspector.getMethod(),
+                        BREAKER_CLOSED_TOTAL,
                         "Amount of time the circuit breaker has spent in closed state",
                         () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.CLOSED_MP));
             }
@@ -164,13 +166,13 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
             if (isFaultToleranceMetricsEnabled()) {
                 // Register gauges for this method
-                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                        FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS,
+                registerGauge(introspector.getMethod(),
+                        BULKHEAD_CONCURRENT_EXECUTIONS,
                         "Number of currently running executions",
                         () -> (long) bulkheadHelper.runningInvocations());
                 if (introspector.isAsynchronous()) {
-                    FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                            FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION,
+                    registerGauge(introspector.getMethod(),
+                            BULKHEAD_WAITING_QUEUE_POPULATION,
                             "Number of executions currently waiting in the queue",
                             () -> (long) bulkheadHelper.waitingInvocations());
                 }
@@ -203,11 +205,19 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             bulkheadHelper.markAsRunning(this);
 
             if (isFaultToleranceMetricsEnabled()) {
-                // Update waiting time histogram
+                // Register and update waiting time histogram
                 if (introspector.isAsynchronous() && queuedNanos != -1L) {
-                    FaultToleranceMetrics.getHistogram(introspector.getMethod(),
-                            FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
-                            .update(System.nanoTime() - queuedNanos);
+                    Method method = introspector.getMethod();
+                    Histogram histogram = getHistogram(method, BULKHEAD_WAITING_DURATION);
+                    if (histogram == null) {
+                        registerHistogram(
+                                String.format(METRIC_NAME_TEMPLATE,
+                                        method.getDeclaringClass().getName(),
+                                        method.getName(),
+                                        BULKHEAD_WAITING_DURATION),
+                                "Histogram of the time executions spend waiting in the queue");
+                    }
+                    histogram.update(System.nanoTime() - queuedNanos);
                 }
             }
         }
@@ -361,18 +371,18 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
         if (throwable == null) {
             // If no errors increment success counter
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+            getCounter(method, BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
         } else if (!wasBreakerOpen) {
             // If error and breaker was closed, increment failed counter
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL).inc();
+            getCounter(method, BREAKER_CALLS_FAILED_TOTAL).inc();
             // If it will open, increment counter
             if (breakerWillOpen) {
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_OPENED_TOTAL).inc();
+                getCounter(method, BREAKER_OPENED_TOTAL).inc();
             }
         }
         // If breaker was open and still is, increment prevented counter
         if (wasBreakerOpen && !isClosedNow) {
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL).inc();
+            getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
         }
     }
 
@@ -392,7 +402,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                         throw new RuntimeException("Oops");
                     }).execute();
                 } catch (Throwable t) {
-                    LOGGER.info("### t = " + t);
                     // ignore
                 }
             }
