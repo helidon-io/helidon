@@ -30,7 +30,7 @@ import io.helidon.common.http.Http;
 /**
  * A {@link Routing.Rules} implementation collecting all routings into single {@link RouteList}.
  */
-class RouteListRoutingRules implements Routing.Rules<RouteListRoutingRules> {
+class RouteListRoutingRules implements Routing.Rules {
 
     private final List<Record> records = new ArrayList<>();
     private final List<Consumer<WebServer>> newWebServerCallbacks = new ArrayList<>();
