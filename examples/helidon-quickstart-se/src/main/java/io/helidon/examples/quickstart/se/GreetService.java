@@ -56,7 +56,7 @@ public class GreetService implements Service {
      * @param rules the routing rules.
      */
     @Override
-    public void update(Routing.Rules rules) {
+    public void update(Routing.Rules<?> rules) {
         rules
             .get("/", this::getDefaultMessage)
             .get("/{name}", this::getMessage)

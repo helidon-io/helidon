@@ -77,7 +77,7 @@ public interface Routing {
      *
      * @see Builder
      */
-    interface Rules<T extends Rules> {
+    interface Rules<T extends Rules<T>> {
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.

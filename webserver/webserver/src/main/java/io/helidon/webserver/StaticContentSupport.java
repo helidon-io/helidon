@@ -53,7 +53,7 @@ public class StaticContentSupport implements Service {
     }
 
     @Override
-    public void update(Routing.Rules routing) {
+    public void update(Routing.Rules<?> routing) {
         routing.onNewWebServer(new Consumer<WebServer>() {
             @Override
             public void accept(WebServer ws) {

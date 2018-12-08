@@ -30,5 +30,5 @@ public interface Service {
      *
      * @param rules a routing rules to update
      */
-    void update(Routing.Rules rules);
+    void update(Routing.Rules<?> rules);
 }

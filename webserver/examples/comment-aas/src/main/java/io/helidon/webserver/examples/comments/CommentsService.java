@@ -37,7 +37,7 @@ public class CommentsService implements Service {
     private final ConcurrentHashMap<String, List<Comment>> topicsAndComments = new ConcurrentHashMap<>();
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules
                 .get("/{topic}", this::handleListComments)
                 .post("/{topic}", this::handleAddComment);

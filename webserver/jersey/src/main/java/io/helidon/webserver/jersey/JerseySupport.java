@@ -115,7 +115,7 @@ public class JerseySupport implements Service {
     }
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules.any(handler);
     }
 

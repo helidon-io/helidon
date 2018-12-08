@@ -274,7 +274,7 @@ public final class MetricsSupport implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void update(Routing.Rules<?> rules) {
         // register the metric registry and factory to be available to all
         rules.any((req, res) -> {
             req.context().register(app);

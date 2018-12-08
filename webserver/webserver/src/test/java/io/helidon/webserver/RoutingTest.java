@@ -123,7 +123,7 @@ public class RoutingTest {
     static class UserService implements Service {
 
         @Override
-        public void update(Routing.Rules routingRules) {
+        public void update(Routing.Rules<?> routingRules) {
             routingRules.get("{userName}", this::getUser)
                         .post(this::createUser);
         }

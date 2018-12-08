@@ -44,7 +44,7 @@ public class CommentService implements Service {
     private final ConcurrentHashMap<String, List<Comment>> data = new ConcurrentHashMap<>();
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules.get((req, res) -> {
                     // Register a publisher for comment
                     res.registerWriter(List.class, MediaType.TEXT_PLAIN.withCharset("UTF-8"), this::publish);

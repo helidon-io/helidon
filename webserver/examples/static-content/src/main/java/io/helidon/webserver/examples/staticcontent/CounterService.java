@@ -37,7 +37,7 @@ public class CounterService implements Service {
     private final AtomicInteger apiAccessCounter = new AtomicInteger();
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules.any(this::handleAny)
                     .register("/api", JsonSupport.get())
                     .get("/api/counter", this::handleGet);

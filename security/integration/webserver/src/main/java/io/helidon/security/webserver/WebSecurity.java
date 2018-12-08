@@ -317,7 +317,7 @@ public final class WebSecurity implements Service {
     }
 
     @Override
-    public void update(Routing.Rules routing) {
+    public void update(Routing.Rules<?> routing) {
         routing.any(this::registerContext);
 
         if (null != config) {

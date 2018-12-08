@@ -59,7 +59,7 @@ public final class PrometheusSupport implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void update(Routing.Rules<?> rules) {
         rules.get(path, this::process);
     }
 

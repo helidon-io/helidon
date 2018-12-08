@@ -46,7 +46,7 @@ public class StreamingService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules.get("/download", this::download)
                 .post("/upload", this::upload);
     }

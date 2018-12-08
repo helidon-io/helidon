@@ -21,7 +21,7 @@ package io.helidon.webserver;
 public class UserManagementService implements Service {
 
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules.get("/{name}", this::getUser)
                     .post("/", this::setUser);
     }

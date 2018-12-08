@@ -27,7 +27,7 @@ import io.helidon.webserver.Service;
 public class Catalog implements Service {
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void update(Routing.Rules<?> rules) {
         rules.get("/", this::list)
              .get("/{id}", (req, res) -> getSingle(res, req.path().param("id")));
     }

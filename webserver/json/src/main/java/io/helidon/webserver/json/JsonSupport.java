@@ -122,7 +122,7 @@ public final class JsonSupport implements Service, Handler {
      * @see Routing
      */
     @Override
-    public void update(Routing.Rules routingRules) {
+    public void update(Routing.Rules<?> routingRules) {
         routingRules.any(this);
     }
 

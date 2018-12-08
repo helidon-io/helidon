@@ -96,7 +96,7 @@ public final class OidcSupport implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void update(Routing.Rules<?> rules) {
         rules.get(oidcConfig.redirectUri(), (req, res) -> {
             // redirected from IDCS
             Optional<String> codeParam = req.queryParams().first(CODE_PARAM_NAME);
