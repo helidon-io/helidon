@@ -21,5 +21,7 @@ module io.helidon.config.beans {
     requires java.logging;
     requires io.helidon.config;
 
+    exports io.helidon.config.beans;
+
     provides io.helidon.config.spi.ConfigMapperProvider with io.helidon.config.beans.BeansConfigMapperProvider;
 }

@@ -127,6 +127,26 @@ class BuilderImpl implements Config.Builder {
     }
 
     @Override
+    public <T> Config.Builder addMapper(GenericType<T> type, Function<Config, T> mappingFunction) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(mappingFunction);
+
+        addMapper(new ConfigMapperProvider() {
+            @Override
+            public Map<Class<?>, Function<Config, ?>> mappers() {
+                return CollectionsHelper.mapOf();
+            }
+
+            @Override
+            public Map<GenericType<?>, BiFunction<Config, ConfigMapper, ?>> genericTypeMappers() {
+                return CollectionsHelper.mapOf(type, (config, aMapper) -> mappingFunction.apply(config));
+            }
+        });
+
+        return this;
+    }
+
+    @Override
     public Config.Builder addMapper(ConfigMapperProvider mapperProvider) {
         Objects.requireNonNull(mapperProvider);
         mapperProviders.add(mapperProvider);

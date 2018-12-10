@@ -20,7 +20,6 @@
 module io.helidon.config {
 
     requires java.logging;
-    requires jdk.unsupported;
 
     requires transitive java.annotation;
 

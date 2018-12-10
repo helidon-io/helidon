@@ -270,7 +270,6 @@ public interface Config {
                 .build();
     }
 
-
     //
     // tree (config nodes) method
     //
@@ -1464,6 +1463,21 @@ public interface Config {
          * @see #disableMapperServices
          */
         <T> Builder addMapper(Class<T> type, Function<Config, T> mapper);
+
+        /**
+         * Register a mapping function for specified {@link GenericType}.
+         * This is useful for mappers that support specificly typed generics, such as {@code Map<String, Integer>}
+         * or {@code Set<Foo<Bar>>}.
+         * To support mappers that can map any type (e.g. all cases of {@code Map<String, V>}),
+         * use {@link #addMapper(ConfigMapperProvider)} as it gives you full control over which types are supported, through
+         * {@link ConfigMapperProvider#mapper(GenericType)}.
+         *
+         * @param type   generic type to register a mapper for
+         * @param mapper mapping function
+         * @param <T>    type of the result
+         * @return updated builder instance
+         */
+        <T> Builder addMapper(GenericType<T> type, Function<Config, T> mapper);
 
         /**
          * Registers simple {@link Function} from {@code String} for specified {@code type}.

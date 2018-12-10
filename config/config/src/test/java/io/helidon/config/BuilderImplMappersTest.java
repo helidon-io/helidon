@@ -18,16 +18,19 @@ package io.helidon.config;
 
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.GenericType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -103,6 +106,19 @@ public class BuilderImplMappersTest {
     }
 
     @Test
+    public void testGenericTypeMapper() {
+        Config config = Config.withSources(ConfigSources.from(mapOf("int-p", "2147483647")))
+                .addMapper(new GenericType<Set<Integer>>() { },
+                           config1 -> config1.asInt().map(CollectionsHelper::setOf)
+                                   .orElse(CollectionsHelper.setOf()))
+                .build();
+
+        Set<Integer> integers = config.get("int-p").as(new GenericType<Set<Integer>>() { }).get();
+
+        assertThat(integers, contains(2147483647));
+    }
+
+    @Test
     public void testUserDefinedHasPrecedenceStringBuilderMapMapper() {
         Config config = Config.withSources(ConfigSources.from(mapOf("int-p", "2147483647")))
                 .addMapper(Map.class, new CustomStringBuilderMapMapper())
@@ -118,7 +134,7 @@ public class BuilderImplMappersTest {
             return ConfigMappers.toMap(config)
                     .entrySet().stream()
                     .map(entry -> CollectionsHelper.mapEntry("prefix-" + entry.getKey(),
-                                            "[" + entry.getValue() + "]"))
+                                                             "[" + entry.getValue() + "]"))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
     }
@@ -129,7 +145,7 @@ public class BuilderImplMappersTest {
             return ConfigMappers.toMap(config)
                     .entrySet().stream()
                     .map(entry -> CollectionsHelper.mapEntry(new StringBuilder("prefix2-" + entry.getKey()),
-                                            new StringBuilder("{" + entry.getValue() + "}")))
+                                                             new StringBuilder("{" + entry.getValue() + "}")))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
     }
