@@ -26,6 +26,8 @@ import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 
+import static io.helidon.microprofile.faulttolerance.ExceptionUtil.toException;
+
 /**
  * Class CommandFallback.
  */
@@ -109,7 +111,7 @@ class CommandFallback {
             if (t instanceof InvocationTargetException) {
                 t = t.getCause();
             }
-            throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
+            throw toException(t);
         }
 
         updateMetrics(null);

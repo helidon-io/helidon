@@ -17,6 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -250,9 +251,9 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testBulkheadMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
-        CompletableFuture<String>[] calls = getConcurrentCalls(
+        Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.concurrent(100), BulkheadBean.MAX_CONCURRENT_CALLS);
-        CompletableFuture.allOf(calls).get();
+        getThreadNames(calls);
         assertEquals(0L,
                      getGauge(bean, "concurrent",
                               BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue());

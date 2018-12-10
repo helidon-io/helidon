@@ -139,11 +139,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                                        ? introspector.getBulkhead().value()
                                                        : MAX_THREAD_POOL_SIZE)
                                                    .withMaxQueueSize(
-                                                       introspector.hasBulkhead()
+                                                       introspector.hasBulkhead() && introspector.isAsynchronous()
                                                        ? introspector.getBulkhead().waitingTaskQueue()
                                                        : MAX_THREAD_POOL_QUEUE_SIZE)
                                                    .withQueueSizeRejectionThreshold(
-                                                       introspector.hasBulkhead()
+                                                       introspector.hasBulkhead() && introspector.isAsynchronous()
                                                        ? introspector.getBulkhead().waitingTaskQueue()
                                                        : MAX_THREAD_POOL_QUEUE_SIZE)));
         this.commandKey = commandKey;
@@ -173,12 +173,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
         if (introspector.hasBulkhead()) {
             bulkheadHelper = new BulkheadHelper(commandKey, introspector.getBulkhead());
-            // Record instance if command is getting queued
-            if (bulkheadHelper.isAtMaxRunningInvocations()) {
-                queuedNanos = System.nanoTime();
-            }
 
             if (isFaultToleranceMetricsEnabled()) {
+                // Record nanos to update metrics later
+                queuedNanos = System.nanoTime();
+
                 // Register gauges for this method
                 registerGauge(introspector.getMethod(),
                         BULKHEAD_CONCURRENT_EXECUTIONS,
@@ -230,6 +229,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                         method.getName(),
                                         BULKHEAD_WAITING_DURATION),
                                 "Histogram of the time executions spend waiting in the queue");
+                        histogram = getHistogram(method, BULKHEAD_WAITING_DURATION);
                     }
                     histogram.update(System.nanoTime() - queuedNanos);
                 }
@@ -307,7 +307,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 if (!failOn) {
                     restoreBreaker();       // clears Hystrix counters
                     updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
-                    throw ExceptionUtil.wrapThrowable(throwable);
+                    throw ExceptionUtil.toWrappedException(throwable);
                 }
             }
 
@@ -335,7 +335,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                         breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
                     }
                     updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
-                    throw ExceptionUtil.wrapThrowable(throwable);
+                    throw ExceptionUtil.toWrappedException(throwable);
                 }
 
                 // Check next state of breaker based on outcome
@@ -368,7 +368,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
         // Outcome of execution
         if (throwable != null) {
-            throw ExceptionUtil.wrapThrowable(throwable);
+            throw ExceptionUtil.toWrappedException(throwable);
         } else {
             return result;
         }

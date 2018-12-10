@@ -19,8 +19,10 @@ package io.helidon.microprofile.faulttolerance;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -77,7 +79,12 @@ public abstract class FaultToleranceTest {
         ).limit(size).toArray(CompletableFuture[]::new);
     }
 
-    static Set<String> getThreadNames(CompletableFuture<String>[] calls) throws Exception {
+    @SuppressWarnings("unchecked")
+    static <T> Future<T>[] getAsyncConcurrentCalls(Supplier<Future<T>> supplier, int size) {
+        return Stream.generate(() -> supplier.get()).limit(size).toArray(Future[]::new);
+    }
+
+    static Set<String> getThreadNames(Future<String>[] calls) {
         return Arrays.asList(calls).stream().map(c -> {
             try {
                 return c.get();

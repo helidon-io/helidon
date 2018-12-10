@@ -28,6 +28,7 @@ import javax.interceptor.InvocationContext;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
 import net.jodah.failsafe.FailsafeFuture;
 import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.SyncFailsafe;
@@ -37,7 +38,22 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 
+import static io.helidon.microprofile.faulttolerance.ExceptionUtil.toException;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CALLS_ACCEPTED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CALLS_REJECTED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_EXECUTION_DURATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.INVOCATIONS_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_FAILED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RETRY_RETRIES_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEOUT_CALLS_TIMED_OUT_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TIMEOUT_EXECUTION_DURATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getCounter;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHistogram;
 
 /**
  * Class CommandRetrier.
@@ -116,9 +132,10 @@ public class CommandRetrier {
      * Retries running a command according to retry policy.
      *
      * @return Object returned by command.
+     * @throws Exception If something goes wrong.
      */
     @SuppressWarnings("unchecked")
-    public Object execute() {
+    public Object execute() throws Exception {
         LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
 
         CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
@@ -126,18 +143,22 @@ public class CommandRetrier {
             return fallback.execute();
         };
 
-        if (isAsynchronous) {
-            Scheduler scheduler = CommandScheduler.create();
-            AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
-            FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
-                               ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                               : failsafe.get(this::retryExecute));
-            return new FailsafeChainedFuture<>(chainedFuture);
-        } else {
-            SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
-            return introspector.hasFallback()
-                   ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                   : failsafe.get(this::retryExecute);
+        try {
+            if (isAsynchronous) {
+                Scheduler scheduler = CommandScheduler.create();
+                AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
+                FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
+                        ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                        : failsafe.get(this::retryExecute));
+                return new FailsafeChainedFuture<>(chainedFuture);
+            } else {
+                SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
+                return introspector.hasFallback()
+                        ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                        : failsafe.get(this::retryExecute);
+            }
+        } catch (FailsafeException e) {
+            throw toException(e.getCause());
         }
     }
 
@@ -148,7 +169,7 @@ public class CommandRetrier {
      *
      * @return Object returned by command.
      */
-    private Object retryExecute() {
+    private Object retryExecute() throws Exception {
         final String commandKey = createCommandKey();
         command = new FaultToleranceCommand(commandKey, introspector, context);
 
@@ -159,8 +180,11 @@ public class CommandRetrier {
             updateMetricsBefore();
             result = command.execute();
             updateMetricsAfter(null);
-        } catch (HystrixRuntimeException e) {
+        } catch (ExceptionUtil.WrappedException e) {
             Throwable cause = e.getCause();
+            if (cause instanceof HystrixRuntimeException) {
+                cause = cause.getCause();
+            }
             updateMetricsAfter(cause);
             if (cause instanceof TimeoutException) {
                 throw new org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException(cause);
@@ -168,13 +192,10 @@ public class CommandRetrier {
             if (cause instanceof RejectedExecutionException) {
                 throw new BulkheadException(cause);
             }
-            if (!(cause instanceof RuntimeException)) {
-                cause = new RuntimeException(cause);
-            }
             if (command.isCircuitBreakerOpen()) {
                 throw new CircuitBreakerOpenException(cause);
             }
-            throw (RuntimeException) cause;
+            throw toException(cause);
         }
         return result;
     }
@@ -185,7 +206,7 @@ public class CommandRetrier {
     private void updateMetricsBefore() {
         if (isFaultToleranceMetricsEnabled()) {
             if (introspector.hasRetry() && invocationCount > 1) {
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.RETRY_RETRIES_TOTAL).inc();
+                getCounter(method, RETRY_RETRIES_TOTAL).inc();
             }
         }
     }
@@ -206,39 +227,40 @@ public class CommandRetrier {
             boolean firstInvocation = (invocationCount == 1);
 
             if (cause == null) {
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
-                FaultToleranceMetrics.getCounter(method, firstInvocation
-                                   ? FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL
-                                   : FaultToleranceMetrics.RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
+                getCounter(method, INVOCATIONS_TOTAL).inc();
+                getCounter(method, firstInvocation
+                                   ? RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL
+                                   : RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL).inc();
             } else if (retry.maxRetries() == invocationCount - 1) {
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.RETRY_CALLS_FAILED_TOTAL).inc();
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
+                getCounter(method, RETRY_CALLS_FAILED_TOTAL).inc();
+                getCounter(method, INVOCATIONS_FAILED_TOTAL).inc();
+                getCounter(method, INVOCATIONS_TOTAL).inc();
             }
         } else {
             // Global method counters
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_TOTAL).inc();
+            getCounter(method, INVOCATIONS_TOTAL).inc();
             if (cause != null) {
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc();
+                getCounter(method, INVOCATIONS_FAILED_TOTAL).inc();
             }
         }
 
         // Timeout
         if (introspector.hasTimeout()) {
-            FaultToleranceMetrics.getHistogram(method, FaultToleranceMetrics.TIMEOUT_EXECUTION_DURATION)
+            getHistogram(method, TIMEOUT_EXECUTION_DURATION)
                                  .update(command.getExecutionTime());
-            FaultToleranceMetrics.getCounter(method, cause instanceof TimeoutException
-                               ? FaultToleranceMetrics.TIMEOUT_CALLS_TIMED_OUT_TOTAL
-                               : FaultToleranceMetrics.TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL).inc();
+            getCounter(method, cause instanceof TimeoutException
+                               ? TIMEOUT_CALLS_TIMED_OUT_TOTAL
+                               : TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL).inc();
         }
 
         // Bulkhead
         if (introspector.hasBulkhead()) {
-            FaultToleranceMetrics.getHistogram(method, FaultToleranceMetrics.BULKHEAD_EXECUTION_DURATION)
-                                 .update(command.getExecutionTime());
-            FaultToleranceMetrics.getCounter(method, cause instanceof RejectedExecutionException
-                               ? FaultToleranceMetrics.BULKHEAD_CALLS_REJECTED_TOTAL
-                               : FaultToleranceMetrics.BULKHEAD_CALLS_ACCEPTED_TOTAL).inc();
+            boolean bulkheadRejection = (cause instanceof RejectedExecutionException);
+            if (!bulkheadRejection) {
+                getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(command.getExecutionTime());
+            }
+            getCounter(method, bulkheadRejection ? BULKHEAD_CALLS_REJECTED_TOTAL
+                    : BULKHEAD_CALLS_ACCEPTED_TOTAL).inc();
         }
     }
 
