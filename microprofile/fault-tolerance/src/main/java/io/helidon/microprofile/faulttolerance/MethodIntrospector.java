@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
+
 import com.netflix.hystrix.HystrixCommandProperties;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
@@ -30,6 +32,9 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
+
+import static io.helidon.microprofile.faulttolerance.MethodAntn.getProperty;
+import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
 
 /**
  * Class MethodIntrospector.
@@ -58,15 +63,15 @@ class MethodIntrospector {
 
         // Only process annotations if FT is enabled
         if (FaultToleranceExtension.isFaultToleranceEnabled()) {
-            this.retry = isAnnotationPresent(Retry.class) ? new RetryAntn(method) : null;
-            this.circuitBreaker = isAnnotationPresent(CircuitBreaker.class) ? new CircuitBreakerAntn(method) : null;
-            this.timeout = isAnnotationPresent(Timeout.class) ? new TimeoutAntn(method) : null;
-            this.bulkhead = isAnnotationPresent(Bulkhead.class) ? new BulkheadAntn(method) : null;
+            this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(method) : null;
+            this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class) ? new CircuitBreakerAntn(method) : null;
+            this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(method) : null;
+            this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(method) : null;
             validate();
         }
 
         // Fallback is always enabled
-        this.fallback = isAnnotationPresent(Fallback.class) ? new FallbackAntn(method) : null;
+        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(method) : null;
     }
 
     Method getMethod() {
@@ -115,7 +120,7 @@ class MethodIntrospector {
     }
 
     boolean isAsynchronous() {
-        return isAnnotationPresent(Asynchronous.class);
+        return isAnnotationEnabled(Asynchronous.class);
     }
 
     /**
@@ -194,26 +199,47 @@ class MethodIntrospector {
     }
 
     /**
-     * Search for annotation first on the method and then its class. This method
-     * does not check if the annotation's target is of element type {@link
-     * java.lang.annotation.ElementType#TYPE}.
-     *
-     * @param clazz Annotation class to search for.
-     * @param <T> Annotation type.
-     * @return Annotation instance or {@code null} if not found.
-     */
-    private <T extends Annotation> T getAnnotation(Class<T> clazz) {
-        final T annotation = method.getAnnotation(clazz);
-        return annotation != null ? annotation : method.getDeclaringClass().getAnnotation(clazz);
-    }
-
-    /**
-     * Determines if annotation type is present on the method or its class.
+     * Determines if annotation type is present and enabled.
      *
      * @param clazz Annotation class to search for.
      * @return Outcome of test.
      */
-    private boolean isAnnotationPresent(Class<? extends Annotation> clazz) {
-        return getAnnotation(clazz) != null;
+    private boolean isAnnotationEnabled(Class<? extends Annotation> clazz) {
+        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(method, clazz);
+        if (lookupResult == null) {
+            return false;       // not present
+        }
+
+        String value;
+        final String annotationType = clazz.getSimpleName();
+
+        // Check if property defined at method level
+        String methodLevel = String.format("%s/%s/%s/enabled",
+                method.getDeclaringClass().getName(),
+                method.getName(),
+                annotationType);
+        value = getProperty(methodLevel);
+        if (value != null) {
+            return Boolean.valueOf(value);
+        }
+
+        // Check if property defined at class level
+        String classLevel = String.format("%s/%s/enabled",
+                method.getDeclaringClass().getName(),
+                annotationType);
+        value = getProperty(classLevel);
+        if (value != null) {
+            return Boolean.valueOf(value);
+        }
+
+        // Check if property defined at global level
+        String globalLevel = String.format("%s/enabled", annotationType);
+        value = getProperty(globalLevel);
+        if (value != null) {
+            return Boolean.valueOf(value);
+        }
+
+        // Default is enabled
+        return true;
     }
 }

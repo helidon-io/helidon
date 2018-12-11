@@ -223,7 +223,7 @@ public abstract class MethodAntn {
      * @param name Property name.
      * @return Property value or {@code null} if it does not exist.
      */
-    protected String getProperty(String name) {
+    static String getProperty(String name) {
         try {
             String value = ConfigProvider.getConfig().getValue(name, String.class);
             if (LOGGER.isLoggable(Level.FINE)) {
