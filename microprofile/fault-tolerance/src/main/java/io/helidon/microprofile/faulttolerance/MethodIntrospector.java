@@ -43,6 +43,8 @@ class MethodIntrospector {
 
     private final Method method;
 
+    private final Class<?> beanClass;
+
     private Retry retry;
 
     private Fallback fallback;
@@ -58,20 +60,22 @@ class MethodIntrospector {
      *
      * @param method The method to introspect.
      */
-    MethodIntrospector(Method method) {
+    MethodIntrospector(Class<?> beanClass, Method method) {
+        this.beanClass = beanClass;
         this.method = method;
 
         // Only process annotations if FT is enabled
         if (FaultToleranceExtension.isFaultToleranceEnabled()) {
-            this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(method) : null;
-            this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class) ? new CircuitBreakerAntn(method) : null;
-            this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(method) : null;
-            this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(method) : null;
+            this.retry = isAnnotationEnabled(Retry.class) ? new RetryAntn(beanClass, method) : null;
+            this.circuitBreaker = isAnnotationEnabled(CircuitBreaker.class)
+                    ? new CircuitBreakerAntn(beanClass, method) : null;
+            this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(beanClass, method) : null;
+            this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(beanClass, method) : null;
             validate();
         }
 
         // Fallback is always enabled
-        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(method) : null;
+        this.fallback = isAnnotationEnabled(Fallback.class) ? new FallbackAntn(beanClass, method) : null;
     }
 
     Method getMethod() {
@@ -205,7 +209,7 @@ class MethodIntrospector {
      * @return Outcome of test.
      */
     private boolean isAnnotationEnabled(Class<? extends Annotation> clazz) {
-        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(method, clazz);
+        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(beanClass, method, clazz);
         if (lookupResult == null) {
             return false;       // not present
         }

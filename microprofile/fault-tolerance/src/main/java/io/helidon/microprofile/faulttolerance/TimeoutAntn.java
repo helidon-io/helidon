@@ -32,8 +32,8 @@ public class TimeoutAntn extends MethodAntn implements Timeout {
      *
      * @param method The method.
      */
-    public TimeoutAntn(Method method) {
-        super(method);
+    public TimeoutAntn(Class<?> beanClass, Method method) {
+        super(beanClass, method);
     }
 
     @Override

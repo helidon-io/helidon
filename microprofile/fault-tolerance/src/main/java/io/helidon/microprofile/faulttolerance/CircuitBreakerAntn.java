@@ -32,8 +32,8 @@ public class CircuitBreakerAntn extends MethodAntn implements CircuitBreaker {
      *
      * @param method The method.
      */
-    public CircuitBreakerAntn(Method method) {
-        super(method);
+    public CircuitBreakerAntn(Class<?> beanClass, Method method) {
+        super(beanClass, method);
     }
 
     @Override

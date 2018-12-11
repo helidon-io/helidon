@@ -35,6 +35,8 @@ public abstract class MethodAntn {
 
     private final Method method;
 
+    private final Class<?> beanClass;
+
     enum MatchingType {
         METHOD, CLASS
     }
@@ -70,47 +72,61 @@ public abstract class MethodAntn {
      *
      * @param method The method.
      */
-    public MethodAntn(Method method) {
+    public MethodAntn(Class<?> beanClass, Method method) {
+        this.beanClass = beanClass;
         this.method = method;
     }
 
-    public Method getMethod() {
+    public Method method() {
         return method;
     }
 
+    public Class<?> beanClass() {
+        return beanClass;
+    }
 
     /**
      * Look up an annotation on the method.
      *
-     * @param clazz Annotation class.
+     * @param annotClass Annotation class.
      * @param <A> Annotation class type param.
      * @return A lookup result.
      */
-    public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> clazz) {
-        return lookupAnnotation(getMethod(), clazz);
+    public final <A extends Annotation> LookupResult<A> lookupAnnotation(Class<A> annotClass) {
+        return lookupAnnotation(beanClass, method, annotClass);
     }
 
     /**
      * Returns underlying annotation and info as to how it was found.
      *
+     * @param beanClass The bean class.
      * @param method The method.
-     * @param clazz Annotation class.
+     * @param annotClass The annotation class.
      * @param <A> Annotation type.
      * @return The lookup result or {@code null}.
      */
-    static <A extends Annotation> LookupResult<A> lookupAnnotation(Method method, Class<A> clazz) {
-        A annotation = method.getAnnotation(clazz);
+    static <A extends Annotation> LookupResult<A> lookupAnnotation(Class<?> beanClass, Method method,
+                                                                   Class<A> annotClass) {
+        A annotation = method.getAnnotation(annotClass);
         if (annotation != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + clazz.getName()
+                LOGGER.fine("Found annotation '" + annotClass.getName()
                         + "' method '" + method.getName() + "'");
             }
             return new LookupResult<>(MatchingType.METHOD, annotation);
         }
-        annotation = method.getDeclaringClass().getAnnotation(clazz);
+        annotation = beanClass.getAnnotation(annotClass);
         if (annotation != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found annotation '" + clazz.getName()
+                LOGGER.fine("Found annotation '" + annotClass.getName()
+                        + "' class '" + method.getDeclaringClass().getName() + "'");
+            }
+            return new LookupResult<>(MatchingType.CLASS, annotation);
+        }
+        annotation = method.getDeclaringClass().getAnnotation(annotClass);
+        if (annotation != null) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.fine("Found annotation '" + method.getDeclaringClass().getName()
                         + "' class '" + method.getDeclaringClass().getName() + "'");
             }
             return new LookupResult<>(MatchingType.CLASS, annotation);
@@ -121,12 +137,13 @@ public abstract class MethodAntn {
     /**
      * Finds if an annotation is present on a method or its class.
      *
+     * @param beanClass The bean class.
      * @param method Method to check.
-     * @param clazz Annotation class.
+     * @param annotClass Annotation class.
      * @return Outcome of test.
      */
-    static boolean isAnnotationPresent(Method method, Class<? extends Annotation> clazz) {
-        return lookupAnnotation(method, clazz) != null;
+    static boolean isAnnotationPresent(Class<?> beanClass, Method method, Class<? extends Annotation> annotClass) {
+        return lookupAnnotation(beanClass, method, annotClass) != null;
     }
 
     /**
