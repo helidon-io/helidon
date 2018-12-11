@@ -49,9 +49,10 @@ The following example consumes each part content as a `JsonObject`:
 ```java
 request.content().as(MultiPart.class).thenAccept(mp -> {
     for(BodyPart bodyPart : mp.bodyParts()){
-        JsonObject json = bodyPart.content().as(JsonObject.class);
         System.out.println("File uploaded: " + bodyPart.headers().filename());
-        System.out.println(json.toString());
+        bodyPart.content().as(JsonObject.class).thenAccept((json) -> {
+            System.out.println(json.toString());
+        });
     }
     response.send("Files uploaded successful");
 });
