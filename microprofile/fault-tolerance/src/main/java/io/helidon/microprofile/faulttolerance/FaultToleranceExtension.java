@@ -62,16 +62,16 @@ public class FaultToleranceExtension implements Extension {
         private final Class<?> beanClass;
         private final Method method;
 
-        public BeanMethod(Class<?> beanClass, Method method) {
+        BeanMethod(Class<?> beanClass, Method method) {
             this.beanClass = beanClass;
             this.method = method;
         }
 
-        public Class<?> beanClass() {
+        Class<?> beanClass() {
             return beanClass;
         }
 
-        public Method method() {
+        Method method() {
             return method;
         }
     }
@@ -80,7 +80,8 @@ public class FaultToleranceExtension implements Extension {
      * Constructor that resets static state.
      */
     FaultToleranceExtension() {
-        isFaultToleranceEnabled = isFaultToleranceMetricsEnabled = true;
+        isFaultToleranceEnabled = true;
+        isFaultToleranceMetricsEnabled = true;
     }
 
     /**

@@ -33,6 +33,7 @@ public class FallbackAntn extends MethodAntn implements Fallback {
     /**
      * Constructor.
      *
+     * @param beanClass Bean class.
      * @param method The method.
      */
     public FallbackAntn(Class<?> beanClass, Method method) {

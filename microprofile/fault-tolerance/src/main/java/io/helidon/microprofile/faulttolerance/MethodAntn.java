@@ -70,6 +70,7 @@ public abstract class MethodAntn {
     /**
      * Constructor.
      *
+     * @param beanClass Bean class.
      * @param method The method.
      */
     public MethodAntn(Class<?> beanClass, Method method) {
@@ -77,11 +78,11 @@ public abstract class MethodAntn {
         this.method = method;
     }
 
-    public Method method() {
+    Method method() {
         return method;
     }
 
-    public Class<?> beanClass() {
+    Class<?> beanClass() {
         return beanClass;
     }
 

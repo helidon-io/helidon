@@ -30,6 +30,7 @@ public class TimeoutAntn extends MethodAntn implements Timeout {
     /**
      * Constructor.
      *
+     * @param beanClass Bean class.
      * @param method The method.
      */
     public TimeoutAntn(Class<?> beanClass, Method method) {
