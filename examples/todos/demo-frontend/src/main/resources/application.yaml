@@ -18,9 +18,12 @@ env: docker
 webserver:
   port: 8080
 
+tracing:
+  service: "todo:front"
+  host: "zipkin"
+
 services:
   backend.endpoint: "http://helidon-todos-backend:8854"
-  zipkin.host: "zipkin"
 
 security:
   config:
