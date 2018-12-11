@@ -107,7 +107,8 @@ Answer the prompts for your module's group ID, artifact ID, and version,
 then `cd` to the `<artifactId>` directory you specified.
 
 === Update your `pom.xml`
-Make sure your POM contains these sections:
+Make sure your POM contains these property settings and dependency management
+entries (possibly in addition to others):
 [source,xml,subs="verbatim,attributes"]
 ----
     <properties>
@@ -135,6 +136,8 @@ include::{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
 
 If you run your project from the IDE, the IDE typically handles the main class and places
 dependent JARs on the runtime classpath for you and your pom is now ready to go. 
+
+include::{se-guide-adoc}[tag=runMavenOutsideIDE]
 
 === Create an MP config file
 This file contains settings for the Helidon web server and the 
@@ -436,8 +439,6 @@ _not_ decrement it when the method returns.
 === Rebuild and rerun your application
 Follow the same steps as before, remembering to stop any instance of your application
 that is still running.
-
-include::{se-guide-adoc}[tag=sendRequestsForMetrics]
 
 === Send some requests
 Use the same `curl` commands as before to send requests to
