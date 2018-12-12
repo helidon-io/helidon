@@ -32,6 +32,7 @@ cd
             <class name="org.eclipse.microprofile.fault.tolerance.tck.metrics.ClashingNameTest"/>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.metrics.BulkheadMetricTest">
                 <methods>
+                    <!-- https://github.com/eclipse/microprofile-fault-tolerance/issues/372 -->
                     <exclude name="bulkheadMetricAsyncTest"/>
                 </methods>
             </class>
@@ -70,6 +71,7 @@ cd
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchConfigTest"/>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest">
                 <methods>
+                    <!-- https://github.com/eclipse/microprofile-fault-tolerance/issues/357 -->
                     <exclude name="testBulkheadClassAsynchronous55RetryOverload"/>
                     <exclude name="testBulkheadMethodAsynchronous55RetryOverload"/>
                 </methods>
