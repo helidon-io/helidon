@@ -77,14 +77,6 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Constructor that resets static state.
-     */
-    FaultToleranceExtension() {
-        isFaultToleranceEnabled = true;
-        isFaultToleranceMetricsEnabled = true;
-    }
-
-    /**
      * Returns a boolean indicating if FT is enabled.
      *
      * @return Fault tolerance enabled or disabled.
@@ -111,10 +103,10 @@ public class FaultToleranceExtension implements Extension {
     void registerInterceptorBindings(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
         // Check if fault tolerance and its metrics are enabled
         final Config config = ConfigProvider.getConfig();
-        config.getOptionalValue(MP_FT_NON_FALLBACK_ENABLED, Boolean.class)
-                .ifPresent(v -> isFaultToleranceEnabled = v);
-        config.getOptionalValue(MP_FT_METRICS_ENABLED, Boolean.class)
-                .ifPresent(v -> isFaultToleranceMetricsEnabled = v);
+        isFaultToleranceEnabled = config.getOptionalValue(MP_FT_NON_FALLBACK_ENABLED, Boolean.class)
+                .orElse(true);      // default is enabled
+        isFaultToleranceMetricsEnabled = config.getOptionalValue(MP_FT_METRICS_ENABLED, Boolean.class)
+                .orElse(true);      // default is enabled
 
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Retry.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(CircuitBreaker.class)));
