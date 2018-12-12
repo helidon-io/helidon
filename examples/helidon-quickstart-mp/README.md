@@ -14,7 +14,7 @@ This example implements a simple Hello World REST service using MicroProfile
 
 Verify prerequisites
 ```
-java --version
+java -version
 mvn --version
 docker --version
 minikube version

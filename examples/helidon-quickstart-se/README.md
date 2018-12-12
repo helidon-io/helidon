@@ -13,7 +13,7 @@ This example implements a simple Hello World REST service.
 
 Verify prerequisites
 ```
-java --version
+java -version
 mvn --version
 docker --version
 minikube version

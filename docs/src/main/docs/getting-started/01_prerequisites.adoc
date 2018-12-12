@@ -44,7 +44,7 @@ The following list shows the minimum versions.
 [source,bash]
 .Verify Prerequisites
 ----
-java --version
+java -version
 mvn --version
 docker --version
 kubectl version --short
