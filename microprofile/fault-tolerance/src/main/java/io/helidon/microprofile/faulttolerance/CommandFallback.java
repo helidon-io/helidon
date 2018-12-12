@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import javax.enterprise.inject.spi.CDI;
@@ -25,12 +26,16 @@ import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 
+import static io.helidon.microprofile.faulttolerance.ExceptionUtil.toException;
+
 /**
  * Class CommandFallback.
  */
 class CommandFallback {
 
     private final InvocationContext context;
+
+    private final Throwable throwable;
 
     private Class<? extends FallbackHandler<?>> handlerClass;
 
@@ -41,9 +46,11 @@ class CommandFallback {
      *
      * @param context Invocation context.
      * @param introspector Method introspector.
+     * @param throwable Throwable that resulted in this fallback being called.
      */
-    CommandFallback(InvocationContext context, MethodIntrospector introspector) {
+    CommandFallback(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
         this.context = context;
+        this.throwable = throwable;
 
         // Establish fallback strategy
         final Fallback fallback = introspector.getFallback();
@@ -71,33 +78,56 @@ class CommandFallback {
     public Object execute() throws Exception {
         assert handlerClass != null || fallbackMethod != null;
 
-        updateMetrics();
+        Object result;
+        try {
+            if (handlerClass != null) {
+                // Instantiate handler using CDI
+                FallbackHandler<?> handler = CDI.current().select(handlerClass).get();
+                result = handler.handle(
+                        new ExecutionContext() {
+                            @Override
+                            public Method getMethod() {
+                                return context.getMethod();
+                            }
 
-        if (handlerClass != null) {
-            // Instantiate handler using CDI
-            FallbackHandler<?> handler = CDI.current().select(handlerClass).get();
-            return handler.handle(
-                new ExecutionContext() {
-                    @Override
-                    public Method getMethod() {
-                        return context.getMethod();
-                    }
+                            @Override
+                            public Object[] getParameters() {
+                                return context.getParameters();
+                            }
 
-                    @Override
-                    public Object[] getParameters() {
-                        return context.getParameters();
-                    }
-                }
-            );
-        } else {
-            return fallbackMethod.invoke(context.getTarget(), context.getParameters());
+                            @Override
+                            public Throwable getFailure() {
+                                return throwable;
+                            }
+                        }
+                );
+            } else {
+                result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
+            }
+        } catch (Throwable t) {
+            updateMetrics(t);
+
+            // If InvocationTargetException, then unwrap underlying cause
+            if (t instanceof InvocationTargetException) {
+                t = t.getCause();
+            }
+            throw toException(t);
         }
+
+        updateMetrics(null);
+        return result;
     }
 
     /**
-     * Updates fallback metrics.
+     * Updates fallback metrics and adjust failed invocations based on outcome of fallback.
      */
-    private void updateMetrics() {
-        FaultToleranceMetrics.getCounter(context.getMethod(), FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
+    private void updateMetrics(Throwable throwable) {
+        final Method method = context.getMethod();
+        FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
+
+        // If fallback was successful, it is not a failed invocation
+        if (throwable == null) {
+            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).dec();
+        }
     }
 }

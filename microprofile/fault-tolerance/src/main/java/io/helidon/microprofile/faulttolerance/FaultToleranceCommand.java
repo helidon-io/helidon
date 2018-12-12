@@ -30,8 +30,25 @@ import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
 import org.apache.commons.configuration.AbstractConfiguration;
+import org.eclipse.microprofile.metrics.Histogram;
 
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CLOSED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_OPENED_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_OPEN_TOTAL;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_DURATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.METRIC_NAME_TEMPLATE;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getCounter;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHistogram;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerGauge;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.registerHistogram;
 
 /**
  * Class FaultToleranceCommand.
@@ -122,11 +139,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                                        ? introspector.getBulkhead().value()
                                                        : MAX_THREAD_POOL_SIZE)
                                                    .withMaxQueueSize(
-                                                       introspector.hasBulkhead()
+                                                       introspector.hasBulkhead() && introspector.isAsynchronous()
                                                        ? introspector.getBulkhead().waitingTaskQueue()
                                                        : MAX_THREAD_POOL_QUEUE_SIZE)
                                                    .withQueueSizeRejectionThreshold(
-                                                       introspector.hasBulkhead()
+                                                       introspector.hasBulkhead() && introspector.isAsynchronous()
                                                        ? introspector.getBulkhead().waitingTaskQueue()
                                                        : MAX_THREAD_POOL_QUEUE_SIZE)));
         this.commandKey = commandKey;
@@ -138,37 +155,40 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             this.breakerHelper = new CircuitBreakerHelper(this, introspector.getCircuitBreaker());
 
             // Register gauges for this method
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BREAKER_OPEN_TOTAL,
-                                                "Amount of time the circuit breaker has spent in open state",
-                                                () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.OPEN_MP));
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BREAKER_HALF_OPEN_TOTAL,
-                                                "Amount of time the circuit breaker has spent in half-open state",
-                                                () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.HALF_OPEN_MP));
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BREAKER_CLOSED_TOTAL,
-                                                "Amount of time the circuit breaker has spent in closed state",
-                                                () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.CLOSED_MP));
+            if (isFaultToleranceMetricsEnabled()) {
+                registerGauge(introspector.getMethod(),
+                        BREAKER_OPEN_TOTAL,
+                        "Amount of time the circuit breaker has spent in open state",
+                        () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.OPEN_MP));
+                registerGauge(introspector.getMethod(),
+                        BREAKER_HALF_OPEN_TOTAL,
+                        "Amount of time the circuit breaker has spent in half-open state",
+                        () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.HALF_OPEN_MP));
+                registerGauge(introspector.getMethod(),
+                        BREAKER_CLOSED_TOTAL,
+                        "Amount of time the circuit breaker has spent in closed state",
+                        () -> breakerHelper.getInStateNanos(CircuitBreakerHelper.State.CLOSED_MP));
+            }
         }
 
         if (introspector.hasBulkhead()) {
             bulkheadHelper = new BulkheadHelper(commandKey, introspector.getBulkhead());
-            // Record instance if command is getting queued
-            if (bulkheadHelper.isAtMaxRunningInvocations()) {
-                queuedNanos = System.nanoTime();
-            }
 
-            // Register gauges for this method
-            FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                FaultToleranceMetrics.BULKHEAD_CONCURRENT_EXECUTIONS,
-                                                "Number of currently running executions",
-                                                () -> bulkheadHelper.runningInvocations());
-            if (introspector.isAsynchronous()) {
-                FaultToleranceMetrics.registerGauge(introspector.getMethod(),
-                                                    FaultToleranceMetrics.BULKHEAD_WAITING_QUEUE_POPULATION,
-                                                    "Number of executions currently waiting in the queue",
-                                                    () -> bulkheadHelper.waitingInvocations());
+            if (isFaultToleranceMetricsEnabled()) {
+                // Record nanos to update metrics later
+                queuedNanos = System.nanoTime();
+
+                // Register gauges for this method
+                registerGauge(introspector.getMethod(),
+                        BULKHEAD_CONCURRENT_EXECUTIONS,
+                        "Number of currently running executions",
+                        () -> (long) bulkheadHelper.runningInvocations());
+                if (introspector.isAsynchronous()) {
+                    registerGauge(introspector.getMethod(),
+                            BULKHEAD_WAITING_QUEUE_POPULATION,
+                            "Number of executions currently waiting in the queue",
+                            () -> (long) bulkheadHelper.waitingInvocations());
+                }
             }
         }
     }
@@ -197,11 +217,22 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         if (introspector.hasBulkhead()) {
             bulkheadHelper.markAsRunning(this);
 
-            // Update waiting time histogram
-            if (introspector.isAsynchronous() && queuedNanos != -1L) {
-                FaultToleranceMetrics.getHistogram(introspector.getMethod(),
-                                                   FaultToleranceMetrics.BULKHEAD_WAITING_DURATION)
-                                     .update(System.nanoTime() - queuedNanos);
+            if (isFaultToleranceMetricsEnabled()) {
+                // Register and update waiting time histogram
+                if (introspector.isAsynchronous() && queuedNanos != -1L) {
+                    Method method = introspector.getMethod();
+                    Histogram histogram = getHistogram(method, BULKHEAD_WAITING_DURATION);
+                    if (histogram == null) {
+                        registerHistogram(
+                                String.format(METRIC_NAME_TEMPLATE,
+                                        method.getDeclaringClass().getName(),
+                                        method.getName(),
+                                        BULKHEAD_WAITING_DURATION),
+                                "Histogram of the time executions spend waiting in the queue");
+                        histogram = getHistogram(method, BULKHEAD_WAITING_DURATION);
+                    }
+                    histogram.update(System.nanoTime() - queuedNanos);
+                }
             }
         }
 
@@ -231,7 +262,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         // Ensure our internal state is consistent with Hystrix
         if (introspector.hasCircuitBreaker()) {
             breakerHelper.ensureConsistentState();
-            LOGGER.info("Circuit breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
+            LOGGER.info("Enter: breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
         }
 
         // Record state of breaker
@@ -275,34 +306,39 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                        .anyMatch(c -> c.isAssignableFrom(throwableFinal.getClass()));
                 if (!failOn) {
                     restoreBreaker();       // clears Hystrix counters
-                    updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
-                    throw ExceptionUtil.wrapThrowable(throwable);
+                    updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
+                    throw ExceptionUtil.toWrappedException(throwable);
                 }
             }
 
             /*
              * Special logic for MP circuit breakers to support an arbitrary success
-             * threshold use to return a breaker back to its CLOSED state. Hystrix
+             * threshold used to return a breaker back to its CLOSED state. Hystrix
              * only supports a threshold of 1 here, so additional logic is required.
              */
             synchronized (breakerHelper.getSyncObject()) {
+                // If failure ratio exceeded, then switch state to OPEN_MP
+                if (breakerHelper.getState() == CircuitBreakerHelper.State.CLOSED_MP) {
+                    double failureRatio = breakerHelper.getFailureRatio();
+                    if (failureRatio >= introspector.getCircuitBreaker().failureRatio()) {
+                        breakerWillOpen = true;
+                        breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
+                        runTripBreaker();
+                    }
+                }
+
+                // If latest run failed, may need to switch state to OPEN_MP
                 if (hasFailed) {
                     if (breakerHelper.getState() == CircuitBreakerHelper.State.HALF_OPEN_MP) {
                         // If failed and in HALF_OPEN_MP, we need to force breaker to open
                         runTripBreaker();
                         breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
-                    } else if (breakerHelper.getState() == CircuitBreakerHelper.State.CLOSED_MP) {
-                        // Determine if breaker will open given failure ratio
-                        double failureRatio = breakerHelper.getFailureRatio();
-                        if (failureRatio >= introspector.getCircuitBreaker().failureRatio()) {
-                            breakerWillOpen = true;
-                            breakerHelper.setState(CircuitBreakerHelper.State.OPEN_MP);
-                        }
                     }
-                    updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
-                    throw ExceptionUtil.wrapThrowable(throwable);
+                    updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
+                    throw ExceptionUtil.toWrappedException(throwable);
                 }
 
+                // Check next state of breaker based on outcome
                 if (wasBreakerOpen && isClosedNow) {
                     // Last called was successful
                     breakerHelper.incSuccessCount();
@@ -317,7 +353,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 }
             }
 
-            updateMetricsAfter(throwable, wasBreakerOpen, breakerWillOpen);
+            updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerWillOpen);
         }
 
         // Untrack invocation in a bulkhead
@@ -325,74 +361,89 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             bulkheadHelper.untrackInvocation(this);
         }
 
+        // Display circuit breaker state at exit
+        if (introspector.hasCircuitBreaker()) {
+            LOGGER.info("Exit: breaker for " + getCommandKey() + " in state " + breakerHelper.getState());
+        }
+
         // Outcome of execution
         if (throwable != null) {
-            throw ExceptionUtil.wrapThrowable(throwable);
+            throw ExceptionUtil.toWrappedException(throwable);
         } else {
             return result;
         }
     }
 
-    private void updateMetricsAfter(Throwable throwable, boolean wasBreakerOpen, boolean breakerWillOpen) {
+    private void updateMetricsAfter(Throwable throwable, boolean wasBreakerOpen, boolean isClosedNow,
+                                    boolean breakerWillOpen) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         assert introspector.hasCircuitBreaker();
         Method method = introspector.getMethod();
 
         if (throwable == null) {
             // If no errors increment success counter
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
+            getCounter(method, BREAKER_CALLS_SUCCEEDED_TOTAL).inc();
         } else if (!wasBreakerOpen) {
             // If error and breaker was closed, increment failed counter
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL).inc();
+            getCounter(method, BREAKER_CALLS_FAILED_TOTAL).inc();
             // If it will open, increment counter
             if (breakerWillOpen) {
-                FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_OPENED_TOTAL).inc();
+                getCounter(method, BREAKER_OPENED_TOTAL).inc();
             }
         }
-        if (wasBreakerOpen) {
-            // If breaker was open, increment prevented counter
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.BREAKER_CALLS_PREVENTED_TOTAL).inc();
+        // If breaker was open and still is, increment prevented counter
+        if (wasBreakerOpen && !isClosedNow) {
+            getCounter(method, BREAKER_CALLS_PREVENTED_TOTAL).inc();
         }
     }
 
     /**
-     * Run a failing command for an entire window to force a circuit breaker to
-     * open. Unfortunately, there is no access to the underlying circuit breaker
+     * Run a failing command for an entire window plus one to force a circuit breaker
+     * to open. Unfortunately, there is no access to the underlying circuit breaker
      * so this is the only way to control its internal state. Notice the use of
      * the same {@code commandKey}.
      */
     private void runTripBreaker() {
-        LOGGER.fine("Attempting to trip circuit breaker for command " + commandKey);
-        final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
-        for (int i = 0; i < windowSize; i++) {
-            try {
-                new RunnableCommand(commandKey, () -> {
-                    throw new RuntimeException("Oops");
-                }).execute();
-            } catch (Throwable t) {
-                // ignore
-            }
-        }
         if (!isCircuitBreakerOpen()) {
-            LOGGER.fine("Attempt to manually open breaker failed for command "
+            LOGGER.info("Attempting to trip circuit breaker for command " + commandKey);
+            final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
+            for (int i = 0; i <= windowSize; i++) {
+                try {
+                    new RunnableCommand(commandKey, () -> {
+                        throw new RuntimeException("Oops");
+                    }).execute();
+                } catch (Throwable t) {
+                    // ignore
+                }
+            }
+            if (!isCircuitBreakerOpen()) {
+                LOGGER.info("Attempt to manually open breaker failed for command "
                         + commandKey);
+            }
         }
     }
 
     /**
-     * Run a successful command for an entire window to force a circuit breaker
+     * Run a successful command for an entire window plus one to force a circuit breaker
      * to close. Unfortunately, there is no access to the underlying circuit breaker
      * so this is the only way to control its internal state. Notice the use of
      * the same {@code commandKey}.
      */
     private void restoreBreaker() {
-        LOGGER.fine("Attempting to restore circuit breaker for command " + commandKey);
-        final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
-        for (int i = 0; i < windowSize; i++) {
-            new RunnableCommand(commandKey, () -> {}).execute();
-        }
         if (isCircuitBreakerOpen()) {
-            LOGGER.fine("Attempt to manually close breaker failed for command "
+            LOGGER.info("Attempting to restore circuit breaker for command " + commandKey);
+            final int windowSize = introspector.getCircuitBreaker().requestVolumeThreshold();
+            for (int i = 0; i <= windowSize; i++) {
+                new RunnableCommand(commandKey, () -> {
+                }).execute();
+            }
+            if (isCircuitBreakerOpen()) {
+                LOGGER.info("Attempt to manually close breaker failed for command "
                         + commandKey);
+            }
         }
     }
 

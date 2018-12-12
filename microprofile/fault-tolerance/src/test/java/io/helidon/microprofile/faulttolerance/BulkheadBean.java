@@ -18,6 +18,10 @@ package io.helidon.microprofile.faulttolerance;
 
 import javax.enterprise.context.Dependent;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+
+import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
@@ -33,49 +37,52 @@ public class BulkheadBean {
 
     static final int MAX_CONCURRENT_CALLS = CONCURRENT_CALLS + WAITING_TASK_QUEUE;
 
+    @Asynchronous
     @Bulkhead(value = CONCURRENT_CALLS, waitingTaskQueue = WAITING_TASK_QUEUE)
-    public String execute(long sleepMillis) {
+    public Future<String> execute(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::execute", "success");
         try {
             Thread.sleep(sleepMillis);
         } catch (InterruptedException e) {
             // falls through
         }
-        return Thread.currentThread().getName();
+        return CompletableFuture.completedFuture(Thread.currentThread().getName());
     }
 
+    @Asynchronous
     @Bulkhead(value = CONCURRENT_CALLS + 1, waitingTaskQueue = WAITING_TASK_QUEUE + 1)
-    public String executePlusOne(long sleepMillis) {
+    public Future<String> executePlusOne(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::executePlusOne", "success");
         try {
             Thread.sleep(sleepMillis);
         } catch (InterruptedException e) {
             // falls through
         }
-        return Thread.currentThread().getName();
+        return CompletableFuture.completedFuture(Thread.currentThread().getName());
     }
 
+    @Asynchronous
     @Bulkhead(value = 2, waitingTaskQueue = 1)
-    public String executeNoQueue(long sleepMillis) {
+    public Future<String> executeNoQueue(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::executeNoQueue", "success");
         try {
             Thread.sleep(sleepMillis);
         } catch (InterruptedException e) {
             // falls through
         }
-        return Thread.currentThread().getName();
+        return CompletableFuture.completedFuture(Thread.currentThread().getName());
     }
 
     @Fallback(fallbackMethod = "onFailure")
     @Bulkhead(value = 2, waitingTaskQueue = 1)
-    public String executeNoQueueWithFallback(long sleepMillis) {
+    public Future<String> executeNoQueueWithFallback(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::executeNoQueue", "success");
         try {
             Thread.sleep(sleepMillis);
         } catch (InterruptedException e) {
             // falls through
         }
-        return Thread.currentThread().getName();
+        return CompletableFuture.completedFuture(Thread.currentThread().getName());
     }
 
     public String onFailure(long sleepMillis) {

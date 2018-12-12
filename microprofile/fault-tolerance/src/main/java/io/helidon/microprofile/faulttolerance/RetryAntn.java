@@ -30,10 +30,11 @@ public class RetryAntn extends MethodAntn implements Retry {
     /**
      * Constructor.
      *
+     * @param beanClass Bean class.
      * @param method The method.
      */
-    public RetryAntn(Method method) {
-        super(method);
+    public RetryAntn(Class<?> beanClass, Method method) {
+        super(beanClass, method);
     }
 
     @Override

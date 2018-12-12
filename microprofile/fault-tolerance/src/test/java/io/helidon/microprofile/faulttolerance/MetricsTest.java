@@ -17,6 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -95,7 +96,7 @@ public class MetricsTest extends FaultToleranceTest {
         bean.retryOne(5);
         assertEquals(1, getCounter(bean, "retryOne",
                                    INVOCATIONS_TOTAL, int.class));
-        assertEquals(5, getCounter(bean, "retryOne",
+        assertEquals(0, getCounter(bean, "retryOne",
                                    INVOCATIONS_FAILED_TOTAL, int.class));
     }
 
@@ -107,9 +108,9 @@ public class MetricsTest extends FaultToleranceTest {
         } catch (Exception e) {
             // falls through
         }
-        assertEquals(0, getCounter(bean, "retryTwo",
+        assertEquals(1, getCounter(bean, "retryTwo",
                                    INVOCATIONS_TOTAL, int.class));
-        assertEquals(6, getCounter(bean, "retryTwo",
+        assertEquals(1, getCounter(bean, "retryTwo",
                                    INVOCATIONS_FAILED_TOTAL, int.class));
     }
 
@@ -121,7 +122,7 @@ public class MetricsTest extends FaultToleranceTest {
                                    RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL, int.class));
         assertEquals(1, getCounter(bean, "retryThree",
                                    RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL, int.class));
-        assertEquals(4, getCounter(bean, "retryThree",
+        assertEquals(0, getCounter(bean, "retryThree",
                                    RETRY_CALLS_FAILED_TOTAL, int.class));
         assertEquals(5, getCounter(bean, "retryThree",
                                    RETRY_RETRIES_TOTAL, int.class));
@@ -139,7 +140,7 @@ public class MetricsTest extends FaultToleranceTest {
                                    RETRY_CALLS_SUCCEEDED_NOT_RETRIED_TOTAL, int.class));
         assertEquals(0, getCounter(bean, "retryFour",
                                    RETRY_CALLS_SUCCEEDED_RETRIED_TOTAL, int.class));
-        assertEquals(5, getCounter(bean, "retryFour",
+        assertEquals(1, getCounter(bean, "retryFour",
                                    RETRY_CALLS_FAILED_TOTAL, int.class));
         assertEquals(5, getCounter(bean, "retryFour",
                                    RETRY_RETRIES_TOTAL, int.class));
@@ -250,16 +251,16 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testBulkheadMetrics() throws Exception {
         MetricsBean bean = newBean(MetricsBean.class);
-        CompletableFuture<String>[] calls = getConcurrentCalls(
+        Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.concurrent(100), BulkheadBean.MAX_CONCURRENT_CALLS);
-        CompletableFuture.allOf(calls).get();
-        assertEquals(0,
+        getThreadNames(calls);
+        assertEquals(0L,
                      getGauge(bean, "concurrent",
                               BULKHEAD_CONCURRENT_EXECUTIONS, long.class).getValue());
         assertEquals(BulkheadBean.MAX_CONCURRENT_CALLS,
                      getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_ACCEPTED_TOTAL, long.class));
-        assertEquals(0,
+        assertEquals(0L,
                      getCounter(bean, "concurrent",
                                 BULKHEAD_CALLS_REJECTED_TOTAL, long.class));
         assertEquals(BulkheadBean.MAX_CONCURRENT_CALLS,

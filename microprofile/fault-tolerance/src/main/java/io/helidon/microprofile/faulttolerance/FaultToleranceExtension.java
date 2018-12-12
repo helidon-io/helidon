@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -35,6 +34,7 @@ import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
@@ -48,17 +48,50 @@ import org.eclipse.microprofile.faulttolerance.Timeout;
  */
 public class FaultToleranceExtension implements Extension {
 
+    static final String MP_FT_NON_FALLBACK_ENABLED = "MP_Fault_Tolerance_NonFallback_Enabled";
+    static final String MP_FT_METRICS_ENABLED = "MP_Fault_Tolerance_Metrics_Enabled";
+
     private static boolean isFaultToleranceEnabled = true;
 
-    private Set<Method> registeredMethods;
+    private static boolean isFaultToleranceMetricsEnabled = true;
+
+    private Set<BeanMethod> registeredMethods;
+
+    private static class BeanMethod {
+
+        private final Class<?> beanClass;
+        private final Method method;
+
+        BeanMethod(Class<?> beanClass, Method method) {
+            this.beanClass = beanClass;
+            this.method = method;
+        }
+
+        Class<?> beanClass() {
+            return beanClass;
+        }
+
+        Method method() {
+            return method;
+        }
+    }
 
     /**
      * Returns a boolean indicating if FT is enabled.
      *
      * @return Fault tolerance enabled or disabled.
      */
-    static boolean isIsFaultToleranceEnabled() {
+    static boolean isFaultToleranceEnabled() {
         return isFaultToleranceEnabled;
+    }
+
+    /**
+     * Returns a boolean indicating if FT metrics are enabled.
+     *
+     * @return Fault tolerance metrics enabled or disabled.
+     */
+    static boolean isFaultToleranceMetricsEnabled() {
+        return isFaultToleranceMetricsEnabled;
     }
 
     /**
@@ -68,10 +101,12 @@ public class FaultToleranceExtension implements Extension {
      * @param bm Bean manager instance.
      */
     void registerInterceptorBindings(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
-        // Check if fault tolerance is enabled
-        Optional<Boolean> enabled = ConfigProvider.getConfig().getOptionalValue(
-                "MP_Fault_Tolerance_NonFallback_Enabled", Boolean.class);
-        isFaultToleranceEnabled = enabled.isPresent() ? enabled.get() : true;
+        // Check if fault tolerance and its metrics are enabled
+        final Config config = ConfigProvider.getConfig();
+        isFaultToleranceEnabled = config.getOptionalValue(MP_FT_NON_FALLBACK_ENABLED, Boolean.class)
+                .orElse(true);      // default is enabled
+        isFaultToleranceMetricsEnabled = config.getOptionalValue(MP_FT_METRICS_ENABLED, Boolean.class)
+                .orElse(true);      // default is enabled
 
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Retry.class)));
         discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(CircuitBreaker.class)));
@@ -91,8 +126,8 @@ public class FaultToleranceExtension implements Extension {
     void registerFaultToleranceMethods(@Observes ProcessManagedBean<?> event) {
         AnnotatedType<?> type = event.getAnnotatedBeanClass();
         for (AnnotatedMethod<?> method : type.getMethods()) {
-            if (isFaultToleranceMethod(method.getJavaMember())) {
-                getRegisteredMethods().add(method.getJavaMember());
+            if (isFaultToleranceMethod(type.getJavaClass(), method.getJavaMember())) {
+                getRegisteredMethods().add(new BeanMethod(type.getJavaClass(), method.getJavaMember()));
             }
         }
     }
@@ -104,30 +139,33 @@ public class FaultToleranceExtension implements Extension {
      */
     void registerFaultToleranceMetrics(@Observes AfterDeploymentValidation validation) {
         if (FaultToleranceMetrics.enabled()) {
-            getRegisteredMethods().stream().forEach(method -> {
+            getRegisteredMethods().stream().forEach(beanMethod -> {
+                final Method method = beanMethod.method();
+                final Class<?> beanClass = beanMethod.beanClass();
+
                 // Counters for all methods
                 FaultToleranceMetrics.registerMetrics(method);
 
                 // Metrics depending on the annotations present
-                if (MethodAntn.isAnnotationPresent(method, Retry.class)) {
+                if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
                     FaultToleranceMetrics.registerRetryMetrics(method);
-                    new RetryAntn(method).validate();
+                    new RetryAntn(beanClass, method).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)) {
+                if (MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)) {
                     FaultToleranceMetrics.registerCircuitBreakerMetrics(method);
-                    new CircuitBreakerAntn(method).validate();
+                    new CircuitBreakerAntn(beanClass, method).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(method, Timeout.class)) {
+                if (MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)) {
                     FaultToleranceMetrics.registerTimeoutMetrics(method);
-                    new TimeoutAntn(method).validate();
+                    new TimeoutAntn(beanClass, method).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(method, Bulkhead.class)) {
+                if (MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)) {
                     FaultToleranceMetrics.registerBulkheadMetrics(method);
-                    new BulkheadAntn(method).validate();
+                    new BulkheadAntn(beanClass, method).validate();
                 }
-                if (MethodAntn.isAnnotationPresent(method, Fallback.class)) {
+                if (MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class)) {
                     FaultToleranceMetrics.registerFallbackMetrics(method);
-                    new FallbackAntn(method).validate();
+                    new FallbackAntn(beanClass, method).validate();
                 }
             });
         }
@@ -138,7 +176,7 @@ public class FaultToleranceExtension implements Extension {
      *
      * @return The set.
      */
-    private Set<Method> getRegisteredMethods() {
+    private Set<BeanMethod> getRegisteredMethods() {
         if (registeredMethods == null) {
             registeredMethods = new CopyOnWriteArraySet<>();
         }
@@ -163,16 +201,17 @@ public class FaultToleranceExtension implements Extension {
      * Determines if a method has any fault tolerance annotations. Only {@code @Fallback}
      * is considered if fault tolerance is disabled.
      *
+     * @param beanClass The bean.
      * @param method The method to check.
      * @return Outcome of test.
      */
-    static boolean isFaultToleranceMethod(Method method) {
-        return MethodAntn.isAnnotationPresent(method, Retry.class)
-                || MethodAntn.isAnnotationPresent(method, CircuitBreaker.class)
-                || MethodAntn.isAnnotationPresent(method, Bulkhead.class)
-                || MethodAntn.isAnnotationPresent(method, Timeout.class)
-                || MethodAntn.isAnnotationPresent(method, Asynchronous.class)
-                || MethodAntn.isAnnotationPresent(method, Fallback.class);
+    static boolean isFaultToleranceMethod(Class<?> beanClass, Method method) {
+        return MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)
+                || MethodAntn.isAnnotationPresent(beanClass, method, CircuitBreaker.class)
+                || MethodAntn.isAnnotationPresent(beanClass, method, Bulkhead.class)
+                || MethodAntn.isAnnotationPresent(beanClass, method, Timeout.class)
+                || MethodAntn.isAnnotationPresent(beanClass, method, Asynchronous.class)
+                || MethodAntn.isAnnotationPresent(beanClass, method, Fallback.class);
     }
 
     /**

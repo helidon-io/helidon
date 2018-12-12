@@ -29,10 +29,11 @@ public class BulkheadAntn extends MethodAntn implements Bulkhead {
     /**
      * Constructor.
      *
+     * @param beanClass Bean class.
      * @param method The method.
      */
-    public BulkheadAntn(Method method) {
-        super(method);
+    public BulkheadAntn(Class<?> beanClass, Method method) {
+        super(beanClass, method);
     }
 
     @Override

@@ -48,7 +48,8 @@ public class CommandInterceptor {
                         + "::" + context.getMethod().getName() + "'");
 
             // Create method introspector and executer retrier
-            final MethodIntrospector introspector = new MethodIntrospector(context.getMethod());
+            final MethodIntrospector introspector = new MethodIntrospector(
+                    context.getTarget().getClass(), context.getMethod());
             final CommandRetrier retrier = new CommandRetrier(context, introspector);
             return retrier.execute();
         } catch (Throwable t) {

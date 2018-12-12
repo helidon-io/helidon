@@ -16,8 +16,8 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.junit.jupiter.api.Test;
@@ -33,32 +33,31 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class BulkheadTest extends FaultToleranceTest {
 
     @Test
-    public void testBulkhead() throws Exception {
+    public void testBulkhead() {
         BulkheadBean bean = newBean(BulkheadBean.class);
-        CompletableFuture<String>[] calls = getConcurrentCalls(
+        Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.execute(100), bean.MAX_CONCURRENT_CALLS);
-        CompletableFuture.allOf(calls).get();
         assertThat(getThreadNames(calls).size(), is(bean.CONCURRENT_CALLS));
     }
+
 
     @Test
     public void testBulkheadPlusOne() throws Exception {
         BulkheadBean bean = newBean(BulkheadBean.class);
-        CompletableFuture<String>[] calls = getConcurrentCalls(
+        Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executePlusOne(100), bean.MAX_CONCURRENT_CALLS + 2);
-        CompletableFuture.allOf(calls).get();
         assertThat(getThreadNames(calls).size(), is(bean.CONCURRENT_CALLS + 1));
     }
 
     @Test
     public void testBulkheadNoQueue() throws Exception {
         BulkheadBean bean = newBean(BulkheadBean.class);
-        CompletableFuture<String>[] calls = getConcurrentCalls(
+        Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueue(2000), 10);
         try {
-            CompletableFuture.allOf(calls).get();
-        } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof BulkheadException);
+            getThreadNames(calls);
+        } catch (RuntimeException e) {
+            assertTrue(e.getCause().getCause() instanceof BulkheadException);
             return;
         }
         fail("ExecutionException was expected!");
@@ -67,8 +66,8 @@ public class BulkheadTest extends FaultToleranceTest {
     @Test
     public void testBulkheadNoQueueWithFallback() throws Exception {
         BulkheadBean bean = newBean(BulkheadBean.class);
-        CompletableFuture<String>[] calls = getConcurrentCalls(
+        Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueueWithFallback(2000), 10);
-        CompletableFuture.allOf(calls).get();
+        getThreadNames(calls);
     }
 }

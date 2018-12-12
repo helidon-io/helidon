@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
 import javax.enterprise.inject.spi.CDI;
 
@@ -31,14 +30,14 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.getRealClass;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 
 /**
  * Class FaultToleranceMetrics.
  */
 class FaultToleranceMetrics {
-    private static final Logger LOGGER = Logger.getLogger(FaultToleranceMetrics.class.getName());
 
-    private static final String METRIC_NAME_TEMPLATE = "ft.%s.%s.%s";
+    static final String METRIC_NAME_TEMPLATE = "ft.%s.%s.%s";
 
     private static MetricRegistry metricRegistry;
 
@@ -106,6 +105,10 @@ class FaultToleranceMetrics {
      * @param method The method.
      */
     static void registerMetrics(Method method) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         registerCounter(
             String.format(METRIC_NAME_TEMPLATE,
                           method.getDeclaringClass().getName(),
@@ -130,6 +133,10 @@ class FaultToleranceMetrics {
     static final String RETRY_RETRIES_TOTAL = "retry.retries.total";
 
     static void registerRetryMetrics(Method method) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         registerCounter(
             String.format(METRIC_NAME_TEMPLATE,
                           method.getDeclaringClass().getName(),
@@ -164,6 +171,10 @@ class FaultToleranceMetrics {
     static final String TIMEOUT_CALLS_NOT_TIMED_OUT_TOTAL = "timeout.callsNotTimedOut.total";
 
     static void registerTimeoutMetrics(Method method) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         registerHistogram(
             String.format(METRIC_NAME_TEMPLATE,
                           method.getDeclaringClass().getName(),
@@ -196,6 +207,10 @@ class FaultToleranceMetrics {
     static final String BREAKER_HALF_OPEN_TOTAL = "circuitbreaker.halfOpen.total";
 
     static void registerCircuitBreakerMetrics(Method method) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         registerCounter(
             String.format(METRIC_NAME_TEMPLATE,
                           method.getDeclaringClass().getName(),
@@ -228,6 +243,10 @@ class FaultToleranceMetrics {
     static final String FALLBACK_CALLS_TOTAL = "fallback.calls.total";
 
     static void registerFallbackMetrics(Method method) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         registerCounter(
             String.format(METRIC_NAME_TEMPLATE,
                           method.getDeclaringClass().getName(),
@@ -246,6 +265,10 @@ class FaultToleranceMetrics {
     static final String BULKHEAD_WAITING_DURATION = "bulkhead.waiting.duration";
 
     static void registerBulkheadMetrics(Method method) {
+        if (!isFaultToleranceMetricsEnabled()) {
+            return;
+        }
+
         registerCounter(
             String.format(METRIC_NAME_TEMPLATE,
                           method.getDeclaringClass().getName(),
@@ -265,12 +288,6 @@ class FaultToleranceMetrics {
                           BULKHEAD_EXECUTION_DURATION),
             "Histogram of method execution times. This does not include any "
             + "time spent waiting in the bulkhead queue.");
-        registerHistogram(
-            String.format(METRIC_NAME_TEMPLATE,
-                          method.getDeclaringClass().getName(),
-                          method.getName(),
-                          BULKHEAD_WAITING_DURATION),
-            "Histogram of the time executions spend waiting in the queue");
     }
 
     // -- Utility methods ----------------------------------------------------
@@ -297,7 +314,7 @@ class FaultToleranceMetrics {
      * @param description Description of histogram.
      * @return The histogram created.
      */
-    private static Histogram registerHistogram(String name, String description) {
+    static Histogram registerHistogram(String name, String description) {
         return getMetricRegistry().histogram(new Metadata(name,
                                                           name,
                                                           description,

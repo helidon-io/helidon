@@ -22,14 +22,34 @@ package io.helidon.microprofile.faulttolerance;
 public class ExceptionUtil {
 
     /**
+     * Exception used internally to propagate other exceptions.
+     */
+    static class WrappedException extends RuntimeException {
+        WrappedException(Throwable t) {
+            super(t);
+        }
+    }
+
+    /**
+     * Wrap throwable into {@code Exception}.
+     *
+     * @param throwable The throwable.
+     * @return A {@code RuntimeException}.
+     */
+    public static Exception toException(Throwable throwable) {
+        return throwable instanceof Exception ? (Exception) throwable
+                : new RuntimeException(throwable);
+    }
+
+    /**
      * Wrap throwable into {@code RuntimeException}.
      *
      * @param throwable The throwable.
      * @return A {@code RuntimeException}.
      */
-    public static RuntimeException wrapThrowable(Throwable throwable) {
-        return throwable instanceof RuntimeException ? (RuntimeException) throwable
-                                                     : new RuntimeException(throwable);
+    public static WrappedException toWrappedException(Throwable throwable) {
+        return throwable instanceof WrappedException ? (WrappedException) throwable
+                : new WrappedException(throwable);
     }
 
     private ExceptionUtil() {

@@ -33,10 +33,11 @@ public class FallbackAntn extends MethodAntn implements Fallback {
     /**
      * Constructor.
      *
+     * @param beanClass Bean class.
      * @param method The method.
      */
-    public FallbackAntn(Method method) {
-        super(method);
+    public FallbackAntn(Class<?> beanClass, Method method) {
+        super(beanClass, method);
     }
 
     @Override
@@ -51,11 +52,11 @@ public class FallbackAntn extends MethodAntn implements Fallback {
         }
 
         // Fallback method must be compatible
-        Method method = getMethod();
+        Method method = method();
         if (!methodName.isEmpty()) {
             try {
                 final Method fallbackMethod = method.getDeclaringClass().getMethod(methodName,
-                        getMethod().getParameterTypes());
+                        method().getParameterTypes());
                 if (!fallbackMethod.getReturnType().isAssignableFrom(method.getReturnType())
                         && !method.getReturnType().isAssignableFrom(Future.class)) {        // async
                     throw new FaultToleranceDefinitionException("Fallback method return type "
