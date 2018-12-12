@@ -25,6 +25,7 @@
 = The RESTful Web Service Guide
 :description: Helidon guide restful web service
 :keywords: helidon, guide, example
+:toc: preamble
 
 Create and build a RESTful web service as your first Helidon SE application.
 
@@ -163,8 +164,7 @@ include::../resources/logging.properties[tag=loggingProps]
 In general, your application can implement multiple services, each tied to its own
 URL path. We'll start with just one service: the greeting service.
 
-Create a new Java class `GreetService.java` as follows. Note that along the way 
-you or your IDE will be adding these Java `import` statements:
+Create a new Java class `GreetService.java` as follows. Add these Java `import` statements:
 [source,java]
 ----
 include::{greet-service}[tags=importsStart;importsWebServer]
@@ -228,7 +228,7 @@ interpreting the end of the path as the new greeting string.
 You need just a little more code so your app starts the Helidon web server
 and makes it aware of your greeting service.
 
-Along the way you or your IDE will be adding these Java `import` statements:
+Add these Java `import` statements:
 [source,java]
 ----
 include::{main-class}[tags=importsStart;importsWebServer;importsEnd]
@@ -289,30 +289,34 @@ and run it like this:
 java -jar target/your-jar-name.jar
 
 Once you have started your app, from another command window run these commands 
-to access its three functions (order is important for the last two):
+to access its functions (order is important for the last two):
 [[curl-command-table]]
 |====
-|Command |Result
+|Command |Result |Function
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet
 a|[listing]
 {"message":"Hello World!"}
+|Returns a greeting with no personalization
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Joe
 a|[listing]
 {"message":"Hello Joe!"}
+|Returns the personalized greeting
 
 a|[source,bash]
 curl -X PUT http://localhost:8080/greet/greeting/Hola
 a|[listing]
 {"greeting":"Hola"}
+|Changes the greeting
 
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
 a|[listing]
 {"message":"Hola Jose!"}
+|Shows that the greeting change took effect
 |====
 // end::buildAndRun[]
 
@@ -323,7 +327,7 @@ Two common approaches for checking health, often used together, are:
 
 - readiness - a simple verification that the service has been started, has initialized itself,
 and is ready to respond to requests; and
-- liveness - often a more thorough assessment of if
+- liveness - often a more thorough assessment of whether
 and how well the service can do its job.
 
 For example, Kubernetes can ping your service's 
@@ -372,7 +376,7 @@ include::{greet-service}[tag=checkHealth]
 Now let's add the code to actually implement the readiness and liveness endpoints to
 to the `Main` class.
 
-Along the way, you or your IDE will need to add 
+Add these imports:
 [source,java]
 include::{main-class}[tags=importsHealth1;importsHealth2;importsHealth3]
 
@@ -406,9 +410,11 @@ include::{main-class}[tag=createRoutingHealth]
 These link the health-related endpoints your code is exposing to the new methods.
 
 // tag::rebuildAndRerunService[]
-=== Rebuild and rerun your service
-Follow the same steps you did before. Make sure you have stopped any earlier 
-instance of your service to free up the port.
+=== Stop, rebuild and rerun your service
+
+. Stop any running instance of your app.
+. Rebuild the app and then run it.
+
 // end::rebuildAndRerunService[]
 
 // tag::tryReadiness[]
@@ -468,7 +474,7 @@ include::{pom}[tag=metricsDependency]
 ----
 . Enable metrics in `Main.java`
 +
-You or your IDE will add this import:
+Add these imports:
 +
 [source,java]
 ----
@@ -503,7 +509,7 @@ include::{main-class}[tag=createRoutingFull]
 
 . Revise `GreetService.java` for metrics
 +
-You or your IDE will add these imports:
+Add these imports:
 +
 [source,java]
 ----
@@ -610,8 +616,9 @@ The request count is higher because the access to `/metrics` to retrieve the
 monitoring data is _not_ handled by our app's rules and filters but by the 
 metrics infrastructure.
 
-== Download the example source (optional) [[downloading]]
-Instead of writing the application yourself, you can download it.
+== (Optional) Download the example source [[downloading]]
+Instead of building the application using the code snippets in this guide, 
+you can download it.
 
 
 . Clone the link:https://github.com/oracle/helidon[`git` workspace

@@ -35,7 +35,7 @@
 = The MP RESTful Web Service Guide
 :description: Helidon MP guide restful web service
 :keywords: helidon, guide, example, mp
-:toc:
+:toc: preamble
 
 Create and build a JAX-RS RESTful web service as your first Helidon MP application.
 
@@ -175,7 +175,7 @@ can set via HTTP.
 The app stores the current message in a JAX-RS bean so we can inject it where
 we need it.
 
-You or your IDE will add these imports along the way:
+Add these imports:
 [source,java]
 ----
 include::{greeting-message-class}[tags=mainImports;mpImports]
@@ -219,7 +219,7 @@ include::{greeting-message-class}[tag=setter]
 === Create a JAX-RS root resource for the application
 This class defines the endpoints for the application.
 
-You or your IDE will add these imports along the way:
+Add these imports:
 [source,java]
 ----
 include::{greet-resource-class}[tag=javaxImports]
@@ -232,6 +232,7 @@ all endpoints in the resource share.
 [source,java]
 ----
 include::{greet-resource-class}[tag=classDecl]
+}
 ----
 
 . Create a private field for the application's `GreetingMessage`
@@ -290,7 +291,7 @@ include::{greet-resource-class}[tag=setGreeting]
 
 === Add an `Application` class
 JAX-RS looks for an `Application`. Create `GreetApplication.java`.
-You or your IDE will add these imports:
+Add these imports:
 [source,java]
 ----
 include::{greet-application-class}[tags=javaImports;helidonImports]
@@ -304,10 +305,12 @@ include::{greet-application-class}[tags=greetAppBody;!healthAdditionToGetClasses
 <1> Have JAX-RS create only one instance of this class.
 <2> No path prefix for this application.
 <3> Class must extend `javax.ws.rs.core.Application`.
-<4> Reports the resource classes in the application.
+
+The `getClasses` method reports the resource classes in the application. We will
+add to this method later.
 
 === Write the `Main` class
-You or your IDE will add these imports:
+Add these imports:
 [source,java]
 ----
 include::{main-class}[tags=javaImports;helidonMPImports]
@@ -345,7 +348,9 @@ include::{se-guide-adoc}[tag=addHealthChecksIntro]
 
 === Add a new JAX-RS resource class
 Create `HealthResource.java` to define the endpoints for checking if the service is
-active and if it is ready. You or your IDE will add these imports:
+active and if it is ready. 
+
+Add these imports:
 [source,java]
 ----
 include::{health-resource-class}[tag=javaxImports]
@@ -356,6 +361,7 @@ include::{health-resource-class}[tag=javaxImports]
 [source,java]
 ----
 include::{health-resource-class}[tag=classDecl]
+}
 ----
 
 . Declare an injected instance field to refer to the greeting message resource. This
@@ -398,7 +404,12 @@ include::{health-resource-class}[tag=readyMethod]
 
 === Update `GreetApplication`
 In the `getClasses` method add `HealthResource.class` to the arguments
-passed to `CollectionsHelper.setOf`. 
+passed to `CollectionsHelper.setOf`:
+
+[source,java]
+----
+include::{greet-application-class}[tags=getClassesMethod]
+----
 
 include::{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
 
@@ -419,7 +430,7 @@ reported here have the same values as for the Helidon SE RESTful web
 service example. In a real application we might measure the `update` method separately
 from the `get` methods.)
 +
-Your or your IDE will add these imports:
+Add these imports:
 +
 [source,java]
 ----
@@ -436,9 +447,10 @@ include::{greet-resource-class}[tag=countedAnno]
 <4> Indicates that the metrics system should increment the counter on each invocation but
 _not_ decrement it when the method returns. 
 
-=== Rebuild and rerun your application
-Follow the same steps as before, remembering to stop any instance of your application
-that is still running.
+=== Stop, rebuild and rerun your application
+
+. Stop any running instance of your app.
+. Rebuild the app and then run it.
 
 === Send some requests
 Use the same `curl` commands as before to send requests to
@@ -489,8 +501,9 @@ counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
-== Download the example source (optional) [[downloading]]
-Instead of writing the application yourself, you can download it.
+== (Optional) Download the example source [[downloading]]
+Instead of building the application using the code snippets in this guide, 
+you can download it.
 
 . Clone the link:https://github.com/oracle/helidon[`git` workspace
 for Helidon]

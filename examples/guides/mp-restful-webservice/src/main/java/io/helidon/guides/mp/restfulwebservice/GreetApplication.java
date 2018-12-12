@@ -34,8 +34,9 @@ import io.helidon.common.CollectionsHelper;
 @ApplicationPath("/") // <2>
 public class GreetApplication extends Application { // <3>
 
+    // tag::getClassesMethod[]
     @Override
-    public Set<Class<?>> getClasses() { // <4>
+    public Set<Class<?>> getClasses() {
         return CollectionsHelper.setOf(
                 GreetResource.class
                 // tag::healthAdditionToGetClasses[]
@@ -43,5 +44,6 @@ public class GreetApplication extends Application { // <3>
                 // end::healthAdditionToGetClasses[]
         );
     }
+    // end::getClassesMethod[]
 }
 // end::greetAppBody[]
