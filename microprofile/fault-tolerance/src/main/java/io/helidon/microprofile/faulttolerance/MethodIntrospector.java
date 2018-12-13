@@ -33,7 +33,7 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
-import static io.helidon.microprofile.faulttolerance.MethodAntn.getProperty;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
 
 /**
@@ -218,27 +218,20 @@ class MethodIntrospector {
         final String annotationType = clazz.getSimpleName();
 
         // Check if property defined at method level
-        String methodLevel = String.format("%s/%s/%s/enabled",
-                method.getDeclaringClass().getName(),
-                method.getName(),
-                annotationType);
-        value = getProperty(methodLevel);
+        value = getParameter(method.getDeclaringClass().getName(), method.getName(),
+                annotationType, "enabled");
         if (value != null) {
             return Boolean.valueOf(value);
         }
 
         // Check if property defined at class level
-        String classLevel = String.format("%s/%s/enabled",
-                method.getDeclaringClass().getName(),
-                annotationType);
-        value = getProperty(classLevel);
+        value = getParameter(method.getDeclaringClass().getName(), annotationType, "enabled");
         if (value != null) {
             return Boolean.valueOf(value);
         }
 
         // Check if property defined at global level
-        String globalLevel = String.format("%s/enabled", annotationType);
-        value = getProperty(globalLevel);
+        value = getParameter(annotationType, "enabled");
         if (value != null) {
             return Boolean.valueOf(value);
         }
