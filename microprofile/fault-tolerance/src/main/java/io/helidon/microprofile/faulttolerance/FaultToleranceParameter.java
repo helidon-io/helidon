@@ -17,7 +17,6 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.NoSuchElementException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -55,9 +54,7 @@ class FaultToleranceParameter {
     private static String getProperty(String name) {
         try {
             String value = ConfigProvider.getConfig().getValue(name, String.class);
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found config property '" + name + "' value '" + value + "'");
-            }
+            LOGGER.fine(() -> "Found config property '" + name + "' value '" + value + "'");
             return value;
         } catch (NoSuchElementException e) {
             return null;
