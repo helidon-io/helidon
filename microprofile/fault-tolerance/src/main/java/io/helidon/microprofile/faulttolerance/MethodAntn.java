@@ -20,12 +20,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.eclipse.microprofile.config.ConfigProvider;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 
 /**
  * Class MethodAntn.
@@ -177,31 +176,20 @@ public abstract class MethodAntn {
 
         // Check property depending on matching type
         if (type == MatchingType.METHOD) {
-            String methodLevel = String.format("%s/%s/%s/%s",
-                    method.getDeclaringClass().getName(),
-                    method.getName(),
-                    annotationType,
-                    parameter);
-            value = getProperty(methodLevel);
+            value = getParameter(method.getDeclaringClass().getName(), method.getName(),
+                    annotationType, parameter);
             if (value != null) {
                 return value;
             }
         } else if (type == MatchingType.CLASS) {
-            String classLevel = String.format("%s/%s/%s",
-                    method.getDeclaringClass().getName(),
-                    annotationType,
-                    parameter);
-            value = getProperty(classLevel);
+            value = getParameter(method.getDeclaringClass().getName(), annotationType, parameter);
             if (value != null) {
                 return value;
             }
         }
 
         // Check if property defined at global level
-        String globalLevel = String.format("%s/%s",
-                annotationType,
-                parameter);
-        value = getProperty(globalLevel);
+        value = getParameter(annotationType, parameter);
         if (value != null) {
             return value;
         }
@@ -233,23 +221,5 @@ public abstract class MethodAntn {
             }
         }
         return (Class<? extends Throwable>[]) result.toArray(new Class[0]);
-    }
-
-    /**
-     * Returns the value of a property using the MP config API.
-     *
-     * @param name Property name.
-     * @return Property value or {@code null} if it does not exist.
-     */
-    static String getProperty(String name) {
-        try {
-            String value = ConfigProvider.getConfig().getValue(name, String.class);
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine("Found config property '" + name + "' value '" + value + "'");
-            }
-            return value;
-        } catch (NoSuchElementException e) {
-            return null;
-        }
     }
 }
