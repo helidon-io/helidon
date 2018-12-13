@@ -40,6 +40,14 @@
 
     <modules>
         <module>arquillian</module>
-        <module>tck</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>tck</id>
+            <modules>
+                <module>tck</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
