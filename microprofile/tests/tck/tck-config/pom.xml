@@ -70,14 +70,6 @@
                         <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
-                <dependencies>
-                    <!-- runs both junit5 and testng providers -->
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-testng</artifactId>
-                        <version>${version.plugin.surefire}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

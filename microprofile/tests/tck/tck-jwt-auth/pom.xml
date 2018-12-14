@@ -82,13 +82,6 @@
                     </suiteXmlFiles>
                     <forkCount>1</forkCount>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-testng</artifactId>
-                        <version>${version.plugin.surefire}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
