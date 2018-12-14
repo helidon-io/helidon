@@ -31,7 +31,7 @@ import io.helidon.common.http.MediaType;
  * <pre>{@code
  * // Server content of attached '/static/pictures' on '/pictures'
  * Routing.builder()
- *        .register("/pics", StaticContent.create("/static/pictures"))
+ *        .register("/pics", StaticContentSupport.create("/static/pictures"))
  *        .build()
  * }</pre>
  * <p>
