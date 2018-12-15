@@ -131,9 +131,9 @@ curl -X GET http://localhost:8080/greet/Jose
 
 == Build a Docker Image
 
-The project also contains a Docker file so that you can easily
-build and run a docker image. Because the example's runtime
-dependencies are already in `target/libs`, the Docker file is
+The project also contains a Dockerfile so that you can easily
+build and run a Docker image. Because the example's runtime
+dependencies are already in `target/libs`, the Dockerfile is
 pretty simple (see `target/Dockerfile`). To build the Docker
 image, you need to have Docker installed and running on your system.
 
