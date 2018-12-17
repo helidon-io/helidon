@@ -37,7 +37,6 @@ import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
