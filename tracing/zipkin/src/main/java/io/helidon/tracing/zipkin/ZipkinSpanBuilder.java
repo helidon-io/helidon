@@ -18,6 +18,8 @@ package io.helidon.tracing.zipkin;
 
 import java.util.List;
 
+import io.helidon.tracing.Tag;
+
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -32,9 +34,9 @@ import io.opentracing.Tracer;
  */
 class ZipkinSpanBuilder implements Tracer.SpanBuilder {
     private final Tracer.SpanBuilder spanBuilder;
-    private final List<Tag> tags;
+    private final List<Tag<?>> tags;
 
-    ZipkinSpanBuilder(Tracer.SpanBuilder spanBuilder, List<Tag> tags) {
+    ZipkinSpanBuilder(Tracer.SpanBuilder spanBuilder, List<Tag<?>> tags) {
         this.spanBuilder = spanBuilder;
         this.tags = tags;
     }

@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
+package io.helidon.tracing.microprofile;
+
+import io.helidon.tracing.jersey.TracingFilter;
+
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
- * @see io.helidon.tracing.spi.TracerProvider
- * @see io.helidon.tracing.TracerBuilder
+ * Unit test for {@link TracingFilter}.
  */
-module io.helidon.tracing {
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires transitive opentracing.api;
-    requires opentracing.noop;
-    requires opentracing.util;
+class TracingFilterTest {
 
-    exports io.helidon.tracing;
-    exports io.helidon.tracing.spi;
-
-    uses io.helidon.tracing.spi.TracerProvider;
 }

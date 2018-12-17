@@ -42,8 +42,8 @@ import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 import static io.helidon.security.jersey.ClientSecurityFeature.PROPERTY_CONTEXT;
-import static io.helidon.tracing.jersey.client.TracingClientFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
-import static io.helidon.tracing.jersey.client.TracingClientFilter.TRACER_PROPERTY_NAME;
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
 
 /**
  * Client to invoke the TODO backend service.

@@ -25,31 +25,38 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-tracing-jersey-client</artifactId>
-    <name>Helidon Tracing Jersey Client</name>
+    <artifactId>helidon-tracing-jersey</artifactId>
+    <name>Helidon Tracing Jersey</name>
 
     <description>
-        Support for propagation of tracing information when
-        using Jersey Client.
-        This library can be used with Helidon-SE.
-        When used with helidon-tracing-microprofile, automated propagation of tracing context is done,
-          there is no need to configure the client or request in any way.
+        Support for distributed tracing in Jersey server.
     </description>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-jersey-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
+            <artifactId>jersey-server</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -18,6 +18,8 @@ package io.helidon.tracing.zipkin;
 
 import java.util.List;
 
+import io.helidon.tracing.Tag;
+
 import brave.opentracing.BraveTracer;
 import io.opentracing.ScopeManager;
 import io.opentracing.Span;
@@ -35,9 +37,9 @@ import io.opentracing.propagation.Format;
  */
 class ZipkinTracer implements Tracer {
     private final BraveTracer tracer;
-    private final List<Tag> tags;
+    private final List<Tag<?>> tags;
 
-    ZipkinTracer(BraveTracer tracer, List<Tag> tags) {
+    ZipkinTracer(BraveTracer tracer, List<Tag<?>> tags) {
         this.tracer = tracer;
         this.tags = tags;
     }

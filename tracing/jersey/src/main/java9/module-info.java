@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,19 @@
  */
 
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
- * @see io.helidon.tracing.spi.TracerProvider
- * @see io.helidon.tracing.TracerBuilder
+ * Tracing integration with Jersey.
  */
-module io.helidon.tracing {
+module io.helidon.tracing.jersey {
+    requires java.logging;
+    requires java.annotation;
+
+    requires java.ws.rs;
+    requires jersey.server;
+    requires javax.inject;
+    requires opentracing.api;
     requires io.helidon.common;
-    requires io.helidon.config;
-    requires transitive opentracing.api;
-    requires opentracing.noop;
-    requires opentracing.util;
+    requires io.helidon.webserver;
+    requires transitive io.helidon.tracing.jersey.client;
 
-    exports io.helidon.tracing;
-    exports io.helidon.tracing.spi;
-
-    uses io.helidon.tracing.spi.TracerProvider;
+    exports io.helidon.tracing.jersey;
 }

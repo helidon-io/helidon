@@ -13,31 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tracing.zipkin;
+package io.helidon.tracing;
 
 import java.util.Objects;
-
-import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.Span;
 
 /**
- * Tag abstraction to be used with {@link TracerBuilder#addTracerTag(String, String)}.
+ * Tag abstraction that can be used with {@link TracerBuilder#addTracerTag(String, String)}.
+ *
+ * @param <T> type of the tag
  */
-abstract class Tag<T> {
-    protected final String key;
-    protected final T value;
+public abstract class Tag<T> {
+    private final String key;
+    private final T value;
 
-    static Tag<String> create(String key, String value) {
+    /**
+     * Create a string tag.
+     * @param key tag name
+     * @param value tag value
+     * @return string tag
+     */
+    public static Tag<String> create(String key, String value) {
         return new StringTag(key, value);
     }
 
-    static Tag<Number> create(String key, Number value) {
+    /**
+     * Create a numeric tag.
+     *
+     * @param key tag name
+     * @param value tag value
+     * @return numeric tag
+     */
+    public static Tag<Number> create(String key, Number value) {
         return new NumericTag(key, value);
     }
 
-    static Tag<Boolean> create(String key, boolean value) {
+    /**
+     * Create a boolean tag.
+     * @param key tag name
+     * @param value tag value
+     * @return boolean tag
+     */
+    public static Tag<Boolean> create(String key, boolean value) {
         return new BooleanTag(key, value);
+    }
+
+    /**
+     * Tag name.
+     * @return tag name
+     */
+    public String key() {
+        return key;
+    }
+
+    /**
+     * Tag value.
+     * @return tag value
+     */
+    public T value() {
+        return value;
     }
 
     private Tag(String key, T value) {
@@ -57,8 +92,8 @@ abstract class Tag<T> {
             return false;
         }
         Tag<?> tag = (Tag<?>) o;
-        return key.equals(tag.key) &&
-                value.equals(tag.value);
+        return key.equals(tag.key)
+                && value.equals(tag.value);
     }
 
     @Override
@@ -71,6 +106,11 @@ abstract class Tag<T> {
         return key + "=" + value;
     }
 
+    /**
+     * Configure this tag on the span provided.
+     *
+     * @param span span to apply the tag on
+     */
     public abstract void apply(Span span);
 
     private static final class StringTag extends Tag<String> {
@@ -80,7 +120,7 @@ abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key, value);
+            span.setTag(key(), value());
         }
     }
 
@@ -91,7 +131,7 @@ abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key, value);
+            span.setTag(key(), value());
         }
     }
 
@@ -102,7 +142,7 @@ abstract class Tag<T> {
 
         @Override
         public void apply(Span span) {
-            span.setTag(key, value);
+            span.setTag(key(), value());
         }
     }
 }

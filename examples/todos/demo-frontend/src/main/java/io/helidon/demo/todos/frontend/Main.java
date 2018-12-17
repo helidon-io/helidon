@@ -30,7 +30,7 @@ import io.helidon.security.jersey.ClientSecurityFeature;
 import io.helidon.security.tools.config.SecureConfigFilter;
 import io.helidon.security.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.tracing.jersey.client.TracingClientFilter;
+import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
@@ -82,7 +82,7 @@ public final class Main {
         // and apply security and tracing features on it
         Client client = ClientBuilder.newBuilder()
                 .register(new ClientSecurityFeature())
-                .register(TracingClientFilter.class)
+                .register(ClientTracingFilter.class)
                 .build();
 
         BackendServiceClient bsc = new BackendServiceClient(client, config);

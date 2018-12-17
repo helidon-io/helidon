@@ -29,26 +29,33 @@
     <name>Helidon Tracing Microprofile</name>
 
     <description>
-        Support for distributed tracing in Microprofile and
-        implementation of Microprofile Opentracing specification.
+        Support for distributed tracing in Helidon MP
+        and
+        TODO implementation of Microprofile Opentracing specification.
     </description>
 
     <dependencies>
-        <dependency>
-            <groupId>org.eclipse.microprofile.opentracing</groupId>
-            <artifactId>microprofile-opentracing-api</artifactId>
-            <!-- TODO move to parent -->
-            <version>1.2.1</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.eclipse.microprofile.opentracing</groupId>-->
+            <!--<artifactId>microprofile-opentracing-api</artifactId>-->
+            <!--&lt;!&ndash; TODO move to parent &ndash;&gt;-->
+            <!--<version>1.2.1</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing</artifactId>
+            <artifactId>helidon-tracing-jersey</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

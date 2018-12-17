@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
+import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
 
 import brave.Tracing;
@@ -112,7 +113,7 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
     static final Version DEFAULT_VERSION = Version.V2;
     static final boolean DEFAULT_ENABLED = true;
 
-    private final List<Tag> tags = new LinkedList<>();
+    private final List<Tag<?>> tags = new LinkedList<>();
     private String serviceName;
     private String protocol = DEFAULT_PROTOCOL;
     private String host = DEFAULT_ZIPKIN_HOST;
@@ -371,7 +372,7 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
         }
     }
 
-    List<Tag> tags() {
+    List<Tag<?>> tags() {
         return tags;
     }
 

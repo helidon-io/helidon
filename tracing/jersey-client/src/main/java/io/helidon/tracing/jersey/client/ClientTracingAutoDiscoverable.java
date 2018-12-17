@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.tracing.jersey.client;
+
+import javax.ws.rs.ConstrainedTo;
+import javax.ws.rs.RuntimeType;
+import javax.ws.rs.core.FeatureContext;
+
+import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
- * @see io.helidon.tracing.spi.TracerProvider
- * @see io.helidon.tracing.TracerBuilder
+ * Auto discoverable feature to bind into jersey runtime.
  */
-module io.helidon.tracing {
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires transitive opentracing.api;
-    requires opentracing.noop;
-    requires opentracing.util;
-
-    exports io.helidon.tracing;
-    exports io.helidon.tracing.spi;
-
-    uses io.helidon.tracing.spi.TracerProvider;
+@ConstrainedTo(RuntimeType.CLIENT)
+public class ClientTracingAutoDiscoverable implements AutoDiscoverable {
+    @Override
+    public void configure(FeatureContext context) {
+        if (!context.getConfiguration().isRegistered(ClientTracingFilter.class)) {
+            context.register(ClientTracingFilter.class);
+        }
+    }
 }

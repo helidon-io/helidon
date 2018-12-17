@@ -30,9 +30,10 @@
     <name>Helidon Tracing Project</name>
 
     <modules>
-        <module>zipkin</module>
         <module>tracing</module>
-        <module>microprofile</module>
         <module>jersey-client</module>
+        <module>jersey</module>
+        <module>microprofile</module>
+        <module>zipkin</module>
     </modules>
 </project>

@@ -18,6 +18,7 @@ package io.helidon.tracing.zipkin;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
+import io.helidon.tracing.Tag;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.Tracer;

@@ -34,5 +34,8 @@ public class MpTracingService implements MpService {
         context.getServerConfigBuilder()
                 .tracer(TracerBuilder.create(tracingConfig)
                                 .buildAndRegister());
+
+        context.getApplications()
+                .forEach(app -> app.register(MpTracingFilter.class));
     }
 }

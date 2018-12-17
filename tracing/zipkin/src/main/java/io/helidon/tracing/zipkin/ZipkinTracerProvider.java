@@ -34,18 +34,20 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * Zipkin java service.
  */
 public class ZipkinTracerProvider implements TracerProvider {
+    // original Zipkin headers (comes from old name of Zipkin - "BigBrotherBird", or "B3")
     static final String X_B3_TRACE_ID = "x-b3-traceid";
     static final String X_B3_SPAN_ID = "x-b3-spanid";
     static final String X_B3_PARENT_SPAN_ID = "x-b3-parentspanid";
-    static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
-    static final String X_REQUEST_ID = "x-request-id";
     static final String X_B3_SAMPLED = "x-b3-sampled";
     static final String X_B3_FLAGS = "x-b3-flags";
+    // Envoy header
+    private static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
+
 
     private static final Logger LOGGER = Logger.getLogger(ZipkinTracerProvider.class.getName());
 
     private static final List<String> TRACING_CONTEXT_PROPAGATION_HEADERS =
-            listOf(X_REQUEST_ID, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS, X_OT_SPAN_CONTEXT);
+            listOf(X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
 
     @Override
     public TracerBuilder<?> createBuilder() {

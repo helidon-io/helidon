@@ -13,21 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
- * @see io.helidon.tracing.spi.TracerProvider
- * @see io.helidon.tracing.TracerBuilder
+ * Internal package is only for use in other modules this is intended for.
+ * Currently the only class {@link io.helidon.tracing.jersey.client.internal.TracingContext} is to be used
+ * by helidon-tracing-jersey and helidon-tracing-microprofile modules.
  */
-module io.helidon.tracing {
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires transitive opentracing.api;
-    requires opentracing.noop;
-    requires opentracing.util;
-
-    exports io.helidon.tracing;
-    exports io.helidon.tracing.spi;
-
-    uses io.helidon.tracing.spi.TracerProvider;
-}
+package io.helidon.tracing.jersey.client.internal;

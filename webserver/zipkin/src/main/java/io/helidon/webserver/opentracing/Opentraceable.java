@@ -80,11 +80,14 @@ import org.glassfish.jersey.server.ClientBinding;
  * </code></pre>
  *
  * @see OpentracingClientFilter
+ * @deprecated use helidon-tracing-jersey-client instead - that adds support for tracing to each and every
+ *          outbound call. Constants for properties are in io.helidon.tracing.jersey.client.TracingClientFilter
  */
 @ClientBinding(configClass = Opentraceable.Config.class)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
+@Deprecated
 public @interface Opentraceable {
 
     /** Client config with registered {@link OpentracingClientFilter}. */

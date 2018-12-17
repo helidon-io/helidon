@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.tracing.microprofile;
+
+import javax.ws.rs.ConstrainedTo;
+import javax.ws.rs.RuntimeType;
+import javax.ws.rs.core.FeatureContext;
+
+import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
- * Opentracing support for helidon, with an abstraction API and SPI for tracing collectors.
- * @see io.helidon.tracing.spi.TracerProvider
- * @see io.helidon.tracing.TracerBuilder
+ * Registers the {@link MpTracingContextFilter} to support
+ *  propagation of information from server runtime to client runtime.
  */
-module io.helidon.tracing {
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires transitive opentracing.api;
-    requires opentracing.noop;
-    requires opentracing.util;
-
-    exports io.helidon.tracing;
-    exports io.helidon.tracing.spi;
-
-    uses io.helidon.tracing.spi.TracerProvider;
+@ConstrainedTo(RuntimeType.SERVER)
+public class MpTracingAutoDiscoverable implements AutoDiscoverable {
+    @Override
+    public void configure(FeatureContext context) {
+        context.register(MpTracingContextFilter.class);
+    }
 }

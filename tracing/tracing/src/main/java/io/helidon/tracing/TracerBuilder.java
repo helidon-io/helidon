@@ -156,23 +156,25 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
     default T collectorUri(URI uri) {
         Objects.requireNonNull(uri);
 
+        TracerBuilder<?> result = this;
+
         if (null != uri.getScheme()) {
-            collectorProtocol(uri.getScheme());
+            result = result.collectorProtocol(uri.getScheme());
         }
 
         if (null != uri.getHost()) {
-            collectorHost(uri.getHost());
+            result = result.collectorHost(uri.getHost());
         }
 
         if (null != uri.getPath()) {
-            collectorPath(uri.getPath());
+            result = result.collectorPath(uri.getPath());
         }
 
         if (uri.getPort() > -1) {
-            collectorPort(uri.getPort());
+            result = result.collectorPort(uri.getPort());
         }
 
-        return (T) this;
+        return (T) result;
     }
 
     /**
