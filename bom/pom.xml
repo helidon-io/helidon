@@ -300,15 +300,21 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <!-- MP extension -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-microprofile</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <!-- Client support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-jersey-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <!-- Server support -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-jersey</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <!-- MP extension -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-microprofile</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
