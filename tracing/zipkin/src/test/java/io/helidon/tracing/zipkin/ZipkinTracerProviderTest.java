@@ -16,11 +16,19 @@
 
 package io.helidon.tracing.zipkin;
 
+import java.util.List;
+import java.util.Map;
+
+import io.helidon.common.CollectionsHelper;
 import io.helidon.tracing.TracerBuilder;
 
+import io.opentracing.mock.MockSpan;
+import io.opentracing.mock.MockTracer;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -31,5 +39,90 @@ class ZipkinTracerProviderTest {
     void testService() {
         TracerBuilder<?> builder = TracerBuilder.create("myService");
         assertThat(builder, instanceOf(ZipkinTracerBuilder.class));
+    }
+
+    @Test
+    void testContextInjection() {
+        MockTracer mt = new MockTracer();
+        MockSpan parent = mt.buildSpan("parentOperation").start();
+        MockSpan span = mt.buildSpan("anOperation")
+                .asChildOf(parent)
+                .start();
+
+        String parentSpanId = "51b3b1a413dce011";
+        String spanId = "521c61ede905945f";
+        String traceId = "0000816c055dc421";
+
+        ZipkinTracerProvider provider = new ZipkinTracerProvider();
+        Map<String, List<String>> inboundHeaders = CollectionsHelper.mapOf(
+                ZipkinTracerProvider.X_OT_SPAN_CONTEXT, listOf("0000816c055dc421;0000816c055dc421;0000000000000000;sr"),
+                ZipkinTracerProvider.X_B3_PARENT_SPAN_ID, listOf(parentSpanId),
+                ZipkinTracerProvider.X_B3_SPAN_ID, listOf(spanId),
+                ZipkinTracerProvider.X_B3_TRACE_ID, listOf(traceId)
+        );
+        Map<String, List<String>> outboundHeaders = CollectionsHelper.mapOf();
+        outboundHeaders = provider.updateOutboundHeaders(span,
+                                                         mt,
+                                                         parent.context(),
+                                                         outboundHeaders,
+                                                         inboundHeaders);
+
+        // all should be propagated, X_OT should be fixed
+        List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
+        assertThat(values, is(listOf("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID);
+        assertThat(values, is(listOf(parentSpanId)));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_SPAN_ID);
+        assertThat(values, is(listOf(spanId)));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_TRACE_ID);
+        assertThat(values, is(listOf(traceId)));
+    }
+
+    @Test
+    void testContextInjectionPreserveHeaders() {
+        MockTracer mt = new MockTracer();
+        MockSpan parent = mt.buildSpan("parentOperation").start();
+        MockSpan span = mt.buildSpan("anOperation")
+                .asChildOf(parent)
+                .start();
+
+        String parentSpanId = "51b3b1a413dce011";
+        String spanId = "521c61ede905945f";
+        String traceId = "0000816c055dc421";
+
+        ZipkinTracerProvider provider = new ZipkinTracerProvider();
+        Map<String, List<String>> outboundHeaders = CollectionsHelper.mapOf(
+                ZipkinTracerProvider.X_OT_SPAN_CONTEXT, listOf("0000816c055dc421;0000816c055dc421;0000000000000000;sr"),
+                ZipkinTracerProvider.X_B3_PARENT_SPAN_ID, listOf(parentSpanId),
+                ZipkinTracerProvider.X_B3_SPAN_ID, listOf(spanId),
+                ZipkinTracerProvider.X_B3_TRACE_ID, listOf(traceId)
+        );
+        Map<String, List<String>> inboundHeaders = CollectionsHelper.mapOf(
+                ZipkinTracerProvider.X_OT_SPAN_CONTEXT, listOf("14"),
+                ZipkinTracerProvider.X_B3_PARENT_SPAN_ID, listOf("15"),
+                ZipkinTracerProvider.X_B3_SPAN_ID, listOf("16"),
+                ZipkinTracerProvider.X_B3_TRACE_ID, listOf("17")
+        );
+        outboundHeaders = provider.updateOutboundHeaders(span,
+                                                         mt,
+                                                         parent.context(),
+                                                         outboundHeaders,
+                                                         inboundHeaders);
+
+        // all should be propagated, X_OT should be fixed
+        List<String> values = outboundHeaders.get(ZipkinTracerProvider.X_OT_SPAN_CONTEXT);
+        assertThat(values, is(listOf("0000816c055dc421;521c61ede905945f;51b3b1a413dce011;sr")));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_PARENT_SPAN_ID);
+        assertThat(values, is(listOf(parentSpanId)));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_SPAN_ID);
+        assertThat(values, is(listOf(spanId)));
+
+        values = outboundHeaders.get(ZipkinTracerProvider.X_B3_TRACE_ID);
+        assertThat(values, is(listOf(traceId)));
     }
 }

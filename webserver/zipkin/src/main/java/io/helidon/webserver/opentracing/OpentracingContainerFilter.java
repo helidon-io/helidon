@@ -49,7 +49,7 @@ import io.opentracing.Tracer;
  * }
  * </code></pre>
  *
- * @deprecated use TracingFilter in helidon-tracing-microprofile instead
+ * @deprecated use TracingFilter in helidon-tracing-jersey instead
  */
 @ConstrainedTo(RuntimeType.SERVER)
 @PreMatching

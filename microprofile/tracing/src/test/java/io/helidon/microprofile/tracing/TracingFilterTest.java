@@ -13,9 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package io.helidon.microprofile.tracing;
+
+import io.helidon.tracing.jersey.TracingFilter;
+
 /**
- * Internal package is only for use in other modules this is intended for.
- * Currently the only class {@link io.helidon.tracing.jersey.client.internal.TracingContext} is to be used
- * by helidon-tracing-jersey and helidon-microprofile-tracing modules.
+ * Unit test for {@link TracingFilter}.
  */
-package io.helidon.tracing.jersey.client.internal;
+class TracingFilterTest {
+
+}

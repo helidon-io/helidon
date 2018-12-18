@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 /**
- * Internal package is only for use in other modules this is intended for.
- * Currently the only class {@link io.helidon.tracing.jersey.client.internal.TracingContext} is to be used
- * by helidon-tracing-jersey and helidon-microprofile-tracing modules.
+ * Microprofile extension for tracing.
+ * Expected location of configuration is at key {@code tracing},
+ * see {@link io.helidon.tracing.TracerBuilder} for details about configuration.
  */
-package io.helidon.tracing.jersey.client.internal;
+package io.helidon.microprofile.tracing;

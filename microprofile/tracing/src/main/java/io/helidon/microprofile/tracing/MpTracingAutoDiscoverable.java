@@ -13,9 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.tracing;
+
+import javax.ws.rs.ConstrainedTo;
+import javax.ws.rs.RuntimeType;
+import javax.ws.rs.core.FeatureContext;
+
+import org.glassfish.jersey.internal.spi.AutoDiscoverable;
+
 /**
- * Internal package is only for use in other modules this is intended for.
- * Currently the only class {@link io.helidon.tracing.jersey.client.internal.TracingContext} is to be used
- * by helidon-tracing-jersey and helidon-microprofile-tracing modules.
+ * Registers the {@link MpTracingContextFilter} to support
+ *  propagation of information from server runtime to client runtime.
  */
-package io.helidon.tracing.jersey.client.internal;
+@ConstrainedTo(RuntimeType.SERVER)
+public class MpTracingAutoDiscoverable implements AutoDiscoverable {
+    @Override
+    public void configure(FeatureContext context) {
+        context.register(MpTracingContextFilter.class);
+    }
+}

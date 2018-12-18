@@ -33,7 +33,6 @@
         <module>tracing</module>
         <module>jersey-client</module>
         <module>jersey</module>
-        <module>microprofile</module>
         <module>zipkin</module>
     </modules>
 </project>

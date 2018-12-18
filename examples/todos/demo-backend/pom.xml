@@ -60,8 +60,8 @@
         </dependency>
         <dependency>
             <!-- general support for tracing -->
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-microprofile</artifactId>
+            <groupId>io.helidon.microprofile.tracing</groupId>
+            <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
         <dependency>
             <!-- Zipkin tracer implementation -->

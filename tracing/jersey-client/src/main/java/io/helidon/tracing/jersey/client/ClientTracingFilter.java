@@ -56,7 +56,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * <ol>
  * <li>From request property {@link #TRACER_PROPERTY_NAME}</li>
  * <li>From JAX-RS server, when the client is invoked in scope of a JAX-RS inbound request
- * and appropriate filter is configured (see helidon-tracing-jersey and helidon-tracing-microprofile modules)</li>
+ * and appropriate filter is configured (see helidon-tracing-jersey and helidon-microprofile-tracing modules)</li>
  * <li>From {@link GlobalTracer#get()}</li>
  * </ol>
  * <p>
@@ -108,12 +108,12 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     /**
      * Header used by Envoy proxy. Automatically propagated when within Jersey and
-     * when using helidon-tracing-microprofile module.
+     * when using helidon-microprofile-tracing module.
      */
     public static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
     /**
      * Header used by routers. Automatically propagated when within Jersey and
-     * when using helidon-tracing-microprofile module.
+     * when using helidon-microprofile-tracing module.
      */
     public static final String X_REQUEST_ID = "x-request-id";
 

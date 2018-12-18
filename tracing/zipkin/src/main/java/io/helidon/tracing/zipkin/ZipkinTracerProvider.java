@@ -41,13 +41,12 @@ public class ZipkinTracerProvider implements TracerProvider {
     static final String X_B3_SAMPLED = "x-b3-sampled";
     static final String X_B3_FLAGS = "x-b3-flags";
     // Envoy header
-    private static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
-
+    static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
 
     private static final Logger LOGGER = Logger.getLogger(ZipkinTracerProvider.class.getName());
 
     private static final List<String> TRACING_CONTEXT_PROPAGATION_HEADERS =
-            listOf(X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
+            listOf(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
 
     @Override
     public TracerBuilder<?> createBuilder() {

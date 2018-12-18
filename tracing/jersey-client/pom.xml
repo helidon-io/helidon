@@ -32,7 +32,7 @@
         Support for propagation of tracing information when
         using Jersey Client.
         This library can be used with Helidon-SE.
-        When used with helidon-tracing-microprofile, automated propagation of tracing context is done,
+        When used with helidon-microprofile-tracing, automated propagation of tracing context is done,
           there is no need to configure the client or request in any way.
     </description>
 

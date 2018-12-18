@@ -43,5 +43,6 @@
         <module>bundles</module>
         <module>tests</module>
         <module>jwt-auth</module>
+        <module>tracing</module>
     </modules>
 </project>
