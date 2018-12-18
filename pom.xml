@@ -111,7 +111,7 @@
         <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
         <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.grpc>1.11.0</version.lib.grpc>
+        <version.lib.grpc>1.16.1</version.lib.grpc>
         <version.lib.guava>25.0-jre</version.lib.guava>
         <version.lib.h2>1.4.197</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -136,7 +136,7 @@
         <version.lib.microprofile-fault-tolerance-api>1.1.3</version.lib.microprofile-fault-tolerance-api>
         <version.lib.mockito>2.15.0</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
-        <version.lib.netty>4.1.22.Final</version.lib.netty>
+        <version.lib.netty>4.1.30.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.2.44</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>12.2.0.1</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
