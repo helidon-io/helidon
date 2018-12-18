@@ -42,7 +42,6 @@
         <module>git</module>
         <module>hocon</module>
         <module>bundle</module>
-        <module>examples</module>
         <module>testing</module>
         <module>test-infrastructure</module>
         <module>tests</module>

@@ -38,11 +38,28 @@
     </properties>
 
     <modules>
-        <module>helidon-quickstart-se</module>
-        <module>helidon-quickstart-mp</module>
-        <module>todos</module>
+        <module>config</module>
+        <module>webserver</module>
+        <module>security</module>
+        <module>microprofile</module>
+        <module>todo-app</module>
+        <module>quickstarts</module>
         <module>guides</module>
     </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <configuration>
+                        <mainClass>${mainClass}</mainClass>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
     <profiles>
         <profile>

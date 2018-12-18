@@ -17,28 +17,31 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.examples.config</groupId>
+        <artifactId>helidon-examples-config-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
-    <packaging>pom</packaging>
+    <artifactId>helidon-examples-config-overrides</artifactId>
+    <name>Helidon Config Examples Overrides</name>
 
-    <modules>
-        <module>webserver</module>
-        <module>netty</module>
-        <module>jersey</module>
-        <module>json</module>
-        <module>test-support</module>
-        <module>zipkin</module>
-        <module>prometheus</module>
-        <module>bundles</module>
-    </modules>
+    <description>
+        The example shows how to use Overrides in Configuration API.
+    </description>
+
+    <properties>
+        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
+        <mainClass>io.helidon.config.examples.overrides.Main</mainClass>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-bundle</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+    </dependencies>
 </project>

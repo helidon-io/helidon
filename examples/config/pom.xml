@@ -17,28 +17,26 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
+    <groupId>io.helidon.examples.config</groupId>
+    <artifactId>helidon-examples-config-project</artifactId>
     <packaging>pom</packaging>
+    <name>Helidon Config Examples</name>
 
     <modules>
-        <module>webserver</module>
-        <module>netty</module>
-        <module>jersey</module>
-        <module>json</module>
-        <module>test-support</module>
-        <module>zipkin</module>
-        <module>prometheus</module>
-        <module>bundles</module>
+        <module>basics</module>
+        <module>changes</module>
+        <module>git</module>
+        <module>mapping</module>
+        <module>overrides</module>
+        <module>sources</module>
     </modules>
+
 </project>

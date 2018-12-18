@@ -22,23 +22,26 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
+
+    <groupId>io.helidon.examples.webserver</groupId>
+    <artifactId>helidon-examples-webserver-project</artifactId>
+    <name>Helidon WebServer Examples Parent</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>webserver</module>
-        <module>netty</module>
+        <module>basics</module>
+        <module>tutorial</module>
+        <module>comment-aas</module>
+        <module>static-content</module>
         <module>jersey</module>
-        <module>json</module>
-        <module>test-support</module>
-        <module>zipkin</module>
-        <module>prometheus</module>
-        <module>bundles</module>
+        <module>opentracing</module>
+        <module>demo-translator-frontend</module>
+        <module>demo-translator-backend</module>
+        <module>streaming</module>
     </modules>
+
 </project>

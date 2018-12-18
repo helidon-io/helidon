@@ -17,28 +17,29 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
+    <groupId>io.helidon.examples.quickstarts</groupId>
+    <artifactId>examples-quickstarts-project</artifactId>
+    <name>Helidon Quickstart Examples</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <modules>
-        <module>webserver</module>
-        <module>netty</module>
-        <module>jersey</module>
-        <module>json</module>
-        <module>test-support</module>
-        <module>zipkin</module>
-        <module>prometheus</module>
-        <module>bundles</module>
+        <module>helidon-quickstart-se</module>
+        <module>helidon-quickstart-mp</module>
     </modules>
+
 </project>

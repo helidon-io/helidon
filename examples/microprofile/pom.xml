@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,28 +17,25 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.examples</groupId>
+        <artifactId>helidon-examples-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
     <packaging>pom</packaging>
+    <groupId>io.helidon.examples.microprofile</groupId>
+    <artifactId>helidon-examples-microprofile-project</artifactId>
+    <name>Helidon Microprofile Examples</name>
 
     <modules>
-        <module>webserver</module>
-        <module>netty</module>
-        <module>jersey</module>
-        <module>json</module>
-        <module>test-support</module>
-        <module>zipkin</module>
-        <module>prometheus</module>
-        <module>bundles</module>
+        <module>hello-world-implicit</module>
+        <module>hello-world-explicit</module>
+        <module>mp1_1-static-content</module>
+        <module>mp1_1-security</module>
+        <module>idcs</module>
     </modules>
 </project>

@@ -17,28 +17,31 @@
 
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.examples.security</groupId>
+        <artifactId>helidon-examples-security-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-project</artifactId>
-    <name>Helidon WebServer Project</name>
-    <packaging>pom</packaging>
+    <artifactId>helidon-examples-security-nohttp-programmatic</artifactId>
+    <name>Helidon Security Examples No-HTTP programmatic</name>
 
-    <modules>
-        <module>webserver</module>
-        <module>netty</module>
-        <module>jersey</module>
-        <module>json</module>
-        <module>test-support</module>
-        <module>zipkin</module>
-        <module>prometheus</module>
-        <module>bundles</module>
-    </modules>
+    <description>
+        Example of programmatic security without an HTTP resource.
+    </description>
+
+    <properties>
+        <example.main-class>io.helidon.security.examples.security.ProgrammaticSecurity</example.main-class>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.security</groupId>
+            <artifactId>helidon-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>
