@@ -33,7 +33,6 @@ import java.util.logging.Logger;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.abac.AbacAnnotation;
@@ -236,7 +235,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
             this.config = config;
             config.get("validators").asList(Config.class).ifPresent(configs -> {
                 for (Config validatorConfig : configs) {
-                    OptionalHelper.from(validatorConfig.get("class").value())
+                    validatorConfig.get("class").asString()
                             .ifPresentOrElse(clazz -> {
                                 //attempt to instantiate
                                 addExecutor(instantiate(clazz));

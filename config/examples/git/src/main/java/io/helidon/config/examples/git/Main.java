@@ -53,9 +53,7 @@ public class Main {
                         .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
                         .build());
 
-        assert config.get("greeting").value().get().equals("hello");
-        assert config.get("greeting").asString().equals("hello");
-
+        assert config.get("greeting").asString().get().equals("hello");
     }
 
 }

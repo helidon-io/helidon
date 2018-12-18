@@ -266,11 +266,11 @@ public class InboundClientDefinition {
          */
         public Builder fromConfig(Config config) {
             keyId(config.get("key-id").asString().get());
-            config.get("principal-name").value().ifPresent(this::principalName);
+            config.get("principal-name").asString().ifPresent(this::principalName);
             config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
             config.get("public-key").as(KeyConfig.class).ifPresent(this::publicKeyConfig);
-            config.get("hmac.secret").value().ifPresent(this::hmacSecret);
-            config.get("algorithm").value().ifPresent(this::algorithm);
+            config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
+            config.get("algorithm").asString().ifPresent(this::algorithm);
 
             return this;
         }

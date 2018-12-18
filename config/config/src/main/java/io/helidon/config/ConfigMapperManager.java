@@ -37,7 +37,7 @@ import io.helidon.config.spi.ConfigMapperProvider;
 /**
  * Manages registered Mappers to be used by Config implementation.
  */
-public class ConfigMapperManager implements ConfigMapper {
+class ConfigMapperManager implements ConfigMapper {
     private static final Map<Class<?>, Class<?>> REPLACED_TYPES = new HashMap<>();
 
     static {
@@ -246,8 +246,8 @@ public class ConfigMapperManager implements ConfigMapper {
         }
 
         @Override
-        public Optional<String> value() throws ConfigMappingException {
-            return Optional.of(value);
+        public ConfigValue<String> asString() {
+            return ConfigValues.create(this, () -> Optional.of(value), Config::asString);
         }
 
         @Override

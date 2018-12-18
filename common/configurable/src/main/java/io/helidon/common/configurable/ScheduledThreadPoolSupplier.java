@@ -176,7 +176,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
         public Builder config(Config config) {
             config.get("core-pool-size").asInt().ifPresent(this::corePoolSize);
             config.get("is-daemon").asBoolean().ifPresent(this::daemon);
-            config.get("thread-name-prefix").value().ifPresent(this::threadNamePrefix);
+            config.get("thread-name-prefix").asString().ifPresent(this::threadNamePrefix);
             config.get("should-prestart").asBoolean().ifPresent(this::prestart);
             return this;
         }

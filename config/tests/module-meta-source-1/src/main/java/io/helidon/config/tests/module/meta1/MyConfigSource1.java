@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.config.ConfigException;
-import io.helidon.config.beans.Value;
+import io.helidon.config.objectmapping.Value;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 

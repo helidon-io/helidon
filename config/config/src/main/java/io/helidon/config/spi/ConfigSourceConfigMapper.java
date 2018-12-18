@@ -101,7 +101,7 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
                 .orElse(Config.empty(config)); // or empty config node
 
         return OptionalHelper.from(config.get(TYPE_KEY)
-                                           .value() // `type` is specified
+                                           .asString() // `type` is specified
                                            .flatMap(type -> OptionalHelper
                                                    .from(builtin(type, properties)) // return built-in source
                                                    .or(() -> providers(type, properties))

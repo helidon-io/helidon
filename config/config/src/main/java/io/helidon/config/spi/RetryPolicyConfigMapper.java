@@ -47,7 +47,7 @@ class RetryPolicyConfigMapper implements Function<Config, RetryPolicy> {
                 .asNode()
                 .orElse(Config.empty(config)); // or empty config node
 
-        return OptionalHelper.from(config.get(TYPE_KEY).value() // `type` is specified
+        return OptionalHelper.from(config.get(TYPE_KEY).asString() // `type` is specified
                 .flatMap(type -> this.builtin(type, properties))) // return built-in retry policy
                 .or(() -> config.get(CLASS_KEY)
                         .as(Class.class) // `class` is specified

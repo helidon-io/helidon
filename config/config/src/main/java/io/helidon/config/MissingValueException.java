@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 /**
  * Exception representing a specific failures related to a missing configuration value.
  */
-public class MissingValueException extends ConfigException {
+public final class MissingValueException extends ConfigException {
 
     private static final long serialVersionUID = 1L;
 

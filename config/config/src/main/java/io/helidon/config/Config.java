@@ -39,13 +39,14 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 
 /**
+ * <h1>Configuration</h1>
  * Immutable tree-structured configuration.
- * <h1>Loading Configuration</h1>
+ * <h2>Loading Configuration</h2>
  * Load the default configuration using the {@link #create} method.
  * <pre>{@code
  * Config config = Config.create();
  * }</pre> Use {@link Config.Builder} to construct a new {@code Config} instance
- * from one or more specific {@link ConfigSource}s.
+ * from one or more specific {@link ConfigSource}s using the {@link #builder()}.
  * <p>
  * The application can affect the way the system loads configuration by
  * implementing interfaces defined in the SPI, by explicitly constructing the
@@ -88,7 +89,7 @@ import io.helidon.config.spi.OverrideSource;
  * {@code Map}.</td>
  * </tr>
  * <tr>
- * <td>{@link Builder#addStringMapper}</td>
+ * <td>{@link Builder#addMapper(Class, Function)}</td>
  * <td>Implements conversion from a {@code Config} node (typically with
  * children) to an application-specific Java type.</td>
  * </tr>
@@ -143,9 +144,7 @@ import io.helidon.config.spi.OverrideSource;
  * <li>on a {@link Type#LIST list} node to get all list elements.</li>
  * </ul>
  * <p>
- * To get the direct value, use
- * {@link #value()} to access the optional value of this node,
- * or {@link #as(Class)} to access this config node as a {@link ConfigValue}
+ * To get node value, use {@link #as(Class)} to access this config node as a {@link ConfigValue}
  *
  * <h2>Converting Configuration Values to Types</h2>
  * <h3>Explicit Conversion by the Application</h3>
@@ -154,64 +153,83 @@ import io.helidon.config.spi.OverrideSource;
  * {@code String} the application can invoke one of these convenience methods:
  * <ul>
  * <li>{@code as<typename>} such as {@code asBoolean, asDouble, asInt}, etc.
- * which return Java primitive data values ({@code boolean, double, int}, etc.)
+ * which return {@link ConfigValue} representing Java primitive data values ({@code boolean, double, int}, etc.)
  * <p>
- * Each method has two variants: one without parameters that throws
- * {@link MissingValueException} if the config at the node does not exist, and
- * one that accepts the default value as a single parameter. For example:
+ * The {@link ConfigValue} can be used to access the value or use optional style methods.
+ *
+ * The config value provides access to the value in multiple ways.
+ * See {@link ConfigValue} for reference.
+ *
+ * Basic usages:
  * <pre>{@code
- * long l1 = config.asLong();
- * long l2 = config.asLong(42L);
+ * // throws a MissingValueException in case the config node does not exist
+ * long l1 = config.asLong().get();
+ * // returns 42 in case the config node does not exist
+ * long l2 = config.asLong().orElse(42L);
+ * // invokes the method "timeout(long)" if the value exists
+ * config.asLong().ifPresent(this::timeout);
  * }</pre>
  * </li>
- * <li>{@code asOptional<typename>} which returns the autoboxed datatype wrapped
- * in an {@code Optional}.
- * <p>
- * For example:
+ * <li>{@link #as(Class)} to convert the config node to an instance of the specified class, if there is a configured
+ * mapper present that supports the class.
  * <pre>{@code
- * Optional<Long> l3 = config.asLong();
+ *   // throws a MissingValueException in case the config node does not exist
+ *   // throws a ConfigMappingException in case the config node cannot be converted to Long
+ *   long l1 = config.as(Long.class).get();
+ *   // returns 42 in case the config node does not exist
+ *   // throws a ConfigMappingException in case the config node cannot be converted to Long
+ *   long l2 = config.as(Long.class).orElse(42L);
+ *   // invokes the method "timeout(long)" if the value exists
+ *   // throws a ConfigMappingException in case the config node cannot be converted to Long
+ *   config.as(Long.class).ifPresent(this::timeout);
+ *   }</pre>
+ * </li>
+ * <li>{@link #as(Function)} to convert the config node using the function provided.
+ * Let's assume there is a method {@code public static Foo create(Config)} on a class {@code Foo}:
+ * <pre>{@code
+ *  // throws a MissingValueException in case the config node does not exist
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Foo
+ *  Foo f1 = config.as(Foo::create).get();
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Foo
+ *  Foo f2 = config.as(Foo::create).orElse(Foo.DEFAULT);
+ *  // invokes the method "foo(Foo)" if the value exists
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Foo
+ *  config.as(Foo::create).ifPresent(this::foo);
  * }</pre>
  * </li>
- * <li>{@code as(Class)} or {@code as(Class, defaultValue)} or
- * {@code asOptional(Class)} which return an instance of the requested type.
- * <p>
- * For example:
+ * <li>{@link #as(GenericType)} to convert the config node to an instance of the specified generic type, if there is a
+ * configured mapper present that supports the generic type.
  * <pre>{@code
- * Long l1 = config.as(Long.class);
- * Long l2 = config.as(Long.class, 42L);
- * Optional<Long> l3 = config.as(Long.class);
+ *  // throws a MissingValueException in case the config node does not exist
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Map<String, Integer>
+ *  Map<String, Integer> m1 = config.as(new GenericType<Map<String, Integer>() {}).get();
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Map<String, Integer>
+ *  Map<String, Integer> m1 = config.as(new GenericType<Map<String, Integer>() {}).orElseGet(Collections::emptyMap);
+ *  // invokes the method "units(Map)" if the value exists
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Map<String, Integer>
+ *  config.as(new GenericType<Map<String, Integer>() {}).ifPresent(this::units);
  * }</pre>
+ * </li>
  * </ul>
- * <h3>Using Built-in and Custom Mappers</h3>
- * Each {@code as*} method delegates to a conversion function to convert a
- * config node to a type. The config system provides mappers for primitive
- * datatypes, {@code List}s, and {@code Map}s, and automatically registers them
- * with each {@code Config.Builder} instance.
- * <p>
+ *
  * To deal with application-specific types, the application can provide its own
  * mapping logic by:
  * <ul>
  * <li>invoking the {@link Config#as(Function)} method variants, </li>
  * <li>adding custom mapping function implementations using the
- * {@link Builder#addStringMapper} method,</li>
+ * {@link Builder#addMapper(Class, Function)} method,</li>
+ * <li>add custom mapping function using the {@link Builder#addStringMapper(Class, Function)}</li>
  * <li>registering custom mappers using the Java service loader mechanism. (See
  * {@link ConfigMapperProvider} for details.)
  * </li>
  * </ul>
- * <p>
- * Returning to the {@code long} example:
- * <pre>{@code
- * long l4 = config.map(ConfigMappers::toLong);
- * long l5 = config.map(ConfigMappers::toLong, 42L);
- * Optional<Long> l6 = config.mapOptional(ConfigMappers::toLong);
- * }</pre> Note that the variants of {@code map} accept a {@code Function} or a
- * {@code ConfigMapper}. The {@link ConfigMappers} class implements many useful
- * conversions; check there before writing your own custom mapper.
+ *
  * <p>
  * If there is no explicitly registered mapping function in a
  * {@link Builder} for converting a given type then the config system
  * throws {@link ConfigMappingException}, unless you use the config beans support,
- * that can handle classes that fulfill some requirements (see documentation).
+ * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
+ * static "create(Config)" method etc.
  *
  * <h2><a name="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
@@ -629,7 +647,7 @@ public interface Config {
      * A leaf node has no nested configuration subtree and has a single value.
      *
      * @return {@code true} if the node is existing leaf node, {@code false}
-     * otherwise.
+     *         otherwise.
      */
     default boolean isLeaf() {
         return type().isLeaf();
@@ -718,17 +736,6 @@ public interface Config {
     //
 
     /**
-     * Returns a {@code String} value as {@link Optional} of configuration node if the node a leaf or "hybrid" node.
-     * Returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type or if the node does not contain a direct
-     * value.
-     * This is "raw" accessor method for String value of this config node. To have nicer variety of value accessors,
-     * see {@link #asString()} and in general {@link #as(Class)}.
-     *
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have a value
-     */
-    Optional<String> value();
-
-    /**
      * Typed value as a {@link ConfigValue} for a generic type.
      * If appropriate mapper exists, returns a properly typed generic instance.
      * <p>
@@ -743,7 +750,7 @@ public interface Config {
      * </pre>
      *
      * @param genericType a (usually anonymous) instance of generic type to prevent type erasure
-     * @param <T> type of the returned value
+     * @param <T>         type of the returned value
      * @return properly typed config value
      */
     <T> ConfigValue<T> as(GenericType<T> genericType);
@@ -833,7 +840,7 @@ public interface Config {
      * Returns this node as a list converting each list value using the provided mapper.
      *
      * @param mapper mapper to convert each list node into a typed value
-     * @param <T> type of list elements
+     * @param <T>    type of list elements
      * @return a typed list with values
      * @throws ConfigMappingException in case the mapper fails to map the values
      */
@@ -844,7 +851,7 @@ public interface Config {
      * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
      *
      * @return current config node as a {@link Optional} instance
-     * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
+     *         or {@link Optional#empty()} in case of {@link Type#MISSING} node.
      */
     default ConfigValue<Config> asNode() {
         return ConfigValues.create(this,
@@ -1070,7 +1077,6 @@ public interface Config {
             return ConfigKeyImpl.of(key);
         }
 
-
         /**
          * Escape {@code '~'} to {@code ~0} and {@code '.'} to {@code ~1} in specified name.
          *
@@ -1234,7 +1240,7 @@ public interface Config {
      * A more sophisticated approach can be achieved using the "config beans" module, that provides reflection access
      * and mapping for static factory methods, constructors, builder patterns and more.
      * <p>
-     * If {@link ConfigSource} not specified, following default config source is used. Same as {@link #create()} uses.
+     * If a {@link ConfigSource} is not specified, following default config source is used. Same as {@link #create()} uses.
      * It builds composite config source from following sources, checked in order:
      * <ol>
      * <li>Tries to load configuration from meta one of following meta configuration files on classpath, in order:
@@ -1689,6 +1695,13 @@ public interface Config {
          */
         Config build();
 
+        /**
+         * Add mappers from another config instance.
+         * This may be useful if we need the same conversion behavior.
+         *
+         * @param config config to extract mappers from
+         * @return updated builder instance
+         */
         Builder mappersFrom(Config config);
     }
 }

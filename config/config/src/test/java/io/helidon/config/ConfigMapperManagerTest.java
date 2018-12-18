@@ -80,19 +80,19 @@ public class ConfigMapperManagerTest {
         Config config = managerNoServices.simpleConfig("key1", "42");
 
         assertThat(config.key(), is(Config.Key.of("key1")));
-        assertThat(config.value(), is(Optional.of("42")));
+        assertThat(config.asString(), is(ConfigValues.simpleValue("42")));
         assertThat(config.type(), is(Config.Type.VALUE));
         assertThat(config.timestamp(), not(nullValue()));
         {
             Config sub = config.get("sub");
             assertThat(sub.key(), is(Config.Key.of("key1.sub")));
-            assertThat(sub.value(), is(Optional.empty()));
+            assertThat(sub.asString(), is(ConfigValues.empty()));
             assertThat(sub.type(), is(Config.Type.MISSING));
         }
         {
             Config detached = config.detach();
             assertThat(detached.key(), is(Config.Key.of("")));
-            assertThat(detached.value(), is(Optional.of("42")));
+            assertThat(detached.asString(), is(ConfigValues.simpleValue("42")));
             assertThat(detached.type(), is(Config.Type.VALUE));
         }
         assertThat(config.traverse().collect(Collectors.toList()), empty());

@@ -85,7 +85,6 @@ public class ConfigObjectImplTest extends ConfigComplexImplTest {
     @ParameterizedTest
     public void testValue(TestContext context) {
         init(context);
-        assertValue(key -> config(key).value().get());
         assertValue(key -> config(key).asString().get());
     }
 

@@ -375,7 +375,7 @@ public final class WebSecurity implements Service {
                         .collect(Collectors.toList());
 
                 String path = pathConfig.get("path")
-                        .value()
+                        .asString()
                         .orElseThrow(() -> new SecurityException(pathConfig
                                                                          .key() + " must contain path key with a path to "
                                                                          + "register to web server"));

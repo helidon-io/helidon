@@ -111,28 +111,28 @@ final class ResourceUtil {
 
     static Optional<Resource> fromConfigPath(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-path")
-                .value()
+                .asString()
                 .map(Paths::get)
                 .map(Resource::create);
     }
 
     static Optional<Resource> fromConfigB64Content(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-content")
-                .value()
+                .asString()
                 .map(Base64.getDecoder()::decode)
                 .map(content -> Resource.create("config:" + keyPrefix + "-content-b64", content));
     }
 
     static Optional<Resource> fromConfigContent(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-content-plain")
-                .value()
+                .asString()
                 .map(content -> Resource.create("config:" + keyPrefix + "-content", content));
     }
 
     static Optional<Resource> fromConfigUrl(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-url")
                 .as(URI.class)
-                .map(uri -> config.get("proxy-host").value()
+                .map(uri -> config.get("proxy-host").asString()
                         .map(proxyHost -> {
                             if (config.get(keyPrefix + "-use-proxy").asBoolean().orElse(true)) {
                                 Proxy proxy = new Proxy(Proxy.Type.HTTP,
@@ -149,7 +149,7 @@ final class ResourceUtil {
 
     static Optional<Resource> fromConfigResourcePath(Config config, String keyPrefix) {
         return config.get(keyPrefix + "-resource-path")
-                .value()
+                .asString()
                 .map(Resource::create);
     }
 }

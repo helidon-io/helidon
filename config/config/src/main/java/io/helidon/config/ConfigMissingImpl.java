@@ -44,11 +44,6 @@ class ConfigMissingImpl extends AbstractConfigImpl {
     }
 
     @Override
-    public Optional<String> value() {
-        return Optional.empty();
-    }
-
-    @Override
     public <T> ConfigValue<T> as(Class<T> type) {
         return ConfigValues.create(this, Optional::empty, aConfig -> aConfig.as(type));
     }

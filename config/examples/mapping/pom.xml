@@ -50,7 +50,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-beans</artifactId>
+            <artifactId>helidon-config-object-mapping</artifactId>
             <version>${helidon.version}</version>
         </dependency>
     </dependencies>

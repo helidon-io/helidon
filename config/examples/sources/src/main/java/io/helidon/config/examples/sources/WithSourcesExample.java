@@ -16,9 +16,9 @@
 
 package io.helidon.config.examples.sources;
 
-import java.util.Optional;
-
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
@@ -53,8 +53,8 @@ public class WithSourcesExample {
                 .addFilter((key, stringValue) -> key.name().equals("level") ? stringValue.toUpperCase() : stringValue)
                 .build();
 
-        // Optional environment type, from dev.yaml:
-        Optional<String> env = config.get("meta.env").value();
+        // Environment type, from dev.yaml:
+        ConfigValue<String> env = config.get("meta.env").asString();
         env.ifPresent(e -> System.out.println("Environment: " + e));
         assert env.get().equals("DEV");
 

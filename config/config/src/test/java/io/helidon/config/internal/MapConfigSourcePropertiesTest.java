@@ -152,7 +152,7 @@ public class MapConfigSourcePropertiesTest {
                 .build();
 
         assertThat(config.get("app.name")
-                           .value()
+                           .asString()
                            .map(Name::fromString)
                            .map(Name::getName),
                    is(Optional.of("app-name")));

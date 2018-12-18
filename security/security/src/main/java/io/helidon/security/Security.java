@@ -847,7 +847,7 @@ public final class Security {
                 AtomicReference<Config> providerSpecific = new AtomicReference<>();
 
                 // if we have name and class, use them
-                String className = pConf.get("class").value().orElse(null);
+                String className = pConf.get("class").asString().orElse(null);
 
                 if (null == className) {
                     findProviderService(configKeyToService, knownKeys, pConf, service, providerSpecific);
@@ -965,7 +965,7 @@ public final class Security {
                                            String className,
                                            Config providerSpecificConfig,
                                            SecurityProviderService providerService) {
-            return pConf.get("name").value().orElseGet(() -> {
+            return pConf.get("name").asString().orElseGet(() -> {
                 if (null == providerSpecificConfig) {
                     if (null == className) {
                         return providerService.getProviderClass().getSimpleName();

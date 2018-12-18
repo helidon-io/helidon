@@ -28,13 +28,13 @@ import java.util.stream.Stream;
  * <p>
  * You can use accessor methods on {@link Config} to obtain this value, such as {@link Config#as(Class)}.
  * A typed value that has all the methods of {@link Optional} - including the ones added in JDK9 and newer.
- * In addition it has methods to access config values as {@link #supplier()}, to access values with defaults etc.
+ * In addition it has methods to access config values as {@link #supplier()}.
  *
  * @param <T> type of the value
  * @see Config#as(Class)
  * @see Config#as(Function)
+ * @see Config#as(io.helidon.common.GenericType)
  */
-// A top level class, as Config must implement it (and if internal, we have a cyclic dependency)
 public interface ConfigValue<T> {
     /**
      * Returns the fully-qualified key of the originating {@code Config} node.

@@ -233,7 +233,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             config.get("keep-alive-minutes").asInt().ifPresent(this::keepAliveMinutes);
             config.get("queue-capacity").asInt().ifPresent(this::queueCapacity);
             config.get("is-daemon").asBoolean().ifPresent(this::daemon);
-            config.get("thread-name-prefix").value().ifPresent(this::threadNamePrefix);
+            config.get("thread-name-prefix").asString().ifPresent(this::threadNamePrefix);
             config.get("should-prestart").asBoolean().ifPresent(this::prestart);
 
             return this;

@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
@@ -75,8 +74,8 @@ public class SignedHeadersConfig {
         config.asNodeList().get().forEach(methodConfig -> {
             HeadersConfig mc = HeadersConfig.fromConfig(methodConfig);
 
-            OptionalHelper.from(methodConfig.get("method")
-                                        .value())
+            methodConfig.get("method")
+                    .asString()
                     .ifPresentOrElse(method -> builder.config(method, mc),
                                      () -> builder.defaultConfig(mc));
         });

@@ -45,8 +45,8 @@ abstract class AbstractSecureConfigTest {
 
     @Test
     void testDeep() {
-        assertThat(getConfig().get("pwd11").value(), is(Optional.of("known_password")));
-        assertThat(getConfig().get("pwd12").value(), is(Optional.of("known_password")));
+        assertThat(getConfig().get("pwd11").asString(), is(ConfigValues.simpleValue("known_password")));
+        assertThat(getConfig().get("pwd12").asString(), is(ConfigValues.simpleValue("known_password")));
     }
 
     @Test
@@ -152,12 +152,11 @@ abstract class AbstractSecureConfigTest {
 
     @Test
     public void testMissing() {
-        assertThat(getConfigRequiresEncryption().get("thisDoesNotExist").value(),
-                   is(Optional.empty()));
+        assertThat(getConfigRequiresEncryption().get("thisDoesNotExist").asString(),
+                   is(ConfigValues.empty()));
     }
 
     void testPassword(Config config, String key, String expectedValue) {
-        Optional<String> optional = config.get(key).value();
-        assertThat(optional, is(Optional.of(expectedValue)));
+        assertThat(config.get(key).asString().get(), is(expectedValue));
     }
 }

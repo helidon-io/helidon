@@ -85,7 +85,7 @@
              if config is not configured through meta configuration, leave it out
             -->
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-beans</artifactId>
+            <artifactId>helidon-config-object-mapping</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

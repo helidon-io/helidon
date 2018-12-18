@@ -40,15 +40,15 @@ public class TreeStructureTests {
                                         "c.a.2", "third")
         )).build();
 
-        assertThat(config.get("a").value(), is(Optional.of("rootValue")));
-        assertThat(config.get("a.b").value(), is(Optional.of("leafTreeNode")));
-        assertThat(config.get("a.b.c").value(), is(Optional.of("leafNode")));
+        assertThat(config.get("a").asString(), is(ConfigValues.simpleValue("rootValue")));
+        assertThat(config.get("a.b").asString(), is(ConfigValues.simpleValue("leafTreeNode")));
+        assertThat(config.get("a.b.c").asString(), is(ConfigValues.simpleValue("leafNode")));
 
-        assertThat(config.get("b").value(), is(Optional.empty()));
-        assertThat(config.get("b.c").value(), is(Optional.of("leafNode")));
+        assertThat(config.get("b").asString(), is(ConfigValues.empty()));
+        assertThat(config.get("b.c").asString(), is(ConfigValues.simpleValue("leafNode")));
 
-        assertThat(config.get("c").value(), is(Optional.empty()));
-        assertThat(config.get("c.a").value(), is(Optional.empty()));
+        assertThat(config.get("c").asString(), is(ConfigValues.empty()));
+        assertThat(config.get("c.a").asString(), is(ConfigValues.empty()));
         assertThat(config.get("c.a").asList(String.class).get(), is(CollectionsHelper.listOf("first", "second", "third")));
     }
 
@@ -61,8 +61,8 @@ public class TreeStructureTests {
                                         "c.a.2", "third")
         )).build();
 
-        assertThat(config.get("c").value(), is(Optional.empty()));
-        assertThat(config.get("c.a").value(), is(Optional.of("treeAndLeafNode")));
+        assertThat(config.get("c").asString(), is(ConfigValues.empty()));
+        assertThat(config.get("c.a").asString(), is(ConfigValues.simpleValue("treeAndLeafNode")));
         assertThat(config.get("c.a").asList(String.class).get(), is(CollectionsHelper.listOf("first", "second", "third")));
     }
 }

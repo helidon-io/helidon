@@ -245,14 +245,14 @@ public final class SecurityHandler implements Handler {
         });
 
         // explicit atn provider implies atn
-        config.get(KEY_AUTHENTICATOR).value().ifPresent(value -> {
+        config.get(KEY_AUTHENTICATOR).asString().ifPresent(value -> {
             if (!config.get(KEY_AUTHENTICATE).exists()) {
                 builder.authenticate(true);
             }
         });
 
         // explicit atz provider implies atz
-        config.get(KEY_AUTHORIZER).value().ifPresent(value -> {
+        config.get(KEY_AUTHORIZER).asString().ifPresent(value -> {
             if (!config.get(KEY_AUTHORIZE).exists()) {
                 builder.authorize(true);
             }

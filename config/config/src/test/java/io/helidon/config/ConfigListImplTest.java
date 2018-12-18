@@ -66,7 +66,7 @@ public class ConfigListImplTest extends ConfigComplexImplTest {
     @ParameterizedTest
     public void testValue(TestContext context) {
         init(context);
-        getConfigAndAssertEmpty(Config::value);
+        getConfigAndAssertEmpty(config -> config.asString().asOptional());
     }
 
     @MethodSource("initParams")

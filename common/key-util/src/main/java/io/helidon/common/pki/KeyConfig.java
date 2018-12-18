@@ -558,12 +558,12 @@ public final class KeyConfig {
          */
         public KeystoreBuilder config(Config config) {
             Resource.create(config, "keystore").ifPresent(this::keystore);
-            config.get("keystore-type").value().ifPresent(this::keystoreType);
-            config.get("keystore-passphrase").value().map(String::toCharArray).ifPresent(this::keystorePassphrase);
-            config.get("key-alias").value().ifPresent(this::keyAlias);
-            config.get("key-passphrase").value().map(String::toCharArray).ifPresent(this::keyPassphrase);
-            config.get("cert-alias").value().ifPresent(this::certAlias);
-            config.get("cert-chain").value().ifPresent(this::certChainAlias);
+            config.get("keystore-type").asString().ifPresent(this::keystoreType);
+            config.get("keystore-passphrase").asString().map(String::toCharArray).ifPresent(this::keystorePassphrase);
+            config.get("key-alias").asString().ifPresent(this::keyAlias);
+            config.get("key-passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
+            config.get("cert-alias").asString().ifPresent(this::certAlias);
+            config.get("cert-chain").asString().ifPresent(this::certChainAlias);
             config.get("trust-store").asBoolean().ifPresent(this::trustStore);
 
             return this;
@@ -690,7 +690,7 @@ public final class KeyConfig {
          */
         public PemBuilder config(Config config) {
             Resource.create(config, "pem-key").ifPresent(this::key);
-            config.get("pem-key-passphrase").value().map(String::toCharArray).ifPresent(this::keyPassphrase);
+            config.get("pem-key-passphrase").asString().map(String::toCharArray).ifPresent(this::keyPassphrase);
             Resource.create(config, "pem-cert-chain").ifPresent(this::certChain);
 
             return this;

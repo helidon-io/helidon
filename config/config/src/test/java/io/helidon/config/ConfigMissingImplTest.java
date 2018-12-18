@@ -82,7 +82,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testValue(TestContext context) {
         init(context);
-        assertThat(config().value(), is(Optional.empty()));
+        assertThat(config().asString(), is(ConfigValues.empty()));
     }
 
     @Override

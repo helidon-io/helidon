@@ -54,7 +54,7 @@
             meta configuration.
             Unless you need this feature, test scope is sufficient -->
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-beans</artifactId>
+            <artifactId>helidon-config-object-mapping</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

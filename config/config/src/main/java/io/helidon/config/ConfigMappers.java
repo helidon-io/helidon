@@ -626,11 +626,11 @@ public final class ConfigMappers {
      */
     public static Map<String, String> toMap(Config config) {
         if (config.isLeaf()) {
-            return new StringMap(config.key().toString(), config.value().get());
+            return new StringMap(config.key().toString(), config.asString().get());
         } else {
             return new StringMap(config.traverse()
                                          .filter(Config::isLeaf)
-                                         .map(node -> new AbstractMap.SimpleEntry<>(node.key().toString(), node.value().get()))
+                                         .map(node -> new AbstractMap.SimpleEntry<>(node.key().toString(), node.asString().get()))
                                          .collect(Collectors.toSet()));
         }
     }
@@ -702,14 +702,16 @@ public final class ConfigMappers {
      *                                to an instance of a given Java type.
      */
     static <T> Function<Config, T> wrap(Function<String, T> mapper) {
-        return (node) -> {
-            Optional<String> nodeValue = node.value();
+        return (node) -> nodeValue(node)
+                .map(value -> safeMap(node.key(), value, mapper))
+                .orElseThrow(MissingValueException.supplierForKey(node.key()));
+    }
 
-            return nodeValue
-                    .map(value -> safeMap(node.key(), value, mapper))
-                    .orElseThrow(MissingValueException.supplierForKey(node.key()));
-
-        };
+    private static Optional<String> nodeValue(Config node) {
+        if (node instanceof AbstractConfigImpl) {
+            return ((AbstractConfigImpl) node).value();
+        }
+        return node.asString().asOptional();
     }
 
     /**

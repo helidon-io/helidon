@@ -45,10 +45,10 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
                 .asNodeList()
                 .ifPresent(nl -> {
                     nl.forEach(conf -> {
-                        conf.get("key").value().ifPresent(key -> {
+                        conf.get("key").asString().ifPresent(key -> {
                             if (LOGIN_CONFIG_METHOD.equals(key)) {
                                 authenticator = conf.get("provider")
-                                        .value()
+                                        .asString()
                                         .orElse(authenticator);
                             }
                         });

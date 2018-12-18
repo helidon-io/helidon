@@ -338,9 +338,6 @@ public abstract class AbstractComplexConfigTest {
 
         assertThat(node.asString().orElse(defaultValue), is(expected));
         assertThat(node.as(String.class).orElse(defaultValue), is(expected));
-
-        assertThat(node.value().orElse(defaultValue), is(expected));
-        assertThat(node.as(String.class).orElse(defaultValue), is(expected));
     }
 
     @Test

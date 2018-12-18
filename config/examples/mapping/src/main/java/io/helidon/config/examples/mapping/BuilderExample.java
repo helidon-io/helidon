@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.beans.Value;
+import io.helidon.config.objectmapping.Value;
 
 /**
  * This example shows how to automatically deserialize configuration instance into POJO beans

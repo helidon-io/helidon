@@ -108,7 +108,7 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
      * @see ZipkinTracerBuilder#fromConfig(Config)
      */
     public static ZipkinTracerBuilder from(Config config) {
-        String serviceName = config.get("service").value()
+        String serviceName = config.get("service").asString()
                 .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
 
         return ZipkinTracerBuilder.forService(serviceName)
@@ -122,12 +122,12 @@ public final class ZipkinTracerBuilder implements Builder<Tracer> {
      * @return updated builder instance
      */
     public ZipkinTracerBuilder fromConfig(Config config) {
-        config.get("service").value().ifPresent(this::serviceName);
-        config.get("protocol").value().ifPresent(this::protocol);
-        config.get("host").value().ifPresent(this::zipkinHost);
+        config.get("service").asString().ifPresent(this::serviceName);
+        config.get("protocol").asString().ifPresent(this::protocol);
+        config.get("host").asString().ifPresent(this::zipkinHost);
         config.get("port").asInt().ifPresent(this::port);
-        config.get("path").value().ifPresent(this::path);
-        config.get("api-version").value().ifPresent(this::configApiVersion);
+        config.get("path").asString().ifPresent(this::path);
+        config.get("api-version").asString().ifPresent(this::configApiVersion);
 
         return this;
     }

@@ -37,6 +37,7 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 
 /**
  * Encryption utilities for secrets protection.
@@ -199,7 +200,7 @@ public final class CryptUtil {
     static Optional<char[]> resolveMasterPassword(boolean requireEncryption, Config config) {
         Optional<char[]> result = OptionalHelper.from(getEnv(ConfigProperties.MASTER_PASSWORD_ENV_VARIABLE))
                 .or(() -> {
-                    Optional<String> value = config.get(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY).value();
+                    ConfigValue<String> value = config.get(ConfigProperties.MASTER_PASSWORD_CONFIG_KEY).asString();
                     if (value.isPresent()) {
                         if (requireEncryption) {
                             LOGGER.warning(
@@ -208,7 +209,7 @@ public final class CryptUtil {
                             return Optional.empty();
                         }
                     }
-                    return value;
+                    return value.asOptional();
                 })
                 .asOptional()
                 .map(String::toCharArray);

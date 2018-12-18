@@ -157,7 +157,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
         @Override
         protected B init(Config metaConfig) {
             //media-type
-            metaConfig.get(MEDIA_TYPE_KEY).value()
+            metaConfig.get(MEDIA_TYPE_KEY).asString()
                     .ifPresent(this::mediaType);
 
             return super.init(metaConfig);

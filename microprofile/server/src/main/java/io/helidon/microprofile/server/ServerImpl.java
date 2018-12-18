@@ -94,7 +94,7 @@ public class ServerImpl implements Server {
                 .bindAddress(listenHost);
 
         OptionalHelper.from(Optional.ofNullable(builder.basePath()))
-                .or(() -> config.get("server.base-path").value())
+                .or(() -> config.get("server.base-path").asString().asOptional())
                 .asOptional()
                 .ifPresent(basePath -> {
                     routingBuilder.any("/", (req, res) -> {
@@ -132,7 +132,7 @@ public class ServerImpl implements Server {
 
             StaticContentSupport.Builder cpBuilder = StaticContentSupport.builder(cpConfig.get("location").asString().get());
             cpBuilder.welcomeFileName(cpConfig.get("welcome")
-                                              .value()
+                                              .asString()
                                               .orElse("index.html"));
             StaticContentSupport staticContent = cpBuilder.build();
 
@@ -149,7 +149,7 @@ public class ServerImpl implements Server {
             Config context = pathConfig.get("context");
             StaticContentSupport.Builder pBuilder = StaticContentSupport.builder(pathConfig.get("location").as(Path.class).get());
             pathConfig.get("welcome")
-                    .value()
+                    .asString()
                     .ifPresent(pBuilder::welcomeFileName);
             StaticContentSupport staticContent = pBuilder.build();
 

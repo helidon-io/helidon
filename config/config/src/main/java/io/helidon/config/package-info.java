@@ -68,18 +68,17 @@
  * <tr>
  * <td>VALUE</td>
  * <td>value node with an optional direct {@code String} value</td>
- * <td>{@link io.helidon.config.Config#value()}</td>
  * </tr>
  * <tr>
  * <td>LIST</td>
  * <td>list of indexed nodes with an optional "direct" value</td>
- * <td>{@link io.helidon.config.Config#value()}, {@link io.helidon.config.Config#asList(java.lang.Class)},
+ * <td>{@link io.helidon.config.Config#asList(java.lang.Class)},
  * {@link io.helidon.config.Config#asNodeList()}</td>
  * </tr>
  * <tr>
  * <td>OBJECT</td>
  * <td>object node with, possibly, child nodes and an optional "direct" value</td>
- * <td>{@link io.helidon.config.Config#value()}, {@link io.helidon.config.Config#asNodeList()}</td>
+ * <td>{@link io.helidon.config.Config#asNodeList()}</td>
  * </tr>
  * </tbody>
  * </table>

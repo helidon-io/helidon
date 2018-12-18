@@ -37,7 +37,7 @@
 
     <modules>
         <module>config</module>
-        <module>config-beans</module>
+        <module>object-mapping</module>
         <module>yaml</module>
         <module>etcd</module>
         <module>git</module>

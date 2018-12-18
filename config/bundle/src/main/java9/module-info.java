@@ -19,7 +19,7 @@
  */
 module io.helidon.config.bundle {
     requires transitive io.helidon.config;
-    requires transitive io.helidon.config.beans;
+    requires transitive io.helidon.config.objectmapping;
     requires transitive io.helidon.config.hocon;
     requires transitive io.helidon.config.yaml;
 }

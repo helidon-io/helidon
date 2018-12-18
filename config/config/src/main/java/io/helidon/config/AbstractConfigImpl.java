@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -77,6 +78,21 @@ abstract class AbstractConfigImpl implements Config {
 
     ConfigMapperManager mapperManager() {
         return mapperManager;
+    }
+
+    /**
+     * Returns a {@code String} value as {@link Optional} of configuration node if the node a leaf or "hybrid" node.
+     * Returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type or if the node does not contain a direct
+     * value.
+     * This is "raw" accessor method for String value of this config node. To have nicer variety of value accessors,
+     * see {@link #asString()} and in general {@link #as(Class)}.
+     *
+     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have a value
+     *
+     * use {@link #asString()} instead
+     */
+    Optional<String> value() {
+        return Optional.empty();
     }
 
     @Override

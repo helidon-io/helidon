@@ -37,7 +37,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link Config} API in case the node is {@link Config.Type#VALUE} type, i.e. {@link ConfigLeafImpl}.
@@ -107,7 +106,7 @@ public class ConfigLeafImplTest extends AbstractConfigImplTest {
     @ParameterizedTest
     public void testValue(TestContext context) {
         init(context);
-        assertValue(key -> config(key).value().get());
+        assertValue(key -> config(key).asString().get());
     }
 
     @MethodSource("initParams")

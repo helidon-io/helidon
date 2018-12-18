@@ -313,7 +313,7 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("name").value().ifPresent(this::name);
+            config.get("name").asString().ifPresent(this::name);
             config.get("default").asBoolean().ifPresent(this::isDefault);
             config.get("authentication").asList(FlaggedProvider::fromConfig)
                     .ifPresent(this.authenticators::addAll);
