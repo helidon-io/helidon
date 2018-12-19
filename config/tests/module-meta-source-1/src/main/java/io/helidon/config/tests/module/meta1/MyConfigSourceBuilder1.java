@@ -57,14 +57,14 @@ public class MyConfigSourceBuilder1
      * @return new builder instance
      */
     public static MyConfigSourceBuilder1 from(Config metaConfig) {
-        return from(metaConfig.get("myProp1").asString(),
-                    metaConfig.get("myProp2").asInt())
+        return from(metaConfig.get("myProp1").asString().get(),
+                    metaConfig.get("myProp2").asInt().get())
                 .init(metaConfig);
     }
 
     @Override
     protected MyConfigSourceBuilder1 init(Config metaConfig) {
-        metaConfig.get("myProp3").asOptionalBoolean().ifPresent(this::myProp3);
+        metaConfig.get("myProp3").asBoolean().ifPresent(this::myProp3);
         return super.init(metaConfig);
     }
 

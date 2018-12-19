@@ -228,13 +228,13 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            config.get("core-pool-size").asOptionalInt().ifPresent(this::corePoolSize);
-            config.get("max-pool-size").asOptionalInt().ifPresent(this::maxPoolSize);
-            config.get("keep-alive-minutes").asOptionalInt().ifPresent(this::keepAliveMinutes);
-            config.get("queue-capacity").asOptionalInt().ifPresent(this::queueCapacity);
-            config.get("is-daemon").asOptional(Boolean.class).ifPresent(this::daemon);
-            config.get("thread-name-prefix").value().ifPresent(this::threadNamePrefix);
-            config.get("should-prestart").asOptional(Boolean.class).ifPresent(this::prestart);
+            config.get("core-pool-size").asInt().ifPresent(this::corePoolSize);
+            config.get("max-pool-size").asInt().ifPresent(this::maxPoolSize);
+            config.get("keep-alive-minutes").asInt().ifPresent(this::keepAliveMinutes);
+            config.get("queue-capacity").asInt().ifPresent(this::queueCapacity);
+            config.get("is-daemon").asBoolean().ifPresent(this::daemon);
+            config.get("thread-name-prefix").asString().ifPresent(this::threadNamePrefix);
+            config.get("should-prestart").asBoolean().ifPresent(this::prestart);
 
             return this;
         }

@@ -22,9 +22,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -363,11 +365,17 @@ public final class WebSecurity implements Service {
         Config wsConfig = config.get("security.web-server");
         SecurityHandler defaults = SecurityHandler.from(wsConfig.get("defaults"), defaultHandler);
 
-        wsConfig.get("paths").nodeList().ifPresent(configs -> {
+        wsConfig.get("paths").asNodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
-                List<Http.RequestMethod> methods = pathConfig.get("methods").mapList(Http.RequestMethod::create, listOf());
+                List<Http.RequestMethod> methods = pathConfig.get("methods").asNodeList().orElse(listOf())
+                        .stream()
+                        .map(Config::asString)
+                        .map(ConfigValue::get)
+                        .map(Http.RequestMethod::create)
+                        .collect(Collectors.toList());
+
                 String path = pathConfig.get("path")
-                        .value()
+                        .asString()
                         .orElseThrow(() -> new SecurityException(pathConfig
                                                                          .key() + " must contain path key with a path to "
                                                                          + "register to web server"));

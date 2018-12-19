@@ -51,7 +51,7 @@ public class GreetService implements Service {
     /**
      * The config value for the key {@code greeting}.
      */
-    private static String greeting = CONFIG.get("greeting").asString("Ciao");
+    private static String greeting = CONFIG.get("greeting").asString().orElse("Ciao");
 
     /**
      * A service registers itself by updating the routine rules.

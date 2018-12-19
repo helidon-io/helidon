@@ -43,11 +43,11 @@ public class DirectorySourceExample {
                 .disableSystemPropertiesSource()
                 .build();
 
-        String username = secrets.get("username").asString();
+        String username = secrets.get("username").asString().get();
         System.out.println("Username: " + username);
         assert username.equals("libor");
 
-        String password = secrets.get("password").asString();
+        String password = secrets.get("password").asString().get();
         System.out.println("Password: " + password);
         assert password.equals("^ery$ecretP&ssword");
     }

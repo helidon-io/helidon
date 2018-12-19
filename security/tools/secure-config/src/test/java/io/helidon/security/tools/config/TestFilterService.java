@@ -31,7 +31,7 @@ class TestFilterService {
     void testFiltering() {
         Config config = Config.create();
 
-        String value = config.get("pwd3").asString();
+        String value = config.get("pwd3").asString().get();
 
         assertThat(value, is(AbstractSecureConfigTest.TEST_STRING));
     }

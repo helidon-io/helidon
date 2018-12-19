@@ -22,7 +22,7 @@
         "http://checkstyle.sourceforge.net/dtds/suppressions_1_1.dtd">
 
 <suppressions>
-    <suppress checks="FileLength"
-            files="Config.java"
-            lines="1"/>
+    <!--<suppress checks="FileLength"-->
+            <!--files="Config.java"-->
+            <!--lines="1"/>-->
 </suppressions>

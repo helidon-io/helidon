@@ -135,7 +135,7 @@ public final class SecurityHandler implements Handler {
 
         queryParamHandlers.addAll(builder.queryParamHandlers);
 
-        config.ifPresent(conf -> conf.asNodeList().forEach(node -> configMap.put(node.name(), node)));
+        config.ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
     }
 
     /**
@@ -195,30 +195,31 @@ public final class SecurityHandler implements Handler {
     static SecurityHandler from(Config config, SecurityHandler defaults) {
         Builder builder = builder(defaults);
 
-        OptionalHelper.from(config.get(KEY_ROLES_ALLOWED).asOptionalList(String.class))
+        config.get(KEY_ROLES_ALLOWED).asList(String.class)
                 .ifPresentOrElse(builder::rolesAllowed,
                                  () -> defaults.rolesAllowed.ifPresent(builder::rolesAllowed));
         if (config.exists()) {
             builder.config(config);
         }
-        OptionalHelper.from(config.get(KEY_AUTHENTICATOR).value()).or(() -> defaults.explicitAuthenticator).asOptional()
+
+        config.get(KEY_AUTHENTICATOR).asString().or(() -> defaults.explicitAuthenticator)
                 .ifPresent(builder::authenticator);
-        OptionalHelper.from(config.get(KEY_AUTHORIZER).value()).or(() -> defaults.explicitAuthorizer).asOptional()
+        config.get(KEY_AUTHORIZER).asString().or(() -> defaults.explicitAuthorizer)
                 .ifPresent(builder::authorizer);
-        OptionalHelper.from(config.get(KEY_AUTHENTICATE).asOptional(Boolean.class)).or(() -> defaults.authenticate).asOptional()
+        config.get(KEY_AUTHENTICATE).as(Boolean.class).or(() -> defaults.authenticate)
                 .ifPresent(builder::authenticate);
-        OptionalHelper.from(config.get(KEY_AUTHENTICATION_OPTIONAL).asOptional(Boolean.class))
+        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class)
                 .or(() -> defaults.authenticationOptional)
-                .asOptional().ifPresent(builder::authenticationOptional);
-        OptionalHelper.from(config.get(KEY_AUDIT).asOptional(Boolean.class)).or(() -> defaults.audited).asOptional()
+                .ifPresent(builder::authenticationOptional);
+        config.get(KEY_AUDIT).as(Boolean.class).or(() -> defaults.audited)
                 .ifPresent(builder::audit);
-        OptionalHelper.from(config.get(KEY_AUTHORIZE).asOptional(Boolean.class)).or(() -> defaults.authorize).asOptional()
+        config.get(KEY_AUTHORIZE).as(Boolean.class).or(() -> defaults.authorize)
                 .ifPresent(builder::authorize);
-        OptionalHelper.from(config.get(KEY_AUDIT_EVENT_TYPE).value()).or(() -> defaults.auditEventType).asOptional()
+        config.get(KEY_AUDIT_EVENT_TYPE).asString().or(() -> defaults.auditEventType)
                 .ifPresent(builder::auditEventType);
-        OptionalHelper.from(config.get(KEY_AUDIT_MESSAGE_FORMAT).value()).or(() -> defaults.auditMessageFormat).asOptional()
+        config.get(KEY_AUDIT_MESSAGE_FORMAT).asString().or(() -> defaults.auditMessageFormat)
                 .ifPresent(builder::auditMessageFormat);
-        config.get(KEY_QUERY_PARAM_HANDLERS).asOptionalList(QueryParamHandler.class)
+        config.get(KEY_QUERY_PARAM_HANDLERS).asList(QueryParamHandler::from)
                 .ifPresent(it -> it.forEach(builder::addQueryParamHandler));
 
         // now resolve implicit behavior
@@ -235,7 +236,7 @@ public final class SecurityHandler implements Handler {
         }
 
         // optional atn implies atn
-        config.get(KEY_AUTHENTICATION_OPTIONAL).asOptional(Boolean.class).ifPresent(aBoolean -> {
+        config.get(KEY_AUTHENTICATION_OPTIONAL).as(Boolean.class).ifPresent(aBoolean -> {
             if (aBoolean) {
                 if (!config.get(KEY_AUTHENTICATE).exists()) {
                     builder.authenticate(true);
@@ -244,14 +245,14 @@ public final class SecurityHandler implements Handler {
         });
 
         // explicit atn provider implies atn
-        config.get(KEY_AUTHENTICATOR).value().ifPresent(value -> {
+        config.get(KEY_AUTHENTICATOR).asString().ifPresent(value -> {
             if (!config.get(KEY_AUTHENTICATE).exists()) {
                 builder.authenticate(true);
             }
         });
 
         // explicit atz provider implies atz
-        config.get(KEY_AUTHORIZER).value().ifPresent(value -> {
+        config.get(KEY_AUTHORIZER).asString().ifPresent(value -> {
             if (!config.get(KEY_AUTHORIZE).exists()) {
                 builder.authorize(true);
             }
@@ -265,7 +266,7 @@ public final class SecurityHandler implements Handler {
                                       Optional<T> defaultValue,
                                       Consumer<T> builderMethod,
                                       Class<T> clazz) {
-        OptionalHelper.from(config.get(key).asOptional(clazz)).or(() -> defaultValue).asOptional().ifPresent(builderMethod);
+        config.get(key).as(clazz).or(() -> defaultValue).ifPresent(builderMethod);
     }
 
     static SecurityHandler newInstance() {

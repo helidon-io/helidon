@@ -18,24 +18,24 @@ package io.helidon.config.tests.module.mappers1;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
+import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 /**
- * Registers {@link ConfigMapper}s for {@link Logger} and {@link Locale}.
+ * Registers Config mappers for {@link Logger} and {@link Locale}.
  */
-@Priority(200)
+@Priority(90) // higher than default
 public class Mappers1ConfigMapperProvider implements ConfigMapperProvider {
 
     @Override
-    public Map<Class<?>, ConfigMapper<?>> getMappers() {
+    public Map<Class<?>, Function<Config, ?>> mappers() {
         return CollectionsHelper.mapOf(Logger.class, new LoggerConfigMapper(),
                       Locale.class, new LocaleConfigMapper());
     }
-
 }

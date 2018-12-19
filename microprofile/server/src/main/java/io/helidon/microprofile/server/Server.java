@@ -278,7 +278,7 @@ public interface Server {
             Map<String, Object> props = new HashMap<>(config.getConfig()
                                                               .get("cdi")
                                                               .detach()
-                                                              .asOptionalMap()
+                                                              .asMap()
                                                               .orElse(CollectionsHelper.mapOf()));
             initializer.setProperties(props);
 

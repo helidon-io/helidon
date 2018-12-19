@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
@@ -72,11 +71,11 @@ public class SignedHeadersConfig {
      */
     public static SignedHeadersConfig fromConfig(Config config) {
         Builder builder = builder();
-        config.asNodeList().forEach(methodConfig -> {
+        config.asNodeList().get().forEach(methodConfig -> {
             HeadersConfig mc = HeadersConfig.fromConfig(methodConfig);
 
-            OptionalHelper.from(methodConfig.get("method")
-                                        .value())
+            methodConfig.get("method")
+                    .asString()
                     .ifPresentOrElse(method -> builder.config(method, mc),
                                      () -> builder.defaultConfig(mc));
         });
@@ -199,8 +198,8 @@ public class SignedHeadersConfig {
          * @return instance configured from config
          */
         public static HeadersConfig fromConfig(Config config) {
-            return create(config.get("always").asStringList(CollectionsHelper.listOf()),
-                          config.get("if-present").asStringList(CollectionsHelper.listOf()));
+            return create(config.get("always").asList(String.class).orElse(CollectionsHelper.listOf()),
+                          config.get("if-present").asList(String.class).orElse(CollectionsHelper.listOf()));
         }
 
         List<String> getHeaders(Map<String, List<String>> transportHeaders) {

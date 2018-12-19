@@ -71,6 +71,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -81,13 +82,6 @@
                         <dependency>org.eclipse.microprofile.health:microprofile-health-tck</dependency>
                     </dependenciesToScan>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-testng</artifactId>
-                        <version>${version.plugin.surefire}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

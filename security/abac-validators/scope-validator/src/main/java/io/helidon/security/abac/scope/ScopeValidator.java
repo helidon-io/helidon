@@ -241,7 +241,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @return updated builder instance
          */
         public Builder from(Config config) {
-            config.get("operator").asOptionalString().map("OR"::equals).ifPresent(this::useOrOperator);
+            config.get("operator").asString().map("OR"::equals).ifPresent(this::useOrOperator);
             return this;
         }
     }
@@ -288,7 +288,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @return configuration based on the config
          */
         public static ScopesConfig from(Config config) {
-            return new ScopesConfig(config.asStringList(CollectionsHelper.listOf()));
+            return new ScopesConfig(config.asList(String.class).orElse(CollectionsHelper.listOf()));
         }
 
         /**

@@ -17,22 +17,22 @@
 package io.helidon.config.tests.module.mappers2;
 
 import java.util.Locale;
+import java.util.function.Function;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 
 /**
- * {@link ConfigMapper}s implementation for {@link Locale}.
+ * Config mappers implementation for {@link Locale}.
  */
-public class LocaleConfigMapper implements ConfigMapper<Locale> {
+public class LocaleConfigMapper implements Function<Config, Locale> {
 
     @Override
     public Locale apply(Config config) throws ConfigMappingException, MissingValueException {
-        String language = config.get("language").asString();
-        String country = config.get("country").asString("");
-        String variant = config.get("variant").asString("");
+        String language = config.get("language").asString().get();
+        String country = config.get("country").asString().orElse("");
+        String variant = config.get("variant").asString().orElse("");
 
         return new Locale("m2:" + language, "m2:" + country, "m2:" + variant);
     }

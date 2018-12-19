@@ -23,13 +23,13 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.config.internal.OverrideConfigFilter;
 import io.helidon.config.spi.OverrideSource;
 
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.config.ConfigSources.from;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link InMemoryOverrideSource}.
@@ -51,11 +51,11 @@ public class InMemoryOverrideSourceTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("aaa.bbb.name").asString(), is("app-name"));
-        assertThat(config.get("aaa.bbb.url").asString(), is("URL1"));
+        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simpleValue("app-name")));
+        assertThat(config.get("aaa.bbb.url").asString().get(), is("URL1"));
         assertThat(config.get("aaa.ccc.url").exists(), is(false));
-        assertThat(config.get("aaa.anything").asInt(), is(1));
-        assertThat(config.get("bbb").asString(), is("ahoy"));
+        assertThat(config.get("aaa.anything").asInt().get(), is(1));
+        assertThat(config.get("bbb").asString().get(), is("ahoy"));
         assertThat(config.get("bbb.ccc.url").exists(), is(false));
     }
 
@@ -74,11 +74,11 @@ public class InMemoryOverrideSourceTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("aaa.bbb.name").asString(), is("app-name"));
-        assertThat(config.get("aaa.bbb.url").asString(), is("URL0"));
+        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simpleValue("app-name")));
+        assertThat(config.get("aaa.bbb.url").asString(), is(ConfigValues.simpleValue("URL0")));
         assertThat(config.get("aaa.ccc.url").exists(), is(false));
-        assertThat(config.get("aaa.anything").asInt(), is(1));
-        assertThat(config.get("bbb").asString(), is("ahoy"));
+        assertThat(config.get("aaa.anything").asInt(), is(ConfigValues.simpleValue(1)));
+        assertThat(config.get("bbb").asString(), is(ConfigValues.simpleValue("ahoy")));
         assertThat(config.get("bbb.ccc.url").exists(), is(false));
     }
 
@@ -102,11 +102,11 @@ public class InMemoryOverrideSourceTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertThat(config.get("aaa.bbb.name").asString(), is("app-name"));
-        assertThat(config.get("aaa.bbb.url").asString(), is("URL1"));
+        assertThat(config.get("aaa.bbb.name").asString(), is(ConfigValues.simpleValue("app-name")));
+        assertThat(config.get("aaa.bbb.url").asString(), is(ConfigValues.simpleValue("URL1")));
         assertThat(config.get("aaa.ccc.url").exists(), is(false));
-        assertThat(config.get("aaa.anything").asInt(), is(1));
-        assertThat(config.get("bbb").asString(), is("ahoy"));
+        assertThat(config.get("aaa.anything").asInt(), is(ConfigValues.simpleValue(1)));
+        assertThat(config.get("bbb").asString(), is(ConfigValues.simpleValue("ahoy")));
         assertThat(config.get("bbb.ccc.url").exists(), is(false));
     }
 

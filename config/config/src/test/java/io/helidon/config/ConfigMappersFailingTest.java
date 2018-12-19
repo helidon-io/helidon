@@ -18,17 +18,17 @@ package io.helidon.config;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
 
-import static org.hamcrest.Matchers.containsString;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.hamcrest.Matchers.containsString;
 
 /**
  * Tests {@link ConfigMappers} with focus on failing mapping.
@@ -50,7 +50,8 @@ public class ConfigMappersFailingTest {
     @ParameterizedTest
     @MethodSource("builtInMapperTypes")
     public void testMappingFails(Class<?> type) {
-        ConfigMapperManager manager = BuilderImpl.buildMappers(false, Collections.emptyMap());
+        ConfigMapperManager manager = BuilderImpl.buildMappers(false,
+                                                               ConfigMapperManager.MapperProviders.create());
 
         String key = "config.key.with.wrong.format";
         Config config = Config.builder()
@@ -58,7 +59,7 @@ public class ConfigMappersFailingTest {
                 .build();
 
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            manager.map(type, config.get(key));
+            manager.map(config.get(key), type);
         });
         Assertions.assertTrue(containsString(key).matches(ex.getMessage()));
     }

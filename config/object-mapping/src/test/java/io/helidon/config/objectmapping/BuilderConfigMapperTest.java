@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,32 @@
  * limitations under the License.
  */
 
-package io.helidon.config;
+package io.helidon.config.objectmapping;
 
 import java.net.URI;
 import java.util.List;
 
-import io.helidon.config.FactoryMethodConfigMapperTest.CustomType;
-import io.helidon.config.FactoryMethodConfigMapperTest.DefaultCustomTypeSupplier;
-import io.helidon.config.FactoryMethodConfigMapperTest.DefaultCustomTypesSupplier;
-import io.helidon.config.FactoryMethodConfigMapperTest.DefaultNumbersSupplier;
-import io.helidon.config.FactoryMethodConfigMapperTest.DefaultUrisSupplier;
-import io.helidon.config.FactoryMethodConfigMapperTest.JavaBean;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigMappers;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.CustomType;
+import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.DefaultCustomTypeSupplier;
+import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.DefaultCustomTypesSupplier;
+import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.DefaultNumbersSupplier;
+import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.DefaultUrisSupplier;
+import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.JavaBean;
 import io.helidon.config.spi.ConfigNode;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
+
 /**
- * Tests {@link ConfigMappers} with focus on builder pattern,
- * see {@link BuilderConfigMapper}.
+ * Tests {@link ConfigMappers} with focus on builder pattern.
  */
 public class BuilderConfigMapperTest {
 
@@ -42,7 +47,7 @@ public class BuilderConfigMapperTest {
     public void testBuilderNoBuildMethod() {
         Config config = Config.empty();
 
-        BuilderNoBuildMethodBean bean = config.as(BuilderNoBuildMethodBean.class);
+        BuilderNoBuildMethodBean bean = config.as(BuilderNoBuildMethodBean.class).get();
 
         assertThat(bean.isOk(), is(true));
     }
@@ -51,7 +56,7 @@ public class BuilderConfigMapperTest {
     public void testBuilderBadTypeBuildMethod() {
         Config config = Config.empty();
 
-        BadTypeBuilderBean bean = config.as(BadTypeBuilderBean.class);
+        BadTypeBuilderBean bean = config.as(BadTypeBuilderBean.class).get();
 
         assertThat(bean.isOk(), is(true));
     }
@@ -60,7 +65,7 @@ public class BuilderConfigMapperTest {
     public void testTransientBuilder() {
         Config config = Config.empty();
 
-        TransientBuilderBean bean = config.as(TransientBuilderBean.class);
+        TransientBuilderBean bean = config.as(TransientBuilderBean.class).get();
 
         assertThat(bean.isOk(), is(true));
     }
@@ -69,7 +74,7 @@ public class BuilderConfigMapperTest {
     public void testTransientBuildMethod() {
         Config config = Config.empty();
 
-        TransientBuildMethodBean bean = config.as(TransientBuildMethodBean.class);
+        TransientBuildMethodBean bean = config.as(TransientBuildMethodBean.class).get();
 
         assertThat(bean.isOk(), is(true));
     }
@@ -96,14 +101,16 @@ public class BuilderConfigMapperTest {
                         .build()));
 
         SettersBuilderBean bean = config.get("app")
-                .as(SettersBuilderBean.class);
+                .as(SettersBuilderBean.class)
+                .get();
 
-        assertThat(bean.getNumber(), is(1));
-        assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
-        assertThat(bean.getCustom(), is(CustomType.from("/this/is/my.path")));
-        assertThat(bean.getNumbers(), contains(1, 2));
-        assertThat(bean.getUris(), contains(URI.create("this:is/my?uri"), URI.create("http://another/uri")));
-        assertThat(bean.getCustoms(), contains(CustomType.from("/this/is/my.path"), CustomType.from("/and/another.path")));
+        MatcherAssert.assertThat(bean.getNumber(), is(1));
+        MatcherAssert.assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
+        MatcherAssert.assertThat(bean.getCustom(), Matchers.is(CustomType.from("/this/is/my.path")));
+        MatcherAssert.assertThat(bean.getNumbers(), contains(1, 2));
+        MatcherAssert.assertThat(bean.getUris(), contains(URI.create("this:is/my?uri"), URI.create("http://another/uri")));
+        MatcherAssert.assertThat(bean.getCustoms(), Matchers
+                .contains(CustomType.from("/this/is/my.path"), CustomType.from("/and/another.path")));
     }
 
     @Test
@@ -128,14 +135,16 @@ public class BuilderConfigMapperTest {
                         .build()));
 
         FieldsBuilderBean bean = config.get("app")
-                .as(FieldsBuilderBean.class);
+                .as(FieldsBuilderBean.class)
+                .get();
 
-        assertThat(bean.getNumber(), is(1));
-        assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
-        assertThat(bean.getCustom(), is(CustomType.from("/this/is/my.path")));
-        assertThat(bean.getNumbers(), contains(1, 2));
-        assertThat(bean.getUris(), contains(URI.create("this:is/my?uri"), URI.create("http://another/uri")));
-        assertThat(bean.getCustoms(), contains(CustomType.from("/this/is/my.path"), CustomType.from("/and/another.path")));
+        MatcherAssert.assertThat(bean.getNumber(), is(1));
+        MatcherAssert.assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
+        MatcherAssert.assertThat(bean.getCustom(), Matchers.is(CustomType.from("/this/is/my.path")));
+        MatcherAssert.assertThat(bean.getNumbers(), contains(1, 2));
+        MatcherAssert.assertThat(bean.getUris(), contains(URI.create("this:is/my?uri"), URI.create("http://another/uri")));
+        MatcherAssert.assertThat(bean.getCustoms(), Matchers
+                .contains(CustomType.from("/this/is/my.path"), CustomType.from("/and/another.path")));
     }
 
     @Test
@@ -160,56 +169,61 @@ public class BuilderConfigMapperTest {
                         .build()));
 
         InterfaceBuilderBean bean = config.get("app")
-                .as(InterfaceBuilderBean.class);
+                .as(InterfaceBuilderBean.class)
+                .get();
 
-        assertThat(bean.getNumber(), is(1));
-        assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
-        assertThat(bean.getCustom(), is(CustomType.from("/this/is/my.path")));
-        assertThat(bean.getNumbers(), contains(1, 2));
-        assertThat(bean.getUris(), contains(URI.create("this:is/my?uri"), URI.create("http://another/uri")));
-        assertThat(bean.getCustoms(), contains(CustomType.from("/this/is/my.path"), CustomType.from("/and/another.path")));
+        MatcherAssert.assertThat(bean.getNumber(), is(1));
+        MatcherAssert.assertThat(bean.getUri(), is(URI.create("this:is/my?uri")));
+        MatcherAssert.assertThat(bean.getCustom(), Matchers.is(CustomType.from("/this/is/my.path")));
+        MatcherAssert.assertThat(bean.getNumbers(), contains(1, 2));
+        MatcherAssert.assertThat(bean.getUris(), contains(URI.create("this:is/my?uri"), URI.create("http://another/uri")));
+        MatcherAssert.assertThat(bean.getCustoms(), Matchers
+                .contains(CustomType.from("/this/is/my.path"), CustomType.from("/and/another.path")));
     }
 
     @Test
     public void testDefaultsSettersBuilder() {
         Config config = Config.empty();
 
-        DefaultsSettersBuilderBean bean = config.as(DefaultsSettersBuilderBean.class);
+        DefaultsSettersBuilderBean bean = config.as(DefaultsSettersBuilderBean.class).get();
 
-        assertThat(bean.getNumber(), is(42));
-        assertThat(bean.getUri(), is(URI.create("default:uri")));
-        assertThat(bean.getCustom(), is(CustomType.from("/tmp/default")));
-        assertThat(bean.getNumbers(), contains(23, 42));
-        assertThat(bean.getUris(), contains(URI.create("default:uri"), URI.create("default:another:uri")));
-        assertThat(bean.getCustoms(), contains(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default")));
+        MatcherAssert.assertThat(bean.getNumber(), is(42));
+        MatcherAssert.assertThat(bean.getUri(), is(URI.create("default:uri")));
+        MatcherAssert.assertThat(bean.getCustom(), Matchers.is(CustomType.from("/tmp/default")));
+        MatcherAssert.assertThat(bean.getNumbers(), contains(23, 42));
+        MatcherAssert.assertThat(bean.getUris(), contains(URI.create("default:uri"), URI.create("default:another:uri")));
+        MatcherAssert.assertThat(bean.getCustoms(), Matchers
+                .contains(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default")));
     }
 
     @Test
     public void testDefaultsFieldsBuilder() {
         Config config = Config.empty();
 
-        DefaultsFieldsBuilderBean bean = config.as(DefaultsFieldsBuilderBean.class);
+        DefaultsFieldsBuilderBean bean = config.as(DefaultsFieldsBuilderBean.class).get();
 
-        assertThat(bean.getNumber(), is(42));
-        assertThat(bean.getUri(), is(URI.create("default:uri")));
-        assertThat(bean.getCustom(), is(CustomType.from("/tmp/default")));
-        assertThat(bean.getNumbers(), contains(23, 42));
-        assertThat(bean.getUris(), contains(URI.create("default:uri"), URI.create("default:another:uri")));
-        assertThat(bean.getCustoms(), contains(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default")));
+        MatcherAssert.assertThat(bean.getNumber(), is(42));
+        MatcherAssert.assertThat(bean.getUri(), is(URI.create("default:uri")));
+        MatcherAssert.assertThat(bean.getCustom(), Matchers.is(CustomType.from("/tmp/default")));
+        MatcherAssert.assertThat(bean.getNumbers(), contains(23, 42));
+        MatcherAssert.assertThat(bean.getUris(), contains(URI.create("default:uri"), URI.create("default:another:uri")));
+        MatcherAssert.assertThat(bean.getCustoms(), Matchers
+                .contains(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default")));
     }
 
     @Test
     public void testDefaultsInterfaceBuilder() {
         Config config = Config.empty();
 
-        DefaultsInterfaceBuilderBean bean = config.as(DefaultsInterfaceBuilderBean.class);
+        DefaultsInterfaceBuilderBean bean = config.as(DefaultsInterfaceBuilderBean.class).get();
 
-        assertThat(bean.getNumber(), is(42));
-        assertThat(bean.getUri(), is(URI.create("default:uri")));
-        assertThat(bean.getCustom(), is(CustomType.from("/tmp/default")));
-        assertThat(bean.getNumbers(), contains(23, 42));
-        assertThat(bean.getUris(), contains(URI.create("default:uri"), URI.create("default:another:uri")));
-        assertThat(bean.getCustoms(), contains(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default")));
+        MatcherAssert.assertThat(bean.getNumber(), is(42));
+        MatcherAssert.assertThat(bean.getUri(), is(URI.create("default:uri")));
+        MatcherAssert.assertThat(bean.getCustom(), Matchers.is(CustomType.from("/tmp/default")));
+        MatcherAssert.assertThat(bean.getNumbers(), contains(23, 42));
+        MatcherAssert.assertThat(bean.getUris(), contains(URI.create("default:uri"), URI.create("default:another:uri")));
+        MatcherAssert.assertThat(bean.getCustoms(), Matchers
+                .contains(CustomType.from("/tmp/default"), CustomType.from("/tmp/another/default")));
     }
 
     //
@@ -245,7 +259,7 @@ public class BuilderConfigMapperTest {
                 this.uri = uri;
             }
 
-            @Config.Value(key = "path")
+            @Value(key = "path")
             public void setCustom(CustomType custom) {
                 this.custom = custom;
             }
@@ -258,7 +272,7 @@ public class BuilderConfigMapperTest {
                 this.uris = uris;
             }
 
-            @Config.Value(key = "paths")
+            @Value(key = "paths")
             public void setCustoms(List<CustomType> customs) {
                 this.customs = customs;
             }
@@ -284,14 +298,14 @@ public class BuilderConfigMapperTest {
 
             void setUri(URI uri);
 
-            @Config.Value(key = "path")
+            @Value(key = "path")
             void setCustom(CustomType custom);
 
             void setNumbers(List<Integer> numbers);
 
             void setUris(List<URI> uris);
 
-            @Config.Value(key = "paths")
+            @Value(key = "paths")
             void setCustoms(List<CustomType> customs);
 
             InterfaceBuilderBean build();
@@ -351,11 +365,11 @@ public class BuilderConfigMapperTest {
         public static class Builder {
             public int number;
             public URI uri;
-            @Config.Value(key = "path")
+            @Value(key = "path")
             public CustomType custom;
             public List<Integer> numbers;
             public List<URI> uris;
-            @Config.Value(key = "paths")
+            @Value(key = "paths")
             public List<CustomType> customs;
 
             private Builder() {
@@ -388,32 +402,32 @@ public class BuilderConfigMapperTest {
             private Builder() {
             }
 
-            @Config.Value(withDefault = "42")
+            @Value(withDefault = "42")
             public void setNumber(int number) {
                 this.number = number;
             }
 
-            @Config.Value(withDefault = "default:uri")
+            @Value(withDefault = "default:uri")
             public void setUri(URI uri) {
                 this.uri = uri;
             }
 
-            @Config.Value(key = "path", withDefaultSupplier = DefaultCustomTypeSupplier.class)
+            @Value(key = "path", withDefaultSupplier = DefaultCustomTypeSupplier.class)
             public void setCustom(CustomType custom) {
                 this.custom = custom;
             }
 
-            @Config.Value(withDefaultSupplier = DefaultNumbersSupplier.class)
+            @Value(withDefaultSupplier = DefaultNumbersSupplier.class)
             public void setNumbers(List<Integer> numbers) {
                 this.numbers = numbers;
             }
 
-            @Config.Value(withDefaultSupplier = DefaultUrisSupplier.class)
+            @Value(withDefaultSupplier = DefaultUrisSupplier.class)
             public void setUris(List<URI> uris) {
                 this.uris = uris;
             }
 
-            @Config.Value(withDefaultSupplier = DefaultCustomTypesSupplier.class)
+            @Value(withDefaultSupplier = DefaultCustomTypesSupplier.class)
             public void setCustoms(List<CustomType> customs) {
                 this.customs = customs;
             }
@@ -435,22 +449,22 @@ public class BuilderConfigMapperTest {
         }
 
         public interface Builder {
-            @Config.Value(withDefault = "42")
+            @Value(withDefault = "42")
             void setNumber(int number);
 
-            @Config.Value(withDefault = "default:uri")
+            @Value(withDefault = "default:uri")
             void setUri(URI uri);
 
-            @Config.Value(key = "path", withDefaultSupplier = DefaultCustomTypeSupplier.class)
+            @Value(key = "path", withDefaultSupplier = DefaultCustomTypeSupplier.class)
             void setCustom(CustomType custom);
 
-            @Config.Value(withDefaultSupplier = DefaultNumbersSupplier.class)
+            @Value(withDefaultSupplier = DefaultNumbersSupplier.class)
             void setNumbers(List<Integer> numbers);
 
-            @Config.Value(withDefaultSupplier = DefaultUrisSupplier.class)
+            @Value(withDefaultSupplier = DefaultUrisSupplier.class)
             void setUris(List<URI> uris);
 
-            @Config.Value(withDefaultSupplier = DefaultCustomTypesSupplier.class)
+            @Value(withDefaultSupplier = DefaultCustomTypesSupplier.class)
             void setCustoms(List<CustomType> customs);
 
             DefaultsInterfaceBuilderBean build();
@@ -508,17 +522,17 @@ public class BuilderConfigMapperTest {
         }
 
         public static class Builder {
-            @Config.Value(withDefault = "42")
+            @Value(withDefault = "42")
             public int number;
-            @Config.Value(withDefault = "default:uri")
+            @Value(withDefault = "default:uri")
             public URI uri;
-            @Config.Value(withDefaultSupplier = DefaultCustomTypeSupplier.class)
+            @Value(withDefaultSupplier = DefaultCustomTypeSupplier.class)
             public CustomType custom;
-            @Config.Value(withDefaultSupplier = DefaultNumbersSupplier.class)
+            @Value(withDefaultSupplier = DefaultNumbersSupplier.class)
             public List<Integer> numbers;
-            @Config.Value(withDefaultSupplier = DefaultUrisSupplier.class)
+            @Value(withDefaultSupplier = DefaultUrisSupplier.class)
             public List<URI> uris;
-            @Config.Value(withDefaultSupplier = DefaultCustomTypesSupplier.class)
+            @Value(withDefaultSupplier = DefaultCustomTypesSupplier.class)
             public List<CustomType> customs;
 
             private Builder() {
@@ -593,7 +607,7 @@ public class BuilderConfigMapperTest {
             this(true);
         }
 
-        @Config.Transient
+        @Transient
         public static Builder builder() {
             return new Builder();
         }
@@ -625,7 +639,7 @@ public class BuilderConfigMapperTest {
             private Builder() {
             }
 
-            @Config.Transient
+            @Transient
             public TransientBuildMethodBean build() {
                 return new TransientBuildMethodBean(false);
             }

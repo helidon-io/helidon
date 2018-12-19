@@ -42,13 +42,13 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     @Override
     public void init(Config config) {
         config.get(PROVIDER_NAME + ".auth-method-mapping")
-                .asOptionalNodeList()
+                .asNodeList()
                 .ifPresent(nl -> {
                     nl.forEach(conf -> {
-                        conf.get("key").value().ifPresent(key -> {
+                        conf.get("key").asString().ifPresent(key -> {
                             if (LOGIN_CONFIG_METHOD.equals(key)) {
                                 authenticator = conf.get("provider")
-                                        .value()
+                                        .asString()
                                         .orElse(authenticator);
                             }
                         });

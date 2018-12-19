@@ -17,13 +17,14 @@
 package io.helidon.config.tests.default4;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link Config#create()} and YAML is used first, has precedence.
@@ -39,7 +40,7 @@ public class ConfigCreateDefaultFromYamlTest {
     public void testCreate() {
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(CONFIG_VALUE));
+        assertThat(config.get(KEY).asString(), is(ConfigValues.simpleValue(CONFIG_VALUE)));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class ConfigCreateDefaultFromYamlTest {
 
         Config config = Config.create();
 
-        assertThat(config.get(KEY).asString(), is(PROP_VALUE));
+        assertThat(config.get(KEY).asString(), is(ConfigValues.simpleValue(PROP_VALUE)));
     }
 
 }

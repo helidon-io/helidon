@@ -254,10 +254,10 @@ public final class TokenHandler {
          * @return update builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("header").value().ifPresent(this::tokenHeader);
-            config.get("prefix").value().ifPresent(this::tokenPrefix);
-            config.get("regexp").asOptional(Pattern.class).ifPresent(this::tokenPattern);
-            config.get("format").value().ifPresent(this::tokenFormat);
+            config.get("header").asString().ifPresent(this::tokenHeader);
+            config.get("prefix").asString().ifPresent(this::tokenPrefix);
+            config.get("regexp").as(Pattern.class).ifPresent(this::tokenPattern);
+            config.get("format").asString().ifPresent(this::tokenFormat);
 
             return this;
         }

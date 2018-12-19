@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.reactive.Flow;
@@ -151,7 +150,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
      */
     public abstract static class Builder<B extends Builder<B, T>, T>
             extends AbstractSource.Builder<B, T, ConfigSource>
-            implements Supplier<ConfigSource> {
+            implements io.helidon.common.Builder<ConfigSource> {
 
         private static final String MEDIA_TYPE_MAPPING_KEY = "media-type-mapping";
         private final B thisBuilder;
@@ -193,7 +192,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         @Override
         protected B init(Config metaConfig) {
             //media-type-mapping
-            metaConfig.get(MEDIA_TYPE_MAPPING_KEY).detach().asOptionalMap()
+            metaConfig.get(MEDIA_TYPE_MAPPING_KEY).detach().asMap()
                     .ifPresent(this::initMediaTypeMapping);
 
             return super.init(metaConfig);

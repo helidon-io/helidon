@@ -17,11 +17,11 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigMapper;
-import io.helidon.config.ConfigMappers;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.RetryPolicies;
@@ -29,7 +29,7 @@ import io.helidon.config.RetryPolicies;
 /**
  * Mapper to convert meta-configuration to {@link RetryPolicy} instance.
  */
-class RetryPolicyConfigMapper implements ConfigMapper<RetryPolicy> {
+class RetryPolicyConfigMapper implements Function<Config, RetryPolicy> {
 
     private static final String PROPERTIES_KEY = "properties";
     private static final String TYPE_KEY = "type";
@@ -44,11 +44,13 @@ class RetryPolicyConfigMapper implements ConfigMapper<RetryPolicy> {
     @Override
     public RetryPolicy apply(Config config) throws ConfigMappingException, MissingValueException {
         Config properties = config.get(PROPERTIES_KEY) // use properties config node
-                .node().orElse(Config.empty()); // or empty config node
+                .asNode()
+                .orElse(Config.empty(config)); // or empty config node
 
-        return OptionalHelper.from(config.get(TYPE_KEY).asOptionalString() // `type` is specified
+        return OptionalHelper.from(config.get(TYPE_KEY).asString() // `type` is specified
                 .flatMap(type -> this.builtin(type, properties))) // return built-in retry policy
-                .or(() -> config.get(CLASS_KEY).asOptional(Class.class) // `class` is specified
+                .or(() -> config.get(CLASS_KEY)
+                        .as(Class.class) // `class` is specified
                         .flatMap(clazz -> custom(clazz, properties))) // return custom retry policy
                 .asOptional()
                 .orElseThrow(() -> new ConfigMappingException(config.key(), "Uncompleted retry-policy configuration."));
@@ -58,7 +60,7 @@ class RetryPolicyConfigMapper implements ConfigMapper<RetryPolicy> {
         final RetryPolicy retryPolicy;
         switch (type) {
         case REPEAT_TYPE:
-            retryPolicy = properties.as(RetryPolicies.Builder.class).get();
+            retryPolicy = properties.as(RetryPolicies.Builder.class).get().get();
             break;
         default:
             retryPolicy = null;
@@ -69,9 +71,9 @@ class RetryPolicyConfigMapper implements ConfigMapper<RetryPolicy> {
     private Optional<RetryPolicy> custom(Class<?> clazz, Config properties) {
         final RetryPolicy retryPolicy;
         if (RetryPolicy.class.isAssignableFrom(clazz)) {
-            retryPolicy = properties.as((Class<RetryPolicy>) clazz);
+            retryPolicy = properties.as((Class<RetryPolicy>) clazz).get();
         } else {
-            retryPolicy = properties.map(ConfigMappers.from(RetryPolicy.class, clazz));
+            throw new ConfigException("Configured retry policy class " + clazz.getName() + " does not implement RetryPolicy");
         }
         return Optional.of(retryPolicy);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.config;
+package io.helidon.config.objectmapping;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.CollectionsHelper;
+import io.helidon.config.ConfigException;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -32,39 +35,45 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
- * Tests {@link GenericConfigMapperUtils}.
+ * Tests {@link ReflectionUtil}.
  */
-public class GenericConfigMapperUtilsTest {
+public class ReflectionUtilTest {
 
     @Test
     public void testDecapitalize() {
-        assertThat(GenericConfigMapperUtils.decapitalize("a"), is("a"));
-        assertThat(GenericConfigMapperUtils.decapitalize("B"), is("b"));
-        assertThat(GenericConfigMapperUtils.decapitalize("cCcCc"), is("cCcCc"));
-        assertThat(GenericConfigMapperUtils.decapitalize("DdDdD"), is("ddDdD"));
+        assertThat(ReflectionUtil.decapitalize("a"), is("a"));
+        assertThat(ReflectionUtil.decapitalize("B"), is("b"));
+        assertThat(ReflectionUtil.decapitalize("cCcCc"), is("cCcCc"));
+        assertThat(ReflectionUtil.decapitalize("DdDdD"), is("ddDdD"));
     }
 
     @Test
-    public void testIsSetter() throws NoSuchMethodException {
+    public void testIsSetter() {
         //false
-        assertThat(isSetter("set", String.class), is(false));
-        assertThat(isSetter("nastav", String.class), is(false));
-        assertThat(isSetter("setVal", String.class), is(false));
-        assertThat(isSetter("setVal2", String.class, String.class), is(false));
-        assertThat(isSetter("init2", String.class, String.class), is(false));
-        //true
-        assertThat(isSetter("setValue", String.class), is(true));
-        assertThat(isSetter("init", String.class), is(true));
+        assertAll(
+                () -> assertThat("Set is fine", isSetter("set", String.class), is(true)),
+                () -> assertThat("Any string is fine as long as it has a single parameter and void return",
+                                 isSetter("nastav", String.class),
+                                 is(true)),
+                () -> assertThat("Wrong return type to be a setter", isSetter("setVal", String.class), is(false)),
+                () -> assertThat("Wrong number of params to be a setter",
+                                 isSetter("setVal2", String.class, String.class),
+                                 is(false)),
+                () -> assertThat("Wrong number of params to be a setter",
+                                 isSetter("init2", String.class, String.class),
+                                 is(false)),
+                //true
+                () -> assertThat("Correct setter definition", isSetter("setValue", String.class), is(true)),
+                () -> assertThat("Correct setter definition", isSetter("init", String.class), is(true))
+        );
     }
 
     private boolean isSetter(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
         Method method = ClashBean.class.getMethod(methodName, parameterTypes);
-        return GenericConfigMapperUtils.isSetter(method);
+        return ReflectionUtil.isSetter(ClashBean.class, method);
     }
 
     @Test
@@ -82,12 +91,12 @@ public class GenericConfigMapperUtilsTest {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             isMethodTransient("setValueClash", String.class);
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("@Config.Value", "@Config.Transient", "setValueClash", "setter")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(), stringContainsInOrder(listOf("@Value", "@Transient", "setValueClash")));
     }
 
     private boolean isMethodTransient(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException {
         Method method = ClashBean.class.getMethod(methodName, parameterTypes);
-        return GenericConfigMapperUtils.isTransient(method);
+        return ReflectionUtil.isTransient(method, "method " + method.getName());
     }
 
     @Test
@@ -100,7 +109,7 @@ public class GenericConfigMapperUtilsTest {
 
     private boolean isAccessible(String fieldName) throws NoSuchFieldException {
         Field field = ClashBean.class.getField(fieldName);
-        return GenericConfigMapperUtils.isAccessible(field);
+        return ReflectionUtil.isAccessible(field);
     }
 
     @Test
@@ -118,28 +127,46 @@ public class GenericConfigMapperUtilsTest {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             isFieldTransient("valueClash");
         });
-        
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("@Config.Value", "@Config.Transient", "field", "valueClash")).matches(ex.getMessage()));
+
+        Assertions.assertTrue(stringContainsInOrder(listOf("@Value", "@Transient", "field", "valueClash"))
+                                      .matches(ex.getMessage()));
     }
 
     private boolean isFieldTransient(String fieldName) throws NoSuchFieldException {
         Field field = ClashBean.class.getField(fieldName);
-        return GenericConfigMapperUtils.isTransient(field);
+        return ReflectionUtil.isTransient(field, "field " + field.getName());
     }
 
     @Test
     public void testCreate() {
-        Map<String, GenericConfigMapper.PropertyAccessor> propertyAccessors =
-                GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), TestBean.class);
+        Map<String, ReflectionUtil.PropertyAccessor<?>> propertyAccessors =
+                ReflectionUtil.getPropertyAccessors(TestBean.class);
 
-        assertThat(propertyAccessors.keySet(), hasSize(3));
-        assertThat(propertyAccessors.keySet(), containsInAnyOrder("init", "value", "valueField"));
+        String[] expectedKeys = {
+                // method init - fluent API with @Value annotation
+                "init",
+                // method port - fluent API without annotation
+                "port",
+                // method nastav - a single argument void return type
+                "nastav",
+                // field valueField - public field
+                "valueField",
+                // method value - classical setter
+                "value",
+                // method set - single parameter, void return - this may be a setter...
+                "set"
+        };
+
+        assertAll(
+                () -> assertThat(propertyAccessors.keySet(), hasSize(expectedKeys.length)),
+                () -> assertThat(propertyAccessors.keySet(), containsInAnyOrder(expectedKeys))
+        );
     }
 
     @Test
     public void testCreateAndCallSetter() throws Throwable {
-        Map<String, GenericConfigMapper.PropertyAccessor> propertyAccessors =
-                GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), TestBean.class);
+        Map<String, ReflectionUtil.PropertyAccessor<?>> propertyAccessors =
+                ReflectionUtil.getPropertyAccessors(TestBean.class);
 
         TestBean bean = new TestBean();
         assertThat(bean.getValue(), is(nullValue()));
@@ -162,8 +189,8 @@ public class GenericConfigMapperUtilsTest {
 
     @Test
     public void testCreateAndSetField() throws Throwable {
-        Map<String, GenericConfigMapper.PropertyAccessor> propertyAccessors =
-                GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), TestBean.class);
+        Map<String, ReflectionUtil.PropertyAccessor<?>> propertyAccessors =
+                ReflectionUtil.getPropertyAccessors(TestBean.class);
 
         TestBean bean = new TestBean();
         assertThat(bean.valueField, is(nullValue()));
@@ -178,8 +205,8 @@ public class GenericConfigMapperUtilsTest {
 
     @Test
     public void testCreateAndCallSetterListParam() throws Throwable {
-        Map<String, GenericConfigMapper.PropertyAccessor> propertyAccessors =
-                GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), ListBean.class);
+        Map<String, ReflectionUtil.PropertyAccessor<?>> propertyAccessors =
+                ReflectionUtil.getPropertyAccessors(ListBean.class);
 
         ListBean bean = new ListBean();
         assertThat(bean.getList(), is(nullValue()));
@@ -188,14 +215,14 @@ public class GenericConfigMapperUtilsTest {
                    equalTo(List.class));
 
         propertyAccessors.get("list").getHandle()
-                .invoke(bean, CollectionsHelper.listOf(23L, 42L));
+                .invoke(bean, listOf(23L, 42L));
         assertThat(bean.getList(), contains(23L, 42L));
     }
 
     @Test
     public void testCreateAndSetFieldListParam() throws Throwable {
-        Map<String, GenericConfigMapper.PropertyAccessor> propertyAccessors =
-                GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), ListBean.class);
+        Map<String, ReflectionUtil.PropertyAccessor<?>> propertyAccessors =
+                ReflectionUtil.getPropertyAccessors(ListBean.class);
 
         ListBean bean = new ListBean();
         assertThat(bean.listField, is(nullValue()));
@@ -204,24 +231,26 @@ public class GenericConfigMapperUtilsTest {
                    equalTo(List.class));
 
         propertyAccessors.get("listField").getHandle()
-                .invoke(bean, CollectionsHelper.listOf(23L, 42L));
+                .invoke(bean, listOf(23L, 42L));
         assertThat(bean.listField, contains(23L, 42L));
     }
 
     @Test
     public void testCreateErrorMethodTransientFieldClash() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
-            GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), MethodTransientFieldClashBean.class);
+            ReflectionUtil.getPropertyAccessors(MethodTransientFieldClashBean.class);
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("@Config.Value", "method", "@Config.Transient", "field", "prop1")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(listOf("@Value", "method", "@Transient", "prop1")));
     }
 
     @Test
     public void testCreateErrorClashFieldTransientMethodClash() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
-            GenericConfigMapperUtils.getPropertyAccessors(mock(ConfigMapperManager.class), FieldTransientMethodClashBean.class);
+            ReflectionUtil.getPropertyAccessors(FieldTransientMethodClashBean.class);
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("@Config.Value", "field", "@Config.Transient", "method", "prop1")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(listOf("@Value", "@Transient", "method", "prop1", "property")));
     }
 
     public static class TestBean {
@@ -229,18 +258,14 @@ public class GenericConfigMapperUtilsTest {
         public final String valueFinal = null;
         // ok fields
         public String valueField;
-        @Config.Transient
+        @Transient
         public String valueTransient;
+
+        // private fields - accessed through a method
         private String value;
         private String init;
 
         // not setters
-        public void set(String val) { //too short
-        }
-
-        public void nastav(String val) { //wrong setter prefix
-        }
-
         public String setVal(String val) { //wrong return type
             return val;
         }
@@ -248,12 +273,17 @@ public class GenericConfigMapperUtilsTest {
         public void setVal2(String val, String val2) { //wrong number of params
         }
 
-        @Config.Value
-        public TestBean init2(String val, String val2) { //wrong number of params, no matter @Config.Value
+        @Value
+        public TestBean init2(String val, String val2) { //wrong number of params, no matter @Value
             return this;
         }
 
         // ok setters
+        public void set(String val) { //too short
+        }
+
+        public void nastav(String val) { //wrong setter prefix
+        }
 
         public void setValue(String value) { // not transient
             this.value = value;
@@ -263,8 +293,13 @@ public class GenericConfigMapperUtilsTest {
             return value;
         }
 
-        @Config.Value
-        public TestBean init(String init) { //builder style - needs @Config.Value
+        // this is ok - fluent API
+        public TestBean port(int port) {
+            return this;
+        }
+
+        @Value
+        public TestBean init(String init) { //builder style
             this.init = init;
             return this;
         }
@@ -273,7 +308,7 @@ public class GenericConfigMapperUtilsTest {
             return init;
         }
 
-        @Config.Transient
+        @Transient
         public void setValueTransient(String value) { // transient
         }
     }
@@ -293,31 +328,31 @@ public class GenericConfigMapperUtilsTest {
 
     public static class ClashBean extends TestBean {
         // clash
-        @Config.Transient
-        @Config.Value
+        @Transient
+        @Value
         public String valueClash;
 
         // clash
-        @Config.Transient
-        @Config.Value
+        @Transient
+        @Value
         public void setValueClash(String value) { // config annotations clash
         }
     }
 
     public static class MethodTransientFieldClashBean {
-        @Config.Transient
+        @Transient
         public String prop1;
 
-        @Config.Value
+        @Value
         public void setProp1(String prop1) {
         }
     }
 
     public static class FieldTransientMethodClashBean {
-        @Config.Value
+        @Value
         public String prop1;
 
-        @Config.Transient
+        @Transient
         public void setProp1(String prop1) {
         }
     }

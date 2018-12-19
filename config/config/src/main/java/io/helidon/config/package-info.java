@@ -20,7 +20,8 @@
  *
  * <h2>Loading a Configuration</h2>
  *
- * The program loads a configuration from either the default sources (using {@link io.helidon.config.Config#create}) or from specified {@link io.helidon.config.spi.ConfigSource}s
+ * The program loads a configuration from either the default sources (using {@link io.helidon.config.Config#create}) or
+ * from specified {@link io.helidon.config.spi.ConfigSource}s
  * (using {@link io.helidon.config.Config.Builder Config.Builder}).
  * <p>
  * The default sources include all of the following, in order:
@@ -61,36 +62,36 @@
  * <tr>
  * <th>Type</th>
  * <th>Meaning</th>
- * <th>Useful <code>Config</code> Methods</th>
+ * <th>Useful {@code Config} Methods</th>
  * </tr>
  * <tbody>
  * <tr>
  * <td>VALUE</td>
- * <td>value node with an optional <code>String</code> value</td>
- * <td><code>value()</code></td>
+ * <td>value node with an optional direct {@code String} value</td>
  * </tr>
  * <tr>
  * <td>LIST</td>
- * <td>list of indexed nodes</td>
- * <td><code>asList</code>, <code>asStringList</code>, <code>asNodeList</code>
+ * <td>list of indexed nodes with an optional "direct" value</td>
+ * <td>{@link io.helidon.config.Config#asList(java.lang.Class)},
+ * {@link io.helidon.config.Config#asNodeList()}</td>
  * </tr>
  * <tr>
  * <td>OBJECT</td>
- * <td>object node with, possibly, child nodes</td>
- * <td><code>nodeList</code>, <code>asNodeList</code>
+ * <td>object node with, possibly, child nodes and an optional "direct" value</td>
+ * <td>{@link io.helidon.config.Config#asNodeList()}</td>
  * </tr>
  * </tbody>
  * </table>
  *
  * <h3>Configuration Values and Types</h3>
- * While each VALUE node's value is accessible as
+ * While each node's direct value is accessible as
  * an {@code Optional<String>}, the program can also
- * have the node convert its {@code String} value to a {@code boolean}, {@code int},
- * {@code long}, {@code double}, a {@code List} of any of these,
- * or an {@code Optional} of any of these.
+ * have the node convert its {@code String} value to a typed {@link io.helidon.config.ConfigValue} using methods such as
+ * {@link io.helidon.config.Config#asString()}, {@link io.helidon.config.Config#asLong()} etc.
  * <p>
- * The program can provide its own {@link io.helidon.config.ConfigMapper} implementations
- * to deal with more complicated value mapping needs. See also {@link io.helidon.config.Config.Builder#addMapper}.
+ * The program can provide its own {@link io.helidon.config.spi.ConfigMapperProvider} implementations
+ * to deal with more complicated value mapping needs. See also {@link io.helidon.config.Config.Builder#addStringMapper}
+ * and {@link io.helidon.config.Config.Builder#addMapper(java.lang.Class, java.util.function.Function)}.
  *
  * <h3>Navigation</h3>
  *
@@ -110,23 +111,23 @@
  *
  * <h3>Monitoring Changes</h3>
  *
- * The program can react to configuration changes by passing a {@code FunctionalInterface}
+ * The program can react to configuration changes by passing a listener
  * to {@link io.helidon.config.Config#onChange}.
  *
  * <h3 id="conversions">Converting Configuration to Java Types</h3>
- * The {@link Config} class provides many methods for converting config
+ * The {@link io.helidon.config.Config} class provides many methods for converting config
  * {@code String} values to Java primitives and simple Java types, as well as
  * mapping parts of the config tree to {@code List}s and {@code Map}s.
  * <p>
  * The application can convert config data to arbitrary types using the
- * {@link Config#as} method, and can provide its own conversions to handle
- * custom types by implementing the
- * {@link io.helidon.config.ConfigMapper} interface and registering the mapper
- * with a {@code Config.Builder} using the {@code addMapper} method.
+ * {@link io.helidon.config.Config#as(java.lang.Class)} and {@link io.helidon.config.Config#as(java.util.function.Function)}
+ * methods, and can provide its own conversions to handle
+ * custom types by implementing a mapping function and registering it
+ * with a {@code Config.Builder} using the {@link io.helidon.config.Config.Builder#addMapper} method.
  * <p>
- * If the {@code Config.as} method finds no matching registered mapper it will
- * follow the logic described in the {@code ConfigMapperManager} class to try to
- * map the configuration automatically.
+ * If the {@code Config.as} method finds no matching registered mapper it will throw
+ * a {@link io.helidon.config.ConfigMappingException}.
+ * Support for automated mapping to types is available in module config-beans.
  *
  * @see io.helidon.config.spi Configuration SPI
  */

@@ -16,26 +16,20 @@
 
 package io.helidon.config;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
+import io.helidon.common.GenericType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
@@ -44,20 +38,15 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 
-import static java.lang.annotation.ElementType.CONSTRUCTOR;
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
 /**
+ * <h1>Configuration</h1>
  * Immutable tree-structured configuration.
  * <h2>Loading Configuration</h2>
  * Load the default configuration using the {@link #create} method.
  * <pre>{@code
  * Config config = Config.create();
  * }</pre> Use {@link Config.Builder} to construct a new {@code Config} instance
- * from one or more specific {@link ConfigSource}s.
+ * from one or more specific {@link ConfigSource}s using the {@link #builder()}.
  * <p>
  * The application can affect the way the system loads configuration by
  * implementing interfaces defined in the SPI, by explicitly constructing the
@@ -100,8 +89,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * {@code Map}.</td>
  * </tr>
  * <tr>
- * <td>{@link Builder#addMapper}</td>
- * <td>{@link ConfigMapper}</td>
+ * <td>{@link Builder#addMapper(Class, Function)}</td>
  * <td>Implements conversion from a {@code Config} node (typically with
  * children) to an application-specific Java type.</td>
  * </tr>
@@ -150,14 +138,13 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * }</pre>
  * <p>
  * To retrieve children of a config node use
- * {@link #nodeList()}, {@link #asNodeList()} or {@link #asNodeList(List)}
+ * {@link #asNodeList()}
  * <ul>
  * <li>on an {@link Type#OBJECT object} node to get all object members,</li>
  * <li>on a {@link Type#LIST list} node to get all list elements.</li>
  * </ul>
  * <p>
- * On a leaf {@link Type#VALUE value} node get the {@code String} value using
- * {@link #value()}, {@link #asString()} or {@link #asString(String)}.
+ * To get node value, use {@link #as(Class)} to access this config node as a {@link ConfigValue}
  *
  * <h2>Converting Configuration Values to Types</h2>
  * <h3>Explicit Conversion by the Application</h3>
@@ -166,64 +153,84 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * {@code String} the application can invoke one of these convenience methods:
  * <ul>
  * <li>{@code as<typename>} such as {@code asBoolean, asDouble, asInt}, etc.
- * which return Java primitive data values ({@code boolean, double, int}, etc.)
+ * which return {@link ConfigValue} representing Java primitive data values ({@code boolean, double, int}, etc.)
  * <p>
- * Each method has two variants: one without parameters that throws
- * {@link MissingValueException} if the config at the node does not exist, and
- * one that accepts the default value as a single parameter. For example:
+ * The {@link ConfigValue} can be used to access the value or use optional style methods.
+ *
+ * The config value provides access to the value in multiple ways.
+ * See {@link ConfigValue} for reference.
+ *
+ * Basic usages:
  * <pre>{@code
- * long l1 = config.asLong();
- * long l2 = config.asLong(42L);
+ * // throws a MissingValueException in case the config node does not exist
+ * long l1 = config.asLong().get();
+ * // returns 42 in case the config node does not exist
+ * long l2 = config.asLong().orElse(42L);
+ * // invokes the method "timeout(long)" if the value exists
+ * config.asLong().ifPresent(this::timeout);
  * }</pre>
  * </li>
- * <li>{@code asOptional<typename>} which returns the autoboxed datatype wrapped
- * in an {@code Optional}.
- * <p>
- * For example:
+ * <li>{@link #as(Class)} to convert the config node to an instance of the specified class, if there is a configured
+ * mapper present that supports the class.
  * <pre>{@code
- * Optional<Long> l3 = config.asOptionalLong();
+ *   // throws a MissingValueException in case the config node does not exist
+ *   // throws a ConfigMappingException in case the config node cannot be converted to Long
+ *   long l1 = config.as(Long.class).get();
+ *   // returns 42 in case the config node does not exist
+ *   // throws a ConfigMappingException in case the config node cannot be converted to Long
+ *   long l2 = config.as(Long.class).orElse(42L);
+ *   // invokes the method "timeout(long)" if the value exists
+ *   // throws a ConfigMappingException in case the config node cannot be converted to Long
+ *   config.as(Long.class).ifPresent(this::timeout);
+ *   }</pre>
+ * </li>
+ * <li>{@link #as(Function)} to convert the config node using the function provided.
+ * Let's assume there is a method {@code public static Foo create(Config)} on a class {@code Foo}:
+ * <pre>{@code
+ *  // throws a MissingValueException in case the config node does not exist
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Foo
+ *  Foo f1 = config.as(Foo::create).get();
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Foo
+ *  Foo f2 = config.as(Foo::create).orElse(Foo.DEFAULT);
+ *  // invokes the method "foo(Foo)" if the value exists
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Foo
+ *  config.as(Foo::create).ifPresent(this::foo);
  * }</pre>
  * </li>
- * <li>{@code as(Class)} or {@code as(Class, defaultValue)} or
- * {@code asOptional(Class)} which return an instance of the requested type.
- * <p>
- * For example:
+ * <li>{@link #as(GenericType)} to convert the config node to an instance of the specified generic type, if there is a
+ * configured mapper present that supports the generic type.
  * <pre>{@code
- * Long l1 = config.as(Long.class);
- * Long l2 = config.as(Long.class, 42L);
- * Optional<Long> l3 = config.asOptional(Long.class);
+ *  // throws a MissingValueException in case the config node does not exist
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Map<String, Integer>
+ *  Map<String, Integer> m1 = config.as(new GenericType<Map<String, Integer>() {}).get();
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Map<String, Integer>
+ *  Map<String, Integer> m1 = config.as(new GenericType<Map<String, Integer>() {}).orElseGet(Collections::emptyMap);
+ *  // invokes the method "units(Map)" if the value exists
+ *  // throws a ConfigMappingException in case the config node cannot be converted to Map<String, Integer>
+ *  config.as(new GenericType<Map<String, Integer>() {}).ifPresent(this::units);
  * }</pre>
+ * </li>
  * </ul>
- * <h3>Using Built-in and Custom Mappers</h3>
- * Each {@code as*} method delegates to a {@link ConfigMapper} to convert a
- * config node to a type. The config system provides mappers for primitive
- * datatypes, {@code List}s, and {@code Map}s, and automatically registers them
- * with each {@code Config.Builder} instance.
- * <p>
+ *
  * To deal with application-specific types, the application can provide its own
  * mapping logic by:
  * <ul>
- * <li>invoking one of the {@link Config#map} method variants, </li>
- * <li>adding custom {@code ConfigMapper} implementations using the
- * {@link Builder#addMapper} method,</li>
+ * <li>invoking the {@link Config#as(Function)} method variants, </li>
+ * <li>adding custom mapping function implementations using the
+ * {@link Builder#addMapper(Class, Function)} method,</li>
+ * <li>add custom mapping function using the {@link Builder#addStringMapper(Class, Function)}</li>
  * <li>registering custom mappers using the Java service loader mechanism. (See
- * {@link ConfigMapper} for details.)
+ * {@link ConfigMapperProvider} for details.)
  * </li>
  * </ul>
+ *
  * <p>
- * Returning to the {@code long} example:
- * <pre>{@code
- * long l4 = config.map(ConfigMappers::toLong);
- * long l5 = config.map(ConfigMappers::toLong, 42L);
- * Optional<Long> l6 = config.mapOptional(ConfigMappers::toLong);
- * }</pre> Note that the variants of {@code map} accept a {@code Function} or a
- * {@code ConfigMapper}. The {@link ConfigMappers} class implements many useful
- * conversions; check there before writing your own custom mapper.
- * <p>
- * If there is no explicitly registered {@link ConfigMapper} instance in a
- * {@link Builder} for converting a given type then the config system uses
- * generic mapping. See {@link ConfigMapperManager} for details on how generic
- * mapping works.
+ * If there is no explicitly registered mapping function in a
+ * {@link Builder} for converting a given type then the config system
+ * throws {@link ConfigMappingException}, unless you use the config beans support,
+ * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
+ * static "create(Config)" method etc.
+ *
  * <h2><a name="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
@@ -244,17 +251,14 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <p>
  * Your application can set a different strategy by constructing its own
  * {@code CompositeBuilder} and invoking
- * {@link ConfigSources.CompositeBuilder#mergingStrategy}, passing the strategy
+ * {@link ConfigSources.CompositeBuilder#mergingStrategy(ConfigSources.MergingStrategy)}, passing the strategy
  * to be used:
  * <pre>
  * Config.withSources(ConfigSources.from(source1, source2, source3)
  *                      .mergingStrategy(new MyMergingStrategy());
  * </pre>
- *
- *
  */
 public interface Config {
-
     /**
      * Returns empty instance of {@code Config}.
      *
@@ -262,6 +266,26 @@ public interface Config {
      */
     static Config empty() {
         return BuilderImpl.EmptyConfigHolder.EMPTY;
+    }
+
+    /**
+     * Create an empty configuration with mappers copied from another config.
+     *
+     * @param config config to get mappers from
+     * @return an empty config instance (empty Object)
+     */
+    static Config empty(Config config) {
+
+        return new BuilderImpl()
+                .sources(ConfigSources.empty())
+                .overrides(OverrideSources.empty())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableMapperServices()
+                .disableParserServices()
+                .disableFilterServices()
+                .mappersFrom(config)
+                .build();
     }
 
     //
@@ -593,7 +617,7 @@ public interface Config {
      * assert name2.key() == "name";            //DETACHED node
      * </pre>
      * <p>
-     * See {@link #asOptionalMap()} for example of config detaching.
+     * See {@link #asMap()} for example of config detaching.
      *
      * @return returns detached Config instance of same config node
      */
@@ -623,7 +647,7 @@ public interface Config {
      * A leaf node has no nested configuration subtree and has a single value.
      *
      * @return {@code true} if the node is existing leaf node, {@code false}
-     * otherwise.
+     *         otherwise.
      */
     default boolean isLeaf() {
         return type().isLeaf();
@@ -649,21 +673,7 @@ public interface Config {
      * @see #type()
      */
     default void ifExists(Consumer<Config> action) {
-        node().ifPresent(action);
-    }
-
-    /**
-     * Performs the given action with the config node if the node
-     * {@link #exists() exists}, otherwise performs the specified "missing"
-     * action.
-     *
-     * @param action        the action to be performed, if a config node exists
-     * @param missingAction the missing-based action to be performed, if a config node is {@link Type#MISSING missing}.
-     * @see #exists()
-     * @see #type()
-     */
-    default void ifExistsOrElse(Consumer<Config> action, Runnable missingAction) {
-        OptionalHelper.from(node()).ifPresentOrElse(action, missingAction);
+        asNode().ifPresent(action);
     }
 
     /**
@@ -701,1117 +711,152 @@ public interface Config {
      * returned {@code Stream<Config>}.
      *
      * @param predicate predicate evaluated on each visited {@code Config} node
-     * to continue or stop visiting the node
+     *                  to continue or stop visiting the node
      * @return stream of deepening depth-first subnodes
      */
     Stream<Config> traverse(Predicate<Config> predicate);
+
+    // instance utility
+
+    /**
+     * Convert a String to a specific type.
+     * This is a helper method to allow for processing of default values that cannot be typed (e.g. in annotations).
+     *
+     * @param type  type of the property
+     * @param value String value
+     * @param <T>   type
+     * @return instance of the correct type
+     * @throws ConfigMappingException in case the String provided cannot be converted to the type expected
+     * @see Config#as(Class)
+     */
+    <T> T convert(Class<T> type, String value) throws ConfigMappingException;
 
     //
     // accessors
     //
 
     /**
-     * Returns a {@code String} value as {@link Optional} of configuration node if the node is {@link Type#VALUE}.
-     * Returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
+     * Typed value as a {@link ConfigValue} for a generic type.
+     * If appropriate mapper exists, returns a properly typed generic instance.
+     * <p>
+     * Example:
+     * <pre>
+     * {@code
+     * ConfigValue<Map<String, Integer>> myMapValue = config.as(new GenericType<Map<String, Integer>>(){});
+     * myMapValue.ifPresent(map -> {
+     *      Integer port = map.get("service.port");
+     *  }
+     * }
+     * </pre>
      *
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node is {@link Type#MISSING}
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}
-     * @see #asOptionalString()
+     * @param genericType a (usually anonymous) instance of generic type to prevent type erasure
+     * @param <T>         type of the returned value
+     * @return properly typed config value
      */
-    Optional<String> value() throws ConfigMappingException;
+    <T> ConfigValue<T> as(GenericType<T> genericType);
 
     /**
-     * Returns a {@code String} value as {@link Optional} of configuration node if the node is {@link Type#VALUE}.
-     * Returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
+     * Typed value as a {@link ConfigValue}.
      *
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node is {@link Type#MISSING}
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}
-     * @see #value()
-     * @see #asOptionalStringSupplier()
+     * @param type type class
+     * @param <T>  type
+     * @return typed value
+     * @see ConfigValue#map(Function)
+     * @see ConfigValue#supplier()
+     * @see ConfigValue#get()
+     * @see ConfigValue#orElse(Object)
      */
-    default Optional<String> asOptionalString() throws ConfigMappingException {
-        return value();
+    <T> ConfigValue<T> as(Class<T> type);
+
+    /**
+     * Typed value as a {@link ConfigValue} created from factory method.
+     * To convert from String, you can use
+     * {@link #asString() config.asString()}{@link ConfigValue#as(Function) .as(Function)}.
+     *
+     * @param mapper method to create an instance from config
+     * @param <T>    type
+     * @return typed value
+     */
+    <T> ConfigValue<T> as(Function<Config, T> mapper);
+
+    // shortcut methods
+
+    /**
+     * Boolean typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Boolean> asBoolean() {
+        return as(Boolean.class);
     }
 
     /**
-     * Returns a {@link Supplier} of an {@link Optional Optional&lt;String&gt;} of the configuration node if the node is {@link
-     * Type#VALUE}.
-     * Supplier returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
+     * String typed value.
      *
-     * @return a supplier of the value as an {@link Optional} typed instance, {@link Optional#empty() empty} in case the node is
-     * {@link Type#MISSING}
-     * @see #asOptionalString()
+     * @return typed value
      */
-    default Supplier<Optional<String>> asOptionalStringSupplier() {
-        return () -> context().last().asOptionalString();
+    default ConfigValue<String> asString() {
+        return as(String.class);
     }
+
+    /**
+     * Integer typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Integer> asInt() {
+        return as(Integer.class);
+    }
+
+    /**
+     * Long typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Long> asLong() {
+        return as(Long.class);
+    }
+
+    /**
+     * Double typed value.
+     *
+     * @return typed value
+     */
+    default ConfigValue<Double> asDouble() {
+        return as(Double.class);
+    }
+
+    /**
+     * Returns list of specified type.
+     *
+     * @param type type class
+     * @param <T>  type of list elements
+     * @return a typed list with values
+     * @throws ConfigMappingException in case of problem to map property value.
+     */
+    <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException;
+
+    /**
+     * Returns this node as a list converting each list value using the provided mapper.
+     *
+     * @param mapper mapper to convert each list node into a typed value
+     * @param <T>    type of list elements
+     * @return a typed list with values
+     * @throws ConfigMappingException in case the mapper fails to map the values
+     */
+    <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException;
 
     /**
      * Returns existing current config node as a {@link Optional} instance
      * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
      *
      * @return current config node as a {@link Optional} instance
-     * or {@link Optional#empty()} in case of {@link Type#MISSING} node.
-     * @see #nodeSupplier()
-     */
-    default Optional<Config> node() {
-        if (exists()) {
-            return Optional.of(this);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Returns a {@link Supplier} of the configuration node as an {@link Optional Optional&lt;Config&gt;} or {@link
-     * Optional#empty()} if the node is {@link Type#MISSING}.
-     *
-     * @return a {@link Supplier} of the configuration node as an {@link Optional Optional&lt;Config&gt;} or {@link
-     * Optional#empty()} if the node is {@link Type#MISSING}
-     * @see #asOptionalStringSupplier()
-     * @see #node()
-     */
-    default Supplier<Optional<Config>> nodeSupplier() {
-        return () -> context().last().node();
-    }
-
-    /**
-     * Returns a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
-     * Returns a list of element nodes if the node is {@link Type#LIST}.
-     * Returns an {@link Optional#empty()} if the node is {@link Type#MISSING}.
-     * Otherwise, if node is {@link Type#VALUE}, it throws {@link ConfigMappingException}.
-     *
-     * @return list of {@link Type#OBJECT} members, list of {@link Type#LIST} members
-     * or empty list in case of {@link Type#MISSING}
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}
-     * @see #asOptionalNodeList
-     */
-    Optional<List<Config>> nodeList() throws ConfigMappingException;
-
-    /**
-     * Returns a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
-     * Returns a list of element nodes if the node is {@link Type#LIST}.
-     * Returns an empty list if the node is {@link Type#MISSING}.
-     * Otherwise, if node is {@link Type#VALUE}, it throws {@link ConfigMappingException}.
-     *
-     * @return list of {@link Type#OBJECT} members, list of {@link Type#LIST} members
-     * or empty list in case of {@link Type#MISSING}
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}
-     * @see #nodeList()
-     * @see #asOptionalNodeListSupplier()
-     */
-    default Optional<List<Config>> asOptionalNodeList() throws ConfigMappingException {
-        return nodeList();
-    }
-
-    /**
-     * Returns a {@link Supplier} of a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
-     * Returns a {@link Supplier} of a list of element nodes if the node is {@link Type#LIST}.
-     * Returns a {@link Supplier} of an empty list if the node is {@link Type#MISSING}.
-     * Otherwise, if node is {@link Type#VALUE}, a calling of {@link Supplier#get()} causes {@link ConfigMappingException}.
-     *
-     * @return a supplier of a list of {@link Type#OBJECT} members, a list of {@link Type#LIST} members
-     * or an empty list in case of {@link Type#MISSING}
-     * @see #nodeList()
-     * @see #asOptionalNodeList()
-     */
-    default Supplier<Optional<List<Config>>> asOptionalNodeListSupplier() {
-        return () -> context().last().asOptionalNodeList();
-    }
-
-    /**
-     * Transform all leaf nodes (values) into Map instance.
-     * <p>
-     * Fully qualified key of config node is used as a key in returned Map.
-     * {@link #detach() Detach} config node before transforming to Map in case you want to cut
-     * current Config node key prefix.
-     * <p>
-     * Let's say we work with following configuration:
-     * <pre>
-     * app:
-     *      name: Example 1
-     *      page-size: 20
-     * logging:
-     *      app.level = INFO
-     *      level = WARNING
-     * </pre>
-     * Map {@code app1} contains two keys: {@code app.name}, {@code app.page-size}.
-     * <pre>{@code
-     * Map<String, String> app1 = config.get("app").asOptionalMap().get();
-     * }</pre>
-     * {@link #detach() Detaching} {@code app} config node returns new Config instance with "reset" local root.
-     * <pre>{@code
-     * Map<String, String> app2 = config.get("app").detach().asOptionalMap().get();
-     * }</pre>
-     * Map {@code app2} contains two keys without {@code app} prefix: {@code name}, {@code page-size}.
-     *
-     * @return map as {@link Optional}, {@link Optional#empty() empty} in case of {@link Type#MISSING} node
-     * @see #asMap()
-     * @see #asMap(Map)
-     * @see #traverse()
-     * @see #detach()
-     */
-    Optional<Map<String, String>> asOptionalMap();
-
-    /**
-     * Returns a {@link Supplier} of a transformed leaf nodes (values) into a Map instance.
-     * <p>
-     * See {@link #asOptionalMap()} to more detailed about the result.
-     *
-     * @return a supplier of optional transformed leaf nodes to map
-     * @see #asOptionalMap()
-     */
-    default Supplier<Optional<Map<String, String>>> asOptionalMapSupplier() {
-        return () -> context().last().asOptionalMap();
-    }
-
-    /**
-     * Returns typed value as a specified type.
-     *
-     * @param type type class
-     * @param <T>  type
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} if entry does not have set value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    <T> Optional<T> asOptional(Class<? extends T> type) throws ConfigMappingException;
-
-    /**
-     * Returns a supplier of an optional typed value.
-     *
-     * @param type a type class
-     * @param <T>  a type
-     * @return a supplier of a value as type instance as {@link Optional}, {@link Optional#empty() empty} if entry does not
-     * have set value
-     * @see #asOptional(Class)
-     */
-    default <T> Supplier<Optional<T>> asOptionalSupplier(Class<? extends T> type) {
-        return () -> context().last().asOptional(type);
-    }
-
-    /**
-     * Returns list of specified type (single values as well as objects).
-     *
-     * @param type type class
-     * @param <T>  type
-     * @return typed list as {@link Optional}, {@link Optional#empty() empty} if entry does not have set value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    <T> Optional<List<T>> asOptionalList(Class<? extends T> type) throws ConfigMappingException;
-
-    /**
-     * Returns a supplier of as optional list of typed values.
-     *
-     * @param type a type class
-     * @param <T>  a type
-     * @return a supplier of as optional list of typed values
-     * @see #asOptionalList(Class)
-     */
-    default <T> Supplier<Optional<List<T>>> asOptionalListSupplier(Class<? extends T> type) {
-        return () -> context().last().asOptionalList(type);
-    }
-
-    /**
-     * Returns list of {@code String}.
-     *
-     * @return typed list as {@link Optional}, {@link Optional#empty() empty} if entry does not have set value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default Optional<List<String>> asOptionalStringList() throws ConfigMappingException {
-        return asOptionalList(String.class);
-    }
-
-    /**
-     * Returns a supplier of as optional list of {@code String}.
-     *
-     * @return a supplier of as optional list of {@code String}
-     * @see #asOptionalStringList()
-     */
-    default Supplier<Optional<List<String>>> asOptionalStringListSupplier() {
-        return () -> context().last().asOptionalStringList();
-    }
-
-    /**
-     * Returns typed value as a using specified type mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    type
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} if entry does not have set value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> Optional<T> mapOptional(Function<String, ? extends T> mapper) throws ConfigMappingException {
-        return mapOptional(ConfigMappers.wrap(mapper));
-    }
-
-    /**
-     * Returns a supplier of an optional value, typed using a specified type mapper.
-     *
-     * @param mapper a type mapper
-     * @param <T>    a type
-     * @return a supplier of an optional value, typed using a specified type mapper
-     * @see #mapOptional(Function)
-     */
-    default <T> Supplier<Optional<T>> mapOptionalSupplier(Function<String, ? extends T> mapper) {
-        return () -> context().last().mapOptional(mapper);
-    }
-
-    /**
-     * Returns typed value as a using specified type mapper.
-     *
-     * @param mapper configuration hierarchy mapper.
-     * @param <T>    expected Java type
-     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} if entry does not represent an existing
-     * configuration node.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> Optional<T> mapOptional(ConfigMapper<? extends T> mapper) throws ConfigMappingException {
-        return type() == Type.MISSING ? Optional.empty() : Optional.of(mapper.apply(this));
-    }
-
-    /**
-     * Returns a supplier of an optional value, typed using a specified type mapper.
-     *
-     * @param mapper a configuration mapper
-     * @param <T>    an expected Java type
-     * @return a supplier of an optional value, typed using a specified type mapper
-     * @see #mapOptional(ConfigMapper)
-     */
-    default <T> Supplier<Optional<T>> mapOptionalSupplier(ConfigMapper<? extends T> mapper) {
-        return () -> context().last().mapOptional(mapper);
-    }
-
-    /**
-     * Maps the node {@link #value()} to {@link Optional}.
-     *
-     * @return value as a {@link Optional}
-     * @throws ConfigMappingException in case it is not possible map the value
-     */
-    default Optional<Boolean> asOptionalBoolean() throws ConfigMappingException {
-        return asOptional(Boolean.class);
-    }
-
-    /**
-     * Returns a supplier to a value typed as an {@link Optional}.
-     *
-     * @return a supplier to a value typed as an {@code OptionalInt}
-     * @see #asOptionalBoolean()
-     */
-    default Supplier<Optional<Boolean>> asOptionalBooleanSupplier() {
-        return () -> context().last().asOptionalBoolean();
-    }
-
-    /**
-     * Maps the node {@link #value()} to {@link OptionalInt}.
-     *
-     * @return value as a {@link OptionalInt}
-     * @throws ConfigMappingException in case it is not possible map the value
-     */
-    default OptionalInt asOptionalInt() throws ConfigMappingException {
-        return asOptional(Integer.class)
-                .map(OptionalInt::of)
-                .orElseGet(OptionalInt::empty);
-    }
-
-    /**
-     * Returns a supplier to a value typed as an {@link OptionalInt}.
-     *
-     * @return a supplier to a value typed as an {@code OptionalInt}
-     * @see #asOptionalInt()
-     */
-    default Supplier<OptionalInt> asOptionalIntSupplier() {
-        return () -> context().last().asOptionalInt();
-    }
-
-    /**
-     * Maps the node {@link #value()} to {@link OptionalLong}.
-     *
-     * @return value as a {@link OptionalLong}
-     * @throws ConfigMappingException in case it is not possible map the value
-     */
-    default OptionalLong asOptionalLong() throws ConfigMappingException {
-        return asOptional(Long.class)
-                .map(OptionalLong::of)
-                .orElseGet(OptionalLong::empty);
-    }
-
-    /**
-     * Returns a supplier to a value typed as an {@link OptionalLong}.
-     *
-     * @return a supplier to a value typed as an {@code OptionalLong}
-     * @see #asOptionalLong()
-     */
-    default Supplier<OptionalLong> asOptionalLongSupplier() {
-        return () -> context().last().asOptionalLong();
-    }
-
-    /**
-     * Maps the node {@link #value()} to {@link OptionalDouble}.
-     *
-     * @return value as a {@link OptionalDouble}
-     * @throws ConfigMappingException in case it is not possible map the value
-     */
-    default OptionalDouble asOptionalDouble() throws ConfigMappingException {
-        return asOptional(Double.class)
-                .map(OptionalDouble::of)
-                .orElseGet(OptionalDouble::empty);
-    }
-
-    /**
-     * Returns a supplier to a value typed as an {@link OptionalDouble}.
-     *
-     * @return a supplier to a value typed as an {@code OptionalDouble}
-     * @see #asOptionalDouble()
-     */
-    default Supplier<OptionalDouble> asOptionalDoubleSupplier() {
-        return () -> context().last().asOptionalDouble();
-    }
-
-    /**
-     * Returns typed list of type (single values as well as objects) provided by specified type mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    single item type
-     * @return typed list as {@link Optional}, {@link Optional#empty() empty} if entry does not have set value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> Optional<List<T>> mapOptionalList(Function<String, ? extends T> mapper) throws ConfigMappingException {
-        try {
-            return asOptionalList(Config.class)
-                    .map(configList -> configList.stream()
-                            .map(config -> config.map(mapper)) //map every single list item
-                            .collect(Collectors.toList()));
-        } catch (MissingValueException ex) {
-            throw new ConfigMappingException(key(),
-                                             "Error to map list element from config node. " + ex.getLocalizedMessage(),
-                                             ex);
-        }
-    }
-
-    /**
-     * Returns a supplier of an optional typed list of a type (single values as well as objects) provided by a specified type
-     * mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    single item type
-     * @return a supplier of an optional typed list of a type (single values as well as objects) provided by a specified type
-     * mapper
-     * @see #mapOptionalList(Function)
-     */
-    default <T> Supplier<Optional<List<T>>> mapOptionalListSupplier(Function<String, ? extends T> mapper) {
-        return () -> context().last().mapOptionalList(mapper);
-    }
-
-    /**
-     * Returns typed list of type (single values as well as objects) provided by specified type mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    single item type
-     * @return typed list as {@link Optional}, {@link Optional#empty() empty} if entry does not have set value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> Optional<List<T>> mapOptionalList(ConfigMapper<? extends T> mapper) throws ConfigMappingException {
-        try {
-            return asOptionalList(Config.class)
-                    .map(configList -> configList.stream()
-                            .map(mapper::apply) //map every single list item
-                            .collect(Collectors.toList()));
-        } catch (MissingValueException ex) {
-            throw new ConfigMappingException(key(),
-                                             "Error to map list element from config node. " + ex.getLocalizedMessage(),
-                                             ex);
-        }
-    }
-
-    /**
-     * Returns a supplier of an optional typed list of a type (single values as well as objects) provided by a specified type
-     * mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    single item type
-     * @return a supplier of an optional typed list of a type (single values as well as objects) provided by a specified type
-     * mapper
-     * @see #mapOptionalList(ConfigMapper)
-     */
-    default <T> Supplier<Optional<List<T>>> mapOptionalListSupplier(ConfigMapper<? extends T> mapper) {
-        return () -> context().last().mapOptionalList(mapper);
-    }
-
-    /**
-     * Returns typed value as a specified type.
-     *
-     * @param type type class
-     * @param <T>  type
-     * @return value as type instance
-     * @throws MissingValueException  in case of the missing value for the key represented by this configuration.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> T as(Class<? extends T> type) throws MissingValueException, ConfigMappingException {
-        return asOptional(type)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a typed value.
-     *
-     * @param type type class
-     * @param <T>  type
-     * @return a supplier of a typed value
-     * @see #as(Class)
-     */
-    default <T> Supplier<T> asSupplier(Class<? extends T> type) {
-        return () -> context().last().as(type);
-    }
-
-    /**
-     * Returns typed value as a specified type.
-     *
-     * @param type         type class
-     * @param <T>          type
-     * @param defaultValue default value
-     * @return value as type instance or default value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> T as(Class<? extends T> type, T defaultValue) throws ConfigMappingException {
-        return this.<T>asOptional(type)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a typed value.
-     *
-     * @param type         a type class
-     * @param <T>          a type
-     * @param defaultValue a default value
-     * @return a supplier of a typed value or a default value
-     * @see #as(Class, Object)
-     */
-    default <T> Supplier<T> asSupplier(Class<T> type, T defaultValue) {
-        return () -> context().last().asOptional(type).orElse(defaultValue);
-    }
-
-    /**
-     * Returns typed value as a using specified type mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    type
-     * @return value as type instance
-     * @throws MissingValueException  in case of the missing value for the key represented by this configuration.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> T map(Function<String, ? extends T> mapper) throws MissingValueException, ConfigMappingException {
-        return mapOptional(mapper)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a typed value, using a specified type mapper.
-     *
-     * @param mapper a type mapper
-     * @param <T>    a type
-     * @return a supplier of a typed value
-     * @see #map(Function)
-     */
-    default <T> Supplier<T> mapSupplier(Function<String, ? extends T> mapper) {
-        return () -> context().last().map(mapper);
-    }
-
-    /**
-     * Returns typed value as a using specified config hierarchy mapper.
-     *
-     * @param mapper config hierarchy mapper
-     * @param <T>    type
-     * @return value as type instance
-     * @throws MissingValueException  in case of the missing value for the key represented by this configuration.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> T map(ConfigMapper<? extends T> mapper) throws MissingValueException, ConfigMappingException {
-        return mapOptional(mapper)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a typed value, using a specified type mapper.
-     *
-     * @param mapper a type mapper
-     * @param <T>    a type
-     * @return a supplier of a typed value
-     * @see #map(ConfigMapper)
-     */
-    default <T> Supplier<T> mapSupplier(ConfigMapper<? extends T> mapper) {
-        return () -> context().last().map(mapper);
-    }
-
-    /**
-     * Returns typed value as a using specified type mapper.
-     *
-     * @param mapper       type mapper
-     * @param <T>          type
-     * @param defaultValue default value
-     * @return value as type instance or default value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> T map(Function<String, ? extends T> mapper, T defaultValue) throws ConfigMappingException {
-        return this.<T>mapOptional(mapper)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a typed value, using a specified type mapper or a default value.
-     *
-     * @param mapper       a type mapper
-     * @param <T>          a type
-     * @param defaultValue a default value
-     * @return a supplier of a typed value or default value
-     * @see #map(Function, Object)
-     */
-    default <T> Supplier<T> mapSupplier(Function<String, ? extends T> mapper, T defaultValue) {
-        return () -> context().last().map(mapper, defaultValue);
-    }
-
-    /**
-     * Returns typed value as a using specified config hierarchy mapper.
-     *
-     * @param mapper       config hierarchy mapper
-     * @param defaultValue default value
-     * @param <T>          type
-     * @return value as type instance or default value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> T map(ConfigMapper<? extends T> mapper, T defaultValue) throws ConfigMappingException {
-        return this.<T>mapOptional(mapper)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a typed value, using a specified type mapper or a default value.
-     *
-     * @param mapper       a type mapper
-     * @param <T>          a type
-     * @param defaultValue a default value
-     * @return a supplier of a typed value or default value
-     * @see #map(ConfigMapper, Object)
-     */
-    default <T> Supplier<T> mapSupplier(ConfigMapper<? extends T> mapper, T defaultValue) {
-        return () -> context().last().map(mapper, defaultValue);
-    }
-
-    /**
-     * Returns list of specified type.
-     *
-     * @param type type class
-     * @param <T>  type
-     * @return a typed list with values
-     * @throws MissingValueException  in case of the missing value for the key represented by this configuration.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> List<T> asList(Class<? extends T> type) throws MissingValueException, ConfigMappingException {
-        return this.<T>asOptionalList(type)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a list of specified type.
-     *
-     * @param type a type class
-     * @param <T>  a type
-     * @return a supplier of a typed list of values
-     * @see #asList(Class)
-     */
-    default <T> Supplier<List<T>> asListSupplier(Class<? extends T> type) {
-        return () -> context().last().asList(type);
-    }
-
-    /**
-     * Returns list of specified type.
-     *
-     * @param type         type class
-     * @param <T>          type
-     * @param defaultValue default value
-     * @return a typed list or default value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> List<T> asList(Class<? extends T> type, List<T> defaultValue) throws ConfigMappingException {
-        return this.<T>asOptionalList(type).orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a list of a specified type or a default value.
-     *
-     * @param type         a type class
-     * @param <T>          a type
-     * @param defaultValue a default value
-     * @return a supplier of a typed list of values or a default value
-     * @see #asList(Class, List)
-     */
-    default <T> Supplier<List<T>> asListSupplier(Class<? extends T> type, List<T> defaultValue) {
-        return () -> context().last().asList(type, defaultValue);
-    }
-
-    /**
-     * Returns typed list of type provided by specified type mapper.
-     *
-     * @param mapper type mapper
-     * @param <T>    mapped Java type
-     * @return a typed list of values or default value
-     * @throws MissingValueException  in case of the missing value for the key represented by this configuration.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> List<T> mapList(ConfigMapper<? extends T> mapper) throws MissingValueException, ConfigMappingException {
-        return this.<T>mapOptionalList(mapper)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a list of a type provided by a specified type mapper.
-     *
-     * @param mapper a type class
-     * @param <T>    a type
-     * @return a supplier of a list of a type provided by a specified type mapper
-     * @see #mapList(ConfigMapper)
-     */
-    default <T> Supplier<List<T>> mapListSupplier(ConfigMapper<? extends T> mapper) {
-        return () -> context().last().mapList(mapper);
-    }
-
-    /**
-     * Returns typed list of type provided by specified type mapper.
-     *
-     * @param mapper       type mapper
-     * @param <T>          mapped Java type
-     * @param defaultValue default value
-     * @return a typed list of values or default value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> List<T> mapList(ConfigMapper<? extends T> mapper, List<T> defaultValue) throws ConfigMappingException {
-        return this.<T>mapOptionalList(mapper).orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a list of a type provided by a specified type mapper or a default value.
-     *
-     * @param mapper       a type class
-     * @param <T>          a type
-     * @param defaultValue a default value
-     * @return a supplier of a list of a type provided by a specified type mapper or a default value
-     * @see #mapList(ConfigMapper, List)
-     */
-    default <T> Supplier<List<T>> mapListSupplier(ConfigMapper<? extends T> mapper, List<T> defaultValue) {
-        return () -> context().last().mapList(mapper, defaultValue);
-    }
-
-    /**
-     * Returns typed list of type provided by specified config hierarchy mapper.
-     *
-     * @param mapper config hierarchy  mapper
-     * @param <T>    mapped Java type
-     * @return a typed list of values or default value
-     * @throws MissingValueException  in case of the missing value for the key represented by this configuration.
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> List<T> mapList(Function<String, ? extends T> mapper) throws MissingValueException, ConfigMappingException {
-        return this.<T>mapOptionalList(mapper)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a list of a type provided by a specified type mapper.
-     *
-     * @param mapper a type class
-     * @param <T>    a type
-     * @return a supplier of a list of a type provided by a specified type mapper
-     * @see #mapList(Function)
-     */
-    default <T> Supplier<List<T>> mapListSupplier(Function<String, ? extends T> mapper) {
-        return () -> context().last().mapList(mapper);
-    }
-
-    /**
-     * Returns typed list of type provided by specified config hierarchy  mapper.
-     *
-     * @param mapper       config hierarchy  mapper
-     * @param <T>          mapped Java type
-     * @param defaultValue default value
-     * @return a typed list of values or default value
-     * @throws ConfigMappingException in case of problem to map property value.
-     */
-    default <T> List<T> mapList(Function<String, ? extends T> mapper, List<T> defaultValue) throws ConfigMappingException {
-        return this.<T>mapOptionalList(mapper)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a list of a type provided by a specified type mapper or a default value.
-     *
-     * @param mapper       a type class
-     * @param <T>          a type
-     * @param defaultValue a default value
-     * @return a supplier of a list of a type provided by a specified type mapper or a default value
-     * @see #mapList(Function, List)
-     */
-    default <T> Supplier<List<T>> mapListSupplier(Function<String, ? extends T> mapper, List<T> defaultValue) {
-        return () -> context().last().mapList(mapper, defaultValue);
-    }
-
-    /**
-     * Returns a {@code String} value of configuration node if the node is {@link Type#VALUE}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return single value if the node is {@link Type#VALUE}.
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}
-     */
-    default String asString() throws MissingValueException, ConfigMappingException {
-        return value()
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a {@code String} value of this configuration node.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code String} value when the node is {@link Type#VALUE}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return a supplier of the value if the node is {@link Type#VALUE}.
-     * @see #asString()
-     */
-    default Supplier<String> asStringSupplier() {
-        return () -> context().last().asString();
-    }
-
-    /**
-     * Returns a {@code String} value of configuration node if the node is {@link Type#VALUE}.
-     * Returns {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue default value
-     * @return single value if the node is {@link Type#VALUE} or {@code defaultValue} if the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}
-     */
-    default String asString(String defaultValue) throws ConfigMappingException {
-        return value()
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a {@code String} value of this configuration node or a default value.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code String} value when the node is {@link Type#VALUE}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of the value if the node is {@link Type#VALUE} or {@code defaultValue}.
-     * @see #asString(String)
-     */
-    default Supplier<String> asStringSupplier(String defaultValue) {
-        return () -> context().last().asString(defaultValue);
-    }
-
-    /**
-     * Returns a {@code boolean} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return single value if the node is {@link Type#VALUE} and can be mapped
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default boolean asBoolean() throws MissingValueException, ConfigMappingException {
-        return asOptional(Boolean.class)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a {@code Boolean} value of this configuration node.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Boolean} value when the node is {@link Type#VALUE}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return a supplier of the value if the node is {@link Type#VALUE}.
-     * @see #asBoolean()
-     */
-    default Supplier<Boolean> asBooleanSupplier() {
-        return () -> context().last().asBoolean();
-    }
-
-    /**
-     * Returns a {@code boolean} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Returns {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return single value if the node is {@link Type#VALUE} or {@code defaultValue} if the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default boolean asBoolean(boolean defaultValue) throws ConfigMappingException {
-        return asOptional(Boolean.class)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a {@code Boolean} value of this configuration node or a default value.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Boolean} value when the node is {@link Type#VALUE}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of the value if the node is {@link Type#VALUE} or {@code defaultValue}.
-     * @see #asBoolean(boolean)
-     */
-    default Supplier<Boolean> asBooleanSupplier(boolean defaultValue) {
-        return () -> context().last().asBoolean(defaultValue);
-    }
-
-    /**
-     * Returns a {@code int} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return single value if the node is {@link Type#VALUE} and can be mapped
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default int asInt() throws MissingValueException, ConfigMappingException {
-        return asOptionalInt()
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a {@code Integer} value of this configuration node.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Integer} value when the node is {@link Type#VALUE}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return a supplier of the value if the node is {@link Type#VALUE}.
-     * @see #asInt()
-     */
-    default Supplier<Integer> asIntSupplier() {
-        return () -> context().last().asInt();
-    }
-
-    /**
-     * Returns a {@code int} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Returns {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return single value if the node is {@link Type#VALUE} or {@code defaultValue} if the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default int asInt(int defaultValue) throws ConfigMappingException {
-        return asOptionalInt()
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a {@code Integer} value of this configuration node or a default value.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Integer} value when the node is {@link Type#VALUE}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of the value if the node is {@link Type#VALUE} or {@code defaultValue}.
-     * @see #asInt(int)
-     */
-    default Supplier<Integer> asIntSupplier(int defaultValue) {
-        return () -> context().last().asInt(defaultValue);
-    }
-
-    /**
-     * Returns a {@code long} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return single value if the node is {@link Type#VALUE} and can be mapped
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default long asLong() throws MissingValueException, ConfigMappingException {
-        return asOptionalLong()
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a {@code Long} value of this configuration node.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Long} value when the node is {@link Type#VALUE}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return a supplier of the value if the node is {@link Type#VALUE}.
-     * @see #asLong()
-     */
-    default Supplier<Long> asLongSupplier() {
-        return () -> context().last().asLong();
-    }
-
-    /**
-     * Returns a {@code long} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return single value if the node is {@link Type#VALUE} or {@code defaultValue} if the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default long asLong(long defaultValue) throws ConfigMappingException {
-        return asOptionalLong()
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a {@code Long} value of this configuration node or a default value.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Long} value when the node is {@link Type#VALUE}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of the value if the node is {@link Type#VALUE} or {@code defaultValue}.
-     * @see #asLong(long)
-     */
-    default Supplier<Long> asLongSupplier(long defaultValue) {
-        return () -> context().last().asLong(defaultValue);
-    }
-
-    /**
-     * Returns a {@code double} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return single value if the node is {@link Type#VALUE} and can be mapped
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default double asDouble() throws MissingValueException, ConfigMappingException {
-        return asOptionalDouble()
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a {@code Double} value of this configuration node.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Double} value when the node is {@link Type#VALUE}.
-     * Throws {@link MissingValueException} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @return a supplier of the value if the node is {@link Type#VALUE}.
-     * @see #asDouble()
-     */
-    default Supplier<Double> asDoubleSupplier() {
-        return () -> context().last().asDouble();
-    }
-
-    /**
-     * Returns a {@code double} value of configuration node if the node is {@link Type#VALUE}
-     * and original {@link #value} can be mapped to.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return single value if the node is {@link Type#VALUE} or {@code defaultValue} if the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#OBJECT} or {@link Type#LIST}, or value cannot be mapped
-     *                                to.
-     */
-    default double asDouble(double defaultValue) throws ConfigMappingException {
-        return asOptionalDouble()
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a {@code Double} value of this configuration node or a default value.
-     * <p>
-     * Calling {@link Supplier#get()} returns {@code Double} value when the node is {@link Type#VALUE}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     * Otherwise, if node is {@link Type#OBJECT} or {@link Type#LIST}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of the value if the node is {@link Type#VALUE} or {@code defaultValue}.
-     * @see #asDouble(double)
-     */
-    default Supplier<Double> asDoubleSupplier(double defaultValue) {
-        return () -> context().last().asDouble(defaultValue);
-    }
-
-    /**
-     * Returns a list of {@code String}s mapped from {@link Type#LIST} or {@link Type#OBJECT} {@link #nodeList() nodes}.
-     *
-     * @return a list of {@code String}s of it is possible to map elementary {@link #nodeList() sub-nodes} into {@code String}
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}, or list of nodes cannot be mapped
-     *                                to list of {@code String}s
-     */
-    default List<String> asStringList() throws MissingValueException, ConfigMappingException {
-        return asOptionalList(String.class)
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier to a list of {@code String}s mapped from {@link Type#LIST} or {@link Type#OBJECT} {@link #nodeList()
-     * nodes}.
-     * <p>
-     * Calling {@link Supplier#get()} throws {@link MissingValueException} if this node is {@link Type#MISSING} or {@link
-     * ConfigMappingException} if this node is {@link Type#VALUE} or a list of nodes cannot be mapped to list of {@code String}s.
-     *
-     * @return a supplier of a list of {@code String}s of it is possible to map elementary {@link #nodeList() sub-nodes} into
-     * {@code String}
-     * @see #asStringList()
-     */
-    default Supplier<List<String>> asStringListSupplier() {
-        return () -> context().last().asStringList();
-    }
-
-    /**
-     * Returns a list of {@code String}s mapped from {@link Type#LIST} or {@link Type#OBJECT} {@link #nodeList() nodes}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING} type.
-     *
-     * @param defaultValue a default value
-     * @return a list of {@code String}s of it is possible to map elementary {@link #nodeList() sub-nodes} into {@code String}
-     * or {@code defaultValue} if the node is {@link Type#MISSING}.
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}, or list of nodes cannot be mapped
-     *                                to list of {@code String}s
-     */
-    default List<String> asStringList(List<String> defaultValue) throws ConfigMappingException {
-        return asOptionalList(String.class)
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier to a list of {@code String}s mapped from {@link Type#LIST} or {@link Type#OBJECT} {@link #nodeList()
-     * nodes} or a default value.
-     * <p>
-     * Calling {@link Supplier#get()} throws {@link ConfigMappingException} if this node is {@link Type#VALUE} or a list of nodes
-     * cannot be mapped to list of {@code String}s.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of a list of {@code String}s of it is possible to map elementary {@link #nodeList() sub-nodes} into
-     * {@code String} or a {@code defaultValue}
-     * @see #asStringList(List)
-     */
-    default Supplier<List<String>> asStringListSupplier(List<String> defaultValue) {
-        return () -> context().last().asStringList(defaultValue);
+     *         or {@link Optional#empty()} in case of {@link Type#MISSING} node.
+     */
+    default ConfigValue<Config> asNode() {
+        return ConfigValues.create(this,
+                                   () -> exists() ? Optional.of(this) : Optional.empty(),
+                                   Config::asNode);
     }
 
     /**
@@ -1821,58 +866,9 @@ public interface Config {
      * Otherwise, if node is {@link Type#VALUE}, it throws {@link ConfigMappingException}.
      *
      * @return a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
-     * @throws MissingValueException  in case the node is {@link Type#MISSING}.
      * @throws ConfigMappingException in case the node is {@link Type#VALUE}
      */
-    default List<Config> asNodeList() throws MissingValueException, ConfigMappingException {
-        return nodeList()
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a list of child nodes when this node is {@link Type#OBJECT} or a list of element nodes for {@link
-     * Type#LIST}.
-     * <p>
-     * Calling {@link Supplier#get()} may throw {@link MissingValueException} if this node is {@link Type#MISSING} or {@link
-     * ConfigMappingException} for nodes of type {@link Type#VALUE}.
-     *
-     * @return a supplier of a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
-     * @see #asNodeList()
-     */
-    default Supplier<List<Config>> asNodeListSupplier() {
-        return () -> context().last().asNodeList();
-    }
-
-    /**
-     * Returns a list of child {@code Config} nodes if the node is {@link Type#OBJECT}.
-     * Returns a list of element nodes if the node is {@link Type#LIST}.
-     * Returns a {@code defaultValue} if the node is {@link Type#MISSING}.
-     * Otherwise, if node is {@link Type#VALUE}, it throws {@link ConfigMappingException}.
-     *
-     * @param defaultValue a default value
-     * @return list of {@link Type#OBJECT} members, list of {@link Type#LIST} members
-     * or {@code defaultValue} in case of {@link Type#MISSING}
-     * @throws ConfigMappingException in case the node is {@link Type#VALUE}
-     */
-    default List<Config> asNodeList(List<Config> defaultValue) throws ConfigMappingException {
-        return nodeList()
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a list of child nodes when this node is {@link Type#OBJECT}, a list of element nodes for {@link
-     * Type#LIST} or {@code defaultValue} if this node is {@link Type#MISSING}.
-     * <p>
-     * Calling {@link Supplier#get()} may throw {@link ConfigMappingException} for nodes of type {@link Type#VALUE}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of a list of {@link Type#OBJECT} members or a list of {@link Type#LIST} members
-     * or {@code defaultValue} in case of {@link Type#MISSING}
-     * @see #asNodeList(List)
-     */
-    default Supplier<List<Config>> asNodeListSupplier(List<Config> defaultValue) {
-        return () -> context().last().asNodeList(defaultValue);
-    }
+    ConfigValue<List<Config>> asNodeList() throws ConfigMappingException;
 
     /**
      * Transform all leaf nodes (values) into Map instance.
@@ -1902,78 +898,10 @@ public interface Config {
      *
      * @return new Map instance that contains all config leaf node values
      * @throws MissingValueException in case the node is {@link Type#MISSING}.
-     * @see #asOptionalMap()
-     * @see #asMap(Map)
      * @see #traverse()
      * @see #detach()
      */
-    default Map<String, String> asMap() throws MissingValueException {
-        return asOptionalMap()
-                .orElseThrow(MissingValueException.supplierForKey(key()));
-    }
-
-    /**
-     * Returns a supplier of a map with transformed leaf nodes.
-     * <p>
-     * For detail see {@link #asMap()}.
-     *
-     * @return a supplier of a map with transformed leaf nodes
-     * @see #asMap()
-     */
-    default Supplier<Map<String, String>> asMapSupplier() {
-        return () -> context().last().asMap();
-    }
-
-    /**
-     * Transform all leaf nodes (values) into Map instance.
-     * <p>
-     * Fully qualified key of config node is used as a key in returned Map.
-     * {@link #detach() Detach} config node before transforming to Map in case you want to cut
-     * current Config node key prefix.
-     * <p>
-     * Let's say we work with following configuration:
-     * <pre>
-     * app:
-     *      name: Example 1
-     *      page-size: 20
-     * logging:
-     *      app.level = INFO
-     *      level = WARNING
-     * </pre>
-     * Map {@code app1} contains two keys: {@code app.name}, {@code app.page-size}.
-     * <pre>{@code
-     * Map<String, String> app1 = config.get("app").asMap(CollectionsHelper.mapOf());
-     * }</pre>
-     * {@link #detach() Detaching} {@code app} config node returns new Config instance with "reset" local root.
-     * <pre>{@code
-     * Map<String, String> app2 = config.get("app").detach().asMap(CollectionsHelper.mapOf());
-     * }</pre>
-     * Map {@code app2} contains two keys without {@code app} prefix: {@code name}, {@code page-size}.
-     *
-     * @param defaultValue a default value
-     * @return new Map instance that contains all config leaf node values or {@code defaultValue} in case of {@link Type#MISSING}
-     * @see #asOptionalMap()
-     * @see #asMap()
-     * @see #traverse()
-     * @see #detach()
-     */
-    default Map<String, String> asMap(Map<String, String> defaultValue) {
-        return asOptionalMap()
-                .orElse(defaultValue);
-    }
-
-    /**
-     * Returns a supplier of a map with transformed leaf nodes or a default value if this node is {@link Type#MISSING}.
-     * <p>
-     * For detail see {@link #asMap(Map)}.
-     *
-     * @param defaultValue a default value
-     * @return a supplier of a map with transformed leaf nodes
-     * @see #asMap(Map)
-     */
-    default Supplier<Map<String, String>> asMapSupplier(Map<String, String> defaultValue) {
-        return () -> context().last().asMap(defaultValue);
-    }
+    ConfigValue<Map<String, String>> asMap() throws MissingValueException;
 
     //
     // config changes
@@ -2033,9 +961,35 @@ public interface Config {
      * @param onNextFunction {@link Flow.Subscriber#onNext(Object)} functionality
      * @see Config#changes()
      * @see ConfigHelper#subscriber(Function)
+     * @deprecated use {@link #onChange(Consumer)} instead
      */
+    @Deprecated
     default void onChange(Function<Config, Boolean> onNextFunction) {
         changes().subscribe(ConfigHelper.subscriber(onNextFunction));
+    }
+
+    /**
+     * Register a {@link Consumer} that is invoked each time a change occurs on whole Config or on a particular Config node.
+     * <p>
+     * A user can subscribe on root Config node and than will be notified on any change of Configuration.
+     * You can also subscribe on any sub-node, i.e. you will receive notification events just about sub-configuration.
+     * No matter how much the sub-configuration has changed you will receive just one notification event that is associated
+     * with a node you are subscribed on.
+     * If a user subscribes on older instance of Config and ones has already been published the last one is automatically
+     * submitted to new-subscriber.
+     * <p>
+     * Note: It does not matter what instance version of Config (related to single {@link Builder} initialization)
+     * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
+     * There is no added value to subscribe again on new Config instance.
+     *
+     * @param onChangeConsumer consumer invoked on change
+     */
+    default void onChange(Consumer<Config> onChangeConsumer) {
+        // temporary workaround before change support is replaced by one not using Flow API
+        changes().subscribe(ConfigHelper.subscriber(config -> {
+            onChangeConsumer.accept(config);
+            return true;
+        }));
     }
 
     /**
@@ -2107,6 +1061,8 @@ public interface Config {
          */
         @Override
         String toString();
+
+        Key child(Key key);
 
         /**
          * Creates new instance of Key for specified {@code key} literal.
@@ -2221,6 +1177,41 @@ public interface Config {
     //
 
     /**
+     * Context associated with specific {@link Config} node that allows to access the last loaded instance of the node
+     * or to request reloading of whole configuration.
+     */
+    interface Context {
+        /**
+         * Returns timestamp of the last loaded configuration.
+         *
+         * @return timestamp of the last loaded configuration.
+         * @see Config#timestamp()
+         */
+        Instant timestamp();
+
+        /**
+         * Returns instance of Config node related to same Config {@link Config#key() key}
+         * as original {@link Config#context() node} used to get Context from.
+         * <p>
+         * If the configuration has not been reloaded yet it returns original Config node instance.
+         *
+         * @return the last instance of Config node associated with same key as original node
+         * @see Config#context()
+         */
+        Config last();
+
+        /**
+         * Requests reloading of whole configuration and returns new instance of
+         * Config node related to same Config {@link Config#key() key}
+         * as original {@link Config#context() node} used to get Context from.
+         *
+         * @return the new instance of Config node associated with same key as original node
+         * @see Config.Builder
+         */
+        Config reload();
+    }
+
+    /**
      * {@link Config} Builder.
      * <p>
      * A factory for a {@code Config} object.
@@ -2229,9 +1220,9 @@ public interface Config {
      * <ul>
      * <li>{@code overrides} - instance of {@link OverrideSource override source};</li>
      * <li>{@code sources} - instances of {@link ConfigSource configuration source};</li>
-     * <li>{@code mappers} - ordered list of {@link ConfigMapper configuration node mappers}.
+     * <li>{@code mappers} - ordered list of mapper functions.
      * It is also possible to {@link #disableMapperServices disable} loading of
-     * {@link ConfigMapper}s as a {@link java.util.ServiceLoader service}.</li>
+     * {@link ConfigMapperProvider}s as a {@link java.util.ServiceLoader service}.</li>
      * <li>{@code parsers} - ordered list of {@link ConfigParser configuration content parsers}.
      * It is also possible to {@link #disableParserServices disable} loading of
      * {@link ConfigParser}s as a {@link java.util.ServiceLoader service}.</li>
@@ -2243,48 +1234,13 @@ public interface Config {
      * <li>{@code caching} - can be elementary configuration value processed by filter cached?</li>
      * </ul>
      * <p>
-     * In case of {@link ConfigMapper}s, if there is no one that could be used to map appropriate {@code type},
-     * it uses {@link java.lang.reflect reflection API} to find public constructor or a public static method
-     * to construct {@code type} instance from config {@code node}:
-     * <ol>
-     * <li>a static method named {@code from} with a single {@code Config} argument that return an instance of the {@code
-     * type};</li>
-     * <li>a constructor that accepts a single {@code Config} argument;</li>
-     * <li>a static method named {@code valueOf} with a single {@code Config} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method named {@code fromConfig} with a single {@code Config} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method named {@code from} with a single {@code String} argument that return an instance of the {@code
-     * type};</li>
-     * <li>a constructor that accepts a single {@code String} argument;</li>
-     * <li>a static method named {@code valueOf} with a single {@code String} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method named {@code fromString} with a single {@code String} argument
-     * that return an instance of the {@code type};</li>
-     * <li>a static method {@code builder()} that creates instance of a builder class.
-     * Generic JavaBean deserialization is applied on the builder instance using config sub-nodes.
-     * See the last list item for more details about generic deserialization support.
-     * Builder has {@code build()} method to create new instance of a bean.
-     * </li>
-     * <li>a factory method {@code from} with parameters (loaded from config sub-nodes) creates new instance of a bean;
-     * Annotation {@link Config.Value} is used on parameters to customize sub-key and/or default value.
-     * </li>
-     * <li>a "factory" constructor with parameters (loaded from config sub-nodes);
-     * Annotation {@link Config.Value} is used on parameters to customize sub-key and/or default value.
-     * </li>
-     * <li>a no-parameter constructor to create new instance of type and apply recursively same mapping behaviour
-     * described above on each JavaBean property of such object, a.k.a. JavaBean deserialization.
-     * Public property setter is used by default to set a property value loaded from appropriate config sub-node.
-     * By default a setter pattern is required - public method named {@code set*} with single parameter that returns {@code void}.
-     * It is possible to suppress returned {@code void} and {@code set*} name requirements
-     * by marking a method by {@link Value} annotation.
-     * If there is no public setter, a public property field is used to set a property value.
-     * Generic mapping behaviour can be customized by {@link Config.Value} and {@link Config.Transient} annotations.
-     * </li>
-     * </ol>
-     * See {@link Config.Value} documentation for more details about generic deserialization feature.
+     * In case of {@link ConfigMapperProvider}s, if there is no one that could be used to map appropriate {@code type},
+     * the mapping attempt throws a {@link ConfigMappingException}.
      * <p>
-     * If {@link ConfigSource} not specified, following default config source is used. Same as {@link #create()} uses.
+     * A more sophisticated approach can be achieved using the "config beans" module, that provides reflection access
+     * and mapping for static factory methods, constructors, builder patterns and more.
+     * <p>
+     * If a {@link ConfigSource} is not specified, following default config source is used. Same as {@link #create()} uses.
      * It builds composite config source from following sources, checked in order:
      * <ol>
      * <li>Tries to load configuration from meta one of following meta configuration files on classpath, in order:
@@ -2322,7 +1278,6 @@ public interface Config {
      * @see ConfigSource
      * @see ConfigParser
      * @see ConfigFilter
-     * @see ConfigMapper
      */
     interface Builder {
 
@@ -2496,25 +1451,39 @@ public interface Config {
         Builder disableSystemPropertiesSource();
 
         /**
-         * Registers contextual {@link ConfigMapper} for specified {@code type}.
+         * Registers mapping function for specified {@code type}.
          * The last registration of same {@code type} overwrites previous one.
          * Programmatically registered mappers have priority over other options.
          * <p>
          * As another option, mappers are loaded automatically as a {@link java.util.ServiceLoader service}
-         * via {@link io.helidon.config.spi.ConfigMapperProvider} SPI, if not {@link #disableMapperServices() disabled}.
+         * via {@link io.helidon.config.spi.ConfigMapperProvider} SPI unless it is {@link #disableMapperServices() disabled}.
          * <p>
          * And the last option, {@link ConfigMappers built-in mappers} are registered.
          *
          * @param type   class of type the {@code mapper} is registered for
-         * @param mapper mapper instance
+         * @param mapper mapping function
          * @param <T>    type the {@code mapper} is registered for
          * @return an updated builder instance
-         * @see #addMapper(Class, Function)
+         * @see #addStringMapper(Class, Function)
          * @see #addMapper(ConfigMapperProvider)
-         * @see ConfigMappers
          * @see #disableMapperServices
          */
-        <T> Builder addMapper(Class<T> type, ConfigMapper<T> mapper);
+        <T> Builder addMapper(Class<T> type, Function<Config, T> mapper);
+
+        /**
+         * Register a mapping function for specified {@link GenericType}.
+         * This is useful for mappers that support specificly typed generics, such as {@code Map<String, Integer>}
+         * or {@code Set<Foo<Bar>>}.
+         * To support mappers that can map any type (e.g. all cases of {@code Map<String, V>}),
+         * use {@link #addMapper(ConfigMapperProvider)} as it gives you full control over which types are supported, through
+         * {@link ConfigMapperProvider#mapper(GenericType)}.
+         *
+         * @param type   generic type to register a mapper for
+         * @param mapper mapping function
+         * @param <T>    type of the result
+         * @return updated builder instance
+         */
+        <T> Builder addMapper(GenericType<T> type, Function<Config, T> mapper);
 
         /**
          * Registers simple {@link Function} from {@code String} for specified {@code type}.
@@ -2530,15 +1499,14 @@ public interface Config {
          * @param mapper mapper instance
          * @param <T>    type the {@code mapper} is registered for
          * @return an updated builder instance
-         * @see #addMapper(Class, ConfigMapper)
          * @see #addMapper(ConfigMapperProvider)
          * @see ConfigMappers
          * @see #disableMapperServices
          */
-        <T> Builder addMapper(Class<T> type, Function<String, T> mapper);
+        <T> Builder addStringMapper(Class<T> type, Function<String, T> mapper);
 
         /**
-         * Registers a {@link ConfigMapper} provider with a map of {@code String} to specified {@code type}.
+         * Registers a {@link ConfigMapperProvider} with a map of {@code String} to specified {@code type}.
          * The last registration of same {@code type} overwrites previous one.
          * Programmatically registered mappers have priority over other options.
          * <p>
@@ -2549,8 +1517,7 @@ public interface Config {
          *
          * @param configMapperProvider mapper provider instance
          * @return modified builder instance
-         * @see #addMapper(Class, ConfigMapper)
-         * @see #addMapper(Class, Function)
+         * @see #addStringMapper(Class, Function)
          * @see ConfigMappers
          * @see #disableMapperServices
          */
@@ -2709,7 +1676,7 @@ public interface Config {
          * Specifies maximum capacity for each subscriber's buffer to be used by by {@link Config#changes()}
          * to deliver new Config instance.
          * <p>
-         * By default {@link io.helidon.common.reactive.Flow#DEFAULT_BUFFER_SIZE} is used.
+         * By default {@link Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Not consumed events will be dropped off.
          *
@@ -2727,317 +1694,14 @@ public interface Config {
          * @return new instance of {@link Config}.
          */
         Config build();
+
+        /**
+         * Add mappers from another config instance.
+         * This may be useful if we need the same conversion behavior.
+         *
+         * @param config config to extract mappers from
+         * @return updated builder instance
+         */
+        Builder mappersFrom(Config config);
     }
-
-    /**
-     * Context associated with specific {@link Config} node that allows to access the last loaded instance of the node
-     * or to request reloading of whole configuration.
-     */
-    interface Context {
-        /**
-         * Returns timestamp of the last loaded configuration.
-         *
-         * @return timestamp of the last loaded configuration.
-         * @see Config#timestamp()
-         */
-        Instant timestamp();
-
-        /**
-         * Returns instance of Config node related to same Config {@link Config#key() key}
-         * as original {@link Config#context() node} used to get Context from.
-         * <p>
-         * If the configuration has not been reloaded yet it returns original Config node instance.
-         *
-         * @return the last instance of Config node associated with same key as original node
-         * @see Config#context()
-         */
-        Config last();
-
-        /**
-         * Requests reloading of whole configuration and returns new instance of
-         * Config node related to same Config {@link Config#key() key}
-         * as original {@link Config#context() node} used to get Context from.
-         *
-         * @return the new instance of Config node associated with same key as original node
-         * @see Config.Builder
-         */
-        Config reload();
-    }
-
-    /**
-     * Annotation used to customize behaviour of JavaBean deserialization support, generic {@link ConfigMapper}
-     * implementation.
-     * <p>
-     * The first option for generic Config to JavaBean deserialization works just with class with no-parameter constructor.
-     * Each JavaBean property value is then set by value mapped from appropriate configuration node.
-     * Each public setter method and public non-final fields are taken as JavaBean properties that will be set.
-     * The deserialization process is applied recursively on each property.
-     * <p>
-     * Use {@link Transient} annotation to exclude setter or field from set of processed JavaBean properties.
-     * <p>
-     * By default JavaBean property name is used as config key to {@link Config#get(String) get} configuration node.
-     * The config key can be customized by {@link #key()} attribute. Use the annotation on public setter or public field.
-     * Annotation on method has precedence over annotation used on field. The second one is ignored.
-     * <p>
-     * If the appropriate configuration node does not exist it is possible to specify default value:
-     * <ul>
-     * <li>{@link #withDefaultSupplier()} - instance of supplier class is used to get default value of target type; or</li>
-     * <li>{@link #withDefault()} - default value in {@code String} form that will be mapped to target type
-     * by associated {@link ConfigMapper}</li>
-     * </ul>
-     * In case of both <i>default</i> attributes are set the {@code withDefaultSupplier} is used
-     * and {@code withDefault} is ignored.
-     * <pre><code>
-     * public class AppConfig {
-     *     private String greeting;
-     *     private int pageSize;
-     *     private List{@literal <Integer>} range;
-     *
-     *     public AppConfig() { // {@literal <1>}
-     *     }
-     *
-     *     public void setGreeting(String greeting) { // {@literal <2>}
-     *         this.greeting = greeting;
-     *     }
-     *
-     *     {@literal @}Config.Value(key = "page-size", withDefault = "10") // {@literal <3>}
-     *     public void setPageSize(int pageSize) {
-     *         this.pageSize = pageSize;
-     *     }
-     *
-     *     {@literal @}Config.Value(withDefaultSupplier = DefaultRangeSupplier.class) // {@literal <4>}
-     *     public void setRange(List{@literal <Integer>} basicRange) {
-     *         this.range = basicRange;
-     *     }
-     *
-     *     //...
-     *
-     *     public static class DefaultRangeSupplier // {@literal <5>}
-     *                 implements Supplier{@literal <List<Integer>>} {
-     *         {@literal @}Override
-     *         public List{@literal <Integer>} get() {
-     *             return CollectionsHelper.listOf(0, 10);
-     *         }
-     *     }
-     * }
-     * </code></pre>
-     * <ol>
-     * <li>public no-parameter constructor;</li>
-     * <li>property {@code greeting} is not customized; will be set from config node with {@code greeting} key, if exists;</li>
-     * <li>property {@code pageSize} customizes key of config node to {@code page-size};
-     * if the config node does not exist, value {@code "10"} will be mapped to {@code int};
-     * </li>
-     * <li>property {@code range} will be set from config node with same {@code range} key;
-     * if the config node does not exist, {@code DefaultRangeSupplier} instance will be used to get default value;
-     * </li>
-     * <li>{@code DefaultRangeSupplier} is used to supply {@code List<Integer>} value.</li>
-     * </ol>
-     * <p>
-     * The second option is to provide factory public static method {@code from} with parameters set from configuration.
-     * Or public "factory" constructor with parameters can be used too.
-     * <pre><code>
-     * public class AppConfig {
-     *     private final String greeting;
-     *     private final int pageSize;
-     *     private final List{@literal <Integer>} basicRange;
-     *
-     *     private AppConfig(String greeting, int pageSize, List{@literal <Integer>} basicRange) {
-     *         this.greeting = greeting;
-     *         this.pageSize = pageSize;
-     *         this.basicRange = basicRange;
-     *     }
-     *
-     *     //...
-     *
-     *     // FACTORY METHOD
-     *     public static AppConfig from({@literal @}Config.Value(key = "greeting", withDefault = "Hi")
-     *                                  String greeting,
-     *                                  {@literal @}Config.Value(key = "page-size", withDefault = "10")
-     *                                  int pageSize,
-     *                                  {@literal @}Config.Value(key = "basic-range",
-     *                                          withDefaultSupplier = DefaultBasicRangeSupplier.class)
-     *                                  List{@literal <Integer>} basicRange) {
-     *         return new AppConfig(greeting, pageSize, basicRange);
-     *     }
-     * }
-     * </code></pre>
-     * <p>
-     * The third option is to provide Builder accessible by public static {@code builder()} method.
-     * The Builder instances is initialized via public setters or fields, similar to the first deserialization option.
-     * Finally, Builder has {@code build()} method that creates new instances of a bean.
-     * <pre><code>
-     * public class AppConfig {
-     *     private final String greeting;
-     *     private final int pageSize;
-     *     private final List{@literal <Integer>} basicRange;
-     *
-     *     private AppConfig(String greeting, int pageSize, List{@literal <Integer>} basicRange) {
-     *         this.greeting = greeting;
-     *         this.pageSize = pageSize;
-     *         this.basicRange = basicRange;
-     *     }
-     *
-     *     // BUILDER METHOD
-     *     public static Builder builder() {
-     *         return new Builder();
-     *     }
-     *
-     *     public static class Builder {
-     *         private String greeting;
-     *         private int pageSize;
-     *         private List{@literal <Integer>} basicRange;
-     *
-     *         private Builder() {
-     *         }
-     *
-     *         {@literal @}Config.Value(withDefault = "Hi")
-     *         public void setGreeting(String greeting) {
-     *             this.greeting = greeting;
-     *         }
-     *
-     *         {@literal @}Config.Value(key = "page-size", withDefault = "10")
-     *         public void setPageSize(int pageSize) {
-     *             this.pageSize = pageSize;
-     *         }
-     *
-     *         {@literal @}Config.Value(key = "basic-range",
-     *                 withDefaultSupplier = DefaultBasicRangeSupplier.class)
-     *         public void setBasicRange(List{@literal <Integer>} basicRange) {
-     *             this.basicRange = basicRange;
-     *         }
-     *
-     *         // BUILD METHOD
-     *         public AppConfig build() {
-     *             return new AppConfig(greeting, pageSize, basicRange);
-     *         }
-     *     }
-     * }
-     * </code></pre>
-     * <p>
-     * Configuration example:
-     * <pre>{@code
-     * {
-     *     "app": {
-     *         "greeting": "Hello",
-     *         "page-size": 20,
-     *         "range": [ -20, 20 ]
-     *     }
-     * }
-     * }</pre>
-     * Getting {@code app} config node as {@code AppConfig} instance:
-     * <pre>{@code
-     * AppConfig appConfig = config.get("app").as(AppConfig.class);
-     * assert appConfig.getGreeting().equals("Hello");
-     * assert appConfig.getPageSize() == 20;
-     * assert appConfig.getRange().get(0) == -20;
-     * assert appConfig.getRange().get(1) == 20;
-     * }</pre>
-     * In this case default values where not used because JSON contains all expected nodes.
-     * <p>
-     * The annotation cannot be applied on same JavaBean property together with {@link Transient}.
-     *
-     * @see Transient
-     */
-    @Retention(RUNTIME)
-    @Target({METHOD, FIELD, PARAMETER})
-    @interface Value {
-
-        /**
-         * Specifies a key of configuration node to be used to set JavaBean property value from.
-         * <p>
-         * If not specified original JavaBean property name is used.
-         *
-         * @return config property key
-         */
-        String key() default "";
-
-        /**
-         * Specifies default value in form of single String value
-         * that will be used to set JavaBean property value in case configuration does not contain a config node
-         * of appropriate config key.
-         * <p>
-         * In case {@link #withDefaultSupplier} is also used current value is ignored.
-         *
-         * @return single default value that will be converted into target type
-         */
-        String withDefault() default None.VALUE;
-
-        /**
-         * Specifies supplier of default value
-         * that will be used to set JavaBean property value in case configuration does not contain config node
-         * of appropriate config key.
-         * <p>
-         * Default value is used in case appropriate config value is not set.
-         * In case {@link #withDefault} is also used this one has higher priority and will be used.
-         *
-         * @return supplier that will provide default value in target type
-         */
-        Class<? extends Supplier> withDefaultSupplier() default None.class;
-
-        /**
-         * Class that represents not-set default values.
-         */
-        interface None extends Supplier {
-            String VALUE = "io.helidon.config:default=null";
-
-            @Override
-            default Object get() {
-                return null;
-            }
-        }
-
-    }
-
-    /**
-     * Annotation used to exclude JavaBean property, method or constructor from JavaBean deserialization support.
-     * The annotation can be used on JavaBean property public setter, on public property field,
-     * on public constructor or on public {@code builder} and {@code build} method.
-     * <p>
-     * The annotation cannot be applied on same JavaBean property together with {@link Value}.
-     * <p>
-     * In following example, property {@code timestamp} is not set even {@code timestamp} config value is available.
-     * Property {@code timestamp} is completely ignored by deserialization process.
-     * <pre><code>
-     * public class AppConfig {
-     *     private Instant timestamp;
-     *     private String greeting;
-     *
-     *     {@literal @}Config.Transient
-     *     public void setTimestamp(Instant timestamp) { // {@literal <1>}
-     *         this.timestamp = timestamp;
-     *     }
-     *
-     *     public void setGreeting(String greeting) {    // {@literal <2>}
-     *         this.greeting = greeting;
-     *     }
-     *
-     *     //...
-     * }
-     * </code></pre>
-     * <ol>
-     * <li>The {@code setTimestamp(Instant)} method is never called during deserialization.</li>
-     * <li>While {@code setGreeting(String)} can be called if {@code greeting} config value is available.</li>
-     * </ol>
-     * Configuration example:
-     * <pre>{@code
-     * {
-     *     "app" : {
-     *         "greeting" : "Hello",
-     *         "timestamp" : "2007-12-03T10:15:30.00Z"
-     *     }
-     * }
-     * }</pre>
-     * Getting {@code app} config node as {@code AppConfig} instance:
-     * <pre>{@code
-     * AppConfig appConfig = config.get("app").as(AppConfig.class);
-     * assert appConfig.getTimestamp() == null;
-     * }</pre>
-     *
-     * @see Value
-     */
-    @Retention(RUNTIME)
-    @Target({METHOD, FIELD, CONSTRUCTOR})
-    @interface Transient {
-    }
-
 }

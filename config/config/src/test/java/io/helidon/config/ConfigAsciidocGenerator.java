@@ -114,7 +114,7 @@ public class ConfigAsciidocGenerator {
     }
 
     private static List<String> builtinMappers() {
-        Map<Class<?>, ConfigMapper<?>> mappers = new HashMap<>();
+        Map<Class<?>, Function<Config, ?>> mappers = new HashMap<>();
         mappers.putAll(ConfigMappers.essentialMappers());
         mappers.putAll(ConfigMappers.builtInMappers());
 
@@ -215,7 +215,7 @@ public class ConfigAsciidocGenerator {
             //map a single value
             SortedMap<KindDesc, Map<AccessType, MethodDesc>> methods = new TreeMap<>();
             final List<KindDesc> kinds = CollectionsHelper.listOf(new KindDesc("Simple `Function` (`T`)", Function.class),
-                                                 new KindDesc("Complex `ConfigMapper` (`T`)", ConfigMapper.class));
+                                                 new KindDesc("Complex `ConfigMapper` (`T`)", Function.class));
 
             allAccessorMethods.stream()
                     .filter(mapMethodsFilter)
@@ -229,7 +229,7 @@ public class ConfigAsciidocGenerator {
             //map a list of values
             SortedMap<KindDesc, Map<AccessType, MethodDesc>> methods = new TreeMap<>();
             final List<KindDesc> kinds = CollectionsHelper.listOf(new KindDesc("Simple `Function` (`List<T>`)", Function.class),
-                                                 new KindDesc("Complex `ConfigMapper` (`List<T>`)", ConfigMapper.class));
+                                                 new KindDesc("Complex `ConfigMapper` (`List<T>`)", Function.class));
 
             allAccessorMethods.stream()
                     .filter(mapMethodsFilter)

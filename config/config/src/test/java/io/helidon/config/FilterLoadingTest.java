@@ -22,7 +22,9 @@ import io.helidon.config.internal.AutoLoadedConfigHighPriority;
 import io.helidon.config.internal.AutoLoadedConfigPriority;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test checking that auto-loaded filter service and filter provider service works.
@@ -52,10 +54,10 @@ public class FilterLoadingTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(AutoLoadedConfigFilter.EXPECTED_FILTERED_VALUE,
-                config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(AutoLoadedConfigFilter.EXPECTED_FILTERED_VALUE)));
     }
 
     @Test
@@ -73,10 +75,10 @@ public class FilterLoadingTest {
                 .disableFilterServices()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
-                config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
     }
 
     @Test
@@ -93,10 +95,10 @@ public class FilterLoadingTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(AutoLoadedConfigHighPriority.EXPECTED_FILTERED_VALUE,
-                config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(AutoLoadedConfigHighPriority.EXPECTED_FILTERED_VALUE)));
     }
 
     @Test
@@ -114,9 +116,9 @@ public class FilterLoadingTest {
                 .disableFilterServices()
                 .build();
 
-        assertEquals(UNAFFECTED_VALUE,
-                config.get(UNAFFECTED_KEY).asString());
-        assertEquals(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING,
-                config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString());
+        assertThat(config.get(UNAFFECTED_KEY).asString(),
+                   is(ConfigValues.simpleValue(UNAFFECTED_VALUE)));
+        assertThat(config.get(AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING).asString(),
+                   is(ConfigValues.simpleValue(ORIGINAL_VALUE_SUBJECT_TO_AUTO_FILTERING)));
     }
 }

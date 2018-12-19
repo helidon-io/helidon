@@ -20,11 +20,10 @@
 module io.helidon.config {
 
     requires java.logging;
-    requires jdk.unsupported;
 
     requires transitive java.annotation;
 
-    requires io.helidon.common;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.common.reactive;
 
     exports io.helidon.config;

@@ -514,12 +514,12 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("optional").asOptional(Boolean.class).ifPresent(this::optional);
-            config.get("client-id").value().ifPresent(this::clientId);
-            config.get("proxy-host").value().ifPresent(this::proxyHost);
-            config.get("proxy-port").asOptionalInt().ifPresent(this::proxyPort);
-            config.get("realm").value().ifPresent(this::realm);
-            config.get("token").asOptional(TokenHandler.class).ifPresent(this::tokenProvider);
+            config.get("optional").asBoolean().ifPresent(this::optional);
+            config.get("client-id").asString().ifPresent(this::clientId);
+            config.get("proxy-host").asString().ifPresent(this::proxyHost);
+            config.get("proxy-port").asInt().ifPresent(this::proxyPort);
+            config.get("realm").asString().ifPresent(this::realm);
+            config.get("token").as(TokenHandler::fromConfig).ifPresent(this::tokenProvider);
 
             return this;
         }
