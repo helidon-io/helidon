@@ -147,7 +147,8 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
      * @see ZipkinTracerBuilder#config(Config)
      */
     public static ZipkinTracerBuilder create(Config config) {
-        String serviceName = config.get("service").value()
+        String serviceName = config.get("service")
+                .asString()
                 .orElseThrow(() -> new IllegalArgumentException("Configuration must at least contain the service key"));
 
         return ZipkinTracerBuilder.forService(serviceName)
@@ -234,30 +235,32 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
 
     @Override
     public ZipkinTracerBuilder config(Config config) {
-        config.get("service").value().ifPresent(this::serviceName);
-        config.get("protocol").value().ifPresent(this::collectorProtocol);
-        config.get("host").value().ifPresent(this::collectorHost);
-        config.get("port").asOptionalInt().ifPresent(this::collectorPort);
-        config.get("path").value().ifPresent(this::collectorPath);
-        config.get("api-version").value().ifPresent(this::configApiVersion);
-        config.get("enabled").asOptionalBoolean().ifPresent(this::enabled);
+        config.get("service").asString().ifPresent(this::serviceName);
+        config.get("protocol").asString().ifPresent(this::collectorProtocol);
+        config.get("host").asString().ifPresent(this::collectorHost);
+        config.get("port").asInt().ifPresent(this::collectorPort);
+        config.get("path").asString().ifPresent(this::collectorPath);
+        config.get("api-version").asString().ifPresent(this::configApiVersion);
+        config.get("enabled").asBoolean().ifPresent(this::enabled);
 
-        config.get("tags").detach().asMap(CollectionsHelper.mapOf())
+        config.get("tags").detach()
+                .asMap()
+                .orElseGet(CollectionsHelper::mapOf)
                 .forEach(this::addTracerTag);
 
         config.get("boolean-tags")
-                .asOptionalNodeList()
+                .asNodeList()
                 .ifPresent(nodes -> {
                     nodes.forEach(node -> {
-                        this.addTracerTag(node.key().name(), node.asBoolean());
+                        this.addTracerTag(node.key().name(), node.asBoolean().get());
                     });
                 });
 
         config.get("int-tags")
-                .asOptionalNodeList()
+                .asNodeList()
                 .ifPresent(nodes -> {
                     nodes.forEach(node -> {
-                        this.addTracerTag(node.key().name(), node.asInt());
+                        this.addTracerTag(node.key().name(), node.asInt().get());
                     });
                 });
 

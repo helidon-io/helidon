@@ -19,21 +19,23 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <modules>
+        <module>it-tracing-client-zipkin</module>
+    </modules>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.tracing</groupId>
+        <artifactId>helidon-tracing-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-project</artifactId>
-    <name>Helidon Tracing Project</name>
 
-    <modules>
-        <module>tracing</module>
-        <module>jersey-client</module>
-        <module>jersey</module>
-        <module>zipkin</module>
-        <module>tests</module>
-    </modules>
+    <packaging>pom</packaging>
+    <artifactId>helidon-tracing-tests</artifactId>
+    <name>Helidon Tracing Integration Tests</name>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
 </project>

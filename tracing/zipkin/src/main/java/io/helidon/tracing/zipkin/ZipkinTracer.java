@@ -30,16 +30,25 @@ import io.opentracing.propagation.Format;
 /**
  * The ZipkinTracer delegates to {@link BraveTracer} while creating {@link ZipkinSpanBuilder}
  * instead of {@link brave.opentracing.BraveSpanBuilder}.
+ * This class should not be sued directly, use either
+ * {@link io.helidon.tracing.TracerBuilder} or {@link ZipkinTracerBuilder}.
  *
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  * @see ZipkinSpanBuilder
  */
-class ZipkinTracer implements Tracer {
+public class ZipkinTracer implements Tracer {
     private final BraveTracer tracer;
     private final List<Tag<?>> tags;
 
-    ZipkinTracer(BraveTracer tracer, List<Tag<?>> tags) {
+    /**
+     * Create a zipkin tracer from the delegate (BraveTracer) and
+     * tags to be used by default for all traces.
+     *
+     * @param tracer tracer to wrap
+     * @param tags list of tags to be automatically added to each span
+     */
+    public ZipkinTracer(BraveTracer tracer, List<Tag<?>> tags) {
         this.tracer = tracer;
         this.tags = tags;
     }

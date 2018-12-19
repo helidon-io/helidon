@@ -60,7 +60,7 @@ public class MpTracingContextFilter implements ContainerRequestFilter, Container
         Tracer tracer = serverRequest.webServer().configuration().tracer();
         SpanContext parentSpan = serverRequest.spanContext();
 
-        boolean clientEnabled = config.get("tracing.client.enabled").asBoolean(true);
+        boolean clientEnabled = config.get("tracing.client.enabled").asBoolean().orElse(true);
         TracingContext tracingContext = TracingContext.create(tracer, serverRequest.headers().toMap(), clientEnabled);
         tracingContext.parentSpan(parentSpan);
 
