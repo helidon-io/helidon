@@ -67,8 +67,8 @@ if [ ! -z "${1}" ]; then
 fi
 
 # Make sure the parent and bom poms are built
-mvn -B -N  ${EXTRA_MAVEN_OPTS} -f ${MY_DIR}/../../pom.xml clean install
-mvn -B -N  ${EXTRA_MAVEN_OPTS} -f ${MY_DIR}/../../bom/pom.xml clean install
+mvn -B -N  ${EXTRA_MAVEN_OPTS} -f ${MY_DIR}/../../../pom.xml clean install
+mvn -B -N  ${EXTRA_MAVEN_OPTS} -f ${MY_DIR}/../../../bom/pom.xml clean install
 
 for _ex in ${EXAMPLES}; do
 
