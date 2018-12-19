@@ -79,11 +79,11 @@ See the <<downloading,downloading>> section for instructions.
 
 == Develop your application
 
-=== Create a new maven project
-You can create your maven project in these ways:
+=== Create a new Maven project
+You can create your Maven project in these ways:
 
-* use your IDE to create a new Java maven project, or
-* run the standard maven archetype to create a new Java project using this command:
+* use your IDE to create a new Java Maven project, or
+* run the standard Maven archetype to create a new Java project using this command:
 +
 [source,bash]
 .Unix-style
