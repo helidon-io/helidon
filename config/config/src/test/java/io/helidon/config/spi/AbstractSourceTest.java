@@ -29,11 +29,12 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PollingStrategies;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link AbstractSource}.
@@ -129,11 +130,16 @@ public class AbstractSourceTest {
 
     @Test
     public void testInitAll() {
-        TestingSource.TestingBuilder builder = TestingSource.builder().init(Config.from(ConfigSources.from(
-                CollectionsHelper.mapOf("optional", "true",
-                       "polling-strategy.class", TestingPollingStrategy.class.getName(),
-                       "retry-policy.class", TestingRetryPolicy.class.getName()
-                ))));
+        TestingSource.TestingBuilder builder = TestingSource.builder().init(
+                Config.withSources(ConfigSources.from(
+                        CollectionsHelper.mapOf("optional", "true",
+                                                "polling-strategy.class", TestingPollingStrategy.class.getName(),
+                                                "retry-policy.class", TestingRetryPolicy.class.getName()
+                        )))
+                        .addMapper(TestingRetryPolicy.class, config -> new TestingRetryPolicy())
+                        .addMapper(TestingPollingStrategy.class, config -> new TestingPollingStrategy())
+                        .build()
+        );
 
         //optional
         assertThat(builder.isMandatory(), is(false));

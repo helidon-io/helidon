@@ -80,6 +80,16 @@
             <artifactId>config</artifactId>
         </dependency>
         <dependency>
+            <!--
+             this dependency is only needed for meta configuration
+             if config is not configured through meta configuration, leave it out
+            -->
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-object-mapping</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
             <version>${project.version}</version>

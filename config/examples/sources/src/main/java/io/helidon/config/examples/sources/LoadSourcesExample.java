@@ -16,9 +16,9 @@
 
 package io.helidon.config.examples.sources;
 
-import java.util.Optional;
-
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 
@@ -52,22 +52,22 @@ public class LoadSourcesExample {
                 .build();
 
         // Optional environment type, from dev.yaml:
-        Optional<String> env = config.get("meta.env").value();
+        ConfigValue<String> env = config.get("meta.env").asString();
         env.ifPresent(e -> System.out.println("Environment: " + e));
         assert env.get().equals("DEV");
 
         // Default value (default.yaml): Config Sources Example
-        String appName = config.get("app.name").asString();
+        String appName = config.get("app.name").asString().get();
         System.out.println("Name: " + appName);
         assert appName.equals("Config Sources Example");
 
         // Page size, from config.yaml: 10
-        int pageSize = config.get("app.page-size").asInt();
+        int pageSize = config.get("app.page-size").asInt().get();
         System.out.println("Page size: " + pageSize);
         assert pageSize == 10;
 
         // Applied filter (uppercase logging level), from dev.yaml: finest -> FINEST
-        String level = config.get("component.audit.logging.level").asString();
+        String level = config.get("component.audit.logging.level").asString().get();
         System.out.println("Level: " + level);
         assert level.equals("FINE");
     }

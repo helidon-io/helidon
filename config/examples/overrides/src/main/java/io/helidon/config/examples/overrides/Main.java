@@ -16,15 +16,15 @@
 
 package io.helidon.config.examples.overrides;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.OverrideSources;
+
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.config.PollingStrategies.regular;
-
-import static java.time.Duration.ofSeconds;
 
 /**
  * Overrides example.
@@ -70,16 +70,16 @@ public class Main {
         Config config = Config
                 .builder()
                 // specify config sources
-                .sources(file("conf/priority-config.yaml").pollingStrategy(regular(ofSeconds(1))),
+                .sources(file("conf/priority-config.yaml").pollingStrategy(regular(Duration.ofSeconds(1))),
                          classpath("application.yaml"))
                 // specify overrides source
                 .overrides(OverrideSources.file("conf/overrides.properties")
-                                   .pollingStrategy(regular(ofSeconds(1))))
+                                   .pollingStrategy(regular(Duration.ofSeconds(1))))
                 .build();
 
         // Resolve current runtime context
-        String env = config.get("env").asString();
-        String pod = config.get("pod").asString();
+        String env = config.get("env").asString().get();
+        String pod = config.get("pod").asString().get();
 
         // get logging config for the current runtime
         Config loggingConfig = config
@@ -100,7 +100,7 @@ public class Main {
      * Initialize logging from config.
      */
     private static boolean initLogging(Config loggingConfig) {
-        String level = loggingConfig.get("level").asString("WARNING");
+        String level = loggingConfig.get("level").asString().orElse("WARNING");
         //e.g. initialize logging using configured level...
 
         System.out.println("Set logging level to " + level + ".");

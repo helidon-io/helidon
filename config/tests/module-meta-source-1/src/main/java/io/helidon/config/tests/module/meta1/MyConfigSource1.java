@@ -19,8 +19,8 @@ package io.helidon.config.tests.module.meta1;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.config.objectmapping.Value;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 
@@ -52,9 +52,9 @@ public class MyConfigSource1 implements ConfigSource {
      * @param myProp3 prop3
      * @return new source instance
      */
-    public static MyConfigSource1 from(@Config.Value(key = "myProp1") String myProp1,
-                                       @Config.Value(key = "myProp2") int myProp2,
-                                       @Config.Value(key = "myProp3") boolean myProp3) {
+    public static MyConfigSource1 from(@Value(key = "myProp1") String myProp1,
+                                       @Value(key = "myProp2") int myProp2,
+                                       @Value(key = "myProp3") boolean myProp3) {
         return new MyConfigSource1(new MyEndpoint1(myProp1, myProp2), myProp3);
     }
 

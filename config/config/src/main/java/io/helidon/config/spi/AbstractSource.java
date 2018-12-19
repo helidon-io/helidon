@@ -363,7 +363,8 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          */
         protected B init(Config metaConfig) {
             //optional / mandatory
-            metaConfig.get(OPTIONAL_KEY).asOptionalBoolean()
+            metaConfig.get(OPTIONAL_KEY)
+                    .asBoolean()
                     .filter(value -> value) //filter `true` only
                     .ifPresent(value -> optional());
             //polling-strategy
@@ -371,7 +372,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
                     .ifExists(cfg -> pollingStrategy(PollingStrategyConfigMapper.instance().apply(cfg, targetType)));
             //retry-policy
             metaConfig.get(RETRY_POLICY_KEY)
-                    .asOptional(RetryPolicy.class)
+                    .as(RetryPolicy::from)
                     .ifPresent(this::retryPolicy);
 
             return thisBuilder;
@@ -461,7 +462,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
          * Specifies maximum capacity for each subscriber's buffer to be used to deliver
          * {@link ConfigSource#changes() config source changes}.
          * <p>
-         * By default {@link Flow#DEFAULT_BUFFER_SIZE} is used.
+         * By default {@link Flow#defaultBufferSize()} is used.
          * <p>
          * Note: Not consumed events will be dropped off.
          *

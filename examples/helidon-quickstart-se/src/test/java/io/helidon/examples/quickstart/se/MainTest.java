@@ -38,8 +38,15 @@ public class MainTest {
     @BeforeAll
     public static void startTheServer() throws Exception {
         webServer = Main.startServer();
-        while (! webServer.isRunning()) {
-            Thread.sleep(1 * 1000);
+
+        long timeout = 2000; // 2 seconds should be enough to start the server
+        long now = System.currentTimeMillis();
+
+        while (!webServer.isRunning()) {
+            Thread.sleep(100);
+            if ((System.currentTimeMillis() - now) > timeout) {
+                Assertions.fail("Failed to start webserver");
+            }
         }
     }
 

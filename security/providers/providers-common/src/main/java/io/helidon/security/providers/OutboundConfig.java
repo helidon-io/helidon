@@ -71,7 +71,7 @@ public final class OutboundConfig {
     static OutboundConfig from(Config providerConfig, OutboundTarget[] defaults) {
         Config config = providerConfig.get(CONFIG_OUTBOUND);
 
-        List<OutboundTarget> configuredTargets = config.mapList(OutboundTarget::from, CollectionsHelper.listOf());
+        List<OutboundTarget> configuredTargets = config.asList(OutboundTarget::from).orElse(CollectionsHelper.listOf());
 
         boolean useDefaults = configuredTargets.stream().noneMatch(targetConfig -> "default".equals(targetConfig.getName()))
                 && (null != defaults);

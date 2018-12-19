@@ -95,10 +95,13 @@ public final class OutboundTarget {
         Builder builder = new Builder();
 
         builder.config(c);
-        builder.name(c.get(CONFIG_NAME).asString());
-        c.get(CONFIG_TRANSPORTS).asStringList(CollectionsHelper.listOf()).forEach(builder::addTransport);
-        c.get(CONFIG_HOSTS).asStringList(CollectionsHelper.listOf()).forEach(builder::addHost);
-        c.get(CONFIG_PATHS).asStringList(CollectionsHelper.listOf()).forEach(builder::addPath);
+        builder.name(c.get(CONFIG_NAME).asString().get());
+        c.get(CONFIG_TRANSPORTS).asList(String.class).orElse(CollectionsHelper.listOf())
+                .forEach(builder::addTransport);
+        c.get(CONFIG_HOSTS).asList(String.class).orElse(CollectionsHelper.listOf())
+                .forEach(builder::addHost);
+        c.get(CONFIG_PATHS).asList(String.class).orElse(CollectionsHelper.listOf())
+                .forEach(builder::addPath);
 
         return builder.build();
     }
@@ -252,7 +255,7 @@ public final class OutboundTarget {
 
         /**
          * Set config for this target. This may be useful if each target requires different
-         * provide configuration.
+         * provider configuration.
          *
          * @param config Config object to configure the provider
          * @return update builder instance

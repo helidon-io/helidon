@@ -313,14 +313,16 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("name").value().ifPresent(this::name);
-            config.get("default").asOptional(Boolean.class).ifPresent(this::isDefault);
-            config.get("authentication").mapOptionalList(FlaggedProvider::fromConfig)
+            config.get("name").asString().ifPresent(this::name);
+            config.get("default").asBoolean().ifPresent(this::isDefault);
+            config.get("authentication").asList(FlaggedProvider::fromConfig)
                     .ifPresent(this.authenticators::addAll);
-            config.get("authorization").mapOptionalList(FlaggedProvider::fromConfig)
+            config.get("authorization").asList(FlaggedProvider::fromConfig)
                     .ifPresent(this.authorizers::addAll);
-            config.get("outbound").nodeList()
-                    .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name").asString())));
+            config.get("outbound").asNodeList()
+                    .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name")
+                                                                                                   .asString()
+                                                                                                   .get())));
 
             return this;
         }
@@ -353,8 +355,11 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          * @return instance configured from config
          */
         static FlaggedProvider fromConfig(Config config) {
-            String name = config.get("name").asString();
-            CompositeProviderFlag flag = config.get("flag").as(CompositeProviderFlag.class, CompositeProviderFlag.REQUIRED);
+            String name = config.get("name").asString().get();
+            CompositeProviderFlag flag = config.get("flag")
+                    .asString()
+                    .as(CompositeProviderFlag::valueOf)
+                    .orElse(CompositeProviderFlag.REQUIRED);
 
             return new FlaggedProvider(flag, name);
         }

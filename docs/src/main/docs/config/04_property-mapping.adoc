@@ -211,7 +211,7 @@ public class WebConfig {
 [source,java]
 .Custom Mapper Class
 ----
-public class WebConfigMapper implements ConfigMapper<WebConfig> {
+public class WebConfigMapper implements Function<Config, WebConfig> {
 
         @Override
         public WebConfig apply(Config config) throws ConfigMappingException, MissingValueException {
@@ -366,10 +366,10 @@ object from the config data.
 By default, the system matches potential JavaBean property names with 
 config keys in the configuration. 
 
-Use the link:{javadoc-base-url-api}/Config.Value.html[`Config.Value`] annnotation to control some of the JavaBean processing for a 
+Use the link:{javadoc-base-url-api}/Value.html[`Value`] annnotation to control some of the JavaBean processing for a
 given property.
 
-.`Config.Value` Annotation
+.`Value` Annotation
 |===
 |Attribute |Usage
 
@@ -403,7 +403,7 @@ public class AppConfig {
         return greeting;
     }
 
-    @Config.Value(key = "page-size",                              // <3>
+    @Value(key = "page-size",                              // <3>
                   withDefault = "10")                             // <4>
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
@@ -412,7 +412,7 @@ public class AppConfig {
         return pageSize;
     }
 
-    @Config.Value(key = "basic-range",                            // <5>
+    @Value(key = "basic-range",                            // <5>
                   withDefaultSupplier = BasicRangeSupplier.class) // <6>
     public void setBasicRange(List<Integer> basicRange) {
         this.basicRange = basicRange;
@@ -541,13 +541,13 @@ public class AppConfig {
             this.greeting = greeting;
         }
 
-        @Config.Value(key = "page-size",
+        @Value(key = "page-size",
                       withDefault = "10")
         public void setPageSize(int pageSize) {                                  // <5>
             this.pageSize = pageSize;
         }
 
-        @Config.Value(key = "basic-range",
+        @Value(key = "basic-range",
                       withDefaultSupplier = BasicRangeSupplier.class)
         public void setBasicRange(List<Integer> basicRange) {                    // <6>
             this.basicRange = basicRange;
@@ -605,19 +605,19 @@ public class BuilderImpl {                                        // <1>
     public BuilderImpl() {                                        // <1>
     }
 
-    @Config.Value(key = "greeting")
+    @Value(key = "greeting")
     public BuilderImpl greeting(String greeting) {                // <2>
         this.greeting = greeting;
         return this;
     }
 
-    @Config.Value(key = "page-size", withDefault = "10")
+    @Value(key = "page-size", withDefault = "10")
     public BuilderImpl pageSize(int pageSize) {                   // <2>
         this.pageSize = pageSize;
         return this;
     }
 
-    @Config.Value(key = "basic-range",
+    @Value(key = "basic-range",
                   withDefaultSupplier = BasicRangeSupplier.class)
     public BuilderImpl basicRange(List<Integer> basicRange) {     // <2>
         this.basicRange = basicRange;
@@ -664,7 +664,7 @@ public class BuilderImpl {                                        // <1>
 <2> The builder can use the _builder_ pattern (the methods return the builder 
 itself so the caller can chain calls together) instead of the usual JavaBean setter
 method pattern. In that case, decorate each builder method (e.g, `greeting`) using
- `@Config.Value` to associate it with the correct config key.
+ `@Value` to associate it with the correct config key.
 <3> The builder's `build()` is declared to return `IAppConfig` and in fact returns 
 an instance of `AppConfigImpl` which implements `IAppConfig`.
 <4> The `AppConfigImpl` class can be private to the builder because the builder
@@ -735,12 +735,12 @@ public class AppConfig {
     }
 
     public static AppConfig from(                                                // <2>
-            @Config.Value(key = "greeting")
+            @Value(key = "greeting")
                     String greeting,                                             // <3>
-            @Config.Value(key = "page-size",
+            @Value(key = "page-size",
                           withDefault = "10")
                     int pageSize,
-            @Config.Value(key = "basic-range",
+            @Value(key = "basic-range",
                           withDefaultSupplier = BasicRangeSupplier.class)
                     List<Integer> basicRange) {
         return new AppConfig(greeting, pageSize, basicRange);
@@ -753,7 +753,7 @@ the same class has access to it.
 <2> The config system invokes the factory method `from(...)`, passing 
 arguments it has fetched from the correspondingly-named config subtrees.
 The factory method returns the new initialized `AppConfig` instance.
-Note the consistent use of `@Config.Value(key = "...")` on each parameter.
+Note the consistent use of `@Value(key = "...")` on each parameter.
 <3> Because the property `greeting` does not specify a default value 
 the property is **mandatory** and must appear in the configuration source.
 Otherwise the config system throws a `ConfigMappingException`.
@@ -768,12 +768,12 @@ parameters, and remove the now-unneeded `from` factory method.
 public class AppConfig {
     ...
     public AppConfig( // <1>
-        @Config.Value(key = "greeting") // <2>
+        @Value(key = "greeting") // <2>
                 String greeting, 
-        @Config.Value(key = "page-size",
+        @Value(key = "page-size",
                           withDefault = "10")
                 int pageSize, 
-        @Config.Value(key = "basic-range",
+        @Value(key = "basic-range",
                           withDefaultSupplier = BasicRangeSupplier.class)
                 List<Integer> basicRange) {
         this.greeting = greeting;

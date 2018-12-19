@@ -17,7 +17,6 @@
 package io.helidon.config;
 
 import java.io.File;
-import java.lang.invoke.MethodHandle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -71,20 +70,19 @@ import io.helidon.common.CollectionsHelper;
  * Note that this class defines many methods of the form {@code <type> to<type>(String)}
  * which are automatically registered with each {@link Config.Builder}.
  *
- * @see io.helidon.config.ConfigMapper
  * @see io.helidon.config.spi.ConfigMapperProvider
  */
 public final class ConfigMappers {
 
-    private static final Map<Class<?>, ConfigMapper<?>> ESSENTIAL_MAPPERS = initEssentialMappers();
-    static final Map<Class<?>, ConfigMapper<?>> BUILT_IN_MAPPERS = initBuiltInMappers();
+    private static final Map<Class<?>, Function<Config, ?>> ESSENTIAL_MAPPERS = initEssentialMappers();
+    static final Map<Class<?>, Function<Config, ?>> BUILT_IN_MAPPERS = initBuiltInMappers();
 
     private ConfigMappers() {
         throw new AssertionError("Instantiation not allowed.");
     }
 
-    private static Map<Class<?>, ConfigMapper<?>> initEssentialMappers() {
-        Map<Class<?>, ConfigMapper<?>> essentials = new HashMap<>();
+    private static Map<Class<?>, Function<Config, ?>> initEssentialMappers() {
+        Map<Class<?>, Function<Config, ?>> essentials = new HashMap<>();
 
         essentials.put(Config.class, (node) -> node);
 
@@ -117,12 +115,12 @@ public final class ConfigMappers {
         return Collections.unmodifiableMap(essentials);
     }
 
-    static Map<Class<?>, ConfigMapper<?>> essentialMappers() {
+    static Map<Class<?>, Function<Config, ?>> essentialMappers() {
         return ESSENTIAL_MAPPERS;
     }
 
-    private static Map<Class<?>, ConfigMapper<?>> initBuiltInMappers() {
-        Map<Class<?>, ConfigMapper<?>> builtIns = new HashMap<>();
+    private static Map<Class<?>, Function<Config, ?>> initBuiltInMappers() {
+        Map<Class<?>, Function<Config, ?>> builtIns = new HashMap<>();
 
         //primitive types
         builtIns.put(Byte.class, wrap(ConfigMappers::toByte));
@@ -163,16 +161,23 @@ public final class ConfigMappers {
         builtIns.put(UUID.class, wrap(ConfigMappers::toUUID));
         builtIns.put(Map.class, wrapMapper(ConfigMappers::toMap));
         builtIns.put(Properties.class, wrapMapper(ConfigMappers::toProperties));
+
+        // obsolete stuff
+        //noinspection UseOfObsoleteDateTimeApi,deprecation
         builtIns.put(Date.class, wrap(ConfigMappers::toDate));
+        //noinspection UseOfObsoleteDateTimeApi,deprecation
         builtIns.put(Calendar.class, wrap(ConfigMappers::toCalendar));
+        //noinspection UseOfObsoleteDateTimeApi,deprecation
         builtIns.put(GregorianCalendar.class, wrap(ConfigMappers::toGregorianCalendar));
+        //noinspection UseOfObsoleteDateTimeApi,deprecation
         builtIns.put(TimeZone.class, wrap(ConfigMappers::toTimeZone));
+        //noinspection UseOfObsoleteDateTimeApi,deprecation
         builtIns.put(SimpleTimeZone.class, wrap(ConfigMappers::toSimpleTimeZone));
 
         return Collections.unmodifiableMap(builtIns);
     }
 
-    static Map<Class<?>, ConfigMapper<?>> builtInMappers() {
+    static Map<Class<?>, Function<Config, ?>> builtInMappers() {
         return BUILT_IN_MAPPERS;
     }
 
@@ -378,7 +383,10 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code Date}
      * @see DateTimeFormatter#ISO_DATE_TIME
+     * @deprecated Use one of the time API classes, such as {@link Instant} or {@link ZonedDateTime}
      */
+    @SuppressWarnings({"UseOfObsoleteDateTimeApi", "DeprecatedIsStillUsed"})
+    @Deprecated
     public static Date toDate(String stringValue) {
         try {
             return new Date(
@@ -410,7 +418,10 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code Calendar}
      * @see DateTimeFormatter#ISO_DATE_TIME
+     * @deprecated use new time API, such as {@link ZonedDateTime}
      */
+    @SuppressWarnings({"UseOfObsoleteDateTimeApi", "DeprecatedIsStillUsed"})
+    @Deprecated
     public static Calendar toCalendar(String stringValue) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(toDate(stringValue));
@@ -423,7 +434,10 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code GregorianCalendar}
      * @see DateTimeFormatter#ISO_DATE_TIME
+     * @deprecated use new time API, such as {@link ZonedDateTime}
      */
+    @SuppressWarnings({"UseOfObsoleteDateTimeApi", "DeprecatedIsStillUsed"})
+    @Deprecated
     public static GregorianCalendar toGregorianCalendar(String stringValue) {
         GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTime(toDate(stringValue));
@@ -502,7 +516,10 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code TimeZone}
      * @see ZoneId#of(String)
+     * @deprecated use new time API, such as {@link ZoneId}
      */
+    @SuppressWarnings({"UseOfObsoleteDateTimeApi", "DeprecatedIsStillUsed"})
+    @Deprecated
     public static TimeZone toTimeZone(String stringValue) {
         ZoneId zoneId = toZoneId(stringValue);
         return TimeZone.getTimeZone(zoneId);
@@ -514,7 +531,10 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code SimpleTimeZone}
      * @see ZoneId#of(String)
+     * @deprecated use new time API, such as {@link ZoneId}
      */
+    @SuppressWarnings({"UseOfObsoleteDateTimeApi", "DeprecatedIsStillUsed"})
+    @Deprecated
     public static SimpleTimeZone toSimpleTimeZone(String stringValue) {
         return new SimpleTimeZone(toTimeZone(stringValue).getRawOffset(), stringValue);
     }
@@ -606,11 +626,11 @@ public final class ConfigMappers {
      */
     public static Map<String, String> toMap(Config config) {
         if (config.isLeaf()) {
-            return new StringMap(config.key().toString(), config.asString());
+            return new StringMap(config.key().toString(), config.asString().get());
         } else {
             return new StringMap(config.traverse()
                                          .filter(Config::isLeaf)
-                                         .map(node -> new AbstractMap.SimpleEntry<>(node.key().toString(), node.asString()))
+                                         .map(node -> new AbstractMap.SimpleEntry<>(node.key().toString(), node.asString().get()))
                                          .collect(Collectors.toSet()));
         }
     }
@@ -652,40 +672,13 @@ public final class ConfigMappers {
     }
 
     /**
-     * Creates new instance of {@link ConfigMapper} that creates new instance of {@code type}
-     * using specified builder that will be initialized from appropriate Config node.
-     * <p>
-     * Advantage of this approach is that there is no connection from {@code type} to {@code builderType}
-     * and builder instance is initialized as an ordinary type from Config.
-     *
-     * @param type        supported type of created mapper.
-     * @param builderType type of builder used to create {@code type} instance.
-     * @param <T>         supported mapping Java type.
-     * @return new ConfigMapper instance that creates {@code type} instance using {@code builderType} instance
-     * @throws ConfigException in case {@code builderType} does not follow builder pattern -
-     *                         there is no public {@code build()} method that builds {@code type} instance.
-     */
-    public static <T> ConfigMapper<T> from(Class<T> type, Class<?> builderType) throws ConfigException {
-        MethodHandle buildHandle = ConfigMapperManager.findBuilderBuildHandler(type, builderType)
-                .orElseThrow(() -> new ConfigException(
-                        "Builder " + builderType.getName()
-                                + " does not provide accessible 'build()' method to build "
-                                + type.getName() + " instance."));
-        return new ExternalBuilderConfigMapper<>(type, builderType, buildHandle);
-    }
-
-    /**
      * Utility method wrapping an arbitrary mapper and ensuring proper exceptions are produced if needed.
      *
      * @param mapper mapping function. Function throws {@link ConfigMappingException} in case the value cannot be mapped.
      * @param <T>    mapped Java type.
      * @return mapped value.
-     * @throws MissingValueException  in case the configuration tree does not contain all expected sub-nodes
-     *                                required by the mapper implementation to provide instance of Java type.
-     * @throws ConfigMappingException in case the mapper fails to map the existing configuration value
-     *                                to an instance of a given Java type.
      */
-    private static <T> ConfigMapper<T> wrapMapper(ConfigMapper<T> mapper) throws MissingValueException, ConfigMappingException {
+    private static <T> Function<Config, T> wrapMapper(Function<Config, T> mapper) {
         return (node) -> {
             try {
                 return mapper.apply(node);
@@ -708,16 +701,17 @@ public final class ConfigMappers {
      * @throws ConfigMappingException in case the mapper fails to map the existing configuration value
      *                                to an instance of a given Java type.
      */
-    static <T> ConfigMapper<T> wrap(Function<String, T> mapper) {
-        return (node) -> {
-            Optional<String> nodeValue = node.value();
+    static <T> Function<Config, T> wrap(Function<String, T> mapper) {
+        return (node) -> nodeValue(node)
+                .map(value -> safeMap(node.key(), value, mapper))
+                .orElseThrow(MissingValueException.supplierForKey(node.key()));
+    }
 
-            return nodeValue
-                    .map(value -> safeMap(node.key(), value, mapper))
-                    .orElseThrow(MissingValueException.supplierForKey(node.key()));
-
-
-        };
+    private static Optional<String> nodeValue(Config node) {
+        if (node instanceof AbstractConfigImpl) {
+            return ((AbstractConfigImpl) node).value();
+        }
+        return node.asString().asOptional();
     }
 
     /**
@@ -768,42 +762,8 @@ public final class ConfigMappers {
         private static Set<Entry<String, String>> wrap(Set<? extends Entry<?, ?>> unknownEntrySet) {
             return unknownEntrySet.stream()
                     .map(entry -> new AbstractMap.SimpleEntry<>(Objects.toString(entry.getKey()),
-                                            Objects.toString(entry.getValue())))
+                                                                Objects.toString(entry.getValue())))
                     .collect(Collectors.toSet());
         }
     }
-
-    /**
-     * Config Mapper implementation that creates new instance of {@code type}
-     * using specified builder that will be initialized from appropriate Config node.
-     * <p>
-     * Advantage of this approach is that there is no connection from {@code type} to {@code builderType}
-     * and builder instance is initialized as an ordinary type from Config.
-     *
-     * @param <T> supported mapping Java type.
-     */
-    private static class ExternalBuilderConfigMapper<T> implements ConfigMapper<T> {
-        private final Class<T> type;
-        private final Class<?> builderType;
-        private final MethodHandle buildHandle;
-
-        private ExternalBuilderConfigMapper(Class<T> type, Class<?> builderType, MethodHandle buildHandle) {
-            this.type = type;
-            this.builderType = builderType;
-            this.buildHandle = buildHandle;
-        }
-
-        @Override
-        public T apply(Config config) throws ConfigMappingException, MissingValueException {
-            Object builder = config.as(builderType);
-            try {
-                return ConfigMapperManager.cast(type, buildHandle.invoke(builder), config.key());
-            } catch (ConfigMappingException ex) {
-                throw ex;
-            } catch (Throwable ex) {
-                throw new ConfigMappingException(config.key(), type, "Build method invocation failed with an exception.", ex);
-            }
-        }
-    }
-
 }

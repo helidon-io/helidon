@@ -36,10 +36,10 @@ public final class EnvHandler implements Service {
      */
     public EnvHandler(final Config config) {
         Config envConfig = config.get("env");
-        this.env = envConfig.asString("unknown");
+        this.env = envConfig.asString().orElse("unknown");
 
         envConfig.onChange(config1 -> {
-            EnvHandler.this.env = config1.asString("unknown");
+            EnvHandler.this.env = config1.asString().orElse("unknown");
             return true;
         });
     }

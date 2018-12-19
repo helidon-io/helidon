@@ -16,8 +16,6 @@
 
 package io.helidon.config.git;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -27,6 +25,8 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigParsers;
@@ -37,27 +37,26 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
+import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.junit.RepositoryTestCase;
-
-import static io.helidon.config.PollingStrategies.regular;
-import io.helidon.config.test.infra.TemporaryFolderExt;
-import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.core.Is.is;
 import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static io.helidon.config.PollingStrategies.regular;
+import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link GitConfigSourceBuilder}.
@@ -352,7 +351,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
 
         Config metaConfig = Config.withSources(ConfigSources.from(ObjectNode.builder()
                                                                           .addValue("class",
-                                                                                    GitConfigSourceBuilder.class.getName())
+                                                                                    GitConfigSource.class.getName())
                                                                           .addObject("properties", ObjectNode.builder()
                                                                                   .addValue("path", "application.properties")
                                                                                   .addValue("uri", fileUri())
@@ -364,7 +363,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .disableSystemPropertiesSource()
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(GitConfigSource.class)));
 
@@ -392,7 +391,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .disableEnvironmentVariablesSource()
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource.class).get();
 
         assertThat(source, is(instanceOf(GitConfigSource.class)));
 

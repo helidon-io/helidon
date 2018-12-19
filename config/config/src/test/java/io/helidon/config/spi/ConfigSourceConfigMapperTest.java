@@ -20,14 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.Optional;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
-import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.MissingValueException;
 import io.helidon.config.internal.ClasspathConfigSource;
 import io.helidon.config.internal.DirectoryConfigSource;
 import io.helidon.config.internal.FileConfigSource;
@@ -36,21 +31,21 @@ import io.helidon.config.internal.PrefixedConfigSource;
 import io.helidon.config.internal.UrlConfigSource;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
+import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import com.xebialabs.restito.server.StubServer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static com.xebialabs.restito.builder.stub.StubHttp.whenHttp;
 import static com.xebialabs.restito.semantics.Action.status;
 import static com.xebialabs.restito.semantics.Action.stringContent;
 import static com.xebialabs.restito.semantics.Condition.get;
-import io.helidon.config.test.infra.TemporaryFolderExt;
 import static org.glassfish.grizzly.http.util.HttpStatus.OK_200;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Tests {@link ConfigSourceConfigMapper}.
@@ -76,13 +71,13 @@ public class ConfigSourceConfigMapperTest {
                         .addValue("type", "system-properties")
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(MapConfigSource.class)));
 
         Config config = justFrom(source);
 
-        assertThat(config.get(TEST_SYS_PROP_NAME).asString(), is(TEST_SYS_PROP_VALUE));
+        assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
     }
 
     @Test
@@ -92,51 +87,53 @@ public class ConfigSourceConfigMapperTest {
                         .addValue("type", "environment-variables")
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(MapConfigSource.class)));
 
         Config config = justFrom(source);
 
-        assertThat(config.get(TEST_ENV_VAR_NAME).asString(), is(TEST_ENV_VAR_VALUE));
+        assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
     }
 
     @Test
     public void testClasspath() {
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.from(
                 ObjectNode.builder()
                         .addValue("type", "classpath")
                         .addObject("properties", ObjectNode.builder()
                                 .addValue("resource", "io/helidon/config/application.properties")
                                 .build())
-                        .build()));
+                        .build()))
+                .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(ClasspathConfigSource.class)));
 
         Config config = justFrom(source);
 
-        assertThat(config.get("app.page-size").asInt(), is(10));
+        assertThat(config.get("app.page-size").asInt().get(), is(10));
     }
 
     @Test
     public void testFile() {
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.from(
                 ObjectNode.builder()
                         .addValue("type", "file")
                         .addObject("properties", ObjectNode.builder()
                                 .addValue("path", getDir() + "io/helidon/config/application.properties")
                                 .build())
-                        .build()));
+                        .build()))
+                .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(FileConfigSource.class)));
 
         Config config = justFrom(source);
 
-        assertThat(config.get("app.page-size").asInt(), is(10));
+        assertThat(config.get("app.page-size").asInt().get(), is(10));
     }
 
     @Test
@@ -145,22 +142,23 @@ public class ConfigSourceConfigMapperTest {
         Files.write(Files.createFile(new File(folder, "username").toPath()), "libor".getBytes());
         Files.write(Files.createFile(new File(folder, "password").toPath()), "^ery$ecretP&ssword".getBytes());
 
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.from(
                 ObjectNode.builder()
                         .addValue("type", "directory")
                         .addObject("properties", ObjectNode.builder()
                                 .addValue("path", folder.getAbsolutePath())
                                 .build())
-                        .build()));
+                        .build()))
+                .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(DirectoryConfigSource.class)));
 
         Config config = justFrom(source);
 
-        assertThat(config.get("username").asString(), is("libor"));
-        assertThat(config.get("password").asString(), is("^ery$ecretP&ssword"));
+        assertThat(config.get("username").asString().get(), is("libor"));
+        assertThat(config.get("password").asString().get(), is("^ery$ecretP&ssword"));
     }
 
     @Test
@@ -172,22 +170,23 @@ public class ConfigSourceConfigMapperTest {
                     .then(status(OK_200),
                           stringContent("greeting = Hello"));
 
-            Config metaConfig = justFrom(ConfigSources.from(
+            Config metaConfig = builderFrom(ConfigSources.from(
                     ObjectNode.builder()
                             .addValue("type", "url")
                             .addObject("properties", ObjectNode.builder()
                                     .addValue("url", String.format("http://127.0.0.1:%d/application.properties",
                                                                    server.getPort()))
                                     .build())
-                            .build()));
+                            .build()))
+                    .build();
 
-            ConfigSource source = metaConfig.as(ConfigSource.class);
+            ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
             assertThat(source, is(instanceOf(UrlConfigSource.class)));
 
             Config config = justFrom(source);
 
-            assertThat(config.get("greeting").asString(), is("Hello"));
+            assertThat(config.get("greeting").asString().get(), is("Hello"));
         } finally {
             server.stop();
         }
@@ -195,7 +194,7 @@ public class ConfigSourceConfigMapperTest {
 
     @Test
     public void testPrefixed() {
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.from(
                 ObjectNode.builder()
                         .addValue("type", "prefixed")
                         .addObject("properties", ObjectNode.builder()
@@ -205,207 +204,31 @@ public class ConfigSourceConfigMapperTest {
                                         .addValue("resource", "io/helidon/config/application.properties")
                                         .build())
                                 .build())
-                        .build()));
+                        .build()))
+                .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource.class);
+        ConfigSource source = metaConfig.as(ConfigSource::from).get();
 
         assertThat(source, is(instanceOf(PrefixedConfigSource.class)));
 
         Config config = justFrom(source);
 
-        assertThat(config.get("this.is.prefix.key.app.page-size").asInt(), is(10));
-    }
-
-    @Test
-    public void testCustomClass() {
-        Config metaConfig = justFrom(ConfigSources.from(
-                ObjectNode.builder()
-                        .addValue("class", MyConfigSource.class.getName())
-                        .addObject("properties", ObjectNode.builder()
-                                .addValue("myProp1", "key1")
-                                .addValue("myProp2", "23")
-                                .addValue("myProp3", "true")
-                                .build())
-                        .build()));
-
-        ConfigSource source = metaConfig.as(ConfigSource.class);
-
-        assertThat(source, is(instanceOf(MyConfigSource.class)));
-
-        Config config = justFrom(source);
-
-        assertThat(config.get("key1").asInt(), is(23));
-        assertThat(config.get("enabled").asBoolean(), is(true));
-    }
-
-    @Test
-    public void testCustomClassBuilder() {
-        Config metaConfig = justFrom(ConfigSources.from(
-                ObjectNode.builder()
-                        .addValue("class", MyConfigSourceBuilder.class.getName())
-                        .addObject("properties", ObjectNode.builder()
-                                .addValue("myProp1", "key1")
-                                .addValue("myProp2", "23")
-                                .addValue("myProp3", "true")
-                                .build())
-                        .build()));
-
-        ConfigSource source = metaConfig.as(ConfigSource.class);
-
-        assertThat(source, is(instanceOf(MyConfigSource.class)));
-
-        Config config = justFrom(source);
-
-        assertThat(config.get("key1").asInt(), is(23));
-        assertThat(config.get("enabled").asBoolean(), is(true));
-    }
-
-    @Test
-    public void testCustomType() {
-        Config metaConfig = justFrom(ConfigSources.from(
-                ObjectNode.builder()
-                        .addValue("type", "testing1")
-                        .addObject("properties", ObjectNode.builder()
-                                .addValue("myProp1", "key1")
-                                .addValue("myProp2", "23")
-                                .addValue("myProp3", "true")
-                                .build())
-                        .build()));
-
-        ConfigSource source = metaConfig.as(ConfigSource.class);
-
-        assertThat(source, is(instanceOf(MyConfigSource.class)));
-
-        Config config = justFrom(source);
-
-        assertThat(config.get("key1").asInt(), is(23));
-        assertThat(config.get("enabled").asBoolean(), is(true));
-    }
-
-    @Test
-    public void testCustomTypeBuilder() {
-        Config metaConfig = justFrom(ConfigSources.from(
-                ObjectNode.builder()
-                        .addValue("type", "testing2")
-                        .addObject("properties", ObjectNode.builder()
-                                .addValue("myProp1", "key1")
-                                .addValue("myProp2", "23")
-                                .addValue("myProp3", "true")
-                                .build())
-                        .build()));
-
-        ConfigSource source = metaConfig.as(ConfigSource.class);
-
-        assertThat(source, is(instanceOf(MyConfigSource.class)));
-
-        Config config = justFrom(source);
-
-        assertThat(config.get("key1").asInt(), is(23));
-        assertThat(config.get("enabled").asBoolean(), is(true));
+        assertThat(config.get("this.is.prefix.key.app.page-size").asInt().get(), is(10));
     }
 
     private static String getDir() {
-        return Paths.get("").toAbsolutePath().toString() + RELATIVE_PATH_TO_RESOURCE;
+        return Paths.get("").toAbsolutePath() + RELATIVE_PATH_TO_RESOURCE;
+    }
+
+    static Config.Builder builderFrom(ConfigSource source) {
+        return Config.withSources(source)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource();
     }
 
     static Config justFrom(ConfigSource source) {
-        return Config.withSources(source).disableEnvironmentVariablesSource().disableSystemPropertiesSource().build();
-    }
-
-    /**
-     * Testing implementation of config source.
-     */
-    public static class MyConfigSource implements ConfigSource {
-
-        private final MyEndpoint endpoint;
-        private final boolean myProp3;
-        private final PollingStrategy pollingStrategy;
-        private final RetryPolicy retryPolicy;
-
-        public MyConfigSource(MyEndpoint endpoint,
-                              boolean myProp3,
-                              PollingStrategy pollingStrategy,
-                              RetryPolicy retryPolicy) {
-            this.endpoint = endpoint;
-            this.myProp3 = myProp3;
-            this.pollingStrategy = pollingStrategy;
-            this.retryPolicy = retryPolicy;
-        }
-
-        public static MyConfigSource from(@Config.Value(key = "myProp1") String myProp1,
-                                          @Config.Value(key = "myProp2") int myProp2,
-                                          @Config.Value(key = "myProp3") boolean myProp3) {
-            return new MyConfigSource(new MyEndpoint(myProp1, myProp2), myProp3, null, null);
-        }
-
-        @Override
-        public Optional<ObjectNode> load() throws ConfigException {
-            return Optional.of(ObjectNode.builder()
-                                       .addValue(endpoint.myProp1, Objects.toString(endpoint.myProp2))
-                                       .addValue("enabled", Objects.toString(myProp3))
-                                       .build());
-        }
-
-        public PollingStrategy getPollingStrategy() {
-            return pollingStrategy;
-        }
-
-        public RetryPolicy getRetryPolicy() {
-            return retryPolicy;
-        }
-
-        @Override
-        public String toString() {
-            return "MyConfigSource{"
-                    + "endpoint=" + endpoint
-                    + ", myProp3=" + myProp3
-                    + '}';
-        }
-    }
-
-    /**
-     * Testing implementation of config source builder.
-     */
-    public static class MyConfigSourceBuilder
-            extends AbstractSource.Builder<MyConfigSourceBuilder, MyEndpoint, ConfigSource> {
-
-        private final MyEndpoint endpoint;
-        private boolean myProp3;
-
-        private MyConfigSourceBuilder(MyEndpoint endpoint) {
-            super(MyEndpoint.class);
-            this.endpoint = endpoint;
-        }
-
-        public static MyConfigSourceBuilder from(String myProp1, int myProp2) {
-            return new MyConfigSourceBuilder(new MyEndpoint(myProp1, myProp2));
-        }
-
-        public static MyConfigSourceBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-            return from(metaConfig.get("myProp1").asString(),
-                        metaConfig.get("myProp2").asInt())
-                    .init(metaConfig);
-        }
-
-        @Override
-        protected MyConfigSourceBuilder init(Config metaConfig) {
-            metaConfig.get("myProp3").asOptionalBoolean().ifPresent(this::myProp3);
-            return super.init(metaConfig);
-        }
-
-        public MyConfigSourceBuilder myProp3(boolean myProp3) {
-            this.myProp3 = myProp3;
-            return this;
-        }
-
-        @Override
-        protected MyEndpoint getTarget() {
-            return endpoint;
-        }
-
-        public ConfigSource build() {
-            return new MyConfigSource(endpoint, myProp3, getPollingStrategy(), getRetryPolicy());
-        }
+        return builderFrom(source)
+                .build();
     }
 
     /**

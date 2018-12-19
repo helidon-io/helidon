@@ -14,26 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.config.tests.module.mappers2;
-
-import java.util.Locale;
-import java.util.Map;
-
-import javax.annotation.Priority;
-
-import io.helidon.common.CollectionsHelper;
-import io.helidon.config.ConfigMapper;
-import io.helidon.config.spi.ConfigMapperProvider;
-
 /**
- * Registers {@link ConfigMapper}s for {@link Locale}.
+ * config module.
  */
-@Priority(300)
-public class Mappers2Priority300ConfigMapperProvider implements ConfigMapperProvider {
+module io.helidon.config.objectmapping {
+    requires java.logging;
+    requires io.helidon.config;
 
-    @Override
-    public Map<Class<?>, ConfigMapper<?>> getMappers() {
-        return CollectionsHelper.mapOf(Locale.class, new LocaleConfigMapper());
-    }
+    exports io.helidon.config.objectmapping;
 
+    provides io.helidon.config.spi.ConfigMapperProvider with io.helidon.config.objectmapping.BeansConfigMapperProvider;
 }

@@ -113,7 +113,7 @@ public final class GitConfigSourceBuilder
      * @see #init(Config)
      */
     public static GitConfigSourceBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return GitConfigSourceBuilder.from(metaConfig.get(PATH_KEY).asString())
+        return GitConfigSourceBuilder.from(metaConfig.get(PATH_KEY).asString().get())
                 .init(metaConfig);
     }
 
@@ -131,13 +131,13 @@ public final class GitConfigSourceBuilder
     @Override
     protected GitConfigSourceBuilder init(Config metaConfig) {
         //uri
-        metaConfig.get(URI_KEY).asOptional(URI.class)
+        metaConfig.get(URI_KEY).as(URI.class)
                 .ifPresent(this::uri);
         //branch
-        metaConfig.get(BRANCH_KEY).asOptionalString()
+        metaConfig.get(BRANCH_KEY).asString()
                 .ifPresent(this::branch);
         //directory
-        metaConfig.get(DIRECTORY_KEY).asOptional(Path.class)
+        metaConfig.get(DIRECTORY_KEY).as(Path.class)
                 .ifPresent(this::directory);
 
         return super.init(metaConfig);
@@ -186,7 +186,7 @@ public final class GitConfigSourceBuilder
     }
 
     @Override
-    public ConfigSource build() {
+    public GitConfigSource build() {
         return new GitConfigSource(this, getTarget());
     }
 

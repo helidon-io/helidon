@@ -126,7 +126,7 @@ final class SecurityUtil {
 
         if (null != config) {
             try {
-                return type.cast(config.as(clazz));
+                return type.cast(config.as(clazz).get());
             } catch (ClassCastException e) {
                 throw new SecurityException("Class " + className + " is not instance of expected type: " + type.getName());
             } catch (ConfigMappingException e) {

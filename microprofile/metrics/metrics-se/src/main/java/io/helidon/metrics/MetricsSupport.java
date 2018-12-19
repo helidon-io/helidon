@@ -382,7 +382,7 @@ public final class MetricsSupport implements Service {
          */
         public Builder config(Config config) {
             this.config = config;
-            config.get("helidon.metrics.context").value().ifPresent(this::context);
+            config.get("helidon.metrics.context").asString().ifPresent(this::context);
 
             return this;
         }

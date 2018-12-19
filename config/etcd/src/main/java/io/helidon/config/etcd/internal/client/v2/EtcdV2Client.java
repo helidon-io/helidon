@@ -53,7 +53,7 @@ public class EtcdV2Client implements EtcdClient {
      *
      * @param uri target Etcd uri
      */
-    public EtcdV2Client(URI uri) {
+    EtcdV2Client(URI uri) {
         etcd = new mousio.etcd4j.EtcdClient(uri);
         etcd.setRetryHandler(new RetryWithTimeout(100, 2000));
     }
@@ -93,7 +93,7 @@ public class EtcdV2Client implements EtcdClient {
         try {
             etcd.put(key, value).timeout(1, TimeUnit.SECONDS).send().get();
         } catch (IOException | EtcdException | TimeoutException | EtcdAuthenticationException e) {
-            throw new EtcdClientException("Cannot put KV pair under " + key);
+            throw new EtcdClientException("Cannot put KV pair under " + key, e);
         }
     }
 

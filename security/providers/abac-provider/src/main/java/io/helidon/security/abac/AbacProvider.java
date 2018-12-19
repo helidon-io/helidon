@@ -220,7 +220,7 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
 
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
         config.getConfig("abac")
-                .ifPresent(abacConfig -> abacConfig.asOptionalMap()
+                .ifPresent(abacConfig -> abacConfig.asMap()
                         .ifPresent(theMap -> {
                             int attributes = 0;
                             int unsupported = 0;
@@ -364,8 +364,8 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
         public Builder from(Config config) {
             Builder b = builder().config(config);
 
-            config.get("fail-on-unvalidated").asOptionalBoolean().ifPresent(b::failOnUnvalidated);
-            config.get("fail-if-none-validated").asOptionalBoolean().ifPresent(b::failIfNoneValidated);
+            config.get("fail-on-unvalidated").asBoolean().ifPresent(b::failOnUnvalidated);
+            config.get("fail-if-none-validated").asBoolean().ifPresent(b::failIfNoneValidated);
 
             return b;
         }

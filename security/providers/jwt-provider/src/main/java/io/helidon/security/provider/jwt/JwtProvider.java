@@ -399,17 +399,17 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
          */
         public static JwtOutboundTarget fromConfig(Config config, TokenHandler defaultHandler) {
             TokenHandler tokenHandler = config.get("outbound-token")
-                    .asOptional(Config.class)
+                    .asNode()
                     .map(TokenHandler::fromConfig)
                     .orElse(defaultHandler);
 
             return new JwtOutboundTarget(
                     tokenHandler,
-                    config.get("jwt-kid").asString(null),
-                    config.get("jwk-kid").asString(null),
-                    config.get("jwt-audience").asString(null),
-                    config.get("jwt-not-before-seconds").asInt(5),
-                    config.get("jwt-validity-seconds").asLong(60 * 60 * 24));
+                    config.get("jwt-kid").asString().orElse(null),
+                    config.get("jwk-kid").asString().orElse(null),
+                    config.get("jwt-audience").asString().orElse(null),
+                    config.get("jwt-not-before-seconds").asInt().orElse(5),
+                    config.get("jwt-validity-seconds").asLong().orElse(60L * 60 * 24));
         }
 
         private void update(Jwt.Builder builder) {
@@ -585,14 +585,14 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
          * @return updated builder instance
          */
         public Builder fromConfig(Config config) {
-            config.get("optional").asOptional(Boolean.class).ifPresent(this::optional);
-            config.get("authenticate").asOptional(Boolean.class).ifPresent(this::authenticate);
-            config.get("propagate").asOptional(Boolean.class).ifPresent(this::propagate);
-            config.get("allow-impersonation").asOptionalBoolean().ifPresent(this::allowImpersonation);
-            config.get("principal-type").asOptional(SubjectType.class).ifPresent(this::subjectType);
-            config.get("atn-token.handler").asOptional(TokenHandler.class).ifPresent(this::atnTokenHandler);
+            config.get("optional").as(Boolean.class).ifPresent(this::optional);
+            config.get("authenticate").as(Boolean.class).ifPresent(this::authenticate);
+            config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
+            config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
+            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
+            config.get("atn-token.handler").as(TokenHandler.class).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
-            config.get("atn-token.jwt-audience").asOptionalString().ifPresent(this::expectedAudience);
+            config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.parseTargets(outbound)));
             config.get("sign-token").ifExists(this::outbound);
 
@@ -616,7 +616,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         private void outbound(Config config) {
             // jwk is optional, we may be propagating existing token
             Resource.create(config, "jwk").ifPresent(this::signJwk);
-            config.get("jwt-issuer").asOptionalString().ifPresent(this::issuer);
+            config.get("jwt-issuer").asString().ifPresent(this::issuer);
         }
     }
 }

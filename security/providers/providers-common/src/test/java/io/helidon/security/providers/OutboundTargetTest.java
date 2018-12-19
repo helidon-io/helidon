@@ -86,7 +86,10 @@ public class OutboundTargetTest {
                 .sources(ConfigSources.classpath("targets_with_default.conf"))
                 .build();
 
-        config = config.get("security-provider.outbound").asList(Config.class).get(0);
+        config = config.get("security-provider.outbound")
+                .asList(Config.class)
+                .get()
+                .get(0);
 
         OutboundTarget instance = OutboundTarget
                 .builder("name")

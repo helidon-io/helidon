@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.objectmapping.Value;
 
 /**
  * This example shows how to automatically deserialize configuration instance into POJO beans
@@ -44,7 +45,8 @@ public class FactoryMethodExample {
                 // get "app" sub-node
                 .get("app")
                 // let config automatically deserialize the node to new AppConfig instance
-                .as(AppConfig.class);
+                .as(AppConfig.class)
+                .get();
 
         System.out.println(appConfig);
 
@@ -98,7 +100,7 @@ public class FactoryMethodExample {
         /**
          * Creates new {@link AppConfig} instances.
          * <p>
-         * {@link Config.Value} is used to specify config keys
+         * {@link Value} is used to specify config keys
          * and default values in case configuration does not contain appropriate value.
          *
          * @param greeting   greeting
@@ -106,11 +108,11 @@ public class FactoryMethodExample {
          * @param basicRange basic range
          * @return new instance of {@link AppConfig}.
          */
-        public static AppConfig from(@Config.Value(key = "greeting", withDefault = "Hi")
+        public static AppConfig from(@Value(key = "greeting", withDefault = "Hi")
                                              String greeting,
-                                     @Config.Value(key = "page-size", withDefault = "10")
+                                     @Value(key = "page-size", withDefault = "10")
                                              int pageSize,
-                                     @Config.Value(key = "basic-range", withDefaultSupplier = DefaultBasicRangeSupplier.class)
+                                     @Value(key = "basic-range", withDefaultSupplier = DefaultBasicRangeSupplier.class)
                                              List<Integer> basicRange) {
             return new AppConfig(greeting, pageSize, basicRange);
         }

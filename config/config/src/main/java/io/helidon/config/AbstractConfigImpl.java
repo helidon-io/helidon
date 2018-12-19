@@ -17,7 +17,9 @@
 package io.helidon.config;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -29,7 +31,7 @@ import io.helidon.config.internal.ConfigKeyImpl;
 
 /**
  * Abstract common implementation of {@link Config} extended by appropriate Config node types:
- * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigValueImpl}.
+ * {@link ConfigListImpl}, {@link ConfigMissingImpl}, {@link ConfigObjectImpl}, {@link ConfigLeafImpl}.
  */
 abstract class AbstractConfigImpl implements Config {
 
@@ -42,21 +44,24 @@ abstract class AbstractConfigImpl implements Config {
     private final Type type;
     private final Flow.Publisher<Config> changesPublisher;
     private final Context context;
+    private final ConfigMapperManager mapperManager;
     private volatile Flow.Subscriber<ConfigDiff> subscriber;
     private final ReentrantReadWriteLock subscriberLock = new ReentrantReadWriteLock();
 
     /**
      * Initializes Config implementation.
-     *
-     * @param type    a type of config node.
+     *  @param type    a type of config node.
      * @param prefix  prefix key for the new config node.
      * @param key     a key to this config.
      * @param factory a config factory.
+     * @param mapperManager mapper manager
      */
     AbstractConfigImpl(Type type,
                        ConfigKeyImpl prefix,
                        ConfigKeyImpl key,
-                       ConfigFactory factory) {
+                       ConfigFactory factory,
+                       ConfigMapperManager mapperManager) {
+        this.mapperManager = mapperManager;
         Objects.requireNonNull(prefix, "prefix argument is null.");
         Objects.requireNonNull(key, "key argument is null.");
         Objects.requireNonNull(factory, "factory argument is null.");
@@ -69,6 +74,25 @@ abstract class AbstractConfigImpl implements Config {
 
         changesPublisher = new FilteringConfigChangeEventPublisher(factory.changes());
         context = new NodeContextImpl();
+    }
+
+    ConfigMapperManager mapperManager() {
+        return mapperManager;
+    }
+
+    /**
+     * Returns a {@code String} value as {@link Optional} of configuration node if the node a leaf or "hybrid" node.
+     * Returns a {@link Optional#empty() empty} if the node is {@link Type#MISSING} type or if the node does not contain a direct
+     * value.
+     * This is "raw" accessor method for String value of this config node. To have nicer variety of value accessors,
+     * see {@link #asString()} and in general {@link #as(Class)}.
+     *
+     * @return value as type instance as {@link Optional}, {@link Optional#empty() empty} in case the node does not have a value
+     *
+     * use {@link #asString()} instead
+     */
+    Optional<String> value() {
+        return Optional.empty();
     }
 
     @Override
@@ -96,6 +120,11 @@ abstract class AbstractConfigImpl implements Config {
     }
 
     @Override
+    public <T> T convert(Class<T> type, String value) throws ConfigMappingException {
+        return mapperManager.map(value, type, "");
+    }
+
+    @Override
     public final Config get(Config.Key subKey) {
         Objects.requireNonNull(subKey, "Key argument is null.");
 
@@ -113,6 +142,11 @@ abstract class AbstractConfigImpl implements Config {
         } else {
             return factory.getConfig(realKey(), ConfigKeyImpl.of());
         }
+    }
+
+    @Override
+    public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
+        return asList(Config.class);
     }
 
     private void subscribe() {
@@ -180,6 +214,7 @@ abstract class AbstractConfigImpl implements Config {
     ConfigFactory getFactory() {
         return factory;
     }
+
 
     @Override
     public Flow.Publisher<Config> changes() {

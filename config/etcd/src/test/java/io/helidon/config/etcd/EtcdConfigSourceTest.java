@@ -20,9 +20,9 @@ import java.io.File;
 import java.io.StringReader;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
@@ -32,14 +32,13 @@ import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.spi.ConfigParser;
 
-import com.google.common.io.Files;
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -73,24 +72,24 @@ public class EtcdConfigSourceTest {
     @Test
     public void testBadUri() {
         Assertions.assertThrows(ConfigException.class, () -> {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
-                .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                .build();
+            EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
+                    .from(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
+                    .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                    .build();
 
-        etcdConfigSource.content();
+            etcdConfigSource.content();
         });
     }
 
     @Test
     public void testBadKey() {
         Assertions.assertThrows(ConfigException.class, () -> {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
-                .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                .build();
+            EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
+                    .from(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
+                    .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
+                    .build();
 
-        etcdConfigSource.content();
+            etcdConfigSource.content();
         });
     }
 
@@ -131,12 +130,12 @@ public class EtcdConfigSourceTest {
                 .sources(mockedConfigSource)
                 .build();
 
-        assertThat(config.get("security").asNodeList().size(), is(1));
+        assertThat(config.get("security").asNodeList().get(), hasSize(1));
     }
 
     private void putConfiguration(String resourcePath) throws Exception {
         File file = new File(EtcdConfigSourceTest.class.getResource(resourcePath).getFile());
         etcdClient.put("configuration",
-                       Files.readLines(file, Charset.defaultCharset()).stream().collect(Collectors.joining("\n")));
+                       String.join("\n", Files.readAllLines(file.toPath(), Charset.defaultCharset())));
     }
 }

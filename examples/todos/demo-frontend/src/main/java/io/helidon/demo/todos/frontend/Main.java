@@ -121,7 +121,7 @@ public final class Main {
      */
     private static Tracer registerTracer(final Config config) {
         config.get("services.zipkin.host")
-                .asOptional(String.class)
+                .as(String.class)
                 .map(host -> ZipkinTracerBuilder.forService("Frontend")
                         .zipkinHost(host)
                         .build())

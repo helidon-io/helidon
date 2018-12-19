@@ -151,7 +151,7 @@ final class ConfigFactory {
         ConfigNode value = fullKeyToNodeMap.get(prefix.child(key));
 
         if (null == value) {
-            return new ConfigMissingImpl(prefix, key, this);
+            return new ConfigMissingImpl(prefix, key, this, mapperManager);
         }
 
         switch (value.getNodeType()) {
@@ -160,9 +160,9 @@ final class ConfigFactory {
         case LIST:
             return new ConfigListImpl(prefix, key, (ListNode) value, filter, this, mapperManager);
         case VALUE:
-            return new ConfigValueImpl(prefix, key, (ValueNode) value, filter, this, mapperManager);
+            return new ConfigLeafImpl(prefix, key, (ValueNode) value, filter, this, mapperManager);
         default:
-            return new ConfigMissingImpl(prefix, key, this);
+            return new ConfigMissingImpl(prefix, key, this, mapperManager);
         }
     }
 

@@ -49,6 +49,16 @@
             <artifactId>org.eclipse.jgit</artifactId>
         </dependency>
         <dependency>
+            <!--
+            This dependency is needed to load config source from
+            meta configuration.
+            Unless you need this feature, test scope is sufficient -->
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-object-mapping</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-testing</artifactId>
             <version>${project.version}</version>
@@ -68,6 +78,12 @@
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit.junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- needed for jgit junit dependency -->
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

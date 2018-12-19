@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,35 @@
  * limitations under the License.
  */
 
-package io.helidon.config;
+package io.helidon.config.objectmapping;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.config.Config;
 import io.helidon.config.Config.Type;
-import io.helidon.config.GenericConfigMapper.SingleValueConfigImpl;
+import io.helidon.config.ConfigMappingException;
+import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 /**
- * Tests {@link ConfigMappers} with focus on generic config mapping support, aka deserialization, see {@link GenericConfigMapper}.
+ * Tests {@link io.helidon.config.ConfigMappers} with focus on generic config mapping support, aka deserialization.
  */
 public class GenericConfigMapperTest {
 
@@ -69,7 +69,7 @@ public class GenericConfigMapperTest {
         assertThat(config.get("app.security.providers.0.uid").type(), is(Type.MISSING));
         assertThat(config.get("app.security.providers.1.uid").type(), is(Type.MISSING));
 
-        AppConfig appConfig = config.get("app").as(AppConfig.class);
+        AppConfig appConfig = config.get("app").as(AppConfig.class).get();
 
         assertThat(appConfig.getUid(), is(nullValue()));
         assertThat(appConfig.getGreeting(), is("Hello"));
@@ -112,7 +112,7 @@ public class GenericConfigMapperTest {
         assertThat(config.get("app.security.providers.0.uid").type(), is(Type.VALUE));
         assertThat(config.get("app.security.providers.1.uid").type(), is(Type.VALUE));
 
-        AppConfig appConfig = config.get("app").as(AppConfig.class);
+        AppConfig appConfig = config.get("app").as(AppConfig.class).get();
         assertThat(appConfig.getUid(), is(nullValue()));
         assertThat(appConfig.getSecurity().getProviders().get(0).getUid(), is(nullValue()));
         assertThat(appConfig.getSecurity().getProviders().get(1).getUid(), is(nullValue()));
@@ -135,7 +135,7 @@ public class GenericConfigMapperTest {
 
         print(config);
 
-        AppConfig appConfig = config.get("app").as(AppConfig.class);
+        AppConfig appConfig = config.get("app").as(AppConfig.class).get();
 
         assertThat(appConfig.getLogging().getLevel(""), is(Optional.empty()));
         assertThat(appConfig.getLogging().getLevel("io.helidon.config"), is(Optional.empty()));
@@ -161,7 +161,7 @@ public class GenericConfigMapperTest {
 
         print(config);
 
-        AppConfig appConfig = config.get("app").as(AppConfig.class);
+        AppConfig appConfig = config.get("app").as(AppConfig.class).get();
         assertThat(appConfig.getPageSize(), is(10));
     }
 
@@ -182,7 +182,7 @@ public class GenericConfigMapperTest {
 
         print(config);
 
-        AppConfig appConfig = config.get("app").as(AppConfig.class);
+        AppConfig appConfig = config.get("app").as(AppConfig.class).get();
         assertThat(appConfig.getBasicRange(), contains(-5, 5));
     }
 
@@ -194,7 +194,7 @@ public class GenericConfigMapperTest {
                 .build();
 
         Assertions.assertThrows(ConfigMappingException.class, () -> {
-            config.as(WrongDefaultBean.class);
+            config.as(WrongDefaultBean.class).get();
         });
     }
 
@@ -206,7 +206,7 @@ public class GenericConfigMapperTest {
                 .build();
 
         Assertions.assertThrows(ConfigMappingException.class, () -> {
-            config.as(WrongDefaultBean.class);
+            config.as(WrongDefaultBean.class).get();
         });
     }
 
@@ -218,7 +218,7 @@ public class GenericConfigMapperTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        WrongDefaultBean wrongDefaultBean = config.as(WrongDefaultBean.class);
+        WrongDefaultBean wrongDefaultBean = config.as(WrongDefaultBean.class).get();
 
         assertThat(wrongDefaultBean.numberWithDefault, is(23));
         assertThat(wrongDefaultBean.numberWithDefaultSupplier, is(42));
@@ -227,6 +227,7 @@ public class GenericConfigMapperTest {
     private static void print(Config config) {
         if (DEBUG) {
             config.asMap()
+                    .get()
                     .forEach((key, value) -> System.out.println("    " + key + " = " + value));
         }
     }
@@ -269,11 +270,11 @@ public class GenericConfigMapperTest {
                     .addList("providers", ListNode.builder()
                             .addObject(ObjectNode.builder()
                                                .addValue("name", "Provider1")
-                                               .addValue("class", "io.helidon.config.GenericConfigMapperTest$TestProvider1")
+                                               .addValue("class", TestProvider1.class.getName())
                                                .build())
                             .addObject(ObjectNode.builder()
                                                .addValue("name", "Provider2")
-                                               .addValue("class", "io.helidon.config.GenericConfigMapperTest$TestProvider2")
+                                               .addValue("class", TestProvider2.class.getName())
                                                .build())
                             .build()
                     ).build());
@@ -291,48 +292,6 @@ public class GenericConfigMapperTest {
         }
 
         return ObjectNode.builder().addObject("app", app.build());
-    }
-
-    @Test
-    public void testSingleValueConfigImpl() {
-        ConfigMapperManager mapperManager = new ConfigMapperManager(ConfigMappers.builtInMappers());
-
-        SingleValueConfigImpl config = new SingleValueConfigImpl(mapperManager, "key1", "42");
-
-        assertThat(config.key(), is(Config.Key.of("key1")));
-        assertThat(config.value(), is(Optional.of("42")));
-        assertThat(config.type(), is(Type.VALUE));
-        assertThat(config.timestamp(), not(nullValue()));
-        {
-            Config sub = config.get("sub");
-            assertThat(sub.key(), is(Config.Key.of("key1.sub")));
-            assertThat(sub.value(), is(Optional.empty()));
-            assertThat(sub.type(), is(Type.MISSING));
-        }
-        {
-            Config detached = config.detach();
-            assertThat(detached.key(), is(Config.Key.of("")));
-            assertThat(detached.value(), is(Optional.of("42")));
-            assertThat(detached.type(), is(Type.VALUE));
-        }
-        assertThat(config.traverse().collect(Collectors.toList()), empty());
-        {
-            Map<String, String> map = config.asMap();
-            assertThat(map.entrySet(), hasSize(1));
-            assertThat(map, hasEntry("key1", "42"));
-        }
-        assertThat(config.as(Integer.class), is(42));
-        try {
-            config.nodeList();
-            Assertions.fail("Did not detect expected ConfigMappingException");
-        } catch (ConfigMappingException ex) {
-            //expected
-        }
-        try {
-            config.asOptionalList(String.class);
-        } catch (ConfigMappingException ex) {
-            //expected
-        }
     }
 
     /**
@@ -367,7 +326,7 @@ public class GenericConfigMapperTest {
      *     }
      * }
      * </pre>
-     * Following JavaBean fields are marked as {@link Config.Transient}, i.e. will not be loaded from configuration:
+     * Following JavaBean fields are marked as {@link Transient}, i.e. will not be loaded from configuration:
      * <pre>
      * app.uid
      * app.security.providers.*.uid
@@ -377,11 +336,11 @@ public class GenericConfigMapperTest {
         public Long uid;
         public String greeting;
         private Boolean greetingSetterCalled;
-        @Config.Value(key = "page-size", withDefault = "42") //ignored, used on setter
+        @Value(key = "page-size", withDefault = "42") //ignored, used on setter
         private Integer pageSize;
         private List<Integer> basicRange;
         private LoggingConfig logging = new LoggingConfig(Config.empty());
-        @Config.Value(withDefaultSupplier = DefaultSecurityConfigSupplier.class) //ignored, used on setter
+        @Value(withDefaultSupplier = DefaultSecurityConfigSupplier.class) //ignored, used on setter
         public SecurityConfig security;
         public Map<String, String> names = CollectionsHelper.mapOf();
 
@@ -394,7 +353,7 @@ public class GenericConfigMapperTest {
             return uid;
         }
 
-        @Config.Transient
+        @Transient
         public void setUid(long uid) {
             this.uid = uid;
         }
@@ -416,7 +375,7 @@ public class GenericConfigMapperTest {
             return pageSize;
         }
 
-        @Config.Value(withDefault = "10")
+        @Value(withDefault = "10")
         public void setPage_size(int pageSize) {
             this.pageSize = pageSize;
         }
@@ -425,7 +384,7 @@ public class GenericConfigMapperTest {
             return basicRange;
         }
 
-        @Config.Value(key = "basic-range",
+        @Value(key = "basic-range",
                       withDefault = "ignored value",
                       withDefaultSupplier = DefaultBasicRangeSupplier.class)
         public void setBasicRange(List<Integer> basicRange) {
@@ -436,7 +395,7 @@ public class GenericConfigMapperTest {
             this.logging = loggingConfig;
         }
 
-        @Config.Value
+        @Value
         public void setSecurity(SecurityConfig securityConfig) {
             this.security = securityConfig;
         }
@@ -472,7 +431,7 @@ public class GenericConfigMapperTest {
             }
 
             public Optional<String> getLevel(String name) {
-                return config.get(name).get("level").asOptionalString();
+                return config.get(name).get("level").asString().asOptional();
             }
         }
 
@@ -496,10 +455,10 @@ public class GenericConfigMapperTest {
         }
 
         public static class ProviderConfig {
-            @Config.Transient
+            @Transient
             public Long uid;
             public String name;
-            @Config.Value(key = "class")
+            @Value(key = "class")
             public Class<?> clazz;
 
             public Long getUid() {
@@ -543,9 +502,9 @@ public class GenericConfigMapperTest {
     }
 
     public static class WrongDefaultBean {
-        @Config.Value(withDefault = "wrong value")
+        @Value(withDefault = "wrong value")
         public int numberWithDefault;
-        @Config.Value(withDefaultSupplier = UuidStringSupplier.class)
+        @Value(withDefaultSupplier = UuidStringSupplier.class)
         public int numberWithDefaultSupplier;
     }
 

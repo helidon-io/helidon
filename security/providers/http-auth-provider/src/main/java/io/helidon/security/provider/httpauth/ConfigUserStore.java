@@ -56,8 +56,8 @@ public class ConfigUserStore implements UserStore {
     public static ConfigUserStore fromConfig(Config config) {
         ConfigUserStore store = new ConfigUserStore();
 
-        config.nodeList().ifPresent(configs -> configs.forEach(config1 -> {
-            User user = config1.map(ConfigUser::fromConfig);
+        config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
+            User user = config1.as(ConfigUser::fromConfig).get();
             store.users.put(user.getLogin(), user);
         }));
 
@@ -77,9 +77,9 @@ public class ConfigUserStore implements UserStore {
         static ConfigUser fromConfig(Config config) {
             ConfigUser cu = new ConfigUser();
 
-            cu.login = config.get("login").asString();
-            cu.password = config.get("password").asString("").toCharArray();
-            cu.roles.addAll(config.get("roles").asStringList(CollectionsHelper.listOf()));
+            cu.login = config.get("login").asString().get();
+            cu.password = config.get("password").asString().orElse("").toCharArray();
+            cu.roles.addAll(config.get("roles").asList(String.class).orElse(CollectionsHelper.listOf()));
 
             return cu;
         }

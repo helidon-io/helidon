@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -245,14 +246,15 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
     /**
      * {@link HttpDigestAuthProvider} fluent API builder.
      */
-    public static class Builder implements io.helidon.common.Builder<HttpDigestAuthProvider> {
+    public static final class Builder implements io.helidon.common.Builder<HttpDigestAuthProvider> {
+        private static final UserStore EMPTY_STORE = login -> Optional.empty();
         /**
          * Default is 24 hours.
          */
         public static final long DEFAULT_DIGEST_NONCE_TIMEOUT = 24 * 60 * 60 * 1000;
         private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
-        private UserStore userStore;
-        private String realm;
+        private UserStore userStore = EMPTY_STORE;
+        private String realm = "Helidon";
         private SubjectType subjectType = SubjectType.USER;
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
         private boolean noDigestQop = false;
@@ -265,22 +267,19 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
         static Builder fromConfig(Config config) {
             Builder builder = new Builder();
 
-            builder.realm(config.get("realm").asString("realm"))
-                    .userStore(config.get("users").asOptional(ConfigUserStore.class)
-                                       .orElseThrow(() -> new HttpAuthException(
-                                               "No users configured! Key \"users\" must be in configuration")))
-                    .digestAlgorithm(config.get("algorithm")
-                                             .as(HttpDigest.Algorithm.class, HttpDigest.Algorithm.MD5))
-                    .digestNonceTimeout(config.get("nonce-timeout-millis")
-                                                .asLong(DEFAULT_DIGEST_NONCE_TIMEOUT), TimeUnit.MILLISECONDS)
-                    .digestServerSecret(config.get("server-secret")
-                                                .value()
-                                                .map(String::toCharArray)
-                                                .orElse(randomSecret()));
+            config.get("realm").asString().ifPresent(builder::realm);
+            config.get("users").as(ConfigUserStore::fromConfig).ifPresent(builder::userStore);
+            config.get("algorithm").as(HttpDigest.Algorithm::fromConfig).orElse(HttpDigest.Algorithm.MD5);
+            config.get("nonce-timeout-millis").asLong()
+                    .ifPresent(timeout -> builder.digestNonceTimeout(timeout, TimeUnit.MILLISECONDS));
+            config.get("principal-type").as(SubjectType.class).ifPresent(builder::subjectType);
 
-            config.get("principal-type").asOptional(SubjectType.class).ifPresent(builder::subjectType);
+            builder.digestServerSecret(config.get("server-secret")
+                    .asString()
+                    .map(String::toCharArray)
+                    .orElseGet(Builder::randomSecret));
 
-            config.get("qop").asOptionalList(HttpDigest.Qop.class).ifPresent(qop -> {
+            config.get("qop").asList(HttpDigest.Qop::fromConfig).ifPresent(qop -> {
                 if (qop.isEmpty()) {
                     builder.noDigestQop();
                 } else {

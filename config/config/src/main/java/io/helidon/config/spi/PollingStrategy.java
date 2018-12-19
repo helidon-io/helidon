@@ -114,7 +114,7 @@ import io.helidon.config.PollingStrategies;
  * <p>
  * The implementation class should define a Java bean property for each
  * meta-configuration property it needs to support. The config system uses
- * {@link io.helidon.config.ConfigMapper}s to convert the text in the
+ * mapping functions to convert the text in the
  * meta-configuration into the correct Java type and then assigns the value to
  * the correspondingly-named Java bean property defined on the custom strategy
  * instance. See the built-in mappers defined in

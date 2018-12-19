@@ -85,7 +85,7 @@ public class InboundClientDefinition {
      * @param config configuration instance located at a single client definition (expect key-id as a child)
      * @return instance configured based on config
      */
-    public static InboundClientDefinition fromConfig(Config config) {
+    public static InboundClientDefinition create(Config config) {
         return new Builder().fromConfig(config).build();
     }
 
@@ -265,12 +265,12 @@ public class InboundClientDefinition {
          * @return builder instance initialized from config
          */
         public Builder fromConfig(Config config) {
-            keyId(config.get("key-id").asString());
-            config.get("principal-name").value().ifPresent(this::principalName);
-            config.get("principal-type").asOptional(SubjectType.class).ifPresent(this::subjectType);
-            config.get("public-key").asOptional(KeyConfig.class).ifPresent(this::publicKeyConfig);
-            config.get("hmac.secret").value().ifPresent(this::hmacSecret);
-            config.get("algorithm").value().ifPresent(this::algorithm);
+            keyId(config.get("key-id").asString().get());
+            config.get("principal-name").asString().ifPresent(this::principalName);
+            config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);
+            config.get("public-key").as(KeyConfig.class).ifPresent(this::publicKeyConfig);
+            config.get("hmac.secret").asString().ifPresent(this::hmacSecret);
+            config.get("algorithm").asString().ifPresent(this::algorithm);
 
             return this;
         }

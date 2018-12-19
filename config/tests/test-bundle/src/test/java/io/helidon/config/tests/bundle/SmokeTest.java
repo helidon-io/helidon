@@ -18,13 +18,15 @@ package io.helidon.config.tests.bundle;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.hocon.HoconConfigParserBuilder;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.yaml.YamlConfigParserBuilder;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.jupiter.api.Test;
 
 /**
  * Test that all dependencies are included and basic use-case is running.
@@ -36,7 +38,7 @@ public class SmokeTest {
         Config config = Config.builder()
                 .sources(ConfigSources.from("key=value", "text/x-java-properties"))
                 .build();
-        assertThat(config.get("key").asString(), is("value"));
+        assertThat(config.get("key").asString(), is(ConfigValues.simpleValue("value")));
     }
 
     @Test

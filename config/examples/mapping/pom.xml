@@ -48,5 +48,10 @@
             <artifactId>helidon-config-hocon</artifactId>
             <version>${helidon.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-object-mapping</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
     </dependencies>
 </project>

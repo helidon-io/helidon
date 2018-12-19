@@ -236,10 +236,11 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
             Builder builder = TimeConfig.builder();
 
             config.get("time-of-day").asList(Config.class)
-                    .forEach(tod -> builder.addBetween(LocalTime.parse(tod.get("from").asString("00:00:00")),
-                                                       LocalTime.parse(tod.get("to").asString("24:00:00"))));
+                    .get()
+                    .forEach(tod -> builder.addBetween(LocalTime.parse(tod.get("from").asString().orElse("00:00:00")),
+                                                       LocalTime.parse(tod.get("to").asString().orElse("24:00:00"))));
 
-            config.get("days-of-week").asOptionalList(DayOfWeek.class)
+            config.get("days-of-week").asList(DayOfWeek.class)
                     .ifPresent(builder::addDaysOfWeek);
 
             return builder.build();

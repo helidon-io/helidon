@@ -19,25 +19,23 @@ package io.helidon.config.etcd;
 import java.io.File;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
+import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdApi;
 import io.helidon.config.etcd.internal.client.EtcdClient;
-import io.helidon.config.etcd.internal.client.EtcdUtils;
 import io.helidon.config.hocon.internal.HoconConfigParser;
 
-import com.google.common.io.Files;
-import io.helidon.common.reactive.Flow;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static io.helidon.config.etcd.EtcdConfigSourceTest.MEDIA_TYPE_APPLICATION_HOCON;
 import static org.hamcrest.MatcherAssert.assertThat;
-
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 /**
  * Tests {@link EtcdConfigSource} with both version, {@link EtcdApi#v2} and {@link EtcdApi#v3}.
@@ -49,7 +47,7 @@ public class EtcdConfigSourceIT {
     @ParameterizedTest
     @EnumSource(EtcdApi.class)
     public void testConfig(EtcdApi version) throws Exception {
-        putConfiguration(EtcdUtils.getClientClass(version), "/application.conf");
+        putConfiguration(version, "/application.conf");
         Config config = Config.builder()
                 .sources(EtcdConfigSourceBuilder
                                  .from(DEFAULT_URI, "configuration", version)
@@ -58,13 +56,13 @@ public class EtcdConfigSourceIT {
                 .addParser(new HoconConfigParser())
                 .build();
 
-        assertThat(config.get("security").asNodeList().size(), is(1));
+        assertThat(config.get("security").asNodeList().get(), hasSize(1));
     }
 
     @ParameterizedTest
     @EnumSource(EtcdApi.class)
     public void testConfigChanges(EtcdApi version) throws Exception {
-        putConfiguration(EtcdUtils.getClientClass(version), "/application.conf");
+        putConfiguration(version, "/application.conf");
         Config config = Config.builder()
                 .sources(EtcdConfigSourceBuilder
                                  .from(DEFAULT_URI, "configuration", version)
@@ -74,7 +72,7 @@ public class EtcdConfigSourceIT {
                 .addParser(new HoconConfigParser())
                 .build();
 
-        assertThat(config.get("security").asNodeList().size(), is(1));
+        assertThat(config.get("security").asNodeList().get(), hasSize(1));
 
         CountDownLatch initLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(3);
@@ -101,20 +99,20 @@ public class EtcdConfigSourceIT {
         });
         assertThat(initLatch.await(1, TimeUnit.SECONDS), is(true));
 
-        putConfiguration(EtcdUtils.getClientClass(version), "/application2.conf");
+        putConfiguration(version, "/application2.conf");
         TimeUnit.MILLISECONDS.sleep(10);
-        putConfiguration(EtcdUtils.getClientClass(version), "/application3.conf");
+        putConfiguration(version, "/application3.conf");
         TimeUnit.MILLISECONDS.sleep(10);
-        putConfiguration(EtcdUtils.getClientClass(version), "/application4.conf");
+        putConfiguration(version, "/application4.conf");
 
         assertThat(nextLatch.await(20, TimeUnit.SECONDS), is(true));
     }
 
-    private static void putConfiguration(Class<? extends EtcdClient> etcdClientClass, String resourcePath) throws Exception {
-        EtcdClient etcd = etcdClientClass.getDeclaredConstructor(URI.class).newInstance(DEFAULT_URI);
+    private static void putConfiguration(EtcdApi version, String resourcePath) throws Exception {
+        EtcdClient etcd = version.clientFactory().createClient(DEFAULT_URI);
 
         File file = new File(EtcdConfigSourceIT.class.getResource(resourcePath).getFile());
-        etcd.put("configuration", Files.readLines(file, Charset.defaultCharset()).stream().collect(Collectors.joining("\n")));
+        etcd.put("configuration", String.join("\n", Files.readAllLines(file.toPath(), Charset.defaultCharset())));
         etcd.close();
     }
 }

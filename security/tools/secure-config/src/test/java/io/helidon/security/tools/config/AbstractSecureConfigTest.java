@@ -20,103 +20,103 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.MissingValueException;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.config.ConfigValues.simpleValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test encryption and configuration.
  */
-public abstract class AbstractSecureConfigTest {
-    public static final String TEST_STRING = "Überstring";
+abstract class AbstractSecureConfigTest {
+    static final String TEST_STRING = "Überstring";
 
     abstract Config getConfig();
 
     abstract Config getConfigRequiresEncryption();
 
     @Test
-    public void testDeep() {
-        String value = getConfig().get("pwd11").asString();
-        assertThat(value, is("known_password"));
-
-        value = getConfig().get("pwd12").asString();
-        assertThat(value, is("known_password"));
+    void testDeep() {
+        assertThat(getConfig().get("pwd11").asString(), is(ConfigValues.simpleValue("known_password")));
+        assertThat(getConfig().get("pwd12").asString(), is(ConfigValues.simpleValue("known_password")));
     }
 
     @Test
-    public void testClearText() throws Exception {
-        testPassword(getConfig(), "pwd1", "known_password", "clear text");
+    void testClearText() {
+        testPassword(getConfig(), "pwd1", "known_password");
     }
 
     @Test
-    public void testClearTextNotAllowed() {
+    void testClearTextNotAllowed() {
         assertThrows(SecureConfigException.class, () ->
-                testPassword(getConfigRequiresEncryption(), "pwd1", "known_password", "clear_text"));
+                testPassword(getConfigRequiresEncryption(), "pwd1", "known_password"));
     }
 
     @Test
-    public void testAlias() throws Exception {
-        testPassword(getConfig(), "pwd2", "known_password", "aliased");
+    void testAlias() {
+        testPassword(getConfig(), "pwd2", "known_password");
     }
 
     @Test
-    public void testMissingAlias() {
+    void testMissingAlias() {
         assertThrows(MissingValueException.class, () ->
-                testPassword(getConfig(), "pwd8", "missing...", "alias"));
+                testPassword(getConfig(), "pwd8", "missing..."));
     }
 
     @Test
-    public void testEncryptedAlias() throws Exception {
-        testPassword(getConfig(), "pwd7", TEST_STRING, "aliased");
+    void testEncryptedAlias() {
+        testPassword(getConfig(), "pwd7", TEST_STRING);
     }
 
     @Test
-    public void testAliasClearTextNotAllowed() {
+    void testAliasClearTextNotAllowed() {
         assertThrows(SecureConfigException.class, () ->
-                testPassword(getConfigRequiresEncryption(), "pwd2", "known_password", "aliased"));
+                testPassword(getConfigRequiresEncryption(), "pwd2", "known_password"));
     }
 
     @Test
-    public void testSymmetric() throws Exception {
-        testPassword(getConfig(), "pwd4", TEST_STRING, "symmetric");
-        testPassword(getConfig(), "pwd6", "", "symmetric");
+    void testSymmetric() {
+        testPassword(getConfig(), "pwd4", TEST_STRING);
+        testPassword(getConfig(), "pwd6", "");
     }
 
     @Test
     public void testWrongSymmetric() {
-        testPassword(getConfig(), "pwd9", "${AES=not really encrypted}", "symmetric");
-        testPassword(getConfig(), "pwd10", "${RSA=not really encrypted}", "asymmetric");
+        testPassword(getConfig(), "pwd9", "${AES=not really encrypted}");
+        testPassword(getConfig(), "pwd10", "${RSA=not really encrypted}");
     }
 
     @Test
-    public void testAsymmetric() throws Exception {
-        testPassword(getConfig(), "pwd3", TEST_STRING, "asymmetric");
-        testPassword(getConfig(), "pwd5", "", "asymmetric");
-        testPassword(getConfigRequiresEncryption(), "pwd3", TEST_STRING, "asymmetric");
-        testPassword(getConfigRequiresEncryption(), "pwd5", "", "asymmetric");
+    public void testAsymmetric() {
+        testPassword(getConfig(), "pwd3", TEST_STRING);
+        testPassword(getConfig(), "pwd5", "");
+        testPassword(getConfigRequiresEncryption(), "pwd3", TEST_STRING);
+        testPassword(getConfigRequiresEncryption(), "pwd5", "");
     }
 
     @Test
     public void testPasswordArray() {
-        Optional<List<String>> passwordsOpt = getConfig().get("passwords").asOptionalList(String.class);
-        assertThat("Passwords must be present", passwordsOpt.isPresent());
-        List<String> passwords = passwordsOpt.get();
-        assertEquals(TEST_STRING, passwords.get(0));
-        assertEquals(TEST_STRING, passwords.get(1));
-        assertEquals("", passwords.get(2));
+        ConfigValue<List<String>> passwordsOpt = getConfig().get("passwords")
+                .asList(String.class);
 
-        assertEquals(3, passwords.size());
+        assertThat("Passwords must be present", passwordsOpt.isPresent());
+
+        List<String> passwords = passwordsOpt.get();
+        assertThat(passwords, hasSize(3));
+        assertThat(passwords, contains(TEST_STRING, TEST_STRING, ""));
     }
 
     @Test
     public void testConfigList() {
-        Optional<List<Config>> objects = getConfig().get("objects").asOptionalList(Config.class);
+        ConfigValue<List<Config>> objects = getConfig().get("objects").asNodeList();
 
         assertThat("Objects should be present in config", objects.isPresent());
 
@@ -124,37 +124,39 @@ public abstract class AbstractSecureConfigTest {
         assertThat("there should be two objects", configSources.size(), is(2));
 
         Config config = configSources.get(0);
-        assertEquals(TEST_STRING, config.get("pwd").asString());
+        assertThat(config.get("pwd").asString(), is(simpleValue(TEST_STRING)));
 
         config = configSources.get(1);
-        assertEquals("", config.get("pwd").asString());
+        assertThat(config.get("pwd").asString(), is(simpleValue("")));
     }
 
     @Test
     public void testConfigListMissing() {
-        Optional<List<Config>> objects = getConfig().get("notThereAtAll").asOptionalList(Config.class);
-        assertFalse(objects.isPresent());
+        ConfigValue<List<Config>> objects = getConfig().get("notThereAtAll").asList(Config.class);
+        assertThat(objects, is(ConfigValues.empty()));
     }
 
     @Test
     public void testPasswordArrayMissing() {
-        Optional<List<String>> passwordsOpt = getConfig().get("notThereAtAll").asOptionalList(String.class);
-        assertFalse(passwordsOpt.isPresent());
+        ConfigValue<List<String>> passwordsOpt = getConfig().get("notThereAtAll")
+                .asList(String.class);
+
+        assertThat(passwordsOpt, is(ConfigValues.empty()));
     }
 
     @Test
     public void testCustomEnc() {
-        assertEquals("${URGH=argh}", getConfigRequiresEncryption().get("customEnc").asString());
+        assertThat(getConfigRequiresEncryption().get("customEnc").asString(),
+                   is(simpleValue("${URGH=argh}")));
     }
 
     @Test
     public void testMissing() {
-        assertFalse(getConfigRequiresEncryption().get("thisDoesNotExist").value().isPresent());
+        assertThat(getConfigRequiresEncryption().get("thisDoesNotExist").asString(),
+                   is(ConfigValues.empty()));
     }
 
-    void testPassword(Config config, String key, String expectedValue, String type) {
-        Optional<String> optional = config.get(key).value();
-        assertThat("Property " + key + " must exist", optional.isPresent(), is(true));
-        assertThat("Property \"" + key + "\" of type: " + type, optional.get(), is(expectedValue));
+    void testPassword(Config config, String key, String expectedValue) {
+        assertThat(config.get(key).asString().get(), is(expectedValue));
     }
 }

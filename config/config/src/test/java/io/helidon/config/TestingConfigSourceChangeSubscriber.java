@@ -22,7 +22,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
 /**
- * Testing implementation of {@link Flow.Subscriber} on {@link ConfigSource#changes()} events.
+ * Testing implementation of {@link io.helidon.common.reactive.Flow.Subscriber} on {@link ConfigSource#changes()} events.
  */
 public class TestingConfigSourceChangeSubscriber extends TestingSubscriber<Optional<ObjectNode>> {
 }

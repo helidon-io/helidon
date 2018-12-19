@@ -17,11 +17,13 @@
 package io.helidon.config.tests.parsers1;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValues;
 import io.helidon.config.tests.module.parsers1.Parsers1Priority300ConfigParser;
-import static org.hamcrest.MatcherAssert.assertThat;
 
-import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Parser tests with enabled Service Loading (default).
@@ -32,7 +34,8 @@ public class ParserServicesEnabledTest extends AbstractParserServicesTest {
     public void testHighestPriorityOverride() {
         Config config = configBuilder().build();
 
-        assertThat(config.get(Parsers1Priority300ConfigParser.KEY_PREFIX + KEY).asString(), is(VALUE));
+        assertThat(config.get(Parsers1Priority300ConfigParser.KEY_PREFIX + KEY).asString(),
+                   is(ConfigValues.simpleValue(VALUE)));
     }
 
 }

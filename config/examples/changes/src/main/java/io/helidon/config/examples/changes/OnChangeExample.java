@@ -20,8 +20,8 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import static io.helidon.config.ConfigSources.directory;
-import static io.helidon.config.PollingStrategies.regular;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.PollingStrategies;
 
 import static java.time.Duration.ofSeconds;
 
@@ -41,8 +41,8 @@ public class OnChangeExample {
      */
     public void run() {
         Config secrets = Config
-                .withSources(directory("conf/secrets")
-                                     .pollingStrategy(regular(ofSeconds(5))))
+                .withSources(ConfigSources.directory("conf/secrets")
+                                     .pollingStrategy(PollingStrategies.regular(ofSeconds(5))))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -54,8 +54,8 @@ public class OnChangeExample {
     }
 
     private static boolean logSecrets(Config secrets) {
-        LOGGER.info("Loaded secrets are u: " + secrets.get("username").asString()
-                            + ", p: " + secrets.get("password").asString());
+        LOGGER.info("Loaded secrets are u: " + secrets.get("username").asString().get()
+                            + ", p: " + secrets.get("password").asString().get());
         return true; // -> continue listening on config changes
     }
 

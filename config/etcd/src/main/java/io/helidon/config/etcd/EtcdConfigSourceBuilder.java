@@ -24,6 +24,9 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
+import io.helidon.config.etcd.internal.client.EtcdClientFactory;
+import io.helidon.config.etcd.internal.client.v2.EtcdV2ClientFactory;
+import io.helidon.config.etcd.internal.client.v3.EtcdV3ClientFactory;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -101,9 +104,9 @@ public final class EtcdConfigSourceBuilder
      * @see #init(Config)
      */
     public static EtcdConfigSourceBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return EtcdConfigSourceBuilder.from(metaConfig.get(URI_KEY).as(URI.class),
-                                            metaConfig.get(KEY_KEY).asString(),
-                                            metaConfig.get(API_KEY).as(EtcdApi.class))
+        return EtcdConfigSourceBuilder.from(metaConfig.get(URI_KEY).as(URI.class).get(),
+                                            metaConfig.get(KEY_KEY).asString().get(),
+                                            metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).get())
                 .init(metaConfig);
     }
 
@@ -130,7 +133,7 @@ public final class EtcdConfigSourceBuilder
      * @return new instance of Etcd ConfigSource.
      */
     @Override
-    public ConfigSource build() {
+    public EtcdConfigSource build() {
         return new EtcdConfigSource(this);
     }
 
@@ -144,13 +147,26 @@ public final class EtcdConfigSourceBuilder
         /**
          * Etcd API v2 version.
          */
-        v2,
+        v2(new EtcdV2ClientFactory()),
 
         /**
          * Etcd API v3 version.
          */
-        v3
+        v3(new EtcdV3ClientFactory());
 
+        private final EtcdClientFactory clientFactory;
+
+        EtcdApi(EtcdClientFactory clientFactory) {
+            this.clientFactory = clientFactory;
+        }
+
+        /**
+         * The client factory for this version of etcd.
+         * @return client factory
+         */
+        public EtcdClientFactory clientFactory() {
+            return clientFactory;
+        }
     }
 
     /**

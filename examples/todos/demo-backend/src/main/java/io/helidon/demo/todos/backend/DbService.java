@@ -122,11 +122,11 @@ public class DbService {
         Cluster.Builder clusterBuilder = Cluster.builder();
 
         Config cConfig = config.get("cassandra");
-        cConfig.get("servers").asList(Config.class).forEach(serverConfig -> {
+        cConfig.get("servers").asList(Config.class).get().forEach(serverConfig -> {
             clusterBuilder.addContactPoints(
-                    serverConfig.get("host").asString());
+                    serverConfig.get("host").asString().get());
         });
-        cConfig.get("port").asOptionalInt().ifPresent(clusterBuilder::withPort);
+        cConfig.get("port").asInt().ifPresent(clusterBuilder::withPort);
 
         cluster = clusterBuilder.build();
         session = cluster.connect("backend");

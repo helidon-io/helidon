@@ -304,14 +304,16 @@ public interface EvictableCache<K, V> {
          * @return updated builder instance
          */
         public Builder<K, V> fromConfig(Config config) {
-            config.get("cache-enabled").asOptionalBoolean().ifPresent(this::cacheEnabled);
+            config.get("cache-enabled").asBoolean().ifPresent(this::cacheEnabled);
             if (cacheEnabled) {
-                config.get("cache-timeout-millis").asOptionalLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
-                long evictDelay = config.get("cache-evict-delay-millis").asLong(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
-                long evictPeriod = config.get("cache-evict-period-millis").asLong(cacheEvictTimeUnit.toMillis(cacheEvictPeriod));
+                config.get("cache-timeout-millis").asLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
+                long evictDelay = config.get("cache-evict-delay-millis").asLong()
+                        .orElse(cacheEvictTimeUnit.toMillis(cacheEvictDelay));
+                long evictPeriod = config.get("cache-evict-period-millis").asLong()
+                        .orElse(cacheEvictTimeUnit.toMillis(cacheEvictPeriod));
                 evictSchedule(evictDelay, evictPeriod, TimeUnit.MILLISECONDS);
-                config.get("parallelism-treshold").asOptionalLong().ifPresent(this::parallelismThreshold);
-                config.get("evictor-class").asOptional(Class.class).ifPresent(this::evictorClass);
+                config.get("parallelism-treshold").asLong().ifPresent(this::parallelismThreshold);
+                config.get("evictor-class").as(Class.class).ifPresent(this::evictorClass);
             }
 
             return this;

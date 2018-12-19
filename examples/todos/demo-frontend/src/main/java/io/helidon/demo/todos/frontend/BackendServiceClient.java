@@ -79,7 +79,7 @@ public final class BackendServiceClient {
     public BackendServiceClient(final Client restClient, final Config config) {
         this.client = restClient;
         this.serviceEndpoint =
-                config.get("services.backend.endpoint").asString();
+                config.get("services.backend.endpoint").asString().get();
         this.tracer = GlobalTracer.get();
     }
 
