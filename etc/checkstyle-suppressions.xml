@@ -32,5 +32,7 @@
             files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/Main.java"/>
         <suppress checks="ImportOrder"
             files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java"/>
+        <suppress checks="NoWhitespaceBefore|SeparatorWrap"
+            files="examples/guides/mp-restful-webservice/src/main/java/io/helidon/guides/mp/restfulwebservice/GreetApplication.java"/>
 </suppressions>
 

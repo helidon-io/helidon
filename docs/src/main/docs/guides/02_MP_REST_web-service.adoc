@@ -17,13 +17,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:example-src-url: https://github.com/oracle/helidon/tree/master/examples/guides/se-rest-web-service/src/main/java
+:example-src-url: https://github.com/oracle/helidon/tree/master/examples/guides/mp-rest-web-service/src/main/java
 
 
-= Helidon SE: Create a RESTful Web Service
-:description: Helidon guide restful web service
-:keywords: helidon, guide, rest, web, service, example
+= Helidon MP: Create a RESTful Web Service
+:description: Helidon guide restful web service MP
+:keywords: helidon, guide, rest, web, service, example, MP
 
-Create and build a ReSTful web service as your first Helidon SE application.
+Create and build a RESTful web service as your first Helidon MP application.
 
-include::{guides-dir}/se-restful-webservice/src/main/docs/index.adoc[leveloffset=+1]
+include::{guides-dir}/mp-restful-webservice/src/main/docs/index.adoc[leveloffset=+1]

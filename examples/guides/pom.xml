@@ -35,5 +35,6 @@
 
     <modules>
         <module>se-restful-webservice</module>
+        <module>mp-restful-webservice</module>
     </modules>
 </project>
