@@ -30,13 +30,13 @@
     <name>Helidon Config Tests Bundle</name>
 
     <description>
-        Integration tests of io.helidon.config.bundle module.
+        Integration tests of io.helidon.bundles.config module.
     </description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-config</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
