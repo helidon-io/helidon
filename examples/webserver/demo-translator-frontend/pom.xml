@@ -133,8 +133,8 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver.examples</groupId>
-            <artifactId>helidon-webserver-examples-translator-backend</artifactId>
+            <groupId>io.helidon.examples.webserver</groupId>
+            <artifactId>helidon-examples-webserver-translator-backend</artifactId>
             <scope>test</scope>
             <version>${project.version}</version>
         </dependency>
