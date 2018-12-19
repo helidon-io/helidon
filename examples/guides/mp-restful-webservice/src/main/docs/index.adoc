@@ -107,8 +107,7 @@ Answer the prompts for your module's group ID, artifact ID, and version,
 then `cd` to the `<artifactId>` directory you specified.
 
 === Update your `pom.xml`
-Make sure your POM contains these property settings and dependency management
-entries (possibly in addition to others):
+Add the properties and dependencies listed here if they don't exist in your `pom.xml`:
 [source,xml,subs="verbatim,attributes"]
 ----
     <properties>
