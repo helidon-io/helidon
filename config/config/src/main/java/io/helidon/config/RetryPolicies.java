@@ -125,7 +125,7 @@ public class RetryPolicies {
          *                                supplied configuration node to an instance of a given Java type.
          * @see PollingStrategies#regular(Duration)
          */
-        public static Builder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+        public static Builder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
             // retries
             Builder builder = new Builder(metaConfig.get(RETRIES_KEY).asInt().get());
             // delay

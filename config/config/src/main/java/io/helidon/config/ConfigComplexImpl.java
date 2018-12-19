@@ -61,7 +61,7 @@ abstract class ConfigComplexImpl<N extends ConfigNode> extends ConfigExistingImp
                         .filter(predicate)
                         .map(node -> traverseSubNodes(node, predicate))
                         .reduce(Stream.empty(), Stream::concat))
-                .orElseThrow(MissingValueException.supplierForKey(key()));
+                .orElseThrow(MissingValueException.createSupplier(key()));
 
     }
 
@@ -74,7 +74,7 @@ abstract class ConfigComplexImpl<N extends ConfigNode> extends ConfigExistingImp
                             .filter(predicate)
                             .map(node -> traverseSubNodes(node, predicate))
                             .reduce(Stream.of(config), Stream::concat))
-                    .orElseThrow(MissingValueException.supplierForKey(key()));
+                    .orElseThrow(MissingValueException.createSupplier(key()));
         }
     }
 

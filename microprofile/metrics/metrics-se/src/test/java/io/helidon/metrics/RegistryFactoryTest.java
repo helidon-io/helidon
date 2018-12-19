@@ -54,7 +54,7 @@ public class RegistryFactoryTest {
     static void createInstance() {
         unconfigured = RegistryFactory.create();
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
                         "helidon.metrics.base." + METRIC_USED_HEAP + ".enabled",
                         "false")))
                 .build();

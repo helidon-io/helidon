@@ -47,9 +47,9 @@ public class WithSourcesExample {
          */
 
         Config config = Config
-                .withSources(file("conf/dev.yaml").optional(),
-                             file("conf/config.yaml").optional(),
-                             classpath("default.yaml"))
+                .builder(file("conf/dev.yaml").optional(),
+                         file("conf/config.yaml").optional(),
+                         classpath("default.yaml"))
                 .addFilter((key, stringValue) -> key.name().equals("level") ? stringValue.toUpperCase() : stringValue)
                 .build();
 

@@ -171,7 +171,7 @@ public final class SecureConfigFilter implements ConfigFilter {
             // another_password=${ALIAS=service_password}
             String alias = removePlaceholder(PREFIX_ALIAS, value);
 
-            return config.get(alias).asString().orElseThrow(MissingValueException.supplierForKey(Config.Key.of(alias)));
+            return config.get(alias).asString().orElseThrow(MissingValueException.createSupplier(Config.Key.create(alias)));
         }
 
         return value;

@@ -25,7 +25,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigParsers;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.ConfigValues;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.hocon.HoconConfigParserBuilder;
 
@@ -136,7 +135,7 @@ public class DemoTest {
     @Test
     public void testFallbackConfigSource() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(
+                .sources(ConfigSources.create(
                         // PROPERTIES first
                         ConfigSources.classpath("application.properties"),
                         // with fallback to HOCON

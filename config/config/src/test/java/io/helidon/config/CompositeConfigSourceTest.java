@@ -58,7 +58,7 @@ public class CompositeConfigSourceTest {
 
     @Test
     public void testDescriptionEmpty() throws MalformedURLException {
-        ConfigSource configSource = ConfigSources.from()
+        ConfigSource configSource = ConfigSources.create()
                 .build();
 
         assertThat(configSource.description(), is(""));
@@ -66,11 +66,11 @@ public class CompositeConfigSourceTest {
 
     @Test
     public void testDescription() throws MalformedURLException {
-        ConfigSource configSource = ConfigSources.from()
+        ConfigSource configSource = ConfigSources.create()
                 .add(ConfigSources.classpath("application.conf"))
-                .add(ConfigSources.from(ObjectNode.builder().addValue("prop1", "1").build()))
-                .add(ConfigSources.from(CollectionsHelper.mapOf()))
-                .add(ConfigSources.from(ObjectNode.builder().addValue("prop1", "2").build()))
+                .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "1").build()))
+                .add(ConfigSources.create(CollectionsHelper.mapOf()))
+                .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "2").build()))
                 .build();
 
         assertThat(configSource.description(),
@@ -80,9 +80,9 @@ public class CompositeConfigSourceTest {
 
     @Test
     public void testDescriptionWithEnvVarsAndSysProps() throws MalformedURLException {
-        ConfigSource configSource = ConfigSources.from()
+        ConfigSource configSource = ConfigSources.create()
                 .add(ConfigSources.classpath("application.conf"))
-                .add(ConfigSources.from(ObjectNode.builder().addValue("prop1", "1").build()))
+                .add(ConfigSources.create(ObjectNode.builder().addValue("prop1", "1").build()))
                 .build();
 
         assertThat(configSource.description(),
@@ -91,7 +91,7 @@ public class CompositeConfigSourceTest {
 
     @Test
     public void testBuildEmptyCompositeBuilder() {
-        Optional<ObjectNode> rootNode = ConfigSources.from()
+        Optional<ObjectNode> rootNode = ConfigSources.create()
                 .build()
                 .load();
 
@@ -130,9 +130,9 @@ public class CompositeConfigSourceTest {
 
         //config source AAA
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceAAA = new AtomicReference<>();
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=1\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -140,16 +140,16 @@ public class CompositeConfigSourceTest {
                 .build();
         //config source BBB
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceBBB = new AtomicReference<>();
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=9"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
                 .pollingStrategy(pollingStrategy)
                 .build();
 
-        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.from()
+        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.create()
                 .add(configSourceAAA)
                 .add(configSourceBBB)
                 .build();
@@ -182,9 +182,9 @@ public class CompositeConfigSourceTest {
 
         //config source AAA
         AtomicReference<ConfigParser.Content> contentReferenceAAA = new AtomicReference<>();
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=1\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -192,16 +192,16 @@ public class CompositeConfigSourceTest {
                 .build();
         //config source BBB
         AtomicReference<ConfigParser.Content> contentReferenceBBB = new AtomicReference<>();
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=9"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
                 .pollingStrategy(pollingStrategy)
                 .build();
 
-        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.from()
+        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.create()
                 .add(configSourceAAA)
                 .add(configSourceBBB)
                 .build();
@@ -224,9 +224,9 @@ public class CompositeConfigSourceTest {
 
         // change content AAA
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=11\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=11\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
         assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
@@ -251,9 +251,9 @@ public class CompositeConfigSourceTest {
 
         //config source AAA
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceAAA = new AtomicReference<>();
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=1\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -261,16 +261,16 @@ public class CompositeConfigSourceTest {
                 .build();
         //config source BBB
         AtomicReference<ConfigParser.Content<Instant>> contentReferenceBBB = new AtomicReference<>();
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=9"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
                 .pollingStrategy(pollingStrategy)
                 .build();
 
-        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.from()
+        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.create()
                 .add(configSourceAAA)
                 .add(configSourceBBB)
                 .build();
@@ -293,9 +293,9 @@ public class CompositeConfigSourceTest {
 
         // change content BBB
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS);
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=22\nppp=9"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=22\nppp=9"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
         assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
@@ -315,9 +315,9 @@ public class CompositeConfigSourceTest {
 
         //config source AAA
         AtomicReference<ConfigParser.Content> contentReferenceAAA = new AtomicReference<>();
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=1\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -325,16 +325,16 @@ public class CompositeConfigSourceTest {
                 .build();
         //config source BBB
         AtomicReference<ConfigParser.Content> contentReferenceBBB = new AtomicReference<>();
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=9"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
                 .pollingStrategy(pollingStrategy)
                 .build();
 
-        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.from()
+        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.create()
                 .add(configSourceAAA)
                 .add(configSourceBBB)
                 .build();
@@ -357,9 +357,9 @@ public class CompositeConfigSourceTest {
 
         // change content BBB
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS);
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=99"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=99"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
         assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
@@ -384,9 +384,9 @@ public class CompositeConfigSourceTest {
 
         //config source AAA
         AtomicReference<ConfigParser.Content> contentReferenceAAA = new AtomicReference<>();
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=1\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=1\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceAAA = TestingParsableConfigSource.builder()
                 .content(contentReferenceAAA::get)
                 .parser(ConfigParsers.properties())
@@ -394,16 +394,16 @@ public class CompositeConfigSourceTest {
                 .build();
         //config source BBB
         AtomicReference<ConfigParser.Content> contentReferenceBBB = new AtomicReference<>();
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=9"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=9"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         TestingParsableConfigSource configSourceBBB = TestingParsableConfigSource.builder()
                 .content(contentReferenceBBB::get)
                 .parser(ConfigParsers.properties())
                 .pollingStrategy(pollingStrategy)
                 .build();
 
-        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.from()
+        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.create()
                 .add(configSourceAAA)
                 .add(configSourceBBB)
                 .build();
@@ -426,13 +426,13 @@ public class CompositeConfigSourceTest {
 
         // change content AAA
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
-        contentReferenceAAA.set(ConfigParser.Content.from(new StringReader("ooo=11\nrrr=5"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceAAA.set(ConfigParser.Content.create(new StringReader("ooo=11\nrrr=5"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
         // change content BBB
-        contentReferenceBBB.set(ConfigParser.Content.from(new StringReader("ooo=2\nppp=99"),
-                                                          PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                          Optional.of(Instant.now())));
+        contentReferenceBBB.set(ConfigParser.Content.create(new StringReader("ooo=2\nppp=99"),
+                                                            PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                            Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
         assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
@@ -458,14 +458,14 @@ public class CompositeConfigSourceTest {
     public void testChangesRepeatSubscription() throws InterruptedException {
         ConfigContext context = mock(ConfigContext.class);
 
-        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.from(
+        CompositeConfigSource configSource = (CompositeConfigSource) ConfigSources.create(
                 ConfigSources.environmentVariables(),
                 ConfigSources.systemProperties(),
                 TestingParsableConfigSource.builder()
                         .content(ConfigParser.Content
-                                         .from(new StringReader("ooo=1\nrrr=5"),
-                                               PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                               Optional.of(Instant.now())))
+                                         .create(new StringReader("ooo=1\nrrr=5"),
+                                                 PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                 Optional.of(Instant.now())))
                         .parser(ConfigParsers.properties())
                         .build())
                 .build();
@@ -510,7 +510,7 @@ public class CompositeConfigSourceTest {
 
     @Test
     public void testBuilderDefault() {
-        ConfigSources.CompositeBuilder builder = ConfigSources.from();
+        ConfigSources.CompositeBuilder builder = ConfigSources.create();
         ConfigSources.CompositeBuilder spyBuilder = spy(builder);
         spyBuilder.build();
 
@@ -526,7 +526,7 @@ public class CompositeConfigSourceTest {
     @Test
     public void testBuilderCustomChanges() {
         ScheduledExecutorService myExecutor = mock(ScheduledExecutorService.class);
-        ConfigSources.CompositeBuilder builder = ConfigSources.from()
+        ConfigSources.CompositeBuilder builder = ConfigSources.create()
                 .changesExecutor(myExecutor)
                 .changesDebounce(Duration.ZERO)
                 .changesMaxBuffer(1);
@@ -545,11 +545,11 @@ public class CompositeConfigSourceTest {
     @Test
     public void testBuilderAddSources() {
         ObjectNode rootNode = initBuilder()
-                .add(ConfigSources.from(ObjectNode.builder()
+                .add(ConfigSources.create(ObjectNode.builder()
                                                 .addValue("prop1", "source-4")
                                                 .addValue("prop4", "source-4")
                                                 .build()))
-                .add(ConfigSources.from(ObjectNode.builder()
+                .add(ConfigSources.create(ObjectNode.builder()
                                                 .addValue("prop1", "source-5")
                                                 .addValue("prop5", "source-5")
                                                 .build()))
@@ -569,15 +569,15 @@ public class CompositeConfigSourceTest {
     //
 
     public static ConfigSources.CompositeBuilder initBuilder() {
-        return ConfigSources.from(
-                ConfigSources.from(ObjectNode.builder()
+        return ConfigSources.create(
+                ConfigSources.create(ObjectNode.builder()
                                            .addValue("prop1", "source-1")
                                            .build()),
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder()
                                            .addValue("prop1", "source-2")
                                            .addValue("prop2", "source-2")
                                            .build()),
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder()
                                            .addValue("prop1", "source-3")
                                            .addValue("prop3", "source-3")
                                            .build()));

@@ -72,9 +72,9 @@ public final class Main {
                 .orElse("http://localhost:2379");
 
         return Config.builder()
-                     .sources(EtcdConfigSourceBuilder.from(URI.create(etcdUri),
-                                                           "comments-aas-config",
-                                                           EtcdConfigSourceBuilder.EtcdApi.v2)
+                     .sources(EtcdConfigSourceBuilder.create(URI.create(etcdUri),
+                                                             "comments-aas-config",
+                                                             EtcdConfigSourceBuilder.EtcdApi.v2)
                                                      .mediaType("application/x-yaml")
                                                      .optional()
                                                      .build(),

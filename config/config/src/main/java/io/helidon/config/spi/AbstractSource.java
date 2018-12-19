@@ -372,7 +372,7 @@ public abstract class AbstractSource<T, S> implements Source<T> {
                     .ifExists(cfg -> pollingStrategy(PollingStrategyConfigMapper.instance().apply(cfg, targetType)));
             //retry-policy
             metaConfig.get(RETRY_POLICY_KEY)
-                    .as(RetryPolicy::from)
+                    .as(RetryPolicy::create)
                     .ifPresent(this::retryPolicy);
 
             return thisBuilder;

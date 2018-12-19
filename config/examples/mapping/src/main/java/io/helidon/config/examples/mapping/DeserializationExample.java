@@ -39,7 +39,7 @@ public class DeserializationExample {
      * @param args arguments
      */
     public static void main(String... args) {
-        Config config = Config.from(ConfigSources.classpath("application.conf"));
+        Config config = Config.create(ConfigSources.classpath("application.conf"));
 
         AppConfig appConfig = config
                 // get "app" sub-node

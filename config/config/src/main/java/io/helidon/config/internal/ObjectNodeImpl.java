@@ -66,7 +66,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
      * @return new instance of mergeable node or original node if already was mergeable.
      */
     public static ObjectNodeImpl wrap(ObjectNode objectNode, Function<String, String> resolveTokenFunction) {
-        return ObjectNodeBuilderImpl.from(objectNode, resolveTokenFunction)
+        return ObjectNodeBuilderImpl.create(objectNode, resolveTokenFunction)
                 .value(objectNode.get())
                 .build();
     }
@@ -110,7 +110,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     }
 
     private MergeableNode mergeWithValueNode(ValueNodeImpl node) {
-        ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.from(members, resolveTokenFunction);
+        ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
         builder.value(node.get());
 
         return builder.build();
@@ -118,7 +118,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
 
     private MergeableNode mergeWithObjectNode(ObjectNodeImpl node) {
         //merge object 'node' with object this object members
-        ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.from(members, resolveTokenFunction);
+        ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
         node.forEach((name, member) -> builder.deepMerge(MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
 
         if (node.hasValue()) {

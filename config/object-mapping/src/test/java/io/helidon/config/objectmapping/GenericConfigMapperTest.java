@@ -51,13 +51,13 @@ public class GenericConfigMapperTest {
     @Test
     public void testLoadWholeBean() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(prepareConfigApp(false, //uid
-                                                             true, //greeting
-                                                             true, //pageSize
-                                                             true, //basicRange
-                                                             true, //logging
-                                                             true, //security
-                                                             true) //names
+                .sources(ConfigSources.create(prepareConfigApp(false, //uid
+                                                               true, //greeting
+                                                               true, //pageSize
+                                                               true, //basicRange
+                                                               true, //logging
+                                                               true, //security
+                                                               true) //names
                                                     .build()))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -94,13 +94,13 @@ public class GenericConfigMapperTest {
     @Test
     public void testTransient() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(prepareConfigApp(true, //UID
-                                                             true, //greeting
-                                                             true, //pageSize
-                                                             true, //basicRange
-                                                             true, //logging
-                                                             true, //security
-                                                             true) //names
+                .sources(ConfigSources.create(prepareConfigApp(true, //UID
+                                                               true, //greeting
+                                                               true, //pageSize
+                                                               true, //basicRange
+                                                               true, //logging
+                                                               true, //security
+                                                               true) //names
                                                     .build()))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -121,13 +121,13 @@ public class GenericConfigMapperTest {
     @Test
     public void testNotSetValues() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(prepareConfigApp(false, //uid
-                                                             true, //greeting
-                                                             true, //pageSize
-                                                             true, //basicRange
-                                                             false, //LOGGING
-                                                             false, //SECURITY
-                                                             false) //NAMES
+                .sources(ConfigSources.create(prepareConfigApp(false, //uid
+                                                               true, //greeting
+                                                               true, //pageSize
+                                                               true, //basicRange
+                                                               false, //LOGGING
+                                                               false, //SECURITY
+                                                               false) //NAMES
                                                     .build()))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -147,13 +147,13 @@ public class GenericConfigMapperTest {
     @Test
     public void testWithDefault() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(prepareConfigApp(false, //uid
-                                                             true, //greeting
-                                                             false, //PAGESIZE
-                                                             true, //basicRange
-                                                             true, //logging
-                                                             true, //security
-                                                             true) //names
+                .sources(ConfigSources.create(prepareConfigApp(false, //uid
+                                                               true, //greeting
+                                                               false, //PAGESIZE
+                                                               true, //basicRange
+                                                               true, //logging
+                                                               true, //security
+                                                               true) //names
                                                     .build()))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -168,13 +168,13 @@ public class GenericConfigMapperTest {
     @Test
     public void testWithDefaultSupplier() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(prepareConfigApp(false, //uid
-                                                             true, //greeting
-                                                             true, //pageSize
-                                                             false, //BASICRANGE
-                                                             true, //logging
-                                                             true, //security
-                                                             true) //names
+                .sources(ConfigSources.create(prepareConfigApp(false, //uid
+                                                               true, //greeting
+                                                               true, //pageSize
+                                                               false, //BASICRANGE
+                                                               true, //logging
+                                                               true, //security
+                                                               true) //names
                                                     .build()))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -188,7 +188,7 @@ public class GenericConfigMapperTest {
 
     @Test
     public void testWithDefaultWrongFormat() {
-        Config config = Config.withSources(ConfigSources.from(CollectionsHelper.mapOf("numberWithDefaultSupplier", "42")))
+        Config config = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("numberWithDefaultSupplier", "42")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -200,7 +200,7 @@ public class GenericConfigMapperTest {
 
     @Test
     public void testWithDefaultSupplierWrongReturnType() {
-        Config config = Config.withSources(ConfigSources.from(CollectionsHelper.mapOf("numberWithDefault", "23")))
+        Config config = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("numberWithDefault", "23")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -212,8 +212,8 @@ public class GenericConfigMapperTest {
 
     @Test
     public void testWrongDefaultsNotUsed() {
-        Config config = Config.withSources(ConfigSources.from(CollectionsHelper.mapOf("numberWithDefault", "23",
-                                                                     "numberWithDefaultSupplier", "42")))
+        Config config = Config.builder(ConfigSources.create(CollectionsHelper.mapOf("numberWithDefault", "23",
+                                                                                    "numberWithDefaultSupplier", "42")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();

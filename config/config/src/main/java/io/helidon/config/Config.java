@@ -59,7 +59,7 @@ import io.helidon.config.spi.OverrideSource;
  * <th>Purpose</th>
  * </tr>
  * <tr>
- * <td>{@link ConfigSources#from}</td>
+ * <td>{@link ConfigSources#create}</td>
  * <td>{@link ConfigSource}</td>
  * <td>Loads configuration from a different type of origin. Each
  * {@code ConfigSource} implementation handles a type of location. Different
@@ -84,7 +84,7 @@ import io.helidon.config.spi.OverrideSource;
  * <td></td>
  * <td>Replaces config {@code String} values during loading based on their keys.
  * Programs provide overrides in Java property file format on the classpath, at
- * a URL, or in a file, or by invoking {@link OverrideSources#from} and passing
+ * a URL, or in a file, or by invoking {@link OverrideSources#create} and passing
  * the name-matching expressions and the corresponding replacement value as a
  * {@code Map}.</td>
  * </tr>
@@ -113,7 +113,7 @@ import io.helidon.config.spi.OverrideSource;
  * Config name3 = config.get("app.services").get("svc1").get("name");
  * Config name4 = config.get("app").get("services").get("svc1").get("name");
  *
- * assert name4.key().equals(Key.from("app.services.svc1.name"))
+ * assert name4.key().equals(Key.create("app.services.svc1.name"))
  * assert name1 == name2 == name3 == name4
  * }</pre> The {@link #get} method always returns a {@code Config} object, even
  * if no configuration is present using the corresponding key. The application
@@ -239,8 +239,8 @@ import io.helidon.config.spi.OverrideSource;
  * <p>
  * The {@link ConfigSources.CompositeBuilder} class handles multiple config
  * sources; in fact the config system uses an instance of that builder
- * automatically when your application invokes {@link Config#from} and
- * {@link Config#withSources}, for example. Each such composite builder has a
+ * automatically when your application invokes {@link Config#create} and
+ * {@link Config#builder}, for example. Each such composite builder has a
  * merging strategy that controls how the config system will search the multiple
  * config sources for a given key. By default each {@code CompositeBuilder} uses
  * the {@link FallbackMergingStrategy}: configuration sources earlier in the
@@ -254,7 +254,7 @@ import io.helidon.config.spi.OverrideSource;
  * {@link ConfigSources.CompositeBuilder#mergingStrategy(ConfigSources.MergingStrategy)}, passing the strategy
  * to be used:
  * <pre>
- * Config.withSources(ConfigSources.from(source1, source2, source3)
+ * Config.withSources(ConfigSources.create(source1, source2, source3)
  *                      .mergingStrategy(new MyMergingStrategy());
  * </pre>
  */
@@ -375,37 +375,37 @@ public interface Config {
      * @param configSources ordered list of configuration sources
      * @return new instance of {@link Config}
      * @see #loadSourcesFrom(Supplier[])
-     * @see #withSources(Supplier[])
-     * @see #loadSources(Supplier[])
+     * @see #builder(Supplier[])
+     * @see #builderLoadSourcesFrom(Supplier[])
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
-     * @see ConfigSources#from(Supplier[])
+     * @see ConfigSources#create(Supplier[])
      * @see ConfigSources.CompositeBuilder
      * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
-    static Config from(Supplier<ConfigSource>... configSources) {
-        return withSources(configSources).build();
+    static Config create(Supplier<ConfigSource>... configSources) {
+        return builder(configSources).build();
     }
 
     /**
      * Creates a new {@link Config} loaded from the specified
      * {@link ConfigSource}s representing meta-configurations.
      * <p>
-     * See {@link ConfigSource#from(Config)} for more information about the
+     * See {@link ConfigSource#create(Config)} for more information about the
      * format of meta-configuration.
      *
      * @param metaSources ordered list of meta sources
      * @return new instance of {@link Config}
-     * @see #from(Supplier[])
-     * @see #withSources(Supplier[])
-     * @see #loadSources(Supplier[])
+     * @see #create(Supplier[])
+     * @see #builder(Supplier[])
+     * @see #builderLoadSourcesFrom(Supplier[])
      * @see ConfigSources#load(Supplier[])
      */
     @SafeVarargs
     static Config loadSourcesFrom(Supplier<ConfigSource>... metaSources) {
-        return loadSources(metaSources).build();
+        return builderLoadSourcesFrom(metaSources).build();
     }
 
     /**
@@ -425,18 +425,18 @@ public interface Config {
      * @param configSources ordered list of configuration sources
      * @return new initialized Builder instance
      * @see #builder()
-     * @see #from(Supplier[])
+     * @see #create(Supplier[])
      * @see #loadSourcesFrom(Supplier[])
-     * @see #loadSources(Supplier[])
+     * @see #builderLoadSourcesFrom(Supplier[])
      * @see Builder#sources(List)
      * @see Builder#disableEnvironmentVariablesSource()
      * @see Builder#disableSystemPropertiesSource()
-     * @see ConfigSources#from(Supplier[])
+     * @see ConfigSources#create(Supplier[])
      * @see ConfigSources.CompositeBuilder
      * @see ConfigSources.MergingStrategy
      */
     @SafeVarargs
-    static Builder withSources(Supplier<ConfigSource>... configSources) {
+    static Builder builder(Supplier<ConfigSource>... configSources) {
         return builder().sources(CollectionsHelper.listOf(configSources));
     }
 
@@ -445,19 +445,19 @@ public interface Config {
      * specified {@link ConfigSource}s representing meta-configurations.
      * <p>
      * Each meta-configuration source should set the {@code sources} property to
-     * be an array of config sources. See {@link ConfigSource#from(Config)} for
+     * be an array of config sources. See {@link ConfigSource#create(Config)} for
      * more information about the format of meta-configuration.
      *
      * @param metaSources ordered list of meta sources
      * @return new initialized Builder instance
      * @see #builder()
-     * @see #withSources(Supplier[])
+     * @see #builder(Supplier[])
      * @see ConfigSources#load(Supplier[])
      * @see #loadSourcesFrom(Supplier[])
      */
     @SafeVarargs
-    static Builder loadSources(Supplier<ConfigSource>... metaSources) {
-        return withSources(ConfigSources.load(metaSources))
+    static Builder builderLoadSourcesFrom(Supplier<ConfigSource>... metaSources) {
+        return builder(ConfigSources.load(metaSources))
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource();
     }
@@ -1073,7 +1073,7 @@ public interface Config {
          * @param key formatted fully-qualified key.
          * @return Key instance representing specified fully-qualified key.
          */
-        static Key of(String key) {
+        static Key create(String key) {
             return ConfigKeyImpl.of(key);
         }
 
@@ -1291,12 +1291,12 @@ public interface Config {
          * configuration sources in the prioritized collection.
          * <p>
          * This is default implementation of
-         * {@link ConfigSources#from(Supplier...)} Composite ConfigSource} provided by
+         * {@link ConfigSources#create(Supplier...)} Composite ConfigSource} provided by
          * {@link ConfigSources.MergingStrategy#fallback() Fallback MergingStrategy}.
          * It is possible to {@link ConfigSources.CompositeBuilder#mergingStrategy(ConfigSources.MergingStrategy)
          * use custom implementation of merging strategy}.
          * <pre>
-         * builder.source(ConfigSources.from(source1, source2, source3)
+         * builder.source(ConfigSources.create(source1, source2, source3)
          *                      .mergingStrategy(new MyMergingStrategy));
          * </pre>
          * Target source is composed from following sources, in order:
@@ -1312,7 +1312,7 @@ public interface Config {
          * @return an updated builder instance
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
-         * @see ConfigSources#from(Supplier...)
+         * @see ConfigSources#create(Supplier...)
          * @see ConfigSources.CompositeBuilder
          * @see ConfigSources.MergingStrategy
          */
@@ -1332,7 +1332,7 @@ public interface Config {
          *
          * @param configSource the only config source
          * @return an updated builder instance
-         * @see Config#from(Supplier...)
+         * @see Config#create(Supplier...)
          * @see #sources(List)
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
@@ -1358,7 +1358,7 @@ public interface Config {
          * @param configSource  the first config source
          * @param configSource2 the second config source
          * @return an updated builder instance
-         * @see Config#from(Supplier...)
+         * @see Config#create(Supplier...)
          * @see #sources(List)
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()
@@ -1386,7 +1386,7 @@ public interface Config {
          * @param configSource2 the second config source
          * @param configSource3 the third config source
          * @return an updated builder instance
-         * @see Config#from(Supplier...)
+         * @see Config#create(Supplier...)
          * @see #sources(List)
          * @see #disableEnvironmentVariablesSource()
          * @see #disableSystemPropertiesSource()

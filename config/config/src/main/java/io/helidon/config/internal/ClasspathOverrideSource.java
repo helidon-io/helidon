@@ -79,7 +79,7 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
         }
         try {
             return new Data<>(
-                    Optional.of(OverrideData.from(new InputStreamReader(inputStream, StandardCharsets.UTF_8))),
+                    Optional.of(OverrideData.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8))),
                     Optional.ofNullable(resourceTimestamp)
             );
         } catch (IOException e) {

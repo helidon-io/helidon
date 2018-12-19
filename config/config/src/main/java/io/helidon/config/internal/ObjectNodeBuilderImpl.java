@@ -58,8 +58,8 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @param members initial members
      * @return new builder instance
      */
-    public static ObjectNodeBuilderImpl from(Map<String, ConfigNode> members) {
-        return from(members, Function.identity());
+    public static ObjectNodeBuilderImpl create(Map<String, ConfigNode> members) {
+        return create(members, Function.identity());
     }
 
     /**
@@ -69,7 +69,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @param resolveTokenFunction a function resolving key token
      * @return new builder instance
      */
-    public static ObjectNodeBuilderImpl from(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction) {
+    public static ObjectNodeBuilderImpl create(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction) {
         return new ObjectNodeBuilderImpl(resolveTokenFunction).fromMap(members);
     }
 

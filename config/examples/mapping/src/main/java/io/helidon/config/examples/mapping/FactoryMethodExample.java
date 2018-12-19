@@ -39,7 +39,7 @@ public class FactoryMethodExample {
      * @param args arguments
      */
     public static void main(String... args) {
-        Config config = Config.from(ConfigSources.classpath("application.conf"));
+        Config config = Config.create(ConfigSources.classpath("application.conf"));
 
         AppConfig appConfig = config
                 // get "app" sub-node
@@ -64,7 +64,7 @@ public class FactoryMethodExample {
     /**
      * POJO representing an application configuration.
      * Class is initialized from {@link Config} instance.
-     * During deserialization {@link #from(String, int, List) factory method} is invoked.
+     * During deserialization {@link #create(String, int, List) factory method} is invoked.
      */
     public static class AppConfig {
         private final String greeting;
@@ -108,17 +108,17 @@ public class FactoryMethodExample {
          * @param basicRange basic range
          * @return new instance of {@link AppConfig}.
          */
-        public static AppConfig from(@Value(key = "greeting", withDefault = "Hi")
+        public static AppConfig create(@Value(key = "greeting", withDefault = "Hi")
                                              String greeting,
-                                     @Value(key = "page-size", withDefault = "10")
+                                       @Value(key = "page-size", withDefault = "10")
                                              int pageSize,
-                                     @Value(key = "basic-range", withDefaultSupplier = DefaultBasicRangeSupplier.class)
+                                       @Value(key = "basic-range", withDefaultSupplier = DefaultBasicRangeSupplier.class)
                                              List<Integer> basicRange) {
             return new AppConfig(greeting, pageSize, basicRange);
         }
 
         /**
-         * Supplier of default value for {@code basic-range} property, see {@link #from(String, int, List)}.
+         * Supplier of default value for {@code basic-range} property, see {@link #create(String, int, List)}.
          */
         public static class DefaultBasicRangeSupplier implements Supplier<List<Integer>> {
             @Override

@@ -48,7 +48,7 @@ public abstract class AbstractParsers1ConfigParser implements ConfigParser {
             throw new ConfigParserException("Cannot read from source.", e);
         }
         ConfigNode.ObjectNode.Builder rootBuilder = ConfigNode.ObjectNode.builder();
-        properties.stringPropertyNames().forEach(k -> addValue(rootBuilder, k, ValueNode.from(properties.getProperty(k))));
+        properties.stringPropertyNames().forEach(k -> addValue(rootBuilder, k, ValueNode.create(properties.getProperty(k))));
         return rootBuilder.build();
     }
 

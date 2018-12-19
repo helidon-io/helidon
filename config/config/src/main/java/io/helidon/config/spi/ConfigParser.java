@@ -125,7 +125,7 @@ public interface ConfigParser {
          * @param <S>       a type of data stamp
          * @return a config content
          */
-        static <S> Content<S> from(Readable readable, String mediaType, Optional<S> stamp) {
+        static <S> Content<S> create(Readable readable, String mediaType, Optional<S> stamp) {
             return new Content<S>() {
                 @Override
                 public void close() throws ConfigException {

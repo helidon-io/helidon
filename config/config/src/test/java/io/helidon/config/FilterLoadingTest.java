@@ -42,8 +42,8 @@ public class FilterLoadingTest {
 
     @Test
     public void testAutoLoadedFilter() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 UNAFFECTED_KEY, UNAFFECTED_VALUE,
                                 AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING,
@@ -62,8 +62,8 @@ public class FilterLoadingTest {
 
     @Test
     public void testSuppressedAutoLoadedFilter() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 UNAFFECTED_KEY, "value1",
                                 AutoLoadedConfigFilter.KEY_SUBJECT_TO_AUTO_FILTERING,
@@ -83,8 +83,8 @@ public class FilterLoadingTest {
 
     @Test
     public void testPrioritizedAutoLoadedConfigFilters() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                              UNAFFECTED_KEY, "value1",
                              AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING,
@@ -103,8 +103,8 @@ public class FilterLoadingTest {
 
     @Test
     public void testSuppressedPrioritizedAutoLoadedConfigFilters() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                              UNAFFECTED_KEY, "value1",
                              AutoLoadedConfigPriority.KEY_SUBJECT_TO_AUTO_FILTERING,

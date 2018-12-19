@@ -87,7 +87,7 @@ public class AbstractParsableConfigSourceTest {
     @Test
     public void testFromReadable() throws IOException {
         AbstractParsableConfigSource source = (AbstractParsableConfigSource) ConfigSources
-                .from(new StringReader(TEST_CONFIG), TEST_MEDIA_TYPE);
+                .create(new StringReader(TEST_CONFIG), TEST_MEDIA_TYPE);
 
         assertThat(source.isMandatory(), is(true));
         assertThat(source.getMediaType(), is(TEST_MEDIA_TYPE));
@@ -306,9 +306,9 @@ public class AbstractParsableConfigSourceTest {
         // change content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         Optional<Instant> contentTimestamp = Optional.of(Instant.now());
-        contentReference.set(ConfigParser.Content.from(new StringReader("aaa=bbb"),
-                                                       PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                       contentTimestamp));
+        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
+                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                         contentTimestamp));
 
         // polling ticks event
         pollingStrategy.submitEvent();
@@ -327,9 +327,9 @@ public class AbstractParsableConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReference = new AtomicReference<>();
         // set content
         Optional<Instant> contentTimestamp = Optional.of(Instant.now());
-        contentReference.set(ConfigParser.Content.from(new StringReader("aaa=bbb"),
-                                                       PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                       contentTimestamp));
+        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
+                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                         contentTimestamp));
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -357,9 +357,9 @@ public class AbstractParsableConfigSourceTest {
         // reset content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         contentTimestamp = Optional.of(Instant.now());
-        contentReference.set(ConfigParser.Content.from(new StringReader("aaa=bbb"),
-                                                       PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                       contentTimestamp));
+        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
+                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                         contentTimestamp));
 
         // polling ticks event
         pollingStrategy.submitEvent();
@@ -378,9 +378,9 @@ public class AbstractParsableConfigSourceTest {
         AtomicReference<ConfigParser.Content<Instant>> contentReference = new AtomicReference<>();
         // set content
         Optional<Instant> contentTimestamp = Optional.of(Instant.now());
-        contentReference.set(ConfigParser.Content.from(new StringReader("aaa=bbb"),
-                                                       PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                       contentTimestamp));
+        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
+                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                         contentTimestamp));
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -423,9 +423,9 @@ public class AbstractParsableConfigSourceTest {
         AtomicReference<ConfigParser.Content> contentReference = new AtomicReference<>();
         // set content
         Optional<Instant> contentTimestamp = Optional.of(Instant.now());
-        contentReference.set(ConfigParser.Content.from(new StringReader("aaa=bbb"),
-                                                       PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                       contentTimestamp));
+        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=bbb"),
+                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                         contentTimestamp));
 
         ConfigContext context = mock(ConfigContext.class);
         TestingPollingStrategy pollingStrategy = new TestingPollingStrategy();
@@ -453,9 +453,9 @@ public class AbstractParsableConfigSourceTest {
         // reset content
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         contentTimestamp = Optional.of(Instant.now());
-        contentReference.set(ConfigParser.Content.from(new StringReader("aaa=ccc"),
-                                                       PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
-                                                       contentTimestamp));
+        contentReference.set(ConfigParser.Content.create(new StringReader("aaa=ccc"),
+                                                         PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES,
+                                                         contentTimestamp));
 
         // polling ticks event
         pollingStrategy.submitEvent();
@@ -526,7 +526,7 @@ public class AbstractParsableConfigSourceTest {
     @Test
     public void testInitAll() {
         TestingParsableConfigSource.TestingBuilder builder = TestingParsableConfigSource.builder()
-                .init(Config.from(ConfigSources.from(CollectionsHelper.mapOf("media-type", "application/x-yaml"))));
+                .init(Config.create(ConfigSources.create(CollectionsHelper.mapOf("media-type", "application/x-yaml"))));
 
         //media-type
         assertThat(builder.getMediaType(), is("application/x-yaml"));
@@ -552,7 +552,7 @@ public class AbstractParsableConfigSourceTest {
     private ConfigParser mockParser(String value) {
         ConfigParser parser = mock(ConfigParser.class);
         when(parser.getSupportedMediaTypes()).thenReturn(CollectionsHelper.setOf(TEST_MEDIA_TYPE));
-        when(parser.parse(any())).thenReturn(ObjectNode.builder().addValue(TEST_KEY, ValueNode.from(value)).build());
+        when(parser.parse(any())).thenReturn(ObjectNode.builder().addValue(TEST_KEY, ValueNode.create(value)).build());
 
         return parser;
     }

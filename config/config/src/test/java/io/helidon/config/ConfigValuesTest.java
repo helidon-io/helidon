@@ -44,7 +44,7 @@ class ConfigValuesTest {
         Map<String, String> theMap = CollectionsHelper.mapOf(
                 "first", "124"
         );
-        full = Config.from(ConfigSources.from(theMap));
+        full = Config.create(ConfigSources.create(theMap));
     }
 
     @Test
@@ -73,7 +73,7 @@ class ConfigValuesTest {
         assertThat(as.orElse(defaultValue), is(expectedValue));
         assertThat(as.asOptional(), is(Optional.of(expectedValue)));
         assertThat(as.name(), is(key));
-        assertThat(as.key(), is(Config.Key.of(key)));
+        assertThat(as.key(), is(Config.Key.create(key)));
         assertThat(as.optionalSupplier().get(), is(Optional.of(expectedValue)));
         Supplier<T> supplier = as.supplier();
         assertThat(supplier.get(), is(expectedValue));
@@ -90,7 +90,7 @@ class ConfigValuesTest {
         assertThat(as.orElse(defaultValue), is(defaultValue));
         assertThat(as.asOptional(), is(Optional.empty()));
         assertThat(as.name(), is(key));
-        assertThat(as.key(), is(Config.Key.of(key)));
+        assertThat(as.key(), is(Config.Key.create(key)));
         assertThat(as.optionalSupplier().get(), is(Optional.empty()));
         Supplier<T> supplier = as.supplier();
         assertThrows(MissingValueException.class, supplier::get);

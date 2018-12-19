@@ -82,7 +82,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
      * @return config source configured from the meta configuration
      */
     public static GitConfigSource create(Config config) {
-        return GitConfigSourceBuilder.from(config).build();
+        return GitConfigSourceBuilder.create(config).build();
     }
 
     /**
@@ -233,9 +233,9 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
 
         LOGGER.finest(FileSourceHelper.safeReadContent(targetPath));
-        return ConfigParser.Content.from(new StringReader(FileSourceHelper.safeReadContent(targetPath)),
-                                         getMediaType(),
-                                         dataStamp());
+        return ConfigParser.Content.create(new StringReader(FileSourceHelper.safeReadContent(targetPath)),
+                                           getMediaType(),
+                                           dataStamp());
     }
 
     GitConfigSourceBuilder.GitEndpoint getGitEndpoint() {

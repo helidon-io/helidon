@@ -77,7 +77,7 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
      * @see io.helidon.config.ConfigSources#classpath(String)
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
-    public static ClasspathConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+    public static ClasspathConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return (ClasspathConfigSource) new ClasspathBuilder(metaConfig.get(RESOURCE_KEY).asString().get())
                 .init(metaConfig)
                 .build();
@@ -122,9 +122,9 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
         } catch (Exception ex) {
             LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
         }
-        return ConfigParser.Content.from(new InputStreamReader(inputStream, StandardCharsets.UTF_8),
-                                         getMediaType(),
-                                         resourceTimestamp);
+        return ConfigParser.Content.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8),
+                                           getMediaType(),
+                                           resourceTimestamp);
     }
 
     /**

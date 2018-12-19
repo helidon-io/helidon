@@ -40,7 +40,7 @@ public abstract class AbstractDifferentIntMapperServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(KEY, CONFIGURED_VALUE)));
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(KEY, CONFIGURED_VALUE)));
     }
 
     abstract protected int expected();

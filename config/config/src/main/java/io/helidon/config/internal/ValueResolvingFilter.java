@@ -73,7 +73,7 @@ import io.helidon.config.spi.ConfigFilter;
  * <li>If you use {@link ConfigFilters#valueResolving()} to get a builder for the
  * filter, invoke the {@code failOnMissingReference} method on that builder before
  * invoking the filter builder's {@code build} method.</li>
- * <li>If you use {@link ConfigFilters.ValueResolvingBuilder#from} to get the
+ * <li>If you use {@link ConfigFilters.ValueResolvingBuilder#create} to get the
  * filter's builder, define this setting in the {@code Config} instance you pass
  * to the {@code from} method:
  * <pre>

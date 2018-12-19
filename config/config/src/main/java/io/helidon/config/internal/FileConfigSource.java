@@ -71,7 +71,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
      * @see io.helidon.config.ConfigSources#file(String)
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
-    public static FileConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+    public static FileConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return (FileConfigSource) new FileBuilder(metaConfig.get(PATH_KEY).as(Path.class).get())
                 .init(metaConfig)
                 .build();
@@ -104,9 +104,9 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
         Optional<byte[]> stamp = dataStamp();
         LOGGER.log(Level.FINE, String.format("Getting content from '%s'", filePath));
 
-        return Content.from(new StringReader(FileSourceHelper.safeReadContent(filePath)),
-                            getMediaType(),
-                            stamp);
+        return Content.create(new StringReader(FileSourceHelper.safeReadContent(filePath)),
+                              getMediaType(),
+                              stamp);
     }
 
     /**

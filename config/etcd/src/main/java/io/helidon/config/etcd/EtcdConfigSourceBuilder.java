@@ -76,9 +76,9 @@ public final class EtcdConfigSourceBuilder
      * @param key an Etcd key with which the value containing the configuration is associated.
      * @param api an Etcd API version.
      * @return new instance of builder
-     * @see #from(Config)
+     * @see #create(Config)
      */
-    public static EtcdConfigSourceBuilder from(URI uri, String key, EtcdApi api) {
+    public static EtcdConfigSourceBuilder create(URI uri, String key, EtcdApi api) {
         return new EtcdConfigSourceBuilder(uri, key, api);
     }
 
@@ -86,7 +86,7 @@ public final class EtcdConfigSourceBuilder
      * Initializes config source instance from meta configuration properties,
      * see {@link io.helidon.config.ConfigSources#load(Config)}.
      * <p>
-     * Mandatory {@code properties}, see {@link #from(URI, String, EtcdApi)}:
+     * Mandatory {@code properties}, see {@link #create(URI, String, EtcdApi)}:
      * <ul>
      * <li>{@code uri} - type {@link URI}</li>
      * <li>{@code key} - type {@code String}</li>
@@ -100,13 +100,13 @@ public final class EtcdConfigSourceBuilder
      *                                required by the mapper implementation to provide instance of Java type.
      * @throws ConfigMappingException in case the mapper fails to map the (existing) configuration tree represented by the
      *                                supplied configuration node to an instance of a given Java type.
-     * @see #from(URI, String, EtcdApi)
+     * @see #create(URI, String, EtcdApi)
      * @see #init(Config)
      */
-    public static EtcdConfigSourceBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
-        return EtcdConfigSourceBuilder.from(metaConfig.get(URI_KEY).as(URI.class).get(),
-                                            metaConfig.get(KEY_KEY).asString().get(),
-                                            metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).get())
+    public static EtcdConfigSourceBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
+        return EtcdConfigSourceBuilder.create(metaConfig.get(URI_KEY).as(URI.class).get(),
+                                              metaConfig.get(KEY_KEY).asString().get(),
+                                              metaConfig.get(API_KEY).asString().as(EtcdApi::valueOf).get())
                 .init(metaConfig);
     }
 

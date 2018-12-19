@@ -105,7 +105,7 @@ public class ConfigSourcePollingTest {
         assertThat("Subscriber was notified of " + (EXPECTED_UPDATE_EVENTS_DELIVERED - nextLatch.getCount() + 1) +
                            " events, not the expected number, within the expected time",
                    nextLatch.await(5000, TimeUnit.MILLISECONDS), is(true));
-        final Config config = Config.from(configSource);
+        final Config config = Config.create(configSource);
         assertThat("value retrieved for app1.node.value.sub1 not as expected",
                    config.get("app1.node.value.sub1").asString().get(),
                    is("subvalue1"));

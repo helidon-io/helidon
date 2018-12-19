@@ -77,7 +77,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * @see io.helidon.config.ConfigSources#url(URL)
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
-    public static UrlConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+    public static UrlConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return (UrlConfigSource) new UrlBuilder(metaConfig.get(URL_KEY).as(URL.class).get())
                 .init(metaConfig)
                 .build();
@@ -107,7 +107,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
             Reader reader = new InputStreamReader(connection.getInputStream(),
                                                   ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-            return ConfigParser.Content.from(reader, mediaType, timestamp);
+            return ConfigParser.Content.create(reader, mediaType, timestamp);
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {

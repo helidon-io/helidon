@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.nio.file.Path;
 import java.nio.file.WatchEvent.Modifier;
+import java.nio.file.WatchService;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
@@ -104,7 +105,7 @@ public final class PollingStrategies {
          *                                supplied configuration node to an instance of a given Java type.
          * @see PollingStrategies#regular(Duration)
          */
-        public static ScheduledBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+        public static ScheduledBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
             return PollingStrategies.regular(metaConfig.get(INTERVAL_KEY).as(Duration.class).get());
         }
 
@@ -165,7 +166,7 @@ public final class PollingStrategies {
 
         /**
          * Add modifiers to be used when registering the {@link java.nio.file.WatchService}.
-         * See {@link Path#register(WatchService, WatchEvent.Kind[], WatchEvent.Modifier[])
+         * See {@link Path#register(WatchService, java.nio.file.WatchEvent.Kind[], Modifier...)}
          * Path.register}.
          *
          * @param modifiers the modifiers to add

@@ -300,7 +300,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
                     .disableSystemPropertiesSource()
                     .disableFilterServices()
                     .disableEnvironmentVariablesSource()
-                    .sources(ConfigSources.from(CollectionsHelper.mapOf("key", value)))
+                    .sources(ConfigSources.create(CollectionsHelper.mapOf("key", value)))
                     .build();
 
             try {
@@ -327,7 +327,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
         return Config.builder()
                 .disableSystemPropertiesSource()
                 .disableEnvironmentVariablesSource()
-                .sources(ConfigSources.from(asMap()))
+                .sources(ConfigSources.create(asMap()))
                 .build();
     }
 

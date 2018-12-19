@@ -131,7 +131,7 @@ public class AbstractSourceTest {
     @Test
     public void testInitAll() {
         TestingSource.TestingBuilder builder = TestingSource.builder().init(
-                Config.withSources(ConfigSources.from(
+                Config.builder(ConfigSources.create(
                         CollectionsHelper.mapOf("optional", "true",
                                                 "polling-strategy.class", TestingPollingStrategy.class.getName(),
                                                 "retry-policy.class", TestingRetryPolicy.class.getName()

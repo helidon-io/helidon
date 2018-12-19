@@ -25,7 +25,7 @@ import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.ConfigSources.from;
+import static io.helidon.config.ConfigSources.create;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,14 +39,14 @@ public class InMemoryOverrideSourceTest {
     @Test
     public void testWildcards() {
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .overrides(OverrideSources.from(CollectionsHelper.mapOf("*.*.url", "URL1")))
+                .overrides(OverrideSources.create(CollectionsHelper.mapOf("*.*.url", "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -62,14 +62,14 @@ public class InMemoryOverrideSourceTest {
     @Test
     public void testWildcards2() {
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .overrides(OverrideSources.from(CollectionsHelper.mapOf("*.url", "URL1")))
+                .overrides(OverrideSources.create(CollectionsHelper.mapOf("*.url", "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -85,14 +85,14 @@ public class InMemoryOverrideSourceTest {
     @Test
     public void testAsConfigFilter() {
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.fromWildcards(
+                .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
                         CollectionsHelper.mapOf("*.*.url", "URL1")
                                 .entrySet()
                                 .stream()

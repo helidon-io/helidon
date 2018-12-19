@@ -43,7 +43,7 @@ public interface RetryPolicy extends Supplier<RetryPolicy> {
     /**
      * Constructs a {@code RetryPolicy} from meta-configuration.
      * <p>
-     * As described with {@link ConfigSource#from(Config)}, the config system
+     * As described with {@link ConfigSource#create(Config)}, the config system
      * can load {@code ConfigSource}s using meta-configuration, which supports
      * specifying retry policies. The
      * {@link RetryPolicies built-in retry policies} and custom ones are
@@ -90,7 +90,7 @@ public interface RetryPolicy extends Supplier<RetryPolicy> {
      * indicate a retry policy but not both. If both appear the config system
      * ignores the {@code class} setting.
      * <p>
-     * See {@link ConfigSource#from(Config)} for example of using built-in retry
+     * See {@link ConfigSource#create(Config)} for example of using built-in retry
      * policies.
      * <h3>Meta-configuration Support for Custom Retry Policies</h3>
      * To support settings in meta-configuration, a custom retry policy must
@@ -117,7 +117,7 @@ public interface RetryPolicy extends Supplier<RetryPolicy> {
      * @see ConfigSources#load(Supplier[])
      * @see ConfigSources#load(Config)
      */
-    static RetryPolicy from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+    static RetryPolicy create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return RetryPolicyConfigMapper.instance().apply(metaConfig);
     }
 

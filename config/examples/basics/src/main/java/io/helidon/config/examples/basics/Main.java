@@ -36,7 +36,7 @@ public class Main {
      * @param args arguments
      */
     public static void main(String... args) {
-        Config config = Config.from(classpath("application.conf"));
+        Config config = Config.create(classpath("application.conf"));
 
         int pageSize = config.get("app.page-size").asInt().get();
 

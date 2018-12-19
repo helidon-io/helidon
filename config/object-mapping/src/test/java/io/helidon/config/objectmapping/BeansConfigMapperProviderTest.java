@@ -55,7 +55,7 @@ class BeansConfigMapperProviderTest {
         Map<String, String> configMap = CollectionsHelper.mapOf(
                 Configurables.WithCreateConfig.CONFIG_KEY, TEST_MESSAGE
         );
-        full = Config.withSources(ConfigSources.from(configMap))
+        full = Config.builder(ConfigSources.create(configMap))
                 .build();
     }
 
@@ -98,7 +98,7 @@ class BeansConfigMapperProviderTest {
         supplier = instance.supplier(defaultValue);
         assertThat(supplier.get(), sameInstance(defaultValue));
 
-        assertThat(instance.key(), is(Config.Key.of(expectedConfigKey)));
+        assertThat(instance.key(), is(Config.Key.create(expectedConfigKey)));
         assertThat(instance.name(), is(expectedConfigKey));
         instance.ifPresent(wcc -> fail("Key is not present, should have failed."));
     }
@@ -127,7 +127,7 @@ class BeansConfigMapperProviderTest {
         assertThat(supplier.get(), not(sameInstance(defaultValue)));
         assertThat(supplier.get().message(), is(TEST_MESSAGE));
 
-        assertThat(instance.key(), is(Config.Key.of(expectedConfigKey)));
+        assertThat(instance.key(), is(Config.Key.create(expectedConfigKey)));
         assertThat(instance.name(), is(expectedConfigKey));
 
         instance.ifPresent(wcc -> assertThat(wcc.message(), is(TEST_MESSAGE)));

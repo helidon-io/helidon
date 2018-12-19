@@ -63,8 +63,8 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
      * <p>
      * <a name="wildcardSupport">{@code OverrideData} supports</a> the {@code *}
      * wildcard character which represents one or more regex word characters:
-     * [a-zA-Z_0-9]. In particular the {@link #from(java.io.Reader)} and
-     * {@link #fromWildcards} static factory methods deal with pairs of
+     * [a-zA-Z_0-9]. In particular the {@link #create(java.io.Reader)} and
+     * {@link #createFromWildcards} static factory methods deal with pairs of
      * {@code String}s; the first is a possible wildcard expression, and the
      * second is the replacement value the config system will use as it loads
      * any {@code Config} value node with a key that matches the wildcard
@@ -95,7 +95,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          * @param data the predicate/replacement pairs
          * @return {@code OverrideData} containing the specified pairs
          */
-        public static OverrideData from(List<Map.Entry<Predicate<Config.Key>, String>> data) {
+        public static OverrideData create(List<Map.Entry<Predicate<Config.Key>, String>> data) {
             return new OverrideData(data);
         }
 
@@ -110,7 +110,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          * {@code Predicate}/{@code String} pairs corresponding to the
          * wildcard/replacement pairs
          */
-        public static OverrideData fromWildcards(List<Map.Entry<String, String>> wildcards) {
+        public static OverrideData createFromWildcards(List<Map.Entry<String, String>> wildcards) {
             List<Map.Entry<Predicate<Config.Key>, String>> overrides = wildcards
                     .stream()
                     .map((e) -> new AbstractMap.SimpleEntry<>(
@@ -135,7 +135,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
          * @throws IOException when an error occurred when reading from the
          * reader
          */
-        public static OverrideData from(Reader reader) throws IOException {
+        public static OverrideData create(Reader reader) throws IOException {
             OrderedProperties properties = new OrderedProperties();
             try (Reader autocloseableReader = reader) {
                 properties.load(autocloseableReader);
@@ -144,7 +144,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
                     .stream()
                     .map((e) -> new AbstractMap.SimpleEntry<>(WILDCARDS_TO_PREDICATE.apply(e.getKey()), e.getValue()))
                     .collect(Collectors.toList());
-            return from(data);
+            return create(data);
         }
 
         /**

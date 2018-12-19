@@ -57,7 +57,7 @@ public interface ConfigNode extends Supplier<String> {
     /**
      * Single string-based configuration value.
      * <p>
-     * NOTE: Do not implement this interface yourself but rather use {@link #from(String)}.
+     * NOTE: Do not implement this interface yourself but rather use {@link #create(String)}.
      */
     interface ValueNode extends ConfigNode {
         @Override
@@ -71,7 +71,7 @@ public interface ConfigNode extends Supplier<String> {
          * @param value string value
          * @return new instance of the {@link ValueNode}
          */
-        static ValueNode from(String value) {
+        static ValueNode create(String value) {
             return new ValueNodeImpl(value);
         }
     }
@@ -109,7 +109,7 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             default Builder addValue(String value) {
-                return addValue(ValueNode.from(value));
+                return addValue(ValueNode.create(value));
             }
 
             /**
@@ -204,7 +204,7 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             default Builder addValue(String key, String value) {
-                return addValue(key, ValueNode.from(value));
+                return addValue(key, ValueNode.create(value));
             }
 
             /**

@@ -109,7 +109,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     //...
  *
  *     // FACTORY METHOD
- *     public static AppConfig from({@literal @}Value(key = "greeting", withDefault = "Hi")
+ *     public static AppConfig create({@literal @}Value(key = "greeting", withDefault = "Hi")
  *                                  String greeting,
  *                                  {@literal @}Value(key = "page-size", withDefault = "10")
  *                                  int pageSize,

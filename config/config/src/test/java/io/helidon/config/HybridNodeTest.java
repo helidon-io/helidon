@@ -54,7 +54,7 @@ public class HybridNodeTest {
         map.put("app.port", "8080");
         map.put("app", "app-name");
 
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.from(map).lax().build();
+        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).lax().build();
         mapConfigSource.init(mock(ConfigContext.class));
         ConfigNode.ObjectNode objectNode = mapConfigSource.load().get();
 

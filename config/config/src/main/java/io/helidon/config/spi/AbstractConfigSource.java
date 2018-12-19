@@ -114,7 +114,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         AtomicReference<ConfigNode> result = new AtomicReference<>(valueNode);
         findParserForKey(key)
                 .ifPresent(parser -> result.set(parser.parse(
-                        Content.from(new StringReader(valueNode.get()), null, datastamp))));
+                        Content.create(new StringReader(valueNode.get()), null, datastamp))));
         return result.get();
     }
 

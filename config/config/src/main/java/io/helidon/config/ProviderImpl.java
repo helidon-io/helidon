@@ -165,7 +165,7 @@ class ProviderImpl implements Config.Context {
                 return token;
             };
         }
-        return ObjectNodeBuilderImpl.from(rootNode, resolveTokenFunction).build();
+        return ObjectNodeBuilderImpl.create(rootNode, resolveTokenFunction).build();
     }
 
     private Map<String, String> flattenNodes(ConfigNode node) {

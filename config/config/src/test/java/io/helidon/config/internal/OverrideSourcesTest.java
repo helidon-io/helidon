@@ -44,7 +44,7 @@ public class OverrideSourcesTest {
 
     @Test
     public void testFromWildcards() {
-        OverrideSource overrideSource = OverrideSources.from(CollectionsHelper.mapOf(WILDCARDS, "localhost"));
+        OverrideSource overrideSource = OverrideSources.create(CollectionsHelper.mapOf(WILDCARDS, "localhost"));
         assertThat(overrideSource.load()
                            .get()
                            .data()
@@ -52,7 +52,7 @@ public class OverrideSourcesTest {
                            .findFirst()
                            .get()
                            .getKey()
-                           .test(Config.Key.of("prod.tenant1.audit.host")), is(true));
+                           .test(Config.Key.create("prod.tenant1.audit.host")), is(true));
     }
 
     @Test

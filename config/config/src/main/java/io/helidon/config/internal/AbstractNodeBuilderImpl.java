@@ -155,9 +155,9 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     }
 
     private void mergeValueMember(ValueNode member, MergingKey key, MergeableNode node, ID id) {
-        ObjectNode on = ObjectNodeBuilderImpl.from(CollectionsHelper.mapOf(), tokenResolver).value(member.get()).build();
+        ObjectNode on = ObjectNodeBuilderImpl.create(CollectionsHelper.mapOf(), tokenResolver).value(member.get()).build();
         ConfigNode merged = ObjectNodeBuilderImpl
-                .from(on, tokenResolver) // make copy of member
+                .create(on, tokenResolver) // make copy of member
                 .value(on.get())
                 .deepMerge(key.rest(), node) // merge it with specified node
                 .build();
@@ -183,7 +183,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
         try {
             // deep merge of object with specified node
             ConfigNode merged = ObjectNodeBuilderImpl
-                    .from(member, tokenResolver) // make copy of member
+                    .create(member, tokenResolver) // make copy of member
                     .value(member.get())
                     .deepMerge(key.rest(), node) // merge it with specified node
                     .build();

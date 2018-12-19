@@ -127,12 +127,12 @@ class BeansConfigMappers {
      * Factory method pattern:
      * <pre>{@code
      * public class T {
-     *     public static T from(prop1, prop2, prop3, ...) {
+     *     public static T create(prop1, prop2, prop3, ...) {
      *         return new T(prop1, prop2, prop3, ...);
      *     }
      * }
      * }</pre>
-     * Class {@code T} contains public static method {@code from(...)} with list of config properties
+     * Class {@code T} contains public static method {@code create(...)} with list of config properties
      * that returns instance of the class {@code T}.
      * <p>
      * "Factory" constructor pattern:

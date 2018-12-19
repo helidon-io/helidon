@@ -94,7 +94,7 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
         if (content == null) {
             throw new ConfigException(String.format("Key '%s' does not contain any value", endpoint.getKey()));
         }
-        return ConfigParser.Content.from(new StringReader(content), getMediaType(), dataStamp());
+        return ConfigParser.Content.create(new StringReader(content), getMediaType(), dataStamp());
     }
 
     EtcdEndpoint getEtcdEndpoint() {
@@ -113,7 +113,7 @@ public class EtcdConfigSource extends AbstractParsableConfigSource<Long> {
      */
     public static EtcdConfigSource create(Config config) {
         return EtcdConfigSourceBuilder
-                .from(config)
+                .create(config)
                 .build();
     }
 }
