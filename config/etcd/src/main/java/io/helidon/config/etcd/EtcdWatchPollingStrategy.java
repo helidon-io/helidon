@@ -48,7 +48,12 @@ public class EtcdWatchPollingStrategy implements PollingStrategy {
      *
      * @param endpoint etcd remote descriptor
      */
-    public EtcdWatchPollingStrategy(EtcdEndpoint endpoint) {
+    public static EtcdWatchPollingStrategy create(EtcdEndpoint endpoint) {
+        return new EtcdWatchPollingStrategy(endpoint);
+    }
+
+
+    EtcdWatchPollingStrategy(EtcdEndpoint endpoint) {
         this.endpoint = endpoint;
         etcdClient = endpoint.getApi()
                 .clientFactory()

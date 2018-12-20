@@ -25,13 +25,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.spi.PollingStrategy.PollingEvent;
 
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ScheduledPollingStrategy}.
@@ -52,7 +53,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testNotStartedYet() {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
 
         assertThat(pollingStrategy.getExecutor(), is(nullValue()));
     }
@@ -62,7 +63,7 @@ public class ScheduledPollingStrategyTest {
         CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(3);
 
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
 
         pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
             @Override
@@ -95,7 +96,7 @@ public class ScheduledPollingStrategyTest {
         CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(1);
 
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
 
         AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
@@ -136,7 +137,7 @@ public class ScheduledPollingStrategyTest {
         CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(1);
 
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
 
         AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
@@ -204,7 +205,7 @@ public class ScheduledPollingStrategyTest {
         CountDownLatch subscribeLatch = new CountDownLatch(1);
         CountDownLatch nextLatch = new CountDownLatch(1);
 
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION, null);
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
 
         AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
 
@@ -303,7 +304,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testScheduledFuture() {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
         assertThat(pollingStrategy.getScheduledFuture(), nullValue());
 
@@ -315,7 +316,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testScheduledFutureCleaning() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
         assertThat(pollingStrategy.getScheduledFuture(), nullValue());
 
@@ -329,7 +330,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testExecutor() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 null);
         assertThat(pollingStrategy.getExecutor(), nullValue());
 
@@ -341,7 +342,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testCustomExecutor() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
         assertThat(pollingStrategy.getExecutor(), notNullValue());
 
@@ -353,7 +354,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testExecutorCleaning() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 null);
         assertThat(pollingStrategy.getExecutor(), nullValue());
 
@@ -366,7 +367,7 @@ public class ScheduledPollingStrategyTest {
 
     @Test
     public void testCustomExecutorCleaning() throws InterruptedException {
-        ScheduledPollingStrategy pollingStrategy = new ScheduledPollingStrategy(() -> POLLING_STRATEGY_DURATION,
+        ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
         assertThat(pollingStrategy.getExecutor(), notNullValue());
 

@@ -67,7 +67,7 @@ public class EtcdConfigSourceIT {
                 .sources(EtcdConfigSourceBuilder
                                  .create(DEFAULT_URI, "configuration", version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                                 .pollingStrategy(EtcdWatchPollingStrategy::new)
+                                 .pollingStrategy(EtcdWatchPollingStrategy::create)
                                  .build())
                 .addParser(new HoconConfigParser())
                 .build();

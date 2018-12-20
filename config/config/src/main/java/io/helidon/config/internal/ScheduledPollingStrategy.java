@@ -55,7 +55,11 @@ public class ScheduledPollingStrategy implements PollingStrategy {
      * @param recurringPolicy a recurring policy
      * @param executor        an executor
      */
-    public ScheduledPollingStrategy(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
+    public static ScheduledPollingStrategy create(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
+        return new ScheduledPollingStrategy(recurringPolicy, executor);
+    }
+
+    private ScheduledPollingStrategy(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
         Objects.requireNonNull(recurringPolicy, "recurringPolicy cannot be null");
 
         this.recurringPolicy = recurringPolicy;

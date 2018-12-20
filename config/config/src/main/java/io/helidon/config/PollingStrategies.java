@@ -129,7 +129,7 @@ public final class PollingStrategies {
          */
         public PollingStrategy build() {
             ScheduledExecutorService executor = this.executor;
-            return new ScheduledPollingStrategy(recurringPolicy, executor);
+            return ScheduledPollingStrategy.create(recurringPolicy, executor);
         }
 
         @Override
