@@ -66,6 +66,10 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         configContext = context;
     }
 
+    /**
+     * Config context associated with this source.
+     * @return config context
+     */
     protected ConfigContext configContext() {
         return configContext;
     }
@@ -228,10 +232,18 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
             return thisBuilder;
         }
 
+        /**
+         * Media type mapping function.
+         * @return media type mapping
+         */
         protected Function<Config.Key, String> mediaTypeMapping() {
             return mediaTypeMapping;
         }
 
+        /**
+         * Parser mapping function.
+         * @return parser mapping
+         */
         protected Function<Config.Key, ConfigParser> parserMapping() {
             return parserMapping;
         }

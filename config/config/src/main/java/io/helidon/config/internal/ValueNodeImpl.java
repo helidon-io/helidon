@@ -33,7 +33,7 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
      *
      * @param value node value
      */
-    public ValueNodeImpl(String value) {
+    protected ValueNodeImpl(String value) {
         this.value = value;
         this.description = null;
     }
@@ -41,6 +41,16 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
     @Override
     public String get() {
         return value;
+    }
+
+    /**
+     * Create a value node for the provided value.
+     *
+     * @param value value of this node
+     * @return value node for the value
+     */
+    public static ValueNodeImpl create(String value) {
+        return new ValueNodeImpl(value);
     }
 
     /**
@@ -53,7 +63,7 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
         if (valueNode instanceof ValueNodeImpl) {
             return (ValueNodeImpl) valueNode;
         }
-        return new ValueNodeImpl(valueNode.get());
+        return ValueNodeImpl.create(valueNode.get());
     }
 
     @Override
@@ -103,6 +113,10 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
         return this;
     }
 
+    /**
+     * Description of this node.
+     * @return description of the node.
+     */
     public String description() {
         return description;
     }

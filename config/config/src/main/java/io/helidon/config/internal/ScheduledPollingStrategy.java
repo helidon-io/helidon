@@ -54,6 +54,7 @@ public class ScheduledPollingStrategy implements PollingStrategy {
      *
      * @param recurringPolicy a recurring policy
      * @param executor        an executor
+     * @return configured strategy
      */
     public static ScheduledPollingStrategy create(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
         return new ScheduledPollingStrategy(recurringPolicy, executor);

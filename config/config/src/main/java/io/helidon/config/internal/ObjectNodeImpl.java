@@ -150,6 +150,10 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         return this;
     }
 
+    /**
+     * Description of this node.
+     * @return node description
+     */
     public String description() {
         return description;
     }

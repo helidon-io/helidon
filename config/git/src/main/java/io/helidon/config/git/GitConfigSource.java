@@ -248,7 +248,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         if (!isClosed) {
             try {
                 closeGits();
@@ -262,7 +262,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     private void closeGits() {
-        gits.forEach(git -> git.close());
+        gits.forEach(Git::close);
     }
 
     private void deleteTempDirectory() throws IOException {

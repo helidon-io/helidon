@@ -73,7 +73,7 @@ public interface ConfigNode extends Supplier<String> {
          * @return new instance of the {@link ValueNode}
          */
         static ValueNode create(String value) {
-            return new ValueNodeImpl(value);
+            return ValueNodeImpl.create(value);
         }
     }
 

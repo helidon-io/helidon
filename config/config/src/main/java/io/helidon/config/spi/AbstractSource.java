@@ -538,6 +538,10 @@ public abstract class AbstractSource<T, S> implements Source<T> {
             return changesMaxBuffer;
         }
 
+        /**
+         * Retry policy configured in this builder.
+         * @return retry policy
+         */
         protected RetryPolicy retryPolicy() {
             return retryPolicySupplier.get();
         }

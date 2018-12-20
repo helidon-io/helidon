@@ -99,6 +99,11 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
         watchServiceModifiers = new LinkedList<>();
     }
 
+    /**
+     * Configured path.
+     *
+     * @return configured path
+     */
     public Path path() {
         return path;
     }
@@ -121,6 +126,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
      * Add modifiers to be used when registering the {@link WatchService}.
      * See {@link Path#register(WatchService, WatchEvent.Kind[],
      * WatchEvent.Modifier...) Path.register}.
+     *
      * @param modifiers the modifiers to add
      */
     public void initWatchServiceModifiers(WatchEvent.Modifier... modifiers) {
