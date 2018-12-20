@@ -82,7 +82,7 @@ public class RetryPolicies {
     /**
      * A builder of the default {@link RetryPolicy}.
      */
-    public static class Builder implements Supplier<RetryPolicy> {
+    public static final class Builder implements io.helidon.common.Builder<RetryPolicy> {
 
         private static final String RETRIES_KEY = "retries";
 

@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ClasspathConfigSource;
@@ -414,7 +415,7 @@ public final class ConfigSources {
      * <strong>not</strong> support
      * {@link ConfigSource#changes() ConfigSource mutability}.
      */
-    public static final class MapBuilder implements Supplier<ConfigSource> {
+    public static final class MapBuilder implements Builder<ConfigSource> {
 
         private static final String PROPERTIES_NAME = "properties";
         private static final String SYS_PROPS_NAME = "sys-props";
@@ -472,6 +473,7 @@ public final class ConfigSources {
          *
          * @return {@link MapConfigSource} based on the specified {@code Map} or {@code Properties}
          */
+        @Override
         public ConfigSource build() {
             return new MapConfigSource(map, strict, mapSourceName);
         }
@@ -532,7 +534,7 @@ public final class ConfigSources {
      * @see MergingStrategy
      * @see MergingStrategy#fallback() default merging strategy
      */
-    public static class CompositeBuilder implements Supplier<ConfigSource> {
+    public static class CompositeBuilder implements Builder<ConfigSource> {
 
         private static final long DEFAULT_CHANGES_DEBOUNCE_TIMEOUT = 100;
 
@@ -646,6 +648,7 @@ public final class ConfigSources {
          *
          * @return new instance of Composite ConfigSource.
          */
+        @Override
         public ConfigSource build() {
             final List<ConfigSource> finalConfigSources = new LinkedList<>();
             finalConfigSources.addAll(configSources);

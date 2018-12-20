@@ -17,7 +17,6 @@
 package io.helidon.config.spi;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import io.helidon.common.reactive.Flow;
 
@@ -54,7 +53,7 @@ public abstract class AbstractOverrideSource<S> extends AbstractSource<OverrideS
      */
     public abstract static class Builder<B extends Builder<B, T>, T>
             extends AbstractSource.Builder<B, T, OverrideSource>
-            implements Supplier<OverrideSource> {
+            implements io.helidon.common.Builder<OverrideSource> {
 
         private volatile OverrideSource overrideSource;
 
