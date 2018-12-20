@@ -16,7 +16,7 @@ to be fixed. Please include:
 1. Version of Helidon
 2. Whether you are writing a Helidon SE or MP application
 3. OS
-4. Version of Docker or Kubernetes or other sosftware if it's relevant to your issue
+4. Version of Docker or Kubernetes or other software if it's relevant to your issue
 5. Steps to reproduce
 
 ## Code
