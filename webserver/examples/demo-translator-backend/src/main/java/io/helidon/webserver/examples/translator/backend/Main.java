@@ -21,11 +21,11 @@ import java.util.TreeMap;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
-import io.helidon.webserver.zipkin.ZipkinTracerBuilder;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -98,9 +98,9 @@ public class Main {
         WebServer webServer = createBackendWebServer(
                 ServerConfiguration.builder()
                         .port(9080)
-                        .tracer(ZipkinTracerBuilder.forService("helidon-webserver-translator-backend")
-                                        .zipkin(System.getenv().getOrDefault("ODX_AURA_ZIPKIN_ADDRESS", null))
-                                        .build())
+                        .tracer(TracerBuilder.create("helidon-webserver-translator-backend")
+                                        .collectorHost(System.getenv().getOrDefault("ODX_AURA_ZIPKIN_ADDRESS", "localhost"))
+                                        .buildAndRegister())
                         .build())
                 .start()
                 .toCompletableFuture()

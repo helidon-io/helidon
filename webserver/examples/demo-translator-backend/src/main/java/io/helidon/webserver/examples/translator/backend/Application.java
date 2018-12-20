@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.examples.translator.backend;
 
-import io.helidon.webserver.opentracing.OpentracingContainerFilter;
+import io.helidon.tracing.jersey.TracingFilter;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -30,6 +30,6 @@ public class Application extends ResourceConfig {
      */
     public Application() {
         packages(TranslatorResource.class.getPackage().getName());
-        register(OpentracingContainerFilter.class);
+        register(TracingFilter.class);
     }
 }

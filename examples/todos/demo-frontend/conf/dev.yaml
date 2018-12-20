@@ -15,6 +15,9 @@
 #
 env: docker
 
+tracing:
+  host: "localhost"
+
 services:
   backend.endpoint: "http://localhost:8854"
-  zipkin.host: "localhost"
+

@@ -29,15 +29,14 @@ import io.helidon.security.Security;
 import io.helidon.security.jersey.ClientSecurityFeature;
 import io.helidon.security.tools.config.SecureConfigFilter;
 import io.helidon.security.webserver.WebSecurity;
+import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.opentracing.OpentracingClientFilter;
-import io.helidon.webserver.zipkin.ZipkinTracerBuilder;
 
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -82,7 +81,7 @@ public final class Main {
         // and apply security and tracing features on it
         Client client = ClientBuilder.newBuilder()
                 .register(new ClientSecurityFeature())
-                .register(OpentracingClientFilter.class)
+                .register(ClientTracingFilter.class)
                 .build();
 
         BackendServiceClient bsc = new BackendServiceClient(client, config);
@@ -120,14 +119,8 @@ public final class Main {
      * @return the created {@code Tracer}
      */
     private static Tracer registerTracer(final Config config) {
-        config.get("services.zipkin.host")
-                .as(String.class)
-                .map(host -> ZipkinTracerBuilder.forService("Frontend")
-                        .zipkinHost(host)
-                        .build())
-                .ifPresent(GlobalTracer::register);
-
-        return GlobalTracer.get();
+        return TracerBuilder.create(config.get("tracing"))
+                .buildAndRegister();
     }
 
     /**
@@ -142,12 +135,12 @@ public final class Main {
                                          final BackendServiceClient bsc) {
 
         return Routing.builder()
+                // register metrics features (on "/metrics")
+                .register(MetricsSupport.create())
                 // register security features
                 .register(WebSecurity.from(security, config))
                 // register static content support (on "/")
                 .register(StaticContentSupport.create("/WEB"))
-                // register metrics features (on "/metrics")
-                .register(MetricsSupport.create())
                 // register API handler (on "/api") - this path is secured (see application.yaml)
                 .register("/api", new TodosHandler(bsc))
                 // and a simple environment handler to see where we are

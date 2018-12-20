@@ -27,7 +27,9 @@ import io.opentracing.SpanContext;
  *
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
+ * @deprecated Use io.helidon.tracing:helidon-tracing-zipkin instead
  */
+@Deprecated
 class ZipkinSpan implements Span {
     private final Span span;
 

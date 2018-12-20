@@ -19,8 +19,9 @@ server:
   port: 8854
   host: 0.0.0.0
 
-services:
-  zipkin.host: "zipkin"
+tracing:
+  service: "todo:back"
+  host: "zipkin"
 
 cassandra:
   port: 9042

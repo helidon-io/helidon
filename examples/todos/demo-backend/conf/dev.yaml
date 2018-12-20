@@ -15,8 +15,8 @@
 #
 env: dev
 
-services:
-  zipkin.host: "localhost"
+tracing:
+  host: "localhost"
 
 cassandra:
   servers:

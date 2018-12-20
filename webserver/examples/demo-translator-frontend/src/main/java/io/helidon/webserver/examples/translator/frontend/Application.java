@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.examples.translator.frontend;
 
-import io.helidon.webserver.opentracing.OpentracingContainerFilter;
+import io.helidon.tracing.jersey.TracingFilter;
 
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -42,7 +42,7 @@ public class Application extends ResourceConfig {
 
             }
         });
-        register(OpentracingContainerFilter.class);
+        register(TracingFilter.class);
         packages(TranslatorResource.class.getPackage().getName());
     }
 }

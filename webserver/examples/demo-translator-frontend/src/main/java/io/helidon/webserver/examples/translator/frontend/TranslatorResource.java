@@ -35,10 +35,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.opentracing.Opentraceable;
-import io.helidon.webserver.opentracing.OpentracingClientFilter;
 
+import io.opentracing.Tracer;
 import org.glassfish.jersey.server.Uri;
 
 /**
@@ -80,7 +80,7 @@ public class TranslatorResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public String getHtml(@QueryParam("q") String query,
-                          @Uri(TRANSLATOR_BACKEND) @Opentraceable WebTarget translator) {
+                          @Uri(TRANSLATOR_BACKEND) WebTarget translator) {
         return "<!doctype html>\n"
                 + "<html lang=\"en\">\n"
                 + "<head>\n"
@@ -105,11 +105,12 @@ public class TranslatorResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getText(@QueryParam("q") String query,
-                          @Uri(TRANSLATOR_BACKEND) @Opentraceable WebTarget translator) {
+                          @Uri(TRANSLATOR_BACKEND) WebTarget translator) {
         try {
             translator = translator.resolveTemplate("backend-port", backendPort)
                                    .resolveTemplate("backend-hostname", backendHostname)
-                                   .property(OpentracingClientFilter.SERVER_REQUEST_PROPERTY_NAME, request)
+                                   .property(ClientTracingFilter.TRACER_PROPERTY_NAME, tracer(request))
+                                   .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext())
                                    .path("translator").queryParam("q", query);
             final StringBuilder sb = new StringBuilder();
 
@@ -136,6 +137,10 @@ public class TranslatorResource {
 
             return stringWriter.toString();
         }
+    }
+
+    private Tracer tracer(ServerRequest request) {
+        return request.webServer().configuration().tracer();
     }
 
     private void translate(final WebTarget backend, final StringBuilder sb) {

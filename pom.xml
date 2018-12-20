@@ -204,6 +204,7 @@
         <module>security</module>
         <module>bom</module>
         <module>microprofile</module>
+        <module>tracing</module>
     </modules>
 
     <build>
