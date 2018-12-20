@@ -35,7 +35,7 @@ public abstract class AbstractParsers1ConfigParser implements ConfigParser {
     private static final String MEDIA_TYPE_TEXT_JAVA_PROPERTIES = "text/x-java-properties";
 
     @Override
-    public Set<String> getSupportedMediaTypes() {
+    public Set<String> supportedMediaTypes() {
         return CollectionsHelper.setOf(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
     }
 

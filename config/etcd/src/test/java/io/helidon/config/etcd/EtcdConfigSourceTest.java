@@ -103,10 +103,10 @@ public class EtcdConfigSourceTest {
                 .build();
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
-        when(mockedConfigSource.getEtcdClient()).thenReturn(etcdClient);
+        when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
         when(mockedConfigSource.content()).thenReturn(new ConfigParser.Content<Long>() {
             @Override
-            public String getMediaType() {
+            public String mediaType() {
                 return MEDIA_TYPE_APPLICATION_HOCON;
             }
 
@@ -121,7 +121,7 @@ public class EtcdConfigSourceTest {
             }
 
             @Override
-            public Optional<Long> getStamp() {
+            public Optional<Long> stamp() {
                 return Optional.of(revision.getAndIncrement());
             }
         });

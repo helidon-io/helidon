@@ -140,7 +140,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
             try (Reader autocloseableReader = reader) {
                 properties.load(autocloseableReader);
             }
-            List<Map.Entry<Predicate<Config.Key>, String>> data = properties.getOrderedMap().entrySet()
+            List<Map.Entry<Predicate<Config.Key>, String>> data = properties.orderedMap().entrySet()
                     .stream()
                     .map((e) -> new AbstractMap.SimpleEntry<>(WILDCARDS_TO_PREDICATE.apply(e.getKey()), e.getValue()))
                     .collect(Collectors.toList());

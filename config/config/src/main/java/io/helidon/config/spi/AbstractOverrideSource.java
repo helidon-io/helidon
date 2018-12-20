@@ -40,7 +40,7 @@ public abstract class AbstractOverrideSource<S> extends AbstractSource<OverrideS
 
     @Override
     public final Flow.Publisher<Optional<OverrideData>> changes() {
-        return getChangesPublisher();
+        return changesPublisher();
     }
 
     /**

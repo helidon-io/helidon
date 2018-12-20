@@ -456,7 +456,7 @@ class BuilderImpl implements Config.Builder {
                 throw new NullPointerException("Unknown media type of resource.");
             }
             return configParsers.stream()
-                    .filter(parser -> parser.getSupportedMediaTypes().contains(mediaType))
+                    .filter(parser -> parser.supportedMediaTypes().contains(mediaType))
                     .findFirst();
         }
 

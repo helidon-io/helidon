@@ -255,7 +255,7 @@ public class HoconConfigParserTest {
     public void testGetSupportedMediaTypes() {
         HoconConfigParser parser = new HoconConfigParser();
 
-        assertThat(parser.getSupportedMediaTypes(), is(not(empty())));
+        assertThat(parser.supportedMediaTypes(), is(not(empty())));
     }
 
     @Test
@@ -285,7 +285,7 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default String getMediaType() {
+        default String mediaType() {
             return HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON;
         }
 

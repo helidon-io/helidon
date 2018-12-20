@@ -58,7 +58,7 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
 
     @Override
     public MergeableNode merge(MergeableNode node) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return node.merge(this);
         case LIST:
@@ -103,7 +103,7 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
         return this;
     }
 
-    public String getDescription() {
+    public String description() {
         return description;
     }
 

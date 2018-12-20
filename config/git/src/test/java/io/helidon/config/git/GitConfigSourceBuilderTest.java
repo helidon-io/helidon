@@ -290,10 +290,10 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .build();
         GitConfigSourceBuilder builder = GitConfigSourceBuilder.create(metaConfig);
 
-        assertThat(builder.getTarget().getPath(), is("application.properties"));
-        assertThat(builder.getTarget().getUri(), is(nullValue()));
-        assertThat(builder.getTarget().getBranch(), is("master"));
-        assertThat(builder.getTarget().getDirectory(), is(nullValue()));
+        assertThat(builder.target().path(), is("application.properties"));
+        assertThat(builder.target().uri(), is(nullValue()));
+        assertThat(builder.target().branch(), is("master"));
+        assertThat(builder.target().directory(), is(nullValue()));
     }
 
     @Test
@@ -309,10 +309,10 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .build();
         GitConfigSourceBuilder builder = GitConfigSourceBuilder.create(metaConfig);
 
-        assertThat(builder.getTarget().getPath(), is("application.properties"));
-        assertThat(builder.getTarget().getUri(), is(URI.create(fileUri())));
-        assertThat(builder.getTarget().getBranch(), is("test"));
-        assertThat(builder.getTarget().getDirectory(), is(directory));
+        assertThat(builder.target().path(), is("application.properties"));
+        assertThat(builder.target().uri(), is(URI.create(fileUri())));
+        assertThat(builder.target().branch(), is("test"));
+        assertThat(builder.target().directory(), is(directory));
     }
 
     @Test
@@ -330,19 +330,19 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .build();
         GitConfigSourceBuilder builder = GitConfigSourceBuilder.create(metaConfig);
 
-        assertThat(builder.getTarget().getPath(), is("application.properties"));
-        assertThat(builder.getTarget().getUri(), is(URI.create(fileUri())));
-        assertThat(builder.getTarget().getBranch(), is("test"));
-        assertThat(builder.getTarget().getDirectory(), is(directory));
+        assertThat(builder.target().path(), is("application.properties"));
+        assertThat(builder.target().uri(), is(URI.create(fileUri())));
+        assertThat(builder.target().branch(), is("test"));
+        assertThat(builder.target().directory(), is(directory));
 
-        assertThat(builder.getPollingStrategyInternal(), is(instanceOf(TestingGitEndpointPollingStrategy.class)));
-        GitEndpoint strategyEndpoint = ((TestingGitEndpointPollingStrategy) builder.getPollingStrategyInternal())
-                .getGitEndpoint();
+        assertThat(builder.pollingStrategyInternal(), is(instanceOf(TestingGitEndpointPollingStrategy.class)));
+        GitEndpoint strategyEndpoint = ((TestingGitEndpointPollingStrategy) builder.pollingStrategyInternal())
+                .gitEndpoint();
 
-        assertThat(strategyEndpoint.getPath(), is("application.properties"));
-        assertThat(strategyEndpoint.getUri(), is(URI.create(fileUri())));
-        assertThat(strategyEndpoint.getBranch(), is("test"));
-        assertThat(strategyEndpoint.getDirectory(), is(directory));
+        assertThat(strategyEndpoint.path(), is("application.properties"));
+        assertThat(strategyEndpoint.uri(), is(URI.create(fileUri())));
+        assertThat(strategyEndpoint.branch(), is("test"));
+        assertThat(strategyEndpoint.directory(), is(directory));
     }
 
     @Test
@@ -368,10 +368,10 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         assertThat(source, is(instanceOf(GitConfigSource.class)));
 
         GitConfigSource gitSource = (GitConfigSource) source;
-        assertThat(gitSource.getGitEndpoint().getPath(), is("application.properties"));
-        assertThat(gitSource.getGitEndpoint().getUri(), is(URI.create(fileUri())));
-        assertThat(gitSource.getGitEndpoint().getBranch(), is("test"));
-        assertThat(gitSource.getGitEndpoint().getDirectory(), is(directory));
+        assertThat(gitSource.gitEndpoint().path(), is("application.properties"));
+        assertThat(gitSource.gitEndpoint().uri(), is(URI.create(fileUri())));
+        assertThat(gitSource.gitEndpoint().branch(), is("test"));
+        assertThat(gitSource.gitEndpoint().directory(), is(directory));
     }
 
     @Test
@@ -396,10 +396,10 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
         assertThat(source, is(instanceOf(GitConfigSource.class)));
 
         GitConfigSource gitSource = (GitConfigSource) source;
-        assertThat(gitSource.getGitEndpoint().getPath(), is("application.properties"));
-        assertThat(gitSource.getGitEndpoint().getUri(), is(URI.create(fileUri())));
-        assertThat(gitSource.getGitEndpoint().getBranch(), is("test"));
-        assertThat(gitSource.getGitEndpoint().getDirectory(), is(directory));
+        assertThat(gitSource.gitEndpoint().path(), is("application.properties"));
+        assertThat(gitSource.gitEndpoint().uri(), is(URI.create(fileUri())));
+        assertThat(gitSource.gitEndpoint().branch(), is("test"));
+        assertThat(gitSource.gitEndpoint().directory(), is(directory));
     }
 
     public static class TestingGitEndpointPollingStrategy implements PollingStrategy {
@@ -416,7 +416,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
             return Flow.Subscriber::onComplete;
         }
 
-        public GitEndpoint getGitEndpoint() {
+        public GitEndpoint gitEndpoint() {
             return gitEndpoint;
         }
     }

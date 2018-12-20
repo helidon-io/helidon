@@ -220,7 +220,7 @@ public class UrlConfigSourceServerMockTest {
 
         ConfigParser.Content content = configSource.content();
 
-        assertThat(content.getMediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(content.mediaType(), is(TEST_MEDIA_TYPE));
         assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
@@ -245,7 +245,7 @@ public class UrlConfigSourceServerMockTest {
 
         ConfigParser.Content content = configSource.content();
 
-        assertThat(content.getMediaType(), is(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
+        assertThat(content.mediaType(), is(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
         assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
@@ -270,7 +270,7 @@ public class UrlConfigSourceServerMockTest {
 
         ConfigParser.Content content = configSource.content();
 
-        assertThat(content.getMediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(content.mediaType(), is(TEST_MEDIA_TYPE));
         assertThat(ConfigHelperTest.readerToString(content.asReadable()), is(TEST_CONFIG));
 
         verifyHttp(server).once(
@@ -292,7 +292,7 @@ public class UrlConfigSourceServerMockTest {
                 .url(new URL(String.format("http://127.0.0.1:%d/application.unknown", server.getPort())))
                 .build();
 
-        assertThat(configSource.content().getMediaType(), is(nullValue()));
+        assertThat(configSource.content().mediaType(), is(nullValue()));
     }
 
 }

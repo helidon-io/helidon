@@ -113,7 +113,7 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@link Readable readable content} and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#getStamp() content timestamp}.
+     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
      * @param readable  a {@code Readable} providing the configuration content
      * @param mediaType a configuration media type
@@ -132,7 +132,7 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@code String} content and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#getStamp() content timestamp}.
+     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
      * @param content   a configuration content
      * @param mediaType a configuration media type

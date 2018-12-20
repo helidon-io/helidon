@@ -55,7 +55,7 @@ public class ScheduledPollingStrategyTest {
     public void testNotStartedYet() {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null);
 
-        assertThat(pollingStrategy.getExecutor(), is(nullValue()));
+        assertThat(pollingStrategy.executor(), is(nullValue()));
     }
 
     @Test
@@ -124,12 +124,12 @@ public class ScheduledPollingStrategyTest {
         });
         assertThat(subscribeLatch.await(100, TimeUnit.MILLISECONDS), is(true));
         assertThat(nextLatch.await(NEXT_LATCH_WAIT_MILLIS, TimeUnit.MILLISECONDS), is(true));
-        assertThat(pollingStrategy.getExecutor(), not(nullValue()));
+        assertThat(pollingStrategy.executor(), not(nullValue()));
 
         //cancel subscription
         subscriptionRef.get().cancel();
 
-        assertThat(pollingStrategy.getExecutor(), is(nullValue()));
+        assertThat(pollingStrategy.executor(), is(nullValue()));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class ScheduledPollingStrategyTest {
 
         //cancel subscription
         subscriptionRef.get().cancel();
-        assertThat(pollingStrategy.getExecutor(), not(nullValue()));
+        assertThat(pollingStrategy.executor(), not(nullValue()));
 
         //subscribe again
         pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
@@ -237,7 +237,7 @@ public class ScheduledPollingStrategyTest {
 
         //cancel subscription
         subscriptionRef.get().cancel();
-        assertThat(pollingStrategy.getExecutor(), is(nullValue()));
+        assertThat(pollingStrategy.executor(), is(nullValue()));
 
         //subscribe again
         pollingStrategy.ticks().subscribe(new Flow.Subscriber<PollingEvent>() {
@@ -306,77 +306,77 @@ public class ScheduledPollingStrategyTest {
     public void testScheduledFuture() {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.getScheduledFuture(), nullValue());
+        assertThat(pollingStrategy.scheduledFuture(), nullValue());
 
         pollingStrategy.startScheduling();
 
-        assertThat(pollingStrategy.getScheduledFuture(), notNullValue());
-        assertThat(pollingStrategy.getScheduledFuture().isCancelled(), is(false));
+        assertThat(pollingStrategy.scheduledFuture(), notNullValue());
+        assertThat(pollingStrategy.scheduledFuture().isCancelled(), is(false));
     }
 
     @Test
     public void testScheduledFutureCleaning() throws InterruptedException {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.getScheduledFuture(), nullValue());
+        assertThat(pollingStrategy.scheduledFuture(), nullValue());
 
         pollingStrategy.startScheduling();
         TimeUnit.SECONDS.sleep(DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING);
         pollingStrategy.stopScheduling();
 
-        assertThat(pollingStrategy.getScheduledFuture(), notNullValue());
-        assertThat(pollingStrategy.getScheduledFuture().isCancelled(), is(true));
+        assertThat(pollingStrategy.scheduledFuture(), notNullValue());
+        assertThat(pollingStrategy.scheduledFuture().isCancelled(), is(true));
     }
 
     @Test
     public void testExecutor() throws InterruptedException {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 null);
-        assertThat(pollingStrategy.getExecutor(), nullValue());
+        assertThat(pollingStrategy.executor(), nullValue());
 
         pollingStrategy.startScheduling();
 
-        assertThat(pollingStrategy.getExecutor(), notNullValue());
-        assertThat(pollingStrategy.getExecutor().awaitTermination(1, TimeUnit.SECONDS), is(false));
+        assertThat(pollingStrategy.executor(), notNullValue());
+        assertThat(pollingStrategy.executor().awaitTermination(1, TimeUnit.SECONDS), is(false));
     }
 
     @Test
     public void testCustomExecutor() throws InterruptedException {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.getExecutor(), notNullValue());
+        assertThat(pollingStrategy.executor(), notNullValue());
 
         pollingStrategy.startScheduling();
 
-        assertThat(pollingStrategy.getExecutor(), notNullValue());
-        assertThat(pollingStrategy.getExecutor().awaitTermination(1, TimeUnit.SECONDS), is(false));
+        assertThat(pollingStrategy.executor(), notNullValue());
+        assertThat(pollingStrategy.executor().awaitTermination(1, TimeUnit.SECONDS), is(false));
     }
 
     @Test
     public void testExecutorCleaning() throws InterruptedException {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 null);
-        assertThat(pollingStrategy.getExecutor(), nullValue());
+        assertThat(pollingStrategy.executor(), nullValue());
 
         pollingStrategy.startScheduling();
         TimeUnit.SECONDS.sleep(DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING);
         pollingStrategy.stopScheduling();
 
-        assertThat(pollingStrategy.getExecutor(), nullValue());
+        assertThat(pollingStrategy.executor(), nullValue());
     }
 
     @Test
     public void testCustomExecutorCleaning() throws InterruptedException {
         ScheduledPollingStrategy pollingStrategy = ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION,
                                                                                 Executors.newScheduledThreadPool(1));
-        assertThat(pollingStrategy.getExecutor(), notNullValue());
+        assertThat(pollingStrategy.executor(), notNullValue());
 
         pollingStrategy.startScheduling();
         TimeUnit.SECONDS.sleep(DELAY_AFTER_START_SCHEDULING_BEFORE_STOP_SCHEDULING);
         pollingStrategy.stopScheduling();
 
-        assertThat(pollingStrategy.getExecutor(), notNullValue());
-        assertThat(pollingStrategy.getExecutor().awaitTermination(1, TimeUnit.SECONDS), is(false));
+        assertThat(pollingStrategy.executor(), notNullValue());
+        assertThat(pollingStrategy.executor().awaitTermination(1, TimeUnit.SECONDS), is(false));
     }
 
     /* NOTE: TEMPORARILY MOVED FROM POLLING_STRATEGY, WILL BE PUBLIC API AGAIN LATER, Issue #14.

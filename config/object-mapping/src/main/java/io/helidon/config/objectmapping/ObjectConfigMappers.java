@@ -186,7 +186,7 @@ class ObjectConfigMappers {
                 T instance = type.cast(constructorHandle.invoke());
 
                 for (PropertyAccessor<?> propertyAccessor : propertyAccessors) {
-                    propertyAccessor.set(instance, config.get(propertyAccessor.getName()));
+                    propertyAccessor.set(instance, config.get(propertyAccessor.name()));
                 }
                 return instance;
             } catch (ConfigMappingException ex) {

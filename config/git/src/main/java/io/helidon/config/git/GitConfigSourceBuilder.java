@@ -143,7 +143,7 @@ public final class GitConfigSourceBuilder
     }
 
     @Override
-    protected GitEndpoint getTarget() {
+    protected GitEndpoint target() {
         return new GitEndpoint(uri, branch, directory, path);
     }
 
@@ -180,13 +180,13 @@ public final class GitConfigSourceBuilder
         return this;
     }
 
-    PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-        return super.getPollingStrategy();
+    PollingStrategy pollingStrategyInternal() { //just for testing purposes
+        return super.pollingStrategy();
     }
 
     @Override
     public GitConfigSource build() {
-        return new GitConfigSource(this, getTarget());
+        return new GitConfigSource(this, target());
     }
 
     /**
@@ -221,7 +221,7 @@ public final class GitConfigSourceBuilder
          *
          * @return a remote git repository uri
          */
-        public URI getUri() {
+        public URI uri() {
             return uri;
         }
 
@@ -230,7 +230,7 @@ public final class GitConfigSourceBuilder
          *
          * @return a git branch
          */
-        public String getBranch() {
+        public String branch() {
             return branch;
         }
 
@@ -239,7 +239,7 @@ public final class GitConfigSourceBuilder
          *
          * @return a local git directory
          */
-        public Path getDirectory() {
+        public Path directory() {
             return directory;
         }
 
@@ -248,7 +248,7 @@ public final class GitConfigSourceBuilder
          *
          * @return a relative path to the configuration file
          */
-        public String getPath() {
+        public String path() {
             return path;
         }
     }

@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class EtcdApiTest {
     @Test
-    public void getClient() {
+    public void testClientVersion() {
         assertThat(EtcdApi.v2.clientFactory().createClient(URI.create("http://localhost")), instanceOf(EtcdV2Client.class));
         assertThat(EtcdApi.v3.clientFactory().createClient(URI.create("http://localhost")), instanceOf(EtcdV3Client.class));
     }

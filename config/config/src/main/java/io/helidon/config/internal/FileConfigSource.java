@@ -83,8 +83,8 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
     }
 
     @Override
-    protected String getMediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.getMediaType()))
+    protected String mediaType() {
+        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
                 .or(this::probeContentType)
                 .asOptional()
                 .orElse(null);
@@ -105,7 +105,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
         LOGGER.log(Level.FINE, String.format("Getting content from '%s'", filePath));
 
         return Content.create(new StringReader(FileSourceHelper.safeReadContent(filePath)),
-                              getMediaType(),
+                              mediaType(),
                               stamp);
     }
 
@@ -147,7 +147,7 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
         }
 
         @Override
-        protected Path getTarget() {
+        protected Path target() {
             return path;
         }
 
@@ -162,8 +162,8 @@ public class FileConfigSource extends AbstractParsableConfigSource<byte[]> {
             return new FileConfigSource(this, path);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 }

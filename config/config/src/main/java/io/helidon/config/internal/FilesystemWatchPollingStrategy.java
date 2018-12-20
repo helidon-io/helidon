@@ -71,7 +71,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
     private final List<WatchEvent.Modifier> watchServiceModifiers;
 
     private WatchKey watchKey;
-    private Future watchThreadFuture;
+    private Future<?> watchThreadFuture;
 
     /**
      * Creates a strategy with watched {@code path} as a parameters.
@@ -99,7 +99,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
         watchServiceModifiers = new LinkedList<>();
     }
 
-    public Path getPath() {
+    public Path path() {
         return path;
     }
 
@@ -109,7 +109,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
     }
 
     private void fireEvent(WatchEvent<?> watchEvent) {
-        getTicksSubmitter().offer(
+        ticksSubmitter().offer(
                 PollingEvent.now(),
                 (subscriber, pollingEvent) -> {
                     LOGGER.log(Level.FINER, String.format("Event %s has not been delivered to %s.", pollingEvent, subscriber));
@@ -215,8 +215,8 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
         }
 
         private void register() throws IOException {
-            Path target = getTarget(path);
-            Path dir = getParentDir(target);
+            Path target = target(path);
+            Path dir = parentDir(target);
             WatchKey oldWatchKey = watchKey;
             watchKey = dir.register(watchService,
                                     CollectionsHelper.listOf(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
@@ -227,7 +227,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
             }
         }
 
-        private Path getTarget(Path path) throws IOException {
+        private Path target(Path path) throws IOException {
             Path target = path;
             while (Files.isSymbolicLink(target)) {
                 target = target.toRealPath();
@@ -235,7 +235,7 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
             return target;
         }
 
-        private Path getParentDir(Path path) {
+        private Path parentDir(Path path) {
             Path parent = path.getParent();
             if (parent == null) {
                 throw new ConfigException(
@@ -246,11 +246,11 @@ public class FilesystemWatchPollingStrategy implements PollingStrategy {
 
     }
 
-    SubmissionPublisher<PollingEvent> getTicksSubmitter() {
+    SubmissionPublisher<PollingEvent> ticksSubmitter() {
         return ticksSubmitter;
     }
 
-    Future getWatchThreadFuture() {
+    Future<?> watchThreadFuture() {
         return watchThreadFuture;
     }
 

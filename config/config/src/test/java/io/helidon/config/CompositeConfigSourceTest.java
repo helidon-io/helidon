@@ -157,7 +157,7 @@ public class CompositeConfigSourceTest {
         configSource.init(context);
         // load from content
         ObjectNode lastObjectNode = configSource.load().get();
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(lastObjectNode.get("ooo"), valueNode("1"));
         assertThat(lastObjectNode.get("rrr"), valueNode("5"));
         assertThat(lastObjectNode.get("ppp"), valueNode("9"));
@@ -172,7 +172,7 @@ public class CompositeConfigSourceTest {
 
         // NO changes event
         assertThat(subscriber.getLastOnNext(200, false), is(nullValue()));
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
     }
 
     @Test
@@ -209,7 +209,7 @@ public class CompositeConfigSourceTest {
         configSource.init(context);
         // load from content
         ObjectNode lastObjectNode = configSource.load().get();
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(lastObjectNode.get("ooo"), valueNode("1"));
         assertThat(lastObjectNode.get("rrr"), valueNode("5"));
         assertThat(lastObjectNode.get("ppp"), valueNode("9"));
@@ -229,19 +229,19 @@ public class CompositeConfigSourceTest {
                                                             Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
 
         // polling ticks event
         pollingStrategy.submitEvent();
 
         // wait for event
         ObjectNode newObjectNode = subscriber.getLastOnNext(500, true).get();
-        assertThat(newObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(newObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(newObjectNode.get("ooo"), valueNode("11"));
         assertThat(newObjectNode.get("rrr"), valueNode("5"));
         assertThat(newObjectNode.get("ppp"), valueNode("9"));
         // last object-node has changed
-        assertThat(lastObjectNode, not(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, not(configSource.lastObjectNode().get()));
     }
 
     @Test
@@ -278,7 +278,7 @@ public class CompositeConfigSourceTest {
         configSource.init(context);
         // load from content
         ObjectNode lastObjectNode = configSource.load().get();
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(lastObjectNode.get("ooo"), valueNode("1"));
         assertThat(lastObjectNode.get("rrr"), valueNode("5"));
         assertThat(lastObjectNode.get("ppp"), valueNode("9"));
@@ -298,14 +298,14 @@ public class CompositeConfigSourceTest {
                                                             Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
 
         // polling ticks event
         pollingStrategy.submitEvent();
 
         // NO changes event
         assertThat(subscriber.getLastOnNext(200, false), is(nullValue()));
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
     }
 
     @Test
@@ -342,7 +342,7 @@ public class CompositeConfigSourceTest {
         configSource.init(context);
         // load from content
         ObjectNode lastObjectNode = configSource.load().get();
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(lastObjectNode.get("ooo"), valueNode("1"));
         assertThat(lastObjectNode.get("rrr"), valueNode("5"));
         assertThat(lastObjectNode.get("ppp"), valueNode("9"));
@@ -362,19 +362,19 @@ public class CompositeConfigSourceTest {
                                                             Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
 
         // polling ticks event
         pollingStrategy.submitEvent();
 
         // wait for event
         ObjectNode newObjectNode = subscriber.getLastOnNext(333, true).get();
-        assertThat(newObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(newObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(newObjectNode.get("ooo"), valueNode("1"));
         assertThat(newObjectNode.get("rrr"), valueNode("5"));
         assertThat(newObjectNode.get("ppp"), valueNode("99"));
         // last object-node has changed
-        assertThat(lastObjectNode, not(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, not(configSource.lastObjectNode().get()));
     }
 
     @Test
@@ -411,7 +411,7 @@ public class CompositeConfigSourceTest {
         configSource.init(context);
         // load from content
         ObjectNode lastObjectNode = configSource.load().get();
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(lastObjectNode.get("ooo"), valueNode("1"));
         assertThat(lastObjectNode.get("rrr"), valueNode("5"));
         assertThat(lastObjectNode.get("ppp"), valueNode("9"));
@@ -435,19 +435,19 @@ public class CompositeConfigSourceTest {
                                                             Optional.of(Instant.now())));
 
         // NO ticks event -> NO change yet
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
 
         // polling ticks event
         pollingStrategy.submitEvent();
 
         // wait for event
         ObjectNode newObjectNode = subscriber.getLastOnNext(333, true).get();
-        assertThat(newObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(newObjectNode, is(configSource.lastObjectNode().get()));
         assertThat(newObjectNode.get("ooo"), valueNode("11"));
         assertThat(newObjectNode.get("rrr"), valueNode("5"));
         assertThat(newObjectNode.get("ppp"), valueNode("99"));
         // last object-node has changed
-        assertThat(lastObjectNode, not(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, not(configSource.lastObjectNode().get()));
 
         // no other change
         subscriber.request1();
@@ -473,10 +473,10 @@ public class CompositeConfigSourceTest {
         configSource.init(context);
         // load from content
         ObjectNode lastObjectNode = configSource.load().get();
-        assertThat(lastObjectNode, is(configSource.getLastObjectNode().get()));
+        assertThat(lastObjectNode, is(configSource.lastObjectNode().get()));
 
         // NO transitive subscribers
-        assertThat(configSource.getCompositeConfigSourcesSubscribers(), is(nullValue()));
+        assertThat(configSource.compositeConfigSourcesSubscribers(), is(nullValue()));
 
         // subscribers
         TestingConfigSourceChangeSubscriber subscriber1 = new TestingConfigSourceChangeSubscriber();
@@ -496,7 +496,7 @@ public class CompositeConfigSourceTest {
         subscriber4.request1();
 
         // subscribers
-        assertThat(configSource.getCompositeConfigSourcesSubscribers(), hasSize(3)); // env-vars + sys-props + test
+        assertThat(configSource.compositeConfigSourcesSubscribers(), hasSize(3)); // env-vars + sys-props + test
 
         // cancel subscription
         subscriber1.getSubscription().cancel();
@@ -505,7 +505,7 @@ public class CompositeConfigSourceTest {
         subscriber4.getSubscription().cancel();
 
         // NO transitive subscribers again
-        assertThat(configSource.getCompositeConfigSourcesSubscribers(), is(nullValue()));
+        assertThat(configSource.compositeConfigSourcesSubscribers(), is(nullValue()));
     }
 
     @Test

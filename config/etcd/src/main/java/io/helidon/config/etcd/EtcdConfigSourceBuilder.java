@@ -116,12 +116,12 @@ public final class EtcdConfigSourceBuilder
     }
 
     @Override
-    protected EtcdEndpoint getTarget() {
+    protected EtcdEndpoint target() {
         return etcdEndpoint;
     }
 
-    PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-        return super.getPollingStrategy();
+    PollingStrategy pollingStrategyInternal() { //just for testing purposes
+        return super.pollingStrategy();
     }
 
     /**
@@ -184,7 +184,7 @@ public final class EtcdConfigSourceBuilder
          * Initializes descriptor.
          *
          * @param uri an Etcd endpoint remote URI.
-         * @param key an etcd key with which the value containing the configuration is associated.
+         * @param key an Etcd key with which the value containing the configuration is associated.
          * @param api an Etcd API version.
          */
         public EtcdEndpoint(URI uri, String key, EtcdApi api) {
@@ -193,15 +193,30 @@ public final class EtcdConfigSourceBuilder
             this.api = api;
         }
 
-        public URI getUri() {
+        /**
+         * Etcd endpoint remote URI.
+         *
+         * @return endpoint URI
+         */
+        public URI uri() {
             return uri;
         }
 
-        public String getKey() {
+        /**
+         * Etcd key.
+         *
+         * @return key with configuration
+         */
+        public String key() {
             return key;
         }
 
-        public EtcdApi getApi() {
+        /**
+         * Etcd API version.
+         *
+         * @return API version
+         */
+        public EtcdApi api() {
             return api;
         }
     }

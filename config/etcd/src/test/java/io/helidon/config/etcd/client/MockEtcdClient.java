@@ -16,18 +16,18 @@
 
 package io.helidon.config.etcd.client;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.SubmissionPublisher;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import java.util.concurrent.Executor;
 
 /**
  * Testing etcd client.
@@ -64,7 +64,7 @@ public class MockEtcdClient implements EtcdClient {
         content.get(uri).put(key, value);
         revisions.get(uri).put(key, rev.getAndIncrement());
 
-        SubmissionPublisher<Long> watchPublisher = getWatchPublisher(key);
+        SubmissionPublisher<Long> watchPublisher = watchPublisher(key);
         executorService.submit(() -> watchPublisher.submit(0L));
     }
 
@@ -78,7 +78,7 @@ public class MockEtcdClient implements EtcdClient {
         return watch(key);
     }
 
-    public SubmissionPublisher<Long> getWatchPublisher(String key) {
+    public SubmissionPublisher<Long> watchPublisher(String key) {
         return publishers.get(uri).get(key);
     }
 

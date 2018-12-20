@@ -94,9 +94,9 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         super(builder);
 
         this.endpoint = endpoint;
-        this.uri = endpoint.getUri();
-        this.branch = endpoint.getBranch();
-        if (endpoint.getDirectory() == null) {
+        this.uri = endpoint.uri();
+        this.branch = endpoint.branch();
+        if (endpoint.directory() == null) {
             if (uri == null) {
                 throw new ConfigException("Directory or Uri must be set.");
             }
@@ -107,12 +107,12 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
                 throw new ConfigException("Cannot create temporary directory.", e);
             }
         } else {
-            this.directory = endpoint.getDirectory();
+            this.directory = endpoint.directory();
         }
 
         try {
             init();
-            targetPath = directory.resolve(endpoint.getPath());
+            targetPath = directory.resolve(endpoint.path());
         } catch (IOException | GitAPIException | JGitInternalException e) {
             throw new ConfigException(String.format("Cannot initialize repository '%s' in local temp dir %s",
                                                     uri.toASCIIString(),
@@ -187,23 +187,23 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     @Override
     protected String uid() {
         StringBuilder sb = new StringBuilder();
-        if (endpoint.getDirectory() != null) {
-            sb.append(endpoint.getDirectory());
+        if (endpoint.directory() != null) {
+            sb.append(endpoint.directory());
         }
-        if (endpoint.getUri() != null && endpoint.getDirectory() != null) {
+        if (endpoint.uri() != null && endpoint.directory() != null) {
             sb.append('|');
         }
-        if (endpoint.getUri() != null) {
-            sb.append(endpoint.getUri().toASCIIString());
+        if (endpoint.uri() != null) {
+            sb.append(endpoint.uri().toASCIIString());
         }
         sb.append('#');
-        sb.append(endpoint.getPath());
+        sb.append(endpoint.path());
         return sb.toString();
     }
 
     @Override
-    protected String getMediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.getMediaType()))
+    protected String mediaType() {
+        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
                 .or(this::probeContentType)
                 .asOptional()
                 .orElse(null);
@@ -223,22 +223,22 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
         return Optional.ofNullable(FileSourceHelper.digest(targetPath));
     }
 
-    private Instant getLastModifiedTime(Path path) {
+    private Instant lastModifiedTime(Path path) {
         return FileSourceHelper.lastModifiedTime(path);
     }
 
     @Override
     protected ConfigParser.Content<byte[]> content() throws ConfigException {
-        Instant lastModifiedTime = getLastModifiedTime(targetPath);
+        Instant lastModifiedTime = lastModifiedTime(targetPath);
         LOGGER.log(Level.FINE, String.format("Getting content from '%s'. Last stamp is %s.", targetPath, lastModifiedTime));
 
         LOGGER.finest(FileSourceHelper.safeReadContent(targetPath));
         return ConfigParser.Content.create(new StringReader(FileSourceHelper.safeReadContent(targetPath)),
-                                           getMediaType(),
+                                           mediaType(),
                                            dataStamp());
     }
 
-    GitConfigSourceBuilder.GitEndpoint getGitEndpoint() {
+    GitConfigSourceBuilder.GitEndpoint gitEndpoint() {
         return endpoint;
     }
 

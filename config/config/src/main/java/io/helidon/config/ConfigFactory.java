@@ -92,7 +92,7 @@ final class ConfigFactory {
     }
 
     static Stream<Map.Entry<ConfigKeyImpl, ConfigNode>> flattenNodes(ConfigKeyImpl key, ConfigNode node) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return ((ObjectNode) node).entrySet().stream()
                     .map(e -> flattenNodes(key.child(e.getKey()), e.getValue()))
@@ -109,7 +109,7 @@ final class ConfigFactory {
         }
     }
 
-    public Instant getTimestamp() {
+    public Instant timestamp() {
         return timestamp;
     }
 
@@ -118,8 +118,8 @@ final class ConfigFactory {
      *
      * @return root {@link Config}
      */
-    public Config getConfig() {
-        return getConfig(ConfigKeyImpl.of(), ConfigKeyImpl.of());
+    public Config config() {
+        return config(ConfigKeyImpl.of(), ConfigKeyImpl.of());
     }
 
     /**
@@ -129,7 +129,7 @@ final class ConfigFactory {
      * @param key    config key
      * @return {@code key} specific instance of {@link Config}
      */
-    public Config getConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+    public Config config(ConfigKeyImpl prefix, ConfigKeyImpl key) {
         PrefixedKey prefixedKey = new PrefixedKey(prefix, key);
         Reference<Config> reference = configCache.compute(prefixedKey, (k, v) -> {
             if (v == null || v.get() == null) {
@@ -154,7 +154,7 @@ final class ConfigFactory {
             return new ConfigMissingImpl(prefix, key, this, mapperManager);
         }
 
-        switch (value.getNodeType()) {
+        switch (value.nodeType()) {
         case OBJECT:
             return new ConfigObjectImpl(prefix, key, (ObjectNode) value, filter, this, mapperManager);
         case LIST:
@@ -175,11 +175,11 @@ final class ConfigFactory {
      *
      * @return whole configuration context.
      */
-    Config.Context getContext() {
+    Config.Context context() {
         return provider;
     }
 
-    ProviderImpl getProvider() {
+    ProviderImpl provider() {
         return provider;
     }
 
@@ -226,7 +226,7 @@ final class ConfigFactory {
 
         @Override
         public void onNext(ConfigDiff event) {
-            if (ConfigFactory.this.getConfig() == event.getConfig()) { //ignore events about current Config instance
+            if (ConfigFactory.this.config() == event.config()) { //ignore events about current Config instance
                 //missed event must be requested once more
                 subscription.request(1);
             } else {

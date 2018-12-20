@@ -78,8 +78,8 @@ public class TestingConfigSource extends AbstractConfigSource<Instant> {
     }
 
     @Override
-    public SubmissionPublisher<Optional<ObjectNode>> getChangesSubmitter() {
-        return super.getChangesSubmitter();
+    public SubmissionPublisher<Optional<ObjectNode>> changesSubmitter() {
+        return super.changesSubmitter();
     }
 
     public void changeLoadedObjectNode(ObjectNode newObjectNode, boolean submitChange) {

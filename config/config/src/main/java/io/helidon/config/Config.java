@@ -337,7 +337,7 @@ public interface Config {
      * </ol>
      * The config system uses only the first {@code application.*} location it
      * finds for which it can locate a {@link ConfigParser} that supports the
-     * corresponding {@link ConfigParser#getSupportedMediaTypes() media type}.
+     * corresponding {@link ConfigParser#supportedMediaTypes() media type}.
      * <p>
      * When creating the default configuration the config system detects parsers
      * that were loaded using the {@link java.util.ServiceLoader} mechanism or,
@@ -1267,7 +1267,7 @@ public interface Config {
      * </li>
      * </ol>
      * It uses the first and only one file that exists and there is a {@link ConfigParser} available
-     * that supports appropriate {@link ConfigParser#getSupportedMediaTypes() media type}.
+     * that supports appropriate {@link ConfigParser#supportedMediaTypes() media type}.
      * Available parser means that the parser:
      * <ol>
      * <li>is loaded as a service using {@link java.util.ServiceLoader};</li>

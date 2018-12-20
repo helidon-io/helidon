@@ -77,7 +77,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     }
 
     static void initDescription(ConfigNode node, String description) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             ((ObjectNodeImpl) node).initDescription(description);
             break;
@@ -94,13 +94,13 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
 
     @Override
     public MergeableNode merge(MergeableNode node) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return mergeWithObjectNode((ObjectNodeImpl) node);
         case LIST:
             throw new ConfigException(
                     String.format("Cannot merge a LIST node%s with an OBJECT node%s.",
-                                  formatFrom(((ListNodeImpl) node).getDescription()),
+                                  formatFrom(((ListNodeImpl) node).description()),
                                   formatFrom(description)));
         case VALUE:
             return mergeWithValueNode((ValueNodeImpl) node);
@@ -150,7 +150,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         return this;
     }
 
-    public String getDescription() {
+    public String description() {
         return description;
     }
 

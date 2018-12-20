@@ -102,13 +102,13 @@ public class EtcdConfigSourceBuilderTest {
                 .create(uri, "/registry", EtcdApi.v2)
                 .pollingStrategy(TestingEtcdEndpointPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((TestingEtcdEndpointPollingStrategy) builder.getPollingStrategyInternal())
-                .getEtcdEndpoint();
+        assertThat(builder.pollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
+        EtcdEndpoint strategyEndpoint = ((TestingEtcdEndpointPollingStrategy) builder.pollingStrategyInternal())
+                .etcdEndpoint();
 
-        assertThat(strategyEndpoint.getUri(), is(uri));
-        assertThat(strategyEndpoint.getKey(), is("/registry"));
-        assertThat(strategyEndpoint.getApi(), is(EtcdApi.v2));
+        assertThat(strategyEndpoint.uri(), is(uri));
+        assertThat(strategyEndpoint.key(), is("/registry"));
+        assertThat(strategyEndpoint.api(), is(EtcdApi.v2));
     }
 
     @Test
@@ -125,9 +125,9 @@ public class EtcdConfigSourceBuilderTest {
                 "key", "/registry",
                 "api", "v3"))));
 
-        assertThat(builder.getTarget().getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(builder.getTarget().getKey(), is("/registry"));
-        assertThat(builder.getTarget().getApi(), is(EtcdApi.v3));
+        assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
+        assertThat(builder.target().key(), is("/registry"));
+        assertThat(builder.target().api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -138,17 +138,17 @@ public class EtcdConfigSourceBuilderTest {
                 "api", "v3",
                 "polling-strategy.class", TestingEtcdEndpointPollingStrategy.class.getName()))));
 
-        assertThat(builder.getTarget().getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(builder.getTarget().getKey(), is("/registry"));
-        assertThat(builder.getTarget().getApi(), is(EtcdApi.v3));
+        assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
+        assertThat(builder.target().key(), is("/registry"));
+        assertThat(builder.target().api(), is(EtcdApi.v3));
 
-        assertThat(builder.getPollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((TestingEtcdEndpointPollingStrategy) builder.getPollingStrategyInternal())
-                .getEtcdEndpoint();
+        assertThat(builder.pollingStrategyInternal(), is(instanceOf(TestingEtcdEndpointPollingStrategy.class)));
+        EtcdEndpoint strategyEndpoint = ((TestingEtcdEndpointPollingStrategy) builder.pollingStrategyInternal())
+                .etcdEndpoint();
 
-        assertThat(strategyEndpoint.getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(strategyEndpoint.getKey(), is("/registry"));
-        assertThat(strategyEndpoint.getApi(), is(EtcdApi.v3));
+        assertThat(strategyEndpoint.uri(), is(URI.create("http://localhost:2379")));
+        assertThat(strategyEndpoint.key(), is("/registry"));
+        assertThat(strategyEndpoint.api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -159,17 +159,17 @@ public class EtcdConfigSourceBuilderTest {
                 "api", "v3",
                 "polling-strategy.class", EtcdWatchPollingStrategy.class.getName()))));
 
-        assertThat(builder.getTarget().getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(builder.getTarget().getKey(), is("/registry"));
-        assertThat(builder.getTarget().getApi(), is(EtcdApi.v3));
+        assertThat(builder.target().uri(), is(URI.create("http://localhost:2379")));
+        assertThat(builder.target().key(), is("/registry"));
+        assertThat(builder.target().api(), is(EtcdApi.v3));
 
-        assertThat(builder.getPollingStrategyInternal(), is(instanceOf(EtcdWatchPollingStrategy.class)));
-        EtcdEndpoint strategyEndpoint = ((EtcdWatchPollingStrategy) builder.getPollingStrategyInternal())
-                .getEtcdEndpoint();
+        assertThat(builder.pollingStrategyInternal(), is(instanceOf(EtcdWatchPollingStrategy.class)));
+        EtcdEndpoint strategyEndpoint = ((EtcdWatchPollingStrategy) builder.pollingStrategyInternal())
+                .etcdEndpoint();
 
-        assertThat(strategyEndpoint.getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(strategyEndpoint.getKey(), is("/registry"));
-        assertThat(strategyEndpoint.getApi(), is(EtcdApi.v3));
+        assertThat(strategyEndpoint.uri(), is(URI.create("http://localhost:2379")));
+        assertThat(strategyEndpoint.key(), is("/registry"));
+        assertThat(strategyEndpoint.api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -188,9 +188,9 @@ public class EtcdConfigSourceBuilderTest {
         assertThat(source, is(instanceOf(EtcdConfigSource.class)));
 
         EtcdConfigSource etcdSource = (EtcdConfigSource) source;
-        assertThat(etcdSource.getEtcdEndpoint().getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(etcdSource.getEtcdEndpoint().getKey(), is("/registry"));
-        assertThat(etcdSource.getEtcdEndpoint().getApi(), is(EtcdApi.v3));
+        assertThat(etcdSource.etcdEndpoint().uri(), is(URI.create("http://localhost:2379")));
+        assertThat(etcdSource.etcdEndpoint().key(), is("/registry"));
+        assertThat(etcdSource.etcdEndpoint().api(), is(EtcdApi.v3));
     }
 
     @Test
@@ -209,9 +209,9 @@ public class EtcdConfigSourceBuilderTest {
         assertThat(source.get(), is(instanceOf(EtcdConfigSource.class)));
 
         EtcdConfigSource etcdSource = (EtcdConfigSource) source;
-        assertThat(etcdSource.getEtcdEndpoint().getUri(), is(URI.create("http://localhost:2379")));
-        assertThat(etcdSource.getEtcdEndpoint().getKey(), is("/registry"));
-        assertThat(etcdSource.getEtcdEndpoint().getApi(), is(EtcdApi.v3));
+        assertThat(etcdSource.etcdEndpoint().uri(), is(URI.create("http://localhost:2379")));
+        assertThat(etcdSource.etcdEndpoint().key(), is("/registry"));
+        assertThat(etcdSource.etcdEndpoint().api(), is(EtcdApi.v3));
     }
 
     public static class TestingEtcdEndpointPollingStrategy implements PollingStrategy {
@@ -228,7 +228,7 @@ public class EtcdConfigSourceBuilderTest {
             return Flow.Subscriber::onComplete;
         }
 
-        public EtcdEndpoint getEtcdEndpoint() {
+        public EtcdEndpoint etcdEndpoint() {
             return etcdEndpoint;
         }
     }

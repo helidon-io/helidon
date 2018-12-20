@@ -56,7 +56,7 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
 
     @Override
     public final Optional<String> value() throws ConfigMappingException {
-        String value = getNode().get();
+        String value = node().get();
         if (null != value) {
             return Optional.ofNullable(filter.apply(realKey(), value));
         } else {
@@ -68,7 +68,7 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
 
     @Override
     public boolean hasValue() {
-        return null != getNode().get();
+        return null != node().get();
     }
 
     @Override
@@ -91,7 +91,7 @@ abstract class ConfigExistingImpl<N extends ConfigNode> extends AbstractConfigIm
         return ConfigValues.createMap(this, mapperManager);
     }
 
-    protected final N getNode() {
+    protected final N node() {
         return node;
     }
 

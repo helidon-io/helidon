@@ -132,7 +132,7 @@ public class DirectoryConfigSource extends AbstractConfigSource<Instant> {
         }
 
         @Override
-        protected Path getTarget() {
+        protected Path target() {
             return path;
         }
 

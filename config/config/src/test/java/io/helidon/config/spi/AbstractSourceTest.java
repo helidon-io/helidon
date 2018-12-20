@@ -144,9 +144,9 @@ public class AbstractSourceTest {
         //optional
         assertThat(builder.isMandatory(), is(false));
         //polling-strategy
-        assertThat(builder.getPollingStrategy(), is(instanceOf(TestingPollingStrategy.class)));
+        assertThat(builder.pollingStrategy(), is(instanceOf(TestingPollingStrategy.class)));
         //retry-policy
-        assertThat(builder.getRetryPolicy(), is(instanceOf(TestingRetryPolicy.class)));
+        assertThat(builder.retryPolicy(), is(instanceOf(TestingRetryPolicy.class)));
     }
 
     @Test
@@ -156,7 +156,7 @@ public class AbstractSourceTest {
         //optional
         assertThat(builder.isMandatory(), is(true));
         //polling-strategy
-        assertThat(builder.getPollingStrategy(), is(PollingStrategies.nop()));
+        assertThat(builder.pollingStrategy(), is(PollingStrategies.nop()));
     }
 
     private static class TestingSource extends AbstractSource<String, Instant> {

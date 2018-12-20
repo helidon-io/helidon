@@ -300,14 +300,14 @@ public class ConfigChangesTest {
         });
 
         //config factory contains 5 subscribers
-        assertThat(config.getFactory().getProvider().getChangesSubmitter().getNumberOfSubscribers(), is(5));
+        assertThat(config.factory().provider().changesSubmitter().getNumberOfSubscribers(), is(5));
 
         //Config already subscribed on config source
         waitFor(configSource::isSubscribePollingStrategyInvoked, 500, 10);
         assertThat(configSource.isCancelPollingStrategyInvoked(), is(false));
 
         //config source just 1
-        assertThat(configSource.getChangesSubmitter().getNumberOfSubscribers(), is(1));
+        assertThat(configSource.changesSubmitter().getNumberOfSubscribers(), is(1));
 
         TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure timestamp changes.
         configSource.changeLoadedObjectNode(null);
@@ -316,14 +316,14 @@ public class ConfigChangesTest {
         subscribers.forEach(subscriber -> subscriber.getSubscription().cancel());
 
         //config factory does not have subscribers
-        waitFor(() -> !config.getFactory().getProvider().getChangesSubmitter().hasSubscribers(), 1_000, 10);
+        waitFor(() -> !config.factory().provider().changesSubmitter().hasSubscribers(), 1_000, 10);
 
         //Config already canceled from config source changes
         assertThat(configSource.isSubscribePollingStrategyInvoked(), is(true));
         assertThat(configSource.isCancelPollingStrategyInvoked(), is(true));
 
         //config source does not have subscribers
-        waitFor(() -> !configSource.getChangesSubmitter().hasSubscribers(), 1_000, 10);
+        waitFor(() -> !configSource.changesSubmitter().hasSubscribers(), 1_000, 10);
     }
 
     @Test

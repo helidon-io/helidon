@@ -81,7 +81,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThat(diff.changedKeys(), is(empty()));
 
     }
@@ -103,7 +103,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b");
 
     }
@@ -125,7 +125,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.c");
 
     }
@@ -147,7 +147,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.c");
 
     }
@@ -169,7 +169,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.c");
 
     }
@@ -191,7 +191,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.b.a");
 
     }
@@ -213,7 +213,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.b.a");
 
     }
@@ -235,7 +235,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "a.c.a", "a.c", "a", "");
 
     }
@@ -257,7 +257,7 @@ public class ConfigDiffTest {
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "a.c.a", "a.c", "a", "");
 
     }

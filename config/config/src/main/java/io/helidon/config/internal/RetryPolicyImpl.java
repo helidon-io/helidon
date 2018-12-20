@@ -129,23 +129,23 @@ public class RetryPolicyImpl implements RetryPolicy {
         return false;
     }
 
-    public int getRetries() {
+    public int retries() {
         return retries;
     }
 
-    public Duration getDelay() {
+    public Duration delay() {
         return delay;
     }
 
-    public double getDelayFactor() {
+    public double delayFactor() {
         return delayFactor;
     }
 
-    public Duration getCallTimeout() {
+    public Duration callTimeout() {
         return callTimeout;
     }
 
-    public Duration getOverallTimeout() {
+    public Duration overallTimeout() {
         return overallTimeout;
     }
 }

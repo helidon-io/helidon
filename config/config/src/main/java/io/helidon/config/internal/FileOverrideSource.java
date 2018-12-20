@@ -105,7 +105,7 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
         }
 
         @Override
-        protected Path getTarget() {
+        protected Path target() {
             return path;
         }
 
@@ -120,8 +120,8 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
             return new FileOverrideSource(this, path);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 }

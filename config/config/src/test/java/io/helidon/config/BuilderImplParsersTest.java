@@ -75,7 +75,7 @@ public class BuilderImplParsersTest {
     @Test
     public void testContextFindParserNotAvailable() {
         ConfigParser.Content content = mock(ConfigParser.Content.class);
-        when(content.getMediaType()).thenReturn(TEST_MEDIA_TYPE);
+        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
 
         BuilderImpl.ConfigContextImpl context = new BuilderImpl.ConfigContextImpl(CollectionsHelper.listOf(
                 mockParser("application/hocon", "application/json"),
@@ -83,13 +83,13 @@ public class BuilderImplParsersTest {
                 mockParser("application/x-yaml")
         ));
 
-        assertThat(context.findParser(content.getMediaType()), is(Optional.empty()));
+        assertThat(context.findParser(content.mediaType()), is(Optional.empty()));
     }
 
     @Test
     public void testContextFindParserFindFirst() {
         ConfigParser.Content content = mock(ConfigParser.Content.class);
-        when(content.getMediaType()).thenReturn(TEST_MEDIA_TYPE);
+        when(content.mediaType()).thenReturn(TEST_MEDIA_TYPE);
 
         ConfigParser firstParser = mockParser(TEST_MEDIA_TYPE);
 
@@ -100,12 +100,12 @@ public class BuilderImplParsersTest {
                 mockParser("application/x-yaml")
         ));
 
-        assertThat(context.findParser(content.getMediaType()).get(), is(firstParser));
+        assertThat(context.findParser(content.mediaType()).get(), is(firstParser));
     }
 
     private ConfigParser mockParser(String... supportedMediaTypes) {
         ConfigParser parser = mock(ConfigParser.class);
-        when(parser.getSupportedMediaTypes()).thenReturn(CollectionsHelper.setOf(supportedMediaTypes));
+        when(parser.supportedMediaTypes()).thenReturn(CollectionsHelper.setOf(supportedMediaTypes));
 
         return parser;
     }
@@ -117,7 +117,7 @@ public class BuilderImplParsersTest {
     private static class MyConfigParser implements ConfigParser {
 
         @Override
-        public Set<String> getSupportedMediaTypes() {
+        public Set<String> supportedMediaTypes() {
             return CollectionsHelper.setOf();
         }
 

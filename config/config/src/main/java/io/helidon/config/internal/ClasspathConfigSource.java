@@ -89,8 +89,8 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
     }
 
     @Override
-    protected String getMediaType() {
-        return OptionalHelper.from(Optional.ofNullable(super.getMediaType()))
+    protected String mediaType() {
+        return OptionalHelper.from(Optional.ofNullable(super.mediaType()))
                 .or(this::probeContentType)
                 .asOptional()
                 .orElse(null);
@@ -123,7 +123,7 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
             LOGGER.log(Level.FINE, "Error to get resource '" + resource + "' path. Used ClassLoader: " + classLoader, ex);
         }
         return ConfigParser.Content.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8),
-                                           getMediaType(),
+                                           mediaType(),
                                            resourceTimestamp);
     }
 
@@ -166,7 +166,7 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
         }
 
         @Override
-        protected Path getTarget() {
+        protected Path target() {
             try {
                 Path resourcePath = ClasspathSourceHelper.resourcePath(resource);
                 if (resourcePath != null) {
@@ -191,8 +191,8 @@ public class ClasspathConfigSource extends AbstractParsableConfigSource<Instant>
             return new ClasspathConfigSource(this, resource);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 }

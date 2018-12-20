@@ -139,7 +139,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
         }
 
         @Override
-        protected URL getTarget() {
+        protected URL target() {
             return url;
         }
 
@@ -154,8 +154,8 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
             return new UrlOverrideSource(this, url);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 

@@ -96,7 +96,7 @@ public class ScheduledPollingStrategy implements PollingStrategy {
      *
      * @return recurring policy
      */
-    public RecurringPolicy getRecurringPolicy() {
+    public RecurringPolicy recurringPolicy() {
         return recurringPolicy;
     }
 
@@ -183,11 +183,11 @@ public class ScheduledPollingStrategy implements PollingStrategy {
         }
     }
 
-    ScheduledFuture<?> getScheduledFuture() {
+    ScheduledFuture<?> scheduledFuture() {
         return scheduledFuture;
     }
 
-    ScheduledExecutorService getExecutor() {
+    ScheduledExecutorService executor() {
         return executor;
     }
 
@@ -281,7 +281,7 @@ public class ScheduledPollingStrategy implements PollingStrategy {
             delay = max.compareTo(candidate) > 0 ? candidate : max;
         }
 
-        Duration getDelay() {
+        Duration delay() {
             return delay;
         }
     }
