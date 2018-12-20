@@ -62,7 +62,7 @@ public class EtcdConfigSourceTest {
     @Test
     public void testConfigSourceBuilder() {
         EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(DEFAULT_URI, "key", EtcdApi.v2)
+                .create(DEFAULT_URI, "key", EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
@@ -73,7 +73,7 @@ public class EtcdConfigSourceTest {
     public void testBadUri() {
         Assertions.assertThrows(ConfigException.class, () -> {
             EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                    .from(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
+                    .create(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
@@ -85,7 +85,7 @@ public class EtcdConfigSourceTest {
     public void testBadKey() {
         Assertions.assertThrows(ConfigException.class, () -> {
             EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                    .from(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
+                    .create(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                     .build();
 
@@ -98,15 +98,15 @@ public class EtcdConfigSourceTest {
         final AtomicLong revision = new AtomicLong(0);
 
         EtcdConfigSource configSource = (EtcdConfigSource) EtcdConfigSourceBuilder
-                .from(DEFAULT_URI, "configuration", EtcdApi.v2)
+                .create(DEFAULT_URI, "configuration", EtcdApi.v2)
                 .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                 .build();
 
         EtcdConfigSource mockedConfigSource = spy(configSource);
-        when(mockedConfigSource.getEtcdClient()).thenReturn(etcdClient);
+        when(mockedConfigSource.etcdClient()).thenReturn(etcdClient);
         when(mockedConfigSource.content()).thenReturn(new ConfigParser.Content<Long>() {
             @Override
-            public String getMediaType() {
+            public String mediaType() {
                 return MEDIA_TYPE_APPLICATION_HOCON;
             }
 
@@ -121,7 +121,7 @@ public class EtcdConfigSourceTest {
             }
 
             @Override
-            public Optional<Long> getStamp() {
+            public Optional<Long> stamp() {
                 return Optional.of(revision.getAndIncrement());
             }
         });

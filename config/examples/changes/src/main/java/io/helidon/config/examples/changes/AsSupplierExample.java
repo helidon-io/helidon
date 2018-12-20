@@ -51,13 +51,13 @@ public class AsSupplierExample {
      */
     public void run() {
         Config config = Config
-                .from(file("conf/dev.yaml")
+                .create(file("conf/dev.yaml")
                               .optional()
                               .pollingStrategy(PollingStrategies::watch),
-                      file("conf/config.yaml")
+                        file("conf/config.yaml")
                               .optional()
                               .pollingStrategy(regular(Duration.ofSeconds(2))),
-                      classpath("default.yaml")
+                        classpath("default.yaml")
                               .pollingStrategy(regular(Duration.ofSeconds(10))));
 
         // greeting.get() always return up-to-date value

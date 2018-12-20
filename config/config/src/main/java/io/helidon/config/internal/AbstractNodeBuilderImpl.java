@@ -60,7 +60,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
      * @return new instance of mergeable node or original node if already was mergeable.
      */
     static MergeableNode wrap(ConfigNode node, Function<String, String> resolveTokenFunction) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return ObjectNodeImpl.wrap((ObjectNode) node, resolveTokenFunction);
         case LIST:
@@ -137,7 +137,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
             // get current member associated with id
             MergeableNode member = member(id);
             // merges current member with specified node
-            switch (member.getNodeType()) {
+            switch (member.nodeType()) {
             case OBJECT:
                 mergeObjectMember((ObjectNode) member, key, node, id);
                 break;
@@ -155,9 +155,9 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     }
 
     private void mergeValueMember(ValueNode member, MergingKey key, MergeableNode node, ID id) {
-        ObjectNode on = ObjectNodeBuilderImpl.from(CollectionsHelper.mapOf(), tokenResolver).value(member.get()).build();
+        ObjectNode on = ObjectNodeBuilderImpl.create(CollectionsHelper.mapOf(), tokenResolver).value(member.get()).build();
         ConfigNode merged = ObjectNodeBuilderImpl
-                .from(on, tokenResolver) // make copy of member
+                .create(on, tokenResolver) // make copy of member
                 .value(on.get())
                 .deepMerge(key.rest(), node) // merge it with specified node
                 .build();
@@ -183,7 +183,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
         try {
             // deep merge of object with specified node
             ConfigNode merged = ObjectNodeBuilderImpl
-                    .from(member, tokenResolver) // make copy of member
+                    .create(member, tokenResolver) // make copy of member
                     .value(member.get())
                     .deepMerge(key.rest(), node) // merge it with specified node
                     .build();
@@ -194,7 +194,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
         }
     }
 
-    Function<String, String> getTokenResolver() {
+    Function<String, String> tokenResolver() {
         return tokenResolver;
     }
 

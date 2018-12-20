@@ -50,7 +50,7 @@ public class ExperimentalConfigTest {
 
     @Test
     public void configResource() {
-        Config http2 = Config.from(ConfigSources.classpath("experimental/application.yaml"))
+        Config http2 = Config.create(ConfigSources.classpath("experimental/application.yaml"))
                 .get("webserver")
                 .get("experimental")
                 .get("http2");

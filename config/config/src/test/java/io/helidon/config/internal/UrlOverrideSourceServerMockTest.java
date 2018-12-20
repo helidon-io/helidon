@@ -43,7 +43,7 @@ import static com.xebialabs.restito.semantics.Action.status;
 import static com.xebialabs.restito.semantics.Action.stringContent;
 import static com.xebialabs.restito.semantics.Condition.method;
 import static com.xebialabs.restito.semantics.Condition.uri;
-import static io.helidon.config.ConfigSources.from;
+import static io.helidon.config.ConfigSources.create;
 import static io.helidon.config.ConfigTest.waitForAssert;
 import static io.helidon.config.OverrideSources.url;
 import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
@@ -102,7 +102,7 @@ public class UrlOverrideSourceServerMockTest {
                 );
 
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.url", "URL0"
                         )))
@@ -134,7 +134,7 @@ public class UrlOverrideSourceServerMockTest {
                 );
 
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.url", "URL0"
                         )))
@@ -166,7 +166,7 @@ public class UrlOverrideSourceServerMockTest {
                 );
 
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.url", "URL0"
                         )))
@@ -335,7 +335,7 @@ public class UrlOverrideSourceServerMockTest {
                 .sources(ConfigSources.url(getUrl("/config", server.getPort()))
                                  .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10))))
                 .overrides(url(getUrl("/override", server.getPort())))
-                .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.fromWildcards(
+                .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
                         CollectionsHelper.mapOf("*.*.url", "URL1")
                                 .entrySet()
                                 .stream()

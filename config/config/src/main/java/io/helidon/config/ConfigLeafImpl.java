@@ -135,7 +135,7 @@ class ConfigLeafImpl extends ConfigExistingImpl<ValueNode> {
 
     @Override
     public String toString() {
-        return "[" + realKey() + "] VALUE '" + getNode().get() + "'";
+        return "[" + realKey() + "] VALUE '" + node().get() + "'";
     }
 
 }

@@ -102,7 +102,7 @@ abstract class AbstractConfigImpl implements Config {
 
     @Override
     public final Instant timestamp() {
-        return factory.getTimestamp();
+        return factory.timestamp();
     }
 
     @Override
@@ -131,7 +131,7 @@ abstract class AbstractConfigImpl implements Config {
         if (subKey.isRoot()) {
             return this;
         } else {
-            return factory.getConfig(prefix, this.key.child(subKey));
+            return factory.config(prefix, this.key.child(subKey));
         }
     }
 
@@ -140,7 +140,7 @@ abstract class AbstractConfigImpl implements Config {
         if (key.isRoot()) {
             return this;
         } else {
-            return factory.getConfig(realKey(), ConfigKeyImpl.of());
+            return factory.config(realKey(), ConfigKeyImpl.of());
         }
     }
 
@@ -195,7 +195,7 @@ abstract class AbstractConfigImpl implements Config {
                 LOGGER.log(Level.CONFIG, "The config suppliers will no longer receive any change.");
             }
         };
-        factory.getProvider().changes().subscribe(subscriber);
+        factory.provider().changes().subscribe(subscriber);
         try {
             subscribeLatch.await(timeout, unit);
         } catch (InterruptedException e) {
@@ -211,7 +211,7 @@ abstract class AbstractConfigImpl implements Config {
                 .get(AbstractConfigImpl.this.key);
     }
 
-    ConfigFactory getFactory() {
+    ConfigFactory factory() {
         return factory;
     }
 
@@ -265,7 +265,7 @@ abstract class AbstractConfigImpl implements Config {
         public void onNext(ConfigDiff event) {
             //(3. fire just on case the sub-node has changed)
             if (event.changedKeys().contains(AbstractConfigImpl.this.realKey)) {
-                delegate.onNext(AbstractConfigImpl.this.contextConfig(event.getConfig()));
+                delegate.onNext(AbstractConfigImpl.this.contextConfig(event.config()));
             } else {
                 subscription.request(1);
             }
@@ -289,7 +289,7 @@ abstract class AbstractConfigImpl implements Config {
 
         @Override
         public Instant timestamp() {
-            return AbstractConfigImpl.this.factory.getContext().timestamp();
+            return AbstractConfigImpl.this.factory.context().timestamp();
         }
 
         @Override
@@ -297,12 +297,12 @@ abstract class AbstractConfigImpl implements Config {
             //the 'last config' behaviour is based on switched-on changes support
             subscribe();
 
-            return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.getContext().last());
+            return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.context().last());
         }
 
         @Override
         public Config reload() {
-            return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.getContext().reload());
+            return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.context().reload());
         }
 
     }

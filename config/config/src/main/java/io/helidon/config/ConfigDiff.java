@@ -114,7 +114,7 @@ class ConfigDiff {
      *
      * @return the newer {@code Config} used in the comparison
      */
-    Config getConfig() {
+    Config config() {
         return config;
     }
 

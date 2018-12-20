@@ -171,18 +171,18 @@ public class ReflectionUtilTest {
         TestBean bean = new TestBean();
         assertThat(bean.getValue(), is(nullValue()));
 
-        assertThat(propertyAccessors.get("value").getHandle().type().parameterType(1),
+        assertThat(propertyAccessors.get("value").handle().type().parameterType(1),
                    equalTo(String.class));
-        assertThat(propertyAccessors.get("init").getHandle().type().parameterType(1),
+        assertThat(propertyAccessors.get("init").handle().type().parameterType(1),
                    equalTo(String.class));
 
         //call setValue
-        propertyAccessors.get("value").getHandle()
+        propertyAccessors.get("value").handle()
                 .invoke(bean, "val1");
         assertThat(bean.getValue(), is("val1"));
 
         //call init
-        propertyAccessors.get("init").getHandle()
+        propertyAccessors.get("init").handle()
                 .invoke(bean, "val2");
         assertThat(bean.getInit(), is("val2"));
     }
@@ -195,10 +195,10 @@ public class ReflectionUtilTest {
         TestBean bean = new TestBean();
         assertThat(bean.valueField, is(nullValue()));
 
-        assertThat(propertyAccessors.get("valueField").getHandle().type().parameterType(1),
+        assertThat(propertyAccessors.get("valueField").handle().type().parameterType(1),
                    equalTo(String.class));
 
-        propertyAccessors.get("valueField").getHandle()
+        propertyAccessors.get("valueField").handle()
                 .invoke(bean, "val1");
         assertThat(bean.valueField, is("val1"));
     }
@@ -211,10 +211,10 @@ public class ReflectionUtilTest {
         ListBean bean = new ListBean();
         assertThat(bean.getList(), is(nullValue()));
 
-        assertThat(propertyAccessors.get("list").getHandle().type().parameterType(1),
+        assertThat(propertyAccessors.get("list").handle().type().parameterType(1),
                    equalTo(List.class));
 
-        propertyAccessors.get("list").getHandle()
+        propertyAccessors.get("list").handle()
                 .invoke(bean, listOf(23L, 42L));
         assertThat(bean.getList(), contains(23L, 42L));
     }
@@ -227,10 +227,10 @@ public class ReflectionUtilTest {
         ListBean bean = new ListBean();
         assertThat(bean.listField, is(nullValue()));
 
-        assertThat(propertyAccessors.get("listField").getHandle().type().parameterType(1),
+        assertThat(propertyAccessors.get("listField").handle().type().parameterType(1),
                    equalTo(List.class));
 
-        propertyAccessors.get("listField").getHandle()
+        propertyAccessors.get("listField").handle()
                 .invoke(bean, listOf(23L, 42L));
         assertThat(bean.listField, contains(23L, 42L));
     }

@@ -33,9 +33,9 @@ public class ConfigKeyImplTest {
 
     @Test
     public void testConfigKeyOf() {
-        assertThatKey((ConfigKeyImpl) Config.Key.of(""), true, nullValue(), "", "");
-        assertThatKey((ConfigKeyImpl) Config.Key.of("aaa"), false, not(nullValue()), "aaa", "aaa");
-        assertThatKey((ConfigKeyImpl) Config.Key.of("aaa.bbb.ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
+        assertThatKey((ConfigKeyImpl) Config.Key.create(""), true, nullValue(), "", "");
+        assertThatKey((ConfigKeyImpl) Config.Key.create("aaa"), false, not(nullValue()), "aaa", "aaa");
+        assertThatKey((ConfigKeyImpl) Config.Key.create("aaa.bbb.ccc"), false, not(nullValue()), "ccc", "aaa.bbb.ccc");
     }
 
     @Test

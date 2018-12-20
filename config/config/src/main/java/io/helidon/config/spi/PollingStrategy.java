@@ -55,7 +55,7 @@ import io.helidon.config.PollingStrategies;
  * {@link AbstractParsableConfigSource} can use a different
  * {@code PollingStrategy}.
  * <p>
- * As described with {@link ConfigSource#from(Config)}, the config system can
+ * As described with {@link ConfigSource#create(Config)}, the config system can
  * load {@code ConfigSource}s using meta-configuration, which supports
  * specifying polling strategies. All {@link PollingStrategies built-in polling
  * strategies} and custom ones are supported. (The support is tightly connected
@@ -127,7 +127,7 @@ import io.helidon.config.PollingStrategies;
  * attributes that are used to construct the associated {@code ConfigSource}. To
  * do so the custom implementation class should implement a constructor that
  * accepts the same Java type as that returned by the
- * {@link AbstractSource.Builder#getTarget()} method on the builder that is used
+ * {@link AbstractSource.Builder#target()} method on the builder that is used
  * to construct the {@code ConfigSource}.
  * <p>
  * For example, a custom polling strategy useful with {@code ConfigSource}s
@@ -198,7 +198,7 @@ public interface PollingStrategy extends Supplier<PollingStrategy> {
          *
          * @return event timestamp
          */
-        Instant getTimestamp();
+        Instant timestamp();
 
         /**
          * Creates a new instance of {@link PollingEvent} with
@@ -210,7 +210,7 @@ public interface PollingStrategy extends Supplier<PollingStrategy> {
             Instant timestamp = Instant.now();
             return new PollingEvent() {
                 @Override
-                public Instant getTimestamp() {
+                public Instant timestamp() {
                     return timestamp;
                 }
 

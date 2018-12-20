@@ -104,8 +104,8 @@
         </dependency>
         <!-- Helidon Config -->
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-config</artifactId>
         </dependency>
         <!-- Helidon Security -->
         <dependency>

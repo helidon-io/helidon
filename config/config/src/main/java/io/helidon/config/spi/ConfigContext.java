@@ -30,7 +30,7 @@ public interface ConfigContext {
     /**
      * Returns the first appropriate {@link ConfigParser} instance that supports
      * the specified
-     * {@link ConfigParser.Content#getMediaType() content media type}.
+     * {@link ConfigParser.Content#mediaType() content media type}.
      * <p>
      * Note that the application can explicitly register parsers with a builder
      * by invoking the

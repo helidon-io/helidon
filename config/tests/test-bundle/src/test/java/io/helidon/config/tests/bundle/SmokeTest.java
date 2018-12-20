@@ -36,7 +36,7 @@ public class SmokeTest {
     @Test
     public void testPropertiesParser() {
         Config config = Config.builder()
-                .sources(ConfigSources.from("key=value", "text/x-java-properties"))
+                .sources(ConfigSources.create("key=value", "text/x-java-properties"))
                 .build();
         assertThat(config.get("key").asString(), is(ConfigValues.simpleValue("value")));
     }

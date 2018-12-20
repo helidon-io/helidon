@@ -54,8 +54,13 @@ public class ScheduledPollingStrategy implements PollingStrategy {
      *
      * @param recurringPolicy a recurring policy
      * @param executor        an executor
+     * @return configured strategy
      */
-    public ScheduledPollingStrategy(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
+    public static ScheduledPollingStrategy create(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
+        return new ScheduledPollingStrategy(recurringPolicy, executor);
+    }
+
+    private ScheduledPollingStrategy(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
         Objects.requireNonNull(recurringPolicy, "recurringPolicy cannot be null");
 
         this.recurringPolicy = recurringPolicy;
@@ -92,7 +97,7 @@ public class ScheduledPollingStrategy implements PollingStrategy {
      *
      * @return recurring policy
      */
-    public RecurringPolicy getRecurringPolicy() {
+    public RecurringPolicy recurringPolicy() {
         return recurringPolicy;
     }
 
@@ -179,11 +184,11 @@ public class ScheduledPollingStrategy implements PollingStrategy {
         }
     }
 
-    ScheduledFuture<?> getScheduledFuture() {
+    ScheduledFuture<?> scheduledFuture() {
         return scheduledFuture;
     }
 
-    ScheduledExecutorService getExecutor() {
+    ScheduledExecutorService executor() {
         return executor;
     }
 
@@ -277,7 +282,7 @@ public class ScheduledPollingStrategy implements PollingStrategy {
             delay = max.compareTo(candidate) > 0 ? candidate : max;
         }
 
-        Duration getDelay() {
+        Duration delay() {
             return delay;
         }
     }

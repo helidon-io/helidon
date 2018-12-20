@@ -57,8 +57,8 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
     protected AbstractConfigSource(Builder<?, ?> builder) {
         super(builder);
 
-        mediaTypeMapping = builder.getMediaTypeMapping();
-        parserMapping = builder.getParserMapping();
+        mediaTypeMapping = builder.mediaTypeMapping();
+        parserMapping = builder.parserMapping();
     }
 
     @Override
@@ -66,7 +66,11 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         configContext = context;
     }
 
-    protected ConfigContext getConfigContext() {
+    /**
+     * Config context associated with this source.
+     * @return config context
+     */
+    protected ConfigContext configContext() {
         return configContext;
     }
 
@@ -80,7 +84,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
     }
 
     private ConfigNode processNode(Optional<S> datastamp, ConfigKeyImpl key, ConfigNode node) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return processObject(datastamp, key, (ObjectNode) node);
         case LIST:
@@ -114,14 +118,14 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
         AtomicReference<ConfigNode> result = new AtomicReference<>(valueNode);
         findParserForKey(key)
                 .ifPresent(parser -> result.set(parser.parse(
-                        Content.from(new StringReader(valueNode.get()), null, datastamp))));
+                        Content.create(new StringReader(valueNode.get()), null, datastamp))));
         return result.get();
     }
 
     private Optional<ConfigParser> findParserForKey(Config.Key key) {
         return OptionalHelper.from(Optional.ofNullable(parserMapping).map(mapping -> mapping.apply(key)))
                 .or(() -> Optional.ofNullable(mediaTypeMapping).map(mapping -> mapping.apply(key))
-                        .flatMap(mediaType -> getConfigContext().findParser(mediaType)))
+                        .flatMap(mediaType -> configContext().findParser(mediaType)))
                 .asOptional();
     }
 
@@ -132,7 +136,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
      */
     @Override
     public final Flow.Publisher<Optional<ObjectNode>> changes() {
-        return getChangesPublisher();
+        return changesPublisher();
     }
 
     /**
@@ -228,11 +232,19 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
             return thisBuilder;
         }
 
-        protected Function<Config.Key, String> getMediaTypeMapping() {
+        /**
+         * Media type mapping function.
+         * @return media type mapping
+         */
+        protected Function<Config.Key, String> mediaTypeMapping() {
             return mediaTypeMapping;
         }
 
-        protected Function<Config.Key, ConfigParser> getParserMapping() {
+        /**
+         * Parser mapping function.
+         * @return parser mapping
+         */
+        protected Function<Config.Key, ConfigParser> parserMapping() {
             return parserMapping;
         }
 

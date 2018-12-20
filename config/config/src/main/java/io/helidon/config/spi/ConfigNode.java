@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import io.helidon.common.Builder;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.ListNodeBuilderImpl;
 import io.helidon.config.internal.ObjectNodeBuilderImpl;
@@ -34,7 +35,7 @@ public interface ConfigNode extends Supplier<String> {
      *
      * @return NodeType this node represents
      */
-    NodeType getNodeType();
+    NodeType nodeType();
 
     /**
      * Base types of config nodes.
@@ -57,11 +58,11 @@ public interface ConfigNode extends Supplier<String> {
     /**
      * Single string-based configuration value.
      * <p>
-     * NOTE: Do not implement this interface yourself but rather use {@link #from(String)}.
+     * NOTE: Do not implement this interface yourself but rather use {@link #create(String)}.
      */
     interface ValueNode extends ConfigNode {
         @Override
-        default NodeType getNodeType() {
+        default NodeType nodeType() {
             return NodeType.VALUE;
         }
 
@@ -71,8 +72,8 @@ public interface ConfigNode extends Supplier<String> {
          * @param value string value
          * @return new instance of the {@link ValueNode}
          */
-        static ValueNode from(String value) {
-            return new ValueNodeImpl(value);
+        static ValueNode create(String value) {
+            return ValueNodeImpl.create(value);
         }
     }
 
@@ -85,7 +86,7 @@ public interface ConfigNode extends Supplier<String> {
      */
     interface ListNode extends ConfigNode, List<ConfigNode> {
         @Override
-        default NodeType getNodeType() {
+        default NodeType nodeType() {
             return NodeType.LIST;
         }
 
@@ -101,7 +102,7 @@ public interface ConfigNode extends Supplier<String> {
         /**
          * Builder to build {@link ListNode} instance.
          */
-        interface Builder {
+        interface Builder extends io.helidon.common.Builder<ListNode> {
             /**
              * Adds String value to the list.
              *
@@ -109,7 +110,7 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             default Builder addValue(String value) {
-                return addValue(ValueNode.from(value));
+                return addValue(ValueNode.create(value));
             }
 
             /**
@@ -143,14 +144,6 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             Builder value(String value);
-
-            /**
-             * Build new instance of {@link ListNode}.
-             *
-             * @return new instance of {@link ListNode}.
-             */
-            ListNode build();
-
         }
     }
 
@@ -169,7 +162,7 @@ public interface ConfigNode extends Supplier<String> {
      */
     interface ObjectNode extends ConfigNode, Map<String, ConfigNode> {
         @Override
-        default NodeType getNodeType() {
+        default NodeType nodeType() {
             return NodeType.OBJECT;
         }
 
@@ -204,7 +197,7 @@ public interface ConfigNode extends Supplier<String> {
              * @return modified builder
              */
             default Builder addValue(String key, String value) {
-                return addValue(key, ValueNode.from(value));
+                return addValue(key, ValueNode.create(value));
             }
 
             /**

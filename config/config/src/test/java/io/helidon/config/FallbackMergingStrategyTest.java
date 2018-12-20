@@ -61,7 +61,7 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeSingleSource() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "1").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "1").build()));
 
         assertThat(rootNode.entrySet(), hasSize(1));
         assertThat(((ObjectNode) rootNode.get("top1")).get("prop1"), valueNode("1"));
@@ -70,8 +70,8 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeValueToValueNew() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "2").build()));
 
         assertThat(rootNode.entrySet(), hasSize(1));
         assertThat(((ObjectNode) rootNode.get("top1")).get("prop1"), valueNode("1"));
@@ -80,8 +80,8 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeValueToValue() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "2").build()));
 
         assertThat(rootNode.entrySet(), hasSize(1));
         assertThat(((ObjectNode) rootNode.get("top1")).get("prop1"), valueNode("1"));
@@ -92,8 +92,8 @@ public class FallbackMergingStrategyTest {
     public void testMergeValueToList() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
                         .addValue("2").build()).build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "LIST")).matches(ex.getMessage()));
@@ -104,8 +104,8 @@ public class FallbackMergingStrategyTest {
     public void testMergeValueToObject() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.sub", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub", "2").build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "OBJECT")).matches(ex.getMessage()));
     }
@@ -115,8 +115,8 @@ public class FallbackMergingStrategyTest {
     public void testMergeObjectToValue() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.sub", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "2").build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "VALUE")).matches(ex.getMessage()));
     }
@@ -125,8 +125,8 @@ public class FallbackMergingStrategyTest {
     public void testMergeObjectWithNonNumberKeyToList() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.sub1", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub1", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
                         .addValue("2").build()).build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "[sub1]", "LIST")).matches(ex.getMessage()));
@@ -135,8 +135,8 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeObjectWithNumberKeyToList() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.0", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.0", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
                         .addValue("2").build()).build()));
         assertThat(rootNode.entrySet(), hasSize(1));
 
@@ -149,8 +149,8 @@ public class FallbackMergingStrategyTest {
     public void testMergeObjectWithNumberKeyOutOfBoundsToList() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.1", "1").build()),
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.1", "1").build()),
+                ConfigSources.create(ObjectNode.builder()
                                            .addList("top1.prop1", ListNode.builder().addValue("2").build())
                                            .build()));
         });
@@ -160,8 +160,8 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeObjectToObject() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.sub1", "1").build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.sub2", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub1", "1").build()),
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub2", "2").build()));
 
         assertThat(rootNode.entrySet(), hasSize(1));
 
@@ -177,9 +177,9 @@ public class FallbackMergingStrategyTest {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
                 ConfigSources
-                        .from(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                        .create(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
                                 .addValue("1").build()).build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1", "2").build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "VALUE")).matches(ex.getMessage()));
     }
@@ -187,12 +187,12 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeListToList() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                ConfigSources.create(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
                         .addValue("1")
                         .addValue("2")
                         .build()).build()),
                 ConfigSources
-                        .from(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
+                        .create(ObjectNode.builder().addList("top1.prop1", ListNode.builder()
                                 .addValue("3").build()).build()));
 
         assertThat(rootNode.entrySet(), hasSize(1));
@@ -207,11 +207,11 @@ public class FallbackMergingStrategyTest {
     public void testMergeListToObjectWithNonNumberKey() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder()
                                            .addList("top1.prop1", ListNode.builder()
                                                    .addValue("1").build())
                                            .build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.sub1", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.sub1", "2").build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")).matches(ex.getMessage()));
     }
@@ -220,11 +220,11 @@ public class FallbackMergingStrategyTest {
     public void testMergeListToObjectWithNumberKey() {
         ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
             mergeLoads(
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder()
                                            .addList("top1.prop1", ListNode.builder()
                                                    .addValue("1").build())
                                            .build()),
-                ConfigSources.from(ObjectNode.builder().addValue("top1.prop1.0", "2").build()));
+                ConfigSources.create(ObjectNode.builder().addValue("top1.prop1.0", "2").build()));
         });
         Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")).matches(ex.getMessage()));
     }
@@ -232,7 +232,7 @@ public class FallbackMergingStrategyTest {
     @Test
     public void testMergeWithNewKeys() {
         ObjectNode rootNode = mergeLoads(
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder()
                                            .addValue("a-prop1", "1")
                                            .addList("a-list", ListNode.builder()
                                                    .addValue("2")
@@ -241,7 +241,7 @@ public class FallbackMergingStrategyTest {
                                                    .addValue("prop1", "4")
                                                    .build())
                                            .build()),
-                ConfigSources.from(ObjectNode.builder()
+                ConfigSources.create(ObjectNode.builder()
                                            .addValue("b-prop1", "11")
                                            .addList("b-list", ListNode.builder()
                                                    .addValue("12")

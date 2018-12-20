@@ -43,7 +43,7 @@ class ConfigListImpl extends ConfigComplexImpl<ListNode> {
     public ConfigValue<List<Config>> asNodeList() throws ConfigMappingException {
         return ConfigValues.create(this,
                                    () -> Optional.of(
-                                           IntStream.range(0, getNode().size())
+                                           IntStream.range(0, node().size())
                                                    .boxed()
                                                    .map(index -> get(Integer.toString(index)))
                                                    .collect(Collectors.toList())),
@@ -53,7 +53,7 @@ class ConfigListImpl extends ConfigComplexImpl<ListNode> {
 
     @Override
     public String toString() {
-        return "[" + realKey() + "] LIST (elements: " + getNode().size() + ")";
+        return "[" + realKey() + "] LIST (elements: " + node().size() + ")";
     }
 
 }

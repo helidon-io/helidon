@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.config.objectmapping.BeansConfigMapperProvider
+io.helidon.config.objectmapping.ObjectConfigMapperProvider

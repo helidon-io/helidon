@@ -44,8 +44,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolving() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "${greeting} ${name}!",
                                 "greeting", "Hallo",
@@ -62,8 +62,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingDottedReference() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "${greeting.german} ${name}!",
                                 "greeting.german", "Hallo",
@@ -80,8 +80,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingTransitive() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "${template}",
                                 "template", "${greeting} ${name}!",
@@ -99,8 +99,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingBackslashed() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "${template}",
                                 "template", "${greeting} \\${name}!",
@@ -118,8 +118,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingBackslashIgnored() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "${greeting} \\ ${name}!",
                                 "name", "Joachim",
@@ -136,8 +136,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingBackslashIgnored2() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "${template}",
                                 "template", "${greeting} \\ ${name}!",
@@ -166,8 +166,8 @@ public class ValueResolvingFilterTest {
         final FutureTask<LoopTestResult> shouldNotRecurse =
             new FutureTask<LoopTestResult> ( () -> {
                 LoopTestResult result = new LoopTestResult();
-                Config config = Config.withSources(
-                ConfigSources.from(
+                Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "message", "There ${template}",
                                 "template", "and back again ${message}"
@@ -201,8 +201,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceIgnored() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}"
                         )))
@@ -217,8 +217,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceNoFilter() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}"
                         )))
@@ -232,8 +232,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceFails() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}"
                         )))
@@ -254,8 +254,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceOKViaNoArgsCtor() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}"
                         )))
@@ -270,8 +270,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceFailsViaNoArgsCtor() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}"
                         )))
@@ -290,8 +290,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceFailsViaServiceLoader() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}",
                                 ConfigFilters.ValueResolvingBuilder.FAIL_ON_MISSING_REFERENCE_KEY_NAME, "true"
@@ -309,8 +309,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingMissingReferenceOKViaServiceLoader() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "wrong", "${missing}"
                         )))
@@ -323,8 +323,8 @@ public class ValueResolvingFilterTest {
 
     @Test
     public void testValueResolvingSatisfiedReferenceViaServiceLoader() {
-        Config config = Config.withSources(
-                ConfigSources.from(
+        Config config = Config.builder(
+                ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "correct", "${refc}",
                                 "refc", "answer"

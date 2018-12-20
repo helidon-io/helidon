@@ -30,7 +30,7 @@ import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import static io.helidon.config.ConfigSources.from;
+import static io.helidon.config.ConfigSources.create;
 import static io.helidon.config.ConfigSources.prefixed;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -68,14 +68,14 @@ public class ConfigSourcesTest {
     public void testFromConfig() throws MalformedURLException, InterruptedException {
         Map<String, String> source = CollectionsHelper.mapOf("object.leaf", "value");
 
-        ConfigSource originConfigSource = from(source).build();
-        Config originConfig = Config.withSources(originConfigSource)
+        ConfigSource originConfigSource = ConfigSources.create(source).build();
+        Config originConfig = Config.builder(originConfigSource)
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
-        ConfigSource configSource = from(originConfig);
-        Config copy = Config.withSources(configSource)
+        ConfigSource configSource = ConfigSources.create(originConfig);
+        Config copy = Config.builder(configSource)
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -85,7 +85,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testPrefix() {
-        assertThat(Config.from(prefixed("security", from(CollectionsHelper.mapOf("credentials.username", "libor"))))
+        assertThat(Config.create(prefixed("security", ConfigSources.create(CollectionsHelper.mapOf("credentials.username", "libor"))))
                            .get("security.credentials.username")
                            .asString(),
                    is(ConfigValues.simpleValue("libor")));
@@ -94,13 +94,13 @@ public class ConfigSourcesTest {
 
     @Test
     public void testPrefixDescription() {
-        ConfigSource source = from(CollectionsHelper.mapOf("credentials.username", "libor")).build();
+        ConfigSource source = ConfigSources.create(CollectionsHelper.mapOf("credentials.username", "libor")).build();
         assertThat(prefixed("security", source).description(), is("prefixed[security]:" + source.description()));
     }
 
     @Test
     public void testMapBuilderSupplierGetOnce() {
-        ConfigSources.MapBuilder builder = from(CollectionsHelper.mapOf());
+        ConfigSources.MapBuilder builder = ConfigSources.create(CollectionsHelper.mapOf());
 
         ConfigSource configSource = builder.get();
         assertThat(configSource, sameInstance(builder.get()));
@@ -108,7 +108,7 @@ public class ConfigSourcesTest {
 
     @Test
     public void testCompositeBuilderSupplierGetOnce() {
-        ConfigSources.CompositeBuilder builder = ConfigSources.from();
+        ConfigSources.CompositeBuilder builder = ConfigSources.create();
 
         ConfigSource configSource = builder.get();
         assertThat(configSource, sameInstance(builder.get()));
@@ -126,7 +126,7 @@ public class ConfigSourcesTest {
     public void testLoadSingleSource() {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
-        ConfigSource meta1 = ConfigSources.from(
+        ConfigSource meta1 = ConfigSources.create(
                 ObjectNode.builder()
                         .addList("sources", ListNode.builder()
                                 .addObject(ObjectNode.builder()
@@ -146,7 +146,7 @@ public class ConfigSourcesTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         //meta1's `sources` property is used
-        ConfigSource meta1 = ConfigSources.from(
+        ConfigSource meta1 = ConfigSources.create(
                 ObjectNode.builder()
                         .addList("sources", ListNode.builder()
                                 .addObject(ObjectNode.builder()
@@ -159,7 +159,7 @@ public class ConfigSourcesTest {
                         .build());
 
         //meta2's `sources` property is ignored
-        ConfigSource meta2 = ConfigSources.from(
+        ConfigSource meta2 = ConfigSources.create(
                 ObjectNode.builder()
                         .addList("sources", ListNode.builder()
                                 .addObject(ObjectNode.builder()

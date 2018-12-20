@@ -58,8 +58,8 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @param members initial members
      * @return new builder instance
      */
-    public static ObjectNodeBuilderImpl from(Map<String, ConfigNode> members) {
-        return from(members, Function.identity());
+    public static ObjectNodeBuilderImpl create(Map<String, ConfigNode> members) {
+        return create(members, Function.identity());
     }
 
     /**
@@ -69,7 +69,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @param resolveTokenFunction a function resolving key token
      * @return new builder instance
      */
-    public static ObjectNodeBuilderImpl from(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction) {
+    public static ObjectNodeBuilderImpl create(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction) {
         return new ObjectNodeBuilderImpl(resolveTokenFunction).fromMap(members);
     }
 
@@ -92,7 +92,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @return modified builder
      */
     public ObjectNodeBuilderImpl addNode(String name, ConfigNode node) {
-        members.put(getTokenResolver().apply(name), wrap(node, getTokenResolver()));
+        members.put(tokenResolver().apply(name), wrap(node, tokenResolver()));
         return this;
     }
 
@@ -108,12 +108,12 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
 
     @Override
     protected MergeableNode member(String name) {
-        return members.computeIfAbsent(name, (k) -> new ObjectNodeImpl(CollectionsHelper.mapOf(), getTokenResolver()));
+        return members.computeIfAbsent(name, (k) -> new ObjectNodeImpl(CollectionsHelper.mapOf(), tokenResolver()));
     }
 
     @Override
     protected void update(String name, MergeableNode node) {
-        members.put(getTokenResolver().apply(name), node);
+        members.put(tokenResolver().apply(name), node);
     }
 
     @Override
@@ -143,24 +143,24 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
 
     @Override
     public ObjectNode.Builder addValue(String key, ConfigNode.ValueNode value) {
-        return deepMerge(MergingKey.of(encodeDotsInTokenReferences(getTokenResolver().apply(key))), ValueNodeImpl.wrap(value));
+        return deepMerge(MergingKey.of(encodeDotsInTokenReferences(tokenResolver().apply(key))), ValueNodeImpl.wrap(value));
     }
 
     @Override
     public ObjectNode.Builder addObject(String key, ObjectNode object) {
-        return deepMerge(MergingKey.of(encodeDotsInTokenReferences(getTokenResolver().apply(key))),
-                         ObjectNodeImpl.wrap(object, getTokenResolver()));
+        return deepMerge(MergingKey.of(encodeDotsInTokenReferences(tokenResolver().apply(key))),
+                         ObjectNodeImpl.wrap(object, tokenResolver()));
     }
 
     @Override
     public ObjectNode.Builder addList(String key, ListNode list) {
-        return deepMerge(MergingKey.of(encodeDotsInTokenReferences(getTokenResolver().apply(key))),
-                         ListNodeImpl.wrap(list, getTokenResolver()));
+        return deepMerge(MergingKey.of(encodeDotsInTokenReferences(tokenResolver().apply(key))),
+                         ListNodeImpl.wrap(list, tokenResolver()));
     }
 
     @Override
     public ObjectNodeImpl build() {
-        return new ObjectNodeImpl(Collections.unmodifiableMap(members), getTokenResolver(), value);
+        return new ObjectNodeImpl(Collections.unmodifiableMap(members), tokenResolver(), value);
     }
 
     @Override

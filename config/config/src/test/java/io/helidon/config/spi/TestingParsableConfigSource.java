@@ -46,7 +46,7 @@ public class TestingParsableConfigSource extends AbstractParsableConfigSource<In
     protected Optional<Instant> dataStamp() {
         ConfigParser.Content<Instant> content = contentSupplier.get();
         if (content != null) {
-            return content.getStamp();
+            return content.stamp();
         }
         return Optional.empty();
     }

@@ -30,7 +30,6 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.ConfigValues;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.hocon.internal.HoconConfigParser;
 import io.helidon.config.spi.ConfigNode;
@@ -208,7 +207,7 @@ public class HoconConfigParserTest {
                 + "}\n";
 
         Config config = Config
-                .withSources(ConfigSources.from(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
+                .builder(ConfigSources.create(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
                 .addParser(new HoconConfigParser())
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
@@ -256,13 +255,13 @@ public class HoconConfigParserTest {
     public void testGetSupportedMediaTypes() {
         HoconConfigParser parser = new HoconConfigParser();
 
-        assertThat(parser.getSupportedMediaTypes(), is(not(empty())));
+        assertThat(parser.supportedMediaTypes(), is(not(empty())));
     }
 
     @Test
     public void testCustomTypeMapping() {
         Config config = Config
-                .withSources(ConfigSources.from(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
+                .builder(ConfigSources.create(AppType.DEF, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
                 .addParser(new HoconConfigParser())
                 .addMapper(AppType.class, new AppTypeMapper())
                 .disableEnvironmentVariablesSource()
@@ -286,7 +285,7 @@ public class HoconConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends Content {
         @Override
-        default String getMediaType() {
+        default String mediaType() {
             return HoconConfigParser.MEDIA_TYPE_APPLICATION_HOCON;
         }
 

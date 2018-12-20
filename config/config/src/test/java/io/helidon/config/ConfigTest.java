@@ -36,7 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static io.helidon.config.Config.Type.LIST;
 import static io.helidon.config.Config.Type.OBJECT;
 import static io.helidon.config.Config.Type.VALUE;
-import static io.helidon.config.ConfigSources.from;
+import static io.helidon.config.ConfigSources.create;
 import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
 import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -528,8 +528,8 @@ public class ConfigTest {
     @Test
     public void testConfigKeyEscapedNameComplex() {
         Config config = Config
-                .withSources(
-                        from(ObjectNode
+                .builder(
+                        ConfigSources.create(ObjectNode
                                      .builder()
                                      .addObject(Key.escapeName("oracle.com"), ObjectNode.builder()
                                              .addValue("prop1", "val1")
@@ -649,7 +649,7 @@ public class ConfigTest {
 
     private static Config.Builder createTestConfigBuilder(ObjectNode oNode) {
         return Config.builder()
-                .sources(from(oNode))
+                .sources(ConfigSources.create(oNode))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableParserServices()

@@ -40,22 +40,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Unit test for {@link BeansConfigMapperProvider}.
+ * Unit test for {@link ObjectConfigMapperProvider}.
  */
-class BeansConfigMapperProviderTest {
+class ObjectConfigMapperProviderTest {
     public static final String TEST_MESSAGE = "testValue";
-    private static BeansConfigMapperProvider provider;
+    private static ObjectConfigMapperProvider provider;
     private static Config empty;
     private static Config full;
 
     @BeforeAll
     static void initClass() {
-        provider = new BeansConfigMapperProvider();
+        provider = new ObjectConfigMapperProvider();
         empty = Config.empty();
         Map<String, String> configMap = CollectionsHelper.mapOf(
                 Configurables.WithCreateConfig.CONFIG_KEY, TEST_MESSAGE
         );
-        full = Config.withSources(ConfigSources.from(configMap))
+        full = Config.builder(ConfigSources.create(configMap))
                 .build();
     }
 
@@ -98,7 +98,7 @@ class BeansConfigMapperProviderTest {
         supplier = instance.supplier(defaultValue);
         assertThat(supplier.get(), sameInstance(defaultValue));
 
-        assertThat(instance.key(), is(Config.Key.of(expectedConfigKey)));
+        assertThat(instance.key(), is(Config.Key.create(expectedConfigKey)));
         assertThat(instance.name(), is(expectedConfigKey));
         instance.ifPresent(wcc -> fail("Key is not present, should have failed."));
     }
@@ -127,7 +127,7 @@ class BeansConfigMapperProviderTest {
         assertThat(supplier.get(), not(sameInstance(defaultValue)));
         assertThat(supplier.get().message(), is(TEST_MESSAGE));
 
-        assertThat(instance.key(), is(Config.Key.of(expectedConfigKey)));
+        assertThat(instance.key(), is(Config.Key.create(expectedConfigKey)));
         assertThat(instance.name(), is(expectedConfigKey));
 
         instance.ifPresent(wcc -> assertThat(wcc.message(), is(TEST_MESSAGE)));

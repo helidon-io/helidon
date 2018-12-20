@@ -39,7 +39,7 @@ public final class ConfigValues {
      * @return a config value that is empty
      */
     public static <T> ConfigValue<T> empty() {
-        return new ConfigValueBase<T>(Config.Key.of("")) {
+        return new ConfigValueBase<T>(Config.Key.create("")) {
             @Override
             public Optional<T> asOptional() {
                 return Optional.empty();
@@ -53,7 +53,7 @@ public final class ConfigValues {
             @Override
             public Supplier<T> supplier() {
                 return () -> {
-                    throw MissingValueException.forKey(key());
+                    throw MissingValueException.create(key());
                 };
             }
 
@@ -83,7 +83,7 @@ public final class ConfigValues {
      * @return a config value that uses the value provided
      */
     public static <T> ConfigValue<T> simpleValue(T value) {
-        return new ConfigValueBase<T>(Config.Key.of("")) {
+        return new ConfigValueBase<T>(Config.Key.create("")) {
             @Override
             public Optional<T> asOptional() {
                 return Optional.ofNullable(value);

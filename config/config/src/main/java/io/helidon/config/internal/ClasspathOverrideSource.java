@@ -79,7 +79,7 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
         }
         try {
             return new Data<>(
-                    Optional.of(OverrideData.from(new InputStreamReader(inputStream, StandardCharsets.UTF_8))),
+                    Optional.of(OverrideData.create(new InputStreamReader(inputStream, StandardCharsets.UTF_8))),
                     Optional.ofNullable(resourceTimestamp)
             );
         } catch (IOException e) {
@@ -117,7 +117,7 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
         }
 
         @Override
-        protected Path getTarget() {
+        protected Path target() {
             try {
                 Path resourcePath = ClasspathSourceHelper.resourcePath(resource);
                 if (resourcePath != null) {
@@ -140,8 +140,8 @@ public class ClasspathOverrideSource extends AbstractOverrideSource<Instant> {
             return new ClasspathOverrideSource(this, resource);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 }

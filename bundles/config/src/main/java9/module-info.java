@@ -15,9 +15,11 @@
  */
 
 /**
- * "all in one" Bundle module.
- * <p>
- * Config Bundle is placed in {@code io.helidon.config.bundle} Java 9 module.
- * Maven coordinates are {@code io.helidon.config:helidon-config-bundle}.
+ * Config Bundle module.
  */
-package io.helidon.config.bundle;
+module io.helidon.bundles.config {
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.config.objectmapping;
+    requires transitive io.helidon.config.hocon;
+    requires transitive io.helidon.config.yaml;
+}

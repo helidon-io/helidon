@@ -204,7 +204,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     Properties props = new Properties();
                     props.load(mpConfigProps.openStream());
                     configSources.clear();
-                    configSources.add(ConfigSources.from(props));
+                    configSources.add(ConfigSources.create(props));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

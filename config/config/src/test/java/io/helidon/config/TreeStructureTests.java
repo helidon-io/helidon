@@ -15,8 +15,6 @@
  */
 package io.helidon.config;
 
-import java.util.Optional;
-
 import io.helidon.common.CollectionsHelper;
 
 import org.junit.jupiter.api.Test;
@@ -30,7 +28,7 @@ import static org.junit.Assert.assertThat;
 public class TreeStructureTests {
     @Test
     void testEmptyLeafAndTreeNodes() {
-        Config config = Config.withSources(ConfigSources.from(
+        Config config = Config.builder(ConfigSources.create(
                 CollectionsHelper.mapOf("a", "rootValue",
                                         "a.b", "leafTreeNode",
                                         "a.b.c", "leafNode",
@@ -54,7 +52,7 @@ public class TreeStructureTests {
 
     @Test
     void testListAndDirectValue() {
-        Config config = Config.withSources(ConfigSources.from(
+        Config config = Config.builder(ConfigSources.create(
                 CollectionsHelper.mapOf("c.a", "treeAndLeafNode",
                                         "c.a.0", "first",
                                         "c.a.1", "second",

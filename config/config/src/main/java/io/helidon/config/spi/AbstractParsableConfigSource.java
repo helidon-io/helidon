@@ -49,15 +49,15 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
     protected AbstractParsableConfigSource(AbstractParsableConfigSource.Builder builder) {
         super(builder);
 
-        mediaType = builder.getMediaType();
-        parser = builder.getParser();
+        mediaType = builder.mediaType();
+        parser = builder.parser();
     }
 
     @Override
     protected Data<ObjectNode, S> loadData() {
         ConfigParser.Content<S> content = content();
-        ObjectNode objectNode = parse(getConfigContext(), content);
-        return new Data<>(Optional.of(objectNode), content.getStamp());
+        ObjectNode objectNode = parse(configContext(), content);
+        return new Data<>(Optional.of(objectNode), content.stamp());
     }
 
     /**
@@ -65,7 +65,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      *
      * @return source associated media type or {@code null} if unknown.
      */
-    protected String getMediaType() {
+    protected String mediaType() {
         return mediaType;
     }
 
@@ -74,7 +74,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      *
      * @return source associated parser or {@code null} if unknown.
      */
-    protected ConfigParser getParser() {
+    protected ConfigParser parser() {
         return parser;
     }
 
@@ -95,13 +95,13 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      * @throws ConfigParserException in case of problem to parse configuration from the source
      */
     private ObjectNode parse(ConfigContext context, ConfigParser.Content<S> content) throws ConfigParserException {
-        return OptionalHelper.from(Optional.ofNullable(getParser()))
-                .or(() -> context.findParser(Optional.ofNullable(content.getMediaType())
+        return OptionalHelper.from(Optional.ofNullable(parser()))
+                .or(() -> context.findParser(Optional.ofNullable(content.mediaType())
                                                      .orElseThrow(() -> new ConfigException("Unknown media type."))))
                 .asOptional()
                 .map(parser -> parser.parse(content))
                 .orElseThrow(() -> new ConfigException("Cannot find suitable parser for '"
-                                                               + content.getMediaType() + "' media type."));
+                                                               + content.mediaType() + "' media type."));
     }
 
     /**
@@ -194,7 +194,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          *
          * @return media type property.
          */
-        protected String getMediaType() {
+        protected String mediaType() {
             return mediaType;
         }
 
@@ -203,7 +203,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          *
          * @return parser property.
          */
-        protected ConfigParser getParser() {
+        protected ConfigParser parser() {
             return parser;
         }
 

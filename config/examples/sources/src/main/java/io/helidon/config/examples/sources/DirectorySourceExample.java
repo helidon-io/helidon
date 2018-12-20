@@ -38,7 +38,7 @@ public class DirectorySourceExample {
            E.g. Kubernetes Secrets:
          */
 
-        Config secrets = Config.withSources(directory("conf/secrets"))
+        Config secrets = Config.builder(directory("conf/secrets"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();

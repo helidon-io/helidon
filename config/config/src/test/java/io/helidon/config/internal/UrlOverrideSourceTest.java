@@ -76,8 +76,8 @@ public class UrlOverrideSourceTest {
         UrlOverrideSource.UrlBuilder builder = (UrlOverrideSource.UrlBuilder) OverrideSources.url(url)
                 .pollingStrategy(UrlOverrideSourceTest.TestingPathPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), instanceOf(UrlOverrideSourceTest.TestingPathPollingStrategy.class));
-        assertThat(((UrlOverrideSourceTest.TestingPathPollingStrategy) builder.getPollingStrategyInternal()).getUrl(),
+        assertThat(builder.pollingStrategyInternal(), instanceOf(UrlOverrideSourceTest.TestingPathPollingStrategy.class));
+        assertThat(((UrlOverrideSourceTest.TestingPathPollingStrategy) builder.pollingStrategyInternal()).getUrl(),
                    Is.is(url));
     }
 

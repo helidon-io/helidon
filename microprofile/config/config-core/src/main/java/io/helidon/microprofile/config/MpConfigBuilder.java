@@ -371,7 +371,7 @@ public class MpConfigBuilder implements ConfigBuilder {
     }
 
     private OrdinalConfigSource wrapSource(ConfigSource source) {
-        io.helidon.config.spi.ConfigSource myCs = ConfigSources.from(source.getProperties()).build();
+        io.helidon.config.spi.ConfigSource myCs = ConfigSources.create(source.getProperties()).build();
 
         return new OrdinalConfigSource(myCs, source.getOrdinal());
     }

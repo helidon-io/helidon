@@ -40,7 +40,7 @@ public class PropertiesConfigParserTest {
     @Test
     public void testGetSupportedMediaTypes() {
         PropertiesConfigParser parser = new PropertiesConfigParser();
-        assertThat(parser.getSupportedMediaTypes(), containsInAnyOrder(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
+        assertThat(parser.supportedMediaTypes(), containsInAnyOrder(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class PropertiesConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends ConfigParser.Content {
         @Override
-        default String getMediaType() {
+        default String mediaType() {
             return MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
         }
 

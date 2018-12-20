@@ -41,7 +41,7 @@ public class OnChangeExample {
      */
     public void run() {
         Config secrets = Config
-                .withSources(ConfigSources.directory("conf/secrets")
+                .builder(ConfigSources.directory("conf/secrets")
                                      .pollingStrategy(PollingStrategies.regular(ofSeconds(5))))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()

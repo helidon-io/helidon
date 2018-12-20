@@ -48,7 +48,7 @@ public class BuilderImplTest {
 
     @Test
     public void testBuildDefault() {
-        Config.Builder builder = Config.withSources(ConfigSources.empty());
+        Config.Builder builder = Config.builder(ConfigSources.empty());
         BuilderImpl spyBuilder = spy((BuilderImpl) builder);
         spyBuilder
                 .disableEnvironmentVariablesSource()
