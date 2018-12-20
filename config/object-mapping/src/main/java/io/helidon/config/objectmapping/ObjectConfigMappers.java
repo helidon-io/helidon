@@ -26,9 +26,9 @@ import io.helidon.config.objectmapping.ReflectionUtil.BuilderAccessor;
 import io.helidon.config.objectmapping.ReflectionUtil.PropertyAccessor;
 
 /**
- * Various mappers used in {@link BeansConfigMapperProvider}.
+ * Various mappers used in {@link ObjectConfigMapperProvider}.
  */
-class BeansConfigMappers {
+class ObjectConfigMappers {
     abstract static class MethodHandleConfigMapper<T, P> implements Function<Config, T> {
         private final Class<T> type;
         private final String methodName;

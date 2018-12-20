@@ -24,11 +24,11 @@ import javax.annotation.Priority;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
-import io.helidon.config.objectmapping.BeansConfigMappers.BuilderConfigMapper;
-import io.helidon.config.objectmapping.BeansConfigMappers.ConfigMethodHandleConfigMapper;
-import io.helidon.config.objectmapping.BeansConfigMappers.FactoryMethodConfigMapper;
-import io.helidon.config.objectmapping.BeansConfigMappers.GenericConfigMapper;
-import io.helidon.config.objectmapping.BeansConfigMappers.StringMethodHandleConfigMapper;
+import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
+import io.helidon.config.objectmapping.ObjectConfigMappers.ConfigMethodHandleConfigMapper;
+import io.helidon.config.objectmapping.ObjectConfigMappers.FactoryMethodConfigMapper;
+import io.helidon.config.objectmapping.ObjectConfigMappers.GenericConfigMapper;
+import io.helidon.config.objectmapping.ObjectConfigMappers.StringMethodHandleConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 
 import static io.helidon.config.objectmapping.ReflectionUtil.findBuilderConstructor;
@@ -42,7 +42,7 @@ import static io.helidon.config.objectmapping.ReflectionUtil.findStaticMethodWit
  * Java beans support for configuration.
  */
 @Priority(1000) // priority should be low to be one of the last ones used
-public class BeansConfigMapperProvider implements ConfigMapperProvider {
+public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_FROM = "from";
     private static final String METHOD_VALUE_OF = "valueOf";
     private static final String METHOD_FROM_CONFIG = "fromConfig";

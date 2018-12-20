@@ -40,17 +40,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Unit test for {@link BeansConfigMapperProvider}.
+ * Unit test for {@link ObjectConfigMapperProvider}.
  */
-class BeansConfigMapperProviderTest {
+class ObjectConfigMapperProviderTest {
     public static final String TEST_MESSAGE = "testValue";
-    private static BeansConfigMapperProvider provider;
+    private static ObjectConfigMapperProvider provider;
     private static Config empty;
     private static Config full;
 
     @BeforeAll
     static void initClass() {
-        provider = new BeansConfigMapperProvider();
+        provider = new ObjectConfigMapperProvider();
         empty = Config.empty();
         Map<String, String> configMap = CollectionsHelper.mapOf(
                 Configurables.WithCreateConfig.CONFIG_KEY, TEST_MESSAGE
