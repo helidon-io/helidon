@@ -51,7 +51,7 @@ But always see the example's `README` for details.
 | security | Helidon SE security examples |
 | webserver | Helidon SE webserver examples |
 | microprofile | Helidon MP examples |
-| quickstarts | Quickstart examples. This is the same examples used by the Helidon quickstart archetypes |
-| integractions | CDI extensions examples. |
-| todo-app | A more complex example consisting of a front end and backend service |
+| quickstarts | Quickstart examples. These are the same examples used by the Helidon quickstart archetypes |
+| integrations | CDI extensions examples. |
+| todo-app | A more complex example consisting of front end and back end services |
 
