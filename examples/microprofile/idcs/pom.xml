@@ -33,6 +33,10 @@
         Microprofile example with IDCS integration (through Open ID Connect)
     </description>
 
+    <properties>
+        <mainClass>io.helidon.microprofile.example.idcs.IdcsMain</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

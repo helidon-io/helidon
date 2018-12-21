@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.security.examples.google.GoogleConfigMain</example.main-class>
+        <mainClass>io.helidon.security.examples.google.GoogleConfigMain</mainClass>
     </properties>
 
     <dependencies>

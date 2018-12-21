@@ -35,7 +35,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.security.examples.signatures.SignatureExampleConfigMain</example.main-class>
+        <mainClass>io.helidon.security.examples.signatures.SignatureExampleConfigMain</mainClass>
     </properties>
 
     <dependencies>

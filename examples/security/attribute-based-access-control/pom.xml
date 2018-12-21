@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.security.examples.abac.AbacJerseyMain</example.main-class>
+        <mainClass>io.helidon.security.examples.abac.AbacJerseyMain</mainClass>
     </properties>
 
     <dependencies>

@@ -47,11 +47,11 @@ But always see the example's `README` for details.
 
 |Directory                     | Description |
 |:------------------------------|:-------------|
-| [config](./config/README.md) | Helidon SE config examples |
-| [security](./security/README.md) | Helidon SE security examples |
-| [webserver](./webserver/README.md) | Helidon SE webserver examples |
-| [microprofile](./microprofile/README.md) | Helidon MP examples |
-| [quickstarts](./quickstarts/README.md) | Quickstart examples. This is the same examples used by the Helidon quickstart archetypes |
-| [integractions](./integrations/README.md) | CDI extensions examples. |
-| [todo-app](./todo-app/README.md) | A more complex application consisting of a front end and backend service |
+| config | Helidon SE config examples |
+| security | Helidon SE security examples |
+| webserver | Helidon SE webserver examples |
+| microprofile | Helidon MP examples |
+| quickstarts | Quickstart examples. This is the same examples used by the Helidon quickstart archetypes |
+| integractions | CDI extensions examples. |
+| todo-app | A more complex example consisting of a front end and backend service |
 

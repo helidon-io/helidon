@@ -33,6 +33,10 @@
         Microprofile 1.1 example with explicit bootstrapping (Server.create(Application.class).start())
     </description>
 
+    <properties>
+        <mainClass>io.helidon.microprofile.example.helloworld.explicit.Main</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

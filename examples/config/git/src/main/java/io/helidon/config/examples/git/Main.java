@@ -47,12 +47,15 @@ public class Main {
 
         Config env = Config.from(ConfigSources.environmentVariables());
 
+        System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
+
         Config config = Config.from(
                 from("application.conf")
                         .uri(URI.create("https://github.com/okosatka/test-config.git"))
                         .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
                         .build());
 
+        System.out.println("Greeting is " + config.get("greeting").asString().get());
         assert config.get("greeting").asString().get().equals("hello");
     }
 

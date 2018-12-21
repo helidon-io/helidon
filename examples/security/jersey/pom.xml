@@ -35,7 +35,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.security.examples.jersey.JerseyConfigMain</example.main-class>
+        <mainClass>io.helidon.security.examples.jersey.JerseyConfigMain</mainClass>
     </properties>
 
     <dependencies>

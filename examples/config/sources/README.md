@@ -1,13 +1,16 @@
 
-# Helidon Config Example
+# Helidon Config Sources Example
 
-# Building 
+This example shows how to load configuration from multiple 
+configuration sources.
+
+## Build
 
 ```
 mvn package
 ```
 
-# Running
+## Run
 
 ```
 mvn exec:java

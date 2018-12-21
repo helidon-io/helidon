@@ -1,14 +1,18 @@
 
-# Helidon Config Example
+# Helidon Config Mapping Example
 
-# Building 
+This example shows how to implement mappers that map configuration
+to POJOs.
+
+## Build
 
 ```
 mvn package
 ```
 
-# Running
+## Run
 
 ```
 mvn exec:java
 ```
+

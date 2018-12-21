@@ -35,7 +35,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.security.examples.webserver.digest.DigestExampleConfigMain</example.main-class>
+        <mainClass>io.helidon.security.examples.webserver.digest.DigestExampleConfigMain</mainClass>
     </properties>
 
     <dependencies>

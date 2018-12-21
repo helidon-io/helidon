@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.microprofile.server.Main</example.main-class>
+        <mainClass>io.helidon.microprofile.server.Main</mainClass>
     </properties>
 
     <dependencies>
@@ -57,7 +57,6 @@
         <dependency>
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -86,21 +85,6 @@
                             <mainClass>${example.main-class}</mainClass>
                         </manifest>
                     </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <configuration>
-                    <executable>java</executable>
-                    <longClasspath>true</longClasspath>
-                    <arguments>
-                        <argument>-enableassertions</argument>
-                        <argument>-Djava.util.logging.config.file=src/main/resources/logging.properties</argument>
-                        <argument>-classpath</argument>
-                        <classpath/>
-                        <argument>${example.main-class}</argument>
-                    </arguments>
                 </configuration>
             </plugin>
         </plugins>

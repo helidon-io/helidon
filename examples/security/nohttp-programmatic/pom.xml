@@ -34,7 +34,7 @@
     </description>
 
     <properties>
-        <example.main-class>io.helidon.security.examples.security.ProgrammaticSecurity</example.main-class>
+        <mainClass>io.helidon.security.examples.security.ProgrammaticSecurity</mainClass>
     </properties>
 
     <dependencies>

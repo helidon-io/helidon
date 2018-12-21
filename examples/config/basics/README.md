@@ -1,13 +1,18 @@
 
-# Helidon Config Example
+# Helidon Config Basic Example
 
-# Building 
+This example shows the basics of using Helidon SE Config:
+
+* Loading configuration from `application.conf`
+* Getting configuration values of various types
+
+## Build
 
 ```
 mvn package
 ```
 
-# Running
+## Run
 
 ```
 mvn exec:java

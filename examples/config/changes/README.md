@@ -1,13 +1,16 @@
 
-# Helidon Config Example
+# Helidon Config Changes Example
 
-# Building 
+This example shows how an application can detect changes to its
+configuration.
+
+## Build
 
 ```
 mvn package
 ```
 
-# Running
+## Run
 
 ```
 mvn exec:java

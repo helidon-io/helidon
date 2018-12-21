@@ -1,9 +1,9 @@
 
-# Helidon MP Hello World Implicit Example
+# Helidon MP Hello World Explicit Example
 
 This examples shows a simple application written using Helidon MP.
-It is implicit because in this example you don't write the
-`main` class, instead you rely on the Microprofile Server main class.
+It is explicit because in this example you write the `main` class
+and explicitly start the microprofile server.
 
 ## Build
 
