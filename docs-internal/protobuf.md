@@ -4,6 +4,37 @@ Add support for protobuf entities in the Helidon WebServer.
 
 I.e Provide a way to send and receive protobuf messages.
 
+## Examples
+
+### Enable Protobuf Support
+
+The readers and writers for the protobuf entity types will be registered by a service, similar to how other media types are supported in the webserver. All the examples below assume that the ProtobufSupport is registered as follow:
+
+```java
+Routing.builder()
+    .register(ProtobufSupport.create(GreetingProtos.getDescriptor()))
+    // user defined handlers...
+    .build());
+```
+
+The ProtobufSupport builder accepts an optional FileDescriptor instance that will be used to lookup the parsers. If not supplied by the user, the parsers will be looked up using reflection and cached for subsequent requests.
+
+### Process a request payload
+
+```java
+request.content().as(GreetingProtos.Greeting.class).thenAccept((greeting) -> {
+    response.send("received" + greeting.getGreeting());
+});
+```
+
+### Return a response
+
+```java
+response.send(GreetingProtos.Greeting.newBuilder()
+    .setGreeting("Hello World!")
+    .build());
+```
+
 ## About protobuf
 
 Protobuf is basically a serialization framework with a toolchain to generate code, it is agnostic of transport protocol.
@@ -44,7 +75,7 @@ These headers can carry the message type as parameters. `application/octet-strea
 
 Deserializing a message requires having a handle on a parser for the type that matches that message. If the message type can be determined from the request headers and if the user has provided a `FileDescriptor`, the parser can be looked-up dynamically.
 
-If the message type is not available, the user must provide the parser explicitly.
+If the message type is not available, the parser can be looked-up using reflection: invoke the `.parser()` static method on the requested class.
 
 ## Sending Protobuf messages
 
@@ -64,13 +95,9 @@ Protobuf defines service with RPC methods, and google provides some special `.pr
 
 These 2 things while in the protobuf space are strongly associated with GRPC. From the perspective of protobuf GRPC is one implementation of a toolchain for RPC services that consists of a `protoc` plugin and a stack that supports various langagues.
 
-It would it be possible for us to define our own "Helidon" flavor of protobuf RPC services, however they wouldn't interoperate with GRPC generated code ; given the popularity of GRPC the usability such RPC services could be questionnable.
+It would it be possible for us to define our own "Helidon" flavor of protobuf RPC services, however they wouldn't interoperate with GRPC generated code ; given the popularity of GRPC the usability of such RPC services is questionnable.
 
 Support for the RPC and interoperability with GRPC clients should be done separately from the basic protobuf support.
-
-## Proposal
-
-Provide Helidon media type support for protobuf supporting with support for the popular headers and without headers.
 
 ## Open Issues
 
