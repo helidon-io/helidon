@@ -73,7 +73,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
             Reader reader = new InputStreamReader(connection.getInputStream(),
                                                   ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-            return new Data<>(Optional.of(OverrideData.from(reader)), Optional.of(timestamp));
+            return new Data<>(Optional.of(OverrideData.create(reader)), Optional.of(timestamp));
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -139,7 +139,7 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
         }
 
         @Override
-        protected URL getTarget() {
+        protected URL target() {
             return url;
         }
 
@@ -154,8 +154,8 @@ public class UrlOverrideSource extends AbstractOverrideSource<Instant> {
             return new UrlOverrideSource(this, url);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 

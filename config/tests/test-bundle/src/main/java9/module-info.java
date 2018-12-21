@@ -15,9 +15,9 @@
  */
 
 /**
- * Integration tests of io.helidon.config.bundle module.
+ * Integration tests of io.helidon.bundles.config module.
  */
 module io.helidon.config.tests.bundle {
 
-    requires io.helidon.config.bundle;
+    requires io.helidon.bundles.config;
 }

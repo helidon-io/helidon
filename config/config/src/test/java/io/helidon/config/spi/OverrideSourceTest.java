@@ -34,13 +34,13 @@ public class OverrideSourceTest {
     @Test
     public void testOrderedPropertiesNotLoadedIsEmpty() {
         OrderedProperties props = new OrderedProperties();
-        assertThat(props.getOrderedMap().entrySet().isEmpty(), is(true));
+        assertThat(props.orderedMap().entrySet().isEmpty(), is(true));
     }
 
     @Test
     public void testOrderedPropertiesUseInsertionOrderedMap() {
         OrderedProperties props = new OrderedProperties();
-        assertThat(props.getOrderedMap(), instanceOf(LinkedHashMap.class));
+        assertThat(props.orderedMap(), instanceOf(LinkedHashMap.class));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class OverrideSourceTest {
                                             + "bbb=2\n"
                                             + "ccc=3\n"
         ));
-        assertThat(props.getOrderedMap().keySet(), contains("aaa", "bbb", "ccc"));
+        assertThat(props.orderedMap().keySet(), contains("aaa", "bbb", "ccc"));
     }
 
 }

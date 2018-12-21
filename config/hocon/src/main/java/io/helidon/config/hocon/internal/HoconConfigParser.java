@@ -99,7 +99,7 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     @Override
-    public Set<String> getSupportedMediaTypes() {
+    public Set<String> supportedMediaTypes() {
         return SUPPORTED_MEDIA_TYPES;
     }
 

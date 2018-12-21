@@ -51,7 +51,7 @@ final class FallbackMergingStrategy implements ConfigSources.MergingStrategy {
     }
 
     private static ObjectNode.Builder addNode(ObjectNode.Builder builder, String key, ConfigNode node) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return builder.addObject(key, (ObjectNode) node);
         case LIST:

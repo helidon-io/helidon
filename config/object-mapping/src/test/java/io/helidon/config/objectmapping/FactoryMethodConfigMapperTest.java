@@ -63,7 +63,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testTransientConstructor() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")
@@ -97,7 +97,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testNoConfigValueConstructor() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.arg0", "1")
                         .addValue("app.arg1", "this:is/my?uri")
@@ -130,7 +130,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testMissingParamsConstructor() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 
@@ -146,7 +146,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testDefaultsConstructor() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 
@@ -182,7 +182,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testTransientFromMethod() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")
@@ -216,7 +216,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testNoConfigValueFromMethod() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.arg0", "1")
                         .addValue("app.arg1", "this:is/my?uri")
@@ -249,7 +249,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testMissingParamsFromMethod() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 
@@ -264,7 +264,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testDefaultsFromMethod() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 

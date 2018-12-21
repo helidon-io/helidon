@@ -81,6 +81,6 @@ public interface Source<T> extends Changeable<T>, AutoCloseable {
      * @throws Exception in case of errors encountered while closing the source
      */
     @Override
-    default void close() throws Exception{
+    default void close() throws Exception {
     }
 }

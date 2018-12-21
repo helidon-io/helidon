@@ -131,9 +131,9 @@ public class AtnProviderSyncTest {
 
     @Test
     public void testConfigSuccess() {
-        Config config = Config.from(
-                ConfigSources.from(CollectionsHelper.mapOf("value", VALUE,
-                                                           "size", String.valueOf(SIZE)))
+        Config config = Config.create(
+                ConfigSources.create(CollectionsHelper.mapOf("value", VALUE,
+                                                             "size", String.valueOf(SIZE)))
         );
 
         SecurityContext context = mock(SecurityContext.class);
@@ -156,8 +156,8 @@ public class AtnProviderSyncTest {
 
     @Test
     public void testFailure() {
-        Config config = Config.from(
-                ConfigSources.from(CollectionsHelper.mapOf("atn-object.size", String.valueOf(SIZE)))
+        Config config = Config.create(
+                ConfigSources.create(CollectionsHelper.mapOf("atn-object.size", String.valueOf(SIZE)))
         );
 
         SecurityContext context = mock(SecurityContext.class);

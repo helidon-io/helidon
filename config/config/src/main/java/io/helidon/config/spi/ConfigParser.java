@@ -63,7 +63,7 @@ public interface ConfigParser {
      *
      * @return supported media types by the parser
      */
-    Set<String> getSupportedMediaTypes();
+    Set<String> supportedMediaTypes();
 
     /**
      * Parses a specified {@link Content} into a {@link ObjectNode hierarchical configuration representation}.
@@ -95,7 +95,7 @@ public interface ConfigParser {
          *
          * @return a stamp of the content
          */
-        default Optional<S> getStamp() {
+        default Optional<S> stamp() {
             return Optional.empty();
         }
 
@@ -104,7 +104,7 @@ public interface ConfigParser {
          *
          * @return content media type
          */
-        String getMediaType();
+        String mediaType();
 
         /**
          * Returns a {@link Readable} that is use to read configuration content from.
@@ -125,7 +125,7 @@ public interface ConfigParser {
          * @param <S>       a type of data stamp
          * @return a config content
          */
-        static <S> Content<S> from(Readable readable, String mediaType, Optional<S> stamp) {
+        static <S> Content<S> create(Readable readable, String mediaType, Optional<S> stamp) {
             return new Content<S>() {
                 @Override
                 public void close() throws ConfigException {
@@ -146,12 +146,12 @@ public interface ConfigParser {
                 }
 
                 @Override
-                public String getMediaType() {
+                public String mediaType() {
                     return mediaType;
                 }
 
                 @Override
-                public Optional<S> getStamp() {
+                public Optional<S> stamp() {
                     return stamp;
                 }
             };

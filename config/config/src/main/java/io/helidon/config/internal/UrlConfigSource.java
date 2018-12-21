@@ -77,7 +77,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
      * @see io.helidon.config.ConfigSources#url(URL)
      * @see AbstractParsableConfigSource.Builder#init(Config)
      */
-    public static UrlConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+    public static UrlConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return (UrlConfigSource) new UrlBuilder(metaConfig.get(URL_KEY).as(URL.class).get())
                 .init(metaConfig)
                 .build();
@@ -94,7 +94,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(GET_METHOD);
 
-            final String mediaType = getMediaType(connection.getContentType());
+            final String mediaType = mediaType(connection.getContentType());
             final Optional<Instant> timestamp;
             if (connection.getLastModified() != 0) {
                 timestamp = Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
@@ -107,7 +107,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
             Reader reader = new InputStreamReader(connection.getInputStream(),
                                                   ConfigUtils.getContentCharset(connection.getContentEncoding()));
 
-            return ConfigParser.Content.from(reader, mediaType, timestamp);
+            return ConfigParser.Content.create(reader, mediaType, timestamp);
         } catch (ConfigException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -116,13 +116,13 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     @Override
-    protected String getMediaType() {
+    protected String mediaType() {
         //do not call ConfigHelper.guessMediaType here - it is done in content() method
-        return super.getMediaType();
+        return super.mediaType();
     }
 
-    private String getMediaType(String responseMediaType) {
-        String mediaType = getMediaType();
+    private String mediaType(String responseMediaType) {
+        String mediaType = mediaType();
         if (mediaType == null) {
             mediaType = responseMediaType;
             if (mediaType == null) {
@@ -197,7 +197,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
         }
 
         @Override
-        protected URL getTarget() {
+        protected URL target() {
             return url;
         }
 
@@ -212,8 +212,8 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
             return new UrlConfigSource(this, url);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 }

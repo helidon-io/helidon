@@ -16,18 +16,20 @@
 
 package io.helidon.webserver.examples.opentracing;
 
+import java.io.IOException;
 import java.util.logging.LogManager;
 
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.zipkin.ZipkinTracerBuilder;
 
 /**
  * The ZipkinExampleMain is an app that leverages a use of Open Tracing and sends
  * the collected data to Zipkin.
  *
- * @see ZipkinTracerBuilder
+ * @see io.helidon.tracing.TracerBuilder
+ * @see io.helidon.tracing.zipkin.ZipkinTracerBuilder
  */
 public final class ZipkinExampleMain {
 
@@ -38,9 +40,9 @@ public final class ZipkinExampleMain {
      * Run the OpenTracing application.
      *
      * @param args not used
-     * @throws Exception in case of an error
+     * @throws IOException in case of an error
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
 
         // configure logging in order to not have the standard JVM defaults
         LogManager.getLogManager().readConfiguration(ZipkinExampleMain.class.getResourceAsStream("/logging.properties"));
@@ -48,7 +50,9 @@ public final class ZipkinExampleMain {
         WebServer webServer = WebServer.create(
                 ServerConfiguration.builder()
                                    .port(8080)
-                                   .tracer(ZipkinTracerBuilder.forService("demo-first").zipkinHost("zipkin")),
+                                   .tracer(TracerBuilder.create("demo-first")
+                                                   .collectorHost("zipkin")
+                                                   .buildAndRegister()),
                 Routing.builder()
                        .any((req, res) -> {
 

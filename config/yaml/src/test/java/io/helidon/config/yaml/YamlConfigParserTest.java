@@ -24,11 +24,11 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.yaml.internal.YamlConfigParser;
 
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.hasSize;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ConfigParser}.
@@ -107,16 +107,16 @@ public class YamlConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends ConfigParser.Content {
         @Override
-        default String getMediaType() {
+        default String mediaType() {
             return YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML;
         }
 
         @Override
         default Reader asReadable() {
-            return new StringReader(getContent());
+            return new StringReader(content());
         }
 
-        String getContent();
+        String content();
     }
 
 }

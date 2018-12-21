@@ -66,12 +66,12 @@ public class ConfigSourceConfigMapperTest {
     public void testSystemProperties() {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = justFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", "system-properties")
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(MapConfigSource.class)));
 
@@ -82,12 +82,12 @@ public class ConfigSourceConfigMapperTest {
 
     @Test
     public void testEnvironmentVariables() {
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = justFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", "environment-variables")
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(MapConfigSource.class)));
 
@@ -98,7 +98,7 @@ public class ConfigSourceConfigMapperTest {
 
     @Test
     public void testClasspath() {
-        Config metaConfig = builderFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", "classpath")
                         .addObject("properties", ObjectNode.builder()
@@ -107,7 +107,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(ClasspathConfigSource.class)));
 
@@ -118,7 +118,7 @@ public class ConfigSourceConfigMapperTest {
 
     @Test
     public void testFile() {
-        Config metaConfig = builderFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", "file")
                         .addObject("properties", ObjectNode.builder()
@@ -127,7 +127,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(FileConfigSource.class)));
 
@@ -142,7 +142,7 @@ public class ConfigSourceConfigMapperTest {
         Files.write(Files.createFile(new File(folder, "username").toPath()), "libor".getBytes());
         Files.write(Files.createFile(new File(folder, "password").toPath()), "^ery$ecretP&ssword".getBytes());
 
-        Config metaConfig = builderFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", "directory")
                         .addObject("properties", ObjectNode.builder()
@@ -151,7 +151,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(DirectoryConfigSource.class)));
 
@@ -170,7 +170,7 @@ public class ConfigSourceConfigMapperTest {
                     .then(status(OK_200),
                           stringContent("greeting = Hello"));
 
-            Config metaConfig = builderFrom(ConfigSources.from(
+            Config metaConfig = builderFrom(ConfigSources.create(
                     ObjectNode.builder()
                             .addValue("type", "url")
                             .addObject("properties", ObjectNode.builder()
@@ -180,7 +180,7 @@ public class ConfigSourceConfigMapperTest {
                             .build()))
                     .build();
 
-            ConfigSource source = metaConfig.as(ConfigSource::from).get();
+            ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
             assertThat(source, is(instanceOf(UrlConfigSource.class)));
 
@@ -194,7 +194,7 @@ public class ConfigSourceConfigMapperTest {
 
     @Test
     public void testPrefixed() {
-        Config metaConfig = builderFrom(ConfigSources.from(
+        Config metaConfig = builderFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", "prefixed")
                         .addObject("properties", ObjectNode.builder()
@@ -207,7 +207,7 @@ public class ConfigSourceConfigMapperTest {
                         .build()))
                 .build();
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(PrefixedConfigSource.class)));
 
@@ -221,7 +221,7 @@ public class ConfigSourceConfigMapperTest {
     }
 
     static Config.Builder builderFrom(ConfigSource source) {
-        return Config.withSources(source)
+        return Config.builder(source)
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource();
     }

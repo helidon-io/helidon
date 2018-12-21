@@ -74,8 +74,9 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         SecurityContext context = (SecurityContext) requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
 
         if (null == context) {
-            throw new SecurityException("SecurityContext must be configured as property \"" + ClientSecurityFeature
-                    .PROPERTY_CONTEXT + " on request");
+            LOGGER.finest("Security not propagated, as the property \""
+                                  + ClientSecurityFeature.PROPERTY_CONTEXT + "\" is not defined on request");
+            return;
         }
 
         Span span = context.getTracer()

@@ -46,8 +46,8 @@ public class LoadSourcesExample {
            with a filter which convert values with keys ending with "level" to upper case
          */
 
-        Config config = Config.loadSources(file("conf/meta-config.yaml").optional(),
-                                           classpath("meta-config.yaml"))
+        Config config = Config.builderLoadSourcesFrom(file("conf/meta-config.yaml").optional(),
+                                                      classpath("meta-config.yaml"))
                 .addFilter((key, stringValue) -> key.name().equals("level") ? stringValue.toUpperCase() : stringValue)
                 .build();
 

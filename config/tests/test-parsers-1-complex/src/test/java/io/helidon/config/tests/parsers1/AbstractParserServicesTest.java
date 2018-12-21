@@ -29,7 +29,7 @@ public abstract class AbstractParserServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.from(KEY + "=" + VALUE, "text/x-java-properties"));
+                .sources(ConfigSources.create(KEY + "=" + VALUE, "text/x-java-properties"));
     }
 
 }

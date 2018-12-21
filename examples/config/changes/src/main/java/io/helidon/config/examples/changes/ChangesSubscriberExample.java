@@ -45,13 +45,13 @@ public class ChangesSubscriberExample {
      */
     public void run() {
         Config config = Config
-                .from(file("conf/dev.yaml")
+                .create(file("conf/dev.yaml")
                               .optional()
                               .pollingStrategy(PollingStrategies::watch),
-                      file("conf/config.yaml")
+                        file("conf/config.yaml")
                               .optional()
                               .pollingStrategy(regular(ofSeconds(2))),
-                      classpath("default.yaml")
+                        classpath("default.yaml")
                               .pollingStrategy(regular(ofSeconds(10))));
 
         // first greeting

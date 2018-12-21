@@ -55,7 +55,7 @@ public class ConfigMappersFailingTest {
 
         String key = "config.key.with.wrong.format";
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, ") bad, bad value ")))
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, ") bad, bad value ")))
                 .build();
 
         ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {

@@ -21,9 +21,6 @@ import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
-import io.helidon.webserver.zipkin.ZipkinTracerBuilder;
-
-import io.opentracing.util.GlobalTracer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -53,9 +50,6 @@ public final class Main {
 
         Config config = buildConfig();
 
-        // enable zipkin tracing
-        registerTracer(config);
-
         // as we need to use custom filter
         // we need to build Server with custom config
         Server server = Server.builder()
@@ -84,19 +78,5 @@ public final class Main {
                  // support for passwords in configuration
 //                .addFilter(SecureConfigFilter.fromConfig())
                 .build();
-    }
-
-    /**
-     * Create and register a {@code Tracer} instance using the given
-     * {@code Config}.
-     * @param config the configuration root
-     */
-    static void registerTracer(final Config config) {
-        config.get("services.zipkin.host")
-                .asString()
-                .map(host -> ZipkinTracerBuilder.forService("Backend")
-                        .zipkinHost(host)
-                        .build())
-                .ifPresent(GlobalTracer::register);
     }
 }

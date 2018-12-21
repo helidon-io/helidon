@@ -23,5 +23,5 @@ module io.helidon.config.objectmapping {
 
     exports io.helidon.config.objectmapping;
 
-    provides io.helidon.config.spi.ConfigMapperProvider with io.helidon.config.objectmapping.BeansConfigMapperProvider;
+    provides io.helidon.config.spi.ConfigMapperProvider with io.helidon.config.objectmapping.ObjectConfigMapperProvider;
 }

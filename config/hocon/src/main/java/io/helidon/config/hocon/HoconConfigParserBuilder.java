@@ -18,6 +18,7 @@ package io.helidon.config.hocon;
 
 import java.util.Objects;
 
+import io.helidon.common.Builder;
 import io.helidon.config.hocon.internal.HoconConfigParser;
 import io.helidon.config.spi.ConfigParser;
 
@@ -32,7 +33,7 @@ import com.typesafe.config.ConfigResolveOptions;
  * It is possible to {@link #disableResolving() disable resolving} feature
  * or specify custom {@link #resolveOptions(ConfigResolveOptions) ConfigResolveOptions} instance.
  */
-public final class HoconConfigParserBuilder {
+public final class HoconConfigParserBuilder implements Builder<ConfigParser> {
 
     private boolean resolvingEnabled;
     private ConfigResolveOptions resolveOptions;

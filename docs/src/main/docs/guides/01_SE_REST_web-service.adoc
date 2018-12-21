@@ -20,7 +20,7 @@
 :example-src-url: https://github.com/oracle/helidon/tree/master/examples/guides/se-rest-web-service/src/main/java
 
 
-= Creating a ReSTful Web Service using Helidon SE
+= Helidon SE: Create a RESTful Web Service
 :description: Helidon guide restful web service
 :keywords: helidon, guide, rest, web, service, example
 

@@ -453,7 +453,7 @@ public class ConfigCdiExtension implements Extension {
             Object value = getConfigValue(context);
             if (null == value && qualifier.rawType().isPrimitive()) {
                 // primitive field, not configured, no default
-                throw MissingValueException.forKey(Config.Key.of(qualifier.key()));
+                throw MissingValueException.create(Config.Key.create(qualifier.key()));
             }
 
             return value;

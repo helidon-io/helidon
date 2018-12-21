@@ -65,7 +65,7 @@ public class FilesystemWatchPollingStrategyTest {
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
 
         SubmissionPublisher<PollingStrategy.PollingEvent> publisher = new SubmissionPublisher<>();
-        when(mockPollingStrategy.getTicksSubmitter()).thenReturn(publisher);
+        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
             @Override
@@ -117,7 +117,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.getTicksSubmitter()).thenReturn(publisher);
+        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
             @Override
@@ -159,7 +159,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path watchedPath = subdir.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.getTicksSubmitter()).thenReturn(publisher);
+        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
             @Override
@@ -204,7 +204,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.getTicksSubmitter()).thenReturn(publisher);
+        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
             @Override
@@ -307,7 +307,7 @@ public class FilesystemWatchPollingStrategyTest {
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
-        when(mockPollingStrategy.getTicksSubmitter()).thenReturn(publisher);
+        when(mockPollingStrategy.ticksSubmitter()).thenReturn(publisher);
 
         publisher.subscribe(new Flow.Subscriber<PollingStrategy.PollingEvent>() {
             @Override
@@ -349,8 +349,8 @@ public class FilesystemWatchPollingStrategyTest {
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         mockPollingStrategy.startWatchService();
 
-        Assertions.assertNotNull(mockPollingStrategy.getWatchThreadFuture());
-        assertThat(mockPollingStrategy.getWatchThreadFuture().isCancelled(), is(false));
+        Assertions.assertNotNull(mockPollingStrategy.watchThreadFuture());
+        assertThat(mockPollingStrategy.watchThreadFuture().isCancelled(), is(false));
 
         mockPollingStrategy.startWatchService();
     }
@@ -364,8 +364,8 @@ public class FilesystemWatchPollingStrategyTest {
         mockPollingStrategy.startWatchService();
         mockPollingStrategy.stopWatchService();
 
-        Assertions.assertNotNull(mockPollingStrategy.getWatchThreadFuture());
-        assertThat(mockPollingStrategy.getWatchThreadFuture().isCancelled(), is(true));
+        Assertions.assertNotNull(mockPollingStrategy.watchThreadFuture());
+        assertThat(mockPollingStrategy.watchThreadFuture().isCancelled(), is(true));
     }
 
 }

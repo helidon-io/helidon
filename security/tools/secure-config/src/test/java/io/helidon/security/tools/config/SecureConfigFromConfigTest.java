@@ -37,9 +37,9 @@ public class SecureConfigFromConfigTest extends AbstractSecureConfigTest {
         config = Config.create();
 
         configRequiresEncryption = Config.builder()
-                .sources(ConfigSources.from(
+                .sources(ConfigSources.create(
                         //override require encryption
-                        ConfigSources.from(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
+                        ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
                         ConfigSources.classpath("application.yaml")))
                 .build();
 

@@ -96,7 +96,7 @@ public class ChainConfigFilterTest {
         final String defaultValue = "default value";
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(new HashMap<String,String>() {{
+                .sources(ConfigSources.create(new HashMap<String,String>() {{
                     put(key, originalValue);
                 }}))
                 .build();
@@ -113,7 +113,7 @@ public class ChainConfigFilterTest {
         final String defaultValue = "default value";
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
@@ -179,7 +179,7 @@ public class ChainConfigFilterTest {
     private final void runQuadTest(boolean useCaching, String expectedValue,
             AssertingFilter.Provider... filterProviders) {
         Config.Builder builder = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
                         Quad.key, Quad.originalValue, Quad.referenceKey, Quad.referenceValue)));
         if (! useCaching) {
             builder.disableCaching();
@@ -216,7 +216,7 @@ public class ChainConfigFilterTest {
         AtomicInteger counter = new AtomicInteger();
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,
@@ -239,7 +239,7 @@ public class ChainConfigFilterTest {
         AtomicInteger counter = new AtomicInteger();
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(key, originalValue)))
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(key, originalValue)))
                 .addFilter(new AssertingFilter.Provider(
                         key,
                         originalValue,

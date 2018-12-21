@@ -38,14 +38,8 @@ import io.helidon.config.internal.ConfigFileTypeDetector;
  * Common Configuration utilities.
  */
 public final class ConfigHelper {
-    private static final List<FileTypeDetector> DETECTORS = new LinkedList<>();
     private static final int DEFAULT_BUFFER_CAPACITY = 1024;
     private static final Logger LOGGER = Logger.getLogger(ConfigFileTypeDetector.class.getName());
-
-    static {
-        ServiceLoader.load(FileTypeDetector.class)
-                .forEach(DETECTORS::add);
-    }
 
     private ConfigHelper() {
         throw new AssertionError("Instantiation not allowed.");

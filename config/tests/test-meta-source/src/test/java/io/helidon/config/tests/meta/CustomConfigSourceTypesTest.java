@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.is;
 public class CustomConfigSourceTypesTest {
 
     private void testCustomType(String type, Class<? extends ConfigSource> sourceClass) {
-        Config metaConfig = justFrom(ConfigSources.from(
+        Config metaConfig = justFrom(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("type", type)
                         .addObject("properties", ObjectNode.builder()
@@ -50,7 +50,7 @@ public class CustomConfigSourceTypesTest {
                                 .build())
                         .build()));
 
-        ConfigSource source = metaConfig.as(ConfigSource::from).get();
+        ConfigSource source = metaConfig.as(ConfigSource::create).get();
 
         assertThat(source, is(instanceOf(sourceClass)));
 
@@ -91,7 +91,7 @@ public class CustomConfigSourceTypesTest {
     }
 
     static Config justFrom(ConfigSource source) {
-        return Config.withSources(source)
+        return Config.builder(source)
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();

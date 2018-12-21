@@ -188,7 +188,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * {@code regular} and {@code watch}. See {@link PollingStrategy} for
      * details about all supported properties and custom implementation support.
      * It also shows the built-in {@code retry-policy} type {@code repeat}. See
-     * {@link RetryPolicy#from(Config) RetryPolicy} for more information.
+     * {@link RetryPolicy#create(Config) RetryPolicy} for more information.
      *
      * <h2><a name="customSourcesAndTypes">Custom Sources and Source
      * Types</a></h2>
@@ -239,7 +239,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * @see ConfigSources#load(Supplier[])
      * @see ConfigSources#load(Config)
      */
-    static ConfigSource from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+    static ConfigSource create(Config metaConfig) throws ConfigMappingException, MissingValueException {
         return ConfigSourceConfigMapper.instance().apply(metaConfig);
     }
 

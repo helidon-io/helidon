@@ -21,8 +21,7 @@ import java.net.URI;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-
-import static io.helidon.config.git.GitConfigSourceBuilder.from;
+import io.helidon.config.git.GitConfigSourceBuilder;
 
 /**
  * Git source example.
@@ -45,12 +44,12 @@ public class Main {
         // we expect a name of the current environment in envvar ENVIRONMENT_NAME
         // in this example we just set envvar in maven plugin 'exec', but can be set in k8s pod via ConfigMap
 
-        Config env = Config.from(ConfigSources.environmentVariables());
+        Config env = Config.create(ConfigSources.environmentVariables());
 
         System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
 
-        Config config = Config.from(
-                from("application.conf")
+        Config config = Config.create(
+                GitConfigSourceBuilder.create("application.conf")
                         .uri(URI.create("https://github.com/okosatka/test-config.git"))
                         .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
                         .build());

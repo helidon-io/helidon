@@ -82,7 +82,7 @@ public class RetryPolicies {
     /**
      * A builder of the default {@link RetryPolicy}.
      */
-    public static class Builder implements Supplier<RetryPolicy> {
+    public static final class Builder implements io.helidon.common.Builder<RetryPolicy> {
 
         private static final String RETRIES_KEY = "retries";
 
@@ -125,7 +125,7 @@ public class RetryPolicies {
          *                                supplied configuration node to an instance of a given Java type.
          * @see PollingStrategies#regular(Duration)
          */
-        public static Builder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+        public static Builder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
             // retries
             Builder builder = new Builder(metaConfig.get(RETRIES_KEY).asInt().get());
             // delay

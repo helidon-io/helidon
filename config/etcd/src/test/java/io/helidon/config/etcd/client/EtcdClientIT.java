@@ -16,28 +16,29 @@
 
 package io.helidon.config.etcd.client;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.reactive.Flow;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
+import io.helidon.common.CollectionsHelper;
+import io.helidon.common.reactive.Flow;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.etcd.internal.client.v2.EtcdV2Client;
 import io.helidon.config.etcd.internal.client.v3.EtcdV3Client;
-import java.lang.reflect.InvocationTargetException;
-import java.util.stream.Stream;
 
 import org.hamcrest.core.Is;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link EtcdClient}s that expect a running etcd at default {@code http://localhost:2379}.
@@ -46,12 +47,12 @@ public class EtcdClientIT {
 
     private static final URI uri = URI.create("http://localhost:2379");
 
-    private static Stream<Class<? extends EtcdClient>> getClients() {
+    private static Stream<Class<? extends EtcdClient>> clients() {
         return CollectionsHelper.listOf(EtcdV2Client.class, EtcdV3Client.class).stream();
     }
 
     @ParameterizedTest
-    @MethodSource("getClients")
+    @MethodSource("clients")
     public <T extends EtcdClient> void testPutGet(Class<T> clientClass) throws EtcdClientException {
         runTest(clientClass, etcdClient -> {
             etcdClient.put("key", "value");
@@ -62,7 +63,7 @@ public class EtcdClientIT {
     }
     
     @ParameterizedTest
-    @MethodSource("getClients")
+    @MethodSource("clients")
     public <T extends EtcdClient> void testGetNonExistingKey(Class<T> clientClass) throws EtcdClientException {
         runTest(clientClass, etcdClient -> {
             String result = etcdClient.get("non-existing-key");
@@ -71,7 +72,7 @@ public class EtcdClientIT {
     }
 
     @ParameterizedTest
-    @MethodSource("getClients")
+    @MethodSource("clients")
     public <T extends EtcdClient> void testWatchNewKey(Class<T> clientClass) throws EtcdClientException, ExecutionException, InterruptedException {
         runTest(clientClass, etcdClient -> {
             final String key = "key#" + new Random().nextLong();
@@ -115,7 +116,7 @@ public class EtcdClientIT {
     }
 
     @ParameterizedTest
-    @MethodSource("getClients")
+    @MethodSource("clients")
     public <T extends EtcdClient> void testWatchValueChanges(Class<T> clientClass) throws EtcdClientException, ExecutionException, InterruptedException {
         runTest(clientClass, etcdClient -> {
             final String key = "key";

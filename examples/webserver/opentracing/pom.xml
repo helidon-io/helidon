@@ -111,8 +111,8 @@
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-zipkin</artifactId>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-zipkin</artifactId>
             <version>${helidon.version}</version>
         </dependency>
         <dependency>

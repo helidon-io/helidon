@@ -48,23 +48,6 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
 
-        <!-- zipkin update -->
-        <dependency>
-            <groupId>io.zipkin.reporter2</groupId>
-            <artifactId>zipkin-sender-urlconnection</artifactId>
-            <version>${version.lib.zipkin}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing.brave</groupId>
-            <artifactId>brave-opentracing</artifactId>
-            <version>${version.lib.brave}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.zipkin.brave</groupId>
-                    <artifactId>brave-tests</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <!--
          ~ Test scope
         -->
@@ -101,17 +84,28 @@
             <artifactId>helidon-webserver-json</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-zipkin</artifactId>
+            <!-- to add tracer builder -->
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-prometheus</artifactId>
+            <!-- to add zipkin support -->
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-zipkin</artifactId>
+        </dependency>
+        <dependency>
+            <!-- to propagate tracing information -->
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-jersey-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-metrics-se</artifactId>
         </dependency>
         <!-- Helidon Config -->
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-config</artifactId>
         </dependency>
         <!-- Helidon Security -->
         <dependency>

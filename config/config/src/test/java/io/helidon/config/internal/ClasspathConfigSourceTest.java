@@ -79,7 +79,7 @@ public class ClasspathConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.getMediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(configSource.mediaType(), is(TEST_MEDIA_TYPE));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ClasspathConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.getMediaType(), Is.is("text/x-java-properties"));
+        assertThat(configSource.mediaType(), Is.is("text/x-java-properties"));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class ClasspathConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.getMediaType(), is(nullValue()));
+        assertThat(configSource.mediaType(), is(nullValue()));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class ClasspathConfigSourceTest {
 
         configSource.init(content -> Optional.of(new ConfigParser() {
             @Override
-            public Set<String> getSupportedMediaTypes() {
+            public Set<String> supportedMediaTypes() {
                 return new HashSet<String>() {{
                     add("application/hocon");
                 }};
@@ -137,7 +137,7 @@ public class ClasspathConfigSourceTest {
             @Override
             public ObjectNode parse(Content content) throws ConfigParserException {
                 assertThat(content, notNullValue());
-                assertThat(content.getMediaType(), is("application/hocon"));
+                assertThat(content.mediaType(), is("application/hocon"));
                 try {
                     assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
                 } catch (IOException e) {
@@ -174,7 +174,7 @@ public class ClasspathConfigSourceTest {
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-            assertThat(builder.getPollingStrategyInternal(), is(PollingStrategies.nop()));
+            assertThat(builder.pollingStrategyInternal(), is(PollingStrategies.nop()));
         });
         assertTrue(ex.getMessage().startsWith("Could not find a filesystem path for resource 'not-exists'"));
         
@@ -185,8 +185,8 @@ public class ClasspathConfigSourceTest {
         ClasspathBuilder builder = (ClasspathBuilder) ConfigSources.classpath("io/helidon/config/application.conf")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.getPollingStrategyInternal()).getPath(),
+        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
+        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
                    is(ClasspathSourceHelper.resourcePath("io/helidon/config/application.conf")));
     }
 

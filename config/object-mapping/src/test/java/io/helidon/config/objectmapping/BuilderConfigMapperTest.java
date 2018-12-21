@@ -81,7 +81,7 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testSettersBuilder() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ConfigNode.ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")
@@ -115,7 +115,7 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testFieldsBuilder() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ConfigNode.ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")
@@ -149,7 +149,7 @@ public class BuilderConfigMapperTest {
 
     @Test
     public void testInterfaceBuilder() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ConfigNode.ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")

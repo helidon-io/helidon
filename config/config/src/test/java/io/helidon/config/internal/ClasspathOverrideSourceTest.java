@@ -102,7 +102,7 @@ public class ClasspathOverrideSourceTest {
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-            assertThat(builder.getPollingStrategyInternal(), Is.is(PollingStrategies.nop()));
+            assertThat(builder.pollingStrategyInternal(), Is.is(PollingStrategies.nop()));
         });
         assertTrue(ex.getMessage().startsWith("Could not find a filesystem path for resource 'not-exists'"));
     }
@@ -112,8 +112,8 @@ public class ClasspathOverrideSourceTest {
         ClasspathBuilder builder = (ClasspathBuilder) OverrideSources.classpath("io/helidon/config/overrides.properties")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.getPollingStrategyInternal()).getPath(),
+        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
+        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
                    is(ClasspathSourceHelper.resourcePath("io/helidon/config/overrides.properties")));
     }
 

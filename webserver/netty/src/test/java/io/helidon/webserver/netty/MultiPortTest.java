@@ -273,7 +273,7 @@ public class MultiPortTest {
 
     @Test
     public void compositeFromConfig() throws Exception {
-        Config config = Config.from(ConfigSources.classpath("multiport/application.yaml"));
+        Config config = Config.create(ConfigSources.classpath("multiport/application.yaml"));
         webServer = WebServer.builder(Routing.builder()
                                              .get("/", (req, res) -> res.send("Plain!")))
                              .configuration(ServerConfiguration.fromConfig(config.get("webserver")))

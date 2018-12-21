@@ -69,7 +69,9 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * If {@link Tracer} doesn't get resolved, a warning is logged.
  *
  * @see Opentraceable
+ * @deprecated use TracingClientFilter from helidon-tracing-jersey-client
  */
+@Deprecated
 public class OpentracingClientFilter implements ClientRequestFilter, ClientResponseFilter {
 
     private static final Logger LOGGER = Logger.getLogger(OpentracingClientFilter.class.getName());
