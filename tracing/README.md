@@ -6,7 +6,7 @@ events.
 
 _Eclipse Microprofile Opentracing specification is not yet implemented_
 
-#Usage
+# Usage
 ## Usage In Helidon MP
 To use tracing in MP, simply depend on the `helidon-microprofile-tracing` module to automate
 setup of tracing, and add your favorite tracer implementation to the classpath (currently Zipkin is the only
@@ -100,9 +100,9 @@ response = webTarget
             .get();
 ```
 
-#Modules
+# Modules
 
-##Module `helidon-tracing`
+## Module `helidon-tracing`
 Contains an abstracted Builder for tracers and an SPI
 to connect various tracer implementations.
 
@@ -131,7 +131,7 @@ tracing:
   host: "zipkin"
 ```
 
-##Module `helidon-tracing-jersey-client`
+## Module `helidon-tracing-jersey-client`
 Integration with Jersey client to add tracing support
  for outbound requests.
  
@@ -141,12 +141,12 @@ There are two modes of usage:
 1. Use within a Jersey server (requires `helidon-tracing-jersey` with a registered filter, or `helidon-microprofile-tracing`)
 2. Standalone use
 
-###Use within Jersey server
+### Use within Jersey server
 The server filters create a context for the client, so as long as the client is invoked
 within the same thread, no additional configuration is required - just use 
 client as usual and tracing will be propagated and added for outbound call.
 
-###Standalone use
+### Standalone use
 In case the Jersey client is used on its own, the tracing filter cannot obtain 
 information needed for outbound call and it has to be provided.
 
@@ -162,7 +162,7 @@ response = webTarget
             .get();
 ``` 
 
-##Module `helidon-tracing-jersey`
+## Module `helidon-tracing-jersey`
 Integration with "pure" Jersey server. This module should not be directly used when using
 Helidon MP, use `helidon-microprofile-tracing` instead.
 
@@ -170,13 +170,13 @@ To configure tracing with Jersey, add `TracingFilter` to your application/resour
 The tracing filter will start a new span for each jersey call and register context for client calls.
 `helidon-tracing-jersey-client` is a transitive dependency of this module.
 
-##Module `helidon-microprofile-tracing`
+## Module `helidon-microprofile-tracing`
 Provides automated integration with Helidon MP, including automated configuration of
 tracer and of server-side filters that register context for client calls and trace each 
 request (unless explicitly disabled using configuration)
 This module is located in /microprofile/tracing
 
-##Module `helidon-tracing-zipkin`
+## Module `helidon-tracing-zipkin`
 Integration with Zipkin (https://zipkin.io/). Easiest approach is to use a docker image
 `zipkin` that, by default, runs on the expected hostname and port.
 
