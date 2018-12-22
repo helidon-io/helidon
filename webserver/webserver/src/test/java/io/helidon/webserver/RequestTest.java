@@ -80,7 +80,7 @@ public class RequestTest {
     @Test
     public void queryEncodingTest() throws Exception {
         BareRequest mock = mock(BareRequest.class);
-        when(mock.getUri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
+        when(mock.uri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
 
         Request request = new RequestTestStub(mock, mock(WebServer.class));
 

@@ -349,7 +349,7 @@ public class JerseySupport implements Service {
     /**
      * Builder for convenient way to create {@link JerseySupport}.
      */
-    public static class Builder implements Configurable<Builder>, io.helidon.common.Builder {
+    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
@@ -370,6 +370,7 @@ public class JerseySupport implements Service {
          *
          * @return built module
          */
+        @Override
         public JerseySupport build() {
             return new JerseySupport(resourceConfig, executorService);
         }

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -232,7 +233,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param sslContextBuilder ssl context builder; will be built as a first step of this method execution
          * @return an updated builder
          */
-        public Builder ssl(io.helidon.common.Builder<? extends SSLContext> sslContextBuilder) {
+        public Builder ssl(Supplier<? extends SSLContext> sslContextBuilder) {
             defaultSocketBuilder.ssl(sslContextBuilder);
             return this;
         }
@@ -351,10 +352,10 @@ public interface ServerConfiguration extends SocketConfiguration {
          *                                   a first step of this method execution
          * @return an updated builder
          */
-        public Builder addSocket(String name, io.helidon.common.Builder<SocketConfiguration> socketConfigurationBuilder) {
+        public Builder addSocket(String name, Supplier<SocketConfiguration> socketConfigurationBuilder) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
 
-            return addSocket(name, socketConfigurationBuilder != null ? socketConfigurationBuilder.build() : null);
+            return addSocket(name, socketConfigurationBuilder != null ? socketConfigurationBuilder.get() : null);
         }
 
         /**
@@ -388,8 +389,8 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder
          */
-        public Builder tracer(io.helidon.common.Builder<? extends Tracer> tracerBuilder) {
-            this.tracer = tracerBuilder != null ? tracerBuilder.build() : null;
+        public Builder tracer(Supplier<? extends Tracer> tracerBuilder) {
+            this.tracer = tracerBuilder != null ? tracerBuilder.get() : null;
             return this;
         }
 

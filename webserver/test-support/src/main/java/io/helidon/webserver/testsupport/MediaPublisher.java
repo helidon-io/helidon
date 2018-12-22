@@ -47,7 +47,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
      * @param publisher a publisher.
      * @return new instance.
      */
-    static MediaPublisher of(MediaType publishedType, Flow.Publisher<DataChunk> publisher) {
+    static MediaPublisher create(MediaType publishedType, Flow.Publisher<DataChunk> publisher) {
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {
@@ -69,7 +69,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
      * @param charSequence A sequence to publish.
      * @return new publisher.
      */
-    static MediaPublisher of(MediaType publishedType, CharSequence charSequence) {
+    static MediaPublisher create(MediaType publishedType, CharSequence charSequence) {
         ByteBuffer data = Optional.ofNullable(publishedType)
                 .flatMap(MediaType::charset)
                 .map(Charset::forName)

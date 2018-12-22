@@ -62,7 +62,7 @@ public class RouteListRoutingRulesTest {
                 .head("/foo", VOID_HANDLER)
                 .head(PathPattern.compile("/bar"), VOID_HANDLER)
                 .aggregate()
-                .getRouteList();
+                .routeList();
         assertNotNull(routes);
         assertEquals(7*3, routes.size());
         assertEquals(7, routes.acceptedMethods().size());
@@ -131,7 +131,7 @@ public class RouteListRoutingRulesTest {
                 .post("/bar", VOID_HANDLER)
                 .post("/bar", (req, res) -> {}, (req, res) -> {})
                 .aggregate()
-                .getRouteList();
+                .routeList();
         assertNotNull(routes);
         assertEquals(6, routes.size());
         assertEquals(0, routes.acceptedMethods().size());
@@ -156,7 +156,7 @@ public class RouteListRoutingRulesTest {
                 .register("/bar", c -> c.delete(VOID_HANDLER)
                                                      .put(VOID_HANDLER))
                 .aggregate()
-                .getRouteList();
+                .routeList();
         assertNotNull(routes);
         assertEquals(5, routes.size());
         assertEquals(4, routes.acceptedMethods().size());
@@ -181,7 +181,7 @@ public class RouteListRoutingRulesTest {
                 .register("/foo", c -> {})
                 .post("/bar", VOID_HANDLER)
                 .aggregate()
-                .getRouteList();
+                .routeList();
         assertNotNull(routes);
         assertEquals(2, routes.size());
         assertEquals(2, routes.acceptedMethods().size());

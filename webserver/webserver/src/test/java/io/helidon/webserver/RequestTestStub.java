@@ -56,7 +56,7 @@ public class RequestTestStub extends Request {
 
     private static BareRequest bareRequestMock() {
         BareRequest bareRequestMock = mock(BareRequest.class);
-        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).getUri();
+        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         return bareRequestMock;
     }
 

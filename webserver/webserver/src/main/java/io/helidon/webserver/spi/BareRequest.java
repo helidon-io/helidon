@@ -38,56 +38,56 @@ public interface BareRequest {
      *
      * @return Actual {@code WebServer} instance.
      */
-    WebServer getWebServer();
+    WebServer webServer();
 
     /**
      * Gets an HTTP request method.
      *
      * @return an HTTP method.
      */
-    Http.RequestMethod getMethod();
+    Http.RequestMethod method();
 
     /**
      * Gets an HTTP version from the request line such as {@code HTTP/1.1}.
      *
      * @return HTTP version.
      */
-    Http.Version getVersion();
+    Http.Version version();
 
     /**
      * Gets a Request-URI (or alternatively path) as defined in request line.
      *
      * @return a request URI
      */
-    URI getUri();
+    URI uri();
 
     /**
      * Gets the Internet Protocol (IP) address of the interface on which the request was received.
      *
      * @return an address.
      */
-    String getLocalAddress();
+    String localAddress();
 
     /**
      * Returns the Internet Protocol (IP) port number of the interface on which the request was received.
      *
      * @return an integer specifying the port number.
      */
-    int getLocalPort();
+    int localPort();
 
     /**
      * Gets the Internet Protocol (IP) address of the client or last proxy that sent the request.
      *
      * @return The address of the client that sent the request.
      */
-    String getRemoteAddress();
+    String remoteAddress();
 
     /**
      * Returns the Internet Protocol (IP) source port of the client or last proxy that sent the request.
      *
      * @return The port number.
      */
-    int getRemotePort();
+    int remotePort();
 
     /**
      * Gets an indicating whether this request was made using a secure channel, such as HTTPS.
@@ -101,7 +101,7 @@ public interface BareRequest {
      *
      * @return representing http headers.
      */
-    Map<String, List<String>> getHeaders();
+    Map<String, List<String>> headers();
 
     /**
      * Gets the Flow Publisher that allows a subscription for request body chunks.

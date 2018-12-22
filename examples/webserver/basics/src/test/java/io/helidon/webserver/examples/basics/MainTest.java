@@ -84,12 +84,12 @@ public class MainTest {
         // foo
         TestResponse response
                 = createClient(Main::readContentEntity).path("/foo")
-                                                       .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "aaa"));
+                                                       .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
         assertEquals(200, response.status().code());
         assertEquals("aaa", response.asString().get());
         // bar
         response = createClient(Main::readContentEntity).path("/bar")
-                                                        .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "aaa"));
+                                                        .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
         assertEquals(200, response.status().code());
         assertEquals("aaa", response.asString().get());
     }
@@ -98,13 +98,13 @@ public class MainTest {
     public void filterAndProcessEntity() throws Exception {
         TestResponse response = createClient(Main::filterAndProcessEntity)
                 .path("/create-record")
-                .post(MediaPublisher.of(MediaType.parse("application/name"), "John Smith"));
+                .post(MediaPublisher.create(MediaType.parse("application/name"), "John Smith"));
         assertEquals(201, response.status().code());
         assertEquals("John Smith", response.asString().get());
         // Unsupported Content-Type
         response = createClient(Main::filterAndProcessEntity)
                 .path("/create-record")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "John Smith"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "John Smith"));
         assertEquals(500, response.status().code());
     }
 
@@ -129,18 +129,18 @@ public class MainTest {
         // Valid
         TestResponse response = createClient(Main::errorHandling)
                 .path("/compute")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "2"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "2"));
         assertEquals(200, response.status().code());
         assertEquals("100 / 2 = 50", response.asString().get());
         // Zero
         response = createClient(Main::errorHandling)
                 .path("/compute")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "0"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "0"));
         assertEquals(412, response.status().code());
         // NaN
         response = createClient(Main::errorHandling)
                 .path("/compute")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "aaa"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
         assertEquals(400, response.status().code());
     }
 

@@ -77,7 +77,7 @@ class RouteList extends ArrayList<Route> implements Route {
         this(null, records);
     }
 
-    PathMatcher getPathContext() {
+    PathMatcher pathContext() {
         return pathContext;
     }
 

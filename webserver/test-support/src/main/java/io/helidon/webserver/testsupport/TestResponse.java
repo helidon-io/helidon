@@ -109,6 +109,6 @@ public class TestResponse {
      * @return a web server associated with this test call.
      */
     public WebServer webServer() {
-        return bareResponse.getWebServer();
+        return bareResponse.webServer();
     }
 }

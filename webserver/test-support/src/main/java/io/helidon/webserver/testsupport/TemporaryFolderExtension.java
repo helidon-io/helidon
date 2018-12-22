@@ -43,7 +43,7 @@ public class TemporaryFolderExtension implements AfterEachCallback,
      * Create a new instance of {@link TemporaryFolderExtension}.
      */
     public TemporaryFolderExtension() {
-        tempFolders = new ArrayList();
+        tempFolders = new ArrayList<>();
     }
 
     @Override

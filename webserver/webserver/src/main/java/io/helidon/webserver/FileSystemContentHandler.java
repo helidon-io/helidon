@@ -82,7 +82,7 @@ class FileSystemContentHandler extends StaticContentHandler {
      * @throws HttpException if welcome file doesn't exists
      */
     private Path findWelcomeFile(Path directory) {
-        String name = getWelcomePageName();
+        String name = welcomePageName();
         throwNotFoundIf(name == null || name.isEmpty());
         Path result = directory.resolve(name);
         throwNotFoundIf(!Files.exists(result));

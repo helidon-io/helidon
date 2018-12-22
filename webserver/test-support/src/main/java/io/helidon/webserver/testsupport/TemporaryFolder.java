@@ -68,7 +68,7 @@ public class TemporaryFolder {
      * Return the root of the temporary folder.
      * @return the {@link java.io.File} instance for the temporary folder root
      */
-    public File getRoot(){
+    public File root(){
         return rootFolder;
     }
 
