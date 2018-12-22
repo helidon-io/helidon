@@ -467,7 +467,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             Config sslConfig = config.get("ssl");
             if (sslConfig.exists()) {
                 try {
-                    soConfigBuilder.ssl(SSLContextBuilder.fromConfig(sslConfig));
+                    soConfigBuilder.ssl(SSLContextBuilder.create(sslConfig));
                 } catch (IllegalStateException e) {
                     throw new ConfigException("Cannot load SSL configuration.", e);
                 }
