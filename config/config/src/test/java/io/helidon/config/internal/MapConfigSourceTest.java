@@ -31,7 +31,6 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -81,7 +81,7 @@ public class MapConfigSourceTest {
     public void testMissingValue() {
         Map<String, String> map = CollectionsHelper.mapOf();
 
-        Assertions.assertThrows(MissingValueException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Config config = Config.builder()
                     .sources(ConfigSources.create(map))
                     .build();
@@ -187,7 +187,7 @@ public class MapConfigSourceTest {
 
         MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).build();
 
-        Assertions.assertThrows(ConfigException.class, () -> {
+        assertThrows(ConfigException.class, () -> {
             mapConfigSource.init(mock(ConfigContext.class));
             mapConfigSource.load();
         });
@@ -202,7 +202,7 @@ public class MapConfigSourceTest {
 
         MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).build();
 
-        Assertions.assertThrows(ConfigException.class, () -> {
+        assertThrows(ConfigException.class, () -> {
             mapConfigSource.init(mock(ConfigContext.class));
             mapConfigSource.load();
         });

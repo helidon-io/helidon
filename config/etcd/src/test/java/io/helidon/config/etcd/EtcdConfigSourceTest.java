@@ -32,13 +32,14 @@ import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.spi.ConfigParser;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +72,7 @@ public class EtcdConfigSourceTest {
 
     @Test
     public void testBadUri() {
-        Assertions.assertThrows(ConfigException.class, () -> {
+        assertThrows(ConfigException.class, () -> {
             EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
                     .create(URI.create("http://localhost:1111"), "configuration", EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
@@ -83,7 +84,7 @@ public class EtcdConfigSourceTest {
 
     @Test
     public void testBadKey() {
-        Assertions.assertThrows(ConfigException.class, () -> {
+        assertThrows(ConfigException.class, () -> {
             EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
                     .create(DEFAULT_URI, "non-existing-key-23323423424234", EtcdApi.v2)
                     .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
@@ -115,7 +116,7 @@ public class EtcdConfigSourceTest {
                 try {
                     return new StringReader(etcdClient.get("configuration"));
                 } catch (EtcdClientException e) {
-                    Assertions.fail(e);
+                    fail(e);
                     return null;
                 }
             }

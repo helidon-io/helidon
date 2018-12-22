@@ -28,14 +28,15 @@ import io.helidon.config.ConfigFilters;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MissingValueException;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link ValueResolvingFilter}.
@@ -192,9 +193,9 @@ public class ValueResolvingFilterTest {
         // the config.get from timing out and should throw an exception instead.
         shouldNotRecurse.run();
         LoopTestResult result = shouldNotRecurse.get(2, TimeUnit.SECONDS);
-        Assertions.assertNull(result.message);
-        Assertions.assertNotNull(result.ex);
-        assertTrue(result.ex.getMessage().startsWith("Recursive update"));
+        assertThat(result.message, nullValue());
+        assertThat(result.ex, notNullValue());
+        assertThat(result.ex.getMessage(), startsWith("Recursive update"));
 
 
     }
@@ -248,8 +249,8 @@ public class ValueResolvingFilterTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             config.get("wrong").asString().get();
         });
-        assertTrue(ex.getMessage().startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
-        assertTrue(instanceOf(MissingValueException.class).matches(ex.getCause()));
+        assertThat(ex.getMessage(), startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
+        assertThat(ex.getCause(), instanceOf(MissingValueException.class));
     }
 
     @Test
@@ -284,8 +285,8 @@ public class ValueResolvingFilterTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             config.get("wrong").asString().get();
         });
-        assertTrue(ex.getMessage().startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
-        assertTrue(instanceOf(MissingValueException.class).matches(ex.getCause()));
+        assertThat(ex.getMessage(), startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
+        assertThat(ex.getCause(), instanceOf(MissingValueException.class));
     }
 
     @Test
@@ -303,8 +304,8 @@ public class ValueResolvingFilterTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             config.get("wrong").asString().get();
         });
-        assertTrue(ex.getMessage().startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
-        assertTrue(instanceOf(MissingValueException.class).matches(ex.getCause()));
+        assertThat(ex.getMessage(), startsWith(String.format(ValueResolvingFilter.MISSING_REFERENCE_ERROR, "wrong")));
+        assertThat(ex.getCause(), instanceOf(MissingValueException.class));
     }
 
     @Test

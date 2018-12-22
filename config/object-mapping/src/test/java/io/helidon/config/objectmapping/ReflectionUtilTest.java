@@ -23,7 +23,6 @@ import java.util.Map;
 
 import io.helidon.config.ConfigException;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.CollectionsHelper.listOf;
@@ -36,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ReflectionUtil}.
@@ -88,7 +88,7 @@ public class ReflectionUtilTest {
 
     @Test
     public void testMethodIsTransientError() throws NoSuchMethodException {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             isMethodTransient("setValueClash", String.class);
         });
         assertThat(ex.getMessage(), stringContainsInOrder(listOf("@Value", "@Transient", "setValueClash")));
@@ -124,12 +124,12 @@ public class ReflectionUtilTest {
 
     @Test
     public void testFieldIsTransientError() throws NoSuchFieldException {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             isFieldTransient("valueClash");
         });
 
-        Assertions.assertTrue(stringContainsInOrder(listOf("@Value", "@Transient", "field", "valueClash"))
-                                      .matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(listOf("@Value", "@Transient", "field", "valueClash")));
     }
 
     private boolean isFieldTransient(String fieldName) throws NoSuchFieldException {
@@ -237,7 +237,7 @@ public class ReflectionUtilTest {
 
     @Test
     public void testCreateErrorMethodTransientFieldClash() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             ReflectionUtil.getPropertyAccessors(MethodTransientFieldClashBean.class);
         });
         assertThat(ex.getMessage(),
@@ -246,7 +246,7 @@ public class ReflectionUtilTest {
 
     @Test
     public void testCreateErrorClashFieldTransientMethodClash() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             ReflectionUtil.getPropertyAccessors(FieldTransientMethodClashBean.class);
         });
         assertThat(ex.getMessage(),

@@ -30,14 +30,13 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link EtcdConfigSourceBuilder}.
@@ -46,16 +45,17 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testBuilderSuccessful() {
-        EtcdConfigSource etcdConfigSource = (EtcdConfigSource) EtcdConfigSourceBuilder
+        EtcdConfigSource etcdConfigSource = EtcdConfigSourceBuilder
                 .create(URI.create("http://localhost:2379"), "/registry", EtcdApi.v2)
                 .mediaType("my/media/type")
                 .build();
 
-        assertNotNull(etcdConfigSource);
+        assertThat(etcdConfigSource, notNullValue());
     }
 
-    @Test    public void testBuilderWithoutUri() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+    @Test
+    public void testBuilderWithoutUri() {
+        assertThrows(NullPointerException.class, () -> {
         EtcdConfigSourceBuilder
                 .create(null, "/registry", EtcdApi.v2)
                 .mediaType("my/media/type")
@@ -65,7 +65,7 @@ public class EtcdConfigSourceBuilderTest {
     }
 
     @Test    public void testBuilderWithoutKey() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
         EtcdConfigSourceBuilder
                 .create(URI.create("http://localhost:2379"), null, EtcdApi.v2)
                 .mediaType("my/media/type")
@@ -76,7 +76,7 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testBuilderWithoutVersion() {
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
         EtcdConfigSourceBuilder
                 .create(URI.create("http://localhost:2379"), "/registry", null)
                 .mediaType("my/media/type")
@@ -113,7 +113,7 @@ public class EtcdConfigSourceBuilderTest {
 
     @Test
     public void testFromConfigNothing() {
-        Assertions.assertThrows(MissingValueException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             EtcdConfigSourceBuilder.create(Config.empty());
         });
     }

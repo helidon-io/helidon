@@ -24,11 +24,11 @@ import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the resolving of key token on config sources like:
@@ -186,7 +186,7 @@ public class KeyTokenResolvingTest {
 
             config.traverse().forEach(System.out::println);
         });
-        assertTrue(ex.getMessage().startsWith("Missing value in token 'region' definition"));
+        assertThat(ex.getMessage(), startsWith("Missing value in token 'region' definition"));
     }
 
     @Test
@@ -201,7 +201,7 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
         });
-        assertTrue(ex.getMessage().startsWith("Missing token 'ad' to resolve"));
+        assertThat(ex.getMessage(), startsWith("Missing token 'ad' to resolve"));
 
     }
 
@@ -220,7 +220,7 @@ public class KeyTokenResolvingTest {
 
             config.traverse().forEach(System.out::println);
         });
-        assertTrue(ex.getMessage().startsWith("Key token 'region' references to a reference in value. A recursive references is not allowed"));
+        assertThat(ex.getMessage(), startsWith("Key token 'region' references to a reference in value. A recursive references is not allowed"));
 
         
 

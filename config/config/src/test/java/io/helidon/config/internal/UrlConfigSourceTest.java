@@ -29,15 +29,15 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -108,12 +108,12 @@ public class UrlConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
                 configSource.init(mock(ConfigContext.class));
                 configSource.load();
         });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
 
     }
 
@@ -129,12 +129,12 @@ public class UrlConfigSourceTest {
                                      .overallTimeout(Duration.ofSeconds(1)))
                 .build();
 
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
                 configSource.init(mock(ConfigContext.class));
                 configSource.load();
         });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test

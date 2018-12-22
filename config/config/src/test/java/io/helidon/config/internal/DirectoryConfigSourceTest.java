@@ -27,11 +27,14 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.test.infra.TemporaryFolderExt;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
-import io.helidon.config.test.infra.TemporaryFolderExt;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -39,9 +42,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -76,11 +76,9 @@ public class DirectoryConfigSourceTest {
         configSource.init(mock(ConfigContext.class));
         assertThat(configSource.dataStamp().get(), is(Instant.MAX));
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            configSource.load();
-        });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        ConfigException ex = assertThrows(ConfigException.class, configSource::load);
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test

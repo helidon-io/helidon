@@ -32,13 +32,13 @@ import io.helidon.config.etcd.internal.client.v2.EtcdV2Client;
 import io.helidon.config.etcd.internal.client.v3.EtcdV3Client;
 
 import org.hamcrest.core.Is;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests {@link EtcdClient}s that expect a running etcd at default {@code http://localhost:2379}.
@@ -176,14 +176,14 @@ public class EtcdClientIT {
             try (EtcdClient etcdClient = clientClass.getDeclaredConstructor(URI.class).newInstance(uri)) {
                 test.accept(etcdClient);
             } catch (EtcdClientException ex) {
-                Assertions.fail(ex);
+                fail(ex);
             }
         } catch (NoSuchMethodException 
                 | InstantiationException 
                 | IllegalAccessException 
                 | InvocationTargetException
                 | InterruptedException ex) {
-            Assertions.fail(ex);
+            fail(ex);
         }
     }
 }

@@ -24,11 +24,12 @@ import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ConfigMappers} with focus on failing mapping.
@@ -58,10 +59,10 @@ public class ConfigMappersFailingTest {
                 .sources(ConfigSources.create(CollectionsHelper.mapOf(key, ") bad, bad value ")))
                 .build();
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             manager.map(config.get(key), type);
         });
-        Assertions.assertTrue(containsString(key).matches(ex.getMessage()));
+        assertThat(ex.getMessage(), containsString(key));
     }
 
 }

@@ -37,16 +37,16 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.hamcrest.core.Is;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -116,8 +116,8 @@ public class ClasspathConfigSourceTest {
             configSource.load();
         });
         
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test
@@ -176,7 +176,7 @@ public class ClasspathConfigSourceTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             assertThat(builder.pollingStrategyInternal(), is(PollingStrategies.nop()));
         });
-        assertTrue(ex.getMessage().startsWith("Could not find a filesystem path for resource 'not-exists'"));
+        assertThat(ex.getMessage(), startsWith("Could not find a filesystem path for resource 'not-exists'"));
         
     }
 

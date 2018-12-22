@@ -37,17 +37,16 @@ import io.helidon.config.internal.PropertiesConfigParser;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.config.ConfigHelperTest.readerToString;
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -142,12 +141,14 @@ public class AbstractParsableConfigSourceTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-                source.init(context);
-                source.load();
+            source.init(context);
+            source.load();
         });
-        assertTrue(stringContainsInOrder(CollectionsHelper.listOf("Cannot load data from mandatory source",
-                                                           "TestingParsableConfig[parsable-test]")).matches(ex.getMessage()));
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause())); //Cannot find suitable parser for 'my/media/type' media type.
+        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+                "Cannot load data from mandatory source",
+                "TestingParsableConfig[parsable-test]")));
+        assertThat(ex.getCause(),
+                   instanceOf(ConfigException.class)); //Cannot find suitable parser for 'my/media/type' media type.
     }
 
     @Test
@@ -176,14 +177,15 @@ public class AbstractParsableConfigSourceTest {
                 .build();
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-                source.init(context);
-                source.load();
+            source.init(context);
+            source.load();
         });
-        assertTrue(stringContainsInOrder(CollectionsHelper.listOf("Cannot load data from mandatory source",
-                                                           "TestingParsableConfig[parsable-test]")).matches(ex.getMessage()));
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause())); //Cannot find suitable parser for 'my/media/type' media type.
+        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
+                "Cannot load data from mandatory source",
+                "TestingParsableConfig[parsable-test]")));
+        assertThat(ex.getCause(),
+                   instanceOf(ConfigException.class)); //Cannot find suitable parser for 'my/media/type' media type.
 
-        
     }
 
     @Test

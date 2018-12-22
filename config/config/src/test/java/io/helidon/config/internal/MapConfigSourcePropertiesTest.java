@@ -30,13 +30,13 @@ import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link MapConfigSource} from {@link Properties} method.
@@ -93,7 +93,7 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testMissingValue() {
-        Assertions.assertThrows(MissingValueException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Properties properties = new Properties();
 
             Config config = Config.builder()
