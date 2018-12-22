@@ -18,7 +18,8 @@ package io.helidon.webserver.netty;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * The UnboundedSemaphoreTest.
@@ -30,23 +31,23 @@ public class UnboundedSemaphoreTest {
         UnboundedSemaphore semaphore;
 
         semaphore = new UnboundedSemaphore();
-        assertEquals(Long.MAX_VALUE, semaphore.release(Long.MAX_VALUE));
+        assertThat(semaphore.release(Long.MAX_VALUE), is(Long.MAX_VALUE));
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE / 2
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE - 1
-        assertEquals(Long.MAX_VALUE - 1, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE - 1));
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE / 2
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE - 1
         semaphore.release(1);
-        assertEquals(Long.MAX_VALUE, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE));
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(5);
         semaphore.release(7);
-        assertEquals(12, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(12L));
     }
 
     @Test
@@ -57,29 +58,30 @@ public class UnboundedSemaphoreTest {
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE / 2
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE - 1
         semaphore.release(1);
-        assertEquals(Long.MAX_VALUE, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE));
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE / 2
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE - 1
         semaphore.release(2);
-        assertEquals(Long.MAX_VALUE, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE));
+
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE / 2
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE - 1
         semaphore.release(Long.MAX_VALUE / 2);
-        assertEquals(Long.MAX_VALUE, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE));
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE / 2
         semaphore.release(Long.MAX_VALUE / 2); // permits = Long.MAX_VALUE - 1
         semaphore.release(Long.MAX_VALUE);
-        assertEquals(Long.MAX_VALUE, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE));
 
         semaphore = new UnboundedSemaphore();
         semaphore.release(Long.MAX_VALUE);
         semaphore.release(Long.MAX_VALUE);
-        assertEquals(Long.MAX_VALUE, semaphore.availablePermits());
+        assertThat(semaphore.availablePermits(), is(Long.MAX_VALUE));
     }
 }

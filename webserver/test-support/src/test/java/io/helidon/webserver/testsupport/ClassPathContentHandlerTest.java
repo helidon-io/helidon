@@ -29,12 +29,10 @@ import io.helidon.common.http.MediaType;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests {@link io.helidon.webserver.ClassPathContentHandler}.
@@ -68,7 +66,7 @@ public class ClassPathContentHandlerTest {
         TestResponse response = TestClient.create(routing)
                                           .path("/some/root-a.txt")
                                           .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
         // With slash
         routing = Routing.builder()
                 .register("/some", StaticContentSupport.create("/content"))
@@ -77,7 +75,7 @@ public class ClassPathContentHandlerTest {
         response = TestClient.create(routing)
                 .path("/some/root-a.txt")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
+        assertThat(response.status(), is(Http.Status.OK_200));
     }
 
     @Test
@@ -89,21 +87,21 @@ public class ClassPathContentHandlerTest {
         TestResponse response = TestClient.create(routing)
                 .path("/some/root-a.txt")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("- root A TXT", filterResponse(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(filterResponse(response), is("- root A TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
         // /some/bar/root-a.txt
         response = TestClient.create(routing)
                 .path("/some/bar/root-b.txt")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("- root B TXT", filterResponse(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(filterResponse(response), is("- root B TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
         // /some/bar/not.exist
         response = TestClient.create(routing)
                 .path("/some/bar/not.exist")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
     @Test
@@ -116,14 +114,14 @@ public class ClassPathContentHandlerTest {
         TestResponse response = TestClient.create(routing)
                 .path("/")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("- index TXT", filterResponse(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(filterResponse(response), is("- index TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
         // /bar/
         response = TestClient.create(routing)
                 .path("/bar/")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
     @Test
@@ -135,21 +133,21 @@ public class ClassPathContentHandlerTest {
         TestResponse response = TestClient.create(routing)
                 .path("/some/example-a.txt")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("Example A TXT", filterResponse(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(filterResponse(response), is("Example A TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
         // /some/example-a.txt
         response = TestClient.create(routing)
                 .path("/some/a/example-a.txt")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("A / Example A TXT", filterResponse(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(filterResponse(response), is("A / Example A TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
         // /some/a/not.exist
         response = TestClient.create(routing)
                 .path("/some/a/not.exist")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
     @Test
@@ -162,9 +160,9 @@ public class ClassPathContentHandlerTest {
         TestResponse response = TestClient.create(routing)
                 .path("/")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("Example A TXT", filterResponse(response));
-        assertEquals(MediaType.TEXT_PLAIN.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(filterResponse(response), is("Example A TXT"));
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE), is(Optional.of(MediaType.TEXT_PLAIN.toString())));
         // /a
         response = TestClient.create(routing)
                 .path("/a/")
@@ -187,6 +185,6 @@ public class ClassPathContentHandlerTest {
         response = TestClient.create(routing)
                 .path("/a/")
                 .get();
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 }

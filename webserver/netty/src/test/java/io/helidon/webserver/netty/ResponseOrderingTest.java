@@ -53,7 +53,6 @@ import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * The ResponseOrderingTest tests whether http chunks were sent in a correct order which was reported as MIC-6419.
@@ -146,7 +145,7 @@ public class ResponseOrderingTest {
         int i1 = Optional.ofNullable(System.getenv("REQUESTS_COUNT")).map(Integer::valueOf).orElse(10);
         for (int i = 0; i < i1; i++) {
             Response response = target.path("multi").request().get();
-            assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily());
+            assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.SUCCESSFUL));
 
             String entity = response.readEntity(String.class);
             returnedIds.add(Long.valueOf(entity));
@@ -173,7 +172,7 @@ public class ResponseOrderingTest {
         InputStream resultStream = response.readEntity(InputStream.class);
 
         String s = new String(InputStreamHelper.readAllBytes(resultStream));
-        assertEquals(sb.toString(), s);
+        assertThat(s, is(sb.toString()));
     }
 
     private String exceptions() {

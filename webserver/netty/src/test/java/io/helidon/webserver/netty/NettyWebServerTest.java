@@ -47,13 +47,13 @@ import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.SignalType;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 /**
  * The NettyWebServerTest.
@@ -259,8 +259,10 @@ public class NettyWebServerTest {
         } catch (CompletionException e) {
             assertThat(e.getMessage(), containsString("WebServer was unable to start"));
             CompletableFuture<WebServer> shutdownFuture = webServer.whenShutdown().toCompletableFuture();
-            assertTrue(shutdownFuture.isDone() && !shutdownFuture.isCompletedExceptionally(),
-                    "Shutdown future not as expected: " + shutdownFuture);
+            assertThat("Shutdown future not as expected: " + shutdownFuture,
+                       shutdownFuture.isDone() && !shutdownFuture.isCompletedExceptionally(),
+                       is(true));
+
         } catch (Exception e) {
             e.printStackTrace();
             fail("No other exception expected!");
@@ -297,6 +299,6 @@ public class NettyWebServerTest {
                                        .addNamedRouting("matched", Routing.builder())
                                        .build();
 
-        assertNotNull(webServer.configuration().socket("matched"));
+        assertThat(webServer.configuration().socket("matched"), notNullValue());
     }
 }

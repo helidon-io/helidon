@@ -35,13 +35,12 @@ import reactor.core.publisher.Flux;
 
 import static io.helidon.common.CollectionsHelper.listOf;
 import static io.helidon.common.CollectionsHelper.mapOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -74,7 +73,7 @@ public class StringContentReaderTest {
             throw e;
         }
 
-        assertTrue(future.isCompletedExceptionally());
+        assertThat(future.isCompletedExceptionally(), is(true));
     }
 
     @Test
@@ -95,28 +94,28 @@ public class StringContentReaderTest {
     public void requestContentCharset() throws Exception {
         RequestTestStub request = charset(mapOf("content-type", listOf("application/json; charset=cp1250")));
 
-        assertEquals("cp1250", StringContentReader.requestContentCharset(request));
+        assertThat(StringContentReader.requestContentCharset(request), is("cp1250"));
     }
 
     @Test
     public void invalidRequestContentCharset() throws Exception {
         RequestTestStub request = charset(mapOf("content-type", listOf("application/json; charset=invalid-charset-name")));
 
-        assertEquals("invalid-charset-name", StringContentReader.requestContentCharset(request));
+        assertThat(StringContentReader.requestContentCharset(request), is("invalid-charset-name"));
     }
 
     @Test
     public void nonexistentCharset() throws Exception {
         RequestTestStub request = charset(mapOf("content-type", listOf("application/json")));
 
-        assertEquals(StringContentReader.DEFAULT_CHARSET, StringContentReader.requestContentCharset(request));
+        assertThat(StringContentReader.requestContentCharset(request), is(StringContentReader.DEFAULT_CHARSET));
     }
 
     @Test
     public void missingContentType() throws Exception {
         RequestTestStub request = charset(CollectionsHelper.mapOf());
 
-        assertEquals(StringContentReader.DEFAULT_CHARSET, StringContentReader.requestContentCharset(request));
+        assertThat(StringContentReader.requestContentCharset(request), is(StringContentReader.DEFAULT_CHARSET));
     }
 
     private RequestTestStub charset(Map<String, List<String>> map) {

@@ -20,9 +20,8 @@ import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests a {@link HandlerRoute}.
@@ -34,22 +33,22 @@ public class HandlerRouteTest {
     @Test
     public void standardMethodRouting() throws Exception {
         HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.Method.POST, Http.Method.PUT);
-        assertTrue(rr.accepts(Http.Method.POST));
-        assertTrue(rr.accepts(Http.Method.PUT));
-        assertFalse(rr.accepts(Http.Method.GET));
-        assertFalse(rr.accepts(Http.Method.DELETE));
-        assertFalse(rr.accepts(Http.RequestMethod.create("FOO")));
-        assertEquals(2, rr.acceptedMethods().size());
+        assertThat(rr.accepts(Http.Method.POST), is(true));
+        assertThat(rr.accepts(Http.Method.PUT), is(true));
+        assertThat(rr.accepts(Http.Method.GET), is(false));
+        assertThat(rr.accepts(Http.Method.DELETE), is(false));
+        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(false));
+        assertThat(rr.acceptedMethods().size(), is(2));
     }
 
     @Test
     public void specialMethodRouting() throws Exception {
         HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("FOO"));
-        assertFalse(rr.accepts(Http.Method.GET));
-        assertFalse(rr.accepts(Http.Method.POST));
-        assertTrue(rr.accepts(Http.RequestMethod.create("FOO")));
-        assertFalse(rr.accepts(Http.RequestMethod.create("BAR")));
-        assertEquals(1, rr.acceptedMethods().size());
+        assertThat(rr.accepts(Http.Method.GET), is(false));
+        assertThat(rr.accepts(Http.Method.POST), is(false));
+        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(true));
+        assertThat(rr.accepts(Http.RequestMethod.create("BAR")), is(false));
+        assertThat(rr.acceptedMethods().size(), is(1));
     }
 
     @Test
@@ -59,23 +58,23 @@ public class HandlerRouteTest {
                                            Http.Method.POST,
                                            Http.RequestMethod.create("FOO"),
                                            Http.Method.PUT);
-        assertTrue(rr.accepts(Http.Method.POST));
-        assertTrue(rr.accepts(Http.Method.PUT));
-        assertFalse(rr.accepts(Http.Method.GET));
-        assertFalse(rr.accepts(Http.Method.DELETE));
-        assertTrue(rr.accepts(Http.RequestMethod.create("FOO")));
-        assertFalse(rr.accepts(Http.RequestMethod.create("BAR")));
-        assertEquals(3, rr.acceptedMethods().size());
+        assertThat(rr.accepts(Http.Method.POST), is(true));
+        assertThat(rr.accepts(Http.Method.PUT), is(true));
+        assertThat(rr.accepts(Http.Method.GET), is(false));
+        assertThat(rr.accepts(Http.Method.DELETE), is(false));
+        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(true));
+        assertThat(rr.accepts(Http.RequestMethod.create("BAR")), is(false));
+        assertThat(rr.acceptedMethods().size(), is(3));
     }
 
     @Test
     public void anyMethodRouting() throws Exception {
         HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER);
-        assertTrue(rr.accepts(Http.Method.POST));
-        assertTrue(rr.accepts(Http.Method.GET));
-        assertTrue(rr.accepts(Http.RequestMethod.create("FOO")));
-        assertTrue(rr.accepts(Http.RequestMethod.create("BAR")));
-        assertEquals(0, rr.acceptedMethods().size());
+        assertThat(rr.accepts(Http.Method.POST), is(true));
+        assertThat(rr.accepts(Http.Method.GET), is(true));
+        assertThat(rr.accepts(Http.RequestMethod.create("FOO")), is(true));
+        assertThat(rr.accepts(Http.RequestMethod.create("BAR")), is(true));
+        assertThat(rr.acceptedMethods().size(), is(0));
     }
 
     @Test
@@ -83,7 +82,7 @@ public class HandlerRouteTest {
         HandlerRoute rr = new HandlerRoute(null, VOID_HANDLER);
         final String path = "/foo";
         PathMatcher.Result result = rr.match(path);
-        assertTrue(result.matches());
-        assertTrue(result.params().isEmpty());
+        assertThat(result.matches(), is(true));
+        assertThat(result.params().isEmpty(), is(true));
     }
 }

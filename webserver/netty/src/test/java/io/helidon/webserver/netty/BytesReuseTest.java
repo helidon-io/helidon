@@ -52,11 +52,10 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 
 import static io.helidon.webserver.testsupport.SocketHttpClient.longData;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -79,7 +78,7 @@ public class BytesReuseTest {
 
     public static void main(String[] args) throws Exception {
         LogManager.getLogManager()
-                  .readConfiguration(BytesReuseTest.class.getResourceAsStream("/logging-test.properties"));
+                .readConfiguration(BytesReuseTest.class.getResourceAsStream("/logging-test.properties"));
         startServer(8080);
     }
 
@@ -94,84 +93,85 @@ public class BytesReuseTest {
         webServer = WebServer.create(
                 ServerConfiguration.builder().port(port).build(),
                 Routing.builder()
-                       .any((req, res) -> {
-                           req.content().registerFilter(requestChunkPublisher -> ReactiveStreamsAdapter.publisherToFlow(
-                                   ReactiveStreamsAdapter.publisherFromFlow(requestChunkPublisher)
-                                           .map(chunk -> {
-                                               if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
-                                                   chunkReference.add(chunk);
-                                               }
-                                               return chunk;
-                                           })));
-                           req.next();
-                       })
-                       .post("/subscriber", (req, res) -> {
-                           ReactiveStreamsAdapter.publisherFromFlow(req.content())
-                                   .subscribe(new BaseSubscriber<DataChunk>() {
-                                             @Override
-                                             protected void hookOnSubscribe(Subscription subscription) {
-                                                 subscription.request(Long.MAX_VALUE);
-                                             }
+                        .any((req, res) -> {
+                            req.content().registerFilter(requestChunkPublisher -> ReactiveStreamsAdapter.publisherToFlow(
+                                    ReactiveStreamsAdapter.publisherFromFlow(requestChunkPublisher)
+                                            .map(chunk -> {
+                                                if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
+                                                    chunkReference.add(chunk);
+                                                }
+                                                return chunk;
+                                            })));
+                            req.next();
+                        })
+                        .post("/subscriber", (req, res) -> {
+                            ReactiveStreamsAdapter.publisherFromFlow(req.content())
+                                    .subscribe(new BaseSubscriber<DataChunk>() {
+                                        @Override
+                                        protected void hookOnSubscribe(Subscription subscription) {
+                                            subscription.request(Long.MAX_VALUE);
+                                        }
 
-                                             @Override
-                                             protected void hookOnNext(DataChunk chunk) {
-                                                 if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
-                                                     chunk.release();
-                                                 }
-                                             }
+                                        @Override
+                                        protected void hookOnNext(DataChunk chunk) {
+                                            if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
+                                                chunk.release();
+                                            }
+                                        }
 
-                                             @Override
-                                             protected void hookOnError(Throwable t) {
-                                                 LOGGER.log(Level.WARNING, "Encountered an exception!", t);
-                                                 res.status(500).send("Error: " + t.getMessage());
-                                             }
+                                        @Override
+                                        protected void hookOnError(Throwable t) {
+                                            LOGGER.log(Level.WARNING, "Encountered an exception!", t);
+                                            res.status(500).send("Error: " + t.getMessage());
+                                        }
 
-                                             @Override
-                                             protected void hookOnComplete() {
-                                                 res.send("Finished");
-                                             }
-                                         });
-                       })
-                       .post("/string", Handler.create(String.class, (req, res, s) -> {
-                           assertAgainstPrefixQueryParam(req, s);
-                           res.send("Finished");
-                       }))
-                       .post("/bytes", Handler.create(byte[].class, (req, res, b) -> {
-                           assertAgainstPrefixQueryParam(req, new String(b));
-                           res.send("Finished");
-                       }))
-                       .post("/bytes_deferred", (req, res) -> {
-                           Executors.newSingleThreadExecutor()
+                                        @Override
+                                        protected void hookOnComplete() {
+                                            res.send("Finished");
+                                        }
+                                    });
+                        })
+                        .post("/string", Handler.create(String.class, (req, res, s) -> {
+                            assertAgainstPrefixQueryParam(req, s);
+                            res.send("Finished");
+                        }))
+                        .post("/bytes", Handler.create(byte[].class, (req, res, b) -> {
+                            assertAgainstPrefixQueryParam(req, new String(b));
+                            res.send("Finished");
+                        }))
+                        .post("/bytes_deferred", (req, res) -> {
+                            Executors.newSingleThreadExecutor()
                                     .submit(() -> {
                                         req.content()
-                                           .as(byte[].class)
-                                           .thenAccept(bytes -> {
-                                               assertAgainstPrefixQueryParam(req, new String(bytes));
-                                               res.send("Finished");
-                                           })
-                                           .exceptionally(t -> {
-                                               req.next(t);
-                                               return null;
-                                           });
+                                                .as(byte[].class)
+                                                .thenAccept(bytes -> {
+                                                    assertAgainstPrefixQueryParam(req, new String(bytes));
+                                                    res.send("Finished");
+                                                })
+                                                .exceptionally(t -> {
+                                                    req.next(t);
+                                                    return null;
+                                                });
                                     });
-                       })
-                       .post("/input_stream", Handler.create(InputStream.class, (req, res, stream) -> {
-                           Executors.newSingleThreadExecutor()
+                        })
+                        .post("/input_stream", Handler.create(InputStream.class, (req, res, stream) -> {
+                            Executors.newSingleThreadExecutor()
                                     .submit(() -> {
                                         try {
                                             LOGGER.info("Consuming data from input stream!");
-                                            assertAgainstPrefixQueryParam(req, new String(InputStreamHelper.readAllBytes(stream)));
+                                            assertAgainstPrefixQueryParam(req,
+                                                                          new String(InputStreamHelper.readAllBytes(stream)));
                                             res.send("Finished");
                                         } catch (IOException e) {
                                             req.next(new IllegalStateException("Got an IO error.", e));
                                         }
                                     });
-                       }))
-                       .any("/unconsumed", (req, res) -> res.send("Nothing consumed!"))
-                       .build())
-                             .start()
-                             .toCompletableFuture()
-                             .get(10, TimeUnit.SECONDS);
+                        }))
+                        .any("/unconsumed", (req, res) -> res.send("Nothing consumed!"))
+                        .build())
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
         LOGGER.info("Started server at: https://localhost:" + webServer.port());
     }
@@ -179,8 +179,8 @@ public class BytesReuseTest {
     private static void assertAgainstPrefixQueryParam(ServerRequest req, String actual) {
         assertThat(actual,
                    startsWith(req.queryParams()
-                                 .first("test")
-                                 .orElseThrow(() -> new BadRequestException("Missing 'test' query param"))));
+                                      .first("test")
+                                      .orElseThrow(() -> new BadRequestException("Missing 'test' query param"))));
     }
 
     @BeforeAll
@@ -193,8 +193,8 @@ public class BytesReuseTest {
     public static void close() throws Exception {
         if (webServer != null) {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
         }
     }
 
@@ -213,7 +213,7 @@ public class BytesReuseTest {
     private void assertChunkReferencesAreReleased() {
         LOGGER.info("Asserting that " + chunkReference.size() + " request chunks were released.");
         for (DataChunk chunk : chunkReference) {
-            assertTrue(chunk.isReleased(), "The chunk was not released: ID " + chunk.id());
+            assertThat("The chunk was not released: ID " + chunk.id(), chunk.isReleased(), is(true));
         }
     }
 
@@ -222,7 +222,7 @@ public class BytesReuseTest {
         doSubscriberPostRequest(false);
 
         for (DataChunk chunk : chunkReference) {
-            assertFalse(chunk.isReleased(), "The chunk was released: ID " + chunk.id());
+            assertThat("The chunk was released: ID " + chunk.id(), chunk.isReleased(), is(false));
         }
         assertThat(new String(chunkReference.peek().bytes()), startsWith("myData"));
     }
@@ -416,8 +416,8 @@ public class BytesReuseTest {
         for (int i = 0; i < 10; i++) {
             flood(false, false, 1_000, false);
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .join();
+                    .toCompletableFuture()
+                    .join();
             startServer();
         }
         webServer.shutdown().toCompletableFuture().join();
@@ -477,11 +477,11 @@ public class BytesReuseTest {
             return service.scheduleAtFixedRate(() -> {
                 long l = sentData.get() / 1000000;
                 receivedDataShort.add(l);
-                long previous = l - ( receivedDataShort.size() > 10 ? receivedDataShort.remove() : 0);
+                long previous = l - (receivedDataShort.size() > 10 ? receivedDataShort.remove() : 0);
                 long time = TimeUnit.SECONDS.convert(System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
                 System.out.println("Sent bytes: " + sentData.get() / 1000_000 + " MB");
                 System.out.println("SPEED: " + l / time + " MB/s");
-                System.out.println("SHORT SPEED: " + previous / ( time > 10 ? 10 : time) + " MB/s");
+                System.out.println("SHORT SPEED: " + previous / (time > 10 ? 10 : time) + " MB/s");
                 System.out.println("====");
             }, 1, 1, TimeUnit.SECONDS);
         }

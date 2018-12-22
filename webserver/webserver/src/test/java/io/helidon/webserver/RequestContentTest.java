@@ -51,7 +51,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -79,7 +78,7 @@ public class RequestContentTest {
                       .subscribe(chunk -> sb.append(TestUtils.requestChunkAsString(chunk))
                                             .append("-"));
 
-        assertEquals("first-second-third-", sb.toString());
+        assertThat(sb.toString(), is("first-second-third-"));
     }
 
     @Test
@@ -100,13 +99,13 @@ public class RequestContentTest {
             return ReactiveStreamsAdapter.publisherToFlow(stringFlux);
         });
 
-        assertEquals("", sb.toString(), "Apply filter is expected to be called after a subscription!");
+        assertThat("Apply filter is expected to be called after a subscription!", sb.toString(), is(""));
 
         ReactiveStreamsAdapter.publisherFromFlow(request.content())
                       .subscribe(chunk -> sb.append(TestUtils.requestChunkAsString(chunk))
                                             .append("-"));
 
-        assertEquals("apply_filter-FIRST-SECOND-THIRD-", sb.toString());
+        assertThat(sb.toString(), is("apply_filter-FIRST-SECOND-THIRD-"));
     }
 
     @Test
@@ -335,7 +334,7 @@ public class RequestContentTest {
                        });
 
         String result = complete.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        assertEquals("2/1/2010", result);
+        assertThat(result, is("2/1/2010"));
     }
 
     @Test
@@ -345,7 +344,7 @@ public class RequestContentTest {
 
         CompletionStage<String> complete = request.content().as(byte[].class).thenApply(String::new);
 
-        assertEquals("test-string", complete.toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
@@ -355,7 +354,7 @@ public class RequestContentTest {
 
         CompletionStage<? extends String> complete = request.content().as(String.class);
 
-        assertEquals("test-string", complete.toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
@@ -379,6 +378,6 @@ public class RequestContentTest {
 
         CompletionStage<? extends String> complete = request.content().as(String.class);
 
-        assertEquals("TEST-STRING", complete.toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("TEST-STRING"));
     }
 }

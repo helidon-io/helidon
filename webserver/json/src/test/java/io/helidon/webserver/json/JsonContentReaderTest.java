@@ -32,8 +32,9 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -95,14 +96,14 @@ public class JsonContentReaderTest {
             stage.toCompletableFuture().get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception");
         } catch (ExecutionException e) {
-            assertTrue(stage.toCompletableFuture().isCompletedExceptionally());
+            assertThat(stage.toCompletableFuture().isCompletedExceptionally(), is(true));
             assertThat(e.getCause(), IsInstanceOf.instanceOf(JsonException.class));
         }
     }
 
     @Test
-    public void defaultJsonSupportAsSingleton() throws Exception {
-        assertTrue(JsonSupport.get() == JsonSupport.get());
-        assertTrue(JsonSupport.create(null) == JsonSupport.create(null));
+    public void defaultJsonSupportAsSingleton() {
+        assertThat(JsonSupport.get(), sameInstance(JsonSupport.get()));
+        assertThat(JsonSupport.create(null), sameInstance(JsonSupport.create(null)));
     }
 }

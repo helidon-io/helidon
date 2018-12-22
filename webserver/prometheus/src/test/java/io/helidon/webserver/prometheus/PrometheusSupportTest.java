@@ -30,10 +30,10 @@ import org.hamcrest.core.StringStartsWith;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PrometheusSupportTest {
 
@@ -76,7 +76,7 @@ public class PrometheusSupportTest {
             request.queryParameter("name[]", nameQuery);
         }
         TestResponse response = request.get();
-        assertEquals(200, response.status().code());
+        assertThat(response.status(), is(Http.Status.OK_200));
         return response;
     }
 
@@ -112,7 +112,7 @@ public class PrometheusSupportTest {
     @Test
     public void filter() throws Exception {
         TestResponse response = doTestRequest("alpha");
-        assertEquals(200, response.status().code());
+        assertThat(response.status(), is(Http.Status.OK_200));
         String body = response.asString().get(5, TimeUnit.SECONDS);
         assertThat(body, not(containsString("# TYPE beta")));
         assertThat(body, not(containsString("beta 3.0")));

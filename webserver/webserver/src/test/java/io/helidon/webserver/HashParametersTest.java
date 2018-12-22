@@ -28,15 +28,12 @@ import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Optional.empty;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The HashParametersTest.
@@ -118,12 +115,12 @@ public class HashParametersTest {
         hp.put("a", l);
         assertThat(hp.all("a"), contains("y1", "y2"));
         l.add("y3");
-        assertEquals(2, hp.all("a").size());
+        assertThat(hp.all("a").size(), is(2));
         hp.put("a");
-        assertFalse(hp.first("a").isPresent());
+        assertThat(hp.first("a").isPresent(), is(false));
         hp.put("b", "b1", "b2");
         hp.put("b", (Iterable<String>) null);
-        assertFalse(hp.first("b").isPresent());
+        assertThat(hp.first("b").isPresent(), is(false));
     }
 
     @Test
@@ -161,7 +158,7 @@ public class HashParametersTest {
             visited.set(true);
             return null;
         });
-        assertTrue(visited.get());
+        assertThat(visited.get(), is(true));
         assertThat(result, IsCollectionWithSize.hasSize(0));
         assertThat(hp.all("a"), IsCollectionWithSize.hasSize(0));
 
@@ -170,7 +167,7 @@ public class HashParametersTest {
             visited.set(true);
             return Arrays.asList("v1", "v2", "v3");
         });
-        assertTrue(visited.get());
+        assertThat(visited.get(), is(true));
         assertThat(result, contains("v1", "v2", "v3"));
         assertThat(hp.all("a"), contains("v1", "v2", "v3"));
 
@@ -179,7 +176,7 @@ public class HashParametersTest {
             visited.set(true);
             return Arrays.asList("x1", "x2", "x3");
         });
-        assertFalse(visited.get());
+        assertThat(visited.get(), is(false));
         assertThat(result, contains("v1", "v2", "v3"));
         assertThat(hp.all("a"), contains("v1", "v2", "v3"));
 
@@ -188,7 +185,7 @@ public class HashParametersTest {
             visited.set(true);
             return "x1";
         });
-        assertTrue(visited.get());
+        assertThat(visited.get(), is(true));
         assertThat(result, contains("x1"));
         assertThat(hp.all("b"), contains("x1"));
 
@@ -197,9 +194,9 @@ public class HashParametersTest {
             visited.set(true);
             return null;
         });
-        assertTrue(visited.get());
+        assertThat(visited.get(), is(true));
         assertThat(result, IsCollectionWithSize.hasSize(0));
-        assertFalse(hp.first("c").isPresent());
+        assertThat(hp.first("c").isPresent(), is(false));
     }
 
     @Test
@@ -219,7 +216,7 @@ public class HashParametersTest {
         hp.put("a", "v1", "v2");
         hp.put("b", "v3", "v4");
         Map<String, List<String>> map = hp.toMap();
-        assertEquals(2, map.size());
+        assertThat(map.size(), is(2));
         assertThat(map.get("a"), contains("v1", "v2"));
         assertThat(map.get("b"), contains("v3", "v4"));
     }
@@ -265,12 +262,12 @@ public class HashParametersTest {
     public void concatNullAndEmpty() throws Exception {
         Parameters[] prms = null;
         HashParameters concat = HashParameters.concat(prms);
-        assertNotNull(concat);
+        assertThat(concat, notNullValue());
         prms = new Parameters[10];
         concat = HashParameters.concat(prms);
-        assertNotNull(concat);
+        assertThat(concat, notNullValue());
         concat = HashParameters.concat();
-        assertNotNull(concat);
+        assertThat(concat, notNullValue());
     }
 
     @Test
@@ -293,7 +290,7 @@ public class HashParametersTest {
         assertThat(concat.all("d"), contains("11", "12"));
 
         concat = HashParameters.concat(p1);
-        assertEquals(p1, concat);
+        assertThat(concat, is(p1));
     }
 
 }
