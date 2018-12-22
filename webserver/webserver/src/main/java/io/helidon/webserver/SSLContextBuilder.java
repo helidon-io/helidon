@@ -74,8 +74,8 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      */
     public static SSLContext create(Config sslConfig) {
         return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
-                                      .sessionCacheSize(sslConfig.get("sessionCacheSize").asInt().orElse(0))
-                                      .sessionTimeout(sslConfig.get("sessionTimeout").asInt().orElse(0))
+                                      .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
+                                      .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
                                       .trustConfig(KeyConfig.create(sslConfig.get("trust")))
                                       .build();
     }

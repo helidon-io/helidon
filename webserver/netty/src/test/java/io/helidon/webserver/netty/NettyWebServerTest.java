@@ -275,7 +275,7 @@ public class NettyWebServerTest {
     public void unpairedRoutingCausesAFailure() throws Exception {
         try {
             WebServer webServer = WebServer.builder(Routing.builder())
-                                           .configuration(ServerConfiguration.builder()
+                                           .config(ServerConfiguration.builder()
                                                                              .addSocket("matched", SocketConfiguration.builder()))
                                            .addNamedRouting("unmatched-first", Routing.builder())
                                            .addNamedRouting("matched", Routing.builder())
@@ -292,7 +292,7 @@ public class NettyWebServerTest {
     @Test
     public void additionalPairedRoutingsDoWork() throws Exception {
         WebServer webServer = WebServer.builder(Routing.builder())
-                                       .configuration(ServerConfiguration.builder()
+                                       .config(ServerConfiguration.builder()
                                                                          .addSocket("matched", SocketConfiguration.builder()))
                                        .addNamedRouting("matched", Routing.builder())
                                        .build();

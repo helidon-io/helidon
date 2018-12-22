@@ -175,7 +175,7 @@ public interface WebServer {
     static WebServer create(ServerConfiguration configuration, Routing routing) {
         Objects.requireNonNull(routing, "Parameter 'routing' is null!");
 
-        return builder(routing).configuration(configuration)
+        return builder(routing).config(configuration)
                                .build();
     }
 
@@ -237,7 +237,7 @@ public interface WebServer {
          * @param configuration the configuration
          * @return an updated builder
          */
-        public Builder configuration(ServerConfiguration configuration) {
+        public Builder config(ServerConfiguration configuration) {
             this.configuration = configuration;
             return this;
         }
@@ -248,7 +248,7 @@ public interface WebServer {
          * @param configurationBuilder the configuration builder
          * @return an updated builder
          */
-        public Builder configuration(Supplier<ServerConfiguration> configurationBuilder) {
+        public Builder config(Supplier<ServerConfiguration> configurationBuilder) {
             this.configuration = configurationBuilder != null ? configurationBuilder.get() : null;
             return this;
         }

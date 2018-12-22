@@ -177,7 +177,7 @@ public class MultiPortTest {
                        .get("/variable", (req, res) -> res.send("Variable 8443"))
 
                        .build())
-                             .configuration(ServerConfiguration.builder()
+                             .config(ServerConfiguration.builder()
                                                                .ssl(ssl)
                                                                .addSocket("plain", SocketConfiguration.builder()))
                              .addNamedRouting("plain",
@@ -231,7 +231,7 @@ public class MultiPortTest {
         // start all of the servers
         webServer = WebServer.builder(Routing.builder()
                                              .get("/foo", commonHandler))
-                             .configuration(
+                             .config(
                                      ServerConfiguration.builder()
                                                         .ssl(ssl)
                                                         .addSocket("redirect", SocketConfiguration.builder()))
@@ -276,7 +276,7 @@ public class MultiPortTest {
         Config config = Config.create(ConfigSources.classpath("multiport/application.yaml"));
         webServer = WebServer.builder(Routing.builder()
                                              .get("/", (req, res) -> res.send("Plain!")))
-                             .configuration(ServerConfiguration.fromConfig(config.get("webserver")))
+                             .config(ServerConfiguration.create(config.get("webserver")))
                              .addNamedRouting("secured",
                                               Routing.builder()
                                                      .get("/", (req, res) -> res.send("Secured!")))

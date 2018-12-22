@@ -54,7 +54,7 @@ public final class Main {
         Config config = loadConfig();
 
         boolean acceptAnonymousUsers = config.get("anonymous-enabled").asBoolean().orElse(false);
-        ServerConfiguration serverConfig = config.get("webserver").as(ServerConfiguration::fromConfig).get();
+        ServerConfiguration serverConfig = config.get("webserver").as(ServerConfiguration::create).get();
 
         WebServer server = WebServer.create(serverConfig, createRouting(acceptAnonymousUsers));
 

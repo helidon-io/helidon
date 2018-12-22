@@ -178,7 +178,7 @@ public interface ServerConfiguration extends SocketConfiguration {
      * @param config the externalized configuration
      * @return a new instance
      */
-    static ServerConfiguration fromConfig(Config config) {
+    static ServerConfiguration create(Config config) {
         return builder(config).build();
     }
 
@@ -443,7 +443,7 @@ public interface ServerConfiguration extends SocketConfiguration {
                 if (http2Config.exists()) {
                     Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
                     http2Config.get("enable").asBoolean().ifPresent(http2Builder::enable);
-                    http2Config.get("maxContentLength").asInt().ifPresent(http2Builder::maxContentLength);
+                    http2Config.get("max-content-length").asInt().ifPresent(http2Builder::maxContentLength);
                     experimentalBuilder.http2(http2Builder.build());
                 }
                 experimental = experimentalBuilder.build();
