@@ -39,7 +39,7 @@ repositories {
 
 dependencies {
     compile "io.helidon:helidon-bom:${project.helidonversion}"
-    compile 'io.helidon.webserver:helidon-webserver-bundle'
+    compile 'io.helidon.bundles:helidon-bundles-webserver'
     compile 'io.helidon.config:helidon-config-yaml'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'

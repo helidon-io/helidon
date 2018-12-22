@@ -39,6 +39,5 @@
         <module>test-support</module>
         <module>zipkin</module>
         <module>prometheus</module>
-        <module>bundles</module>
     </modules>
 </project>

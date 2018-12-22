@@ -74,7 +74,7 @@ unzip -p target/quickstart-se.jar META-INF/MANIFEST.MF
 [listing]
 ----
 . . .
-Class-Path: libs/helidon-webserver-bundle-0.10.4.jar libs/helidon-webser
+Class-Path: libs/helidon-bundles-webserver-0.10.4.jar libs/helidon-webser
  ver-0.10.4.jar libs/helidon-common-reactive-0.10.4.jar libs/helidon-com
  mon-http-0.10.4.jar libs/helidon-common-key-util-0.10.4.jar libs/helido
 . . .

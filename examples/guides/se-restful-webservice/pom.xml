@@ -183,8 +183,8 @@
     <dependencies>
         <!-- tag::webserverBundleDependency[] -->
         <dependency> <!--1-->
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-webserver</artifactId>
         </dependency>
         <!-- end::webserverBundleDependency[] -->
         <!-- tag::configYamlDependency[] -->

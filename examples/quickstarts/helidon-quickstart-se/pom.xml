@@ -171,8 +171,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
