@@ -45,7 +45,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The test of SSL Netty layer.
@@ -129,8 +130,9 @@ public class SslTest {
     }
 
     private void doAssert(Response response) {
-        assertEquals("It works!", response.readEntity(String.class),
-                "Unexpected content; returned status code: " + response.getStatus());
+        assertThat("Unexpected content; returned status code: " + response.getStatus(),
+                   response.readEntity(String.class),
+                   is("It works!"));
     }
 
     @BeforeAll
@@ -151,7 +153,7 @@ public class SslTest {
 
     public static SSLContext clientSslContextTrustAll() throws NoSuchAlgorithmException, KeyManagementException {
         // Create a trust manager that does not validate certificate chains
-        TrustManager[] trustAllCerts = new TrustManager[] {
+        TrustManager[] trustAllCerts = {
                 new X509TrustManager() {
                     @Override
                     public java.security.cert.X509Certificate[] getAcceptedIssuers() {

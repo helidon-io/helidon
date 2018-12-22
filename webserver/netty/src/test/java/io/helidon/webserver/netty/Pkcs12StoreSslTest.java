@@ -31,10 +31,11 @@ import io.helidon.webserver.SSLContextBuilder;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The Pkcs12StoreSslTest.
@@ -77,8 +78,9 @@ public class Pkcs12StoreSslTest {
         try {
             WebTarget target = client.target("https://localhost:" + otherWebServer.port());
             Response response = target.request().get();
-            assertEquals("It works!", response.readEntity(String.class),
-                    "Unexpected content; returned status code: " + response.getStatus());
+            assertThat("Unexpected content; returned status code: " + response.getStatus(),
+                       response.readEntity(String.class),
+                       is("It works!"));
         } finally {
             otherWebServer.shutdown()
                           .toCompletableFuture()

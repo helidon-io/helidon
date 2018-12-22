@@ -25,10 +25,9 @@ import io.helidon.common.http.Http;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link RouteList}.
@@ -65,14 +64,14 @@ public class RouteListTest {
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
-        assertTrue(r.accepts(Http.Method.POST));
-        assertTrue(r.accepts(Http.Method.PUT));
-        assertTrue(r.accepts(Http.Method.DELETE));
-        assertTrue(r.accepts(Http.Method.GET));
-        assertTrue(r.accepts(Http.RequestMethod.create("FOO")));
-        assertTrue(r.accepts(Http.RequestMethod.create("BAR")));
-        assertFalse(r.accepts(Http.Method.OPTIONS));
-        assertEquals(6, r.acceptedMethods().size());
+        assertThat(r.accepts(Http.Method.POST), is(true));
+        assertThat(r.accepts(Http.Method.PUT), is(true));
+        assertThat(r.accepts(Http.Method.DELETE), is(true));
+        assertThat(r.accepts(Http.Method.GET), is(true));
+        assertThat(r.accepts(Http.RequestMethod.create("FOO")), is(true));
+        assertThat(r.accepts(Http.RequestMethod.create("BAR")), is(true));
+        assertThat(r.accepts(Http.Method.OPTIONS), is(false));
+        assertThat(r.acceptedMethods().size(), is(6));
     }
 
     @Test
@@ -88,14 +87,14 @@ public class RouteListTest {
         routes.add(new HandlerRoute(null, VOID_HANDLER, Http.RequestMethod.create("BAR")));
         RouteList r = new RouteList(routes);
         // assertion
-        assertTrue(r.accepts(Http.Method.POST));
-        assertTrue(r.accepts(Http.Method.PUT));
-        assertTrue(r.accepts(Http.Method.DELETE));
-        assertTrue(r.accepts(Http.Method.GET));
-        assertTrue(r.accepts(Http.RequestMethod.create("FOO")));
-        assertTrue(r.accepts(Http.RequestMethod.create("BAR")));
-        assertTrue(r.accepts(Http.RequestMethod.create("BAZ")));
-        assertTrue(r.accepts(Http.Method.OPTIONS));
-        assertEquals(0, r.acceptedMethods().size());
+        assertThat(r.accepts(Http.Method.POST), is(true));
+        assertThat(r.accepts(Http.Method.PUT), is(true));
+        assertThat(r.accepts(Http.Method.DELETE), is(true));
+        assertThat(r.accepts(Http.Method.GET), is(true));
+        assertThat(r.accepts(Http.RequestMethod.create("FOO")), is(true));
+        assertThat(r.accepts(Http.RequestMethod.create("BAR")), is(true));
+        assertThat(r.accepts(Http.RequestMethod.create("BAZ")), is(true));
+        assertThat(r.accepts(Http.Method.OPTIONS), is(true));
+        assertThat(r.acceptedMethods().size(), is(0));
     }
 }

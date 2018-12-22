@@ -31,7 +31,8 @@ import io.helidon.common.http.MediaType;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -174,7 +175,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertEquals(Paths.get("/root"), handler.path);
+        assertThat(handler.path, is(Paths.get("/root")));
     }
 
     @Test
@@ -184,7 +185,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.POST, request, response);
         verify(request).next();
-        assertEquals(0, handler.counter.get());
+        assertThat(handler.counter.get(), is(0));
     }
 
     @Test
@@ -194,7 +195,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request, never()).next();
-        assertEquals(Paths.get("/root/foo/some.txt"), handler.path);
+        assertThat(handler.path, is(Paths.get("/root/foo/some.txt")));
     }
 
     @Test
@@ -204,7 +205,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", true);
         handler.handle(Http.Method.GET, request, response);
         verify(request).next();
-        assertEquals(0, handler.counter.get());
+        assertThat(handler.counter.get(), is(0));
     }
 
     @Test
@@ -214,7 +215,7 @@ public class StaticContentHandlerTest {
         TestContentHandler handler = new TestContentHandler("/root", false);
         handler.handle(Http.Method.GET, request, response);
         verify(request).next();
-        assertEquals(1, handler.counter.get());
+        assertThat(handler.counter.get(), is(1));
     }
 
     static class TestContentHandler extends StaticContentHandler {

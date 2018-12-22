@@ -33,7 +33,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests specific header expectation from 204 NO CONTENT status code together with {@link HttpURLConnection} based JAX-RS client.
@@ -61,12 +62,12 @@ public class Status204Test {
     }
 
     @Test
-    public void callPutAndGet() throws Exception {
+    public void callPutAndGet() {
         WebTarget target = ClientBuilder.newClient()
                                         .target("http://localhost:" + server.port());
         Response response = target.request().put(Entity.entity("test call", MediaType.TEXT_PLAIN));
-        assertEquals(204, response.getStatus());
+        assertThat(response.getStatus(), is(204));
         String s = target.request().get(String.class);
-        assertEquals("test", s);
+        assertThat(s, is("test"));
     }
 }

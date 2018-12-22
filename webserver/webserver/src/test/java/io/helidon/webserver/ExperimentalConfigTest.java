@@ -18,11 +18,11 @@ package io.helidon.webserver;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Class ExperimentalConfigTest.
@@ -32,8 +32,8 @@ public class ExperimentalConfigTest {
     @Test
     public void http2BuilderDefaults() {
         Http2Configuration http2 = new Http2Configuration.Builder().build();
-        assertFalse(http2.enable());
-        assertEquals(Http2Configuration.DEFAULT_MAX_CONTENT_LENGTH, http2.maxContentLength());
+        assertThat(http2.enable(), is(false));
+        assertThat(http2.maxContentLength(), is(Http2Configuration.DEFAULT_MAX_CONTENT_LENGTH));
     }
 
     @Test
@@ -42,10 +42,10 @@ public class ExperimentalConfigTest {
         builder.enable(true);
         builder.maxContentLength(32 * 1024);
         Http2Configuration http2 = builder.build();
-        assertTrue(http2.enable());
-        assertEquals(32 * 1024, http2.maxContentLength());
+        assertThat(http2.enable(), is(true));
+        assertThat(http2.maxContentLength(), is(32 * 1024));
         ExperimentalConfiguration config = new ExperimentalConfiguration.Builder().http2(http2).build();
-        assertEquals(http2, config.http2());
+        assertThat(config.http2(), is(http2));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class ExperimentalConfigTest {
                 .get("webserver")
                 .get("experimental")
                 .get("http2");
-        assertTrue(http2.get("enable").asBoolean().get());
-        assertEquals(16 * 1024, (int) http2.get("max-content-length").asInt().get());
+        assertThat(http2.get("enable").asBoolean().get(), is(true));
+        assertThat((int) http2.get("max-content-length").asInt().get(), is(16 * 1024));
     }
 }

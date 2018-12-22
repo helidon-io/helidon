@@ -23,14 +23,13 @@ import io.helidon.webserver.spi.BareRequest;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,37 +43,37 @@ public class RequestTest {
         Request.Path path = Request.Path.create(null,
                                                 "/foo/bar/baz",
                                                 CollectionsHelper.mapOf("a", "va", "b", "vb", "var", "1"));
-        assertEquals("/foo/bar/baz", path.toString());
-        assertEquals("/foo/bar/baz", path.absolute().toString());
-        assertEquals(path.param("a"), "va");
-        assertEquals(path.param("b"), "vb");
-        assertEquals(path.param("var"), "1");
+        assertThat(path.toString(), is("/foo/bar/baz"));
+        assertThat(path.absolute().toString(), is("/foo/bar/baz"));
+        assertThat("va", is(path.param("a")));
+        assertThat("vb", is(path.param("b")));
+        assertThat("1", is(path.param("var")));
         assertThat(path.segments(), contains("foo", "bar", "baz"));
         // Sub path
         path = Request.Path.create(path,
                                    "/bar/baz",
                                    CollectionsHelper.mapOf("c", "vc", "var", "2"));
-        assertEquals("/bar/baz", path.toString());
-        assertEquals("/foo/bar/baz", path.absolute().toString());
-        assertEquals(path.param("c"), "vc");
-        assertEquals(path.param("var"), "2");
-        assertNull(path.param("a"));
-        assertEquals(path.absolute().param("a"), "va");
-        assertEquals(path.absolute().param("b"), "vb");
-        assertEquals(path.absolute().param("var"), "2");
+        assertThat(path.toString(), is("/bar/baz"));
+        assertThat(path.absolute().toString(), is("/foo/bar/baz"));
+        assertThat("vc", is(path.param("c")));
+        assertThat("2", is(path.param("var")));
+        assertThat(path.param("a"), nullValue());
+        assertThat("va", is(path.absolute().param("a")));
+        assertThat("vb", is(path.absolute().param("b")));
+        assertThat("2", is(path.absolute().param("var")));
         // Sub Sub Path
         path = Request.Path.create(path,
                                    "/baz",
                                    CollectionsHelper.mapOf("d", "vd", "a", "a2"));
-        assertEquals("/baz", path.toString());
-        assertEquals("/foo/bar/baz", path.absolute().toString());
-        assertEquals(path.param("d"), "vd");
-        assertEquals(path.param("a"), "a2");
-        assertNull(path.param("c"));
-        assertEquals(path.absolute().param("a"), "a2");
-        assertEquals(path.absolute().param("b"), "vb");
-        assertEquals(path.absolute().param("c"), "vc");
-        assertEquals(path.absolute().param("var"), "2");
+        assertThat(path.toString(), is("/baz"));
+        assertThat(path.absolute().toString(), is("/foo/bar/baz"));
+        assertThat("vd", is(path.param("d")));
+        assertThat("a2", is(path.param("a")));
+        assertThat(path.param("c"), nullValue());
+        assertThat("a2", is(path.absolute().param("a")));
+        assertThat("vb", is(path.absolute().param("b")));
+        assertThat("vc", is(path.absolute().param("c")));
+        assertThat("2", is(path.absolute().param("var")));
     }
 
     @Test

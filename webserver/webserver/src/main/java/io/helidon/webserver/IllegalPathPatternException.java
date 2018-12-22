@@ -38,10 +38,18 @@ public class IllegalPathPatternException extends IllegalArgumentException {
         this.index = index;
     }
 
+    /**
+     * Illegal used pattern.
+     * @return pattern that was used
+     */
     public String pattern() {
         return pattern;
     }
 
+    /**
+     * Index of character.
+     * @return index of offending character
+     */
     public int index() {
         return index;
     }
