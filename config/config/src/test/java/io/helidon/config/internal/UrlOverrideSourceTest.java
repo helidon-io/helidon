@@ -26,13 +26,13 @@ import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.hamcrest.core.Is;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link UrlOverrideSource}.
@@ -63,11 +63,9 @@ public class UrlOverrideSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-                overrideSource.load();
-        });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test

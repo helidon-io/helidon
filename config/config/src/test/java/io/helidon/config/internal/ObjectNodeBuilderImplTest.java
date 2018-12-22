@@ -22,17 +22,17 @@ import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ObjectNodeBuilderImpl}.
@@ -60,49 +60,52 @@ public class ObjectNodeBuilderImplTest {
     @Test
     @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeValueToList() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addList("top1.prop1", ListNode.builder().addValue("2").build())
-                .addValue("top1.prop1", "1")
-                .build();
+                    .addList("top1.prop1", ListNode.builder().addValue("2").build())
+                    .addValue("top1.prop1", "1")
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "LIST")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "LIST")));
     }
 
     @Test
     @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeValueToObject() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addValue("top1.prop1.sub", "2")
-                .addValue("top1.prop1", "1")
-                .build();
+                    .addValue("top1.prop1.sub", "2")
+                    .addValue("top1.prop1", "1")
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "OBJECT")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(), stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "VALUE", "OBJECT")));
     }
 
     @Test
     @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeObjectToValue() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addValue("top1.prop1", "2")
-                .addValue("top1.prop1.sub", "1")
-                .build();
+                    .addValue("top1.prop1", "2")
+                    .addValue("top1.prop1.sub", "1")
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "merge", "prop1", "OBJECT", "VALUE")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1", "merge", "prop1", "OBJECT", "VALUE")));
     }
 
     @Test
     public void testMergeObjectWithNonNumberKeyToList() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addList("top1.prop1", ListNode.builder().addValue("2").build())
-                .addValue("top1.prop1.sub1", "1")
-                .build();
+                    .addList("top1.prop1", ListNode.builder().addValue("2").build())
+                    .addValue("top1.prop1.sub1", "1")
+                    .build();
         });
-        Assertions.assertTrue(
-                stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "'sub1'", "LIST", "not a number")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper
+                                                 .listOf("top1", "prop1", "merge", "OBJECT", "'sub1'", "LIST", "not a number")));
     }
 
     @Test
@@ -121,24 +124,38 @@ public class ObjectNodeBuilderImplTest {
 
     @Test
     public void testMergeObjectWithNumberKeyOutOfBoundsToList() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
-             new ObjectNodeBuilderImpl()
-                .addList("top1.prop1", ListNode.builder().addValue("1").addValue("2").build())
-                .addValue("top1.prop1.2", "1")
-                .build();
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
+            new ObjectNodeBuilderImpl()
+                    .addList("top1.prop1", ListNode.builder().addValue("1").addValue("2").build())
+                    .addValue("top1.prop1.2", "1")
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "'2'", "LIST", "out of bounds")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1",
+                                                                  "prop1",
+                                                                  "merge",
+                                                                  "OBJECT",
+                                                                  "'2'",
+                                                                  "LIST",
+                                                                  "out of bounds")));
     }
 
     @Test
     public void testMergeObjectWithNegativeNumberKeyOutOfBoundsToList() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addList("top1.prop1", ListNode.builder().addValue("2").build())
-                .addValue("top1.prop1.-1", "1")
-                .build();
+                    .addList("top1.prop1", ListNode.builder().addValue("2").build())
+                    .addValue("top1.prop1.-1", "1")
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "OBJECT", "'-1'", "LIST", "negative index")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1",
+                                                                  "prop1",
+                                                                  "merge",
+                                                                  "OBJECT",
+                                                                  "'-1'",
+                                                                  "LIST",
+                                                                  "negative index")));
     }
 
     @Test
@@ -159,13 +176,14 @@ public class ObjectNodeBuilderImplTest {
     @Test
     @Disabled // since list and object nodes can now contain "direct" values, this no longer fails
     public void testMergeListToValue() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addValue("top1.prop1", "2")
-                .addList("top1.prop1", ListNode.builder().addValue("2").build())
-                .build();
+                    .addValue("top1.prop1", "2")
+                    .addList("top1.prop1", ListNode.builder().addValue("2").build())
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "VALUE")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "VALUE")));
     }
 
     @Test
@@ -185,24 +203,26 @@ public class ObjectNodeBuilderImplTest {
 
     @Test
     public void testMergeListToObjectWithNonNumberKey() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addValue("top1.prop1.sub1", "2")
-                .addList("top1.prop1", ListNode.builder().addValue("1").build())
-                .build();
+                    .addValue("top1.prop1.sub1", "2")
+                    .addList("top1.prop1", ListNode.builder().addValue("1").build())
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")));
     }
 
     @Test
     public void testMergeListToObjectWithNumberKey() {
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             new ObjectNodeBuilderImpl()
-                .addValue("top1.prop1.0", "2")
-                .addList("top1.prop1", ListNode.builder().addValue("1").build())
-                .build();
+                    .addValue("top1.prop1.0", "2")
+                    .addList("top1.prop1", ListNode.builder().addValue("1").build())
+                    .build();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf("top1", "prop1", "merge", "LIST", "OBJECT")));
     }
 
     @Test

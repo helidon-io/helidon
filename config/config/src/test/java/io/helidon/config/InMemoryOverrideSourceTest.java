@@ -25,11 +25,10 @@ import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.ConfigSources.create;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link InMemoryOverrideSource}.
@@ -111,11 +110,11 @@ public class InMemoryOverrideSourceTest {
     }
 
     @Test
-    public void testBuilderDefault() {
+    void testBuilderDefault() {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
                 new InMemoryOverrideSource.Builder(CollectionsHelper.listOf()).build();
         });
-        assertTrue(ex.getMessage().startsWith("Override values cannot be empty."));
+        assertThat(ex.getMessage(), startsWith("Override values cannot be empty."));
     }
 
     @Test
@@ -123,7 +122,7 @@ public class InMemoryOverrideSourceTest {
         NullPointerException ex = assertThrows(NullPointerException.class, () -> {
             new InMemoryOverrideSource.Builder(null);
         });
-        assertTrue(ex.getMessage().startsWith("overrideValues cannot be null"));
+        assertThat(ex.getMessage(), startsWith("overrideValues cannot be null"));
     }
 
 }

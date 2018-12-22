@@ -31,13 +31,13 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ConfigMappers} with focus on factory method and constructor initialization.
@@ -51,7 +51,7 @@ public class FactoryMethodConfigMapperTest {
     @Test
     public void testAmbiguousConstructors() {
         Config config = Config.empty();
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.as(AmbiguousConstructorsBean.class).get();
         });
 
@@ -134,7 +134,7 @@ public class FactoryMethodConfigMapperTest {
                 "app.number", "1"
         )));
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.get("app")
                     .as(ConstructorBean.class)
                     .get();
@@ -170,7 +170,7 @@ public class FactoryMethodConfigMapperTest {
     public void testAmbiguousFromMethods() {
         Config config = Config.empty();
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.as(AmbiguousFromMethodsBean.class).get();
         });
 
@@ -253,13 +253,14 @@ public class FactoryMethodConfigMapperTest {
                 "app.number", "1"
         )));
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.get("app")
                     .as(FromMethodBean.class)
                     .get();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf(
+                "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")));
     }
 
     @Test

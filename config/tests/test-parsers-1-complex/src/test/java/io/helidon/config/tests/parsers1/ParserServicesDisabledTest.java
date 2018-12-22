@@ -20,11 +20,12 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.stringContainsInOrder;
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Parser tests with {@link Config.Builder#disableParserServices}.
@@ -39,16 +40,17 @@ public class ParserServicesDisabledTest extends AbstractParserServicesTest {
 
     @Test
     public void testNoSuitableParser() {
-        final ConfigException ce = Assertions.assertThrows(ConfigException.class, () -> {
+        final ConfigException ce = assertThrows(ConfigException.class, () -> {
             configBuilder().build();
         });
-        
-        assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
+
+        assertThat(ce.getMessage(), stringContainsInOrder(CollectionsHelper.listOf(
                 "Cannot load data from mandatory source",
                 "InMemoryConfig[String]",
-                "Cannot find suitable parser for 'text/x-java-properties' media type.")).matches(ce.getMessage()));
-        assertTrue(instanceOf(ConfigException.class).matches(ce.getCause())); //Cannot find suitable parser for 'text/x-java-properties' media type.
+                "Cannot find suitable parser for 'text/x-java-properties' media type.")));
 
+        //Cannot find suitable parser for 'text/x-java-properties' media type.
+        assertThat(ce.getCause(), instanceOf(ConfigException.class));
     }
 
 }

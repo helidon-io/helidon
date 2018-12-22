@@ -16,6 +16,7 @@
 
 package io.helidon.config.internal;
 
+import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
@@ -23,17 +24,17 @@ import java.util.function.Supplier;
 
 import io.helidon.config.ConfigException;
 
+import org.junit.jupiter.api.Test;
+
 import static java.lang.Thread.sleep;
-import java.time.Duration;
 import static java.time.Duration.ZERO;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -90,7 +91,7 @@ public class RetryPolicyImplTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             retryPolicy.execute(sup::get);
         });
-        assertTrue(ex.getMessage().startsWith("All repeated calls failed."));
+        assertThat(ex.getMessage(), startsWith("All repeated calls failed."));
 
     }
 
@@ -170,8 +171,8 @@ public class RetryPolicyImplTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
                 retryPolicy.execute(sup::get);
         });
-        assertTrue(instanceOf(TimeoutException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("A timeout has been reached."));
+        assertThat(ex.getCause(), instanceOf(TimeoutException.class));
+        assertThat(ex.getMessage(), startsWith("A timeout has been reached."));
     }
 
     @Test
@@ -188,8 +189,8 @@ public class RetryPolicyImplTest {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
                 retryPolicy.execute(sup::get);
         });
-        assertTrue(instanceOf(TimeoutException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("A timeout has been reached."));
+        assertThat(ex.getCause(), instanceOf(TimeoutException.class));
+        assertThat(ex.getMessage(), startsWith("A timeout has been reached."));
     }
 
     @Test
@@ -207,8 +208,8 @@ public class RetryPolicyImplTest {
                 String result = retryPolicy.execute(sup::get);
                 System.out.println(result);
         });
-        assertTrue(instanceOf(TimeoutException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("A timeout has been reached."));
+        assertThat(ex.getCause(), instanceOf(TimeoutException.class));
+        assertThat(ex.getMessage(), startsWith("A timeout has been reached."));
     }
 
     @Test
@@ -235,8 +236,8 @@ public class RetryPolicyImplTest {
             Object execute = retryPolicy.execute(sup::get);
             System.out.println(execute);
         });
-        assertTrue(instanceOf(CancellationException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("An invocation has been canceled."));
+        assertThat(ex.getCause(), instanceOf(CancellationException.class));
+        assertThat(ex.getMessage(), startsWith("An invocation has been canceled."));
     }
 
     @Test

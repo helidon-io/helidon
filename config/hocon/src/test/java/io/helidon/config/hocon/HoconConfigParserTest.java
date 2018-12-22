@@ -40,7 +40,6 @@ import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigParserException;
 
 import com.typesafe.config.ConfigResolveOptions;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigValues.simpleValue;
@@ -53,6 +52,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link HoconConfigParser}.
@@ -76,21 +76,21 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveDisabled() {
-        ConfigParserException cpe = Assertions.assertThrows(ConfigParserException.class, () -> {
+        ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
             ConfigParser parser = HoconConfigParserBuilder.create().disableResolving().build();
             parser.parse((StringContent) () -> ""
-                + "aaa = 1 \n"
-                + "bbb = ${aaa} \n"
-                + "ccc = \"${aaa}\" \n"
-                + "ddd = ${?zzz}");
+                    + "aaa = 1 \n"
+                    + "bbb = ${aaa} \n"
+                    + "ccc = \"${aaa}\" \n"
+                    + "ddd = ${?zzz}");
         });
 
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "Cannot read from source",
-                "substitution not resolved",
-                "${aaa}")).matches(cpe.getMessage()));
-        Assertions.assertTrue(instanceOf(com.typesafe.config.ConfigException.NotResolved.class)
-                .matches(cpe.getCause()));
+        assertThat(cpe.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf(
+                           "Cannot read from source",
+                           "substitution not resolved",
+                           "${aaa}")));
+        assertThat(cpe.getCause(), instanceOf(com.typesafe.config.ConfigException.NotResolved.class));
     }
 
     @Test
@@ -104,21 +104,19 @@ public class HoconConfigParserTest {
 
     @Test
     public void testResolveEnabledEnvVarDisabled() {
-        ConfigParserException cpe = Assertions.assertThrows(ConfigParserException.class, () -> {
+        ConfigParserException cpe = assertThrows(ConfigParserException.class, () -> {
             ConfigParser parser = HoconConfigParserBuilder.create()
                     .resolveOptions(ConfigResolveOptions.noSystem())
                     .build();
-        parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
+            parser.parse((StringContent) () -> "env-var = ${HOCON_TEST_PROPERTY}");
         });
 
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "Cannot read from source",
-                "not resolve substitution ",
-                "${HOCON_TEST_PROPERTY}")).matches(cpe.getMessage()),
-                "Unexpected exception message: " + cpe.getMessage());
-        Assertions.assertTrue(instanceOf(com.typesafe.config.ConfigException.UnresolvedSubstitution.class)
-                .matches(cpe.getCause()),
-                "Unexpected exception cause type: " + cpe.getCause().getClass().getName());
+        assertThat(cpe.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf(
+                           "Cannot read from source",
+                           "not resolve substitution ",
+                           "${HOCON_TEST_PROPERTY}")));
+        assertThat(cpe.getCause(), instanceOf(com.typesafe.config.ConfigException.UnresolvedSubstitution.class));
     }
 
     @Test
@@ -362,11 +360,11 @@ public class HoconConfigParserTest {
         @Override
         public AppType apply(Config config) throws ConfigMappingException, MissingValueException {
             AppType app = new AppType(
-                config.get("name").asString().get(),
-                config.get("greeting").asString().get(),
-                config.get("page-size").asInt().get(),
-                config.get("basic-range").asList(Integer.class).get(),
-                config.get("storagePassphrase").asString().get()
+                    config.get("name").asString().get(),
+                    config.get("greeting").asString().get(),
+                    config.get("page-size").asInt().get(),
+                    config.get("basic-range").asList(Integer.class).get(),
+                    config.get("storagePassphrase").asString().get()
             );
 
             return app;

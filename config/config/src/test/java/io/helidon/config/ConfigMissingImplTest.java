@@ -16,7 +16,6 @@
 
 package io.helidon.config;
 
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,12 +27,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static io.helidon.config.Config.Type.MISSING;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -318,7 +317,7 @@ public class ConfigMissingImplTest extends AbstractConfigImplTest {
         MissingValueException ex = assertThrows(MissingValueException.class, () -> {
             op.apply(config);
         });
-        assertTrue(ex.getMessage().contains("'" + config.key() + "'"));
+        assertThat(ex.getMessage(), containsString("'" + config.key() + "'"));
     }
 
 }

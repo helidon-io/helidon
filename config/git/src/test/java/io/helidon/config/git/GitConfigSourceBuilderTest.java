@@ -54,9 +54,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link GitConfigSourceBuilder}.
@@ -170,7 +170,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .build();
                 });
 
-        assertTrue(ce.getMessage().startsWith(String.format("Directory '%s' is not empty and it is not a valid repository.", tempDir.toString())));
+        assertThat(ce.getMessage(), startsWith(String.format("Directory '%s' is not empty and it is not a valid repository.", tempDir.toString())));
     }
 
     @Test
@@ -181,7 +181,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
                 .parser(ConfigParsers.properties())
                 .build();
         });
-        assertTrue(ce.getMessage().startsWith("Directory or Uri must be set."));
+        assertThat(ce.getMessage(), startsWith("Directory or Uri must be set."));
     }
 
     @Test

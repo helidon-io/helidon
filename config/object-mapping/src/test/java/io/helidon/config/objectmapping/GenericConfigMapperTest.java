@@ -30,7 +30,6 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,6 +39,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link io.helidon.config.ConfigMappers} with focus on generic config mapping support, aka deserialization.
@@ -193,7 +193,7 @@ public class GenericConfigMapperTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(ConfigMappingException.class, () -> {
             config.as(WrongDefaultBean.class).get();
         });
     }
@@ -205,7 +205,7 @@ public class GenericConfigMapperTest {
                 .disableSystemPropertiesSource()
                 .build();
 
-        Assertions.assertThrows(ConfigMappingException.class, () -> {
+        assertThrows(ConfigMappingException.class, () -> {
             config.as(WrongDefaultBean.class).get();
         });
     }

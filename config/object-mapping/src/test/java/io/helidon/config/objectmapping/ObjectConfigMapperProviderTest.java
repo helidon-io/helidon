@@ -28,7 +28,6 @@ import io.helidon.config.ConfigValue;
 import io.helidon.config.MissingValueException;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +36,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -86,14 +86,14 @@ class ObjectConfigMapperProviderTest {
         assertThat(instance.asOptional(), is(Optional.empty()));
         Configurables.WithCreateConfig defaultValue = new Configurables.WithCreateConfig("default");
         assertThat(instance.orElse(defaultValue), sameInstance(defaultValue));
-        Assertions.assertThrows(MissingValueException.class, instance::get);
+        assertThrows(MissingValueException.class, instance::get);
 
         Supplier<Optional<Configurables.WithCreateConfig>> optionalSupplier = instance.optionalSupplier();
         assertThat(optionalSupplier, notNullValue());
         assertThat(optionalSupplier.get(), is(Optional.empty()));
 
         Supplier<Configurables.WithCreateConfig> supplier = instance.supplier();
-        Assertions.assertThrows(MissingValueException.class, supplier::get);
+        assertThrows(MissingValueException.class, supplier::get);
 
         supplier = instance.supplier(defaultValue);
         assertThat(supplier.get(), sameInstance(defaultValue));

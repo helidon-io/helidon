@@ -17,8 +17,10 @@
 package io.helidon.config;
 
 import io.helidon.common.reactive.Flow;
-import org.junit.jupiter.api.Assertions;
+
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenerTest {
 
@@ -27,7 +29,7 @@ public class ListenerTest {
      */
     @Test
     public void compilation() {
-        Assertions.assertThrows(RuntimeException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             Config config = null;
             config.get("my").get("app").get("security").changes().subscribe(new ConfigChangeSubscriber());
         });

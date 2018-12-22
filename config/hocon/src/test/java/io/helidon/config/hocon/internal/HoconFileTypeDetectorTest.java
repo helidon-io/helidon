@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 import io.helidon.config.ConfigHelper;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * Tests {@link HoconFileTypeDetector}.
  */
@@ -30,22 +33,22 @@ public class HoconFileTypeDetectorTest {
 
     @Test
     public void testProbeContentTypeHocon() throws IOException {
-        assertEquals(ConfigHelper.detectContentType(Paths.get("config.conf")), "application/hocon");
+        assertThat(ConfigHelper.detectContentType(Paths.get("config.conf")), is("application/hocon"));
     }
 
     @Test
     public void testProbeContentTypeHoconDirectly() throws IOException {
-        assertEquals(new HoconFileTypeDetector().probeContentType(Paths.get("config.conf")), "application/hocon");
+        assertThat(new HoconFileTypeDetector().probeContentType(Paths.get("config.conf")), is("application/hocon"));
     }
 
     @Test
     public void testProbeContentTypeJson() throws IOException {
-        assertEquals(ConfigHelper.detectContentType(Paths.get("config.json")), "application/json");
+        assertThat(ConfigHelper.detectContentType(Paths.get("config.json")), is("application/json"));
     }
 
     @Test
     public void testProbeContentTypeJsonDirectly() throws IOException {
-        assertEquals(new HoconFileTypeDetector().probeContentType(Paths.get("config.json")), "application/json");
+        assertThat(new HoconFileTypeDetector().probeContentType(Paths.get("config.json")), is("application/json"));
     }
 
 }

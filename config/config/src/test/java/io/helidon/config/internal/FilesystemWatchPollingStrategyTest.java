@@ -26,20 +26,21 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.config.spi.PollingStrategy;
-
-import com.sun.nio.file.SensitivityWatchEventModifier;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
+import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.jupiter.api.Assertions;
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -81,7 +82,7 @@ public class FilesystemWatchPollingStrategyTest {
 
             @Override
             public void onError(Throwable throwable) {
-                Assertions.fail(throwable);
+                fail(throwable);
             }
 
             @Override
@@ -133,7 +134,7 @@ public class FilesystemWatchPollingStrategyTest {
 
             @Override
             public void onError(Throwable throwable) {
-                Assertions.fail(throwable);
+                fail(throwable);
             }
 
             @Override
@@ -175,7 +176,7 @@ public class FilesystemWatchPollingStrategyTest {
 
             @Override
             public void onError(Throwable throwable) {
-                Assertions.fail(throwable);
+                fail(throwable);
             }
 
             @Override
@@ -230,7 +231,7 @@ public class FilesystemWatchPollingStrategyTest {
 
             @Override
             public void onError(Throwable throwable) {
-                Assertions.fail(throwable);
+                fail(throwable);
             }
 
             @Override
@@ -323,7 +324,7 @@ public class FilesystemWatchPollingStrategyTest {
 
             @Override
             public void onError(Throwable throwable) {
-                Assertions.fail(throwable);
+                fail(throwable);
             }
 
             @Override
@@ -342,21 +343,21 @@ public class FilesystemWatchPollingStrategyTest {
     }
 
     @Test
-    public void testWatchThreadFuture() throws InterruptedException {
+    public void testWatchThreadFuture() {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
         mockPollingStrategy.initWatchServiceModifiers(SensitivityWatchEventModifier.HIGH);
         mockPollingStrategy.startWatchService();
 
-        Assertions.assertNotNull(mockPollingStrategy.watchThreadFuture());
+        assertThat(mockPollingStrategy.watchThreadFuture(), notNullValue());
         assertThat(mockPollingStrategy.watchThreadFuture().isCancelled(), is(false));
 
         mockPollingStrategy.startWatchService();
     }
 
     @Test
-    public void testWatchThreadFutureCanceled() throws InterruptedException {
+    public void testWatchThreadFutureCanceled() {
         Path dirPath = FileSystems.getDefault().getPath(dir.getRoot().getAbsolutePath());
         Path watchedPath = dirPath.resolve(WATCHED_FILE);
         FilesystemWatchPollingStrategy mockPollingStrategy = spy(new FilesystemWatchPollingStrategy(watchedPath, null));
@@ -364,7 +365,7 @@ public class FilesystemWatchPollingStrategyTest {
         mockPollingStrategy.startWatchService();
         mockPollingStrategy.stopWatchService();
 
-        Assertions.assertNotNull(mockPollingStrategy.watchThreadFuture());
+        assertThat(mockPollingStrategy.watchThreadFuture(), notNullValue());
         assertThat(mockPollingStrategy.watchThreadFuture().isCancelled(), is(true));
     }
 
