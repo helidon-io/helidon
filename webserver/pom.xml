@@ -40,6 +40,5 @@
         <module>zipkin</module>
         <module>prometheus</module>
         <module>bundles</module>
-        <module>examples</module>
     </modules>
 </project>

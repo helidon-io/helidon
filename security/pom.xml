@@ -39,7 +39,6 @@
         <module>jwt</module>
         <module>abac-validators</module>
         <module>bundle</module>
-        <module>examples</module>
     </modules>
 
     <profiles>

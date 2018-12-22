@@ -32,7 +32,6 @@
     <name>Helidon Microprofile</name>
 
     <modules>
-        <module>examples</module>
         <module>config</module>
         <module>health</module>
         <module>metrics</module>
