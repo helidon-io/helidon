@@ -50,7 +50,7 @@ public class JsonSupportTest {
     public void pingPong() throws Exception {
         Routing routing = Routing.builder()
                                  .register(JsonSupport.get())
-                                 .post("/foo", Handler.of(JsonObject.class, (req, res, json) -> res.send(json)))
+                                 .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                                  .build();
         JsonObject json = createJson();
         TestResponse response = TestClient.create(routing)
@@ -68,7 +68,7 @@ public class JsonSupportTest {
     public void invalidJson() throws Exception {
         Routing routing = Routing.builder()
                 .register(JsonSupport.get())
-                .post("/foo", Handler.of(JsonObject.class, (req, res, json) -> res.send(json)))
+                .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                 .build();
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
@@ -80,7 +80,7 @@ public class JsonSupportTest {
     @Test
     public void explicitJsonSupportRegistrationMissingJsonProperty() throws Exception {
         Routing routing = Routing.builder()
-                .post("/foo", Handler.of(JsonObject.class, (req, res, json) -> res.send(json)))
+                .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                 .build();
         JsonObject json = createJson();
         TestResponse response = TestClient.create(routing)
@@ -94,7 +94,7 @@ public class JsonSupportTest {
     public void acceptHeaders() throws Exception {
         Routing routing = Routing.builder()
                 .register(JsonSupport.get())
-                .post("/foo", Handler.of(JsonObject.class, (req, res, json) -> res.send(json)))
+                .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                 .build();
         JsonObject json = createJson();
 

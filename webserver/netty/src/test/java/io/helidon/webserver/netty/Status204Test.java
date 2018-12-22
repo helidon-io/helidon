@@ -48,7 +48,7 @@ public class Status204Test {
                .get(((req, res) -> {
                    res.send("test");
                }))
-               .put(Handler.of(String.class, (req, res, entity) -> {
+               .put(Handler.create(String.class, (req, res, entity) -> {
                    res.status(Http.Status.NO_CONTENT_204).send();
                }))
                .createServer();

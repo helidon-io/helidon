@@ -78,7 +78,7 @@ public class PlainTest {
                            res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
                            res.send("abcd");
                        })
-                       .any(Handler.of(String.class, (req, res, entity) -> res.send("It works! Payload: " + entity)))
+                       .any(Handler.create(String.class, (req, res, entity) -> res.send("It works! Payload: " + entity)))
                        .build())
                              .start()
                              .toCompletableFuture()

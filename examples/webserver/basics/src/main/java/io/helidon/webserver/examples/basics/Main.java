@@ -217,7 +217,7 @@ public class Main {
                                         });
                                  })
                                  // It is possible to use Hanlder.of() method to automatically cover all error states.
-                                 .post("/bar", Handler.of(String.class, (req, res, data) -> {
+                                 .post("/bar", Handler.create(String.class, (req, res, data) -> {
                                      System.out.println("/foo DATA: " + data);
                                      res.send(data);
                                  }))
@@ -251,7 +251,7 @@ public class Main {
                                      req.next();
                                  })
                                  // Registered reader can be used by following handlers
-                                 .post("/create-record", Handler.of(Name.class, (req, res, name) -> {
+                                 .post("/create-record", Handler.create(Name.class, (req, res, name) -> {
                                      System.out.println("Name: " + name);
                                      res.status(Http.Status.CREATED_201)
                                         .send(name.toString());
@@ -291,7 +291,7 @@ public class Main {
      */
     public void errorHandling() {
         Routing routing = Routing.builder()
-                                 .post("/compute", Handler.of(String.class, (req, res, str) -> {
+                                 .post("/compute", Handler.create(String.class, (req, res, str) -> {
                                      int result = 100 / Integer.parseInt(str);
                                      res.send(String.valueOf("100 / " + str + " = " + result));
                                  }))

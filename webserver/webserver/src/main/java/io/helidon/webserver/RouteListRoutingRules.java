@@ -299,7 +299,7 @@ class RouteListRoutingRules implements Routing.Rules {
         if (pathPattern == null) {
             return any((PathMatcher) null, requestHandlers);
         } else {
-            return any(PathMatcher.from(pathPattern), requestHandlers);
+            return any(PathMatcher.create(pathPattern), requestHandlers);
         }
     }
 
@@ -327,7 +327,7 @@ class RouteListRoutingRules implements Routing.Rules {
         if (pathPattern == null) {
             return anyOf(methods, (PathMatcher) null, requestHandlers);
         } else {
-            return anyOf(methods, PathMatcher.from(pathPattern), requestHandlers);
+            return anyOf(methods, PathMatcher.create(pathPattern), requestHandlers);
         }
     }
 

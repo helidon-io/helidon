@@ -15,7 +15,7 @@
  */
 
 /**
- * WebServer Bundle module.
+ * WebServer Jersey Bundle module.
  */
 module io.helidon.bundles.jersey {
     requires transitive io.helidon.webserver;
