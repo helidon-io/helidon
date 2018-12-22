@@ -15,7 +15,7 @@
  */
 
 /**
- * TODO javadoc.
+ * Prometheus support.
  */
 module io.helidon.webserver.prometheus {
     requires io.helidon.webserver;

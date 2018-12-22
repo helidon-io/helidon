@@ -30,7 +30,7 @@
     <name>Helidon WebServer Jersey</name>
 
     <description>
-        Jersey adapter for the JDK Web Server
+        Jersey adapter for the Web Server
     </description>
 
     <dependencies>

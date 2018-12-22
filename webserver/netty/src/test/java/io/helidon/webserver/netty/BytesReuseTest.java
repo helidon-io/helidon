@@ -132,11 +132,11 @@ public class BytesReuseTest {
                                              }
                                          });
                        })
-                       .post("/string", Handler.of(String.class, (req, res, s) -> {
+                       .post("/string", Handler.create(String.class, (req, res, s) -> {
                            assertAgainstPrefixQueryParam(req, s);
                            res.send("Finished");
                        }))
-                       .post("/bytes", Handler.of(byte[].class, (req, res, b) -> {
+                       .post("/bytes", Handler.create(byte[].class, (req, res, b) -> {
                            assertAgainstPrefixQueryParam(req, new String(b));
                            res.send("Finished");
                        }))
@@ -155,7 +155,7 @@ public class BytesReuseTest {
                                            });
                                     });
                        })
-                       .post("/input_stream", Handler.of(InputStream.class, (req, res, stream) -> {
+                       .post("/input_stream", Handler.create(InputStream.class, (req, res, stream) -> {
                            Executors.newSingleThreadExecutor()
                                     .submit(() -> {
                                         try {
