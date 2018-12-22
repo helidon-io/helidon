@@ -44,8 +44,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-jersey-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-jersey</artifactId>
             <version>${project.version}</version>
         </dependency>
          <dependency>
