@@ -67,7 +67,7 @@ class RequestRouting implements Routing {
     @Override
     public void route(BareRequest bareRequest, BareResponse bareResponse) {
         try {
-            WebServer webServer = bareRequest.getWebServer();
+            WebServer webServer = bareRequest.webServer();
             Span span = createRequestSpan(tracer(webServer), bareRequest);
             RoutedResponse response = new RoutedResponse(webServer, bareResponse, span.context());
             response.whenSent()
@@ -93,14 +93,14 @@ class RequestRouting implements Routing {
                         return null;
                     });
             // Process path
-            String p = bareRequest.getUri().normalize().getPath();
+            String p = bareRequest.uri().normalize().getPath();
             if (p.charAt(p.length() - 1) == '/') {
                 p = p.substring(0, p.length() - 1);
             }
             if (p.isEmpty()) {
                 p = "/";
             }
-            Crawler crawler = new Crawler(routes, p, bareRequest.getMethod());
+            Crawler crawler = new Crawler(routes, p, bareRequest.method());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers, span);
             nextRequests.next();
         } catch (Error | RuntimeException e) {
@@ -121,10 +121,10 @@ class RequestRouting implements Routing {
     private Span createRequestSpan(Tracer tracer, BareRequest request) {
         Tracer.SpanBuilder spanBuilder = tracer.buildSpan("HTTP Request")
                 .withTag(Tags.COMPONENT.getKey(), "helidon-webserver")
-                .withTag(Tags.HTTP_METHOD.getKey(), request.getMethod().name())
-                .withTag(Tags.HTTP_URL.getKey(), request.getUri().toString());
+                .withTag(Tags.HTTP_METHOD.getKey(), request.method().name())
+                .withTag(Tags.HTTP_URL.getKey(), request.uri().toString());
 
-        Map<String, String> headersMap = request.getHeaders()
+        Map<String, String> headersMap = request.headers()
                                                 .entrySet()
                                                 .stream()
                                                 .filter(entry -> !entry.getValue().isEmpty())

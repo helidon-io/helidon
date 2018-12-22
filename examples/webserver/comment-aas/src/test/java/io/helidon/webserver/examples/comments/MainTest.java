@@ -54,7 +54,7 @@ public class MainTest {
     public void argot() throws Exception {
         TestResponse response = TestClient.create(Main.createRouting(true))
                 .path("/comments/one")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "Spring framework is the BEST!"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "Spring framework is the BEST!"));
         assertEquals(Http.Status.NOT_ACCEPTABLE_406, response.status());
     }
 

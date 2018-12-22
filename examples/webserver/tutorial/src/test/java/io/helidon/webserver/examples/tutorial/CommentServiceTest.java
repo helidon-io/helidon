@@ -64,7 +64,7 @@ public class CommentServiceTest {
         // Add first comment
         response = TestClient.create(routing)
                 .path("one")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "aaa"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "aaa"));
         assertEquals(Http.Status.OK_200, response.status());
         response = TestClient.create(routing)
                 .path("one")
@@ -76,7 +76,7 @@ public class CommentServiceTest {
         // Add second comment
         response = TestClient.create(routing)
                 .path("one")
-                .post(MediaPublisher.of(MediaType.TEXT_PLAIN, "bbb"));
+                .post(MediaPublisher.create(MediaType.TEXT_PLAIN, "bbb"));
         assertEquals(Http.Status.OK_200, response.status());
         response = TestClient.create(routing)
                 .path("one")

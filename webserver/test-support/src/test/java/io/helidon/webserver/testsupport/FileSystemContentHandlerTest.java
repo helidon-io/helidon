@@ -46,7 +46,7 @@ public class FileSystemContentHandlerTest {
     @BeforeEach
     public void createContent() throws IOException {
         // root
-        Path root = folder.getRoot().toPath();
+        Path root = folder.root().toPath();
         Files.write(root.resolve("index.html"), "Index HTML".getBytes(StandardCharsets.UTF_8));
         Files.write(root.resolve("foo.txt"), "Foo TXT".getBytes(StandardCharsets.UTF_8));
         // css
@@ -70,7 +70,7 @@ public class FileSystemContentHandlerTest {
     public void serveFile() throws Exception {
         try {
         Routing routing = Routing.builder()
-                                 .register("/some", StaticContentSupport.create(folder.getRoot().toPath()))
+                                 .register("/some", StaticContentSupport.create(folder.root().toPath()))
                                  .build();
         // /some/foo.txt
         TestResponse response = TestClient.create(routing)
@@ -109,7 +109,7 @@ public class FileSystemContentHandlerTest {
     @Test
     public void serveIndex() throws Exception {
         Routing routing = Routing.builder()
-                .register(StaticContentSupport.builder(folder.getRoot().toPath())
+                .register(StaticContentSupport.builder(folder.root().toPath())
                                               .welcomeFileName("index.html")
                                               .contentType("css", MediaType.TEXT_PLAIN)
                                               .build())

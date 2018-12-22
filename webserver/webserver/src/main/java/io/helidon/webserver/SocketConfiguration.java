@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.InetAddress;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -190,8 +191,8 @@ public interface SocketConfiguration {
          *                          method execution
          * @return this builder
          */
-        public Builder ssl(io.helidon.common.Builder<? extends SSLContext> sslContextBuilder) {
-            return ssl(sslContextBuilder != null ? sslContextBuilder.build() : null);
+        public Builder ssl(Supplier<? extends SSLContext> sslContextBuilder) {
+            return ssl(sslContextBuilder != null ? sslContextBuilder.get() : null);
         }
 
         @Override

@@ -164,42 +164,42 @@ public class TestClient {
         }
 
         @Override
-        public TestWebServer getWebServer() {
+        public TestWebServer webServer() {
             return webServer;
         }
 
         @Override
-        public Http.RequestMethod getMethod() {
+        public Http.RequestMethod method() {
             return method;
         }
 
         @Override
-        public Http.Version getVersion() {
+        public Http.Version version() {
             return version;
         }
 
         @Override
-        public URI getUri() {
+        public URI uri() {
             return path;
         }
 
         @Override
-        public String getLocalAddress() {
+        public String localAddress() {
             return "0.0.0.0";
         }
 
         @Override
-        public int getLocalPort() {
+        public int localPort() {
             return 9999;
         }
 
         @Override
-        public String getRemoteAddress() {
+        public String remoteAddress() {
             return "127.0.0.1";
         }
 
         @Override
-        public int getRemotePort() {
+        public int remotePort() {
             return 3333;
         }
 
@@ -209,7 +209,7 @@ public class TestClient {
         }
 
         @Override
-        public Map<String, List<String>> getHeaders() {
+        public Map<String, List<String>> headers() {
             return headers;
         }
 
@@ -238,7 +238,7 @@ public class TestClient {
             this.webServer = webServer;
         }
 
-        TestWebServer getWebServer() {
+        TestWebServer webServer() {
             return webServer;
         }
 

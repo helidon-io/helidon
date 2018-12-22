@@ -62,7 +62,7 @@ public class RequestContentTest {
 
     private static Request requestTestStub(Publisher<DataChunk> flux) {
         BareRequest bareRequestMock = Mockito.mock(BareRequest.class);
-        Mockito.doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).getUri();
+        Mockito.doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         Mockito.doReturn(ReactiveStreamsAdapter.publisherToFlow(flux)).when(bareRequestMock).bodyPublisher();
         return new RequestTestStub(bareRequestMock, Mockito.mock(WebServer.class));
     }

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.ContextualRegistry;
@@ -247,8 +248,8 @@ public interface WebServer {
          * @param configurationBuilder the configuration builder
          * @return an updated builder
          */
-        public Builder configuration(io.helidon.common.Builder<ServerConfiguration> configurationBuilder) {
-            this.configuration = configurationBuilder != null ? configurationBuilder.build() : null;
+        public Builder configuration(Supplier<ServerConfiguration> configurationBuilder) {
+            this.configuration = configurationBuilder != null ? configurationBuilder.get() : null;
             return this;
         }
 
@@ -286,11 +287,11 @@ public interface WebServer {
          *                       configuration; will be built as a first step of this method execution
          * @return an updated builder
          */
-        public Builder addNamedRouting(String name, io.helidon.common.Builder<Routing> routingBuilder) {
+        public Builder addNamedRouting(String name, Supplier<Routing> routingBuilder) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
             Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
 
-            return addNamedRouting(name, routingBuilder.build());
+            return addNamedRouting(name, routingBuilder.get());
         }
 
         /**

@@ -56,7 +56,7 @@ public class JsonSupportTest {
         TestResponse response = TestClient.create(routing)
                                           .path("/foo")
                                           .post(MediaPublisher
-                                                        .of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                                                        .create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
 
         assertEquals(MediaType.APPLICATION_JSON.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
         byte[] bytes = response.asBytes().toCompletableFuture().get(10, TimeUnit.SECONDS);
@@ -72,7 +72,7 @@ public class JsonSupportTest {
                 .build();
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), "{ ... invalid ... }"));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), "{ ... invalid ... }"));
 
         assertEquals(Http.Status.INTERNAL_SERVER_ERROR_500, response.status());
     }
@@ -85,7 +85,7 @@ public class JsonSupportTest {
         JsonObject json = createJson();
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
 
         assertEquals(Http.Status.INTERNAL_SERVER_ERROR_500, response.status());
     }
@@ -102,7 +102,7 @@ public class JsonSupportTest {
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
                 .header("Accept", "text/plain; q=.8, application/json; q=.1")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
         assertEquals(Http.Status.OK_200, response.status());
         assertEquals(MediaType.APPLICATION_JSON.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
 
@@ -110,7 +110,7 @@ public class JsonSupportTest {
         response = TestClient.create(routing)
                 .path("/foo")
                 .header("Accept", "text/plain; q=.8, application/specific+json; q=.1")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
         assertEquals(Http.Status.OK_200, response.status());
         assertEquals(MediaType.parse("application/specific+json").toString(),
                      response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
@@ -119,7 +119,7 @@ public class JsonSupportTest {
         response = TestClient.create(routing)
                 .path("/foo")
                 .header("Accept", "text/plain; q=.8, application/*; q=.1")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
         assertEquals(Http.Status.OK_200, response.status());
         assertEquals(MediaType.APPLICATION_JSON.toString(), response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
 
@@ -127,7 +127,7 @@ public class JsonSupportTest {
         response = TestClient.create(routing)
                 .path("/foo")
                 .header("Accept", "application/javascript")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
         assertEquals(Http.Status.OK_200, response.status());
         assertEquals("application/javascript", response.headers().first(Http.Header.CONTENT_TYPE).orElse(null));
 
@@ -135,7 +135,7 @@ public class JsonSupportTest {
         response = TestClient.create(routing)
                 .path("/foo")
                 .header("Accept", "text/plain; q=.8, application/specific; q=.1")
-                .post(MediaPublisher.of(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
+                .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
         assertEquals(Http.Status.INTERNAL_SERVER_ERROR_500, response.status());
     }
 }

@@ -121,8 +121,8 @@ public class StringContentReaderTest {
 
     private RequestTestStub charset(Map<String, List<String>> map) {
         BareRequest bareRequestMock = mock(BareRequest.class);
-        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).getUri();
-        doReturn(map).when(bareRequestMock).getHeaders();
+        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
+        doReturn(map).when(bareRequestMock).headers();
 
         return new RequestTestStub(bareRequestMock, mock(WebServer.class));
     }

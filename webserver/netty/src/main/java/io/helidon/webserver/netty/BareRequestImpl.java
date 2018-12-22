@@ -62,42 +62,42 @@ class BareRequestImpl implements BareRequest {
     }
 
     @Override
-    public WebServer getWebServer() {
+    public WebServer webServer() {
         return webServer;
     }
 
     @Override
-    public Http.RequestMethod getMethod() {
+    public Http.RequestMethod method() {
         return Http.RequestMethod.create(nettyRequest.method().name());
     }
 
     @Override
-    public Http.Version getVersion() {
+    public Http.Version version() {
         return Http.Version.create(nettyRequest.protocolVersion().text());
     }
 
     @Override
-    public URI getUri() {
+    public URI uri() {
         return URI.create(nettyRequest.uri());
     }
 
     @Override
-    public String getLocalAddress() {
+    public String localAddress() {
         return hostString(ctx.channel().localAddress());
     }
 
     @Override
-    public int getLocalPort() {
+    public int localPort() {
         return port(ctx.channel().localAddress());
     }
 
     @Override
-    public String getRemoteAddress() {
+    public String remoteAddress() {
         return hostString(ctx.channel().remoteAddress());
     }
 
     @Override
-    public int getRemotePort() {
+    public int remotePort() {
         return port(ctx.channel().remoteAddress());
     }
 
@@ -115,7 +115,7 @@ class BareRequestImpl implements BareRequest {
     }
 
     @Override
-    public Map<String, List<String>> getHeaders() {
+    public Map<String, List<String>> headers() {
         HashMap<String, List<String>> map = new HashMap<>();
 
         for (Map.Entry<String, String> entry : nettyRequest.headers().entries()) {

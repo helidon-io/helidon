@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.spi.BareRequest;
@@ -92,7 +93,7 @@ public interface Routing {
          *                        method execution
          * @return Updated routing configuration
          */
-        Rules register(io.helidon.common.Builder<? extends Service>... serviceBuilders);
+        Rules register(Supplier<? extends Service>... serviceBuilders);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -111,7 +112,7 @@ public interface Routing {
          *                        method execution
          * @return an updated routing configuration
          */
-        Rules register(String pathPattern, io.helidon.common.Builder<? extends Service>... serviceBuilders);
+        Rules register(String pathPattern, Supplier<? extends Service>... serviceBuilders);
 
         /**
          * Routes all GET requests to provided handler(s). Request handler can call {@link ServerRequest#next()}
@@ -403,7 +404,7 @@ public interface Routing {
         // --------------- ROUTING API
 
         @Override
-        public Builder register(io.helidon.common.Builder<? extends Service>... serviceBuilders) {
+        public Builder register(Supplier<? extends Service>... serviceBuilders) {
             delegate.register(serviceBuilders);
             return this;
         }
@@ -421,7 +422,7 @@ public interface Routing {
         }
 
         @Override
-        public Builder register(String pathPattern, io.helidon.common.Builder<? extends Service>... serviceBuilders) {
+        public Builder register(String pathPattern, Supplier<? extends Service>... serviceBuilders) {
             delegate.register(pathPattern, serviceBuilders);
             return this;
         }
@@ -625,7 +626,7 @@ public interface Routing {
          */
         public Routing build() {
             RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
-            return new RequestRouting(aggregate.getRouteList(), errorHandlerRecords, aggregate.getNewWebServerCallbacks());
+            return new RequestRouting(aggregate.routeList(), errorHandlerRecords, aggregate.newWebServerCallbacks());
         }
 
         /**

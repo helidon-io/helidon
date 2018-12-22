@@ -22,9 +22,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.common.Builder;
 import io.helidon.common.http.Http;
 
 /**
@@ -82,13 +82,13 @@ class RouteListRoutingRules implements Routing.Rules {
                 if (!subAggregations.isEmpty()) {
                     Aggregation subAggregation = Aggregation.concatWithSamePath(subAggregations);
                     // Insert into current result
-                    resultCallbacks.addAll(subAggregation.getNewWebServerCallbacks());
-                    if (!subAggregation.getRouteList().isEmpty()) {
+                    resultCallbacks.addAll(subAggregation.newWebServerCallbacks());
+                    if (!subAggregation.routeList().isEmpty()) {
                         if (record.pathContext == null) {
                             // Can flat it
-                            result.addAll(subAggregation.getRouteList());
+                            result.addAll(subAggregation.routeList());
                         } else {
-                            result.add(subAggregation.getRouteList());
+                            result.add(subAggregation.routeList());
                         }
                     }
                 }
@@ -127,12 +127,12 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
-    public RouteListRoutingRules register(Builder<? extends Service>... serviceBuilders) {
+    public RouteListRoutingRules register(Supplier<? extends Service>... serviceBuilders) {
         if (serviceBuilders != null && serviceBuilders.length > 0) {
             records.add(new Record(null,
                                    Stream.of(serviceBuilders)
                                          .filter(Objects::nonNull)
-                                         .map(Builder::build)
+                                         .map(Supplier::get)
                                          .toArray(Service[]::new)));
         }
         return this;
@@ -147,12 +147,12 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
-    public RouteListRoutingRules register(String pathPattern, Builder<? extends Service>... serviceBuilders) {
+    public RouteListRoutingRules register(String pathPattern, Supplier<? extends Service>... serviceBuilders) {
         if (serviceBuilders != null && serviceBuilders.length > 0) {
             records.add(new Record(PathPattern.compile(pathPattern),
                                    Stream.of(serviceBuilders)
                                          .filter(Objects::nonNull)
-                                         .map(Builder::build)
+                                         .map(Supplier::get)
                                          .toArray(Service[]::new)));
         }
         return this;
@@ -371,7 +371,7 @@ class RouteListRoutingRules implements Routing.Rules {
     /**
      * Aggregated result.
      */
-    static class Aggregation {
+    static final class Aggregation {
         private final RouteList routeList;
         private final List<Consumer<WebServer>> newWebServerCallbacks;
 
@@ -381,7 +381,7 @@ class RouteListRoutingRules implements Routing.Rules {
             this.newWebServerCallbacks = newWebServerCallbacks;
         }
 
-        RouteList getRouteList() {
+        RouteList routeList() {
             return routeList;
         }
 
@@ -389,7 +389,7 @@ class RouteListRoutingRules implements Routing.Rules {
             return routeList.isEmpty() && newWebServerCallbacks.isEmpty();
         }
 
-        List<Consumer<WebServer>> getNewWebServerCallbacks() {
+        List<Consumer<WebServer>> newWebServerCallbacks() {
             return newWebServerCallbacks;
         }
 
@@ -409,7 +409,7 @@ class RouteListRoutingRules implements Routing.Rules {
                     callbacks.addAll(aggregation.newWebServerCallbacks);
                     routes.addAll(aggregation.routeList);
                 }
-                return new Aggregation(new RouteList(aggregations.get(0).routeList.getPathContext(), routes), callbacks);
+                return new Aggregation(new RouteList(aggregations.get(0).routeList.pathContext(), routes), callbacks);
             }
         }
     }

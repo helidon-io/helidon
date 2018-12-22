@@ -59,7 +59,7 @@ class ClassPathContentHandler extends FileSystemContentHandler {
         }
 
         // If URL exists then it can be directory and we have to try locate a welcome page
-        String welcomePageName = getWelcomePageName();
+        String welcomePageName = welcomePageName();
         if ((welcomePageName != null) && !welcomePageName.isEmpty()) {
             URL welcomeUrl = classLoader.getResource(path.resolve(welcomePageName).toString());
             if (welcomeUrl != null) {
@@ -93,7 +93,7 @@ class ClassPathContentHandler extends FileSystemContentHandler {
                 processModifyHeaders(extrEntry.lastModified, request.headers(), response.headers());
             }
 
-            String entryName = extrEntry.entryName == null ? getFileName(path) : extrEntry.entryName;
+            String entryName = extrEntry.entryName == null ? fileName(path) : extrEntry.entryName;
 
             processContentType(entryName,
                                request.headers(),

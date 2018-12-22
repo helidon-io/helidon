@@ -72,8 +72,8 @@ abstract class Request implements ServerRequest {
         this.bareRequest = req;
         this.webServer = webServer;
         this.context = ContextualRegistry.create(webServer.context());
-        this.queryParams = UriComponent.decodeQuery(req.getUri().getRawQuery(), true);
-        this.headers = new HashRequestHeaders(bareRequest.getHeaders());
+        this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
+        this.headers = new HashRequestHeaders(bareRequest.headers());
         this.content = new Content();
     }
 
@@ -105,22 +105,22 @@ abstract class Request implements ServerRequest {
 
     @Override
     public Http.RequestMethod method() {
-        return bareRequest.getMethod();
+        return bareRequest.method();
     }
 
     @Override
     public Http.Version version() {
-        return bareRequest.getVersion();
+        return bareRequest.version();
     }
 
     @Override
     public URI uri() {
-        return bareRequest.getUri();
+        return bareRequest.uri();
     }
 
     @Override
     public String query() {
-        return bareRequest.getUri().getRawQuery();
+        return bareRequest.uri().getRawQuery();
     }
 
     @Override
@@ -130,27 +130,27 @@ abstract class Request implements ServerRequest {
 
     @Override
     public String fragment() {
-        return bareRequest.getUri().getFragment();
+        return bareRequest.uri().getFragment();
     }
 
     @Override
     public String localAddress() {
-        return bareRequest.getLocalAddress();
+        return bareRequest.localAddress();
     }
 
     @Override
     public int localPort() {
-        return bareRequest.getLocalPort();
+        return bareRequest.localPort();
     }
 
     @Override
     public String remoteAddress() {
-        return bareRequest.getRemoteAddress();
+        return bareRequest.remoteAddress();
     }
 
     @Override
     public int remotePort() {
-        return bareRequest.getRemotePort();
+        return bareRequest.remotePort();
     }
 
     @Override
