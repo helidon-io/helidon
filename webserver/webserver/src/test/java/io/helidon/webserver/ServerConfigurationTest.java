@@ -84,7 +84,7 @@ public class ServerConfigurationTest {
     @Test
     public void fromConfig() throws Exception {
         Config config = Config.builder().sources(ConfigSources.classpath("config1.conf")).build();
-        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::fromConfig).get();
+        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
         assertNotNull(sc);
         assertEquals(10, sc.port());
         assertEquals(20, sc.backlog());
@@ -113,7 +113,7 @@ public class ServerConfigurationTest {
     @Test
     public void sslFromConfig() throws Exception {
         Config config = Config.builder().sources(ConfigSources.classpath("config-with-ssl.conf")).build();
-        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::fromConfig).get();
+        ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
         assertNotNull(sc);
         assertEquals(10, sc.port());
         assertNotNull(sc.ssl());
