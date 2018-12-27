@@ -19,32 +19,30 @@ package io.helidon.guides.se.restfulwebservice;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
-import io.helidon.common.http.Http;
-import io.helidon.config.Config;
-import io.helidon.metrics.MetricsSupport;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.json.JsonSupport;
-
 // tag::importsHealth1[]
+import io.helidon.common.http.Http;
 // end::importsHealth1[]
 // tag::importsStart[]
+import io.helidon.config.Config;
 // end::importsStart[]
 // tag::importsMetrics[]
+import io.helidon.metrics.MetricsSupport;
 // end::importsMetrics[]
 // tag::importsWebServer[]
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
 // end::importsWebServer[]
 // tag::importsHealth2[]
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
 // end::importsHealth2[]
 // tag::importsEnd[]
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.json.JsonSupport;
 // end::importsEnd[]
 // tag::importsHealth3[]
+import javax.json.Json;
+import javax.json.JsonObject;
 // end::importsHealth3[]
 
 /**
