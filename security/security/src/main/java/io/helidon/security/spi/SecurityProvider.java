@@ -31,7 +31,7 @@ import io.helidon.security.SecurityContext;
  */
 public interface SecurityProvider {
     /**
-     * Provide extension annotations supported by this provider (e.g. {@link javax.annotation.security.RolesAllowed}).
+     * Provide extension annotations supported by this provider (e.g. {@code javax.annotation.security.RolesAllowed}).
      * Annotations will be collected according to framework in use. For JAX-RS, annotations from application class, resource
      * class and resource methods will be collected.
      *
