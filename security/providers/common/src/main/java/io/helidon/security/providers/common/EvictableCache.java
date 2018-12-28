@@ -177,7 +177,7 @@ public interface EvictableCache<K, V> {
      * @param <K> types of keys used in the cache
      * @param <V> types of values used in the cache
      */
-    class Builder<K, V> {
+    class Builder<K, V> implements io.helidon.common.Builder<EvictableCache<K, V>> {
         private boolean cacheEnabled = true;
         private long cacheTimeout = CACHE_TIMEOUT_MINUTES;
         private long cacheMaxSize = CACHE_MAX_SIZE;
@@ -191,14 +191,12 @@ public interface EvictableCache<K, V> {
         /**
          * Build a new instance of the cache based on configuration of this builder.
          *
-         * @param <K> key type
-         * @param <V> value type
          * @return a new instance of the cache
          */
-        @SuppressWarnings("unchecked")
-        public <K, V> EvictableCache<K, V> build() {
+        @Override
+        public EvictableCache<K, V> build() {
             if (cacheEnabled) {
-                return new EvictableCacheImpl(this);
+                return new EvictableCacheImpl<>(this);
             } else {
                 return noCache();
             }

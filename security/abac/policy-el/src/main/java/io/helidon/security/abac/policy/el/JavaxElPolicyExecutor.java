@@ -224,7 +224,7 @@ public class JavaxElPolicyExecutor implements PolicyExecutor {
         }
     }
 
-    private static class CustomFunction {
+    private static final class CustomFunction {
         private String prefix;
         private String localName;
         private Method method;
