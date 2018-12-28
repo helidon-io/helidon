@@ -19,18 +19,18 @@
         xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <groupId>io.helidon.security.providers</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
-        <groupId>io.helidon.security</groupId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>helidon-security-provider-oidc-common</artifactId>
+    <artifactId>helidon-security-providers-oidc-common</artifactId>
     <name>Helidon Security Providers OIDC Common</name>
 
     <dependencies>
         <dependency>
             <!-- Token handling -->
-            <groupId>io.helidon.security</groupId>
+            <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
             <version>${project.version}</version>
         </dependency>

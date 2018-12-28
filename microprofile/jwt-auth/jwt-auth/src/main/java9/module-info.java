@@ -28,10 +28,10 @@ module io.helidon.mp.jwt.auth {
     requires io.helidon.common.pki;
     requires io.helidon.config;
     requires transitive io.helidon.security;
-    requires io.helidon.security.providers;
+    requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
     requires transitive io.helidon.security.jwt;
-    requires io.helidon.security.adapter.jersey;
+    requires io.helidon.security.integration.jersey;
 
     exports io.helidon.microprofile.jwt.auth;
 }

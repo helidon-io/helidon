@@ -41,7 +41,7 @@ import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
-import static io.helidon.security.jersey.ClientSecurityFeature.PROPERTY_CONTEXT;
+import static io.helidon.security.integration.jersey.ClientSecurityFeature.PROPERTY_CONTEXT;
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
 import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
 

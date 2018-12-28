@@ -50,6 +50,6 @@ security:
           - name: "second"
     providers:
       - name: "first"
-        class: "io.helidon.security.provider.PathBasedProvider"
+        class: "io.helidon.security.providers.PathBasedProvider"
       - name: "second"
-        class: "io.helidon.security.provider.ResourceBasedProvider"
+        class: "io.helidon.security.providers.ResourceBasedProvider"

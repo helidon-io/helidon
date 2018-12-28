@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
-import io.helidon.security.provider.ProviderForTesting;
+import io.helidon.security.providers.ProviderForTesting;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

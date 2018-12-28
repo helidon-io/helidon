@@ -22,8 +22,8 @@ import java.util.Optional;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.security.SecurityResponse.SecurityStatus;
-import io.helidon.security.provider.PathBasedProvider;
-import io.helidon.security.provider.ResourceBasedProvider;
+import io.helidon.security.providers.PathBasedProvider;
+import io.helidon.security.providers.ResourceBasedProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
 import io.helidon.security.spi.ProviderSelectionPolicy;

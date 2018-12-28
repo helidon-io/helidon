@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.security.google.GoogleTokenService
+io.helidon.security.providers.google.login.GoogleTokenService

@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 import javax.annotation.security.PermitAll;
 
 import io.helidon.config.Config;
-import io.helidon.security.jersey.spi.AnnotationAnalyzer;
+import io.helidon.security.integration.jersey.spi.AnnotationAnalyzer;
 
 import org.eclipse.microprofile.auth.LoginConfig;
 

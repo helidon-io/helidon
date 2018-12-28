@@ -19,7 +19,7 @@ package io.helidon.security;
 import java.net.URI;
 import java.util.Optional;
 
-import io.helidon.security.provider.ProviderForTesting;
+import io.helidon.security.providers.ProviderForTesting;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

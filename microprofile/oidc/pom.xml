@@ -45,8 +45,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security-provider-oidc</artifactId>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-oidc</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

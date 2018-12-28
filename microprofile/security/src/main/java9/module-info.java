@@ -21,9 +21,9 @@ module io.helidon.mp.security {
     requires java.logging;
 
     requires transitive io.helidon.security;
-    requires io.helidon.security.provider.abac;
-    requires transitive io.helidon.security.adapter.jersey;
-    requires transitive io.helidon.security.adapter.webserver;
+    requires io.helidon.security.providers.abac;
+    requires transitive io.helidon.security.integration.jersey;
+    requires transitive io.helidon.security.integration.webserver;
     requires io.helidon.mp.server;
 
     provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.security.SecurityMpService;

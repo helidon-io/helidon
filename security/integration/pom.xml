@@ -26,13 +26,14 @@
         <artifactId>helidon-security-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-security-integration-project</artifactId>
-    <name>Helidon Security Integration</name>
     <packaging>pom</packaging>
+
+    <groupId>io.helidon.security.integration</groupId>
+    <artifactId>helidon-security-integration-project</artifactId>
+    <name>Helidon Security Integration Project</name>
 
     <modules>
         <module>jersey</module>
         <module>webserver</module>
-        <module>annotations</module>
     </modules>
 </project>

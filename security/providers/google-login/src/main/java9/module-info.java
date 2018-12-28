@@ -17,7 +17,7 @@
 /**
  * Google login authentication provider.
  */
-module io.helidon.security.provider.google.login {
+module io.helidon.security.providers.google.login {
     requires io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.security;
@@ -25,10 +25,10 @@ module io.helidon.security.provider.google.login {
     requires google.api.client;
     requires google.http.client;
     requires google.http.client.jackson2;
-    requires io.helidon.security.providers;
+    requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
 
-    exports io.helidon.security.google;
+    exports io.helidon.security.providers.google.login;
 
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.google.GoogleTokenService;
+    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.google.login.GoogleTokenService;
 }

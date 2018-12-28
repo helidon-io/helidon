@@ -27,7 +27,7 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security</artifactId>
-    <name>Helidon Security Core</name>
+    <name>Helidon Security</name>
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>

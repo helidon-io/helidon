@@ -21,7 +21,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 
 import io.helidon.config.Config;
 import io.helidon.security.Security;
-import io.helidon.security.jersey.SecurityFeature;
+import io.helidon.security.integration.jersey.SecurityFeature;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;

@@ -26,19 +26,20 @@
         <artifactId>helidon-security-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
+    <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-project</artifactId>
     <name>Helidon Security Providers</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>providers-common</module>
-        <module>http-auth-provider</module>
-        <module>http-signature-provider</module>
+        <module>common</module>
+        <module>http-auth</module>
+        <module>http-sign</module>
         <module>google-login</module>
-        <module>header-atn-provider</module>
-        <module>jwt-provider</module>
-        <module>abac-provider</module>
-        <module>oidc-provider</module>
+        <module>header</module>
+        <module>jwt</module>
+        <module>abac</module>
+        <module>oidc</module>
         <module>idcs-mapper</module>
         <module>oidc-common</module>
     </modules>

@@ -22,7 +22,7 @@ module io.helidon.mp.config {
 
     requires transitive io.helidon.config;
     requires transitive microprofile.config.api;
-    requires io.helidon.security.tools.config;
+    requires io.helidon.config.secure;
 
     exports io.helidon.microprofile.config;
 
