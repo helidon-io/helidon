@@ -151,7 +151,7 @@ public class SignedHeadersConfig {
     /**
      * Configuration of headers to be signed.
      */
-    public static class HeadersConfig {
+    public static final class HeadersConfig {
         private final List<String> always;
         private final List<String> ifPresent;
 

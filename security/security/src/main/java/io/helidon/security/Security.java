@@ -488,8 +488,8 @@ public final class Security {
          * @param providerBuilder Builder of a provider, method build will be immediately called
          * @return updated builder instance
          */
-        public Builder addProvider(io.helidon.common.Builder<? extends SecurityProvider> providerBuilder) {
-            return addProvider(providerBuilder.build());
+        public Builder addProvider(Supplier<? extends SecurityProvider> providerBuilder) {
+            return addProvider(providerBuilder.get());
         }
 
         /**
@@ -532,8 +532,8 @@ public final class Security {
          * @param name            name of the provider, if null, this provider will not be referencable from other scopes
          * @return updated builder instance
          */
-        public Builder addProvider(io.helidon.common.Builder<? extends SecurityProvider> providerBuilder, String name) {
-            return addProvider(providerBuilder.build(), name);
+        public Builder addProvider(Supplier<? extends SecurityProvider> providerBuilder, String name) {
+            return addProvider(providerBuilder.get(), name);
         }
 
         /**
@@ -554,8 +554,8 @@ public final class Security {
          * @param builder Builder of provider to use as the default for this runtime.
          * @return updated builder instance
          */
-        public Builder authenticationProvider(io.helidon.common.Builder<? extends AuthenticationProvider> builder) {
-            return authenticationProvider(builder.build());
+        public Builder authenticationProvider(Supplier<? extends AuthenticationProvider> builder) {
+            return authenticationProvider(builder.get());
         }
 
         /**
@@ -576,8 +576,8 @@ public final class Security {
          * @param builder Builder of provider to use as the default for this runtime.
          * @return updated builder instance
          */
-        public Builder authorizationProvider(io.helidon.common.Builder<? extends AuthorizationProvider> builder) {
-            return authorizationProvider(builder.build());
+        public Builder authorizationProvider(Supplier<? extends AuthorizationProvider> builder) {
+            return authorizationProvider(builder.get());
         }
 
         /**
@@ -600,8 +600,8 @@ public final class Security {
          * @param builder builder of provider to add
          * @return updated builder instance
          */
-        public Builder addAuthenticationProvider(io.helidon.common.Builder<? extends AuthenticationProvider> builder) {
-            return addAuthenticationProvider(builder.build());
+        public Builder addAuthenticationProvider(Supplier<? extends AuthenticationProvider> builder) {
+            return addAuthenticationProvider(builder.get());
         }
 
         /**
@@ -631,9 +631,9 @@ public final class Security {
          * @param name    name of provider, may be null or empty, but as such will not be rerefencable by name
          * @return updated builder instance
          */
-        public Builder addAuthenticationProvider(io.helidon.common.Builder<? extends AuthenticationProvider> builder,
+        public Builder addAuthenticationProvider(Supplier<? extends AuthenticationProvider> builder,
                                                  String name) {
-            return addAuthenticationProvider(builder.build(), name);
+            return addAuthenticationProvider(builder.get(), name);
         }
 
         /**
@@ -652,8 +652,8 @@ public final class Security {
          * @param builder builder of provider instance
          * @return updated builder instance
          */
-        public Builder addAuthorizationProvider(io.helidon.common.Builder<? extends AuthorizationProvider> builder) {
-            return addAuthorizationProvider(builder.build());
+        public Builder addAuthorizationProvider(Supplier<? extends AuthorizationProvider> builder) {
+            return addAuthorizationProvider(builder.get());
         }
 
         /**
@@ -685,8 +685,8 @@ public final class Security {
          * @param name    name of provider, may be null or empty, but as such will not be referencable
          * @return updated builder instance
          */
-        public Builder addAuthorizationProvider(io.helidon.common.Builder<? extends AuthorizationProvider> builder, String name) {
-            return addAuthorizationProvider(builder.build(), name);
+        public Builder addAuthorizationProvider(Supplier<? extends AuthorizationProvider> builder, String name) {
+            return addAuthorizationProvider(builder.get(), name);
         }
 
         /**
@@ -711,8 +711,8 @@ public final class Security {
          * @param builder Builder of provider instance
          * @return updated builder instance
          */
-        public Builder addOutboundSecurityProvider(io.helidon.common.Builder<? extends OutboundSecurityProvider> builder) {
-            return addOutboundSecurityProvider(builder.build());
+        public Builder addOutboundSecurityProvider(Supplier<? extends OutboundSecurityProvider> builder) {
+            return addOutboundSecurityProvider(builder.get());
         }
 
         /**
@@ -723,9 +723,9 @@ public final class Security {
          * @param name  name of the provider for reference from configuration
          * @return updated builder instance.
          */
-        public Builder addOutboundSecurityProvider(io.helidon.common.Builder<? extends OutboundSecurityProvider> build,
+        public Builder addOutboundSecurityProvider(Supplier<? extends OutboundSecurityProvider> build,
                                                    String name) {
-            return addOutboundSecurityProvider(build.build(), name);
+            return addOutboundSecurityProvider(build.get(), name);
         }
 
         /**
@@ -778,8 +778,8 @@ public final class Security {
          * @param builder Builder of provider instance
          * @return updated builder instance
          */
-        public Builder addAuditProvider(io.helidon.common.Builder<? extends AuditProvider> builder) {
-            return addAuditProvider(builder.build());
+        public Builder addAuditProvider(Supplier<? extends AuditProvider> builder) {
+            return addAuditProvider(builder.get());
         }
 
         /**
