@@ -51,8 +51,8 @@ support for generating a brand new token based on configuration of this provider
 |Property |Value
 
 |Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-jwt
-|Provider package |io.helidon.security.provider.jwt
+|Maven artifactId |helidon-security-providers-jwt
+|Provider package |io.helidon.security.providers.jwt
 |Provider class |JwtProvider
 |Provider key |jwt
 |===
@@ -70,7 +70,7 @@ This provider is:
 ----
 <dependency>
     <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-jwt</artifactId>
+    <artifactId>helidon-security-providers-jwt</artifactId>
 </dependency>
 ----
 
@@ -163,7 +163,7 @@ Note that basic authentication sends username and password unencrypted over the 
 |Property |Value
 
 |Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-http-auth
+|Maven artifactId |helidon-security-providers-http-auth
 |Provider package |io.helidon.security.provider.httpauth
 |Provider class |HttpBasicAuthProvider
 |Provider key |http-basic-auth
@@ -182,7 +182,7 @@ This provider is:
 ----
 <dependency>
     <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-http-auth</artifactId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
 </dependency>
 ----
 
@@ -253,7 +253,7 @@ Note that basic authentication sends username and password unencrypted over the 
 |Property |Value
 
 |Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-http-auth
+|Maven artifactId |helidon-security-providers-http-auth
 |Provider package |io.helidon.security.provider.httpauth
 |Provider class |HttpDigestAuthProvider
 |Provider key |http-digest-auth
@@ -271,7 +271,7 @@ This provider is:
 ----
 <dependency>
     <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-http-auth</artifactId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
 </dependency>
 ----
 
@@ -330,8 +330,8 @@ care of authentication and propagates the user in a header).
 |Property |Value
 
 |Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-header-atn
-|Provider package |io.helidon.security.provider.header
+|Maven artifactId |helidon-security-providers-header
+|Provider package |io.helidon.security.providers.header
 |Provider class |HeaderAtnProvider
 |Provider key |header-atn
 |===
@@ -348,7 +348,7 @@ This provider is:
 ----
 <dependency>
     <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-header-atn</artifactId>
+    <artifactId>helidon-security-providers-header</artifactId>
 </dependency>
 ----
 
@@ -407,7 +407,7 @@ Support for HTTP Signatures (both inbound and outbound).
 ----
 <dependency>
     <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-http-signature</artifactId>
+    <artifactId>helidon-security-providers-http-sign</artifactId>
 </dependency>
 ----
 
@@ -594,7 +594,7 @@ the request is denied.
 ----
 <dependency>
     <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-abac</artifactId>
+    <artifactId>helidon-security-providers-abac</artifactId>
 </dependency>
 ----
 

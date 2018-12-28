@@ -18,4 +18,4 @@ security:
   providers:
     # Order matters... All implemented interfaces will be used by default, can override
     - name: "TestProvider"
-      class: "io.helidon.security.jersey.BindingTestProvider"
+      class: "io.helidon.security.integration.jersey.BindingTestProvider"

@@ -25,7 +25,7 @@ import javax.ws.rs.core.Response;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.security.abac.scope.ScopeValidator;
-import io.helidon.security.annot.Authenticated;
+import io.helidon.security.annotations.Authenticated;
 
 /**
  * JAX-RS resource.

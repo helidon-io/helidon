@@ -109,15 +109,15 @@
         </dependency>
         <!-- Helidon Security -->
         <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security</groupId>
+            <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security</groupId>
+            <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey</artifactId>
         </dependency>
         <!-- Metrics -->

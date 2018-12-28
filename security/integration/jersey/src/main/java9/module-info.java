@@ -17,12 +17,12 @@
 /**
  * Security integration with Jersey.
  */
-module io.helidon.security.adapter.jersey {
+module io.helidon.security.integration.jersey {
     requires java.logging;
     requires java.annotation;
 
     requires transitive io.helidon.security;
-    requires transitive io.helidon.security.integration.annotations;
+    requires transitive io.helidon.security.annotations;
     requires transitive io.helidon.security.util;
     requires transitive java.ws.rs;
     requires jersey.common;
@@ -30,11 +30,11 @@ module io.helidon.security.adapter.jersey {
     requires jersey.client;
     requires javax.inject;
 
-    exports io.helidon.security.jersey;
-    exports io.helidon.security.jersey.spi;
+    exports io.helidon.security.integration.jersey;
+    exports io.helidon.security.integration.jersey.spi;
 
     // needed for jersey injection
-    opens io.helidon.security.jersey to hk2.locator,hk2.utils;
+    opens io.helidon.security.integration.jersey to hk2.locator,hk2.utils;
 
-    uses io.helidon.security.jersey.spi.AnnotationAnalyzer;
+    uses io.helidon.security.integration.jersey.spi.AnnotationAnalyzer;
 }

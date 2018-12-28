@@ -17,13 +17,13 @@
 /**
  * OIDC common classes.
  */
-module io.helidon.security.oidc.common {
+module io.helidon.security.providers.oidc.common {
     requires java.logging;
     requires io.helidon.security.util;
-    requires io.helidon.security.providers;
+    requires io.helidon.security.providers.common;
     requires io.helidon.security.jwt;
     requires jersey.client;
     requires java.ws.rs;
 
-    exports io.helidon.security.oidc.common;
+    exports io.helidon.security.providers.oidc.common;
 }

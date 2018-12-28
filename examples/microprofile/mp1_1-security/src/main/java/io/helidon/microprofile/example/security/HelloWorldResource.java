@@ -26,8 +26,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import io.helidon.security.SecurityContext;
-import io.helidon.security.annot.Authenticated;
-import io.helidon.security.annot.Authorized;
+import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Authorized;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 

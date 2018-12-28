@@ -24,9 +24,9 @@ import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Security;
-import io.helidon.security.abac.AbacProvider;
-import io.helidon.security.jersey.SecurityFeature;
-import io.helidon.security.webserver.WebSecurity;
+import io.helidon.security.integration.jersey.SecurityFeature;
+import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.providers.abac.AbacProvider;
 
 /**
  * Security extension.

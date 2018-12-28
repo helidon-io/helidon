@@ -61,7 +61,7 @@ reviewing changes done by others.
             configured (e.g. a component may expect tracing endpoint - if not defined, tracing may be disabled)         
         
 
-Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java)
+Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java)
 
 # Getters and Setters
 1. We do not use the verb, e.g. when a property "port" exists, the following methods are used:  
@@ -71,7 +71,7 @@ Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-co
     1. Default is without a verb (e.g. authenticate(boolean atn), boolean authenticate())
     2. If this would be ambiguous, we can use verb to clear the meaning (e.g. isAuthenticated() or shouldAuthenticate())      
 
-Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java) 
+Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java) 
 
 # Fluent API
 1. We use fluent API where applicable
@@ -112,7 +112,7 @@ Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-co
         1. May accept other classes that are built using a builder, either directly, or as Supplier<T> 
             (as builder implements Supplier, this allows us to pass a builder to such a method, as well as a nice lambda)
             
-Example: [io.helidon.security.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java)
+Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/oidc/common/OidcConfig.java)
 
 # Java 9+ (Jigsaw/JPMS)
 1. Each java module has a module-info.java defined in a "java9" directory under src/main

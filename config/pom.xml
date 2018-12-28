@@ -42,6 +42,7 @@
         <module>etcd</module>
         <module>git</module>
         <module>hocon</module>
+        <module>secure</module>
         <module>testing</module>
         <module>test-infrastructure</module>
         <module>tests</module>

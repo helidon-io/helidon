@@ -21,7 +21,7 @@ module io.helidon.security.examples.abac {
     // bundle of security providers and tools
     requires io.helidon.security.bundle;
     // jersey integration is separately packaged
-    requires io.helidon.security.adapter.jersey;
+    requires io.helidon.security.integration.jersey;
     // implementation of expression language to use (used by the abac provider: policy expression language
     requires javax.el;
 

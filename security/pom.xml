@@ -29,16 +29,16 @@
     <packaging>pom</packaging>
     <groupId>io.helidon.security</groupId>
     <artifactId>helidon-security-project</artifactId>
-    <name>Helidon Security</name>
+    <name>Helidon Security Project</name>
 
     <modules>
+        <module>annotations</module>
+        <module>util</module>
         <module>security</module>
-        <module>tools</module>
         <module>integration</module>
         <module>providers</module>
         <module>jwt</module>
-        <module>abac-validators</module>
-        <module>bundle</module>
+        <module>abac</module>
     </modules>
 
     <profiles>

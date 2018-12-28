@@ -26,9 +26,8 @@ import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.security.Security;
-import io.helidon.security.jersey.ClientSecurityFeature;
-import io.helidon.security.tools.config.SecureConfigFilter;
-import io.helidon.security.webserver.WebSecurity;
+import io.helidon.security.integration.jersey.ClientSecurityFeature;
+import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.webserver.Routing;
@@ -190,8 +189,6 @@ public final class Main {
                         // in jar file
                         // (see src/main/resources/application.yaml)
                         classpath("application.yaml"))
-                 // support for passwords in configuration
-                .addFilter(SecureConfigFilter.fromConfig())
                 .build();
     }
 }

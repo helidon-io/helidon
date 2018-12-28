@@ -39,8 +39,8 @@ import javax.ws.rs.core.Response;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.annot.Authenticated;
-import io.helidon.security.annot.Authorized;
+import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Authorized;
 
 import io.opentracing.Span;
 

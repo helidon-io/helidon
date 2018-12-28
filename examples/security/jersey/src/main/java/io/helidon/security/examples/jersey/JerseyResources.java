@@ -28,8 +28,8 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.annot.Authenticated;
-import io.helidon.security.jersey.ClientSecurityFeature;
+import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.integration.jersey.ClientSecurityFeature;
 
 /**
  * Resources are contained here.

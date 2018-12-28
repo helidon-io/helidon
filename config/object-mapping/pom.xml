@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-config-object-mapping</artifactId>
-    <name>Helidon Config Beans</name>
+    <name>Helidon Config Object Mapping</name>
     <description>
         Support for loading java pojos from configuration.
     </description>

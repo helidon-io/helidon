@@ -22,7 +22,7 @@ import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.webserver.WebSecurity;
+import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
