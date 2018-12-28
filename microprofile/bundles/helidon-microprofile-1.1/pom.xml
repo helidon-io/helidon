@@ -36,10 +36,6 @@
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>javax.el</groupId>
-                    <artifactId>javax.el-api</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>javax.interceptor</groupId>
                     <artifactId>javax.interceptor-api</artifactId>
                 </exclusion>

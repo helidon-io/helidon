@@ -21,7 +21,8 @@ module io.helidon.security.abac.policy.el {
     requires io.helidon.security.providers.abac;
     requires io.helidon.security.abac.policy;
     requires java.logging;
-    requires javax.el;
+    // expected to be provided by the actual EL implementation
+    requires static javax.el.api;
     requires java.desktop;
     requires io.helidon.security.util;
 
