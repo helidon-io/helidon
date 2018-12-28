@@ -16,7 +16,6 @@
 
 package io.helidon.security;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -41,7 +40,7 @@ public class AuditEventTest {
         assertThat(param.toString(), containsString(name));
         assertThat(param.toString(), containsString(value));
 
-        Assertions.assertEquals(name, param.getName());
+        assertThat(param.getName(), is(name));
     }
 
     @Test
