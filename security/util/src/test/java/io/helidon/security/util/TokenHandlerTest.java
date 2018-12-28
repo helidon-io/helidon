@@ -26,7 +26,6 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
@@ -34,6 +33,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link TokenHandler}.
@@ -188,12 +188,12 @@ public class TokenHandlerTest {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("token_provider.conf"))
                 .build();
-        Assertions.assertThrows(NullPointerException.class, () -> TokenHandler.fromConfig(config.get("token-3")));
+        assertThrows(NullPointerException.class, () -> TokenHandler.fromConfig(config.get("token-3")));
     }
 
     @Test
     public void testWrongBuilder() {
-        Assertions.assertThrows(NullPointerException.class, () -> TokenHandler.builder()
+        assertThrows(NullPointerException.class, () -> TokenHandler.builder()
                 .tokenPattern(Pattern.compile("bearer (.*)", Pattern.CASE_INSENSITIVE)).build());
     }
 
