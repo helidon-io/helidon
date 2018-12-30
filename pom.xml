@@ -206,6 +206,7 @@
         <module>microprofile</module>
         <module>tracing</module>
         <module>bundles</module>
+        <module>metrics</module>
     </modules>
 
     <build>

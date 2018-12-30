@@ -15,16 +15,16 @@
  */
 
 /**
- * Aggregator module for microprofile 1.2.
+ * Microprofile OIDC integration.
  */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
+module io.helidon.mp.oidc {
+    requires java.logging;
 
-    requires io.helidon.mp.health.checks;
+    requires io.helidon.mp.server;
+    requires io.helidon.mp.security;
+    requires io.helidon.security.providers.oidc;
+
+    exports io.helidon.microprofile.oidc;
+
+    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.oidc.OidcMpService;
 }

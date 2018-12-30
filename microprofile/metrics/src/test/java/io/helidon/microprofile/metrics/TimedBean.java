@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * Aggregator module for microprofile 1.2.
- */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
+package io.helidon.microprofile.metrics;
 
-    requires io.helidon.mp.health.checks;
+import javax.enterprise.context.Dependent;
+
+import org.eclipse.microprofile.metrics.annotation.Timed;
+
+/**
+ * Class TimedBean.
+ */
+@Dependent
+@Timed
+public class TimedBean {
+
+    @Timed
+    public void method1() {
+    }
+
+    // Inherits annotations from class
+    public void method2() {
+    }
 }

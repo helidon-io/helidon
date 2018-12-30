@@ -34,8 +34,8 @@ Declare the following dependency in your project:
 .Webserver Metrics Dependency
 ----
     <dependency>
-        <groupId>io.helidon.microprofile.metrics</groupId>
-        <artifactId>helidon-metrics-se</artifactId>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics</artifactId>
     </dependency>
 ----
 
