@@ -29,8 +29,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
@@ -76,9 +76,9 @@ public class TestClient {
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
-    public static TestClient create(Builder<Routing> routingBuilder) {
+    public static TestClient create(Supplier<Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(routingBuilder.build());
+        return create(routingBuilder.get());
     }
 
     /**

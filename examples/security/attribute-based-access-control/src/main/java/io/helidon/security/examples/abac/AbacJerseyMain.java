@@ -19,6 +19,7 @@ package io.helidon.security.examples.abac;
 import java.time.DayOfWeek;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -26,7 +27,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import io.helidon.common.Builder;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -68,7 +68,7 @@ public final class AbacJerseyMain {
         server = startIt(routing);
     }
 
-    static WebServer startIt(Builder<? extends Routing> routing) {
+    static WebServer startIt(Supplier<? extends Routing> routing) {
         WebServer server = WebServer.create(routing);
 
         long t = System.nanoTime();

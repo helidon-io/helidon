@@ -20,8 +20,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
@@ -38,7 +38,7 @@ public class IdcsUtil {
     private IdcsUtil() {
     }
 
-    static WebServer startIt(Builder<? extends Routing> routing) throws UnknownHostException {
+    static WebServer startIt(Supplier<? extends Routing> routing) throws UnknownHostException {
         WebServer server = WebServer.create(ServerConfiguration.builder()
                                                     .port(PORT)
                                                     .bindAddress(InetAddress.getByName("localhost")),
