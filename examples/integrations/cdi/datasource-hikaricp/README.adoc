@@ -16,6 +16,13 @@ To create a user-defined Docker network:
 $ docker network create helidon-examples
 ==================================================
 
+To log in to the Oracle Container Registry (which you will need to do
+in order to pull Oracle database images from it):
+
+==================================================
+$ docker login -u your.name@yourdomain.com -p yourpasswordhere container-registry.oracle.com
+==================================================
+
 To run Oracle's `database/standard` Docker image in a Docker container
 named `mysql` connected to this network that publishes its ports to
 the host:
