@@ -12,9 +12,9 @@ connect to it using the application's container.
 
 To create a user-defined Docker network:
 
-==================================================
+```sh
 $ docker network create helidon-examples
-==================================================
+```
 
 To log in to the Oracle Container Registry (which you will need to do
 in order to pull Oracle database images from it):
