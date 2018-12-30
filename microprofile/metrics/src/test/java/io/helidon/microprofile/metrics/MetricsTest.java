@@ -46,7 +46,7 @@ public class MetricsTest extends MetricsBaseTest {
         CountedBean bean = newBean(CountedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Counter counter = getMetric(bean, "method1");
-        assertThat(counter.getCount(), is(10));
+        assertThat(counter.getCount(), is(10L));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class MetricsTest extends MetricsBaseTest {
         CountedBean bean = newBean(CountedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Counter counter = getMetric(bean, "method1");
-        assertThat(counter.getCount(), is(10));
+        assertThat(counter.getCount(), is(10L));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class MetricsTest extends MetricsBaseTest {
         MeteredBean bean = newBean(MeteredBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Meter meter = getMetric(bean, "method1");
-        assertThat(meter.getCount(), is(10));
+        assertThat(meter.getCount(), is(10L));
         assertThat(meter.getMeanRate(), is(greaterThan(0.0)));
     }
 
@@ -71,7 +71,7 @@ public class MetricsTest extends MetricsBaseTest {
         MeteredBean bean = newBean(MeteredBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Meter meter = getMetric(bean, "method2");
-        assertThat(meter.getCount(), is(10));
+        assertThat(meter.getCount(), is(10L));
         assertThat(meter.getMeanRate(), is(greaterThan(0.0)));
     }
 
@@ -80,7 +80,7 @@ public class MetricsTest extends MetricsBaseTest {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Timer timer = getMetric(bean, "method1");
-        assertThat(timer.getCount(), is(10));
+        assertThat(timer.getCount(), is(10L));
         assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
     }
 
@@ -89,7 +89,7 @@ public class MetricsTest extends MetricsBaseTest {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Timer timer = getMetric(bean, "method2");
-        assertThat(timer.getCount(), is(10));
+        assertThat(timer.getCount(), is(10L));
         assertThat(timer.getMeanRate(), is(greaterThan(0.0)));
     }
 

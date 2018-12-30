@@ -18,7 +18,8 @@ package io.helidon.microprofile.faulttolerance;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -28,27 +29,27 @@ public class MethodAntnTest {
 
     @Test
     public void testParseArray() {
-        assertArrayEquals(
+        assertThat(
             MethodAntn.parseThrowableArray("{ java.lang.Throwable, " +
                                            "  java.lang.Exception, " +
                                            "  java.lang.RuntimeException }"),
-            new Class[]{Throwable.class, Exception.class, RuntimeException.class});
+            is(new Class[]{Throwable.class, Exception.class, RuntimeException.class}));
     }
 
     @Test
     public void testParseArrayClassSuffix() {
-        assertArrayEquals(
+        assertThat(
             MethodAntn.parseThrowableArray("{ java.lang.Throwable.class, " +
                                            "  java.lang.Exception.class, " +
                                            "  java.lang.RuntimeException.class }"),
-            new Class[]{Throwable.class, Exception.class, RuntimeException.class});
+            is(new Class[]{Throwable.class, Exception.class, RuntimeException.class}));
     }
 
     @Test
     public void testParseArrayEmpty() {
-        assertArrayEquals(
+        assertThat(
             MethodAntn.parseThrowableArray("{ }"),
-            new Class[]{});
+            is(new Class[]{}));
     }
 
     @Test

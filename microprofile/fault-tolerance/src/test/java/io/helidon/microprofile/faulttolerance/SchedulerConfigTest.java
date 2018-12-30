@@ -21,8 +21,9 @@ import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Testing configuration of {@link CommandScheduler}.
@@ -41,9 +42,9 @@ class SchedulerConfigTest {
             server.start();
 
             CommandScheduler commandScheduler = CommandScheduler.instance();
-            assertNotNull(commandScheduler);
+            assertThat(commandScheduler, notNullValue());
             ScheduledThreadPoolSupplier poolSupplier = commandScheduler.poolSupplier();
-            assertEquals(8, poolSupplier.get().getCorePoolSize());
+            assertThat(poolSupplier.get().getCorePoolSize(), is(8));
         } finally {
             if (server != null) {
                 server.stop();

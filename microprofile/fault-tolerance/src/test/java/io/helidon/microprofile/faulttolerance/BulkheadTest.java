@@ -16,16 +16,15 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class BulkheadTest.
@@ -36,35 +35,31 @@ public class BulkheadTest extends FaultToleranceTest {
     public void testBulkhead() {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.execute(100), bean.MAX_CONCURRENT_CALLS);
-        assertThat(getThreadNames(calls).size(), is(bean.CONCURRENT_CALLS));
+            () -> bean.execute(100), BulkheadBean.MAX_CONCURRENT_CALLS);
+        assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS));
     }
 
 
     @Test
-    public void testBulkheadPlusOne() throws Exception {
+    public void testBulkheadPlusOne() {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
-            () -> bean.executePlusOne(100), bean.MAX_CONCURRENT_CALLS + 2);
-        assertThat(getThreadNames(calls).size(), is(bean.CONCURRENT_CALLS + 1));
+            () -> bean.executePlusOne(100), BulkheadBean.MAX_CONCURRENT_CALLS + 2);
+        assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS + 1));
     }
 
     @Test
-    public void testBulkheadNoQueue() throws Exception {
+    public void testBulkheadNoQueue() {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueue(2000), 10);
-        try {
-            getThreadNames(calls);
-        } catch (RuntimeException e) {
-            assertTrue(e.getCause().getCause() instanceof BulkheadException);
-            return;
-        }
-        fail("ExecutionException was expected!");
+
+        RuntimeException e = assertThrows(RuntimeException.class, () -> getThreadNames(calls));
+        assertThat(e.getCause().getCause(), instanceOf(BulkheadException.class));
     }
 
     @Test
-    public void testBulkheadNoQueueWithFallback() throws Exception {
+    public void testBulkheadNoQueueWithFallback() {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueueWithFallback(2000), 10);

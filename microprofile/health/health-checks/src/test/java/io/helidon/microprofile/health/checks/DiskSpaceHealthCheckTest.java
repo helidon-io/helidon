@@ -27,10 +27,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiskSpaceHealthCheckTest {
     private static final long TOTAL_DISK = 10000L;
@@ -105,8 +105,8 @@ class DiskSpaceHealthCheckTest {
         setDiskUsage(used);
         DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(path, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertThat(HealthCheckResponse.State.UP, equalTo(response.getState()));
-        assertTrue(response.getData().isPresent());
+        assertThat(HealthCheckResponse.State.UP, is(response.getState()));
+        assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values
         assertThat(response.getData().get(), hasEntry("freeBytes", TOTAL_DISK - used));
@@ -121,7 +121,7 @@ class DiskSpaceHealthCheckTest {
         DiskSpaceHealthCheck check = new DiskSpaceHealthCheck(path, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
         assertThat(HealthCheckResponse.State.DOWN, equalTo(response.getState()));
-        assertTrue(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values
         assertThat(response.getData().get(), hasEntry("freeBytes", TOTAL_DISK - used));

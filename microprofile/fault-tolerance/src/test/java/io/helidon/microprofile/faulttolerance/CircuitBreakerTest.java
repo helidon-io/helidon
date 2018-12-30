@@ -20,8 +20,10 @@ import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenExce
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Class CircuitBreakerTest.
@@ -101,8 +103,9 @@ public class CircuitBreakerTest extends FaultToleranceTest {
         // Should not throw CircuitBreakerOpenException
         try {
             bean.exerciseBreaker(false, new RuntimeException("Oops"));
-        } catch (Exception e) {
-            assertEquals(RuntimeException.class, e.getClass());     // not CircuitBreakerOpenException
+            fail("Should have failed on previous statement");
+        } catch (RuntimeException ignored) {
+            // this is OK
         }
     }
 

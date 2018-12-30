@@ -25,7 +25,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Class HelloWorldTest.
@@ -45,7 +46,7 @@ public class HelloWorldTest extends MetricsMpServiceTest {
                 i -> client.target(baseUri())
                         .path("helloworld").request().accept(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
-        assertEquals(5, getCounter("helloCounter").getCount());
+        assertThat(getCounter("helloCounter").getCount(), is(5L));
     }
 
     @AfterEach
@@ -53,6 +54,6 @@ public class HelloWorldTest extends MetricsMpServiceTest {
         JsonObject app = client.target(baseUri())
                 .path("metrics").request().accept(MediaType.APPLICATION_JSON_TYPE)
                 .get(JsonObject.class).getJsonObject("application");
-        assertEquals(5, app.getJsonNumber("helloCounter").intValue());
+        assertThat(app.getJsonNumber("helloCounter").intValue(), is(5));
     }
 }

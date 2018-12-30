@@ -20,13 +20,12 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HealthCheckResponseProviderImplTest {
     @Test
@@ -34,7 +33,7 @@ class HealthCheckResponseProviderImplTest {
         HealthCheckResponse response = HealthCheckResponse.named("successful-test").build();
         assertThat("successful-test", equalTo(response.getName()));
         assertThat(response.getData(), notNullValue());
-        assertFalse(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(false));
         assertThat(HealthCheckResponse.State.UP, equalTo(response.getState()));
     }
 
@@ -43,7 +42,7 @@ class HealthCheckResponseProviderImplTest {
         HealthCheckResponse response = HealthCheckResponse.named("successful-test").state(true).build();
         assertThat("successful-test", equalTo(response.getName()));
         assertThat(response.getData(), notNullValue());
-        assertFalse(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(false));
         assertThat(HealthCheckResponse.State.UP, equalTo(response.getState()));
     }
 
@@ -52,7 +51,7 @@ class HealthCheckResponseProviderImplTest {
         HealthCheckResponse response = HealthCheckResponse.named("failed-test").down().build();
         assertThat("failed-test", equalTo(response.getName()));
         assertThat(response.getData(), notNullValue());
-        assertFalse(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(false));
         assertThat(HealthCheckResponse.State.DOWN, equalTo(response.getState()));
     }
 
@@ -61,7 +60,7 @@ class HealthCheckResponseProviderImplTest {
         HealthCheckResponse response = HealthCheckResponse.named("failed-test").state(false).build();
         assertThat("failed-test", equalTo(response.getName()));
         assertThat(response.getData(), notNullValue());
-        assertFalse(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(false));
         assertThat(HealthCheckResponse.State.DOWN, equalTo(response.getState()));
     }
 
@@ -76,7 +75,7 @@ class HealthCheckResponseProviderImplTest {
 
         assertThat("data-test", equalTo(response.getName()));
         assertThat(response.getData(), notNullValue());
-        assertTrue(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(true));
         assertThat(HealthCheckResponse.State.UP, equalTo(response.getState()));
         assertThat(3, equalTo(response.getData().get().size()));
         assertThat(response.getData().get(), hasEntry("baz", Long.MAX_VALUE));
@@ -92,7 +91,7 @@ class HealthCheckResponseProviderImplTest {
     @Test
     void emptyResponseNameIsAccepted() {
         final HealthCheckResponse response = HealthCheckResponse.named("").build();
-        assertTrue(response.getName().isEmpty());
+        assertThat(response.getName().isEmpty(), is(true));
     }
 
     @Test
@@ -126,7 +125,7 @@ class HealthCheckResponseProviderImplTest {
 
         // The original "response" must not contain the new values
         assertThat(response.getData(), notNullValue());
-        assertTrue(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(true));
         assertThat(1, equalTo(response.getData().get().size()));
         assertThat(response.getData().get(), hasEntry("foo", "bar"));
         assertThat(HealthCheckResponse.State.UP, equalTo(response.getState()));
@@ -135,7 +134,7 @@ class HealthCheckResponseProviderImplTest {
         assertThat("reuse-test2", equalTo(response2.getName()));
         assertThat(HealthCheckResponse.State.DOWN, equalTo(response2.getState()));
         assertThat(response2.getData(), notNullValue());
-        assertTrue(response2.getData().isPresent());
+        assertThat(response2.getData().isPresent(), is(true));
         assertThat(2, equalTo(response2.getData().get().size()));
         assertThat(response2.getData().get(), hasEntry("foo", "bar"));
         assertThat(response2.getData().get(), hasEntry("wombat", true));

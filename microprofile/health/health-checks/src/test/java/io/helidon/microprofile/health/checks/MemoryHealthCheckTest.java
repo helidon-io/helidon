@@ -26,10 +26,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MemoryHealthCheckTest {
     private static final long MAX_MEMORY = 10000L;
@@ -74,7 +73,7 @@ class MemoryHealthCheckTest {
     void testThatHealthCheckNameDoesNotChange() {
         HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertEquals("heapMemory", response.getName()); // Just verify it never changes accidentally
+        assertThat(response.getName(), is("heapMemory")); // Just verify it never changes accidentally
     }
 
     @ParameterizedTest
@@ -83,8 +82,8 @@ class MemoryHealthCheckTest {
         setMemoryUsage(used, total);
         HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertEquals(HealthCheckResponse.State.UP, response.getState());
-        assertTrue(response.getData().isPresent());
+        assertThat(response.getState(), is(HealthCheckResponse.State.UP));
+        assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values
         assertThat(response.getData().get(), hasEntry("freeBytes", total - used));
@@ -99,8 +98,8 @@ class MemoryHealthCheckTest {
         setMemoryUsage(used, total);
         HeapMemoryHealthCheck check = new HeapMemoryHealthCheck(runtime, THRESHOLD_PERCENT);
         HealthCheckResponse response = check.call();
-        assertEquals(HealthCheckResponse.State.DOWN, response.getState());
-        assertTrue(response.getData().isPresent());
+        assertThat(response.getState(), is(HealthCheckResponse.State.DOWN));
+        assertThat(response.getData().isPresent(), is(true));
         // Another test will make sure DiskSpaceHealthCheck returns the right stuff, so skipping
         // the textual return values
         assertThat(response.getData().get(), hasEntry("freeBytes", total - used));
