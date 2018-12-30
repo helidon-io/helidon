@@ -45,7 +45,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 /**
  * Microprofile config wrapper of {@link Config}.
  */
-public class MpConfig implements org.eclipse.microprofile.config.Config {
+public final class MpConfig implements org.eclipse.microprofile.config.Config {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
     private static final Map<Class<?>, Class<?>> TYPE_REPLACEMENTS = new HashMap<>();
 
@@ -68,7 +68,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      * @param converterClasses classes of converters
      * @param converters       class to converter mapping
      */
-    public MpConfig(Config config,
+    MpConfig(Config config,
                     List<ConfigSource> mpConfigSources,
                     Set<Class<?>> converterClasses,
                     Map<Class<?>, Converter<?>> converters) {
@@ -228,7 +228,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      * @param <T>          type of the property
      * @return value from configuration or default value if not available
      */
-    public <T> T getValue(String propertyName, Class<T> propertyType, T defaultValue) {
+    public <T> T value(String propertyName, Class<T> propertyType, T defaultValue) {
         return getOptionalValue(propertyName, propertyType).orElse(defaultValue);
     }
 
@@ -241,7 +241,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      * @param <T>          type of the property
      * @return value from configuration or default value coerced to correct type if not available
      */
-    public <T> T getValueWithDefault(String propertyName, Class<T> propertyType, String defaultValue) {
+    public <T> T valueWithDefault(String propertyName, Class<T> propertyType, String defaultValue) {
         return getOptionalValue(propertyName, propertyType).orElse(convert(propertyType, defaultValue));
     }
 
@@ -322,7 +322,7 @@ public class MpConfig implements org.eclipse.microprofile.config.Config {
      *
      * @return config instance that has the same properties as this instance
      */
-    public Config getConfig() {
+    public Config helidonConfig() {
         // I need to create a config based on this config instance
         return Config.builder()
                 .disableSystemPropertiesSource()

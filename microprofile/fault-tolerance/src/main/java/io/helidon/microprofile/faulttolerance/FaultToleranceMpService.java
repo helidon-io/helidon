@@ -26,6 +26,6 @@ public class FaultToleranceMpService implements MpService {
 
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-        CommandScheduler.create(mpServiceContext.getHelidonConfig().get("helidon.fault-tolerance.async-thread-pool"));
+        CommandScheduler.create(mpServiceContext.helidonConfig().get("helidon.fault-tolerance.async-thread-pool"));
     }
 }

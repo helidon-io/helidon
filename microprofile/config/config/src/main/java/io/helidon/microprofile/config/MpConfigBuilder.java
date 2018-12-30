@@ -140,7 +140,7 @@ public class MpConfigBuilder implements ConfigBuilder {
             Enumeration<URL> resources = getClassLoader().getResources("META-INF/microprofile-config.properties");
 
             while (resources.hasMoreElements()) {
-                mpConfigSources.add(MpcSourceUrl.from(resources.nextElement()));
+                mpConfigSources.add(MpcSourceUrl.create(resources.nextElement()));
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Failed to read microprofile-config.properties", e);

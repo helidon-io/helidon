@@ -63,7 +63,7 @@ public class MetricsMpServiceTest {
 
         registry = RegistryFactory.getRegistryFactory().get().getRegistry(MetricRegistry.Type.APPLICATION);
 
-        port = server.getPort();
+        port = server.port();
         baseUri = "http://localhost:" + port;
     }
 

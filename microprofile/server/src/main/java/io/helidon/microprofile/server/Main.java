@@ -35,7 +35,7 @@ public final class Main {
     public static void main(String[] args) {
         Server server = Server.create();
         server.start();
-        port = server.getPort();
+        port = server.port();
     }
 
     /**
@@ -43,7 +43,7 @@ public final class Main {
      * server port can be obtained with this method.
      * This method will return a reasonable value only if the
      * server is started through {@link #main(String[])} method.
-     * Otherwise use {@link Server#getPort()}.
+     * Otherwise use {@link Server#port()}.
      *
      * @return port the server started on
      */

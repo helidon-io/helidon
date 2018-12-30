@@ -62,7 +62,7 @@ public class TracingTest {
 
         client = ClientBuilder.newClient();
 
-        WebTarget mainTarget = client.target("http://localhost:" + server.getPort());
+        WebTarget mainTarget = client.target("http://localhost:" + server.port());
 
         target = mainTarget.path("/test");
         hellWorldTarget = mainTarget.path("/hello");

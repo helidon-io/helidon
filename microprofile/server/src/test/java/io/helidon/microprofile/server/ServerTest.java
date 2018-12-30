@@ -26,7 +26,7 @@ class ServerTest {
     void testMultiRun() {
         Server server = Server.builder().port(-1).build();
         server.start();
-        int port = server.getPort();
+        int port = server.port();
         server.stop();
 
         server = Server.builder().port(port).build();

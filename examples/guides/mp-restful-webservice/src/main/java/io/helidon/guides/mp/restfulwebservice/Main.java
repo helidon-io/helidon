@@ -43,7 +43,7 @@ public class Main {
 
         Server server = startServer();
 
-        System.out.println("http://localhost:" + server.getPort() + "/greet");
+        System.out.println("http://localhost:" + server.port() + "/greet");
     }
     // end::main[]
 

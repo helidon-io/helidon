@@ -27,7 +27,7 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-config</artifactId>
-    <name>Helidon Microprofile Config Core</name>
+    <name>Helidon Microprofile Config</name>
 
     <description>
         Microprofile config implementation - core (without CDI)

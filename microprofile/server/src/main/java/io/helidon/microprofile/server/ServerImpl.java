@@ -70,19 +70,19 @@ public class ServerImpl implements Server {
     private int port = -1;
 
     ServerImpl(Builder builder) {
-        MpConfig mpConfig = (MpConfig) builder.getConfig();
-        Config config = mpConfig.getConfig();
-        this.container = builder.getCdiContainer();
-        this.containerCreated = builder.getContainerCreated();
+        MpConfig mpConfig = (MpConfig) builder.config();
+        Config config = mpConfig.helidonConfig();
+        this.container = builder.cdiContainer();
+        this.containerCreated = builder.containerCreated();
 
         InetAddress listenHost;
-        if (null == builder.getHost()) {
+        if (null == builder.host()) {
             listenHost = InetAddress.getLoopbackAddress();
         } else {
             try {
-                listenHost = InetAddress.getByName(builder.getHost());
+                listenHost = InetAddress.getByName(builder.host());
             } catch (UnknownHostException e) {
-                throw new MpException("Failed to create address for host: " + getHost(), e);
+                throw new MpException("Failed to create address for host: " + builder.host(), e);
             }
         }
         this.host = listenHost.getHostName();
@@ -90,7 +90,7 @@ public class ServerImpl implements Server {
         Routing.Builder routingBuilder = Routing.builder();
         Config serverConfig = config.get("server");
         ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder(serverConfig)
-                .port(builder.getPort())
+                .port(builder.port())
                 .bindAddress(listenHost);
 
         OptionalHelper.from(Optional.ofNullable(builder.basePath()))
@@ -106,12 +106,12 @@ public class ServerImpl implements Server {
 
         STARTUP_LOGGER.finest("Builders ready");
 
-        List<JaxRsApplication> applications = builder.getApplications();
+        List<JaxRsApplication> applications = builder.applications();
         loadExtensions(builder, mpConfig, config, applications, routingBuilder, serverConfigBuilder);
 
         STARTUP_LOGGER.finest("Extensions loaded");
 
-        applications.stream().map(JaxRsApplication::getConfig).forEach(resourceConfig -> {
+        applications.stream().map(JaxRsApplication::resourceConfig).forEach(resourceConfig -> {
             // do not remove the "new ExceptionMapper<Exception>", as otherwise Jersey loses the generics info and does not
             // trigger the handler
             resourceConfig.register(new ExceptionMapper<Exception>() {
@@ -164,15 +164,15 @@ public class ServerImpl implements Server {
 
         applications
                 .forEach(app -> {
-                    JerseySupport js = JerseySupport.builder(app.getConfig())
-                            .executorService(app.getExecutorService()
-                                                     .orElseGet(builder::getDefaultExecutorService))
+                    JerseySupport js = JerseySupport.builder(app.resourceConfig())
+                            .executorService(app.executorService()
+                                                     .orElseGet(builder::defaultExecutorService))
                             .build();
 
-                    if ("/".equals(app.getContextRoot())) {
+                    if ("/".equals(app.contextRoot())) {
                         routingBuilder.register(js);
                     } else {
-                        routingBuilder.register(app.getContextRoot(), js);
+                        routingBuilder.register(app.contextRoot(), js);
                     }
                 });
 
@@ -200,7 +200,7 @@ public class ServerImpl implements Server {
                                 List<JaxRsApplication> apps,
                                 Routing.Builder routingBuilder, ServerConfiguration.Builder serverConfigBuilder) {
         // extensions
-        List<MpService> extensions = new LinkedList<>(builder.getExtensions());
+        List<MpService> extensions = new LinkedList<>(builder.extensions());
         ServiceLoader.load(MpService.class).forEach(extensions::add);
 
         List<JaxRsApplication> newApps = new LinkedList<>();
@@ -208,14 +208,14 @@ public class ServerImpl implements Server {
 
         MpServiceContext context = new MpServiceContext() {
             @Override
-            public org.eclipse.microprofile.config.Config getConfig() {
+            public org.eclipse.microprofile.config.Config config() {
                 return mpConfig;
             }
 
             @Override
-            public List<ResourceConfig> getApplications() {
+            public List<ResourceConfig> applications() {
                 return apps.stream()
-                        .map(JaxRsApplication::getConfig)
+                        .map(JaxRsApplication::resourceConfig)
                         .collect(Collectors.toList());
             }
 
@@ -231,22 +231,22 @@ public class ServerImpl implements Server {
             }
 
             @Override
-            public Config getHelidonConfig() {
+            public Config helidonConfig() {
                 return config;
             }
 
             @Override
-            public SeContainer getCdiContainer() {
+            public SeContainer cdiContainer() {
                 return container;
             }
 
             @Override
-            public ServerConfiguration.Builder getServerConfigBuilder() {
+            public ServerConfiguration.Builder serverConfigBuilder() {
                 return serverConfigBuilder;
             }
 
             @Override
-            public Routing.Builder getServerRoutingBuilder() {
+            public Routing.Builder serverRoutingBuilder() {
                 return routingBuilder;
             }
 
@@ -263,7 +263,7 @@ public class ServerImpl implements Server {
     }
 
     @Override
-    public SeContainer getContainer() {
+    public SeContainer cdiContainer() {
         return container;
     }
 
@@ -356,12 +356,12 @@ public class ServerImpl implements Server {
     }
 
     @Override
-    public String getHost() {
+    public String host() {
         return host;
     }
 
     @Override
-    public int getPort() {
+    public int port() {
         return port;
     }
 }

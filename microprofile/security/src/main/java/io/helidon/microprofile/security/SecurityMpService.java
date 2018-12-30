@@ -41,7 +41,7 @@ public class SecurityMpService implements MpService {
     @Override
     public void configure(MpServiceContext context) {
         //this uses helidon config heavily
-        Config config = context.getHelidonConfig();
+        Config config = context.helidonConfig();
 
         Security security;
         if (config.get("security.providers").exists()) {
@@ -64,12 +64,12 @@ public class SecurityMpService implements MpService {
                     .config(jerseyConfig)
                     .build();
 
-            context.getApplications().forEach(app -> app.register(feature));
+            context.applications().forEach(app -> app.register(feature));
         }
 
         Config webServerConfig = config.get("security.web-server");
         if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
-            context.getServerRoutingBuilder()
+            context.serverRoutingBuilder()
                     .register(WebSecurity.create(security, config));
         }
 

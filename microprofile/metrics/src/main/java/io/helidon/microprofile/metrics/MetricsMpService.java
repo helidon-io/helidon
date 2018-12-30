@@ -38,7 +38,7 @@ public class MetricsMpService implements MpService {
     public void configure(MpServiceContext serviceContext) {
         MpConfig config = (MpConfig) ConfigProviderResolver.instance().getConfig();
 
-        MetricsSupport.create(config.getConfig())
-                .update(serviceContext.getServerRoutingBuilder());
+        MetricsSupport.create(config.helidonConfig())
+                .update(serviceContext.serverRoutingBuilder());
     }
 }
