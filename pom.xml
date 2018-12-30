@@ -207,6 +207,7 @@
         <module>tracing</module>
         <module>bundles</module>
         <module>metrics</module>
+        <module>health</module>
     </modules>
 
     <build>
