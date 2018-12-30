@@ -271,8 +271,8 @@ public interface SecurityContext {
      * @see SecurityEnvironment#derive()
      * @see SecurityEnvironment#builder(SecurityTime)
      */
-    default void env(io.helidon.common.Builder<SecurityEnvironment> envBuilder) {
-        env(envBuilder.build());
+    default void env(Supplier<SecurityEnvironment> envBuilder) {
+        env(envBuilder.get());
     }
 
     /**
@@ -303,8 +303,8 @@ public interface SecurityContext {
      *
      * @param epBuilder builder of an endpoint configuration
      */
-    default void endpointConfig(io.helidon.common.Builder<EndpointConfig> epBuilder) {
-        endpointConfig(epBuilder.build());
+    default void endpointConfig(Supplier<EndpointConfig> epBuilder) {
+        endpointConfig(epBuilder.get());
     }
 
     /**

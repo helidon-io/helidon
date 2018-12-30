@@ -19,8 +19,8 @@ package io.helidon.security.examples.jersey;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
@@ -33,7 +33,7 @@ class JerseyUtil {
     private JerseyUtil() {
     }
 
-    static WebServer startIt(Builder<? extends Routing> routing) {
+    static WebServer startIt(Supplier<? extends Routing> routing) {
         WebServer server = WebServer.create(routing);
 
         long t = System.nanoTime();
