@@ -35,6 +35,6 @@
 
     <modules>
         <module>config-cdi</module>
-        <module>config-core</module>
+        <module>config</module>
     </modules>
 </project>
