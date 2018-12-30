@@ -23,7 +23,7 @@ module io.helidon.mp.jwt.auth.cdi {
     requires javax.inject;
     requires microprofile.config.api;
 
-    requires io.helidon.mp.jwt.auth;
+    requires transitive io.helidon.mp.jwt.auth;
 
     exports io.helidon.microprofile.jwt.auth.cdi;
 

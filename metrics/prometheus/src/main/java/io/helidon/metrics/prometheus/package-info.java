@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,14 @@
  */
 
 /**
- * Aggregator module for microprofile 1.2.
+ * Support for Prometheus client endpoint.
+ * <p>
+ * Usage:
+ * <pre>{@code
+ * Routing.builder()
+ *        .register(PrometheusSupport.create())
+ * }</pre>
+ *
+ * @see io.helidon.metrics.prometheus.PrometheusSupport
  */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
-
-    requires io.helidon.mp.health.checks;
-}
+package io.helidon.metrics.prometheus;

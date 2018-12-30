@@ -53,8 +53,8 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-prometheus</artifactId>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-prometheus</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -242,15 +242,10 @@
                 <artifactId>helidon-microprofile-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.metrics</groupId>
-                <artifactId>helidon-microprofile-metrics-cdi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <!-- metrics -->
             <dependency>
-                <groupId>io.helidon.microprofile.metrics</groupId>
-                <artifactId>helidon-metrics-se</artifactId>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

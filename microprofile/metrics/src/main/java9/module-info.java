@@ -15,16 +15,24 @@
  */
 
 /**
- * Aggregator module for microprofile 1.2.
+ * Microprofile metrics implementation.
  */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
+module io.helidon.mp.metrics {
+    requires java.logging;
 
-    requires io.helidon.mp.health.checks;
+    requires static cdi.api;
+    requires static javax.inject;
+    requires static javax.interceptor.api;
+    requires static java.annotation;
+
+    requires io.helidon.mp.server;
+    requires transitive io.helidon.metrics;
+
+    requires transitive microprofile.config.api;
+
+
+    exports io.helidon.microprofile.metrics;
+
+    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.metrics.MetricsMpService;
+    provides javax.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
 }

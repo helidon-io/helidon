@@ -37,6 +37,5 @@
         <module>jersey</module>
         <module>json</module>
         <module>test-support</module>
-        <module>prometheus</module>
     </modules>
 </project>
