@@ -45,7 +45,7 @@ public class TestResource2 {
         boolean field = Proxy.isProxyClass(context.getClass());
         String className = context.getClass().getName();
 
-        response.setSubject(context.getUser().orElse(SecurityContext.ANONYMOUS).toString());
+        response.setSubject(context.user().orElse(SecurityContext.ANONYMOUS).toString());
         response.setField(field);
         response.setFieldClass(className);
 

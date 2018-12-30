@@ -66,18 +66,34 @@ public class TokenCredential {
         return new Builder();
     }
 
-    public String getToken() {
+    /**
+     * The full token string as it was received from token service.
+     * @return token data as a string
+     */
+    public String token() {
         return token;
     }
 
+    /**
+     * Issue time of the token.
+     * @return issue time or empty if not available
+     */
     public Optional<Instant> getIssueTime() {
         return issueTime;
     }
 
+    /**
+     * Expiration time of the token.
+     * @return expiration time or empty if not available
+     */
     public Optional<Instant> getExpTime() {
         return expTime;
     }
 
+    /**
+     * Issuer of the token.
+     * @return issuer or empty if not available
+     */
     public Optional<String> getIssuer() {
         return issuer;
     }
@@ -107,12 +123,12 @@ public class TokenCredential {
     /**
      * Fluent API builder for {@link TokenCredential}.
      */
-    public static class Builder implements io.helidon.common.Builder<TokenCredential> {
+    public static final class Builder implements io.helidon.common.Builder<TokenCredential> {
+        private final ClassToInstanceStore<Object> tokens = new ClassToInstanceStore<>();
         private Instant issueTime;
         private Instant expTime;
         private String issuer;
         private String token;
-        private ClassToInstanceStore<Object> tokens = new ClassToInstanceStore<>();
 
         private Builder() {
         }

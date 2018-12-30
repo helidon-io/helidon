@@ -58,16 +58,16 @@ public abstract class HeaderAtnProviderTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getUser(), is(not(Optional.empty())));
-        assertThat(response.getService(), is(Optional.empty()));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.user(), is(not(Optional.empty())));
+        assertThat(response.service(), is(Optional.empty()));
 
-        response.getUser()
-                .map(Subject::getPrincipal)
+        response.user()
+                .map(Subject::principal)
                 .map(Principal::getName)
                 .ifPresent(name -> assertThat(name, is(username)));
     }
@@ -78,13 +78,13 @@ public abstract class HeaderAtnProviderTest {
         SecurityEnvironment env = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
-        assertThat(response.getUser(), is(Optional.empty()));
-        assertThat(response.getService(), is(Optional.empty()));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.user(), is(Optional.empty()));
+        assertThat(response.service(), is(Optional.empty()));
     }
 
     @Test
@@ -94,12 +94,12 @@ public abstract class HeaderAtnProviderTest {
         SecurityEnvironment env = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         SecurityContext sc = mock(SecurityContext.class);
-        when(sc.getUser()).thenReturn(Optional.of(Subject.builder().addPrincipal(Principal.create("username")).build()));
-        when(sc.getService()).thenReturn(Optional.empty());
-        when(request.getContext()).thenReturn(sc);
+        when(sc.user()).thenReturn(Optional.of(Subject.builder().addPrincipal(Principal.create("username")).build()));
+        when(sc.service()).thenReturn(Optional.empty());
+        when(request.securityContext()).thenReturn(sc);
 
         SecurityEnvironment outboundEnv = SecurityEnvironment.create();
         EndpointConfig outboundEp = EndpointConfig.create();
@@ -109,7 +109,7 @@ public abstract class HeaderAtnProviderTest {
 
         OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
 
-        List<String> custom = response.getRequestHeaders().get("Custom");
+        List<String> custom = response.requestHeaders().get("Custom");
         assertThat(custom, notNullValue());
         assertThat(custom.size(), is(1));
 
@@ -128,16 +128,16 @@ public abstract class HeaderAtnProviderTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getUser(), is(Optional.empty()));
-        assertThat(response.getService(), is(not(Optional.empty())));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.user(), is(Optional.empty()));
+        assertThat(response.service(), is(not(Optional.empty())));
 
-        response.getService()
-                .map(Subject::getPrincipal)
+        response.service()
+                .map(Subject::principal)
                 .map(Principal::getName)
                 .ifPresent(name -> assertThat(name, is(username)));
     }
@@ -149,13 +149,13 @@ public abstract class HeaderAtnProviderTest {
         SecurityEnvironment env = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getService(), is(Optional.empty()));
-        assertThat(response.getUser(), is(Optional.empty()));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.service(), is(Optional.empty()));
+        assertThat(response.user(), is(Optional.empty()));
     }
 
     @Test
@@ -167,12 +167,12 @@ public abstract class HeaderAtnProviderTest {
         SecurityEnvironment env = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         SecurityContext sc = mock(SecurityContext.class);
-        when(sc.getService()).thenReturn(Optional.of(Subject.builder().addPrincipal(Principal.create(username)).build()));
-        when(sc.getUser()).thenReturn(Optional.empty());
-        when(request.getContext()).thenReturn(sc);
+        when(sc.service()).thenReturn(Optional.of(Subject.builder().addPrincipal(Principal.create(username)).build()));
+        when(sc.user()).thenReturn(Optional.empty());
+        when(request.securityContext()).thenReturn(sc);
 
         SecurityEnvironment outboundEnv = SecurityEnvironment.create();
         EndpointConfig outboundEp = EndpointConfig.create();
@@ -180,7 +180,7 @@ public abstract class HeaderAtnProviderTest {
         assertThat("Outbound should be supported", provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
         OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
 
-        List<String> custom = response.getRequestHeaders().get("Authorization");
+        List<String> custom = response.requestHeaders().get("Authorization");
         assertThat(custom, notNullValue());
         assertThat(custom.size(), is(1));
 
@@ -199,13 +199,13 @@ public abstract class HeaderAtnProviderTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
-        assertThat(response.getUser(), is(Optional.empty()));
-        assertThat(response.getService(), is(Optional.empty()));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.user(), is(Optional.empty()));
+        assertThat(response.service(), is(Optional.empty()));
     }
 
     @Test
@@ -217,12 +217,12 @@ public abstract class HeaderAtnProviderTest {
         SecurityEnvironment env = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         SecurityContext sc = mock(SecurityContext.class);
-        when(sc.getUser()).thenReturn(Optional.of(Subject.builder().addPrincipal(Principal.create(username)).build()));
-        when(sc.getService()).thenReturn(Optional.empty());
-        when(request.getContext()).thenReturn(sc);
+        when(sc.user()).thenReturn(Optional.of(Subject.builder().addPrincipal(Principal.create(username)).build()));
+        when(sc.service()).thenReturn(Optional.empty());
+        when(request.securityContext()).thenReturn(sc);
 
         SecurityEnvironment outboundEnv = SecurityEnvironment.create();
         EndpointConfig outboundEp = EndpointConfig.create();

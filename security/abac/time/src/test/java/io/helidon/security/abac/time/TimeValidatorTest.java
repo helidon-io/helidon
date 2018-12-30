@@ -84,7 +84,7 @@ public class TimeValidatorTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         validator.validate(timeConfig, collector, request);
 
@@ -106,7 +106,7 @@ public class TimeValidatorTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         validator.validate(timeConfig, collector, request);
 
@@ -130,7 +130,7 @@ public class TimeValidatorTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(env);
+        when(request.env()).thenReturn(env);
 
         validator.validate(timeConfig, collector, request);
 

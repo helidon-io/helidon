@@ -56,7 +56,7 @@ class FeatureConfig {
             this.usePrematchingAtn = builder.isPrematchingAuthentication();
         }
 
-        this.queryParamHandlers.addAll(builder.getQueryParamHandlers());
+        this.queryParamHandlers.addAll(builder.queryParamHandlers());
     }
 
     boolean shouldAuthorizeAnnotatedOnly() {

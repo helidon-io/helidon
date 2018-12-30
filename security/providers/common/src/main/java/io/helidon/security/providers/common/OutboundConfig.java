@@ -52,8 +52,8 @@ public final class OutboundConfig {
      * @param providerConfig configuration object of current provider
      * @return new instance with targets from configuration
      */
-    public static OutboundConfig parseTargets(Config providerConfig) {
-        return from(providerConfig, null);
+    public static OutboundConfig create(Config providerConfig) {
+        return createFromConfig(providerConfig, null);
     }
 
     /**
@@ -64,16 +64,16 @@ public final class OutboundConfig {
      * @param defaults       default target configuration (e.g. known public endpoints that are expected static in time)
      * @return new instance with targets from configuration, defaults are first (unless overridden)
      */
-    public static OutboundConfig parseTargets(Config providerConfig, OutboundTarget... defaults) {
-        return from(providerConfig, defaults);
+    public static OutboundConfig create(Config providerConfig, OutboundTarget... defaults) {
+        return createFromConfig(providerConfig, defaults);
     }
 
-    static OutboundConfig from(Config providerConfig, OutboundTarget[] defaults) {
+    static OutboundConfig createFromConfig(Config providerConfig, OutboundTarget[] defaults) {
         Config config = providerConfig.get(CONFIG_OUTBOUND);
 
-        List<OutboundTarget> configuredTargets = config.asList(OutboundTarget::from).orElse(CollectionsHelper.listOf());
+        List<OutboundTarget> configuredTargets = config.asList(OutboundTarget::create).orElse(CollectionsHelper.listOf());
 
-        boolean useDefaults = configuredTargets.stream().noneMatch(targetConfig -> "default".equals(targetConfig.getName()))
+        boolean useDefaults = configuredTargets.stream().noneMatch(targetConfig -> "default".equals(targetConfig.name()))
                 && (null != defaults);
 
         Builder builder = OutboundConfig.builder();
@@ -110,9 +110,9 @@ public final class OutboundConfig {
      * @return TargetConfig wrapped in {@link Optional} valid for the request
      */
     public Optional<OutboundTarget> findTarget(SecurityEnvironment env) {
-        String transport = env.getTransport();
-        String host = env.getTargetUri().getHost();
-        String path = env.getPath().orElse(null);
+        String transport = env.transport();
+        String host = env.targetUri().getHost();
+        String path = env.path().orElse(null);
 
         for (OutboundTarget outboundTarget : targets) {
             if (outboundTarget.matches(transport, host, path)) {
@@ -123,7 +123,14 @@ public final class OutboundConfig {
         return Optional.empty();
     }
 
-    public List<OutboundTarget> getTargets() {
+    /**
+     * Outbound targets configured for outbound handling.
+     * Each target defines a protocol, host and path it is valid for (maybe using wildcards).
+     * Additional configuration is usually added to a target for a specific provider.
+     *
+     * @return list of targets defined
+     */
+    public List<OutboundTarget> targets() {
         return targets;
     }
 
@@ -144,11 +151,11 @@ public final class OutboundConfig {
          * @return updated builder instance
          */
         public Builder addTarget(OutboundTarget config) {
-            if (names.contains(config.getName())) {
-                throw new IllegalStateException("Duplicate name of a target: " + config.getName());
+            if (names.contains(config.name())) {
+                throw new IllegalStateException("Duplicate name of a target: " + config.name());
             }
 
-            names.add(config.getName());
+            names.add(config.name());
             targets.add(config);
 
             return this;

@@ -62,8 +62,8 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
      * @param config configuration of this provider
      * @return provider instance
      */
-    public static HeaderAtnProvider fromConfig(Config config) {
-        return builder().fromConfig(config).build();
+    public static HeaderAtnProvider create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -81,7 +81,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
             return AuthenticationResponse.abstain();
         }
 
-        Optional<String> username = atnTokenHandler.extractToken(providerRequest.getEnv().getHeaders());
+        Optional<String> username = atnTokenHandler.extractToken(providerRequest.env().headers());
 
         return username
                 .map(Principal::create)
@@ -115,17 +115,17 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
                                                     EndpointConfig outboundEndpointConfig) {
         Optional<Subject> toPropagate;
         if (subjectType == SubjectType.USER) {
-            toPropagate = providerRequest.getContext().getUser();
+            toPropagate = providerRequest.securityContext().user();
         } else {
-            toPropagate = providerRequest.getContext().getService();
+            toPropagate = providerRequest.securityContext().service();
         }
 
         return toPropagate
-                .map(Subject::getPrincipal)
-                .map(Principal::getId)
+                .map(Subject::principal)
+                .map(Principal::id)
                 .map(id -> {
                     Map<String, List<String>> headers = new HashMap<>();
-                    outboundTokenHandler.setHeader(headers, id);
+                    outboundTokenHandler.header(headers, id);
                     return OutboundSecurityResponse.withHeaders(headers);
                 })
                 .orElse(OutboundSecurityResponse.abstain());
@@ -134,7 +134,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
     /**
      * A fluent api Builder for {@link HeaderAtnProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<HeaderAtnProvider> {
+    public static final class Builder implements io.helidon.common.Builder<HeaderAtnProvider> {
         private boolean optional = false;
         private boolean authenticate = true;
         private boolean propagate = true;
@@ -159,7 +159,7 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
          * @param config configuration to load from
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("optional").as(Boolean.class).ifPresent(this::optional);
             config.get("authenticate").as(Boolean.class).ifPresent(this::authenticate);
             config.get("propagate").as(Boolean.class).ifPresent(this::propagate);

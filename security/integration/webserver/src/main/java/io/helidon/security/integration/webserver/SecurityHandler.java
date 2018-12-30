@@ -69,8 +69,8 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 
 /**
  * Handles security for web server. This handler is registered either by hand on router config,
- * or automatically from configuration when integration done through {@link WebSecurity#from(Config)}
- * or {@link WebSecurity#from(Security, Config)}.
+ * or automatically from configuration when integration done through {@link WebSecurity#create(Config)}
+ * or {@link WebSecurity#create(Security, Config)}.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -192,7 +192,7 @@ public final class SecurityHandler implements Handler {
      * @param defaults Default values to copy
      * @return an instance configured from the config (using defaults from defaults parameter for missing values)
      */
-    static SecurityHandler from(Config config, SecurityHandler defaults) {
+    static SecurityHandler create(Config config, SecurityHandler defaults) {
         Builder builder = builder(defaults);
 
         config.get(KEY_ROLES_ALLOWED).asList(String.class)
@@ -219,7 +219,7 @@ public final class SecurityHandler implements Handler {
                 .ifPresent(builder::auditEventType);
         config.get(KEY_AUDIT_MESSAGE_FORMAT).asString().or(() -> defaults.auditMessageFormat)
                 .ifPresent(builder::auditMessageFormat);
-        config.get(KEY_QUERY_PARAM_HANDLERS).asList(QueryParamHandler::from)
+        config.get(KEY_QUERY_PARAM_HANDLERS).asList(QueryParamHandler::create)
                 .ifPresent(it -> it.forEach(builder::addQueryParamHandler));
 
         // now resolve implicit behavior
@@ -269,7 +269,7 @@ public final class SecurityHandler implements Handler {
         config.get(key).as(clazz).or(() -> defaultValue).ifPresent(builderMethod);
     }
 
-    static SecurityHandler newInstance() {
+    static SecurityHandler create() {
         // constant is OK, object is immutable
         return DEFAULT_INSTANCE;
     }
@@ -300,7 +300,7 @@ public final class SecurityHandler implements Handler {
         //headers.forEach(req.headers()::put);
 
         // update environment in context with the found headers
-        securityContext.setEnv(securityContext.getEnv().derive()
+        securityContext.env(securityContext.env().derive()
                                        .headers(headers)
                                        .build());
     }
@@ -340,19 +340,19 @@ public final class SecurityHandler implements Handler {
 
     private void processSecurity(SecurityContext securityContext, ServerRequest req, ServerResponse res) {
         // authentication and authorization
-        Tracer tracer = securityContext.getTracer();
+        Tracer tracer = securityContext.tracer();
 
         Span securitySpan = tracer
                 .buildSpan("security")
-                .asChildOf(securityContext.getTracingSpan())
+                .asChildOf(securityContext.tracingSpan())
                 .start();
 
-        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.getId()));
+        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.id()));
 
         // extract headers
         extractQueryParams(securityContext, req);
 
-        securityContext.setEndpointConfig(securityContext.getEndpointConfig()
+        securityContext.endpointConfig(securityContext.endpointConfig()
                                                   .derive()
                                                   .configMap(configMap)
                                                   .customObjects(customObjects.orElse(new ClassToInstanceStore<>()))
@@ -440,12 +440,12 @@ public final class SecurityHandler implements Handler {
                 .addParam(plain("method", req.method()))
                 .addParam(plain("path", req.path()))
                 .addParam(plain("status", String.valueOf(res.status().code())))
-                .addParam(plain("subject", securityContext.getUser().orElse(SecurityContext.ANONYMOUS)))
+                .addParam(plain("subject", securityContext.user().orElse(SecurityContext.ANONYMOUS)))
                 .addParam(plain("transport", "http"))
                 .addParam(plain("resourceType", "http"))
                 .addParam(plain("targetUri", req.uri()));
 
-        securityContext.getService().ifPresent(svc -> auditEvent.addParam(plain("service", svc.toString())));
+        securityContext.service().ifPresent(svc -> auditEvent.addParam(plain("service", svc.toString())));
 
         securityContext.audit(auditEvent);
     }
@@ -470,7 +470,7 @@ public final class SecurityHandler implements Handler {
         configureSecurityRequest(clientBuilder, req, res, atnSpan);
 
         clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit().thenAccept(response -> {
-            switch (response.getStatus()) {
+            switch (response.status()) {
             case SUCCESS:
                 //everything is fine, we can continue with processing
                 break;
@@ -492,7 +492,7 @@ public final class SecurityHandler implements Handler {
                 }
                 break;
             default:
-                Exception e = new SecurityException("Invalid SecurityStatus returned: " + response.getStatus());
+                Exception e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
                 future.completeExceptionally(e);
                 traceError(atnSpan, e);
                 return;
@@ -510,14 +510,14 @@ public final class SecurityHandler implements Handler {
     }
 
     private void atnSpanFinish(Span atnSpan, AuthenticationResponse response) {
-        response.getUser()
+        response.user()
                 .ifPresent(subject -> atnSpan
-                        .log("security.user: " + subject.getPrincipal().getName()));
+                        .log("security.user: " + subject.principal().getName()));
 
-        response.getService()
-                .ifPresent(subject -> atnSpan.log("security.service: " + subject.getPrincipal().getName()));
+        response.service()
+                .ifPresent(subject -> atnSpan.log("security.service: " + subject.principal().getName()));
 
-        atnSpan.log("status: " + response.getStatus());
+        atnSpan.log("status: " + response.status());
 
         atnSpan.finish();
     }
@@ -570,8 +570,8 @@ public final class SecurityHandler implements Handler {
                               int defaultCode,
                               Map<String, List<String>> defaultHeaders) {
 
-        int statusCode = ((null == response) ? defaultCode : response.getStatusCode().orElse(defaultCode));
-        Map<String, List<String>> responseHeaders = ((null == response) ? defaultHeaders : response.getResponseHeaders());
+        int statusCode = ((null == response) ? defaultCode : response.statusCode().orElse(defaultCode));
+        Map<String, List<String>> responseHeaders = ((null == response) ? defaultHeaders : response.responseHeaders());
         responseHeaders = responseHeaders.isEmpty() ? defaultHeaders : responseHeaders;
 
         ResponseHeaders httpHeaders = res.headers();
@@ -602,14 +602,14 @@ public final class SecurityHandler implements Handler {
                         @Override
                         public void onNext(DataChunk item) {
                             // chunk not released, as security provider may use it later
-                            getSubscriber().onNext(item.data());
+                            subscriber().onNext(item.data());
                         }
                     };
             Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromBizLogic);
             return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
                 @Override
                 public void onNext(ByteBuffer item) {
-                    getSubscriber().onNext(DataChunk.create(true, item));
+                    subscriber().onNext(DataChunk.create(true, item));
                 }
             };
         });
@@ -622,14 +622,14 @@ public final class SecurityHandler implements Handler {
                         @Override
                         public void onNext(DataChunk item) {
                             // chunk not released, as security provider may use it later
-                            getSubscriber().onNext(item.data());
+                            subscriber().onNext(item.data());
                         }
                     };
             Flow.Publisher<ByteBuffer> securedBytes = filterFunction.apply(bytesFromExternal);
             return new ResponseProcessor<ByteBuffer, DataChunk>(securedBytes) {
                 @Override
                 public void onNext(ByteBuffer item) {
-                    getSubscriber().onNext(DataChunk.create(item));
+                    subscriber().onNext(DataChunk.create(item));
                 }
             };
         });
@@ -680,13 +680,13 @@ public final class SecurityHandler implements Handler {
         configureSecurityRequest(client, req, res, atzSpan);
 
         client.explicitProvider(explicitAuthorizer.orElse(null)).submit().thenAccept(response -> {
-            switch (response.getStatus()) {
+            switch (response.status()) {
             case SUCCESS:
                 //everything is fine, we can continue with processing
                 break;
             case FAILURE_FINISH:
             case SUCCESS_FINISH:
-                int defaultStatus = (response.getStatus() == AuthenticationResponse.SecurityStatus.FAILURE_FINISH)
+                int defaultStatus = (response.status() == AuthenticationResponse.SecurityStatus.FAILURE_FINISH)
                         ? Http.Status.FORBIDDEN_403.code()
                         : Http.Status.OK_200.code();
 
@@ -701,7 +701,7 @@ public final class SecurityHandler implements Handler {
                 future.complete(AtxResult.STOP);
                 return;
             default:
-                SecurityException e = new SecurityException("Invalid SecurityStatus returned: " + response.getStatus());
+                SecurityException e = new SecurityException("Invalid SecurityStatus returned: " + response.status());
                 traceError(atzSpan, e);
                 future.completeExceptionally(e);
                 return;
@@ -724,7 +724,7 @@ public final class SecurityHandler implements Handler {
      *
      * @return list of handlers
      */
-    public List<QueryParamHandler> getQueryParamHandlers() {
+    public List<QueryParamHandler> queryParamHandlers() {
         return Collections.unmodifiableList(queryParamHandlers);
     }
 
@@ -892,7 +892,7 @@ public final class SecurityHandler implements Handler {
      */
     public SecurityHandler queryParam(String queryParamName, TokenHandler headerHandler) {
         return builder(this)
-                .addQueryParamHandler(QueryParamHandler.from(queryParamName, headerHandler))
+                .addQueryParamHandler(QueryParamHandler.create(queryParamName, headerHandler))
                 .build();
     }
 
@@ -975,7 +975,7 @@ public final class SecurityHandler implements Handler {
             subscriber.onComplete();
         }
 
-        Flow.Subscriber<? super R> getSubscriber() {
+        Flow.Subscriber<? super R> subscriber() {
             return subscriber;
         }
     }
@@ -1024,7 +1024,7 @@ public final class SecurityHandler implements Handler {
             handler.auditEventType.ifPresent(this::auditEventType);
             handler.auditMessageFormat.ifPresent(this::auditMessageFormat);
             handler.authorize.ifPresent(this::authorize);
-            this.queryParamHandlers.addAll(handler.getQueryParamHandlers());
+            this.queryParamHandlers.addAll(handler.queryParamHandlers());
 
             return this;
         }
@@ -1191,8 +1191,8 @@ public final class SecurityHandler implements Handler {
         private final TokenHandler headerHandler;
 
         private QueryParamHandler(QueryParamMapping mapping) {
-            this.queryParamName = mapping.getQueryParamName();
-            this.headerHandler = mapping.getTokenHandler();
+            this.queryParamName = mapping.queryParamName();
+            this.headerHandler = mapping.tokenHandler();
         }
 
         /**
@@ -1201,8 +1201,8 @@ public final class SecurityHandler implements Handler {
          * @param config configuration instance
          * @return new instance of query parameter handler
          */
-        public static QueryParamHandler from(Config config) {
-            return from(QueryParamMapping.from(config));
+        public static QueryParamHandler create(Config config) {
+            return create(QueryParamMapping.create(config));
         }
 
         /**
@@ -1211,7 +1211,7 @@ public final class SecurityHandler implements Handler {
          * @param mapping existing mapping
          * @return new instance of query parameter handler
          */
-        public static QueryParamHandler from(QueryParamMapping mapping) {
+        public static QueryParamHandler create(QueryParamMapping mapping) {
             return new QueryParamHandler(mapping);
         }
 
@@ -1222,8 +1222,8 @@ public final class SecurityHandler implements Handler {
          * @param headerHandler  handler to extract parameter and store the header
          * @return new instance of query parameter handler
          */
-        public static QueryParamHandler from(String queryParamName, TokenHandler headerHandler) {
-            return from(QueryParamMapping.create(queryParamName, headerHandler));
+        public static QueryParamHandler create(String queryParamName, TokenHandler headerHandler) {
+            return create(QueryParamMapping.create(queryParamName, headerHandler));
         }
 
         void extract(ServerRequest req, Map<String, List<String>> headers) {

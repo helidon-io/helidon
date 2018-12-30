@@ -76,7 +76,7 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
 
         if (null == requestSpanContext) {
             closeParentSpan = true;
-            Span requestSpan = security().getTracer().buildSpan("security-parent").start();
+            Span requestSpan = security().tracer().buildSpan("security-parent").start();
             request.setProperty(PROP_PARENT_SPAN, requestSpan);
             requestSpanContext = requestSpan.context();
         }

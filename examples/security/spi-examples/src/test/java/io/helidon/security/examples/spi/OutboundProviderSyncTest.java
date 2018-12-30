@@ -42,19 +42,19 @@ public class OutboundProviderSyncTest {
     @Test
     public void testAbstain() {
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.empty());
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.empty());
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
 
         OutboundProviderSync ops = new OutboundProviderSync();
         OutboundSecurityResponse response = ops.syncOutbound(request, SecurityEnvironment.create(), EndpointConfig.create());
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
 
     @Test
@@ -63,19 +63,19 @@ public class OutboundProviderSyncTest {
         Subject subject = Subject.create(Principal.create(username));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.of(subject));
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.of(subject));
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
 
         OutboundProviderSync ops = new OutboundProviderSync();
         OutboundSecurityResponse response = ops.syncOutbound(request, SecurityEnvironment.create(), EndpointConfig.create());
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getRequestHeaders().get("X-AUTH-USER"), is(CollectionsHelper.listOf(username)));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.requestHeaders().get("X-AUTH-USER"), is(CollectionsHelper.listOf(username)));
     }
 }

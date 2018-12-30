@@ -72,7 +72,7 @@ public final class BuiltInMethods {
      * @return true if the subject has all the specified scopes
      */
     public static boolean inScope(Subject subject, String scope) {
-        List<String> grants = subject.getGrantsByType("scope").stream().map(Grant::getName).collect(Collectors.toList());
+        List<String> grants = subject.grantsByType("scope").stream().map(Grant::getName).collect(Collectors.toList());
 
         return grants.contains(scope);
     }
@@ -85,7 +85,7 @@ public final class BuiltInMethods {
      * @return true if the subject has all the specified scopes
      */
     public static boolean inScopes(Subject subject, String... scopes) {
-        List<String> grants = subject.getGrantsByType("scope").stream().map(Grant::getName).collect(Collectors.toList());
+        List<String> grants = subject.grantsByType("scope").stream().map(Grant::getName).collect(Collectors.toList());
         for (String scope : scopes) {
             if (!grants.contains(scope)) {
                 return false;

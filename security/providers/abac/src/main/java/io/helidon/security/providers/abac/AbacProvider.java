@@ -49,9 +49,9 @@ import io.helidon.security.spi.SynchronousProvider;
  * Each attribute to be validated must have a {@link AbacValidator} implemented.
  *
  * @see #builder()
- * @see #from(Config)
+ * @see #create(Config)
  */
-public class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
+public final class AbacProvider extends SynchronousProvider implements AuthorizationProvider {
     private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
     private final Set<Class<? extends Annotation>> supportedAnnotations;
     private final Set<String> supportedConfigKeys;
@@ -100,8 +100,8 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
      * @param config configuration
      * @return ABAC provider instantiated from config
      */
-    public static AbacProvider from(Config config) {
-        return builder().from(config).build();
+    public static AbacProvider create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -124,7 +124,7 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
         Errors.Collector collector = Errors.collector();
         List<RuntimeAttribute> attributes = new ArrayList<>();
 
-        EndpointConfig epConfig = providerRequest.getEndpointConfig();
+        EndpointConfig epConfig = providerRequest.endpointConfig();
         // list all "Attribute" annotations and make sure we support them
         validateAnnotations(epConfig, collector);
         // list all children of abac config and make sure one of the AbacValidators supports them
@@ -138,11 +138,11 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
             String configKey = validator.configKey();
             Collection<Class<? extends Annotation>> annotations = validator.supportedAnnotations();
 
-            Optional<? extends AbacValidatorConfig> customObject = epConfig.getInstance(configClass);
+            Optional<? extends AbacValidatorConfig> customObject = epConfig.instance(configClass);
             if (customObject.isPresent()) {
                 attributes.add(new RuntimeAttribute(validator, customObject.get()));
             } else {
-                OptionalHelper.from(epConfig.getConfig(configKey))
+                OptionalHelper.from(epConfig.config(configKey))
                         .ifPresentOrElse(attribConfig -> attributes
                                 .add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig))), () -> {
                             List<Annotation> annotationConfig = new ArrayList<>();
@@ -184,13 +184,13 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
     }
 
     private void validateCustom(EndpointConfig epConfig, Errors.Collector collector) {
-        epConfig.getInstanceKeys()
+        epConfig.instanceKeys()
                 .forEach(clazz -> {
                     int attributes = 0;
                     int unsupported = 0;
                     List<String> unsupportedClasses = new LinkedList<>();
 
-                    if (AbacValidatorConfig.class.isInstance(epConfig.getInstance(clazz))) {
+                    if (AbacValidatorConfig.class.isInstance(epConfig.instance(clazz))) {
                         attributes++;
                         if (!supportedCustomObjects.contains(clazz)) {
                             unsupported++;
@@ -219,7 +219,7 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
     }
 
     private void validateConfig(EndpointConfig config, Errors.Collector collector) {
-        config.getConfig("abac")
+        config.config("abac")
                 .ifPresent(abacConfig -> abacConfig.asMap()
                         .ifPresent(theMap -> {
                             int attributes = 0;
@@ -257,7 +257,7 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
     private void validateAnnotations(EndpointConfig epConfig, Errors.Collector collector) {
         // list all annotations that are marked as Attribute and make sure some AbacValidator supports them
         Map<Class<? extends Annotation>, List<Annotation>> allAnnotations = epConfig
-                .getAnnotations(EndpointConfig.AnnotationScope.values());
+                .annotations(EndpointConfig.AnnotationScope.values());
 
         int attributeAnnotations = 0;
         int unsupported = 0;
@@ -295,11 +295,11 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
     /**
      * A fluent API builder for {@link AbacProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<AbacProvider> {
+    public static final class Builder implements io.helidon.common.Builder<AbacProvider> {
+        private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
         private Config config = Config.empty();
         private boolean failOnUnvalidated = true;
         private boolean failIfNoneValidated = true;
-        private final List<AbacValidator<? extends AbacValidatorConfig>> validators = new ArrayList<>();
 
         private Builder() {
         }
@@ -322,13 +322,13 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
         }
 
         /**
-         * Configuration to use for validator instances (by default this is the provider's configuration that would be sent
-         * to {@link #from(Config)}.
+         * Configuration to use for validator instances.
+         * This builder is NOT updated from the provided config, use {@link #config(Config)} to update this builder.
          *
          * @param config configuration
          * @return updated builder instance
          */
-        public Builder config(Config config) {
+        public Builder configuration(Config config) {
             this.config = config;
             return this;
         }
@@ -356,18 +356,18 @@ public class AbacProvider extends SynchronousProvider implements AuthorizationPr
         }
 
         /**
-         * Update builder from configuration.
+         * Update builder from configuration and set the config to {@link #configuration(io.helidon.config.Config)}.
          *
          * @param config configuration placed on the key of this provider
          * @return updated builder instance
          */
-        public Builder from(Config config) {
-            Builder b = builder().config(config);
+        public Builder config(Config config) {
+            configuration(config);
 
-            config.get("fail-on-unvalidated").asBoolean().ifPresent(b::failOnUnvalidated);
-            config.get("fail-if-none-validated").asBoolean().ifPresent(b::failIfNoneValidated);
+            config.get("fail-on-unvalidated").asBoolean().ifPresent(this::failOnUnvalidated);
+            config.get("fail-if-none-validated").asBoolean().ifPresent(this::failIfNoneValidated);
 
-            return b;
+            return this;
         }
     }
 }

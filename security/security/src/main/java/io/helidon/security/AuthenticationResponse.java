@@ -139,11 +139,19 @@ public final class AuthenticationResponse extends SecurityResponse {
                                       .build());
     }
 
-    public Optional<Subject> getUser() {
+    /**
+     * User subject.
+     * @return {@link io.helidon.security.Subject} of the user, if one was authenticated
+     */
+    public Optional<Subject> user() {
         return user;
     }
 
-    public Optional<Subject> getService() {
+    /**
+     * Service (or client) subject.
+     * @return {@link io.helidon.security.Subject} of the service (or client), if one was authenticated
+     */
+    public Optional<Subject> service() {
         return service;
     }
 
@@ -161,9 +169,12 @@ public final class AuthenticationResponse extends SecurityResponse {
      * Allows fully customized response, if one of the static methods is not sufficient (e.g. when returning a specialized
      * {@link SecurityStatus}.
      */
-    public static class Builder extends SecurityResponse.SecurityResponseBuilder<Builder, AuthenticationResponse> {
+    public static final class Builder extends SecurityResponse.SecurityResponseBuilder<Builder, AuthenticationResponse> {
         private Subject user;
         private Subject service;
+
+        private Builder() {
+        }
 
         /**
          * Set the user subject as created by this provider.

@@ -60,7 +60,7 @@ final class JerseyResources {
         @Produces(MediaType.TEXT_PLAIN)
         public String getHello(@Context SecurityContext securityContext) {
             return "To test this example, call /jersey. If you use a user without \"user\" role, your request will be denied. "
-                    + "Your current subject: " + securityContext.getUser().orElse(SecurityContext.ANONYMOUS);
+                    + "Your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
 
         /**
@@ -77,7 +77,7 @@ final class JerseyResources {
         @Produces(MediaType.TEXT_PLAIN)
         // due to Jersey approach to path matching, we need two methods to match both the "root" and "root" + subpaths
         public String getHelloName(@Context SecurityContext securityContext) {
-            return "Hello, your current subject: " + securityContext.getUser().orElse(SecurityContext.ANONYMOUS);
+            return "Hello, your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
     }
 
@@ -105,7 +105,7 @@ final class JerseyResources {
                     .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
                     .get(String.class);
 
-            return "Hello, your current subject: " + securityContext.getUser().orElse(SecurityContext.ANONYMOUS) + "\n"
+            return "Hello, your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS) + "\n"
                     + "Response from hello world: " + response;
         }
     }
@@ -126,7 +126,7 @@ final class JerseyResources {
         @Produces(MediaType.TEXT_PLAIN)
         public String getHello(@Context SecurityContext securityContext) {
             return "To test this example, call /jersey. If you use a user without \"user\" role, your request will be denied. "
-                    + "Your current subject: " + securityContext.getUser().orElse(SecurityContext.ANONYMOUS);
+                    + "Your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
         }
 
         /**
@@ -143,12 +143,12 @@ final class JerseyResources {
         public Response getHelloName(@Context SecurityContext securityContext, @Context HttpHeaders headers) {
             AuthenticationResponse resp = securityContext.atnClientBuilder().buildAndGet();
 
-            if (resp.getStatus().isSuccess()) {
+            if (resp.status().isSuccess()) {
                 //and to authorize
                 // role provider can be used directly through context
                 if (securityContext.isUserInRole("user")) {
                     return Response
-                            .ok("Hello, your current subject: " + securityContext.getUser().orElse(SecurityContext.ANONYMOUS))
+                            .ok("Hello, your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS))
                             .build();
                 } else {
                     return Response.status(Response.Status.FORBIDDEN).build();
@@ -156,9 +156,9 @@ final class JerseyResources {
             }
 
             Response.ResponseBuilder builder = Response
-                    .status(resp.getStatusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode()));
+                    .status(resp.statusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode()));
 
-            resp.getResponseHeaders().forEach((key, value) -> value.forEach(hv -> builder.header(key, hv)));
+            resp.responseHeaders().forEach((key, value) -> value.forEach(hv -> builder.header(key, hv)));
 
             return builder.build();
         }

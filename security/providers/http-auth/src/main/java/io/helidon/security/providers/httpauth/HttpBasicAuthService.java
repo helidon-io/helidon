@@ -30,12 +30,12 @@ public class HttpBasicAuthService implements SecurityProviderService {
     }
 
     @Override
-    public Class<? extends SecurityProvider> getProviderClass() {
+    public Class<? extends SecurityProvider> providerClass() {
         return HttpBasicAuthProvider.class;
     }
 
     @Override
-    public SecurityProvider getProviderInstance(Config config) {
-        return HttpBasicAuthProvider.fromConfig(config);
+    public SecurityProvider providerInstance(Config config) {
+        return HttpBasicAuthProvider.create(config);
     }
 }

@@ -49,9 +49,9 @@ public class JwtTest {
                 .audience(audience)
                 .build();
 
-        assertThat(jwt.getJwtId(), is(Optional.of(id)));
-        assertThat(jwt.getAlgorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
-        assertThat(jwt.getAudience(), is(Optional.of(CollectionsHelper.listOf(audience))));
+        assertThat(jwt.jwtId(), is(Optional.of(id)));
+        assertThat(jwt.algorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
+        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf(audience))));
     }
 
     @Test
@@ -80,12 +80,12 @@ public class JwtTest {
                 .notBefore(notBefore)
                 .build();
 
-        assertThat(jwt.getScopes(), is(Optional.of(CollectionsHelper.listOf("link", "lank", "lunk"))));
-        assertThat(jwt.getSubject(), is(Optional.of(subject)));
-        assertThat(jwt.getPreferredUsername(), is(Optional.of(username)));
-        assertThat(jwt.getIssueTime(), is(Optional.of(now)));
-        assertThat(jwt.getExpirationTime(), is(Optional.of(expiration)));
-        assertThat(jwt.getNotBefore(), is(Optional.of(notBefore)));
+        assertThat(jwt.scopes(), is(Optional.of(CollectionsHelper.listOf("link", "lank", "lunk"))));
+        assertThat(jwt.subject(), is(Optional.of(subject)));
+        assertThat(jwt.preferredUsername(), is(Optional.of(username)));
+        assertThat(jwt.issueTime(), is(Optional.of(now)));
+        assertThat(jwt.expirationTime(), is(Optional.of(expiration)));
+        assertThat(jwt.notBefore(), is(Optional.of(notBefore)));
 
         //and this one should be valid
         List<Validator<Jwt>> vals = Jwt.defaultTimeValidators();

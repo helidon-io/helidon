@@ -30,12 +30,12 @@ public class GoogleTokenService implements SecurityProviderService {
     }
 
     @Override
-    public Class<? extends SecurityProvider> getProviderClass() {
+    public Class<? extends SecurityProvider> providerClass() {
         return GoogleTokenProvider.class;
     }
 
     @Override
-    public SecurityProvider getProviderInstance(Config config) {
-        return GoogleTokenProvider.fromConfig(config);
+    public SecurityProvider providerInstance(Config config) {
+        return GoogleTokenProvider.create(config);
     }
 }

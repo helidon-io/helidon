@@ -52,13 +52,13 @@ public class AbacProviderTest {
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
-        when(request.getEndpointConfig()).thenReturn(ec);
+        when(request.endpointConfig()).thenReturn(ec);
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getDescription(), not(Optional.empty()));
-        response.getDescription()
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.description(), not(Optional.empty()));
+        response.description()
                 .ifPresent(desc -> {
                     assertThat(desc, containsString("Attrib1 attribute annotation is not supported"));
                 });
@@ -77,13 +77,13 @@ public class AbacProviderTest {
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
-        when(request.getEndpointConfig()).thenReturn(ec);
+        when(request.endpointConfig()).thenReturn(ec);
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getDescription(), not(Optional.empty()));
-        response.getDescription()
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.description(), not(Optional.empty()));
+        response.description()
                 .ifPresent(desc -> assertThat(desc, containsString("RolesAllowed attribute annotation is not supported")));
     }
 
@@ -103,13 +103,13 @@ public class AbacProviderTest {
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
-        when(request.getEndpointConfig()).thenReturn(ec);
+        when(request.endpointConfig()).thenReturn(ec);
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getDescription(), not(Optional.empty()));
-        response.getDescription()
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.description(), not(Optional.empty()));
+        response.description()
                 .ifPresent(desc -> assertThat(desc, containsString("Intentional unit test failure")));
     }
 
@@ -129,12 +129,12 @@ public class AbacProviderTest {
                 .build();
 
         ProviderRequest request = Mockito.mock(ProviderRequest.class);
-        when(request.getEndpointConfig()).thenReturn(ec);
+        when(request.endpointConfig()).thenReturn(ec);
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getDescription().orElse("Attrib1 value is true, so the authorization should succeed"),
-                   response.getStatus(),
+        assertThat(response.description().orElse("Attrib1 value is true, so the authorization should succeed"),
+                   response.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
     }
 }

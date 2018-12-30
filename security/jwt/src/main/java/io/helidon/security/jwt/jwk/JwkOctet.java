@@ -92,9 +92,9 @@ public class JwkOctet extends Jwk {
      *
      * @param json with definition of this octet web key
      * @return new instance of this class constructed from json
-     * @see Jwk#fromJson(JsonObject) for generic method that can load any supported JWK type.
+     * @see Jwk#create(JsonObject) for generic method that can load any supported JWK type.
      */
-    public static JwkOctet fromJson(JsonObject json) {
+    public static JwkOctet create(JsonObject json) {
         return builder().fromJson(json).build();
     }
 
@@ -139,8 +139,8 @@ public class JwkOctet extends Jwk {
     }
 
     private String getSignatureAlgorithm() {
-        String jwkAlg = getAlgorithm();
-        String javaAlg = ALG_MAP.get(getAlgorithm());
+        String jwkAlg = algorithm();
+        String javaAlg = ALG_MAP.get(algorithm());
 
         if (null == javaAlg) {
             throw new JwtException("Unsupported algorithm for MAC: " + jwkAlg);
@@ -163,7 +163,7 @@ public class JwkOctet extends Jwk {
          *
          * @param json JsonObject with the JWK
          * @return updated builder instance, just call {@link #build()} to build the {@link JwkOctet} instance
-         * @see JwkOctet#fromJson(JsonObject) as a shortcut if no additional configuration is to be done
+         * @see JwkOctet#create(JsonObject) as a shortcut if no additional configuration is to be done
          */
         public Builder fromJson(JsonObject json) {
             super.fromJson(json);

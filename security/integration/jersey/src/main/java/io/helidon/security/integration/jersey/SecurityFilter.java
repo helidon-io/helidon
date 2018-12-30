@@ -211,7 +211,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             fc.setShouldFinish(false);
         }
 
-        SpanContext requestSpan = securityContext.getTracingSpan();
+        SpanContext requestSpan = securityContext.tracingSpan();
         Span span = startNewSpan(requestSpan, "security:response");
 
         try {
@@ -229,8 +229,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                         .addParam(AuditEvent.AuditParam.plain("path", fc.getResourcePath()))
                         .addParam(AuditEvent.AuditParam.plain("status", String.valueOf(responseContext.getStatus())))
                         .addParam(AuditEvent.AuditParam.plain("subject",
-                                                              OptionalHelper.from(securityContext.getUser())
-                                                                      .or(securityContext::getService)
+                                                              OptionalHelper.from(securityContext.user())
+                                                                      .or(securityContext::service)
                                                                       .asOptional()
                                                                       .orElse(SecurityContext.ANONYMOUS)))
                         .addParam(AuditEvent.AuditParam.plain("transport", "http"))

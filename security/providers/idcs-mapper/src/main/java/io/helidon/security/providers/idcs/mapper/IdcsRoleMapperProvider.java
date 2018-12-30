@@ -94,29 +94,29 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
      * @return a new instance configured from config
      */
     public static SecurityProvider create(Config config) {
-        return builder().fromConfig(config).build();
+        return builder().config(config).build();
     }
 
     @Override
     public CompletionStage<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
                                                        AuthenticationResponse previousResponse) {
         // this only supports users
-        return previousResponse.getUser().map(subject -> enhance(subject, previousResponse))
+        return previousResponse.user().map(subject -> enhance(subject, previousResponse))
                 .orElseGet(() -> CompletableFuture.completedFuture(previousResponse));
     }
 
     private CompletionStage<AuthenticationResponse> enhance(Subject subject,
                                                             AuthenticationResponse previousResponse) {
-        String username = subject.getPrincipal().getName();
+        String username = subject.principal().getName();
 
         List<? extends Grant> grants = roleCache.computeValue(username, () -> getGrantsFromServer(username))
                 .orElse(CollectionsHelper.listOf());
 
         AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
         builder.user(buildSubject(subject, grants));
-        previousResponse.getService().ifPresent(builder::service);
-        previousResponse.getDescription().ifPresent(builder::description);
-        builder.requestHeaders(previousResponse.getRequestHeaders());
+        previousResponse.service().ifPresent(builder::service);
+        previousResponse.description().ifPresent(builder::description);
+        builder.requestHeaders(previousResponse.requestHeaders());
 
         AuthenticationResponse response = builder.build();
 
@@ -187,7 +187,7 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
                 .or(this::getAndCacheAppTokenFromServer)
                 .asOptional()
                 // we are interested in the text content of the token
-                .map(SignedJwt::getTokenContent);
+                .map(SignedJwt::tokenContent);
     }
 
     private Optional<SignedJwt> getCachedAppToken() {
@@ -236,9 +236,12 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
     /**
      * Fluent API builder for {@link IdcsRoleMapperProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
+    public static final class Builder implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
         private OidcConfig oidcConfig;
         private EvictableCache<String, List<? extends Grant>> roleCache;
+
+        private Builder() {
+        }
 
         @Override
         public IdcsRoleMapperProvider build() {
@@ -259,7 +262,7 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
          * @param config current node must have "oidc-config" as one of its children
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("oidc-config").as(OidcConfig.class).ifPresent(this::oidcConfig);
             config.get("cache-config").as(EvictableCache.class).ifPresent(this::roleCache);
             return this;

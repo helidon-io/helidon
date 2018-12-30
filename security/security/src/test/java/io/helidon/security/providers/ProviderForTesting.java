@@ -40,7 +40,7 @@ public class ProviderForTesting extends SynchronousProvider
         this.denyResource = denyResource;
     }
 
-    public static ProviderForTesting fromConfig(Config config) {
+    public static ProviderForTesting create(Config config) {
         return new ProviderForTesting(config.asString().get());
     }
 
@@ -59,7 +59,7 @@ public class ProviderForTesting extends SynchronousProvider
 
     @Override
     protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
-        String resource = providerRequest.getEnv().getAttribute("resourceType")
+        String resource = providerRequest.env().abacAttribute("resourceType")
                 .map(String::valueOf)
                 .orElseThrow(() -> new IllegalArgumentException("Resource type is required"));
 

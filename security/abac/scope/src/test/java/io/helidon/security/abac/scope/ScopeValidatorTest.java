@@ -51,7 +51,7 @@ public class ScopeValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Grant.builder()
                                                                                     .type("scope")
@@ -62,7 +62,7 @@ public class ScopeValidatorTest {
                                                                                     .name("calendar_update")
                                                                                     .build())
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(sConfig, collector, request);
 
         collector.collect().checkValid();
@@ -83,14 +83,14 @@ public class ScopeValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Grant.builder()
                                                                                     .type("scope")
                                                                                     .name("calendar_get")
                                                                                     .build())
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(sConfig, collector, request);
 
         if (collector.collect().isValid()) {
@@ -116,14 +116,14 @@ public class ScopeValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Grant.builder()
                                                                                     .type("scope")
                                                                                     .name("calendar_get")
                                                                                     .build())
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(sConfig, collector, request);
 
         collector.collect().checkValid();
@@ -147,14 +147,14 @@ public class ScopeValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Grant.builder()
                                                                                     .type("scope")
                                                                                     .name("calendar_other")
                                                                                     .build())
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(sConfig, collector, request);
 
         if (collector.collect().isValid()) {

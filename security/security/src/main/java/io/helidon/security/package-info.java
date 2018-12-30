@@ -40,7 +40,7 @@
  * .{@link io.helidon.security.Security.Builder#build() build()}</code>
  * <p>
  * Or using configuration:<br>
- * <code>{@link io.helidon.security.Security#fromConfig(io.helidon.config.Config)}</code>
+ * <code>{@link io.helidon.security.Security#create(io.helidon.config.Config)}</code>
  * <p>
  * Configuration example (Google login for users and http-signatures for service):<br>
  * <pre><code>

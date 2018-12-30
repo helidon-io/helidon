@@ -97,8 +97,8 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
      * @param config configuration to load this class from
      * @return a new instance from config
      */
-    public static PolicyValidator from(Config config) {
-        return builder().from(config).build();
+    public static PolicyValidator create(Config config) {
+        return builder().config(config).build();
     }
 
     @Override
@@ -119,7 +119,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
     @Override
     public PolicyConfig fromConfig(Config config) {
         return PolicyConfig.builder()
-                .from(config)
+                .config(config)
                 .build();
     }
 
@@ -150,7 +150,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
         List<String> unvalidatedStatements = new LinkedList<>();
         boolean isValidated;
 
-        for (String statement : config.getPolicyStatements()) {
+        for (String statement : config.policyStatements()) {
             isValidated = false;
 
             for (PolicyExecutor executor : executors) {
@@ -202,9 +202,9 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
     /**
      * A fluent API builder for {@link PolicyValidator}.
      */
-    public static class Builder implements io.helidon.common.Builder<PolicyValidator> {
+    public static final class Builder implements io.helidon.common.Builder<PolicyValidator> {
+        private final List<PolicyExecutor> executors = new LinkedList<>();
         private Config config = Config.empty();
-        private List<PolicyExecutor> executors = new LinkedList<>();
 
         private Builder() {
         }
@@ -231,7 +231,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
          * @param config configuration instance located on {@link PolicyValidatorService#configKey()}
          * @return updated builder instance
          */
-        public Builder from(Config config) {
+        public Builder config(Config config) {
             this.config = config;
             config.get("validators").asList(Config.class).ifPresent(configs -> {
                 for (Config validatorConfig : configs) {
@@ -271,7 +271,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
      * Configuration of policy validator - a statement and whether to inherit value
      * from parents.
      */
-    public static class PolicyConfig implements AbacValidatorConfig {
+    public static final class PolicyConfig implements AbacValidatorConfig {
         private final List<String> policyStatements;
         private final boolean inherit;
 
@@ -294,7 +294,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
          *
          * @return list of statements in order they should be executed
          */
-        public List<String> getPolicyStatements() {
+        public List<String> policyStatements() {
             return Collections.unmodifiableList(policyStatements);
         }
 
@@ -310,8 +310,8 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
         /**
          * A fluent API builder for {@link PolicyConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<PolicyConfig> {
-            private List<String> policyStatements = new LinkedList<>();
+        public static final class Builder implements io.helidon.common.Builder<PolicyConfig> {
+            private final List<String> policyStatements = new LinkedList<>();
             private boolean inherit = true;
 
             private Builder() {
@@ -349,7 +349,7 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
              * @param config config instance located on the key {@link PolicyValidator#configKey()}
              * @return updated builder instance
              */
-            public Builder from(Config config) {
+            public Builder config(Config config) {
 
                 config.get("inherit").asBoolean().ifPresent(this::inherit);
                 config.get("statement").asString().ifPresent(this::statement);

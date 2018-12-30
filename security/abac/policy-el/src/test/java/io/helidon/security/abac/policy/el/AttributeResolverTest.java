@@ -99,20 +99,20 @@ class AttributeResolverTest {
     }
 
     private static class MyResource implements AbacSupport {
-        private AbacSupport.BasicAttributes attribs = new BasicAttributes();
+        private AbacSupport.BasicAttributes attribs = BasicAttributes.create();
 
         private MyResource(Map<String, Object> attribs) {
             attribs.forEach(this.attribs::put);
         }
 
         @Override
-        public Object getAttributeRaw(String key) {
-            return attribs.getAttributeRaw(key);
+        public Object abacAttributeRaw(String key) {
+            return attribs.abacAttributeRaw(key);
         }
 
         @Override
-        public Collection<String> getAttributeNames() {
-            return attribs.getAttributeNames();
+        public Collection<String> abacAttributeNames() {
+            return attribs.abacAttributeNames();
         }
     }
 }

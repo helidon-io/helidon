@@ -34,10 +34,10 @@ public class Auditer implements AuditProvider {
     }
 
     @Override
-    public Consumer<TracedAuditEvent> getAuditConsumer() {
+    public Consumer<TracedAuditEvent> auditConsumer() {
         return event -> {
             // just dump to stdout and store in a list
-            System.out.println(event.getSeverity() + ": " + event.getTracingId() + ": " + event);
+            System.out.println(event.severity() + ": " + event.tracingId() + ": " + event);
             messages.add(event);
         };
     }

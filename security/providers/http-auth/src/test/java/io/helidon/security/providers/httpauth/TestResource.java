@@ -40,8 +40,8 @@ public class TestResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String defaultProvider(@Context SecurityContext securityContext) {
         return "Basic provider\n"
-                + " user: " + securityContext.getUserName() + "\n"
-                + " subject: " + securityContext.getUser();
+                + " user: " + securityContext.userName() + "\n"
+                + " subject: " + securityContext.user();
     }
 
     @Authenticated(provider = "http-digest-auth")
@@ -50,8 +50,8 @@ public class TestResource {
     @Path("/digest")
     public String digest(@Context SecurityContext securityContext) {
         return "Digest provider\n"
-                + " user: " + securityContext.getUserName() + "\n"
-                + " subject: " + securityContext.getUser();
+                + " user: " + securityContext.userName() + "\n"
+                + " subject: " + securityContext.user();
     }
 
     @Authenticated(provider = "digest_old")
@@ -60,7 +60,7 @@ public class TestResource {
     @Path("/digest_old")
     public String digestOld(@Context SecurityContext securityContext) {
         return "Digest provider\n"
-                + " user: " + securityContext.getUserName() + "\n"
-                + " subject: " + securityContext.getUser();
+                + " user: " + securityContext.userName() + "\n"
+                + " subject: " + securityContext.user();
     }
 }

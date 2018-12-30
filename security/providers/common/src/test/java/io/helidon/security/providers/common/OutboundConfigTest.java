@@ -25,8 +25,6 @@ import java.util.Optional;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.SecurityEnvironment;
-import io.helidon.security.providers.common.OutboundConfig;
-import io.helidon.security.providers.common.OutboundTarget;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,17 +62,17 @@ public class OutboundConfigTest {
 
     @Test
     public void testParsing() {
-        OutboundConfig targets = OutboundConfig.from(configWithDefaults, new OutboundTarget[0]);
+        OutboundConfig targets = OutboundConfig.create(configWithDefaults, new OutboundTarget[0]);
 
-        List<OutboundTarget> targetList = targets.getTargets();
+        List<OutboundTarget> targetList = targets.targets();
 
         assertThat(targetList, notNullValue());
         assertThat(targetList.size(), is(2));
 
         OutboundTarget target = targetList.get(0);
-        assertThat(target.getName(), is("default"));
-        assertThat(target.getHosts(), hasItems("a.b.com"));
-        assertThat(target.getTransports(), hasItems("https"));
+        assertThat(target.name(), is("default"));
+        assertThat(target.hosts(), hasItems("a.b.com"));
+        assertThat(target.transports(), hasItems("https"));
         Optional<Config> targetsConfigOpt = target.getConfig();
         Config targetsConfig = targetsConfigOpt.orElseGet(() -> {
             fail("Config was expected to be non-null");
@@ -83,9 +81,9 @@ public class OutboundConfigTest {
         assertThat(targetsConfig.get("type").asString(), is(simpleValue("S2S")));
 
         target = targetList.get(1);
-        assertThat(target.getName(), is("obo"));
-        assertThat(target.getHosts(), hasItems("b.c.com", "d.e.org"));
-        assertThat(target.getTransports(), hasItems("https"));
+        assertThat(target.name(), is("obo"));
+        assertThat(target.hosts(), hasItems("b.c.com", "d.e.org"));
+        assertThat(target.transports(), hasItems("https"));
         targetsConfigOpt = target.getConfig();
         targetsConfig = targetsConfigOpt.orElseGet(() -> {
             fail("Config was expected to be non-null");
@@ -99,17 +97,17 @@ public class OutboundConfigTest {
         // default value must be overriden by config, so the test is the same as above...
         OutboundTarget defaultValue = OutboundTarget.builder("default").build();
 
-        OutboundConfig targets = OutboundConfig.from(configWithDefaults, new OutboundTarget[] {defaultValue});
+        OutboundConfig targets = OutboundConfig.create(configWithDefaults, new OutboundTarget[] {defaultValue});
 
-        List<OutboundTarget> targetList = targets.getTargets();
+        List<OutboundTarget> targetList = targets.targets();
 
         assertThat(targetList, notNullValue());
         assertThat(targetList.size(), is(2));
 
         OutboundTarget target = targetList.get(0);
-        assertThat(target.getName(), is("default"));
-        assertThat(target.getTransports(), hasItems("https"));
-        assertThat(target.getHosts(), hasItems("a.b.com"));
+        assertThat(target.name(), is("default"));
+        assertThat(target.transports(), hasItems("https"));
+        assertThat(target.hosts(), hasItems("a.b.com"));
         Optional<Config> targetsConfigOpt = target.getConfig();
         Config targetsConfig = targetsConfigOpt.orElseGet(() -> {
             fail("Config was expected to be non-null");
@@ -118,9 +116,9 @@ public class OutboundConfigTest {
         assertThat(targetsConfig.get("type").asString(), is(simpleValue("S2S")));
 
         target = targetList.get(1);
-        assertThat(target.getName(), is("obo"));
-        assertThat(target.getTransports(), hasItems("https"));
-        assertThat(target.getHosts(), hasItems("b.c.com", "d.e.org"));
+        assertThat(target.name(), is("obo"));
+        assertThat(target.transports(), hasItems("https"));
+        assertThat(target.hosts(), hasItems("b.c.com", "d.e.org"));
         targetsConfigOpt = target.getConfig();
         targetsConfig = targetsConfigOpt.orElseGet(() -> {
             fail("Config was expected to be non-null");
@@ -137,32 +135,32 @@ public class OutboundConfigTest {
                 OutboundTarget.builder("default").addTransport("https").addHost("www.google.com").build(),
                 OutboundTarget.builder("default2").addTransport("http").addHost("localhost").addHost("127.0.0.1").build()
         };
-        OutboundConfig targets = OutboundConfig.from(configNoDefaults, defaultValue);
+        OutboundConfig targets = OutboundConfig.create(configNoDefaults, defaultValue);
 
-        List<OutboundTarget> targetList = targets.getTargets();
+        List<OutboundTarget> targetList = targets.targets();
 
         assertThat(targetList, notNullValue());
         // 2 defaults + one from config file
         assertThat(targetList.size(), is(3));
 
         OutboundTarget target = targetList.get(0);
-        assertThat(target.getName(), is("default"));
-        assertThat(target.getTransports(), hasItems("https"));
-        assertThat(target.getHosts(), hasItems("www.google.com"));
+        assertThat(target.name(), is("default"));
+        assertThat(target.transports(), hasItems("https"));
+        assertThat(target.hosts(), hasItems("www.google.com"));
         Optional<Config> targetsConfig = target.getConfig();
         assertThat(targetsConfig.isPresent(), is(false));
 
         target = targetList.get(1);
-        assertThat(target.getName(), is("default2"));
-        assertThat(target.getTransports(), hasItems("http"));
-        assertThat(target.getHosts(), hasItems("localhost", "127.0.0.1"));
+        assertThat(target.name(), is("default2"));
+        assertThat(target.transports(), hasItems("http"));
+        assertThat(target.hosts(), hasItems("localhost", "127.0.0.1"));
         targetsConfig = target.getConfig();
         assertThat(targetsConfig.isPresent(), is(false));
 
         target = targetList.get(2);
-        assertThat(target.getName(), is("obo"));
-        assertThat(target.getTransports(), hasItems("https"));
-        assertThat(target.getHosts(), hasItems("b.c.com", "d.e.org"));
+        assertThat(target.name(), is("obo"));
+        assertThat(target.transports(), hasItems("https"));
+        assertThat(target.hosts(), hasItems("b.c.com", "d.e.org"));
         targetsConfig = target.getConfig();
 
         Config config = targetsConfig.orElseGet(() -> {
@@ -174,7 +172,7 @@ public class OutboundConfigTest {
 
     @Test
     public void testUserScenario() {
-        OutboundConfig targets = OutboundConfig.parseTargets(configWithDefaults);
+        OutboundConfig targets = OutboundConfig.create(configWithDefaults);
 
         Optional<OutboundTarget> optional = targets.findTarget(buildEnv("https", "a.b.com"));
 
@@ -195,7 +193,7 @@ public class OutboundConfigTest {
                 //intentionally the same config, to make sure we do this in order
                 OutboundTarget.builder("default3").addTransport("http").addHost("localhost").addHost("127.0.0.1").build()
         };
-        OutboundConfig targets = OutboundConfig.parseTargets(configNoDefaults, defaultValue);
+        OutboundConfig targets = OutboundConfig.create(configNoDefaults, defaultValue);
 
         Optional<OutboundTarget> optional = targets.findTarget(buildEnv("https", "d.e.org"));
         assertThat(optional.isPresent(), is(true));
@@ -218,7 +216,7 @@ public class OutboundConfigTest {
     }
 
     private void validateTarget(OutboundTarget target, String name, Map<String, String> expectedProps) {
-        assertThat(target.getName(), is(name));
+        assertThat(target.name(), is(name));
 
         if (expectedProps.isEmpty()) {
             return;
@@ -240,10 +238,10 @@ public class OutboundConfigTest {
 
     private SecurityEnvironment buildEnv(String transport, String host) {
         SecurityEnvironment mock = Mockito.mock(SecurityEnvironment.class);
-        Mockito.when(mock.getTransport()).thenReturn(transport);
-        Mockito.when(mock.getMethod()).thenReturn("GET");
-        Mockito.when(mock.getPath()).thenReturn(Optional.of(""));
-        Mockito.when(mock.getTargetUri()).thenReturn(URI.create(transport + "://" + host));
+        Mockito.when(mock.transport()).thenReturn(transport);
+        Mockito.when(mock.method()).thenReturn("GET");
+        Mockito.when(mock.path()).thenReturn(Optional.of(""));
+        Mockito.when(mock.targetUri()).thenReturn(URI.create(transport + "://" + host));
 
         return mock;
     }

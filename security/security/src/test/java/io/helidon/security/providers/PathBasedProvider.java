@@ -40,7 +40,7 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 public class PathBasedProvider implements AuthenticationProvider, OutboundSecurityProvider, AuthorizationProvider {
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        return CompletableFuture.completedFuture(providerRequest.getEnv().getPath().map(path -> {
+        return CompletableFuture.completedFuture(providerRequest.env().path().map(path -> {
             switch (path) {
             case "/jack":
                 return ResourceBasedProvider.success("path-jack");
@@ -68,7 +68,7 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
 
     @Override
     public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-        return CompletableFuture.completedFuture(context.getEnv().getPath().map(path -> {
+        return CompletableFuture.completedFuture(context.env().path().map(path -> {
             switch (path) {
             case "/atz/permit":
                 return AuthorizationResponse.permit();
@@ -91,7 +91,7 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
-        return providerRequest.getEnv().getPath().isPresent();
+        return providerRequest.env().path().isPresent();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class PathBasedProvider implements AuthenticationProvider, OutboundSecuri
                                                                       SecurityEnvironment outboundEnv,
                                                                       EndpointConfig outboundConfig) {
 
-        return CompletableFuture.completedFuture(providerRequest.getEnv().getPath().map(path -> {
+        return CompletableFuture.completedFuture(providerRequest.env().path().map(path -> {
             switch (path) {
             case "/jack":
                 return OutboundSecurityResponse.withHeaders(mapOf("path", listOf("path-jack")));

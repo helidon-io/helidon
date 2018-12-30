@@ -78,10 +78,10 @@ public final class OutboundOverrideExample {
 
         return startServer(Routing
                                    .builder()
-                                   .register(WebSecurity.from(config))
+                                   .register(WebSecurity.create(config.get("security")))
                                    .get("/hello", (req, res) -> {
-                                       res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::getUser).map(
-                                               Subject::getPrincipal).map(Principal::getName).orElse("Anonymous"));
+                                       res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
+                                               Subject::principal).map(Principal::getName).orElse("Anonymous"));
                                    }),
                            server -> servingPort = server.port());
     }
@@ -91,7 +91,7 @@ public final class OutboundOverrideExample {
 
         return startServer(Routing
                                    .builder()
-                                   .register(WebSecurity.from(config))
+                                   .register(WebSecurity.create(config.get("security")))
                                    .get("/override", OutboundOverrideExample::override)
                                    .get("/propagate", OutboundOverrideExample::propagate),
                            server -> clientPort = server.port());
@@ -107,7 +107,7 @@ public final class OutboundOverrideExample {
                 .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
                 .get(String.class);
 
-        res.send("You are: " + context.getUserName() + ", backend service returned: " + result);
+        res.send("You are: " + context.userName() + ", backend service returned: " + result);
     }
 
     private static void propagate(ServerRequest req, ServerResponse res) {
@@ -116,7 +116,7 @@ public final class OutboundOverrideExample {
                 .property(ClientSecurityFeature.PROPERTY_CONTEXT, context)
                 .get(String.class);
 
-        res.send("You are: " + context.getUserName() + ", backend service returned: " + result);
+        res.send("You are: " + context.userName() + ", backend service returned: " + result);
     }
 
     private static WebTarget webTarget() {

@@ -61,7 +61,7 @@ public final class SecurityFeature implements Feature {
      */
     public SecurityFeature(Security security) {
         this.security = security;
-        this.featureConfig = new FeatureConfig(builder(security).fromConfig(security.getConfig("jersey")));
+        this.featureConfig = new FeatureConfig(builder(security).config(security.configFor("jersey")));
     }
 
     private SecurityFeature(Builder builder) {
@@ -247,7 +247,7 @@ public final class SecurityFeature implements Feature {
          * @param config configuration set to key "jersey" (see example above)
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("prematching-authentication").asBoolean().ifPresent(this::usePrematchingAuthentication);
             config.get("prematching-authorization").asBoolean().ifPresent(this::usePrematchingAuthorization);
             Config myConfig = config.get("defaults");
@@ -268,11 +268,11 @@ public final class SecurityFeature implements Feature {
             return new SecurityFeature(this);
         }
 
-        Security getSecurity() {
+        Security security() {
             return security;
         }
 
-        List<QueryParamHandler> getQueryParamHandlers() {
+        List<QueryParamHandler> queryParamHandlers() {
             return queryParamHandlers;
         }
 

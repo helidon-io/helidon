@@ -33,10 +33,5 @@ enum ProviderSelectionPolicyType {
     /**
      * Explicit class for a custom {@link ProviderSelectionPolicyType}.
      */
-    CLASS;
-
-    // to simplify from config
-    static ProviderSelectionPolicyType from(String value) {
-        return ProviderSelectionPolicyType.valueOf(value);
-    }
+    CLASS
 }

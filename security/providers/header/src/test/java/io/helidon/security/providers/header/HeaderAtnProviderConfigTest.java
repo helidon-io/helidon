@@ -47,24 +47,24 @@ public class HeaderAtnProviderConfigTest extends HeaderAtnProviderTest {
 
     @Override
     HeaderAtnProvider getFullProvider() {
-        return HeaderAtnProvider.fromConfig(config.get("full-config"));
+        return HeaderAtnProvider.create(config.get("full-config"));
     }
 
     @Override
     HeaderAtnProvider getServiceProvider() {
-        return HeaderAtnProvider.fromConfig(config.get("service-config"));
+        return HeaderAtnProvider.create(config.get("service-config"));
     }
 
     @Override
     HeaderAtnProvider getNoSecurityProvider() {
-        return HeaderAtnProvider.fromConfig(config.get("no-atn-outbound-config"));
+        return HeaderAtnProvider.create(config.get("no-atn-outbound-config"));
     }
 
     @Test
     public void testProviderService() {
         String username = "username";
 
-        Security security = Security.fromConfig(config);
+        Security security = Security.create(config.get("security"));
         SecurityContext context = security.contextBuilder("unit-test")
                 .env(SecurityEnvironment.builder()
                              .header("Authorization", "bearer " + username)
@@ -73,16 +73,16 @@ public class HeaderAtnProviderConfigTest extends HeaderAtnProviderTest {
 
         AuthenticationResponse response = context.atnClientBuilder().buildAndGet();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getUser(), is(not(Optional.empty())));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.user(), is(not(Optional.empty())));
 
-        response.getUser()
-                .map(Subject::getPrincipal)
+        response.user()
+                .map(Subject::principal)
                 .map(Principal::getName)
                 .ifPresent(user -> {
                     assertThat(user, is(username));
                 });
 
-        assertThat(response.getService(), is(Optional.empty()));
+        assertThat(response.service(), is(Optional.empty()));
     }
 }

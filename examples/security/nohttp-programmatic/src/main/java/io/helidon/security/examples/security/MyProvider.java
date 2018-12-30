@@ -43,7 +43,7 @@ class MyProvider extends SynchronousProvider implements AuthenticationProvider, 
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
         //get username and password
-        List<String> headers = providerRequest.getEnv().getHeaders().getOrDefault("authorization", CollectionsHelper.listOf());
+        List<String> headers = providerRequest.env().headers().getOrDefault("authorization", CollectionsHelper.listOf());
         if (headers.isEmpty()) {
             return AuthenticationResponse.failed("No authorization header");
         }
@@ -78,12 +78,12 @@ class MyProvider extends SynchronousProvider implements AuthenticationProvider, 
     @Override
     protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
         if ("CustomResourceType"
-                .equals(providerRequest.getEnv().getAttribute("resourceType").orElseThrow(() -> new IllegalArgumentException(
+                .equals(providerRequest.env().abacAttribute("resourceType").orElseThrow(() -> new IllegalArgumentException(
                         "Resource type is a required parameter")))) {
             //supported resource
-            return providerRequest.getContext()
-                    .getUser()
-                    .map(Subject::getPrincipal)
+            return providerRequest.securityContext()
+                    .user()
+                    .map(Subject::principal)
                     .map(Principal::getName)
                     .map("aUser"::equals)
                     .map(correct -> {
@@ -103,9 +103,9 @@ class MyProvider extends SynchronousProvider implements AuthenticationProvider, 
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
 
-        return providerRequest.getContext()
-                .getUser()
-                .flatMap(subject -> subject.getPrivateCredential(MyPrivateCreds.class))
+        return providerRequest.securityContext()
+                .user()
+                .flatMap(subject -> subject.privateCredential(MyPrivateCreds.class))
                 .map(myPrivateCreds -> OutboundSecurityResponse.builder()
                         .requestHeader("Authorization", authHeader(myPrivateCreds))
                         .build()

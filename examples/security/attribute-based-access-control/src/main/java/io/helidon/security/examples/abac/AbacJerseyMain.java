@@ -215,7 +215,7 @@ public final class AbacJerseyMain {
                 return Response.ok().entity("fine, sir").build();
             } else {
                 return Response.status(Response.Status.FORBIDDEN)
-                        .entity(atzResponse.getDescription().orElse("Access not granted"))
+                        .entity(atzResponse.description().orElse("Access not granted"))
                         .build();
             }
         }

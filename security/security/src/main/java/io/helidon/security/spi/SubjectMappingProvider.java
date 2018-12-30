@@ -25,13 +25,13 @@ import io.helidon.security.ProviderRequest;
  * to a new subject.
  * This may be replacing the subject, adding roles to the subject etc.
  *
- * Subjects may be a {@link ProviderRequest#getSubject() user subject} or a {@link ProviderRequest#getService() service subject}.
+ * Subjects may be a {@link ProviderRequest#subject() user subject} or a {@link ProviderRequest#service() service subject}.
  */
 @FunctionalInterface
 public interface SubjectMappingProvider extends SecurityProvider {
     /**
-     * Map grants from authenticated request (e.g. one or both of {@link ProviderRequest#getSubject()} or
-     * {@link ProviderRequest#getService()} returns a non-empty value) to a new authentication response.
+     * Map grants from authenticated request (e.g. one or both of {@link ProviderRequest#subject()} or
+     * {@link ProviderRequest#service()} returns a non-empty value) to a new authentication response.
      *
      * The provider can change/add/remove grants (such as groups, scopes, permissions) or change the subject to a different
      * one.

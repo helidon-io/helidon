@@ -87,7 +87,7 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
             }
             return AuthenticationResponse.failed("Failed processing: " + throwable.getMessage(), throwable);
         }).thenApply(authenticationResponse -> {
-            if (authenticationResponse.getStatus() == SecurityResponse.SecurityStatus.ABSTAIN) {
+            if (authenticationResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
                 // todo check if this is correct - optional is possible on too many places, maybe atn client should check it?
                 //                if (request.isOptional()) {
                 //                    return AuthenticationResponse
@@ -105,22 +105,22 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
     private AuthenticationResponse processProvider(Atn providerConfig,
                                                    AuthenticationResponse prevResponse,
                                                    AuthenticationResponse thisResponse) {
-        CompositeProviderFlag flag = providerConfig.config.getFlag();
+        CompositeProviderFlag flag = providerConfig.config.flag();
 
-        if (!flag.isValid(thisResponse.getStatus())) {
+        if (!flag.isValid(thisResponse.status())) {
             // terminate sequence
             // not a valid response for this provider, terminate sequence
             // if the response is other than fail, create a new fail
-            switch (thisResponse.getStatus()) {
+            switch (thisResponse.status()) {
             case SUCCESS:
             case SUCCESS_FINISH:
             case ABSTAIN:
                 AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
                 builder.status(SecurityResponse.SecurityStatus.FAILURE);
                 builder.description("Composite flag forbids this response: "
-                                            + thisResponse.getStatus());
-                thisResponse.getDescription().map(builder::description);
-                thisResponse.getThrowable().map(builder::throwable);
+                                            + thisResponse.status());
+                thisResponse.description().map(builder::description);
+                thisResponse.throwable().map(builder::throwable);
                 throw new AsyncAtnException(builder.build());
             case FAILURE:
             case FAILURE_FINISH:
@@ -130,32 +130,32 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
         }
 
         if ((flag == CompositeProviderFlag.SUFFICIENT) && (
-                thisResponse.getStatus() == SecurityResponse.SecurityStatus.SUCCESS)) {
+                thisResponse.status() == SecurityResponse.SecurityStatus.SUCCESS)) {
             // if flag is sufficient and we have success, finish processing
             throw new AsyncAtnException(thisResponse);
         }
 
         // I only care about success
-        if (prevResponse.getStatus() == SecurityResponse.SecurityStatus.ABSTAIN) {
-            return thisResponse.getStatus().isSuccess() ? thisResponse : prevResponse;
+        if (prevResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
+            return thisResponse.status().isSuccess() ? thisResponse : prevResponse;
         }
 
-        if (!thisResponse.getStatus().isSuccess()) {
+        if (!thisResponse.status().isSuccess()) {
             return prevResponse;
         }
 
         AuthenticationResponse.Builder responseBuilder = AuthenticationResponse.builder();
 
         // combine principals
-        OptionalHelper.from(prevResponse.getUser()
-                                    .map(user -> combine(user, thisResponse.getUser())))
-                .or(thisResponse::getUser)
+        OptionalHelper.from(prevResponse.user()
+                                    .map(user -> combine(user, thisResponse.user())))
+                .or(thisResponse::user)
                 .asOptional()
                 .ifPresent(responseBuilder::user);
 
-        OptionalHelper.from(prevResponse.getService()
-                                    .map(service -> combine(service, thisResponse.getService())))
-                .or(thisResponse::getService)
+        OptionalHelper.from(prevResponse.service()
+                                    .map(service -> combine(service, thisResponse.service())))
+                .or(thisResponse::service)
                 .asOptional()
                 .ifPresent(responseBuilder::service);
 

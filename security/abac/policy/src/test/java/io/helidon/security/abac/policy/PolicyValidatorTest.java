@@ -45,7 +45,7 @@ public class PolicyValidatorTest {
         when(sc.isAuthenticated()).thenReturn(true);
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(sc);
+        when(request.securityContext()).thenReturn(sc);
         when(request.getObject()).thenReturn(Optional.empty());
 
         PolicyValidator.PolicyConfig pc = PolicyValidator.PolicyConfig.builder()
@@ -67,7 +67,7 @@ public class PolicyValidatorTest {
         when(sc.isAuthenticated()).thenReturn(false);
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(sc);
+        when(request.securityContext()).thenReturn(sc);
         when(request.getObject()).thenReturn(Optional.empty());
 
         PolicyValidator.PolicyConfig pc = PolicyValidator.PolicyConfig.builder()

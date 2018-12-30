@@ -72,17 +72,17 @@ public class SignatureExampleBuilderMain {
     private static void addUser(String user, String password, List<String> roles) {
         USERS.put(user, new UserStore.User() {
             @Override
-            public String getLogin() {
+            public String login() {
                 return user;
             }
 
             @Override
-            public char[] getPassword() {
+            public char[] password() {
                 return password.toCharArray();
             }
 
             @Override
-            public Collection<String> getRoles() {
+            public Collection<String> roles() {
                 return roles;
             }
         });
@@ -123,7 +123,7 @@ public class SignatureExampleBuilderMain {
         // build routing (security is loaded from config)
         return Routing.builder()
                 // helper method to load both security and web server security from configuration
-                .register(WebSecurity.from(security2()).securityDefaults(WebSecurity.authenticate()))
+                .register(WebSecurity.create(security2()).securityDefaults(WebSecurity.authenticate()))
                 .get("/service2", WebSecurity.rolesAllowed("user"))
                 .get("/service2-rsa", WebSecurity.rolesAllowed("user"))
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
@@ -131,10 +131,10 @@ public class SignatureExampleBuilderMain {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Response from service2, you are: \n" + securityContext
-                            .flatMap(SecurityContext::getUser)
+                            .flatMap(SecurityContext::user)
                             .map(Subject::toString)
                             .orElse("Security context is null") + ", service: " + securityContext
-                            .flatMap(SecurityContext::getService)
+                            .flatMap(SecurityContext::service)
                             .map(Subject::toString));
                 })
                 .build();
@@ -143,7 +143,7 @@ public class SignatureExampleBuilderMain {
     private static Routing routing1() {
         // build routing (security is loaded from config)
         return Routing.builder()
-                .register(WebSecurity.from(security1()).securityDefaults(WebSecurity.authenticate()))
+                .register(WebSecurity.create(security1()).securityDefaults(WebSecurity.authenticate()))
                 .get("/service1",
                      WebSecurity.rolesAllowed("user"),
                      (req, res) -> SignatureExampleUtil.processService1Request(req, res, "/service2", service2Server.port()))

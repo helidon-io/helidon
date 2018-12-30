@@ -31,12 +31,12 @@ public class JwtProviderService implements SecurityProviderService {
     }
 
     @Override
-    public Class<? extends SecurityProvider> getProviderClass() {
+    public Class<? extends SecurityProvider> providerClass() {
         return JwtProvider.class;
     }
 
     @Override
-    public SecurityProvider getProviderInstance(Config config) {
-        return JwtProvider.fromConfig(config);
+    public SecurityProvider providerInstance(Config config) {
+        return JwtProvider.create(config);
     }
 }

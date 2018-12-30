@@ -36,7 +36,7 @@ public class JerseyConfigMain {
     }
 
     private static SecurityFeature buildSecurity() {
-        return new SecurityFeature(Security.fromConfig(Config.create()));
+        return new SecurityFeature(Security.create(Config.create().get("security")));
     }
 
     private static JerseySupport buildJersey() {

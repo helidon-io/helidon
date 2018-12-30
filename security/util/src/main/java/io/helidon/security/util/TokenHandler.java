@@ -116,8 +116,8 @@ public final class TokenHandler {
      * @param config config to parse into an instance of this object
      * @return a new instance configured from config
      */
-    public static TokenHandler fromConfig(Config config) {
-        return builder().fromConfig(config).build();
+    public static TokenHandler create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -150,7 +150,11 @@ public final class TokenHandler {
         return headerExtractor.apply(tokenRawValue);
     }
 
-    public String getTokenHeader() {
+    /**
+     * Name of the header the token is expected in (or will be written into).
+     * @return header name
+     */
+    public String tokenHeader() {
         return tokenHeader;
     }
 
@@ -161,7 +165,7 @@ public final class TokenHandler {
      * @param headers Headers to update
      * @param token   Token value
      */
-    public void setHeader(Map<String, List<String>> headers, String token) {
+    public void header(Map<String, List<String>> headers, String token) {
         headers.put(tokenHeader, singletonList(headerCreator.apply(token)));
     }
 
@@ -190,11 +194,14 @@ public final class TokenHandler {
     /**
      * Fluent API builder to create {@link TokenHandler}.
      */
-    public static class Builder implements io.helidon.common.Builder<TokenHandler> {
+    public static final class Builder implements io.helidon.common.Builder<TokenHandler> {
         private String tokenHeader;
         private String tokenPrefix;
         private Pattern tokenPattern;
         private String tokenFormat;
+
+        private Builder() {
+        }
 
         /**
          * Set the name of header to look into to extract the token.
@@ -253,7 +260,7 @@ public final class TokenHandler {
          * @param config Configuration to update from
          * @return update builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("header").asString().ifPresent(this::tokenHeader);
             config.get("prefix").asString().ifPresent(this::tokenPrefix);
             config.get("regexp").as(Pattern.class).ifPresent(this::tokenPattern);

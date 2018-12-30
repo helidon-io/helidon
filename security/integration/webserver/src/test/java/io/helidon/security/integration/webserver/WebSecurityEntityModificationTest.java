@@ -69,7 +69,7 @@ public class WebSecurityEntityModificationTest {
         Security security = buildSecurity();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.from(security))
+                .register(WebSecurity.create(security))
                 // secure post
                 .post("/", WebSecurity.authenticate())
                 .post("/", (req, res) -> {
@@ -96,7 +96,7 @@ public class WebSecurityEntityModificationTest {
 
     private static Security buildSecurity() {
         return Security.builder().addAuthenticationProvider(request -> {
-            request.getResponseEntity().ifPresent(message -> {
+            request.responseEntity().ifPresent(message -> {
                 // this is a test - just append " Suffix" to response message
                 message.filter(inPublisher -> {
                     SubmissionPublisher<ByteBuffer> outPublisher = new SubmissionPublisher<>();
@@ -133,7 +133,7 @@ public class WebSecurityEntityModificationTest {
                 });
             });
 
-            return request.getRequestEntity()
+            return request.requestEntity()
                     .map(message -> {
 
                         // this message filter will forward the message and once done, publish additional data

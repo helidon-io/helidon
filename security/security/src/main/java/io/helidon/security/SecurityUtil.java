@@ -64,38 +64,38 @@ final class SecurityUtil {
     static AuditProvider.TracedAuditEvent wrapEvent(String tracingId, AuditProvider.AuditSource auditSource, AuditEvent event) {
         return new AuditProvider.TracedAuditEvent() {
             @Override
-            public AuditProvider.AuditSource getAuditSource() {
+            public AuditProvider.AuditSource auditSource() {
                 return auditSource;
             }
 
             @Override
-            public String getTracingId() {
+            public String tracingId() {
                 return tracingId;
             }
 
             @Override
-            public String getEventType() {
-                return event.getEventType();
+            public String eventType() {
+                return event.eventType();
             }
 
             @Override
-            public Optional<Throwable> getThrowable() {
-                return event.getThrowable();
+            public Optional<Throwable> throwable() {
+                return event.throwable();
             }
 
             @Override
-            public List<AuditEvent.AuditParam> getParams() {
-                return event.getParams();
+            public List<AuditEvent.AuditParam> params() {
+                return event.params();
             }
 
             @Override
-            public String getMessageFormat() {
-                return event.getMessageFormat();
+            public String messageFormat() {
+                return event.messageFormat();
             }
 
             @Override
-            public AuditEvent.AuditSeverity getSeverity() {
-                return event.getSeverity();
+            public AuditEvent.AuditSeverity severity() {
+                return event.severity();
             }
 
             @Override

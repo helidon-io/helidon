@@ -30,7 +30,7 @@ public class HttpSignProviderConfigTest extends HttpSignProviderTest {
     public static void initClass() {
         Config config = Config.create();
 
-        instance = HttpSignProvider.fromConfig(config.get("security.providers.0.http-signatures"));
+        instance = HttpSignProvider.create(config.get("security.providers.0.http-signatures"));
     }
 
     @Override

@@ -55,7 +55,7 @@ public final class GoogleBuilderMain {
                 .addProvider(GoogleTokenProvider.builder()
                                      .clientId("your-client-id.apps.googleusercontent.com"))
                 .build();
-        WebSecurity ws = WebSecurity.from(security);
+        WebSecurity ws = WebSecurity.create(security);
 
         Routing.Builder routing = Routing.builder()
                 .register(ws)
@@ -65,7 +65,7 @@ public final class GoogleBuilderMain {
                          Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                          res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                          res.send("Response from builder based service, you are: \n" + securityContext
-                                 .flatMap(SecurityContext::getUser)
+                                 .flatMap(SecurityContext::user)
                                  .map(Subject::toString)
                                  .orElse("Security context is null"));
                          req.next();

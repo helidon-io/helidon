@@ -91,7 +91,7 @@ final class CompositeAuthorizationProvider implements AuthorizationProvider {
                     .throwable(throwable)
                     .build();
         }).thenApply(atzResponse -> {
-            if (atzResponse.getStatus() == SecurityResponse.SecurityStatus.ABSTAIN) {
+            if (atzResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
                 // TODO how to resolve optional - too many places to configure it
                 //                if (context.getSecurityContext().getEndpointConfig().isOptional()) {
                 //                    return AuthorizationResponse.permit();
@@ -106,21 +106,21 @@ final class CompositeAuthorizationProvider implements AuthorizationProvider {
 
     private AuthorizationResponse processProvider(Atz providerConfig,
                                                   AuthorizationResponse prevResponse, AuthorizationResponse thisResponse) {
-        CompositeProviderFlag flag = providerConfig.config.getFlag();
+        CompositeProviderFlag flag = providerConfig.config.flag();
 
-        if (!flag.isValid(thisResponse.getStatus())) {
+        if (!flag.isValid(thisResponse.status())) {
             // not a valid response for this provider, terminate sequence
             // if the response is other than fail, create a new fail
-            switch (thisResponse.getStatus()) {
+            switch (thisResponse.status()) {
             case SUCCESS:
             case SUCCESS_FINISH:
             case ABSTAIN:
                 AuthorizationResponse.Builder builder = AuthorizationResponse.builder();
                 builder.status(SecurityResponse.SecurityStatus.FAILURE);
                 builder.description("Composite flag forbids this response: "
-                                            + thisResponse.getStatus());
-                thisResponse.getDescription().map(builder::description);
-                thisResponse.getThrowable().map(builder::throwable);
+                                            + thisResponse.status());
+                thisResponse.description().map(builder::description);
+                thisResponse.throwable().map(builder::throwable);
                 throw new AsyncAtzException(builder.build());
             case FAILURE:
             case FAILURE_FINISH:
@@ -130,19 +130,19 @@ final class CompositeAuthorizationProvider implements AuthorizationProvider {
         }
 
         if ((flag == CompositeProviderFlag.SUFFICIENT) && (
-                thisResponse.getStatus() == SecurityResponse.SecurityStatus.SUCCESS)) {
+                thisResponse.status() == SecurityResponse.SecurityStatus.SUCCESS)) {
             // if flag is sufficient and we have success, finish processing
             throw new AsyncAtzException(thisResponse);
         }
 
-        if (prevResponse.getStatus() == SecurityResponse.SecurityStatus.ABSTAIN) {
+        if (prevResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
             // previous was abstain, no need to modify anything, just return
             // "better" result
-            return thisResponse.getStatus().isSuccess() ? thisResponse : prevResponse;
+            return thisResponse.status().isSuccess() ? thisResponse : prevResponse;
         }
 
         // this request failed, return previous without modification
-        if (!thisResponse.getStatus().isSuccess()) {
+        if (!thisResponse.status().isSuccess()) {
             return prevResponse;
         }
 

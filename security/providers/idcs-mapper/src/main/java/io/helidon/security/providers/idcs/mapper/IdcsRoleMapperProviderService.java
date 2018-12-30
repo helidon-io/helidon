@@ -29,12 +29,12 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
     }
 
     @Override
-    public Class<? extends SecurityProvider> getProviderClass() {
+    public Class<? extends SecurityProvider> providerClass() {
         return IdcsRoleMapperProvider.class;
     }
 
     @Override
-    public SecurityProvider getProviderInstance(Config config) {
+    public SecurityProvider providerInstance(Config config) {
         return IdcsRoleMapperProvider.create(config);
     }
 }

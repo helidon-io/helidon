@@ -27,7 +27,7 @@ import io.helidon.security.SecurityContext;
  * Base interface for all security providers.
  *
  * @see EndpointConfig
- * @see SecurityContext#getEndpointConfig()
+ * @see SecurityContext#endpointConfig()
  */
 public interface SecurityProvider {
     /**
@@ -36,7 +36,7 @@ public interface SecurityProvider {
      * class and resource methods will be collected.
      *
      * @return Collection of annotations this provider expects.
-     * @see EndpointConfig#getAnnotations(EndpointConfig.AnnotationScope...)
+     * @see EndpointConfig#annotations(EndpointConfig.AnnotationScope...)
      * @see EndpointConfig#combineAnnotations(Class, EndpointConfig.AnnotationScope...)
      */
     default Collection<Class<? extends Annotation>> supportedAnnotations() {
@@ -50,7 +50,7 @@ public interface SecurityProvider {
      * is to be used by this provider to evaluate security.
      *
      * @return name of the configuration key or empty (default)
-     * @see EndpointConfig#getConfig(String)
+     * @see EndpointConfig#config(String)
      */
     default Collection<String> supportedConfigKeys() {
         return CollectionsHelper.setOf();
@@ -63,7 +63,7 @@ public interface SecurityProvider {
      * of such a class to configure that provider.
      *
      * @return class of the type or empty (default)
-     * @see EndpointConfig#getInstance(Class)
+     * @see EndpointConfig#instance(Class)
      */
     default Collection<Class<? extends ProviderConfig>> supportedCustomObjects() {
         return CollectionsHelper.setOf();
@@ -74,7 +74,7 @@ public interface SecurityProvider {
      * configuration.
      *
      * @return collection of supported attribute names
-     * @see EndpointConfig#getAttribute(String)
+     * @see EndpointConfig#abacAttribute(String)
      */
     default Collection<String> supportedAttributes() {
         return CollectionsHelper.setOf();

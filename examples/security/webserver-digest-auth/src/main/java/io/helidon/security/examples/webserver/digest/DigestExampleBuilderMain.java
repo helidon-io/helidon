@@ -77,7 +77,7 @@ public final class DigestExampleBuilderMain {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.getUser().orElse(SecurityContext.ANONYMOUS).toString())
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
                 })
                 .build();
@@ -95,7 +95,7 @@ public final class DigestExampleBuilderMain {
                                 .userStore(buildUserStore()),
                         "digest-auth")
                 .build();
-        return WebSecurity.from(security);
+        return WebSecurity.create(security);
     }
 
     private static UserStore buildUserStore() {
@@ -118,17 +118,17 @@ public final class DigestExampleBuilderMain {
         }
 
         @Override
-        public char[] getPassword() {
+        public char[] password() {
             return password;
         }
 
         @Override
-        public Set<String> getRoles() {
+        public Set<String> roles() {
             return roles;
         }
 
         @Override
-        public String getLogin() {
+        public String login() {
             return login;
         }
     }

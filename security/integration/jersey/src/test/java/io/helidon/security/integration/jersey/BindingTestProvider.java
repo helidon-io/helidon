@@ -39,7 +39,7 @@ public class BindingTestProvider extends SynchronousProvider
     @Override
     protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
         String path = providerRequest
-                .getEnv().getPath().orElseThrow(() -> new IllegalArgumentException("Path is a required parameter"));
+                .env().path().orElseThrow(() -> new IllegalArgumentException("Path is a required parameter"));
         if ("/deny".equals(path)) {
             return AuthorizationResponse.deny();
         }
@@ -48,7 +48,7 @@ public class BindingTestProvider extends SynchronousProvider
 
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
-        List<String> strings = providerRequest.getEnv().getHeaders().get("x-user");
+        List<String> strings = providerRequest.env().headers().get("x-user");
 
         if (null == strings) {
             return AuthenticationResponse.abstain();
@@ -60,10 +60,10 @@ public class BindingTestProvider extends SynchronousProvider
     protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
-        return providerRequest.getContext()
-                .getUser()
+        return providerRequest.securityContext()
+                .user()
                 .map(user -> OutboundSecurityResponse
-                        .withHeaders(CollectionsHelper.mapOf("x-user", CollectionsHelper.listOf(user.getPrincipal().getId()))))
+                        .withHeaders(CollectionsHelper.mapOf("x-user", CollectionsHelper.listOf(user.principal().id()))))
                 .orElse(OutboundSecurityResponse.abstain());
     }
 }

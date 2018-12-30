@@ -95,16 +95,16 @@ public class ProgrammaticSecurity {
     private void propagate() {
         OutboundSecurityResponse response = CONTEXT.get().outboundClientBuilder().buildAndGet();
 
-        switch (response.getStatus()) {
+        switch (response.status()) {
         case SUCCESS:
             //we should have "Authorization" header present and just need to update request headers of our outbound call
-            System.out.println("Authorization header: " + response.getRequestHeaders().get("Authorization"));
+            System.out.println("Authorization header: " + response.requestHeaders().get("Authorization"));
             break;
         case SUCCESS_FINISH:
             System.out.println("Identity propagation done, request sent...");
             break;
         default:
-            System.out.println("Failed in identity propagation provider: " + response.getDescription().orElse(null));
+            System.out.println("Failed in identity propagation provider: " + response.description().orElse(null));
             break;
         }
     }
@@ -116,14 +116,14 @@ public class ProgrammaticSecurity {
             throw new IllegalStateException("User is not in expected role");
         }
 
-        context.setEnv(context.getEnv()
+        context.env(context.env()
                                .derive()
                                .addAttribute("resourceType", "CustomResourceType"));
 
         //check authorization through provider
         AuthorizationResponse response = context.atzClientBuilder().buildAndGet();
 
-        if (response.getStatus().isSuccess()) {
+        if (response.status().isSuccess()) {
             //ok, process resource
             System.out.println("Resource processed");
         } else {
@@ -133,17 +133,17 @@ public class ProgrammaticSecurity {
 
     private Subject login() {
         SecurityContext securityContext = CONTEXT.get();
-        securityContext.setEnv(securityContext.getEnv().derive()
+        securityContext.env(securityContext.env().derive()
                                        .path("/some/path")
                                        .header("Authorization", buildBasic("aUser", "aPassword")));
 
         AuthenticationResponse response = securityContext.atnClientBuilder().buildAndGet();
 
-        if (response.getStatus().isSuccess()) {
-            return response.getUser().orElseThrow(() -> new IllegalStateException("No user authenticated!"));
+        if (response.status().isSuccess()) {
+            return response.user().orElseThrow(() -> new IllegalStateException("No user authenticated!"));
         }
 
-        throw new RuntimeException("Failed to authenticate", response.getThrowable().orElse(null));
+        throw new RuntimeException("Failed to authenticate", response.throwable().orElse(null));
     }
 
     private void init() {

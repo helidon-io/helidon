@@ -95,8 +95,8 @@ public class SecurityTime {
      *               important)
      * @return a new instance of time configured from this configuration
      */
-    public static SecurityTime from(Config config) {
-        return builder().fromConfig(config).build();
+    public static SecurityTime create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -121,9 +121,9 @@ public class SecurityTime {
      * Fluent API builder for {@link SecurityTime}.
      */
     public static final class Builder implements io.helidon.common.Builder<SecurityTime> {
+        private final List<ChronoValues> values = new ArrayList<>();
         private ZoneId timeZone = ZoneId.systemDefault();
         private long shiftBySeconds = 0;
-        private List<ChronoValues> values = new ArrayList<>();
 
         private Builder() {
         }
@@ -188,7 +188,7 @@ public class SecurityTime {
          * @param config configuration to read data from
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             // modification, time flows as usual
             config.get("time-zone").asString().map(ZoneId::of).ifPresent(this::timeZone);
             config.get("shift-by-seconds").asLong().ifPresent(this::shiftBySeconds);

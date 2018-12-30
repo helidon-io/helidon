@@ -45,7 +45,7 @@ public class AuditerTest {
                 .build();
 
         SecurityContext context = sec.createContext("unit-test");
-        context.setEnv(SecurityEnvironment.builder()
+        context.env(SecurityEnvironment.builder()
                                .path("/public/path"));
 
         AuthorizationResponse response = context.authorize();
@@ -57,7 +57,7 @@ public class AuditerTest {
         // there should be two messages - configuration of security and authorization
 
         List<AuditProvider.TracedAuditEvent> atzEvents = messages.stream()
-                .filter(event -> event.getEventType().startsWith(AuditEvent.AUTHZ_TYPE_PREFIX))
+                .filter(event -> event.eventType().startsWith(AuditEvent.AUTHZ_TYPE_PREFIX))
                 .collect(Collectors.toList());
 
         assertThat("We only expect a single authorization event", atzEvents.size(), is(1));

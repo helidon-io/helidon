@@ -53,19 +53,19 @@ public class ConfigUserStore implements UserStore {
      * @param config to load this user store from
      * @return {@link UserStore} instance
      */
-    public static ConfigUserStore fromConfig(Config config) {
+    public static ConfigUserStore create(Config config) {
         ConfigUserStore store = new ConfigUserStore();
 
         config.asNodeList().ifPresent(configs -> configs.forEach(config1 -> {
-            User user = config1.as(ConfigUser::fromConfig).get();
-            store.users.put(user.getLogin(), user);
+            User user = config1.as(ConfigUser::create).get();
+            store.users.put(user.login(), user);
         }));
 
         return store;
     }
 
     @Override
-    public Optional<User> getUser(String login) {
+    public Optional<User> user(String login) {
         return Optional.ofNullable(users.get(login));
     }
 
@@ -74,7 +74,7 @@ public class ConfigUserStore implements UserStore {
         private String login;
         private char[] password;
 
-        static ConfigUser fromConfig(Config config) {
+        static ConfigUser create(Config config) {
             ConfigUser cu = new ConfigUser();
 
             cu.login = config.get("login").asString().get();
@@ -85,17 +85,17 @@ public class ConfigUserStore implements UserStore {
         }
 
         @Override
-        public String getLogin() {
+        public String login() {
             return login;
         }
 
         @Override
-        public char[] getPassword() {
+        public char[] password() {
             return password;
         }
 
         @Override
-        public Set<String> getRoles() {
+        public Set<String> roles() {
             return roles;
         }
 

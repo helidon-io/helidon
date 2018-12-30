@@ -42,30 +42,6 @@ public class HttpDigest {
         }
 
         /**
-         * Parse configuration into this enum.
-         *
-         * @param config Config with wrapped enum value
-         * @return enum instance
-         */
-        public static Algorithm fromConfig(Config config) {
-            return fromString(config.asString().get());
-        }
-
-        static Algorithm fromString(String value) {
-            if (null == value) {
-                // incoming request did not contain an algorithm - MD5 is default
-                return MD5;
-            }
-            for (Algorithm algorithm : Algorithm.values()) {
-                if (algorithm.getAlgorithm().equals(value)) {
-                    return algorithm;
-                }
-            }
-            throw new IllegalArgumentException("Invalid algorithm for digest: " + value + ", allowed: " + Arrays
-                    .toString(Algorithm.values()));
-        }
-
-        /**
          * Get the algorithm string.
          *
          * @return algorithm string as used in RFC
@@ -104,7 +80,7 @@ public class HttpDigest {
          * @param config Config with wrapped enum value
          * @return enum instance
          */
-        public static Qop fromConfig(Config config) {
+        public static Qop create(Config config) {
             return fromString(config.asString().get());
         }
 

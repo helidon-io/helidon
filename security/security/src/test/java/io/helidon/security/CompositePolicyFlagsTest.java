@@ -51,49 +51,49 @@ public class CompositePolicyFlagsTest {
         AuthorizationProvider atz = psp.selectProvider(AuthorizationProvider.class).get();
 
         SecurityResponse res = SecurityResponse.get(atn.authenticate(request("/jack", "jack")));
-        assertThat(res.getStatus(), is(conf.okOk));
+        assertThat(res.status(), is(conf.okOk));
         res = SecurityResponse.get(atz.authorize(request("/atz/permit", "atz/permit")));
-        assertThat(res.getStatus(), is(conf.okOk));
+        assertThat(res.status(), is(conf.okOk));
 
         res = SecurityResponse.get(atn.authenticate(request("/jack", "abstain")));
-        assertThat(res.getStatus(), is(conf.okAbstain));
+        assertThat(res.status(), is(conf.okAbstain));
         res = SecurityResponse.get(atz.authorize(request("/atz/permit", "atz/abstain")));
-        assertThat(res.getStatus(), is(conf.okAbstain));
+        assertThat(res.status(), is(conf.okAbstain));
 
         res = SecurityResponse.get(atn.authenticate(request("/jack", "fail")));
-        assertThat(res.getStatus(), is(conf.okFail));
+        assertThat(res.status(), is(conf.okFail));
         res = SecurityResponse.get(atz.authorize(request("/atz/permit", "atz/fail")));
-        assertThat(res.getStatus(), is(conf.okFail));
+        assertThat(res.status(), is(conf.okFail));
 
         res = SecurityResponse.get(atn.authenticate(request("/abstain", "jack")));
-        assertThat(res.getStatus(), is(conf.abstainOk));
+        assertThat(res.status(), is(conf.abstainOk));
         res = SecurityResponse.get(atz.authorize(request("/atz/abstain", "atz/permit")));
-        assertThat(res.getStatus(), is(conf.abstainOk));
+        assertThat(res.status(), is(conf.abstainOk));
 
         res = SecurityResponse.get(atn.authenticate(request("/abstain", "abstain")));
-        assertThat(res.getStatus(), is(conf.abstainAbstain));
+        assertThat(res.status(), is(conf.abstainAbstain));
         res = SecurityResponse.get(atz.authorize(request("/atz/abstain", "atz/abstain")));
-        assertThat(res.getStatus(), is(conf.abstainAbstain));
+        assertThat(res.status(), is(conf.abstainAbstain));
 
         res = SecurityResponse.get(atn.authenticate(request("/abstain", "fail")));
-        assertThat(res.getStatus(), is(conf.abstainFail));
+        assertThat(res.status(), is(conf.abstainFail));
         res = SecurityResponse.get(atz.authorize(request("/atz/abstain", "atz/fail")));
-        assertThat(res.getStatus(), is(conf.abstainFail));
+        assertThat(res.status(), is(conf.abstainFail));
 
         res = SecurityResponse.get(atn.authenticate(request("/fail", "jack")));
-        assertThat(res.getStatus(), is(conf.failOk));
+        assertThat(res.status(), is(conf.failOk));
         res = SecurityResponse.get(atz.authorize(request("/atz/fail", "atz/permit")));
-        assertThat(res.getStatus(), is(conf.failOk));
+        assertThat(res.status(), is(conf.failOk));
 
         res = SecurityResponse.get(atn.authenticate(request("/fail", "abstain")));
-        assertThat(res.getStatus(), is(conf.failAbstain));
+        assertThat(res.status(), is(conf.failAbstain));
         res = SecurityResponse.get(atz.authorize(request("/atz/fail", "atz/abstain")));
-        assertThat(res.getStatus(), is(conf.failAbstain));
+        assertThat(res.status(), is(conf.failAbstain));
 
         res = SecurityResponse.get(atn.authenticate(request("/fail", "fail")));
-        assertThat(res.getStatus(), is(conf.failFail));
+        assertThat(res.status(), is(conf.failFail));
         res = SecurityResponse.get(atz.authorize(request("/atz/fail", "atz/fail")));
-        assertThat(res.getStatus(), is(conf.failFail));
+        assertThat(res.status(), is(conf.failFail));
     }
 
     @Test
@@ -314,11 +314,11 @@ public class CompositePolicyFlagsTest {
         ProviderRequest mock = Mockito.mock(ProviderRequest.class);
         SecurityEnvironment se = Mockito.mock(SecurityEnvironment.class);
 
-        when(se.getPath()).thenReturn(Optional.of(path));
-        when(se.getHeaders()).thenReturn(CollectionsHelper.mapOf());
-        when(se.getAttribute("resourceType")).thenReturn(Optional.of(resource));
+        when(se.path()).thenReturn(Optional.of(path));
+        when(se.headers()).thenReturn(CollectionsHelper.mapOf());
+        when(se.abacAttribute("resourceType")).thenReturn(Optional.of(resource));
 
-        when(mock.getEnv()).thenReturn(se);
+        when(mock.env()).thenReturn(se);
 
         return mock;
     }

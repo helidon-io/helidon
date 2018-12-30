@@ -43,7 +43,7 @@ import io.helidon.security.abac.policy.spi.PolicyExecutor;
  * See tutorial for details of the EL: <a href="https://docs.oracle.com/javaee/7/tutorial/jsf-el005.htm#BNAIK">https://docs
  * .oracle.com/javaee/7/tutorial/jsf-el005.htm#BNAIK</a>
  */
-public class JavaxElPolicyExecutor implements PolicyExecutor {
+public final class JavaxElPolicyExecutor implements PolicyExecutor {
     private static final Logger LOGGER = Logger.getLogger(JavaxElPolicyExecutor.class.getName());
     private static final AttributeResolver ATTRIBUTE_RESOLVER = new AttributeResolver();
     private final ExpressionFactory ef;
@@ -69,8 +69,8 @@ public class JavaxElPolicyExecutor implements PolicyExecutor {
      * @param config configuration located on the key provided by {@link JavaxElPolicyExecutorService#configKey()}
      * @return a new configured instance
      */
-    public static JavaxElPolicyExecutor from(Config config) {
-        return builder().fromConfig(config).build();
+    public static JavaxElPolicyExecutor create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -94,12 +94,12 @@ public class JavaxElPolicyExecutor implements PolicyExecutor {
                                                                       customFunction.localName,
                                                                       customFunction.method));
 
-        Subject userSubject = request.getSubject().orElse(SecurityContext.ANONYMOUS);
+        Subject userSubject = request.subject().orElse(SecurityContext.ANONYMOUS);
 
         variable(variables, "user", userSubject, Subject.class);
         variable(variables, "subject", userSubject, Subject.class);
-        variable(variables, "service", request.getService().orElse(SecurityContext.ANONYMOUS), Subject.class);
-        variable(variables, "env", request.getEnv(), SecurityEnvironment.class);
+        variable(variables, "service", request.service().orElse(SecurityContext.ANONYMOUS), Subject.class);
+        variable(variables, "env", request.env(), SecurityEnvironment.class);
         variable(variables, "object", request.getObject().orElse(null), Object.class);
         variable(variables, "request", request, ProviderRequest.class);
 
@@ -126,9 +126,9 @@ public class JavaxElPolicyExecutor implements PolicyExecutor {
     /**
      * A fluent API builder for {@link JavaxElPolicyExecutor}.
      */
-    public static class Builder implements io.helidon.common.Builder<JavaxElPolicyExecutor> {
+    public static final class Builder implements io.helidon.common.Builder<JavaxElPolicyExecutor> {
+        private final List<CustomFunction> customMethods = new LinkedList<>();
         private ExpressionFactory expressionFactory;
-        private List<CustomFunction> customMethods = new LinkedList<>();
 
         private Builder() {
             // configure built-in methods
@@ -218,16 +218,16 @@ public class JavaxElPolicyExecutor implements PolicyExecutor {
          * @param config configuration to update from
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             // currently no configurable options exist
             return this;
         }
     }
 
     private static final class CustomFunction {
-        private String prefix;
-        private String localName;
-        private Method method;
+        private final String prefix;
+        private final String localName;
+        private final Method method;
 
         private CustomFunction(String prefix, String localName, Method method) {
             this.prefix = prefix;

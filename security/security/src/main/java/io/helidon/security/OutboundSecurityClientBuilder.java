@@ -50,7 +50,7 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
         return new OutboundSecurityClientImpl(security,
                                               context,
                                               super.buildRequest(),
-                                              super.getProviderName(),
+                                              super.providerName(),
                                               outboundEnvironment,
                                               outboundEndpointConfig);
     }

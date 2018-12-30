@@ -20,7 +20,7 @@
  * to use them for signatures ({@link io.helidon.security.jwt.jwk.Jwk#sign(byte[])} and {@link
  * io.helidon.security.jwt.jwk.Jwk#verifySignature(byte[], byte[])}).
  *
- * @see io.helidon.security.jwt.jwk.Jwk#fromJson(javax.json.JsonObject)
+ * @see io.helidon.security.jwt.jwk.Jwk#create(javax.json.JsonObject)
  * @see io.helidon.security.jwt.jwk.JwkEC
  * @see io.helidon.security.jwt.jwk.JwkRSA
  * @see io.helidon.security.jwt.jwk.JwkOctet

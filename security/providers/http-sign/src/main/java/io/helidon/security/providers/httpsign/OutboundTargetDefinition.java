@@ -27,7 +27,7 @@ import io.helidon.config.Config;
 /**
  * Configuration of outbound target to sign outgoing requests.
  */
-public class OutboundTargetDefinition {
+public final class OutboundTargetDefinition {
     private final String keyId;
     private final String algorithm;
     private final KeyConfig keyConfig;
@@ -72,7 +72,7 @@ public class OutboundTargetDefinition {
      * @return builder instance
      */
     public static Builder builder(Config config) {
-        return new Builder().fromConfig(config);
+        return new Builder().config(config);
     }
 
     /**
@@ -81,7 +81,7 @@ public class OutboundTargetDefinition {
      * @param config configuration located at this outbound key, expects "key-id" to be a child
      * @return new instance configured from config
      */
-    public static OutboundTargetDefinition fromConfig(Config config) {
+    public static OutboundTargetDefinition create(Config config) {
         return builder(config).build();
     }
 
@@ -90,7 +90,7 @@ public class OutboundTargetDefinition {
      *
      * @return key id string (may be an API key, key fingerprint, service name etc.)
      */
-    public String getKeyId() {
+    public String keyId() {
         return keyId;
     }
 
@@ -99,7 +99,7 @@ public class OutboundTargetDefinition {
      *
      * @return algorithm
      */
-    public String getAlgorithm() {
+    public String algorithm() {
         return algorithm;
     }
 
@@ -108,7 +108,7 @@ public class OutboundTargetDefinition {
      *
      * @return private key location and configuration or empty optional if not configured
      */
-    public Optional<KeyConfig> getKeyConfig() {
+    public Optional<KeyConfig> keyConfig() {
         return Optional.ofNullable(keyConfig);
     }
 
@@ -117,7 +117,7 @@ public class OutboundTargetDefinition {
      *
      * @return shared secret or empty optional if not configured
      */
-    public Optional<byte[]> getHmacSharedSecret() {
+    public Optional<byte[]> hmacSharedSecret() {
         return Optional.ofNullable(hmacSharedSecret);
     }
 
@@ -126,7 +126,7 @@ public class OutboundTargetDefinition {
      *
      * @return header type
      */
-    public HttpSignHeader getHeader() {
+    public HttpSignHeader header() {
         return header;
     }
 
@@ -138,12 +138,12 @@ public class OutboundTargetDefinition {
      * <li>date - if not present and required, will be added to request</li>
      * <li>host - if not present and required, will be added to request from target URI</li>
      * <li>(request-target) - as per spec, calculated from method and path</li>
-     * <li>authorization - if {@link #getHeader()} returns {@link HttpSignHeader#AUTHORIZATION} it is ignored</li>
+     * <li>authorization - if {@link #header()} returns {@link HttpSignHeader#AUTHORIZATION} it is ignored</li>
      * </ul>
      *
      * @return configuration of headers to be signed
      */
-    public SignedHeadersConfig getSignedHeadersConfig() {
+    public SignedHeadersConfig signedHeadersConfig() {
         return signedHeadersConfig;
     }
 
@@ -151,7 +151,7 @@ public class OutboundTargetDefinition {
      * Fluent API builder to build {@link OutboundTargetDefinition} instances.
      * Call {@link #build()} to create a new instance.
      */
-    public static class Builder implements io.helidon.common.Builder<OutboundTargetDefinition> {
+    public static final class Builder implements io.helidon.common.Builder<OutboundTargetDefinition> {
         private String keyId;
         private String algorithm;
         private KeyConfig keyConfig;
@@ -266,7 +266,7 @@ public class OutboundTargetDefinition {
          * @param config config instance
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             Builder builder = new Builder();
 
             // mandatory

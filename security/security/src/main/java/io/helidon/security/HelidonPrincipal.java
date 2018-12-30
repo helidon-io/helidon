@@ -30,7 +30,7 @@ class HelidonPrincipal implements Principal {
     HelidonPrincipal(Builder builder) {
         this.name = builder.name();
         this.id = builder.id();
-        BasicAttributes container = new BasicAttributes(builder.properties());
+        BasicAttributes container = BasicAttributes.create(builder.properties());
 
         container.put("name", name);
         container.put("id", id);
@@ -38,13 +38,13 @@ class HelidonPrincipal implements Principal {
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return properties.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return properties.abacAttributeNames();
     }
 
     @Override
@@ -53,7 +53,7 @@ class HelidonPrincipal implements Principal {
     }
 
     @Override
-    public String getId() {
+    public String id() {
         return id;
     }
 

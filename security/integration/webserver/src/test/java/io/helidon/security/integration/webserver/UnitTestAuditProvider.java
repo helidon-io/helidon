@@ -31,9 +31,9 @@ class UnitTestAuditProvider implements AuditProvider {
     private final CountDownLatch cdl = new CountDownLatch(1);
 
     @Override
-    public Consumer<TracedAuditEvent> getAuditConsumer() {
+    public Consumer<TracedAuditEvent> auditConsumer() {
         return item -> {
-            if ("unit_test".equals(item.getEventType())) {
+            if ("unit_test".equals(item.eventType())) {
                 theEvent = item;
                 cdl.countDown();
             }

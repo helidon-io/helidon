@@ -51,9 +51,9 @@ public class JavaxElPolicyExecutorTest {
         MyResource object = new MyResource("unit-test-user");
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getService()).thenReturn(Optional.of(service));
-        when(request.getSubject()).thenReturn(Optional.of(user));
-        when(request.getEnv()).thenReturn(env);
+        when(request.service()).thenReturn(Optional.of(service));
+        when(request.subject()).thenReturn(Optional.of(user));
+        when(request.env()).thenReturn(env);
         when(request.getObject()).thenReturn(Optional.of(object));
 
         Errors.Collector collector = Errors.collector();

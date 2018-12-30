@@ -77,7 +77,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
 
     @Override
     public TimeConfig fromConfig(Config config) {
-        return TimeConfig.from(config);
+        return TimeConfig.create(config);
     }
 
     @Override
@@ -112,7 +112,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
 
     @Override
     public void validate(TimeConfig config, Errors.Collector collector, ProviderRequest request) {
-        ZonedDateTime now = request.getEnv().getTime();
+        ZonedDateTime now = request.env().time();
         config.validate(this, now, collector);
     }
 
@@ -183,7 +183,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
     /**
      * Configuration for time attribute validator.
      */
-    public static class TimeConfig implements AbacValidatorConfig {
+    public static final class TimeConfig implements AbacValidatorConfig {
         private final List<BetweenTime> betweenTimes = new ArrayList<>();
         private final Set<DayOfWeek> daysOfWeek = EnumSet.noneOf(DayOfWeek.class);
 
@@ -232,7 +232,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
          * @param config configuration located on this validator config key
          * @return time configuration based on the config
          */
-        public static TimeConfig from(Config config) {
+        public static TimeConfig create(Config config) {
             Builder builder = TimeConfig.builder();
 
             config.get("time-of-day").asList(Config.class)
@@ -292,7 +292,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
         /**
          * Fluent API builder for {@link TimeConfig}.
          */
-        public static class Builder implements io.helidon.common.Builder<TimeConfig> {
+        public static final class Builder implements io.helidon.common.Builder<TimeConfig> {
             private final List<BetweenTime> betweenTimes = new ArrayList<>();
             private final Set<DayOfWeek> daysOfWeek = EnumSet.noneOf(DayOfWeek.class);
 

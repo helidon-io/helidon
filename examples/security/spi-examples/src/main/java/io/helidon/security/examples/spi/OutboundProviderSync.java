@@ -36,9 +36,9 @@ public class OutboundProviderSync extends SynchronousProvider implements Outboun
                                                     EndpointConfig outboundEndpointConfig) {
 
         // let's just add current user's id as a custom header, otherwise do nothing
-        return providerRequest.getContext()
-                .getUser()
-                .map(Subject::getPrincipal)
+        return providerRequest.securityContext()
+                .user()
+                .map(Subject::principal)
                 .map(Principal::getName)
                 .map(name -> OutboundSecurityResponse
                         .withHeaders(CollectionsHelper.mapOf("X-AUTH-USER", CollectionsHelper.listOf(name))))

@@ -53,13 +53,13 @@ public final class DigestExampleConfigMain {
         // build routing (security is loaded from config)
         Routing routing = Routing.builder()
                 // helper method to load both security and web server security from configuration
-                .register(WebSecurity.from(config))
+                .register(WebSecurity.create(config.get("security")))
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.getUser().orElse(SecurityContext.ANONYMOUS).toString())
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
                 })
                 .build();

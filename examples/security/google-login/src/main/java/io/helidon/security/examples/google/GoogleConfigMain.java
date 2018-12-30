@@ -67,13 +67,13 @@ public final class GoogleConfigMain {
 
         Routing.Builder routing = Routing.builder()
                 // helper method to load both security and web server security from configuration
-                .register(WebSecurity.from(config))
+                .register(WebSecurity.create(config.get("security")))
                 // web server does not (yet) have possibility to configure routes in config files, so explicit...
                 .get("/rest/profile", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Response from config based service, you are: \n" + securityContext
-                            .flatMap(SecurityContext::getUser)
+                            .flatMap(SecurityContext::user)
                             .map(Subject::toString)
                             .orElse("Security context is null"));
                 })

@@ -31,12 +31,12 @@ public class HttpSignService implements SecurityProviderService {
     }
 
     @Override
-    public Class<? extends SecurityProvider> getProviderClass() {
+    public Class<? extends SecurityProvider> providerClass() {
         return HttpSignProvider.class;
     }
 
     @Override
-    public SecurityProvider getProviderInstance(Config config) {
-        return HttpSignProvider.fromConfig(config);
+    public SecurityProvider providerInstance(Config config) {
+        return HttpSignProvider.create(config);
     }
 }
