@@ -60,7 +60,7 @@ import io.helidon.security.spi.SecurityProvider;
  * }
  * </pre>
  */
-public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy {
+public final class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy {
     private final CompositeOutboundProvider outbound;
     private final CompositeAuthenticationProvider atn;
     private final CompositeAuthorizationProvider atz;
@@ -83,13 +83,13 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
                             flaggedProvider,
                             providers.getProviders(AuthenticationProvider.class)
                                     .stream()
-                                    .filter(np -> np.getName().equals(flaggedProvider.getProviderName()))
+                                    .filter(np -> np.getName().equals(flaggedProvider.providerName()))
                                     .findFirst()
                                     .map(NamedProvider::getProvider)
                                     .orElseThrow(() -> new SecurityException(
                                             "Misconfigured composite provider selection policy. There is no authentication "
                                                     + "provider named " + flaggedProvider
-                                                    .getProviderName() + " configured."))
+                                                    .providerName() + " configured."))
                     )));
 
             atn = new CompositeAuthenticationProvider(parts);
@@ -104,13 +104,13 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
                             flaggedProvider,
                             providers.getProviders(AuthorizationProvider.class)
                                     .stream()
-                                    .filter(np -> np.getName().equals(flaggedProvider.getProviderName()))
+                                    .filter(np -> np.getName().equals(flaggedProvider.providerName()))
                                     .findFirst()
                                     .map(NamedProvider::getProvider)
                                     .orElseThrow(() -> new SecurityException(
                                             "Misconfigured composite provider selection policy. There is no authorization "
                                                     + "provider named " + flaggedProvider
-                                                    .getProviderName() + " configured."))
+                                                    .providerName() + " configured."))
                     )));
 
             atz = new CompositeAuthorizationProvider(parts);
@@ -157,8 +157,8 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
      * @param config configuration instance
      * @return function as expected by {@link Security.Builder#providerSelectionPolicy(Function)}
      */
-    public static Function<Providers, ProviderSelectionPolicy> fromConfig(Config config) {
-        return builder().fromConfig(config).build();
+    public static Function<Providers, ProviderSelectionPolicy> create(Config config) {
+        return builder().config(config).build();
     }
 
     @Override
@@ -213,7 +213,7 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
      * Fluent API builder to create {@link CompositeProviderSelectionPolicy}.
      * Invoke {@link #build()} to get a function to be sent to {@link Security.Builder#providerSelectionPolicy(Function)}.
      */
-    public static class Builder implements io.helidon.common.Builder<Function<Providers, ProviderSelectionPolicy>> {
+    public static final class Builder implements io.helidon.common.Builder<Function<Providers, ProviderSelectionPolicy>> {
         private final List<FlaggedProvider> authenticators = new LinkedList<>();
         private final List<FlaggedProvider> authorizers = new LinkedList<>();
         private final List<String> outbound = new LinkedList<>();
@@ -312,12 +312,12 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          * @param config Configuration
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("name").asString().ifPresent(this::name);
             config.get("default").asBoolean().ifPresent(this::isDefault);
-            config.get("authentication").asList(FlaggedProvider::fromConfig)
+            config.get("authentication").asList(FlaggedProvider::create)
                     .ifPresent(this.authenticators::addAll);
-            config.get("authorization").asList(FlaggedProvider::fromConfig)
+            config.get("authorization").asList(FlaggedProvider::create)
                     .ifPresent(this.authorizers::addAll);
             config.get("outbound").asNodeList()
                     .ifPresent(configs -> configs.forEach(outConfig -> addOutboundProvider(outConfig.get("name")
@@ -354,7 +354,7 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
          * @param config configuration instance
          * @return instance configured from config
          */
-        static FlaggedProvider fromConfig(Config config) {
+        static FlaggedProvider create(Config config) {
             String name = config.get("name").asString().get();
             CompositeProviderFlag flag = config.get("flag")
                     .asString()
@@ -364,11 +364,11 @@ public class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy
             return new FlaggedProvider(flag, name);
         }
 
-        String getProviderName() {
+        String providerName() {
             return providerName;
         }
 
-        CompositeProviderFlag getFlag() {
+        CompositeProviderFlag flag() {
             return flag;
         }
     }

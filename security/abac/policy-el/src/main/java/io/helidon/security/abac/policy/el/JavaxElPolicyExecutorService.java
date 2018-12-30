@@ -31,6 +31,6 @@ public class JavaxElPolicyExecutorService implements PolicyExecutorService {
 
     @Override
     public PolicyExecutor instantiate(Config config) {
-        return JavaxElPolicyExecutor.from(config);
+        return JavaxElPolicyExecutor.create(config);
     }
 }

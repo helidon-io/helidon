@@ -49,7 +49,7 @@ public class IdcsResource {
     @Path("/login")
     @Authenticated
     public String login(@Context SecurityContext context) {
-        return context.getUser().toString();
+        return context.user().toString();
     }
 
     /**
@@ -85,6 +85,6 @@ public class IdcsResource {
     // A group defined in my IDCS domain
     @RoleValidator.Roles("my_admins")
     public String scopes(@Context SecurityContext context) {
-        return context.getUser().toString();
+        return context.user().toString();
     }
 }

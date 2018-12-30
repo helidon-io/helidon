@@ -109,7 +109,7 @@ public class EntityModificationTest {
     private static Security buildSecurity() {
 
         return Security.builder().addAuthenticationProvider(request -> {
-            request.getResponseEntity().ifPresent(message -> {
+            request.responseEntity().ifPresent(message -> {
                 // this is a test - just append " Suffix" to response message
                 message.filter(inPublisher -> {
                     SubmissionPublisher<ByteBuffer> outPublisher = new SubmissionPublisher<>();
@@ -146,7 +146,7 @@ public class EntityModificationTest {
                 });
             });
 
-            return request.getRequestEntity()
+            return request.requestEntity()
                     .map(message -> {
                         CompletableFuture<AuthenticationResponse> future = new CompletableFuture<>();
 

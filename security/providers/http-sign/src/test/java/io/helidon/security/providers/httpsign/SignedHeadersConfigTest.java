@@ -64,22 +64,22 @@ public class SignedHeadersConfigTest {
     private void testThem(SignedHeadersConfig shc) {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
-        List<String> requiredHeaders = shc.getHeaders("get", headers);
+        List<String> requiredHeaders = shc.headers("get", headers);
         // first check we get the mandatory ones even if they are not present in request
         assertThat(requiredHeaders, CoreMatchers.hasItems("date", REQUEST_TARGET, "host"));
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization")));
 
-        requiredHeaders = shc.getHeaders("post", headers);
+        requiredHeaders = shc.headers("post", headers);
         assertThat(requiredHeaders, CoreMatchers.hasItems("date"));
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization", REQUEST_TARGET, "host")));
 
         //now let's add authorization to the request headers
         headers.put("Authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
-        requiredHeaders = shc.getHeaders("get", headers);
+        requiredHeaders = shc.headers("get", headers);
         // first check we get the mandatory ones even if they are not present in request
         assertThat(requiredHeaders, CoreMatchers.hasItems("date", REQUEST_TARGET, "host", "authorization"));
 
-        requiredHeaders = shc.getHeaders("post", headers);
+        requiredHeaders = shc.headers("post", headers);
         assertThat(requiredHeaders, CoreMatchers.hasItems("date"));
         assertThat(requiredHeaders, CoreMatchers.not(CoreMatchers.hasItems("authorization", REQUEST_TARGET, "host")));
     }

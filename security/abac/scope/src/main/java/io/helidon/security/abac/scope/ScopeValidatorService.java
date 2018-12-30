@@ -33,6 +33,6 @@ public class ScopeValidatorService implements AbacValidatorService {
 
     @Override
     public AbacValidator<? extends AbacValidatorConfig> instantiate(Config config) {
-        return ScopeValidator.from(config);
+        return ScopeValidator.create(config);
     }
 }

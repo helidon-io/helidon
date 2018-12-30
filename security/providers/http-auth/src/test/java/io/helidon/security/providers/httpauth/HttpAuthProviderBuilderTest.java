@@ -71,17 +71,17 @@ public class HttpAuthProviderBuilderTest {
             if (login.equals("jack")) {
                 return Optional.of(new UserStore.User() {
                     @Override
-                    public String getLogin() {
+                    public String login() {
                         return "jack";
                     }
 
                     @Override
-                    public char[] getPassword() {
+                    public char[] password() {
                         return "jackIsGreat".toCharArray();
                     }
 
                     @Override
-                    public Set<String> getRoles() {
+                    public Set<String> roles() {
                         return CollectionsHelper.setOf("user", "admin");
                     }
                 });
@@ -89,17 +89,17 @@ public class HttpAuthProviderBuilderTest {
             if (login.equals("jill")) {
                 return Optional.of(new UserStore.User() {
                     @Override
-                    public String getLogin() {
+                    public String login() {
                         return "jill";
                     }
 
                     @Override
-                    public char[] getPassword() {
+                    public char[] password() {
                         return "password".toCharArray();
                     }
 
                     @Override
-                    public Set<String> getRoles() {
+                    public Set<String> roles() {
                         return CollectionsHelper.setOf("user");
                     }
                 });
@@ -138,9 +138,9 @@ public class HttpAuthProviderBuilderTest {
     public void basicTestFail() {
         AuthenticationResponse response = context.atnClientBuilder().buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        String authHeader = response.getResponseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
+        String authHeader = response.responseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
     }
@@ -151,16 +151,16 @@ public class HttpAuthProviderBuilderTest {
 
         AuthenticationResponse response = context.authenticate();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getStatusCode().orElse(200), is(200));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.statusCode().orElse(200), is(200));
 
-        assertThat(context.getUser().map(sub -> sub.getPrincipal().getName()).orElse(null), is("jack"));
+        assertThat(context.user().map(sub -> sub.principal().getName()).orElse(null), is("jack"));
         assertThat(context.isUserInRole("admin"), is(true));
         assertThat(context.isUserInRole("user"), is(true));
     }
 
     private void setHeader(SecurityContext context, String name, String value) {
-        context.setEnv(context.getEnv()
+        context.env(context.env()
                                .derive()
                                .header(name, value)
                                .build());
@@ -172,10 +172,10 @@ public class HttpAuthProviderBuilderTest {
 
         AuthenticationResponse response = context.authenticate();
 
-        assertThat(response.getDescription().orElse(""), is("Invalid username or password"));
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        String authHeader = response.getResponseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
+        assertThat(response.description().orElse(""), is("Invalid username or password"));
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
+        String authHeader = response.responseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
 
@@ -183,9 +183,9 @@ public class HttpAuthProviderBuilderTest {
 
         response = context.authenticate();
 
-        assertThat(response.getDescription().orElse(""), is("Invalid username or password"));
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Invalid username or password"));
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -194,8 +194,8 @@ public class HttpAuthProviderBuilderTest {
 
         AuthenticationResponse response = context.authenticate();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -203,8 +203,8 @@ public class HttpAuthProviderBuilderTest {
         setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, "basic wrong_header_value");
         AuthenticationResponse response = context.authenticate();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
 
         // not base64 encoded and invalid
         setHeader(context,
@@ -213,8 +213,8 @@ public class HttpAuthProviderBuilderTest {
 
         response = context.authenticate();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -222,8 +222,8 @@ public class HttpAuthProviderBuilderTest {
         setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, buildDigest(HttpDigest.Qop.AUTH, "jack", "jackIsGreat"));
         AuthenticationResponse response = context.authenticate();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -231,8 +231,8 @@ public class HttpAuthProviderBuilderTest {
         setHeader(context, HttpBasicAuthProvider.HEADER_AUTHENTICATION, buildBasic("jill", "password"));
         AuthenticationResponse response = context.authenticate();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getStatusCode().orElse(200), is(200));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.statusCode().orElse(200), is(200));
 
         assertThat(getUsername(context), is("jill"));
         assertThat(context.isUserInRole("admin"), is(false));
@@ -245,9 +245,9 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        String authHeader = response.getResponseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
+        String authHeader = response.responseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
         assertThat(authHeader.toLowerCase(), containsString("qop="));
@@ -259,9 +259,9 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest_old")
                 .buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        String authHeader = response.getResponseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
+        String authHeader = response.responseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
         assertThat(authHeader.toLowerCase(), not(containsString("qop=")));
@@ -274,10 +274,10 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse("No description"),
-                   response.getStatus(),
+        assertThat(response.description().orElse("No description"),
+                   response.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getStatusCode().orElse(200), is(200));
+        assertThat(response.statusCode().orElse(200), is(200));
 
         assertThat(getUsername(context), is("jack"));
         assertThat(context.isUserInRole("admin"), is(true));
@@ -291,10 +291,10 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse(""), is("Invalid username or password"));
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        String authHeader = response.getResponseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
+        assertThat(response.description().orElse(""), is("Invalid username or password"));
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
+        String authHeader = response.responseHeaders().get(HttpBasicAuthProvider.HEADER_AUTHENTICATION_REQUIRED).get(0);
         assertThat(authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
 
@@ -305,9 +305,9 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse(""), is("Invalid username or password"));
-        assertThat(response.getStatus().isSuccess(), is(false));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Invalid username or password"));
+        assertThat(response.status().isSuccess(), is(false));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -317,8 +317,8 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -328,8 +328,8 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -339,10 +339,10 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse("No description"),
-                   response.getStatus(),
+        assertThat(response.description().orElse("No description"),
+                   response.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getStatusCode().orElse(200), is(200));
+        assertThat(response.statusCode().orElse(200), is(200));
 
         assertThat(getUsername(context), is("jill"));
         assertThat(context.isUserInRole("admin"), is(false));
@@ -350,7 +350,7 @@ public class HttpAuthProviderBuilderTest {
     }
 
     private String getUsername(SecurityContext context) {
-        return context.getUser().map(Subject::getPrincipal).map(Principal::getName).orElse(null);
+        return context.user().map(Subject::principal).map(Principal::getName).orElse(null);
     }
 
     @Test
@@ -360,10 +360,10 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest_old")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse("No description"),
-                   response.getStatus(),
+        assertThat(response.description().orElse("No description"),
+                   response.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getStatusCode().orElse(200), is(200));
+        assertThat(response.statusCode().orElse(200), is(200));
 
         assertThat(getUsername(context), is("jack"));
         assertThat(context.isUserInRole("admin"), is(true));
@@ -377,10 +377,10 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest_old")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse("No description"),
-                   response.getStatus(),
+        assertThat(response.description().orElse("No description"),
+                   response.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
-        assertThat(response.getStatusCode().orElse(200), is(200));
+        assertThat(response.statusCode().orElse(200), is(200));
 
         assertThat(getUsername(context), is("jill"));
         assertThat(context.isUserInRole("admin"), is(false));
@@ -402,9 +402,9 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse(""), is("Nonce timeout"));
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Nonce timeout"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -419,9 +419,9 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse(""), is("Nonce must be base64 encoded"));
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Nonce must be base64 encoded"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -437,9 +437,9 @@ public class HttpAuthProviderBuilderTest {
         AuthenticationResponse response = context.atnClientBuilder()
                 .explicitProvider("digest")
                 .buildAndGet();
-        assertThat(response.getDescription().orElse(""), is("Invalid nonce length"));
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Invalid nonce length"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -455,9 +455,9 @@ public class HttpAuthProviderBuilderTest {
         AuthenticationResponse response = context.atnClientBuilder()
                 .explicitProvider("digest")
                 .buildAndGet();
-        assertThat(response.getDescription().orElse(""), is("Invalid nonce value"));
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Invalid nonce value"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     @Test
@@ -472,9 +472,9 @@ public class HttpAuthProviderBuilderTest {
                 .explicitProvider("digest")
                 .buildAndGet();
 
-        assertThat(response.getDescription().orElse(""), is("Invalid realm"));
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
+        assertThat(response.description().orElse(""), is("Invalid realm"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
     }
 
     private String buildBasic(String user, String password) {

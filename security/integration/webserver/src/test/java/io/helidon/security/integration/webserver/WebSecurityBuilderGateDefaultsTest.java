@@ -69,11 +69,11 @@ public class WebSecurityBuilderGateDefaultsTest {
 
         Config config = Config.create();
 
-        Security security = Security.builderFromConfig(config)
+        Security security = Security.builder(config.get("security"))
                 .addAuditProvider(myAuditProvider).build();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.from(security).securityDefaults(WebSecurity.rolesAllowed("admin").audit()))
+                .register(WebSecurity.create(security).securityDefaults(WebSecurity.rolesAllowed("admin").audit()))
                 // will only accept admin (due to gate defaults)
                 .get("/noRoles", WebSecurity.enforce())
                 .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
@@ -92,7 +92,7 @@ public class WebSecurityBuilderGateDefaultsTest {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.getUser().orElse(SecurityContext.ANONYMOUS).toString())
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
                 })
                 .build();
@@ -204,8 +204,8 @@ public class WebSecurityBuilderGateDefaultsTest {
         // audit
         AuditEvent auditEvent = myAuditProvider.getAuditEvent();
         assertThat(auditEvent, notNullValue());
-        assertThat(auditEvent.toString(), auditEvent.getMessageFormat(), is(WebSecurityTests.AUDIT_MESSAGE_FORMAT));
-        assertThat(auditEvent.toString(), auditEvent.getSeverity(), is(AuditEvent.AuditSeverity.SUCCESS));
+        assertThat(auditEvent.toString(), auditEvent.messageFormat(), is(WebSecurityTests.AUDIT_MESSAGE_FORMAT));
+        assertThat(auditEvent.toString(), auditEvent.severity(), is(AuditEvent.AuditSeverity.SUCCESS));
     }
 
     private void testForbidden(String uri, String username, String password) {

@@ -87,7 +87,7 @@ public final class Main {
 
         // create a web server
         WebServer server = createRouting(
-                Security.fromConfig(config),
+                Security.create(config.get("security")),
                 config,
                 bsc)
                 .createServer(createConfiguration(config));
@@ -137,7 +137,7 @@ public final class Main {
                 // register metrics features (on "/metrics")
                 .register(MetricsSupport.create())
                 // register security features
-                .register(WebSecurity.from(security, config))
+                .register(WebSecurity.create(security, config))
                 // register static content support (on "/")
                 .register(StaticContentSupport.create("/WEB"))
                 // register API handler (on "/api") - this path is secured (see application.yaml)

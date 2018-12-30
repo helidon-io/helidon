@@ -57,12 +57,12 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
 
     private CompletionStage<AuthenticationResponse> mapSubject(AuthenticationResponse prevResponse) {
         ProviderRequest providerRequest = new ProviderRequest(context,
-                                                              request.getResources(),
-                                                              request.getRequestEntity(),
-                                                              request.getResponseEntity());
+                                                              request.resources(),
+                                                              request.requestEntity(),
+                                                              request.responseEntity());
 
-        if (prevResponse.getStatus() == SecurityResponse.SecurityStatus.SUCCESS) {
-            return security.getSubjectMapper()
+        if (prevResponse.status() == SecurityResponse.SecurityStatus.SUCCESS) {
+            return security.subjectMapper()
                     .map(mapper -> mapper.map(providerRequest, prevResponse))
                     .orElseGet(() -> CompletableFuture.completedFuture(prevResponse))
                     .thenApply(newResponse -> {
@@ -71,8 +71,8 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
                             // no changes were done, response as is
                             return prevResponse;
                         } else {
-                            newResponse.getUser().ifPresent(context::setUser);
-                            newResponse.getService().ifPresent(context::setService);
+                            newResponse.user().ifPresent(context::setUser);
+                            newResponse.service().ifPresent(context::setService);
                             return newResponse;
                         }
                     });
@@ -84,16 +84,16 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
     private CompletionStage<AuthenticationResponse> authenticate(AuthenticationProvider providerInstance) {
         // prepare request to provider
         ProviderRequest providerRequest = new ProviderRequest(context,
-                                                              request.getResources(),
-                                                              request.getRequestEntity(),
-                                                              request.getResponseEntity());
+                                                              request.resources(),
+                                                              request.requestEntity(),
+                                                              request.responseEntity());
 
         return providerInstance.authenticate(providerRequest).thenApply(response -> {
-            if (response.getStatus().isSuccess()) {
-                response.getUser()
+            if (response.status().isSuccess()) {
+                response.user()
                         .ifPresent(context::setUser);
 
-                response.getService()
+                response.service()
                         .ifPresent(context::setService);
 
                 //Audit success
@@ -103,7 +103,7 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
                                               "Provider %s. Subject %s")
                                       .addParam(AuditEvent.AuditParam
                                                         .plain("provider", providerInstance.getClass().getName()))
-                                      .addParam(AuditEvent.AuditParam.plain("subject", response.getUser())));
+                                      .addParam(AuditEvent.AuditParam.plain("subject", response.user())));
                 return response;
             }
 
@@ -111,10 +111,10 @@ final class AuthenticationClientImpl implements SecurityClient<AuthenticationRes
             SecurityAuditEvent event = SecurityAuditEvent
                     .failure(AuditEvent.AUTHN_TYPE_PREFIX + ".authenticate", "Provider %s. Message: %s")
                     .addParam(AuditEvent.AuditParam.plain("provider", providerInstance.getClass().getName()))
-                    .addParam(AuditEvent.AuditParam.plain("message", response.getDescription().orElse(null)));
+                    .addParam(AuditEvent.AuditParam.plain("message", response.description().orElse(null)));
 
-            response.getThrowable()
-                    .map(e -> event.addParam(AuditEvent.AuditParam.plain("exception", response.getThrowable())));
+            response.throwable()
+                    .map(e -> event.addParam(AuditEvent.AuditParam.plain("exception", response.throwable())));
             context.audit(event);
             return response;
         }).exceptionally(throwable -> {

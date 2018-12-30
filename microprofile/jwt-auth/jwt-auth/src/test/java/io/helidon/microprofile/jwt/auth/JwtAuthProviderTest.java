@@ -102,10 +102,10 @@ public class JwtAuthProviderTest {
         JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.of(subject));
+        when(context.user()).thenReturn(Optional.of(subject));
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
+        when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
                 .path("/ec")
                 .transport("http")
@@ -118,7 +118,7 @@ public class JwtAuthProviderTest {
 
         OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
 
-        String signedToken = response.getRequestHeaders().get("Authorization").get(0);
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
         //now I want to validate it to prove it was correctly signed
         SignedJwt signedJwt = SignedJwt.parseToken(signedToken);
@@ -126,52 +126,52 @@ public class JwtAuthProviderTest {
         Jwt jwt = signedJwt.getJwt();
 
         // MP specific additions
-        assertThat(jwt.getPayloadClaim("upn"), not(Optional.empty()));
-        assertThat(jwt.getPayloadClaim("groups"), not(Optional.empty()));
-        assertThat(jwt.getUserPrincipal(), is(Optional.of(username)));
-        assertThat(jwt.getUserGroups(), not(Optional.empty()));
-        assertThat(jwt.getUserGroups().get(), hasItems("group1", "group2", "group3"));
+        assertThat(jwt.payloadClaim("upn"), not(Optional.empty()));
+        assertThat(jwt.payloadClaim("groups"), not(Optional.empty()));
+        assertThat(jwt.userPrincipal(), is(Optional.of(username)));
+        assertThat(jwt.userGroups(), not(Optional.empty()));
+        assertThat(jwt.userGroups().get(), hasItems("group1", "group2", "group3"));
         // End of MP specific additions
 
-        assertThat(jwt.getSubject(), is(Optional.of(userId)));
-        assertThat(jwt.getPreferredUsername(), is(Optional.of(username)));
-        assertThat(jwt.getEmail(), is(Optional.of(email)));
-        assertThat(jwt.getEmailVerified(), is(Optional.of(true)));
-        assertThat(jwt.getFamilyName(), is(Optional.of(familyName)));
-        assertThat(jwt.getGivenName(), is(Optional.of(givenName)));
-        assertThat(jwt.getFullName(), is(Optional.of(fullName)));
-        assertThat(jwt.getLocale(), is(Optional.of(locale)));
-        assertThat(jwt.getAudience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
-        assertThat(jwt.getIssuer(), is(Optional.of("jwt.example.com")));
-        assertThat(jwt.getAlgorithm(), is(Optional.of(JwkEC.ALG_ES256)));
-        Instant instant = jwt.getIssueTime().get();
+        assertThat(jwt.subject(), is(Optional.of(userId)));
+        assertThat(jwt.preferredUsername(), is(Optional.of(username)));
+        assertThat(jwt.email(), is(Optional.of(email)));
+        assertThat(jwt.emailVerified(), is(Optional.of(true)));
+        assertThat(jwt.familyName(), is(Optional.of(familyName)));
+        assertThat(jwt.givenName(), is(Optional.of(givenName)));
+        assertThat(jwt.fullName(), is(Optional.of(fullName)));
+        assertThat(jwt.locale(), is(Optional.of(locale)));
+        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
+        assertThat(jwt.issuer(), is(Optional.of("jwt.example.com")));
+        assertThat(jwt.algorithm(), is(Optional.of(JwkEC.ALG_ES256)));
+        Instant instant = jwt.issueTime().get();
         boolean compareResult = Instant.now().minusSeconds(10).compareTo(instant) < 0;
         assertThat("Issue time must not be older than 10 seconds", compareResult, is(true));
         Instant expectedNotBefore = instant.minus(5, ChronoUnit.SECONDS);
-        assertThat(jwt.getNotBefore(), is(Optional.of(expectedNotBefore)));
+        assertThat(jwt.notBefore(), is(Optional.of(expectedNotBefore)));
         Instant expectedExpiry = instant.plus(60 * 60 * 24, ChronoUnit.SECONDS);
-        assertThat(jwt.getExpirationTime(), is(Optional.of(expectedExpiry)));
+        assertThat(jwt.expirationTime(), is(Optional.of(expectedExpiry)));
 
         //now we need to use the same token to invoke authentication
         ProviderRequest atnRequest = mockRequest(signedToken);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.getUser()
-                                    .map(Subject::getPrincipal))
+        OptionalHelper.from(authenticationResponse.user()
+                                    .map(Subject::principal))
                 .ifPresentOrElse(atnPrincipal -> {
                     assertThat(atnPrincipal, instanceOf(JsonWebTokenImpl.class));
                     JsonWebTokenImpl jsonWebToken = (JsonWebTokenImpl) atnPrincipal;
                     String upn = jsonWebToken.getClaim(Claims.upn.name());
                     assertThat(upn, is(username));
 
-                    assertThat(atnPrincipal.getId(), is(userId));
+                    assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(username));
-                    assertThat(atnPrincipal.getAttribute("email"), is(Optional.of(email)));
-                    assertThat(atnPrincipal.getAttribute("email_verified"), is(Optional.of(true)));
-                    assertThat(atnPrincipal.getAttribute("family_name"), is(Optional.of(familyName)));
-                    assertThat(atnPrincipal.getAttribute("given_name"), is(Optional.of(givenName)));
-                    assertThat(atnPrincipal.getAttribute("full_name"), is(Optional.of(fullName)));
-                    assertThat(atnPrincipal.getAttribute("locale"), is(Optional.of(locale)));
+                    assertThat(atnPrincipal.abacAttribute("email"), is(Optional.of(email)));
+                    assertThat(atnPrincipal.abacAttribute("email_verified"), is(Optional.of(true)));
+                    assertThat(atnPrincipal.abacAttribute("family_name"), is(Optional.of(familyName)));
+                    assertThat(atnPrincipal.abacAttribute("given_name"), is(Optional.of(givenName)));
+                    assertThat(atnPrincipal.abacAttribute("full_name"), is(Optional.of(fullName)));
+                    assertThat(atnPrincipal.abacAttribute("locale"), is(Optional.of(locale)));
                 }, () -> fail("User must be present in response"));
     }
 
@@ -185,10 +185,10 @@ public class JwtAuthProviderTest {
         JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.of(subject));
+        when(context.user()).thenReturn(Optional.of(subject));
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
+        when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
                 .path("/oct")
                 .transport("http")
@@ -201,49 +201,49 @@ public class JwtAuthProviderTest {
 
         OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
 
-        String signedToken = response.getRequestHeaders().get("Authorization").get(0);
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
         //now I want to validate it to prove it was correctly signed
         SignedJwt signedJwt = SignedJwt.parseToken(signedToken);
         signedJwt.verifySignature(verifyKeys).checkValid();
         Jwt jwt = signedJwt.getJwt();
 
-        assertThat(jwt.getSubject(), is(Optional.of(userId)));
-        assertThat(jwt.getPreferredUsername(), is(Optional.of(userId)));
-        assertThat(jwt.getEmail(), is(Optional.empty()));
-        assertThat(jwt.getEmailVerified(), is(Optional.empty()));
-        assertThat(jwt.getFamilyName(), is(Optional.empty()));
-        assertThat(jwt.getGivenName(), is(Optional.empty()));
+        assertThat(jwt.subject(), is(Optional.of(userId)));
+        assertThat(jwt.preferredUsername(), is(Optional.of(userId)));
+        assertThat(jwt.email(), is(Optional.empty()));
+        assertThat(jwt.emailVerified(), is(Optional.empty()));
+        assertThat(jwt.familyName(), is(Optional.empty()));
+        assertThat(jwt.givenName(), is(Optional.empty()));
         // stored as "name" attribute on principal, full name is stored as "name" in JWT
-        assertThat(jwt.getFullName(), is(Optional.empty()));
-        assertThat(jwt.getLocale(), is(Optional.empty()));
-        assertThat(jwt.getAudience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
-        assertThat(jwt.getIssuer(), is(Optional.of("jwt.example.com")));
-        assertThat(jwt.getAlgorithm(), is(Optional.of(JwkOctet.ALG_HS256)));
-        Instant instant = jwt.getIssueTime().get();
+        assertThat(jwt.fullName(), is(Optional.empty()));
+        assertThat(jwt.locale(), is(Optional.empty()));
+        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
+        assertThat(jwt.issuer(), is(Optional.of("jwt.example.com")));
+        assertThat(jwt.algorithm(), is(Optional.of(JwkOctet.ALG_HS256)));
+        Instant instant = jwt.issueTime().get();
         boolean compareResult = Instant.now().minusSeconds(10).compareTo(instant) < 0;
         assertThat("Issue time must not be older than 10 seconds", compareResult, is(true));
         Instant expectedNotBefore = instant.minus(5, ChronoUnit.SECONDS);
-        assertThat(jwt.getNotBefore(), is(Optional.of(expectedNotBefore)));
+        assertThat(jwt.notBefore(), is(Optional.of(expectedNotBefore)));
         Instant expectedExpiry = instant.plus(60 * 60 * 24, ChronoUnit.SECONDS);
-        assertThat(jwt.getExpirationTime(), is(Optional.of(expectedExpiry)));
+        assertThat(jwt.expirationTime(), is(Optional.of(expectedExpiry)));
 
         //now we need to use the same token to invoke authentication
         ProviderRequest atnRequest = mockRequest(signedToken);
 
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.getUser()
-                                    .map(Subject::getPrincipal))
+        OptionalHelper.from(authenticationResponse.user()
+                                    .map(Subject::principal))
                 .ifPresentOrElse(atnPrincipal -> {
-                    assertThat(atnPrincipal.getId(), is(userId));
+                    assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(userId));
-                    assertThat(atnPrincipal.getAttribute("email"), is(Optional.empty()));
-                    assertThat(atnPrincipal.getAttribute("email_verified"), is(Optional.empty()));
-                    assertThat(atnPrincipal.getAttribute("family_name"), is(Optional.empty()));
-                    assertThat(atnPrincipal.getAttribute("given_name"), is(Optional.empty()));
-                    assertThat(atnPrincipal.getAttribute("full_name"), is(Optional.empty()));
-                    assertThat(atnPrincipal.getAttribute("locale"), is(Optional.empty()));
+                    assertThat(atnPrincipal.abacAttribute("email"), is(Optional.empty()));
+                    assertThat(atnPrincipal.abacAttribute("email_verified"), is(Optional.empty()));
+                    assertThat(atnPrincipal.abacAttribute("family_name"), is(Optional.empty()));
+                    assertThat(atnPrincipal.abacAttribute("given_name"), is(Optional.empty()));
+                    assertThat(atnPrincipal.abacAttribute("full_name"), is(Optional.empty()));
+                    assertThat(atnPrincipal.abacAttribute("locale"), is(Optional.empty()));
                 }, () -> fail("User must be present in response"));
 
     }
@@ -274,10 +274,10 @@ public class JwtAuthProviderTest {
         JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.of(subject));
+        when(context.user()).thenReturn(Optional.of(subject));
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
+        when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
                 .path("/rsa")
                 .transport("http")
@@ -290,51 +290,51 @@ public class JwtAuthProviderTest {
 
         OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
 
-        String signedToken = response.getRequestHeaders().get("Authorization").get(0);
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
         signedToken = signedToken.substring("bearer ".length());
         //now I want to validate it to prove it was correctly signed
         SignedJwt signedJwt = SignedJwt.parseToken(signedToken);
         signedJwt.verifySignature(verifyKeys).checkValid();
         Jwt jwt = signedJwt.getJwt();
 
-        assertThat(jwt.getSubject(), is(Optional.of(userId)));
-        assertThat(jwt.getPreferredUsername(), is(Optional.of(username)));
-        assertThat(jwt.getEmail(), is(Optional.of(email)));
-        assertThat(jwt.getEmailVerified(), is(Optional.of(true)));
-        assertThat(jwt.getFamilyName(), is(Optional.of(familyName)));
-        assertThat(jwt.getGivenName(), is(Optional.of(givenName)));
-        assertThat(jwt.getFullName(), is(Optional.of(fullName)));
-        assertThat(jwt.getLocale(), is(Optional.of(locale)));
-        assertThat(jwt.getAudience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
-        assertThat(jwt.getIssuer(), is(Optional.of("jwt.example.com")));
-        assertThat(jwt.getAlgorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
+        assertThat(jwt.subject(), is(Optional.of(userId)));
+        assertThat(jwt.preferredUsername(), is(Optional.of(username)));
+        assertThat(jwt.email(), is(Optional.of(email)));
+        assertThat(jwt.emailVerified(), is(Optional.of(true)));
+        assertThat(jwt.familyName(), is(Optional.of(familyName)));
+        assertThat(jwt.givenName(), is(Optional.of(givenName)));
+        assertThat(jwt.fullName(), is(Optional.of(fullName)));
+        assertThat(jwt.locale(), is(Optional.of(locale)));
+        assertThat(jwt.audience(), is(Optional.of(CollectionsHelper.listOf("audience.application.id"))));
+        assertThat(jwt.issuer(), is(Optional.of("jwt.example.com")));
+        assertThat(jwt.algorithm(), is(Optional.of(JwkRSA.ALG_RS256)));
 
-        assertThat(jwt.getIssueTime(), is(not(Optional.empty())));
-        jwt.getIssueTime()
+        assertThat(jwt.issueTime(), is(not(Optional.empty())));
+        jwt.issueTime()
                 .ifPresent(instant -> {
                     boolean compareResult = Instant.now().minusSeconds(10).compareTo(instant) < 0;
                     assertThat("Issue time must not be older than 10 seconds", compareResult, is(true));
                     Instant expectedNotBefore = instant.minus(60, ChronoUnit.SECONDS);
-                    assertThat(jwt.getNotBefore(), is(Optional.of(expectedNotBefore)));
+                    assertThat(jwt.notBefore(), is(Optional.of(expectedNotBefore)));
                     Instant expectedExpiry = instant.plus(3600, ChronoUnit.SECONDS);
-                    assertThat(jwt.getExpirationTime(), is(Optional.of(expectedExpiry)));
+                    assertThat(jwt.expirationTime(), is(Optional.of(expectedExpiry)));
                 });
 
         //now we need to use the same token to invoke authentication
         ProviderRequest atnRequest = mockRequest(signedToken);
 
         AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
-        OptionalHelper.from(authenticationResponse.getUser()
-                                    .map(Subject::getPrincipal))
+        OptionalHelper.from(authenticationResponse.user()
+                                    .map(Subject::principal))
                 .ifPresentOrElse(atnPrincipal -> {
-                    assertThat(atnPrincipal.getId(), is(userId));
+                    assertThat(atnPrincipal.id(), is(userId));
                     assertThat(atnPrincipal.getName(), is(username));
-                    assertThat(atnPrincipal.getAttribute("email"), is(Optional.of(email)));
-                    assertThat(atnPrincipal.getAttribute("email_verified"), is(Optional.of(true)));
-                    assertThat(atnPrincipal.getAttribute("family_name"), is(Optional.of(familyName)));
-                    assertThat(atnPrincipal.getAttribute("given_name"), is(Optional.of(givenName)));
-                    assertThat(atnPrincipal.getAttribute("full_name"), is(Optional.of(fullName)));
-                    assertThat(atnPrincipal.getAttribute("locale"), is(Optional.of(locale)));
+                    assertThat(atnPrincipal.abacAttribute("email"), is(Optional.of(email)));
+                    assertThat(atnPrincipal.abacAttribute("email_verified"), is(Optional.of(true)));
+                    assertThat(atnPrincipal.abacAttribute("family_name"), is(Optional.of(familyName)));
+                    assertThat(atnPrincipal.abacAttribute("given_name"), is(Optional.of(givenName)));
+                    assertThat(atnPrincipal.abacAttribute("full_name"), is(Optional.of(fullName)));
+                    assertThat(atnPrincipal.abacAttribute("locale"), is(Optional.of(locale)));
                 }, () -> fail("User must be present in response"));
     }
 
@@ -343,7 +343,7 @@ public class JwtAuthProviderTest {
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .header("Authorization", "bearer " + signedToken)
                 .build();
-        when(atnRequest.getEnv()).thenReturn(se);
+        when(atnRequest.env()).thenReturn(se);
 
         EndpointConfig ep = mock(EndpointConfig.class);
         LoginConfig lc = mock(LoginConfig.class);
@@ -352,7 +352,7 @@ public class JwtAuthProviderTest {
 
         when(ep.combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION))
                 .thenReturn(CollectionsHelper.listOf(lc));
-        when(atnRequest.getEndpointConfig()).thenReturn(ep);
+        when(atnRequest.endpointConfig()).thenReturn(ep);
 
         return atnRequest;
     }

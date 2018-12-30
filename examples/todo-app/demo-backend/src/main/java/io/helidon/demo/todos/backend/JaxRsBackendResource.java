@@ -80,12 +80,12 @@ public class JaxRsBackendResource {
     public Response list(@Context final SecurityContext context,
                          @Context final HttpHeaders headers) {
 
-        Span span = context.getTracer().buildSpan("jaxrs:list")
-                .asChildOf(context.getTracingSpan())
+        Span span = context.tracer().buildSpan("jaxrs:list")
+                .asChildOf(context.tracingSpan())
                 .start();
 
         JsonArrayBuilder builder = Json.createArrayBuilder();
-        backendService.list(context.getTracingSpan(), getUserId(context))
+        backendService.list(context.tracingSpan(), getUserId(context))
                       .forEach(data -> builder.add(data.forRest()));
 
         Response response = Response.ok(builder.build()).build();
@@ -108,7 +108,7 @@ public class JaxRsBackendResource {
                         @Context final SecurityContext context) {
 
         return backendService
-                .get(context.getTracingSpan(), id, getUserId(context))
+                .get(context.tracingSpan(), id, getUserId(context))
                 .map(Todo::forRest)
                 .map(Response::ok)
                 .orElse(Response.status(Response.Status.NOT_FOUND))
@@ -129,7 +129,7 @@ public class JaxRsBackendResource {
                            @Context final SecurityContext context) {
 
         return backendService
-                .delete(context.getTracingSpan(), id, getUserId(context))
+                .delete(context.tracingSpan(), id, getUserId(context))
                 .map(Todo::forRest)
                 .map(Response::ok)
                 .orElse(Response.status(Response.Status.NOT_FOUND))
@@ -153,7 +153,7 @@ public class JaxRsBackendResource {
         String userId = getUserId(context);
         Todo newBackend = Todo.newTodoFromRest(jsonObject, userId, newId);
 
-        backendService.insert(context.getTracingSpan(), newBackend);
+        backendService.insert(context.tracingSpan(), newBackend);
 
         return Response.ok(newBackend.forRest()).build();
     }
@@ -175,7 +175,7 @@ public class JaxRsBackendResource {
                            final @Context SecurityContext context) {
 
         return backendService
-                .update(context.getTracingSpan(),
+                .update(context.tracingSpan(),
                         Todo.fromRest(jsonObject, getUserId(context), id))
                 .map(Todo::forRest)
                 .map(Response::ok)
@@ -189,9 +189,9 @@ public class JaxRsBackendResource {
      * @return user id found in the context or {@code <ANONYMOUS>} otherwise
      */
     private String getUserId(final SecurityContext context) {
-        return context.getUser()
-                .map(Subject::getPrincipal)
-                .map(Principal::getId)
+        return context.user()
+                .map(Subject::principal)
+                .map(Principal::id)
                 .orElse("<ANONYMOUS>");
     }
 }

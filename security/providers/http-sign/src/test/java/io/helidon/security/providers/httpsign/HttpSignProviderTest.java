@@ -73,7 +73,7 @@ public abstract class HttpSignProviderTest {
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getExecutorService()).thenReturn(ForkJoinPool.commonPool());
+        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .headers(headers)
@@ -81,21 +81,21 @@ public abstract class HttpSignProviderTest {
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AuthenticationResponse atnResponse = provider.authenticate(request).toCompletableFuture().get();
 
-        assertThat(atnResponse.getDescription().orElse("Unknown problem"),
-                   atnResponse.getStatus(),
+        assertThat(atnResponse.description().orElse("Unknown problem"),
+                   atnResponse.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        OptionalHelper.from(atnResponse.getUser()
-                                    .map(Subject::getPrincipal))
+        OptionalHelper.from(atnResponse.user()
+                                    .map(Subject::principal))
                 .ifPresentOrElse(principal -> {
                     assertThat(principal.getName(), is("aUser"));
-                    assertThat(principal.getAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("rsa-key-12345")));
+                    assertThat(principal.abacAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("rsa-key-12345")));
                 }, () -> fail("User must be filled"));
 
     }
@@ -116,7 +116,7 @@ public abstract class HttpSignProviderTest {
         HttpSignProvider provider = getProvider();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getExecutorService()).thenReturn(ForkJoinPool.commonPool());
+        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         SecurityEnvironment se = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .headers(headers)
@@ -124,21 +124,21 @@ public abstract class HttpSignProviderTest {
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AuthenticationResponse atnResponse = provider.authenticate(request).toCompletableFuture().get();
 
-        assertThat(atnResponse.getDescription().orElse("Unknown problem"),
-                   atnResponse.getStatus(),
+        assertThat(atnResponse.description().orElse("Unknown problem"),
+                   atnResponse.status(),
                    is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        OptionalHelper.from(atnResponse.getService()
-                                    .map(Subject::getPrincipal))
+        OptionalHelper.from(atnResponse.service()
+                                    .map(Subject::principal))
                 .ifPresentOrElse(principal -> {
                     assertThat(principal.getName(), is("aSetOfTrustedServices"));
-                    assertThat(principal.getAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("myServiceKeyId")));
+                    assertThat(principal.abacAttribute(HttpSignProvider.ATTRIB_NAME_KEY_ID), is(Optional.of("myServiceKeyId")));
                 }, () -> fail("User must be filled"));
     }
 
@@ -152,9 +152,9 @@ public abstract class HttpSignProviderTest {
         headers.put("authorization", CollectionsHelper.listOf("basic dXNlcm5hbWU6cGFzc3dvcmQ="));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getExecutorService()).thenReturn(ForkJoinPool.commonPool());
+        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
+        when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
                 .path("/my/resource")
                 .targetUri(URI.create("http://example.org/my/resource"))
@@ -169,9 +169,9 @@ public abstract class HttpSignProviderTest {
         OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp).toCompletableFuture()
                 .get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        Map<String, List<String>> updatedHeaders = response.getRequestHeaders();
+        Map<String, List<String>> updatedHeaders = response.requestHeaders();
         assertThat(updatedHeaders, notNullValue());
 
         //and now the value
@@ -199,9 +199,9 @@ public abstract class HttpSignProviderTest {
         headers.put("date", CollectionsHelper.listOf("Thu, 08 Jun 2014 18:32:30 GMT"));
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getExecutorService()).thenReturn(ForkJoinPool.commonPool());
+        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
+        when(request.securityContext()).thenReturn(context);
 
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
                 .path("/second/someOtherPath")
@@ -217,9 +217,9 @@ public abstract class HttpSignProviderTest {
         OutboundSecurityResponse response = getProvider().outboundSecurity(request, outboundEnv, outboundEp).toCompletableFuture()
                 .get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
 
-        Map<String, List<String>> updatedHeaders = response.getRequestHeaders();
+        Map<String, List<String>> updatedHeaders = response.requestHeaders();
         assertThat(updatedHeaders, notNullValue());
 
         //and now the value

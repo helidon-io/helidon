@@ -66,11 +66,11 @@ public final class SignedJwt {
      *                      the algorithms of JWK and JWT do not match, or in case of other mis-matches
      */
     public static SignedJwt sign(Jwt jwt, JwkKeys jwks) throws JwtException {
-        return jwt.getAlgorithm()
+        return jwt.algorithm()
                 .map(alg -> sign(jwt, jwks, alg))
                 .orElseGet(() -> {
                     // If key id is present, but no algorithm is defined, try to use the default alg of the jwk
-                    return jwt.getKeyId()
+                    return jwt.keyId()
                             // key id is defined
                             .map(kid -> jwks.forKeyId(kid)
                                     .map(jwk -> sign(jwt, jwk))
@@ -90,8 +90,8 @@ public final class SignedJwt {
      *                      the algorithms of JWK and JWT do not match, or in case of other mis-matches
      */
     public static SignedJwt sign(Jwt jwt, Jwk jwk) throws JwtException {
-        JsonObject headerJson = jwt.getHeaderJson();
-        JsonObject payloadJson = jwt.getPayloadJson();
+        JsonObject headerJson = jwt.headerJson();
+        JsonObject payloadJson = jwt.payloadJson();
 
         // now serialize to string
         String headerJsonString = headerJson.toString();
@@ -112,7 +112,7 @@ public final class SignedJwt {
     }
 
     private static SignedJwt sign(Jwt jwt, JwkKeys jwks, String alg) {
-        Jwk jwk = jwt.getKeyId()
+        Jwk jwk = jwt.keyId()
                 // if key id is defined, find it from keys
                 .map(kid -> jwks.forKeyId(kid).orElseThrow(() -> new JwtException("Could not find JWK for kid: " + kid)))
                 // else check that alg is none, if so, use none
@@ -214,22 +214,42 @@ public final class SignedJwt {
         }
     }
 
-    public String getTokenContent() {
+    /**
+     * The full token (header, payload, signature).
+     * @return token content
+     */
+    public String tokenContent() {
         return tokenContent;
     }
 
-    JsonObject getHeaderJson() {
+    /**
+     * Header JSON.
+     * @return header json
+     */
+    JsonObject headerJson() {
         return headerJson;
     }
 
-    JsonObject getPayloadJson() {
+    /**
+     * Payload JSON.
+     * @return payload JSON
+     */
+    JsonObject payloadJson() {
         return payloadJson;
     }
 
+    /**
+     * The bytes that were signed (payload bytes).
+     * @return signed bytes
+     */
     public byte[] getSignedBytes() {
         return Arrays.copyOf(signedBytes, signedBytes.length);
     }
 
+    /**
+     * Signature bytes.
+     * @return bytes of the signature
+     */
     public byte[] getSignature() {
         return Arrays.copyOf(signature, signature.length);
     }
@@ -276,7 +296,7 @@ public final class SignedJwt {
             if (null == kid) {
                 collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
                 jwk = (defaultJwk == null) ? Jwk.NONE_JWK : defaultJwk;
-                alg = jwk.getAlgorithm();
+                alg = jwk.algorithm();
             } else {
                 //null alg, non-null kid - will use alg of jwk
                 jwk = keys.forKeyId(kid).orElse(null);
@@ -288,7 +308,7 @@ public final class SignedJwt {
                     }
                 }
                 if (null != jwk) {
-                    alg = jwk.getAlgorithm();
+                    alg = jwk.algorithm();
                 }
             }
         } else {
@@ -306,7 +326,7 @@ public final class SignedJwt {
                 //both not null
                 jwk = keys.forKeyId(kid).orElse(null);
                 if (null == jwk) {
-                    if ((null != defaultJwk) && alg.equals(defaultJwk.getAlgorithm())) {
+                    if ((null != defaultJwk) && alg.equals(defaultJwk.algorithm())) {
                         jwk = defaultJwk;
                     }
                     if (null == jwk) {
@@ -322,7 +342,7 @@ public final class SignedJwt {
 
         // now if jwk algorithm is none, alg may be
 
-        if (jwk.getAlgorithm().equals(alg)) {
+        if (jwk.algorithm().equals(alg)) {
 
             if (!jwk.verifySignature(signedBytes, signature)) {
                 collector.fatal(jwk, "Signature of JWT token is not valid, based on alg: " + alg + ", kid: " + kid);
@@ -330,7 +350,7 @@ public final class SignedJwt {
         } else {
             collector.fatal(jwk,
                             "Algorithm of JWK (" + jwk
-                                    .getAlgorithm() + ") does not match algorithm of this JWT (" + alg + ") for kid: " + kid);
+                                    .algorithm() + ") does not match algorithm of this JWT (" + alg + ") for kid: " + kid);
         }
 
         return collector.collect();

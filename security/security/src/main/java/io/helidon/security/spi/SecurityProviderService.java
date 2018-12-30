@@ -48,7 +48,7 @@ public interface SecurityProviderService {
      *
      * @return class of {@link SecurityProvider} provided by this provider service
      */
-    Class<? extends SecurityProvider> getProviderClass();
+    Class<? extends SecurityProvider> providerClass();
 
     /**
      * Create a new instance of the provider based on the configuration
@@ -57,5 +57,5 @@ public interface SecurityProviderService {
      * @param config Config with provider configuration
      * @return provider instance created from the {@link Config} provided
      */
-    SecurityProvider getProviderInstance(Config config);
+    SecurityProvider providerInstance(Config config);
 }

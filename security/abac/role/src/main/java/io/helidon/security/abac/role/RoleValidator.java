@@ -80,7 +80,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
 
     @Override
     public RoleConfig fromConfig(Config config) {
-        return RoleConfig.from(config);
+        return RoleConfig.create(config);
     }
 
     @Override
@@ -108,15 +108,15 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
     @Override
     public RoleConfig combine(RoleConfig parent, RoleConfig child) {
         return RoleConfig.builder()
-                .addRoles(parent.getUserRolesAllowed())
-                .addRoles(child.getUserRolesAllowed())
+                .addRoles(parent.userRolesAllowed())
+                .addRoles(child.userRolesAllowed())
                 .build();
     }
 
     @Override
     public void validate(RoleConfig config, Errors.Collector collector, ProviderRequest request) {
-        validate(config.getUserRolesAllowed(), collector, request.getSubject(), SubjectType.USER);
-        validate(config.getServiceRolesAllowed(), collector, request.getService(), SubjectType.SERVICE);
+        validate(config.userRolesAllowed(), collector, request.subject(), SubjectType.USER);
+        validate(config.serviceRolesAllowed(), collector, request.service(), SubjectType.SERVICE);
     }
 
     private void validate(Set<String> rolesAllowed, Errors.Collector collector, Optional<Subject> subject, SubjectType type) {
@@ -126,7 +126,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         }
 
         Set<String> roleGrants = subject
-                .map(sub -> sub.getGrants(Role.class))
+                .map(sub -> sub.grants(Role.class))
                 .orElse(CollectionsHelper.listOf())
                 .stream()
                 .map(Role::getName)
@@ -196,7 +196,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
     /**
      * Attribute configuration class for Role validator.
      */
-    public static class RoleConfig implements AbacValidatorConfig {
+    public static final class RoleConfig implements AbacValidatorConfig {
         private final Set<String> userRolesAllowed = new HashSet<>();
         private final Set<String> serviceRolesAllowed = new HashSet<>();
 
@@ -220,7 +220,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
          * @param rolesAllowed roles allowed
          * @return instance configured with the userRolesAllowed
          */
-        public static RoleConfig from(Collection<String> rolesAllowed) {
+        public static RoleConfig create(Collection<String> rolesAllowed) {
             return RoleConfig.builder()
                     .addRoles(rolesAllowed)
                     .build();
@@ -232,7 +232,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
          * @param rolesAllowed roles allowed
          * @return instance configured with the userRolesAllowed
          */
-        public static RoleConfig from(String... rolesAllowed) {
+        public static RoleConfig create(String... rolesAllowed) {
             return RoleConfig.builder()
                     .addRoles(Arrays.asList(rolesAllowed))
                     .build();
@@ -250,8 +250,8 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
          * @param config configuration located on key "roles-allowed"
          * @return roles config for the configuration
          */
-        public static RoleConfig from(Config config) {
-            return builder().from(config).build();
+        public static RoleConfig create(Config config) {
+            return builder().config(config).build();
         }
 
         /**
@@ -259,7 +259,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
          *
          * @return set of roles
          */
-        public Set<String> getServiceRolesAllowed() {
+        public Set<String> serviceRolesAllowed() {
             return Collections.unmodifiableSet(serviceRolesAllowed);
         }
 
@@ -268,7 +268,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
          *
          * @return set of roles
          */
-        public Set<String> getUserRolesAllowed() {
+        public Set<String> userRolesAllowed() {
             return Collections.unmodifiableSet(userRolesAllowed);
         }
 
@@ -335,7 +335,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
              * @param config configuration located the key of this attribute config
              * @return updated builder instance
              */
-            public Builder from(Config config) {
+            public Builder config(Config config) {
                 config.get("user").asList(String.class).ifPresent(this::addRoles);
                 config.get("service").asList(String.class).ifPresent(this::addServiceRoles);
                 return this;

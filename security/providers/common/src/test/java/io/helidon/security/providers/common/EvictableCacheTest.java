@@ -19,8 +19,6 @@ package io.helidon.security.providers.common;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.security.providers.common.EvictableCache;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -52,7 +50,7 @@ class EvictableCacheTest {
 
     @Test
     void testEviction() throws InterruptedException {
-        EvictableCache<String, String> cache = EvictableCache.builder()
+        EvictableCache<String, String> cache = EvictableCache.<String, String>builder()
                 .evictSchedule(100, 100, TimeUnit.MILLISECONDS)
                 .timeout(50, TimeUnit.MILLISECONDS)
                 .build();
@@ -67,7 +65,7 @@ class EvictableCacheTest {
 
     @Test
     void testEvictor() {
-        EvictableCache<String, String> cache = EvictableCache.builder()
+        EvictableCache<String, String> cache = EvictableCache.<String, String>builder()
                 // always evict ones
                 .evictor((key, value) -> "one".equals(key))
                 .build();
@@ -82,7 +80,7 @@ class EvictableCacheTest {
 
     @Test
     void testMaxSize() {
-        EvictableCache<String, String> cache = EvictableCache.builder()
+        EvictableCache<String, String> cache = EvictableCache.<String, String>builder()
                 .maxSize(2)
                 .build();
 

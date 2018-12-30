@@ -68,7 +68,7 @@ public class PreMatchingBindingTest {
         server = Routing.builder()
                 .register(JerseySupport.builder()
                                   .register(MyResource.class)
-                                  .register(new SecurityFeature(Security.fromConfig(config)))
+                                  .register(new SecurityFeature(Security.create(config.get("security"))))
                                   .register(new ExceptionMapper<Exception>() {
                                       @Override
                                       public Response toResponse(Exception exception) {
@@ -153,8 +153,8 @@ public class PreMatchingBindingTest {
         @Produces(MediaType.TEXT_PLAIN)
         public String getIt(@Context SecurityContext context) {
             return "hello" +
-                    context.getUser()
-                            .map(Subject::getPrincipal)
+                    context.user()
+                            .map(Subject::principal)
                             .map(Principal::getName)
                             .map(name -> " " + name)
                             .orElse("");

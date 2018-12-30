@@ -57,7 +57,7 @@ public class EndpointConfig implements AbacSupport {
 
     private EndpointConfig(Builder builder) {
         this.annotations = Collections.unmodifiableMap(new EnumMap<>(builder.annotations));
-        this.attributes = new BasicAttributes(builder.attributes);
+        this.attributes = BasicAttributes.create(builder.attributes);
         this.customObjects = new ClassToInstanceStore<>();
         this.customObjects.putAll(builder.customObjects);
         this.configMap = new HashMap<>(builder.configMap);
@@ -82,13 +82,13 @@ public class EndpointConfig implements AbacSupport {
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return attributes.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return attributes.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return attributes.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return attributes.abacAttributeNames();
     }
 
     /**
@@ -98,7 +98,7 @@ public class EndpointConfig implements AbacSupport {
      * @param <U>   type of the configuration
      * @return instance of the custom object if present
      */
-    public <U> Optional<U> getInstance(Class<U> clazz) {
+    public <U> Optional<U> instance(Class<U> clazz) {
         return customObjects.getInstance(clazz);
     }
 
@@ -107,7 +107,7 @@ public class EndpointConfig implements AbacSupport {
      *
      * @return classes that are keys in the custom object store
      */
-    public Collection<Class<?>> getInstanceKeys() {
+    public Collection<Class<?>> instanceKeys() {
         return customObjects.keys();
     }
 
@@ -117,7 +117,7 @@ public class EndpointConfig implements AbacSupport {
      * @param configKey key of configuration expected
      * @return Config instance if present in this endpoint configuration
      */
-    public Optional<Config> getConfig(String configKey) {
+    public Optional<Config> config(String configKey) {
         return Optional.ofNullable(configMap.get(configKey));
     }
 
@@ -128,7 +128,7 @@ public class EndpointConfig implements AbacSupport {
      * @return a map of annotation classes to annotation instances
      * @see SecurityProvider#supportedAnnotations()
      */
-    public Map<Class<? extends Annotation>, List<Annotation>> getAnnotations(AnnotationScope... scopes) {
+    public Map<Class<? extends Annotation>, List<Annotation>> annotations(AnnotationScope... scopes) {
         Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
 
         for (AnnotationScope scope : scopes) {
@@ -154,7 +154,7 @@ public class EndpointConfig implements AbacSupport {
     public <T extends Annotation> List<T> combineAnnotations(Class<T> annotationClass, AnnotationScope... scopes) {
         List<T> result = new LinkedList<>();
 
-        result.addAll((Collection<? extends T>) getAnnotations(scopes).getOrDefault(annotationClass, CollectionsHelper.listOf()));
+        result.addAll((Collection<? extends T>) annotations(scopes).getOrDefault(annotationClass, CollectionsHelper.listOf()));
 
         return result;
     }
@@ -210,7 +210,7 @@ public class EndpointConfig implements AbacSupport {
                 new EnumMap<>(AnnotationScope.class);
         private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
         private final Map<String, Config> configMap = new HashMap<>();
-        private BasicAttributes attributes = new BasicAttributes();
+        private BasicAttributes attributes = BasicAttributes.create();
 
         private Builder() {
         }
@@ -302,7 +302,7 @@ public class EndpointConfig implements AbacSupport {
          * @return updated builder instance
          */
         private Builder attributes(AbacSupport attributes) {
-            this.attributes = new BasicAttributes(attributes);
+            this.attributes = BasicAttributes.create(attributes);
             return this;
         }
 

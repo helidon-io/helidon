@@ -36,7 +36,7 @@ public class ProviderSelectorTest {
                 .build();
 
         SecurityContext context = security.createContext("unit-test");
-        context.setEnv(SecurityEnvironment.builder().path("/public/path"));
+        context.env(SecurityEnvironment.builder().path("/public/path"));
 
         AuthorizationResponse response = context.authorize();
 

@@ -57,11 +57,11 @@ public class SignedJwtTest {
     public void testParsing() {
         SignedJwt signedJwt = SignedJwt.parseToken(AUTH_0_TOKEN);
 
-        assertThat(signedJwt.getHeaderJson(), notNullValue());
-        assertThat(signedJwt.getPayloadJson(), notNullValue());
+        assertThat(signedJwt.headerJson(), notNullValue());
+        assertThat(signedJwt.payloadJson(), notNullValue());
         assertThat(signedJwt.getSignature(), notNullValue());
         assertThat(signedJwt.getSignedBytes(), notNullValue());
-        assertThat(signedJwt.getTokenContent(), is(AUTH_0_TOKEN));
+        assertThat(signedJwt.tokenContent(), is(AUTH_0_TOKEN));
     }
 
     @Test

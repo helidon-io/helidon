@@ -47,7 +47,7 @@ public class AtnProviderSync extends SynchronousProvider implements Authenticati
 
         // first obtain the configuration of this request
         // either from annotation, custom object or config
-        AtnObject myObject = getCustomObject(providerRequest.getEndpointConfig());
+        AtnObject myObject = getCustomObject(providerRequest.endpointConfig());
 
         if (null == myObject) {
             // I do not have my required information, this request is probably not for me
@@ -69,13 +69,13 @@ public class AtnProviderSync extends SynchronousProvider implements Authenticati
     private AtnObject getCustomObject(EndpointConfig epConfig) {
         // order I choose - this depends on type of security you implement and your choice:
         // 1) custom object in request (as this must be explicitly done by a developer)
-        Optional<? extends AtnObject> opt = epConfig.getInstance(AtnObject.class);
+        Optional<? extends AtnObject> opt = epConfig.instance(AtnObject.class);
         if (opt.isPresent()) {
             return opt.get();
         }
 
         // 2) configuration in request
-        opt = epConfig.getConfig("atn-object").flatMap(conf -> conf.as(AtnObject::from).asOptional());
+        opt = epConfig.config("atn-object").flatMap(conf -> conf.as(AtnObject::from).asOptional());
         if (opt.isPresent()) {
             return opt.get();
         }

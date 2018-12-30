@@ -53,9 +53,9 @@ public class ExtractQueryParamsTest {
     @BeforeAll
     public static void initClass() throws Throwable {
         Config config = Config.create();
-        Security security = Security.fromConfig(config);
+        Security security = Security.create(config.get("security"));
         SecurityFeature feature = SecurityFeature.builder(security)
-                .fromConfig(config.get("security.jersey"))
+                .config(config.get("security.jersey"))
                 .build();
 
         server = Routing.builder()

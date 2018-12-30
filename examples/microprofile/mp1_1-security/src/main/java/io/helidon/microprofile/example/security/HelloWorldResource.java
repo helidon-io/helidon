@@ -56,7 +56,7 @@ public class HelloWorldResource {
                 + "<a href=\"helloworld/admin\">Allowed for admin only</a><br>"
                 + "<a href=\"helloworld/user\">Allowed for user only</a><br>"
                 + "<a href=\"" + context + "/resource.html\">" + context + "/resource.html allowed for a logged in user</a><br>"
-                + "you are logged in as: " + securityContext.getUser()
+                + "you are logged in as: " + securityContext.user()
                 + "</body></html>";
     }
 
@@ -75,7 +75,7 @@ public class HelloWorldResource {
     public String getAdmin(@Context SecurityContext securityContext) {
         return "<html><head/><body>Hello World. You may want to check "
                 + "<a href=\"" + context + "/resource.html\">" + context + "/resource.html</a><br>"
-                + "you are logged in as: " + securityContext.getUser()
+                + "you are logged in as: " + securityContext.user()
                 + "</body></html>";
     }
 
@@ -94,7 +94,7 @@ public class HelloWorldResource {
     public String getUser(@Context SecurityContext securityContext) {
         return "<html><head/><body>Hello World. You may want to check "
                 + "<a href=\"" + context + "/resource.html\">" + context + "/resource.html</a><br>"
-                + "you are logged in as: " + securityContext.getUser()
+                + "you are logged in as: " + securityContext.user()
                 + "</body></html>";
     }
 }

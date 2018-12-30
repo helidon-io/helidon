@@ -31,12 +31,12 @@ public class AtzProviderSync extends SynchronousProvider implements Authorizatio
     protected AuthorizationResponse syncAuthorize(ProviderRequest providerRequest) {
         // just check the path contains the string "public", otherwise allow only if user is logged in
         // if no path is defined, abstain (e.g. I do not care about such requests - I can neither allow or deny them)
-        return providerRequest.getEnv().getPath()
+        return providerRequest.env().path()
                 .map(path -> {
                     if (path.contains("public")) {
                         return AuthorizationResponse.permit();
                     }
-                    if (providerRequest.getContext().isAuthenticated()) {
+                    if (providerRequest.securityContext().isAuthenticated()) {
                         return AuthorizationResponse.permit();
                     } else {
                         return AuthorizationResponse.deny();

@@ -81,8 +81,8 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
      * @param config configuration on the key of this provider
      * @return scope validator instance
      */
-    public static ScopeValidator from(Config config) {
-        return builder().from(config).build();
+    public static ScopeValidator create(Config config) {
+        return builder().config(config).build();
     }
 
     @Override
@@ -102,7 +102,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
 
     @Override
     public ScopesConfig fromConfig(Config config) {
-        return ScopesConfig.from(config);
+        return ScopesConfig.create(config);
     }
 
     @Override
@@ -117,22 +117,22 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
             }
         }
 
-        return ScopesConfig.from(scopes);
+        return ScopesConfig.create(scopes);
     }
 
     @Override
     public ScopesConfig combine(ScopesConfig parent, ScopesConfig child) {
         List<String> allScopes = new LinkedList<>();
-        allScopes.addAll(parent.getRequiredScopes());
-        allScopes.addAll(child.getRequiredScopes());
-        return ScopesConfig.from(allScopes.toArray(new String[0]));
+        allScopes.addAll(parent.requiredScopes());
+        allScopes.addAll(child.requiredScopes());
+        return ScopesConfig.create(allScopes.toArray(new String[0]));
     }
 
     @Override
     public void validate(ScopesConfig config, Errors.Collector collector, ProviderRequest request) {
-        OptionalHelper.from(request.getSubject()).ifPresentOrElse(
+        OptionalHelper.from(request.subject()).ifPresentOrElse(
                 subject -> {
-                    Set<String> requiredScopes = new LinkedHashSet<>(config.getRequiredScopes());
+                    Set<String> requiredScopes = new LinkedHashSet<>(config.requiredScopes());
                     int origRequired = requiredScopes.size();
 
                     if (origRequired == 0) {
@@ -140,14 +140,14 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
                         return;
                     }
 
-                    List<Grant> userScopes = subject.getGrantsByType(SCOPE_GRANT_TYPE);
+                    List<Grant> userScopes = subject.grantsByType(SCOPE_GRANT_TYPE);
 
                     // remove from required scopes
                     userScopes.stream().map(Grant::getName).forEach(requiredScopes::remove);
                     int remainingRequired = requiredScopes.size();
 
                     if (remainingRequired == origRequired) {
-                        collector.fatal(this, "Access requires scopes: " + config.getRequiredScopes() + ", yet the user is in "
+                        collector.fatal(this, "Access requires scopes: " + config.requiredScopes() + ", yet the user is in "
                                 + "neither of them: " + userScopes);
                         return;
                     }
@@ -162,11 +162,11 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
                         return;
                     }
 
-                    collector.fatal(this, "User is not in all required scopes: " + config.getRequiredScopes() + ", user's "
+                    collector.fatal(this, "User is not in all required scopes: " + config.requiredScopes() + ", user's "
                             + "scopes: " + userScopes);
 
                 }, () -> {
-                    List<String> requiredScopes = config.getRequiredScopes();
+                    List<String> requiredScopes = config.requiredScopes();
                     if (!requiredScopes.isEmpty()) {
                         collector.fatal(this, "User not logged int. Required scopes: " + requiredScopes);
                     }
@@ -211,7 +211,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
     /**
      * A fluent API builder for {@link ScopeValidator}.
      */
-    public static class Builder implements io.helidon.common.Builder<ScopeValidator> {
+    public static final class Builder implements io.helidon.common.Builder<ScopeValidator> {
         private boolean useOrOperator = false;
 
         private Builder() {
@@ -240,7 +240,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @param config config located on key of this validator
          * @return updated builder instance
          */
-        public Builder from(Config config) {
+        public Builder config(Config config) {
             config.get("operator").asString().map("OR"::equals).ifPresent(this::useOrOperator);
             return this;
         }
@@ -262,7 +262,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @param scopes scopes required
          * @return configuration based on this list of scopes
          */
-        public static ScopesConfig from(String... scopes) {
+        public static ScopesConfig create(String... scopes) {
             return new ScopesConfig(CollectionsHelper.listOf(scopes));
         }
 
@@ -272,7 +272,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @param scopes scope annotations
          * @return configuration based on the list
          */
-        public static ScopesConfig from(List<Scope> scopes) {
+        public static ScopesConfig create(List<Scope> scopes) {
             List<String> allScopes = new ArrayList<>();
 
             for (Scope scope : scopes) {
@@ -287,7 +287,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          * @param config config located on the key of this validator
          * @return configuration based on the config
          */
-        public static ScopesConfig from(Config config) {
+        public static ScopesConfig create(Config config) {
             return new ScopesConfig(config.asList(String.class).orElse(CollectionsHelper.listOf()));
         }
 
@@ -296,7 +296,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
          *
          * @return list of scopes in order of definition
          */
-        public List<String> getRequiredScopes() {
+        public List<String> requiredScopes() {
             return Collections.unmodifiableList(requiredScopes);
         }
     }

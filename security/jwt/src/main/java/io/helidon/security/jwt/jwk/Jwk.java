@@ -190,16 +190,16 @@ public abstract class Jwk {
      * @param json with definition of a web key (any key type)
      * @return new instance of a descendant of this class constructed from json, based on key type
      */
-    public static Jwk fromJson(JsonObject json) {
+    public static Jwk create(JsonObject json) {
         String keyType = asString(json, PARAM_KEY_TYPE, "JWK Key type");
         // gather key type specific values
         switch (keyType) {
         case KEY_TYPE_EC:
-            return JwkEC.fromJson(json);
+            return JwkEC.create(json);
         case KEY_TYPE_RSA:
-            return JwkRSA.fromJson(json);
+            return JwkRSA.create(json);
         case KEY_TYPE_OCT:
-            return JwkOctet.fromJson(json);
+            return JwkOctet.create(json);
         default:
             throw new JwtException("Unknown JWK type: " + keyType);
         }
@@ -214,7 +214,7 @@ public abstract class Jwk {
      * @see #KEY_TYPE_RSA
      * @see #KEY_TYPE_EC
      */
-    public String getKeyType() {
+    public String keyType() {
         return keyType;
     }
 
@@ -229,7 +229,7 @@ public abstract class Jwk {
      * @return key id of this JWK
      * @see #PARAM_KEY_ID
      */
-    public String getKeyId() {
+    public String keyId() {
         return keyId;
     }
 
@@ -241,7 +241,7 @@ public abstract class Jwk {
      * @return algorithm if present (some types have defaults).
      * @see #PARAM_ALGORITHM
      */
-    public String getAlgorithm() {
+    public String algorithm() {
         return algorithm;
     }
 
@@ -255,7 +255,7 @@ public abstract class Jwk {
      * @see #USE_ENCRYPTION
      * @see #USE_SIGNATURE
      */
-    public Optional<String> getUsage() {
+    public Optional<String> usage() {
         return usage;
     }
 
@@ -266,7 +266,7 @@ public abstract class Jwk {
      *
      * @return list of operations allowed, or empty if not defined
      */
-    public Optional<List<String>> getOperations() {
+    public Optional<List<String>> operations() {
         return operations;
     }
 
@@ -318,12 +318,6 @@ public abstract class Jwk {
         return result;
     }
 
-    /*
-    TODO - see security#26 as a follow-up issue
-    public abstract byte[] encrypt(byte[] encryptedBytes);
-    public abstract byte[] decrypt(byte[] plainTextBytes);
-    */
-
     // used from other descendants - if alg is set to "none", the signature must be
     // an empty string and we must support it for current kid
     boolean verifyNoneAlg(byte[] signatureToVerify) {
@@ -336,8 +330,8 @@ public abstract class Jwk {
     }
 
     // this builder is not public, as a specific key type must be built
-    abstract static class Builder<T extends Builder> {
-        private T myInstance;
+    abstract static class Builder<T extends Builder<T>> {
+        private final T myInstance;
         private String keyType;
         private String keyId;
         private String algorithm;

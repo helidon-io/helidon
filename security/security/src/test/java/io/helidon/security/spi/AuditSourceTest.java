@@ -32,12 +32,12 @@ public class AuditSourceTest {
     @Test
     void testLocation() {
         // DO NOT MOVE THIS LINE - if you add an import, this test will fail - or fix assertion of line number!!!
-        AuditSource auditSource = AuditSource.build();
+        AuditSource auditSource = AuditSource.create();
 
-        assertThat(auditSource.getClassName(), is(Optional.of(AuditSourceTest.class.getName())));
-        assertThat(auditSource.getFileName(), is(Optional.of("AuditSourceTest.java")));
-        assertThat(auditSource.getMethodName(), is(Optional.of("testLocation")));
-        assertThat(auditSource.getLineNumber(), is(OptionalInt.of(35)));
+        assertThat(auditSource.className(), is(Optional.of(AuditSourceTest.class.getName())));
+        assertThat(auditSource.fileName(), is(Optional.of("AuditSourceTest.java")));
+        assertThat(auditSource.methodName(), is(Optional.of("testLocation")));
+        assertThat(auditSource.lineNumber(), is(OptionalInt.of(35)));
     }
 
     @Test

@@ -29,7 +29,7 @@ public interface SecurityClient<T extends SecurityResponse> {
      * or OutboundSecurity).
      *
      * @return response with information about what happened. Check
-     * {@link AuthenticationResponse#getStatus()} to obtain {@link SecurityResponse.SecurityStatus} and easily check if {@link
+     * {@link AuthenticationResponse#status()} to obtain {@link SecurityResponse.SecurityStatus} and easily check if {@link
      * SecurityResponse.SecurityStatus#isSuccess()}
      * Otherwise security request failed or could not be processed.
      */

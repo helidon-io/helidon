@@ -29,7 +29,7 @@ import io.helidon.common.reactive.Flow;
  * An {@link Flow.Subscriber subscriber} that can subscribe to a source of {@code ByteBuffer} data chunks and then make
  * them available for consumption via standard blocking {@link InputStream} API.
  */
-public class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteBuffer> {
+class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteBuffer> {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private volatile Flow.Subscription subscription;

@@ -48,7 +48,7 @@ public class AtnProvider extends SynchronousProvider implements AuthenticationPr
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
 
-        List<Authentications> authenticationAnnots = providerRequest.getEndpointConfig()
+        List<Authentications> authenticationAnnots = providerRequest.endpointConfig()
                 .combineAnnotations(Authentications.class, EndpointConfig.AnnotationScope.METHOD);
 
         List<Authentication> authentications = new LinkedList<>();

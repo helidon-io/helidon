@@ -35,14 +35,14 @@ public interface AbacSupport {
      * @param key key (name) of the property
      * @return value of the property or null
      */
-    Object getAttributeRaw(String key);
+    Object abacAttributeRaw(String key);
 
     /**
      * A collection of all property names in this container.
      *
      * @return collection of keys
      */
-    Collection<String> getAttributeNames();
+    Collection<String> abacAttributeNames();
 
     /**
      * Get the property (optional) value.
@@ -50,26 +50,50 @@ public interface AbacSupport {
      * @param key key (name) of the property
      * @return value of the property if exists or empty
      */
-    default Optional<Object> getAttribute(String key) {
-        return Optional.ofNullable(getAttributeRaw(key));
+    default Optional<Object> abacAttribute(String key) {
+        return Optional.ofNullable(abacAttributeRaw(key));
     }
 
     /**
      * Implements {@link AbacSupport} interface and supports adding attributes.
+     * This class is mutable and thread safe.
      */
     class BasicAttributes implements AbacSupport {
         private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
         private final Map<String, Object> registry = new LinkedHashMap<>();
 
-        public BasicAttributes() {
+        private BasicAttributes() {
         }
 
-        public BasicAttributes(AbacSupport toCopy) {
-            toCopy.getAttributeNames().forEach(key -> {
-                this.registry.put(key, toCopy.getAttributeRaw(key));
+        /**
+         * Create empty basic attributes.
+         *
+         * @return basic attributes
+         */
+        public static BasicAttributes create() {
+            return new BasicAttributes();
+        }
+
+        /**
+         * Create basic attributes that have all attributes of the toCopy.
+         *
+         * @param toCopy abac support to copy
+         * @return basic attributes with all attributes of the toCopy {@link io.helidon.security.util.AbacSupport}
+         */
+        public static BasicAttributes create(AbacSupport toCopy) {
+            BasicAttributes ba = new BasicAttributes();
+            toCopy.abacAttributeNames().forEach(key -> {
+                ba.registry.put(key, toCopy.abacAttributeRaw(key));
             });
+            return ba;
         }
 
+        /**
+         * Put a new attribute to this instance.
+         *
+         * @param classifier classifier (name) of the attribute
+         * @param value      attribute value
+         */
         public void put(String classifier, Object value) {
             Lock lock = rwLock.writeLock();
 
@@ -82,7 +106,7 @@ public interface AbacSupport {
         }
 
         @Override
-        public Collection<String> getAttributeNames() {
+        public Collection<String> abacAttributeNames() {
             Lock lock = rwLock.readLock();
             lock.lock();
             try {
@@ -93,7 +117,7 @@ public interface AbacSupport {
         }
 
         @Override
-        public Object getAttributeRaw(String key) {
+        public Object abacAttributeRaw(String key) {
             Lock lock = rwLock.readLock();
             lock.lock();
 

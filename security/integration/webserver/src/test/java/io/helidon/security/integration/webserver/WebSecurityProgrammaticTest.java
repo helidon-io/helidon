@@ -48,13 +48,13 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
 
         Config config = Config.create();
 
-        Security security = Security.builderFromConfig(config)
+        Security security = Security.builder(config.get("security"))
                 .addAuditProvider(myAuditProvider).build();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.from(security)
+                .register(WebSecurity.create(security)
                                   .securityDefaults(
-                                          SecurityHandler.newInstance()
+                                          SecurityHandler.create()
                                                   .queryParam(
                                                           "jwt",
                                                           TokenHandler.builder()
@@ -82,7 +82,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.getUser().orElse(SecurityContext.ANONYMOUS).toString())
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
                 })
                 .build();

@@ -51,22 +51,22 @@ public class AtnProviderSyncTest {
     @Test
     public void testAbstain() {
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.empty());
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.empty());
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AtnProviderSync provider = new AtnProviderSync();
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
 
     @Test
@@ -89,8 +89,8 @@ public class AtnProviderSyncTest {
         };
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.empty());
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.empty());
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
         EndpointConfig ep = EndpointConfig.builder()
@@ -99,9 +99,9 @@ public class AtnProviderSyncTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         testSuccess(request);
     }
@@ -113,8 +113,8 @@ public class AtnProviderSyncTest {
         obj.setValue(VALUE);
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.empty());
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.empty());
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
         EndpointConfig ep = EndpointConfig.builder()
@@ -122,9 +122,9 @@ public class AtnProviderSyncTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         testSuccess(request);
     }
@@ -137,8 +137,8 @@ public class AtnProviderSyncTest {
         );
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.empty());
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.empty());
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
         EndpointConfig ep = EndpointConfig.builder()
@@ -146,9 +146,9 @@ public class AtnProviderSyncTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
 
         testSuccess(request);
@@ -161,8 +161,8 @@ public class AtnProviderSyncTest {
         );
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.empty());
-        when(context.getService()).thenReturn(Optional.empty());
+        when(context.user()).thenReturn(Optional.empty());
+        when(context.service()).thenReturn(Optional.empty());
 
         SecurityEnvironment se = SecurityEnvironment.create();
         EndpointConfig ep = EndpointConfig.builder()
@@ -170,15 +170,15 @@ public class AtnProviderSyncTest {
                 .build();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AtnProviderSync provider = new AtnProviderSync();
 
         AuthenticationResponse response = provider.syncAuthenticate(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
 
     @Test
@@ -191,7 +191,7 @@ public class AtnProviderSyncTest {
         // in Jersey you have access to security context through annotations
         // in Web server you have access to security context through context
         SecurityContext context = security.createContext("unit-test");
-        context.setEndpointConfig(EndpointConfig.builder()
+        context.endpointConfig(EndpointConfig.builder()
                                           .customObject(AtnProviderSync.AtnObject.class,
                                                         AtnProviderSync.AtnObject.from(VALUE, SIZE)));
         AuthenticationResponse response = context.authenticate();
@@ -200,11 +200,11 @@ public class AtnProviderSyncTest {
     }
 
     private void validateResponse(AuthenticationResponse response) {
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
-        Optional<Subject> maybeuser = response.getUser();
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        Optional<Subject> maybeuser = response.user();
 
         OptionalHelper.from(maybeuser).ifPresentOrElse(user -> {
-            assertThat(user.getPrincipal().getId(), is(VALUE));
+            assertThat(user.principal().id(), is(VALUE));
             Set<String> roles = Security.getRoles(user);
             assertThat(roles.size(), is(1));
             assertThat(roles.iterator().next(), is("role_" + SIZE));

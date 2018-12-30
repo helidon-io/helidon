@@ -121,7 +121,7 @@ class OptionalSecurityTest {
         secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
 
         assertThat(filterContext.isShouldFinish(), is(false));
-        assertThat(secuContext.getUser(), is(Optional.empty()));
+        assertThat(secuContext.user(), is(Optional.empty()));
     }
 
     @Test
@@ -147,7 +147,7 @@ class OptionalSecurityTest {
         secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
 
         assertThat(filterContext.isShouldFinish(), is(true));
-        assertThat(secuContext.getUser(), is(Optional.empty()));
+        assertThat(secuContext.user(), is(Optional.empty()));
     }
 
     private static Application getApplication() {

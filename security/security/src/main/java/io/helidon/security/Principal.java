@@ -30,7 +30,7 @@ public interface Principal extends AbacSupport, java.security.Principal {
      *
      * @return id if defined, name otherwise
      */
-    String getId();
+    String id();
 
     /**
      * Creates a fluent API builder to build new instances of this class.
@@ -56,10 +56,10 @@ public interface Principal extends AbacSupport, java.security.Principal {
     /**
      * A fluent API builder for {@link Principal}.
      */
-    class Builder implements io.helidon.common.Builder<Principal> {
+    final class Builder implements io.helidon.common.Builder<Principal> {
         private String name;
         private String id;
-        private BasicAttributes properties = new BasicAttributes();
+        private BasicAttributes properties = BasicAttributes.create();
 
         private Builder() {
         }
@@ -116,7 +116,7 @@ public interface Principal extends AbacSupport, java.security.Principal {
          * @return updated builder instance
          */
         private Builder attributes(AbacSupport attributes) {
-            this.properties = new BasicAttributes(attributes);
+            this.properties = BasicAttributes.create(attributes);
             return this;
         }
 

@@ -23,6 +23,7 @@ import java.util.Optional;
 
 /**
  * Map of classes to their instances.
+ * This class is mutable and not thread safe.
  *
  * @param <T> Type all classes in this instance must extend
  */
@@ -31,14 +32,14 @@ public final class ClassToInstanceStore<T> {
 
     /**
      * Create a new instance based on explicit instances.
-     * This method create a MUTABLE instance (contrary to such methods on java collections).
+     * This method creates a MUTABLE instance (contrary to such methods on java collections).
      *
      * @param instances instances to add to the new store
      * @param <T>       type of the store
      * @return new store with instances inserted as when calling {@link #putInstance(Object)} for each of them
      */
     @SafeVarargs
-    public static <T> ClassToInstanceStore<T> of(T... instances) {
+    public static <T> ClassToInstanceStore<T> create(T... instances) {
         ClassToInstanceStore<T> result = new ClassToInstanceStore<>();
         for (T instance : instances) {
             result.putInstance(instance);

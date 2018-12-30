@@ -79,7 +79,7 @@ public interface EvictableCache<K, V> {
 
     /**
      * Create a new cache and configure it from the provided configuration.
-     * See {@link Builder#fromConfig(Config)} for the list of configuration keys.
+     * See {@link Builder#config(Config)} for the list of configuration keys.
      *
      * @param config config to read configuration of this cache from
      * @param <K>    type of keys in the cache
@@ -89,23 +89,8 @@ public interface EvictableCache<K, V> {
     static <K, V> EvictableCache<K, V> create(Config config) {
         Builder<K, V> builder = builder();
 
-        return builder.fromConfig(config)
+        return builder.config(config)
                 .build();
-    }
-
-    /**
-     * This method has same semantics as {@link #create(Config)} and is here to allow automatic
-     * loading of instances from config using {@link Config#as(Class)}.
-     *
-     * @param config config to read configuration of this cache from
-     * @param <K>    type of keys in the cache
-     * @param <V>    type of values in the cache
-     * @return new cache configured from config
-     * @deprecated Do not use directly, please use {@link #create(Config)}
-     */
-    @Deprecated
-    static <K, V> EvictableCache<K, V> from(Config config) {
-        return create(config);
     }
 
     /**
@@ -301,7 +286,7 @@ public interface EvictableCache<K, V> {
          * @param config Config to use to load configuration options for this builder
          * @return updated builder instance
          */
-        public Builder<K, V> fromConfig(Config config) {
+        public Builder<K, V> config(Config config) {
             config.get("cache-enabled").asBoolean().ifPresent(this::cacheEnabled);
             if (cacheEnabled) {
                 config.get("cache-timeout-millis").asLong().ifPresent(timeout -> timeout(timeout, TimeUnit.MILLISECONDS));
@@ -318,7 +303,7 @@ public interface EvictableCache<K, V> {
         }
 
         @SuppressWarnings("unchecked")
-        private Builder<K, V> evictorClass(Class aClass) {
+        private Builder<K, V> evictorClass(Class<?> aClass) {
             // attempt to create an instance
             try {
                 aClass.getMethod("apply", Object.class, Object.class);

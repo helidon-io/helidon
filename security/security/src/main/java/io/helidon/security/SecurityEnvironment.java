@@ -31,7 +31,7 @@ import io.helidon.security.util.AbacSupport;
  * Security environment is a set of attributes that are stable for an interaction (usually a request in our case).
  * Environment can be re-used for multiple security request (e.g authentication, authorization).
  * Access to environment is either through methods (for known attributes) or through
- * generic {@link #getAttribute(String)} methods for any property configured by integration component.
+ * generic {@link #abacAttribute(String)} methods for any property configured by integration component.
  *
  * <p>
  * The following properties are available (known):
@@ -55,7 +55,7 @@ public class SecurityEnvironment implements AbacSupport {
     private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     private SecurityEnvironment(Builder builder) {
-        BasicAttributes basicAttributes = new BasicAttributes(builder.attributes);
+        BasicAttributes basicAttributes = BasicAttributes.create(builder.attributes);
         this.timeProvider = builder.timeProvider;
         this.time = builder.time;
         this.targetUri = builder.targetUri;
@@ -102,13 +102,13 @@ public class SecurityEnvironment implements AbacSupport {
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return properties.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return properties.abacAttributeNames();
     }
 
     /**
@@ -119,9 +119,9 @@ public class SecurityEnvironment implements AbacSupport {
      * to the future), or an explicit value (e.g. setting the time to 14:00 e.g. for testing purposes).
      *
      * @return server time that should be used to make security decisions
-     * @see Security.Builder#serverTime
+     * @see io.helidon.security.Security.Builder#serverTime()
      */
-    public ZonedDateTime getTime() {
+    public ZonedDateTime time() {
         return time;
     }
 
@@ -135,7 +135,7 @@ public class SecurityEnvironment implements AbacSupport {
      *
      * @return URI being called or URI to be called
      */
-    public URI getTargetUri() {
+    public URI targetUri() {
         return targetUri;
     }
 
@@ -145,7 +145,7 @@ public class SecurityEnvironment implements AbacSupport {
      *
      * @return Path to the resource
      */
-    public Optional<String> getPath() {
+    public Optional<String> path() {
         return path;
     }
 
@@ -155,7 +155,7 @@ public class SecurityEnvironment implements AbacSupport {
      *
      * @return Verb executing on the resource, default is GET
      */
-    public String getMethod() {
+    public String method() {
         return method;
     }
 
@@ -166,7 +166,7 @@ public class SecurityEnvironment implements AbacSupport {
      *
      * @return transport used for this request. Defaults to http.
      */
-    public String getTransport() {
+    public String transport() {
         return transport;
     }
 
@@ -197,14 +197,14 @@ public class SecurityEnvironment implements AbacSupport {
      *
      * @return Header map. If transport protocol does not support headers, map will be empty
      */
-    public Map<String, List<String>> getHeaders() {
+    public Map<String, List<String>> headers() {
         return headers;
     }
 
     /**
      * A fluent API builder for {@link SecurityEnvironment}.
      */
-    public static class Builder implements io.helidon.common.Builder<SecurityEnvironment> {
+    public static final class Builder implements io.helidon.common.Builder<SecurityEnvironment> {
         /**
          * Default transport is {@value}.
          */
@@ -217,7 +217,7 @@ public class SecurityEnvironment implements AbacSupport {
         private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private SecurityTime timeProvider;
         private ZonedDateTime time;
-        private BasicAttributes attributes = new BasicAttributes();
+        private BasicAttributes attributes = BasicAttributes.create();
         private URI targetUri;
         private String path;
         private String method = DEFAULT_METHOD;
@@ -235,7 +235,7 @@ public class SecurityEnvironment implements AbacSupport {
         }
 
         private Builder attributes(AbacSupport props) {
-            this.attributes = new BasicAttributes(props);
+            this.attributes = BasicAttributes.create(props);
             return this;
         }
 

@@ -76,7 +76,7 @@ public class InboundClientDefinition {
      * @return builder configured based on config
      */
     public static Builder builder(Config config) {
-        return new Builder().fromConfig(config);
+        return new Builder().config(config);
     }
 
     /**
@@ -86,7 +86,7 @@ public class InboundClientDefinition {
      * @return instance configured based on config
      */
     public static InboundClientDefinition create(Config config) {
-        return new Builder().fromConfig(config).build();
+        return new Builder().config(config).build();
     }
 
     /**
@@ -94,7 +94,7 @@ public class InboundClientDefinition {
      *
      * @return key id to map this configuration to inbound signature
      */
-    public String getKeyId() {
+    public String keyId() {
         return keyId;
     }
 
@@ -103,7 +103,7 @@ public class InboundClientDefinition {
      *
      * @return name to use when creating security principal for this client
      */
-    public String getPrincipalName() {
+    public String principalName() {
         return principalName;
     }
 
@@ -112,7 +112,7 @@ public class InboundClientDefinition {
      *
      * @return principal type to use when creating security principal for this client
      */
-    public SubjectType getSubjectType() {
+    public SubjectType subjectType() {
         return subjectType;
     }
 
@@ -121,7 +121,7 @@ public class InboundClientDefinition {
      *
      * @return algorithm of signature expected in request
      */
-    public String getAlgorithm() {
+    public String algorithm() {
         return algorithm;
     }
 
@@ -130,7 +130,7 @@ public class InboundClientDefinition {
      *
      * @return Public key configuration to validate signature or empty optional if none configured
      */
-    public Optional<KeyConfig> getKeyConfig() {
+    public Optional<KeyConfig> keyConfig() {
         return Optional.ofNullable(keyConfig);
     }
 
@@ -139,7 +139,7 @@ public class InboundClientDefinition {
      *
      * @return shared secret to validate signature or empty optional if none configured
      */
-    public Optional<byte[]> getHmacSharedSecret() {
+    public Optional<byte[]> hmacSharedSecret() {
         return Optional.ofNullable(hmacSharedSecret);
     }
 
@@ -147,7 +147,7 @@ public class InboundClientDefinition {
      * Fluent API builder to create a new instance of {@link InboundClientDefinition}.
      * Use {@link #build()} to create the instance.
      */
-    public static class Builder implements io.helidon.common.Builder<InboundClientDefinition> {
+    public static final class Builder implements io.helidon.common.Builder<InboundClientDefinition> {
         private String keyId;
         private String algorithm;
         private KeyConfig keyConfig;
@@ -264,7 +264,7 @@ public class InboundClientDefinition {
          * @param config config instance
          * @return builder instance initialized from config
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             keyId(config.get("key-id").asString().get());
             config.get("principal-name").asString().ifPresent(this::principalName);
             config.get("principal-type").as(SubjectType.class).ifPresent(this::subjectType);

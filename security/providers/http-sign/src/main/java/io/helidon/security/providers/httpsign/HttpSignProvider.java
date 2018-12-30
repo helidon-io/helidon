@@ -90,11 +90,11 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         this.inboundKeys = builder.inboundKeys;
         this.outboundConfig = builder.outboundConfig;
 
-        outboundConfig.getTargets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
+        outboundConfig.targets().forEach(target -> target.getConfig().ifPresent(targetConfig -> {
             OutboundTargetDefinition outboundTargetDefinition = targetConfig.get("signature")
                     .as(OutboundTargetDefinition.class)
                     .get();
-            targetKeys.put(target.getName(), outboundTargetDefinition);
+            targetKeys.put(target.name(), outboundTargetDefinition);
         }));
     }
 
@@ -104,8 +104,8 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
      * @param config config located at this provider, expects "http-signature" to be a child
      * @return provider configured from config
      */
-    public static HttpSignProvider fromConfig(Config config) {
-        return builder().fromConfig(config).build();
+    public static HttpSignProvider create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -119,18 +119,18 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        Map<String, List<String>> headers = providerRequest.getEnv().getHeaders();
+        Map<String, List<String>> headers = providerRequest.env().headers();
 
         if ((headers.get("Signature") != null) && acceptHeaders.contains(HttpSignHeader.SIGNATURE)) {
             return CompletableFuture
-                    .supplyAsync(() -> signatureHeader(headers.get("Signature"), providerRequest.getEnv()),
-                                 providerRequest.getContext().getExecutorService());
+                    .supplyAsync(() -> signatureHeader(headers.get("Signature"), providerRequest.env()),
+                                 providerRequest.securityContext().executorService());
         } else if ((headers.get("Authorization") != null) && acceptHeaders.contains(HttpSignHeader.AUTHORIZATION)) {
             // TODO when authorization header in use and "authorization" is also a
             // required header to be signed, we must either fail or ignore, as we cannot sign ourselves
             return CompletableFuture
-                    .supplyAsync(() -> authorizeHeader(providerRequest.getEnv()),
-                                 providerRequest.getContext().getExecutorService());
+                    .supplyAsync(() -> authorizeHeader(providerRequest.env()),
+                                 providerRequest.securityContext().executorService());
         }
 
         if (optional) {
@@ -141,14 +141,14 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     }
 
     private AuthenticationResponse authorizeHeader(SecurityEnvironment env) {
-        List<String> authorization = env.getHeaders().get("Authorization");
+        List<String> authorization = env.headers().get("Authorization");
         AuthenticationResponse response = null;
 
         // attempt to validate each authorization, first one that succeeds will finish processing and return
         for (String authorizationValue : authorization) {
             if (authorizationValue.toLowerCase().startsWith("signature ")) {
                 response = signatureHeader(CollectionsHelper.listOf(authorizationValue.substring("singature ".length())), env);
-                if (response.getStatus().isSuccess()) {
+                if (response.status().isSuccess()) {
                     // that was a good header, let's return the response
                     return response;
                 }
@@ -163,7 +163,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         // challenge
         return challenge(env, (null == response)
                 ? "No Signature authorization header"
-                : response.getDescription().orElse("Unknown problem"));
+                : response.description().orElse("Unknown problem"));
     }
 
     private AuthenticationResponse challenge(SecurityEnvironment env, String description) {
@@ -171,7 +171,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                 .responseHeader("WWW-Authenticate", "Signature realm=\""
                         + realm
                         + ",headers=\""
-                        + headersForMethod(env.getMethod())
+                        + headersForMethod(env.method())
                         + "\"")
                 .status(SecurityResponse.SecurityStatus.FAILURE)
                 .statusCode(401)
@@ -180,7 +180,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     }
 
     private String headersForMethod(String method) {
-        return String.join(" ", inboundRequiredHeaders.getHeaders(method.toLowerCase()));
+        return String.join(" ", inboundRequiredHeaders.headers(method.toLowerCase()));
     }
 
     private AuthenticationResponse signatureHeader(List<String> signatures,
@@ -223,22 +223,22 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         // validate algorithm
         Optional<String> validationResult = httpSignature.validate(env,
                                                                    clientDefinition,
-                                                                   inboundRequiredHeaders.getHeaders(env.getMethod(),
-                                                                                                     env.getHeaders()));
+                                                                   inboundRequiredHeaders.headers(env.method(),
+                                                                                                  env.headers()));
 
         if (validationResult.isPresent()) {
             return AuthenticationResponse.failed(validationResult.get());
         }
 
         Principal principal = Principal.builder()
-                .name(clientDefinition.getPrincipalName())
-                .addAttribute(ATTRIB_NAME_KEY_ID, clientDefinition.getKeyId())
+                .name(clientDefinition.principalName())
+                .addAttribute(ATTRIB_NAME_KEY_ID, clientDefinition.keyId())
                 .build();
 
         Subject subject = Subject.builder()
                 .principal(principal)
                 .build();
-        if (clientDefinition.getSubjectType() == SubjectType.USER) {
+        if (clientDefinition.subjectType() == SubjectType.USER) {
             return AuthenticationResponse.success(subject);
         } else {
             return AuthenticationResponse.successService(subject);
@@ -258,7 +258,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                                                                       EndpointConfig outboundConfig) {
 
         return CompletableFuture.supplyAsync(() -> signRequest(outboundEnv),
-                                             providerRequest.getContext().getExecutorService());
+                                             providerRequest.securityContext().executorService());
     }
 
     private OutboundSecurityResponse signRequest(SecurityEnvironment outboundEnv) {
@@ -266,20 +266,20 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
         Optional<OutboundTarget> targetOpt = this.outboundConfig.findTarget(outboundEnv);
 
         return targetOpt.map(target -> {
-            OutboundTargetDefinition targetConfig = this.targetKeys.computeIfAbsent(target.getName(), key -> target.getConfig()
+            OutboundTargetDefinition targetConfig = this.targetKeys.computeIfAbsent(target.name(), key -> target.getConfig()
                     .flatMap(config -> config.get("signature").as(OutboundTargetDefinition.class).asOptional())
-                    .orElse(target.getCustomObject(OutboundTargetDefinition.class).orElseThrow(() -> new HttpSignatureException(
-                            "Failed to find configuration for outbound signatures for target " + target.getName()))));
+                    .orElse(target.customObject(OutboundTargetDefinition.class).orElseThrow(() -> new HttpSignatureException(
+                            "Failed to find configuration for outbound signatures for target " + target.name()))));
 
             Map<String, List<String>> newHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            newHeaders.putAll(outboundEnv.getHeaders());
+            newHeaders.putAll(outboundEnv.headers());
             HttpSignature signature = HttpSignature.sign(outboundEnv, targetConfig, newHeaders);
 
             OutboundSecurityResponse.Builder builder = OutboundSecurityResponse.builder()
                     .requestHeaders(newHeaders)
                     .status(SecurityResponse.SecurityStatus.SUCCESS);
 
-            switch (targetConfig.getHeader()) {
+            switch (targetConfig.header()) {
             case SIGNATURE:
                 builder.requestHeader("Signature", signature.toSignatureHeader());
                 break;
@@ -287,10 +287,10 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
                 builder.requestHeader("Authorization", "Signature " + signature.toSignatureHeader());
                 break;
             default:
-                throw new HttpSignatureException("Invalid header configuration: " + targetConfig.getHeader());
+                throw new HttpSignatureException("Invalid header configuration: " + targetConfig.header());
             }
 
-            Map<String, List<String>> headers = outboundEnv.getHeaders();
+            Map<String, List<String>> headers = outboundEnv.headers();
             if (headers.containsKey("host")) {
                 builder.requestHeader("host", headers.get("host"));
             }
@@ -306,13 +306,16 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
     /**
      * Fluent API builder for this provider. Call {@link #build()} to create a provider instance.
      */
-    public static class Builder implements io.helidon.common.Builder<HttpSignProvider> {
+    public static final class Builder implements io.helidon.common.Builder<HttpSignProvider> {
         private boolean optional = true;
-        private String realm = "Helidon";
+        private String realm = "helidon";
         private final Set<HttpSignHeader> acceptHeaders = EnumSet.noneOf(HttpSignHeader.class);
         private SignedHeadersConfig inboundRequiredHeaders = SignedHeadersConfig.builder().build();
         private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private final Map<String, InboundClientDefinition> inboundKeys = new HashMap<>();
+
+        private Builder() {
+        }
 
         @Override
         public HttpSignProvider build() {
@@ -325,16 +328,16 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * @param config Config located at http-signatures key
          * @return builder instance configured from config
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("headers").asList(HttpSignHeader.class).ifPresent(list -> list.forEach(this::addAcceptHeader));
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("realm").asString().ifPresent(this::realm);
-            config.get("sign-headers").as(SignedHeadersConfig::fromConfig).ifPresent(this::inboundRequiredHeaders);
-            outboundConfig = OutboundConfig.parseTargets(config);
+            config.get("sign-headers").as(SignedHeadersConfig::create).ifPresent(this::inboundRequiredHeaders);
+            outboundConfig = OutboundConfig.create(config);
 
             config.get("inbound.keys")
                     .asList(InboundClientDefinition::create)
-                    .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.getKeyId(), inbound)));
+                    .ifPresent(list -> list.forEach(inbound -> inboundKeys.put(inbound.keyId(), inbound)));
 
             return this;
         }
@@ -402,7 +405,7 @@ public final class HttpSignProvider implements AuthenticationProvider, OutboundS
          * @return updated builder instance
          */
         public Builder addInbound(InboundClientDefinition client) {
-            this.inboundKeys.put(client.getKeyId(), client);
+            this.inboundKeys.put(client.keyId(), client);
             return this;
         }
 

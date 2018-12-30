@@ -196,15 +196,15 @@ public class JwkEC extends JwkPki {
      *
      * @param json with definition of this EC web key
      * @return new instance of this class constructed from json
-     * @see Jwk#fromJson(JsonObject) for generic method that can load any supported JWK type.
+     * @see Jwk#create(JsonObject) for generic method that can load any supported JWK type.
      */
-    public static JwkEC fromJson(JsonObject json) {
+    public static JwkEC create(JsonObject json) {
         return builder().fromJson(json).build();
     }
 
     @Override
-    String getSignatureAlgorithm() {
-        String jwkAlg = getAlgorithm();
+    String signatureAlgorithm() {
+        String jwkAlg = algorithm();
         String javaAlg = ALG_MAP.get(jwkAlg);
 
         if (null == javaAlg) {
@@ -271,7 +271,7 @@ public class JwkEC extends JwkPki {
          *
          * @param json JsonObject with the JWK
          * @return updated builder instance, just call {@link #build()} to build the {@link JwkEC} instance
-         * @see JwkEC#fromJson(JsonObject) as a shortcut if no additional configuration is to be done
+         * @see JwkEC#create(JsonObject) as a shortcut if no additional configuration is to be done
          */
         public Builder fromJson(JsonObject json) {
             super.fromJson(json);

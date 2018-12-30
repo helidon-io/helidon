@@ -34,8 +34,8 @@ public final class QueryParamHandler {
     private final TokenHandler tokenHandler;
 
     private QueryParamHandler(QueryParamMapping mapping) {
-        this.paramName = mapping.getQueryParamName();
-        this.tokenHandler = mapping.getTokenHandler();
+        this.paramName = mapping.queryParamName();
+        this.tokenHandler = mapping.tokenHandler();
     }
 
     /**
@@ -44,8 +44,8 @@ public final class QueryParamHandler {
      * @param config configuration instance
      * @return new query parameter handler instance
      */
-    public static QueryParamHandler from(Config config) {
-        return new QueryParamHandler(QueryParamMapping.from(config));
+    public static QueryParamHandler create(Config config) {
+        return new QueryParamHandler(QueryParamMapping.create(config));
     }
 
     /**
@@ -54,7 +54,7 @@ public final class QueryParamHandler {
      * @param mapping mapping to use
      * @return new query parameter handler instance
      */
-    public static QueryParamHandler from(QueryParamMapping mapping) {
+    public static QueryParamHandler create(QueryParamMapping mapping) {
         return new QueryParamHandler(mapping);
     }
 

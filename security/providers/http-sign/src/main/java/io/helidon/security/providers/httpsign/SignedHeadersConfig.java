@@ -47,7 +47,7 @@ import io.helidon.config.Config;
  * ]
  * </pre>
  */
-public class SignedHeadersConfig {
+public final class SignedHeadersConfig {
     /**
      * Special header {@value} is used for method and path combination.
      */
@@ -69,10 +69,10 @@ public class SignedHeadersConfig {
      * @param config config instance, expecting object array as children
      * @return signed headers configuration loaded from config
      */
-    public static SignedHeadersConfig fromConfig(Config config) {
+    public static SignedHeadersConfig create(Config config) {
         Builder builder = builder();
         config.asNodeList().get().forEach(methodConfig -> {
-            HeadersConfig mc = HeadersConfig.fromConfig(methodConfig);
+            HeadersConfig mc = HeadersConfig.create(methodConfig);
 
             methodConfig.get("method")
                     .asString()
@@ -92,11 +92,11 @@ public class SignedHeadersConfig {
         return new Builder().defaultConfig(HeadersConfig.create());
     }
 
-    List<String> getHeaders(String method, Map<String, List<String>> transportHeaders) {
+    List<String> headers(String method, Map<String, List<String>> transportHeaders) {
         return methodConfigs.getOrDefault(method, defaultConfig).getHeaders(transportHeaders);
     }
 
-    List<String> getHeaders(String method) {
+    List<String> headers(String method) {
         return new ArrayList<>(methodConfigs.getOrDefault(method, defaultConfig).always);
     }
 
@@ -104,7 +104,7 @@ public class SignedHeadersConfig {
      * Fluent API builder to create {@link SignedHeadersConfig} instances.
      * Call {@link #build()} to create a new instance.
      */
-    public static class Builder implements io.helidon.common.Builder<SignedHeadersConfig> {
+    public static final class Builder implements io.helidon.common.Builder<SignedHeadersConfig> {
         private static final HeadersConfig DEFAULT_HEADERS = HeadersConfig.create(CollectionsHelper.listOf("date"));
 
         private final Map<String, HeadersConfig> methodConfigs = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -135,7 +135,7 @@ public class SignedHeadersConfig {
         }
 
         /**
-         * Configuration of a single method (see {@link io.helidon.security.SecurityEnvironment#getMethod()} to set required and
+         * Configuration of a single method (see {@link io.helidon.security.SecurityEnvironment#method()} to set required and
          * "if-present" headers to be signed (or to be expected in inbound signature).
          *
          * @param method method name (methods are case-insensitive)
@@ -197,7 +197,7 @@ public class SignedHeadersConfig {
          * @param config configuration located at header config
          * @return instance configured from config
          */
-        public static HeadersConfig fromConfig(Config config) {
+        public static HeadersConfig create(Config config) {
             return create(config.get("always").asList(String.class).orElse(CollectionsHelper.listOf()),
                           config.get("if-present").asList(String.class).orElse(CollectionsHelper.listOf()));
         }

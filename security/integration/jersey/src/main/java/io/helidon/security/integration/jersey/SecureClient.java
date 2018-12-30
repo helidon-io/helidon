@@ -30,7 +30,6 @@ import org.glassfish.jersey.server.ClientBinding;
  * Just send security context as request parameter using {@link ClientSecurityFeature#PROPERTY_CONTEXT} and
  * security will be handled for outgoing request(s) on this client.
  *
- * <p>
  * <pre>
  * &#064;SecureClient
  * &#064;Uri("http://service-name:8787/base_path")

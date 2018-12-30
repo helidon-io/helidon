@@ -41,8 +41,10 @@ public interface SecurityRequest {
      * Access request message entity.
      *
      * @return Entity of the request, if current request has entity
+     * @deprecated Access to entity is to be removed from security
      */
-    default Optional<Entity> getRequestEntity() {
+    @Deprecated
+    default Optional<Entity> requestEntity() {
         return Optional.empty();
     }
 
@@ -50,8 +52,10 @@ public interface SecurityRequest {
      * Access response message entity.
      *
      * @return Entity of the response, if current response can have entity
+     * @deprecated Access to entity is to be removed from security
      */
-    default Optional<Entity> getResponseEntity() {
+    @Deprecated
+    default Optional<Entity> responseEntity() {
         return Optional.empty();
     }
 
@@ -62,7 +66,7 @@ public interface SecurityRequest {
      * @see io.opentracing.util.GlobalTracer#get()
      * @see io.opentracing.Tracer#buildSpan(String)
      */
-    Span getTracingSpan();
+    Span tracingSpan();
 
     /**
      * Return a map of keys to resource instances.
@@ -70,6 +74,6 @@ public interface SecurityRequest {
      *
      * @return a map of object keys to object instances
      */
-    Map<String, Supplier<Object>> getResources();
+    Map<String, Supplier<Object>> resources();
 
 }

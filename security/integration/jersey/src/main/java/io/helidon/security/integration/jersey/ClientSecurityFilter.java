@@ -79,21 +79,21 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             return;
         }
 
-        Span span = context.getTracer()
+        Span span = context.tracer()
                 .buildSpan("security:outbound")
-                .asChildOf(context.getTracingSpan())
+                .asChildOf(context.tracingSpan())
                 .start();
 
         String explicitProvider = (String) requestContext.getProperty(ClientSecurityFeature.PROPERTY_PROVIDER);
 
         try {
-            SecurityEnvironment.Builder outboundEnv = context.getEnv().derive();
+            SecurityEnvironment.Builder outboundEnv = context.env().derive();
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
                     .headers(HttpUtil.toSimpleMap(requestContext.getStringHeaders()));
 
-            EndpointConfig.Builder outboundEp = context.getEndpointConfig().derive();
+            EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
             for (String name : requestContext.getPropertyNames()) {
                 outboundEp.addAtribute(name, requestContext.getProperty(name));
             }
@@ -105,13 +105,13 @@ public class ClientSecurityFilter implements ClientRequestFilter {
 
             OutboundSecurityResponse providerResponse = clientBuilder.buildAndGet();
 
-            switch (providerResponse.getStatus()) {
+            switch (providerResponse.status()) {
             case FAILURE:
             case FAILURE_FINISH:
                 HttpUtil.traceError(span,
-                                    providerResponse.getThrowable().orElse(null),
-                                    providerResponse.getDescription()
-                                            .orElse(providerResponse.getStatus().toString()));
+                                    providerResponse.throwable().orElse(null),
+                                    providerResponse.description()
+                                            .orElse(providerResponse.status().toString()));
                 break;
             case ABSTAIN:
             case SUCCESS:
@@ -122,7 +122,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             // TODO check response status - maybe entity was updated?
             // see MIC-6785
 
-            Map<String, List<String>> newHeaders = providerResponse.getRequestHeaders();
+            Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
             LOGGER.finest(() -> "Client filter header(s). SIZE: " + newHeaders.size());
 

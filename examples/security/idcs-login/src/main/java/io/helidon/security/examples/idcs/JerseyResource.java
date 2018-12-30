@@ -44,6 +44,6 @@ public class JerseyResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getHelloName(@Context SecurityContext securityContext) {
-        return "Hello, your current subject: " + securityContext.getUser().orElse(SecurityContext.ANONYMOUS);
+        return "Hello, your current subject: " + securityContext.user().orElse(SecurityContext.ANONYMOUS);
     }
 }

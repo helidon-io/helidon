@@ -48,7 +48,7 @@ import io.helidon.security.spi.SynchronousProvider;
  * Http authentication security provider.
  * Provides support for username and password authentication, with support for roles list.
  */
-public class HttpDigestAuthProvider extends SynchronousProvider implements AuthenticationProvider {
+public final class HttpDigestAuthProvider extends SynchronousProvider implements AuthenticationProvider {
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String DIGEST_PREFIX = "digest ";
@@ -78,7 +78,7 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
 
     /**
      * Get a builder instance to construct a new security provider.
-     * Alternative approach is {@link #fromConfig(Config)} (or {@link HttpDigestAuthProvider#fromConfig(Config)}).
+     * Alternative approach is {@link #create(Config)} (or {@link HttpDigestAuthProvider#create(Config)}).
      *
      * @return builder to fluently construct Basic security provider
      */
@@ -93,8 +93,8 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
      *               http-digest-auth)
      * @return instance of provider configured from provided config
      */
-    public static HttpDigestAuthProvider fromConfig(Config config) {
-        return Builder.fromConfig(config).build();
+    public static HttpDigestAuthProvider create(Config config) {
+        return builder().config(config).build();
     }
 
     static String nonce(long timeInMillis, Random random, char[] serverSecret) {
@@ -121,7 +121,7 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
 
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
-        Map<String, List<String>> headers = providerRequest.getEnv().getHeaders();
+        Map<String, List<String>> headers = providerRequest.env().headers();
         List<String> authorizationHeader = headers.get(HEADER_AUTHENTICATION);
 
         if (null == authorizationHeader) {
@@ -131,7 +131,7 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
         return authorizationHeader.stream()
                 .filter(header -> header.toLowerCase().startsWith(DIGEST_PREFIX))
                 .findFirst()
-                .map(value -> validateDigestAuth(value, providerRequest.getEnv()))
+                .map(value -> validateDigestAuth(value, providerRequest.env()))
                 .orElseGet(() -> fail("Authorization header does not contain digest authentication: " + authorizationHeader));
 
     }
@@ -140,7 +140,7 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
         DigestToken token;
         try {
             token = DigestToken.fromAuthorizationHeader(headerValue.substring(DIGEST_PREFIX.length()),
-                                                        env.getMethod().toLowerCase());
+                                                        env.method().toLowerCase());
         } catch (HttpAuthException e) {
             LOGGER.log(Level.FINEST, "Failed to process digest token", e);
             return fail(e.getMessage());
@@ -178,9 +178,9 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
             return fail("Invalid realm");
         }
 
-        return userStore.getUser(token.getUsername())
+        return userStore.user(token.getUsername())
                 .map(user -> {
-                    if (token.validateLogin(user.getPassword())) {
+                    if (token.validateLogin(user.password())) {
                         // yay, correct user and password!!!
                         if (subjectType == SubjectType.USER) {
                             return AuthenticationResponse.success(buildSubject(user));
@@ -233,11 +233,11 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
     private Subject buildSubject(UserStore.User user) {
         Subject.Builder builder = Subject.builder()
                 .principal(Principal.builder()
-                                   .name(user.getLogin())
+                                   .name(user.login())
                                    .build())
                 .addPrivateCredential(UserStore.User.class, user);
 
-        user.getRoles()
+        user.roles()
                 .forEach(role -> builder.addGrant(Role.create(role)));
 
         return builder.build();
@@ -259,35 +259,38 @@ public class HttpDigestAuthProvider extends SynchronousProvider implements Authe
         private HttpDigest.Algorithm digestAlgorithm = HttpDigest.Algorithm.MD5;
         private boolean noDigestQop = false;
         private long digestNonceTimeoutMillis = DEFAULT_DIGEST_NONCE_TIMEOUT;
-        private char[] digestServerSecret;
+        private char[] digestServerSecret = randomSecret();
 
         private Builder() {
         }
 
-        static Builder fromConfig(Config config) {
-            Builder builder = new Builder();
-
-            config.get("realm").asString().ifPresent(builder::realm);
-            config.get("users").as(ConfigUserStore::fromConfig).ifPresent(builder::userStore);
-            config.get("algorithm").as(HttpDigest.Algorithm::fromConfig).orElse(HttpDigest.Algorithm.MD5);
+        /**
+         * Update builder from configuration.
+         * @param config to read configuration from, located on the node of the provider
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("realm").asString().ifPresent(this::realm);
+            config.get("users").as(ConfigUserStore::create).ifPresent(this::userStore);
+            config.get("algorithm").asString().as(HttpDigest.Algorithm::valueOf).ifPresent(this::digestAlgorithm);
             config.get("nonce-timeout-millis").asLong()
-                    .ifPresent(timeout -> builder.digestNonceTimeout(timeout, TimeUnit.MILLISECONDS));
-            config.get("principal-type").as(SubjectType.class).ifPresent(builder::subjectType);
+                    .ifPresent(timeout -> this.digestNonceTimeout(timeout, TimeUnit.MILLISECONDS));
+            config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
 
-            builder.digestServerSecret(config.get("server-secret")
+            config.get("server-secret")
                     .asString()
                     .map(String::toCharArray)
-                    .orElseGet(Builder::randomSecret));
+                    .ifPresent(this::digestServerSecret);
 
-            config.get("qop").asList(HttpDigest.Qop::fromConfig).ifPresent(qop -> {
+            config.get("qop").asList(HttpDigest.Qop::create).ifPresent(qop -> {
                 if (qop.isEmpty()) {
-                    builder.noDigestQop();
+                    noDigestQop();
                 } else {
-                    qop.forEach(builder::addDigestQop);
+                    qop.forEach(this::addDigestQop);
                 }
             });
 
-            return builder;
+            return this;
         }
 
         private static char[] randomSecret() {

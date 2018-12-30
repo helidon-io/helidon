@@ -43,11 +43,11 @@ public class WebSecurityTest {
         AtomicReference<Class> execClassHolder = new AtomicReference<>();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.from(security))
+                .register(WebSecurity.create(security))
                 .get("/unit_test", (req, res) -> {
                     req.context()
                             .get(SecurityContext.class)
-                            .ifPresent(context -> execClassHolder.set(context.getExecutorService().getClass()));
+                            .ifPresent(context -> execClassHolder.set(context.executorService().getClass()));
                     req.next();
                 })
                 .build();

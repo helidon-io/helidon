@@ -35,7 +35,7 @@ class JsonWebTokenProducer {
 
     @Produces
     public JsonWebToken produceToken() {
-        return securityContext.getUserPrincipal()
+        return securityContext.userPrincipal()
                 .map(JsonWebToken.class::cast)
                 .orElse(null);
     }

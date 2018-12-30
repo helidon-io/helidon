@@ -24,6 +24,7 @@ import io.helidon.common.CollectionsHelper;
 /**
  * Store of users for resolving httpauth and digest authentication.
  */
+@FunctionalInterface
 public interface UserStore {
     /**
      * Get user based on login.
@@ -31,7 +32,7 @@ public interface UserStore {
      * @param login login of the user (as obtained from request)
      * @return User information (empty if user is not found)
      */
-    Optional<User> getUser(String login);
+    Optional<User> user(String login);
 
     /**
      * Representation of a single user.
@@ -42,7 +43,7 @@ public interface UserStore {
          *
          * @return login of the user
          */
-        String getLogin();
+        String login();
 
         /**
          * Get password of the user.
@@ -51,14 +52,14 @@ public interface UserStore {
          *
          * @return password
          */
-        char[] getPassword();
+        char[] password();
 
         /**
          * Get set of roles the user is in.
          *
          * @return roles of this user (or empty if not supported).
          */
-        default Collection<String> getRoles() {
+        default Collection<String> roles() {
             return CollectionsHelper.setOf();
         }
     }

@@ -32,6 +32,6 @@ public class PolicyValidatorService implements AbacValidatorService {
 
     @Override
     public AbacValidator<? extends AbacValidatorConfig> instantiate(Config config) {
-        return PolicyValidator.from(config);
+        return PolicyValidator.create(config);
     }
 }

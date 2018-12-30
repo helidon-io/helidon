@@ -23,7 +23,7 @@
  * {@link io.helidon.webserver.Routing} routing = Routing.builder()
  * // register the WebSecurity to create context (shared by all routes)
  * .register({@link io.helidon.security.integration.webserver.WebSecurity}.{@link
- * io.helidon.security.integration.webserver.WebSecurity#from(io.helidon.security.Security) from(security)})
+ * io.helidon.security.integration.webserver.WebSecurity#create(io.helidon.security.Security) from(security)})
  * // authenticate all paths under /user and require role "user"
  * .get("/user[/{*}]", WebSecurity.{@link io.helidon.security.integration.webserver.WebSecurity#authenticate() authenticate()}
  * .{@link io.helidon.security.integration.webserver.WebSecurity#rolesAllowed(java.lang.String...) rolesAllowed("user")})
@@ -41,8 +41,8 @@
  * above. This is to provide a single starting point for security integration ({@link io.helidon.security.integration.webserver.WebSecurity})
  * and fluent API to build the "gate" to each route that is protected.
  *
- * @see io.helidon.security.integration.webserver.WebSecurity#from(io.helidon.security.Security)
- * @see io.helidon.security.integration.webserver.WebSecurity#from(io.helidon.config.Config)
- * @see io.helidon.security.integration.webserver.WebSecurity#from(io.helidon.security.Security, io.helidon.config.Config)
+ * @see io.helidon.security.integration.webserver.WebSecurity#create(io.helidon.security.Security)
+ * @see io.helidon.security.integration.webserver.WebSecurity#create(io.helidon.config.Config)
+ * @see io.helidon.security.integration.webserver.WebSecurity#create(io.helidon.security.Security, io.helidon.config.Config)
  */
 package io.helidon.security.integration.webserver;

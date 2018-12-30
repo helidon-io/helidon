@@ -39,7 +39,7 @@ class JerseySecurityContext implements SecurityContext {
 
     @Override
     public Principal getUserPrincipal() {
-        return securityContext.getUser().map(Subject::getPrincipal)
+        return securityContext.user().map(Subject::principal)
                 .orElse(io.helidon.security.SecurityContext.ANONYMOUS_PRINCIPAL);
     }
 

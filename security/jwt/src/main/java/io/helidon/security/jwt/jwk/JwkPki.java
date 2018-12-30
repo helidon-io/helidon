@@ -83,31 +83,31 @@ abstract class JwkPki extends Jwk {
         this.sha256Thumbprint = Optional.ofNullable(builder.sha256Thumbprint);
     }
 
-    public Optional<PrivateKey> getPrivateKey() {
+    public Optional<PrivateKey> privateKey() {
         return privateKey;
     }
 
-    public PublicKey getPublicKey() {
+    public PublicKey publicKey() {
         return publicKey;
     }
 
-    public Optional<List<X509Certificate>> getCertificateChain() {
+    public Optional<List<X509Certificate>> certificateChain() {
         return certificateChain;
     }
 
-    public Optional<byte[]> getSha1Thumbprint() {
+    public Optional<byte[]> sha1Thumbprint() {
         return sha1Thumbprint;
     }
 
-    public Optional<byte[]> getSha256Thumbprint() {
+    public Optional<byte[]> sha256Thumbprint() {
         return sha256Thumbprint;
     }
 
-    abstract String getSignatureAlgorithm();
+    abstract String signatureAlgorithm();
 
     @Override
     public boolean doVerify(byte[] signedBytes, byte[] signatureToVerify) {
-        String alg = getSignatureAlgorithm();
+        String alg = signatureAlgorithm();
 
         if (ALG_NONE.equals(alg)) {
             return verifyNoneAlg(signatureToVerify);
@@ -126,7 +126,7 @@ abstract class JwkPki extends Jwk {
 
     @Override
     public byte[] doSign(byte[] bytesToSign) {
-        String alg = getSignatureAlgorithm();
+        String alg = signatureAlgorithm();
         if (ALG_NONE.equals(alg)) {
             return EMPTY_BYTES;
         }
@@ -145,8 +145,8 @@ abstract class JwkPki extends Jwk {
     }
 
     // this builder is not public, as a specific key type must be built
-    static class Builder<T extends Builder> extends Jwk.Builder<T> {
-        private T myInstance;
+    static class Builder<T extends Builder<T>> extends Jwk.Builder<T> {
+        private final T myInstance;
         private List<X509Certificate> certificateChain;
         private byte[] sha1Thumbprint;
         private byte[] sha256Thumbprint;
@@ -180,7 +180,6 @@ abstract class JwkPki extends Jwk {
         }
 
         private static List<X509Certificate> processCertChain(URI uri) {
-            // TODO see security#26 as a follow up issue
             LOGGER.log(Level.SEVERE, "Certificate chain from URL is not (yet) supported");
             return new LinkedList<>();
         }

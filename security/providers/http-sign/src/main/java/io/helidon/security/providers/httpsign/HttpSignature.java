@@ -138,17 +138,17 @@ class HttpSignature {
                               OutboundTargetDefinition outboundDefinition,
                               Map<String, List<String>> newHeaders) {
 
-        HttpSignature signature = new HttpSignature(outboundDefinition.getKeyId(),
-                                                    outboundDefinition.getAlgorithm(),
-                                                    outboundDefinition.getSignedHeadersConfig()
-                                                            .getHeaders(env.getMethod(), env.getHeaders()));
+        HttpSignature signature = new HttpSignature(outboundDefinition.keyId(),
+                                                    outboundDefinition.algorithm(),
+                                                    outboundDefinition.signedHeadersConfig()
+                                                            .headers(env.method(), env.headers()));
 
         // validate algorithm is OK
         //let's try to validate the signature
         switch (signature.getAlgorithm()) {
         case HttpSignProvider.ALGORITHM_RSA:
             signature.signatureBytes = signature.signRsaSha256(env,
-                                                               outboundDefinition.getKeyConfig()
+                                                               outboundDefinition.keyConfig()
                                                                        .orElseThrow(() -> new HttpSignatureException(
                                                                                "Private key configuration must be present to use "
                                                                                        + HttpSignProvider.ALGORITHM_RSA + " "
@@ -157,7 +157,7 @@ class HttpSignature {
             break;
         case HttpSignProvider.ALGORITHM_HMAC:
             signature.signatureBytes = signature.signHmacSha256(env,
-                                                                outboundDefinition.getHmacSharedSecret()
+                                                                outboundDefinition.hmacSharedSecret()
                                                                         .orElseThrow(() -> new HttpSignatureException(
                                                                                 "HMAC shared secret must be configured to use "
                                                                                         + HttpSignProvider.ALGORITHM_HMAC
@@ -235,8 +235,8 @@ class HttpSignature {
                               List<String> requiredHeaders) {
 
         // validate algorithm is OK
-        if (!algorithm.equalsIgnoreCase(clientDefinition.getAlgorithm())) {
-            return Optional.of("Algorithm of signature is " + algorithm + ", configured: " + clientDefinition.getAlgorithm());
+        if (!algorithm.equalsIgnoreCase(clientDefinition.algorithm())) {
+            return Optional.of("Algorithm of signature is " + algorithm + ", configured: " + clientDefinition.algorithm());
         }
 
         for (String requiredHeader : requiredHeaders) {
@@ -274,7 +274,7 @@ class HttpSignature {
                                                InboundClientDefinition clientDefinition) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initVerify(clientDefinition.getKeyConfig()
+            signature.initVerify(clientDefinition.keyConfig()
                                          .orElseThrow(() -> new HttpSignatureException("RSA public key configuration is "
                                                                                                + "required"))
                                          .publicKey()
@@ -316,7 +316,7 @@ class HttpSignature {
     private Optional<String> validateHmacSha256(SecurityEnvironment env,
                                                 InboundClientDefinition clientDefinition) {
         try {
-            byte[] signature = signHmacSha256(env, clientDefinition.getHmacSharedSecret().orElse(EMPTY_BYTES), null);
+            byte[] signature = signHmacSha256(env, clientDefinition.hmacSharedSecret().orElse(EMPTY_BYTES), null);
             if (!Arrays.equals(signature, this.signatureBytes)) {
                 return Optional.of("Signature is not valid");
             }
@@ -333,16 +333,16 @@ class HttpSignature {
 
     String getSignedString(Map<String, List<String>> newHeaders, SecurityEnvironment env) {
         StringBuilder toSign = new StringBuilder();
-        Map<String, List<String>> requestHeaders = env.getHeaders();
+        Map<String, List<String>> requestHeaders = env.headers();
 
         for (String header : this.headers) {
             if ("(request-target)".equals(header)) {
                 //special case
                 toSign.append(header)
                         .append(": ")
-                        .append(env.getMethod().toLowerCase())
+                        .append(env.method().toLowerCase())
                         .append(" ")
-                        .append(env.getPath().orElse("/"))
+                        .append(env.path().orElse("/"))
                         .append('\n');
             } else {
                 List<String> headerValues = requestHeaders.get(header);
@@ -360,7 +360,7 @@ class HttpSignature {
 
                         LOGGER.finest(() -> "Added date header to request: " + date);
                     } else if ("host".equalsIgnoreCase(header)) {
-                        URI uri = env.getTargetUri();
+                        URI uri = env.targetUri();
 
                         String host = uri.getHost() + ":" + uri.getPort();
                         headerValues = CollectionsHelper.listOf(host);

@@ -138,9 +138,9 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
      * @param config Configuration located on the provider's key
      * @return Instance configured from the configuration instance
      */
-    public static GoogleTokenProvider fromConfig(Config config) {
+    public static GoogleTokenProvider create(Config config) {
         // not covered by unit tests, as this creates a component connecting to internet
-        return builder().fromConfig(config).build();
+        return builder().config(config).build();
     }
 
     /**
@@ -156,14 +156,14 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
         Optional<String> maybeToken;
         try {
-            maybeToken = tokenHandler.extractToken(providerRequest.getEnv().getHeaders());
+            maybeToken = tokenHandler.extractToken(providerRequest.env().headers());
         } catch (Exception e) {
             return failInvalidRequest(e);
         }
 
-        SecurityContext sContext = providerRequest.getContext();
+        SecurityContext sContext = providerRequest.securityContext();
         return maybeToken
-                .map(token -> cachedResponse(token, sContext.getTracer(), sContext.getTracingSpan()))
+                .map(token -> cachedResponse(token, sContext.tracer(), sContext.tracingSpan()))
                 .orElseGet(this::failNoToken);
 
     }
@@ -250,9 +250,9 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
 
-        return providerRequest.getContext()
-                .getUser()
-                .flatMap(subject -> subject.getPublicCredential(TokenCredential.class))
+        return providerRequest.securityContext()
+                .user()
+                .flatMap(subject -> subject.publicCredential(TokenCredential.class))
                 .flatMap(token -> token.getIssuer()
                         .map(issuer -> issuer.endsWith(".google.com")))
                 .orElse(false);
@@ -262,9 +262,9 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     protected OutboundSecurityResponse syncOutbound(ProviderRequest providerRequest,
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
-        return providerRequest.getContext()
-                .getUser()
-                .flatMap(subject -> subject.getPublicCredential(TokenCredential.class))
+        return providerRequest.securityContext()
+                .user()
+                .flatMap(subject -> subject.publicCredential(TokenCredential.class))
                 .map(token -> outboundSecurity(providerRequest, outboundEnv, outboundEndpointConfig, token))
                 .orElse(OutboundSecurityResponse.abstain());
     }
@@ -280,9 +280,9 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
         }
 
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        headers.putAll(outboundEnv.getHeaders());
+        headers.putAll(outboundEnv.headers());
 
-        tokenHandler.setHeader(headers, token.getToken());
+        tokenHandler.header(headers, token.token());
 
         return OutboundSecurityResponse.withHeaders(headers);
     }
@@ -398,7 +398,7 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
     /**
      * Fluent API builder to build {@link GoogleTokenProvider} instance.
      */
-    public static class Builder implements io.helidon.common.Builder<GoogleTokenProvider> {
+    public static final class Builder implements io.helidon.common.Builder<GoogleTokenProvider> {
         private String clientId;
 
         private String proxyHost;
@@ -513,13 +513,13 @@ public final class GoogleTokenProvider extends SynchronousProvider implements Au
          * @param config Configuration at provider (security.provider.x) key
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("optional").asBoolean().ifPresent(this::optional);
             config.get("client-id").asString().ifPresent(this::clientId);
             config.get("proxy-host").asString().ifPresent(this::proxyHost);
             config.get("proxy-port").asInt().ifPresent(this::proxyPort);
             config.get("realm").asString().ifPresent(this::realm);
-            config.get("token").as(TokenHandler::fromConfig).ifPresent(this::tokenProvider);
+            config.get("token").as(TokenHandler::create).ifPresent(this::tokenProvider);
 
             return this;
         }

@@ -44,9 +44,9 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * Methods that start with "from" are to register WebSecurity with {@link io.helidon.webserver.WebServer}
  * - to create {@link SecurityContext} for requests:
  * <ul>
- * <li>{@link #from(Security)}</li>
- * <li>{@link #from(Config)}</li>
- * <li>{@link #from(Security, Config)}</li>
+ * <li>{@link #create(Security)}</li>
+ * <li>{@link #create(Config)}</li>
+ * <li>{@link #create(Security, Config)}</li>
  * </ul>
  * <p>
  * Example:
@@ -55,7 +55,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * {@link io.helidon.webserver.Routing} routing = Routing.builder()
  * // register the WebSecurity to create context (shared by all routes)
  * .register({@link WebSecurity}.{@link
- * WebSecurity#from(Security) from(security)})
+ * WebSecurity#create(Security) from(security)})
  * </pre>
  * <p>
  * Other methods are to create security enforcement points (gates) for routes (e.g. you are expected to use them for a get, post
@@ -101,7 +101,7 @@ public final class WebSecurity implements Service {
     private final SecurityHandler defaultHandler;
 
     private WebSecurity(Security security, Config config) {
-        this(security, config, SecurityHandler.newInstance());
+        this(security, config, SecurityHandler.create());
     }
 
     private WebSecurity(Security security, Config config, SecurityHandler defaultHandler) {
@@ -123,7 +123,7 @@ public final class WebSecurity implements Service {
      * @param security initialized security
      * @return routing config consumer
      */
-    public static WebSecurity from(Security security) {
+    public static WebSecurity create(Security security) {
         return new WebSecurity(security, null);
     }
 
@@ -135,9 +135,9 @@ public final class WebSecurity implements Service {
      * @param config Config instance to load security and web server integration from configuration
      * @return routing config consumer
      */
-    public static WebSecurity from(Config config) {
-        Security security = Security.fromConfig(config);
-        return from(security, config);
+    public static WebSecurity create(Config config) {
+        Security security = Security.create(config);
+        return create(security, config);
     }
 
     /**
@@ -149,7 +149,7 @@ public final class WebSecurity implements Service {
      * @param config   Config instance to load security and web server integration from configuration
      * @return routing config consumer
      */
-    public static WebSecurity from(Security security, Config config) {
+    public static WebSecurity create(Security security, Config config) {
         return new WebSecurity(security, config);
     }
 
@@ -169,7 +169,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance configured with authentication and authorization
      */
     public static SecurityHandler secure() {
-        return SecurityHandler.newInstance().authenticate().authorize();
+        return SecurityHandler.create().authenticate().authorize();
     }
 
     /**
@@ -185,7 +185,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler authenticate() {
-        return SecurityHandler.newInstance().authenticate();
+        return SecurityHandler.create().authenticate();
     }
 
     /**
@@ -202,7 +202,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler audit() {
-        return SecurityHandler.newInstance().audit();
+        return SecurityHandler.create().audit();
     }
 
     /**
@@ -219,7 +219,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler authenticator(String explicitAuthenticator) {
-        return SecurityHandler.newInstance().authenticate().authenticator(explicitAuthenticator);
+        return SecurityHandler.create().authenticate().authenticator(explicitAuthenticator);
     }
 
     /**
@@ -237,7 +237,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler authorizer(String explicitAuthorizer) {
-        return SecurityHandler.newInstance().authenticate().authorize().authorizer(explicitAuthorizer);
+        return SecurityHandler.create().authenticate().authorize().authorizer(explicitAuthorizer);
     }
 
     /**
@@ -254,7 +254,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler rolesAllowed(String... roles) {
-        return SecurityHandler.newInstance().rolesAllowed(roles);
+        return SecurityHandler.create().rolesAllowed(roles);
 
     }
 
@@ -271,7 +271,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler allowAnonymous() {
-        return SecurityHandler.newInstance().authenticate().authenticationOptional();
+        return SecurityHandler.create().authenticate().authenticationOptional();
     }
 
     /**
@@ -287,7 +287,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler authorize() {
-        return SecurityHandler.newInstance().authorize();
+        return SecurityHandler.create().authorize();
     }
 
     /**
@@ -303,7 +303,7 @@ public final class WebSecurity implements Service {
      * @return {@link SecurityHandler} instance
      */
     public static SecurityHandler enforce() {
-        return SecurityHandler.newInstance();
+        return SecurityHandler.create();
     }
 
     /**
@@ -362,8 +362,8 @@ public final class WebSecurity implements Service {
     }
 
     private void registerRouting(Routing.Rules routing) {
-        Config wsConfig = config.get("security.web-server");
-        SecurityHandler defaults = SecurityHandler.from(wsConfig.get("defaults"), defaultHandler);
+        Config wsConfig = config.get("web-server");
+        SecurityHandler defaults = SecurityHandler.create(wsConfig.get("defaults"), defaultHandler);
 
         wsConfig.get("paths").asNodeList().ifPresent(configs -> {
             for (Config pathConfig : configs) {
@@ -380,9 +380,9 @@ public final class WebSecurity implements Service {
                                                                          .key() + " must contain path key with a path to "
                                                                          + "register to web server"));
                 if (methods.isEmpty()) {
-                    routing.any(path, SecurityHandler.from(pathConfig, defaults));
+                    routing.any(path, SecurityHandler.create(pathConfig, defaults));
                 } else {
-                    routing.anyOf(methods, path, SecurityHandler.from(pathConfig, defaults));
+                    routing.anyOf(methods, path, SecurityHandler.create(pathConfig, defaults));
                 }
             }
         });

@@ -27,7 +27,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 
 /**
- * TODO javadoc.
+ * Test validator.
  */
 public class Attrib1Validator implements AbacValidator<Attrib1Validator.Attrib1Config> {
     @Override

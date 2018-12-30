@@ -49,9 +49,9 @@ public class ResourceBasedProvider implements AuthenticationProvider, Authorizat
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        SecurityEnvironment env = providerRequest.getEnv();
+        SecurityEnvironment env = providerRequest.env();
 
-        return CompletableFuture.completedFuture(env.getAttribute("resourceType")
+        return CompletableFuture.completedFuture(env.abacAttribute("resourceType")
                                                          .map(String::valueOf)
                                                          .map(resource -> {
                                                              switch (resource) {
@@ -82,9 +82,9 @@ public class ResourceBasedProvider implements AuthenticationProvider, Authorizat
 
     @Override
     public CompletionStage<AuthorizationResponse> authorize(ProviderRequest context) {
-        SecurityEnvironment env = context.getEnv();
+        SecurityEnvironment env = context.env();
 
-        return CompletableFuture.completedFuture(env.getAttribute("resourceType")
+        return CompletableFuture.completedFuture(env.abacAttribute("resourceType")
                                                          .map(String::valueOf)
                                                          .map(resource -> {
                                                              switch (resource) {
@@ -111,8 +111,8 @@ public class ResourceBasedProvider implements AuthenticationProvider, Authorizat
                                        EndpointConfig outboundConfig) {
 
         return providerRequest
-                .getEnv()
-                .getAttribute("resourceType")
+                .env()
+                .abacAttribute("resourceType")
                 .isPresent();
     }
 
@@ -122,8 +122,8 @@ public class ResourceBasedProvider implements AuthenticationProvider, Authorizat
                                                                       EndpointConfig outboundConfig) {
 
         return CompletableFuture.completedFuture(providerRequest
-                                                         .getEnv()
-                                                         .getAttribute("resourceType")
+                                                         .env()
+                                                         .abacAttribute("resourceType")
                                                          .map(String::valueOf)
                                                          .map(resource -> {
                                                              switch (resource) {

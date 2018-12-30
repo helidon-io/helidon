@@ -47,7 +47,7 @@ public class Grant implements AbacSupport, Principal {
         this.name = builder.name;
         this.origin = builder.origin;
 
-        BasicAttributes properties = new BasicAttributes(builder.properties);
+        BasicAttributes properties = BasicAttributes.create(builder.properties);
         properties.put("type", type);
         properties.put("name", name);
         properties.put("origin", origin);
@@ -59,18 +59,18 @@ public class Grant implements AbacSupport, Principal {
      *
      * @return builder instance
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return properties.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return properties.abacAttributeNames();
     }
 
     /**
@@ -83,7 +83,7 @@ public class Grant implements AbacSupport, Principal {
      *
      * @return type of the grant
      */
-    public String getType() {
+    public String type() {
         return type;
     }
 
@@ -97,22 +97,26 @@ public class Grant implements AbacSupport, Principal {
         return type + ":" + name;
     }
 
-    public String getOrigin() {
+    /**
+     * Origin of this grant - this may be an arbitrary string, URI, component creating it etc.
+     * @return origin of this grant
+     */
+    public String origin() {
         return origin;
     }
 
     /**
-     * A fluent API builder for {@link Grant}.
+     * A fluent API builder for {@link Grant} to be extended by other {@link Grant} implementations.
      *
      * @param <T> type of the builder, needed for builder inheritance
      */
-    public static class Builder<T extends Builder> implements io.helidon.common.Builder<Grant> {
-        private BasicAttributes properties = new BasicAttributes();
+    public static class Builder<T extends Builder<T>> implements io.helidon.common.Builder<Grant> {
+        private BasicAttributes properties = BasicAttributes.create();
         private String type;
         private String name;
-        private String origin;
+        private String origin = "builder";
 
-        private T instance;
+        private final T instance;
 
         /**
          * Create a new instance.
@@ -168,7 +172,7 @@ public class Grant implements AbacSupport, Principal {
          * @return updated builder instance
          */
         public T attributes(AbacSupport attribs) {
-            this.properties = new BasicAttributes(attribs);
+            this.properties = BasicAttributes.create(attribs);
             return instance;
         }
 

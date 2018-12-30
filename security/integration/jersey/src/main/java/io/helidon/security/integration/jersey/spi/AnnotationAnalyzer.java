@@ -100,7 +100,7 @@ public interface AnnotationAnalyzer {
      * Response of an analysis run.
      */
     final class AnalyzerResponse {
-        private final ClassToInstanceStore<Object> registry = ClassToInstanceStore.of();
+        private final ClassToInstanceStore<Object> registry = ClassToInstanceStore.create();
         private final AnalyzerResponse parent;
 
         private final Flag atnResponse;
@@ -224,7 +224,7 @@ public interface AnnotationAnalyzer {
          * Fluent API builder for {@link AnalyzerResponse}.
          */
         public static class Builder implements io.helidon.common.Builder<AnalyzerResponse> {
-            private final ClassToInstanceStore<Object> registry = ClassToInstanceStore.of();
+            private final ClassToInstanceStore<Object> registry = ClassToInstanceStore.create();
             private AnalyzerResponse parent;
             private Flag atnResponse = Flag.ABSTAIN;
             private Flag atzResponse = Flag.ABSTAIN;
@@ -253,7 +253,9 @@ public interface AnnotationAnalyzer {
             }
 
             /**
-             * @param atzResponse
+             * Authorization response.
+             *
+             * @param atzResponse authorization response flag
              * @return updated builder instance
              */
             public Builder atzResponse(Flag atzResponse) {
@@ -261,11 +263,23 @@ public interface AnnotationAnalyzer {
                 return this;
             }
 
+            /**
+             * Explicit authentication provider to use.
+             *
+             * @param authenticator name of a provider to use
+             * @return updated builder instance
+             */
             public Builder authenticator(String authenticator) {
                 this.authenticator = authenticator;
                 return this;
             }
 
+            /**
+             * Explicit authorization provider to use.
+             *
+             * @param authorizer name of a provider to use
+             * @return updated builder instance
+             */
             public Builder authorizer(String authorizer) {
                 this.authorizer = authorizer;
                 return this;

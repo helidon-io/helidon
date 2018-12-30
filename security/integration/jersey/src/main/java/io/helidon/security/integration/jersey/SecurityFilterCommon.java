@@ -73,8 +73,8 @@ abstract class SecurityFilterCommon {
     }
 
     protected Span startSecuritySpan(SecurityContext securityContext) {
-        Span securitySpan = startNewSpan(securityContext.getTracingSpan(), "security");
-        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.getId()));
+        Span securitySpan = startNewSpan(securityContext.tracingSpan(), "security");
+        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.id()));
         return securitySpan;
     }
 
@@ -87,7 +87,7 @@ abstract class SecurityFilterCommon {
     }
 
     protected Span startNewSpan(SpanContext parentSpan, String name) {
-        Tracer.SpanBuilder spanBuilder = security.getTracer().buildSpan(name);
+        Tracer.SpanBuilder spanBuilder = security.tracer().buildSpan(name);
         spanBuilder.asChildOf(parentSpan);
 
         return spanBuilder.start();
@@ -119,7 +119,7 @@ abstract class SecurityFilterCommon {
         Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
         allHeaders.put(Security.HEADER_ORIG_URI, CollectionsHelper.listOf(origRequest));
 
-        SecurityEnvironment env = SecurityEnvironment.builder(security.getServerTime())
+        SecurityEnvironment env = SecurityEnvironment.builder(security.serverTime())
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())
@@ -134,8 +134,8 @@ abstract class SecurityFilterCommon {
                 .build();
 
         try {
-            securityContext.setEnv(env);
-            securityContext.setEndpointConfig(ec);
+            securityContext.env(env);
+            securityContext.endpointConfig(ec);
 
             request.setProperty(PROP_FILTER_CONTEXT, filterContext);
             //context is needed even if authn/authz fails - for auditing
@@ -175,10 +175,10 @@ abstract class SecurityFilterCommon {
         } finally {
             if (context.isTraceSuccess()) {
                 List<String> logs = new LinkedList<>();
-                securityContext.getUser()
-                        .ifPresent(user -> logs.add("security.user: " + user.getPrincipal().getName()));
-                securityContext.getService()
-                        .ifPresent(service -> logs.add("security.service: " + service.getPrincipal().getName()));
+                securityContext.user()
+                        .ifPresent(user -> logs.add("security.user: " + user.principal().getName()));
+                securityContext.service()
+                        .ifPresent(service -> logs.add("security.service: " + service.principal().getName()));
 
                 finishSpan(atnSpan, logs);
             } else {
@@ -220,7 +220,7 @@ abstract class SecurityFilterCommon {
 
         AuthenticationResponse response = clientBuilder.buildAndGet();
 
-        SecurityResponse.SecurityStatus responseStatus = response.getStatus();
+        SecurityResponse.SecurityStatus responseStatus = response.status();
 
         switch (responseStatus) {
         case SUCCESS:
@@ -231,11 +231,11 @@ abstract class SecurityFilterCommon {
                 logger().finest("Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceSuccess(false);
-                context.setTraceDescription(response.getDescription().orElse(responseStatus.toString()));
-                context.setTraceThrowable(response.getThrowable().orElse(null));
+                context.setTraceDescription(response.description().orElse(responseStatus.toString()));
+                context.setTraceThrowable(response.throwable().orElse(null));
                 context.setShouldFinish(true);
 
-                int status = response.getStatusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode());
+                int status = response.statusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode());
                 abortRequest(context, response, status, CollectionsHelper.mapOf());
             }
 
@@ -243,7 +243,7 @@ abstract class SecurityFilterCommon {
         case SUCCESS_FINISH:
             context.setShouldFinish(true);
 
-            int status = response.getStatusCode().orElse(Response.Status.OK.getStatusCode());
+            int status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
             abortRequest(context, response, status, CollectionsHelper.mapOf());
 
             return;
@@ -252,7 +252,7 @@ abstract class SecurityFilterCommon {
                 logger().finest("Authentication failed, but was optional, so assuming anonymous");
             } else {
                 context.setTraceSuccess(false);
-                context.setTraceDescription(response.getDescription().orElse(responseStatus.toString()));
+                context.setTraceDescription(response.description().orElse(responseStatus.toString()));
                 context.setShouldFinish(true);
                 abortRequest(context,
                              response,
@@ -264,8 +264,8 @@ abstract class SecurityFilterCommon {
             if (methodSecurity.authenticationOptional()) {
                 logger().finest("Authentication failed, but was optional, so assuming anonymous");
             } else {
-                context.setTraceDescription(response.getDescription().orElse(responseStatus.toString()));
-                context.setTraceThrowable(response.getThrowable().orElse(null));
+                context.setTraceDescription(response.description().orElse(responseStatus.toString()));
+                context.setTraceThrowable(response.throwable().orElse(null));
                 context.setTraceSuccess(false);
                 abortRequest(context,
                              response,
@@ -276,7 +276,7 @@ abstract class SecurityFilterCommon {
             return;
         default:
             context.setTraceSuccess(false);
-            context.setTraceDescription(response.getDescription().orElse("UNKNOWN_RESPONSE: " + responseStatus));
+            context.setTraceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
             context.setShouldFinish(true);
             SecurityException throwable = new SecurityException("Invalid SecurityStatus returned: " + responseStatus);
             context.setTraceThrowable(throwable);
@@ -317,7 +317,7 @@ abstract class SecurityFilterCommon {
                                         SecurityClientBuilder<AuthorizationResponse> clientBuilder) {
         // now fully synchronous
         AuthorizationResponse response = clientBuilder.buildAndGet();
-        SecurityResponse.SecurityStatus responseStatus = response.getStatus();
+        SecurityResponse.SecurityStatus responseStatus = response.status();
 
         switch (responseStatus) {
         case SUCCESS:
@@ -325,39 +325,39 @@ abstract class SecurityFilterCommon {
             return;
         case FAILURE_FINISH:
             context.setTraceSuccess(false);
-            context.setTraceDescription(response.getDescription().orElse(responseStatus.toString()));
-            context.setTraceThrowable(response.getThrowable().orElse(null));
+            context.setTraceDescription(response.description().orElse(responseStatus.toString()));
+            context.setTraceThrowable(response.throwable().orElse(null));
             context.setShouldFinish(true);
-            int status = response.getStatusCode().orElse(Response.Status.FORBIDDEN.getStatusCode());
+            int status = response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode());
             abortRequest(context, response, status, CollectionsHelper.mapOf());
             return;
         case SUCCESS_FINISH:
             context.setShouldFinish(true);
-            status = response.getStatusCode().orElse(Response.Status.OK.getStatusCode());
+            status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
             abortRequest(context, response, status, CollectionsHelper.mapOf());
             return;
         case FAILURE:
             context.setTraceSuccess(false);
-            context.setTraceDescription(response.getDescription().orElse(responseStatus.toString()));
-            context.setTraceThrowable(response.getThrowable().orElse(null));
+            context.setTraceDescription(response.description().orElse(responseStatus.toString()));
+            context.setTraceThrowable(response.throwable().orElse(null));
             context.setShouldFinish(true);
             abortRequest(context,
                          response,
-                         response.getStatusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
+                         response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
                          CollectionsHelper.mapOf());
             return;
         case ABSTAIN:
             context.setTraceSuccess(false);
-            context.setTraceDescription(response.getDescription().orElse(responseStatus.toString()));
+            context.setTraceDescription(response.description().orElse(responseStatus.toString()));
             context.setShouldFinish(true);
             abortRequest(context,
                          response,
-                         response.getStatusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
+                         response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
                          CollectionsHelper.mapOf());
             return;
         default:
             context.setTraceSuccess(false);
-            context.setTraceDescription(response.getDescription().orElse("UNKNOWN_RESPONSE: " + responseStatus));
+            context.setTraceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
             context.setShouldFinish(true);
             SecurityException throwable = new SecurityException("Invalid SecurityStatus returned: " + responseStatus);
             context.setTraceThrowable(throwable);
@@ -370,8 +370,8 @@ abstract class SecurityFilterCommon {
                                 int defaultStatusCode,
                                 Map<String, List<String>> defaultHeaders) {
 
-        int statusCode = response.getStatusCode().orElse(defaultStatusCode);
-        Map<String, List<String>> responseHeaders = response.getResponseHeaders();
+        int statusCode = response.statusCode().orElse(defaultStatusCode);
+        Map<String, List<String>> responseHeaders = response.responseHeaders();
 
         Response.ResponseBuilder responseBuilder = Response.status(statusCode);
         if (responseHeaders.isEmpty()) {
@@ -383,7 +383,7 @@ abstract class SecurityFilterCommon {
         }
 
         if (featureConfig.isDebug()) {
-            response.getDescription().ifPresent(responseBuilder::entity);
+            response.description().ifPresent(responseBuilder::entity);
         }
 
         context.getJerseyRequest().abortWith(responseBuilder.build());
@@ -550,6 +550,6 @@ abstract class SecurityFilterCommon {
     }
 
     Config config(String child) {
-        return security.getConfig(child);
+        return security.configFor(child);
     }
 }

@@ -63,7 +63,13 @@ class DigestToken {
         dt.username = values.get("username");
         dt.realm = values.get("realm");
         dt.uri = values.get("uri");
-        dt.algorithm = HttpDigest.Algorithm.fromString(values.get("algorithm"));
+        String alg = values.get("algorithm");
+        if (null == alg) {
+            dt.algorithm = HttpDigest.Algorithm.MD5;
+        } else {
+            dt.algorithm = HttpDigest.Algorithm.valueOf(values.get("algorithm"));
+        }
+
         dt.response = values.get("response");
         dt.opaque = values.get("opaque");
         dt.qop = HttpDigest.Qop.fromString(values.get("qop"));

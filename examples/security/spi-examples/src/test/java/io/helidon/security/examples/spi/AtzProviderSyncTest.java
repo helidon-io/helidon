@@ -42,14 +42,14 @@ public class AtzProviderSyncTest {
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AtzProviderSync provider = new AtzProviderSync();
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
     }
 
     @Test
@@ -58,14 +58,14 @@ public class AtzProviderSyncTest {
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AtzProviderSync provider = new AtzProviderSync();
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
 
     @Test
@@ -79,15 +79,15 @@ public class AtzProviderSyncTest {
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AtzProviderSync provider = new AtzProviderSync();
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
 
     @Test
@@ -101,14 +101,14 @@ public class AtzProviderSyncTest {
         EndpointConfig ep = EndpointConfig.create();
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(request.getEnv()).thenReturn(se);
-        when(request.getEndpointConfig()).thenReturn(ep);
+        when(request.securityContext()).thenReturn(context);
+        when(request.env()).thenReturn(se);
+        when(request.endpointConfig()).thenReturn(ep);
 
         AtzProviderSync provider = new AtzProviderSync();
 
         AuthorizationResponse response = provider.syncAuthorize(request);
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.SUCCESS));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
     }
 }

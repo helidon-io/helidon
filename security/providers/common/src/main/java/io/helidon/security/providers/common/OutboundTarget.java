@@ -91,7 +91,7 @@ public final class OutboundTarget {
         }
     }
 
-    static OutboundTarget from(Config c) {
+    static OutboundTarget create(Config c) {
         Builder builder = new Builder();
 
         builder.config(c);
@@ -127,18 +127,34 @@ public final class OutboundTarget {
         return values.contains("*");
     }
 
-    public String getName() {
+    /**
+     * Name of this target.
+     * @return name
+     */
+    public String name() {
         return name;
     }
 
-    public Set<String> getTransports() {
+    /**
+     * Transports of this target.
+     * @return transports this target is valid for
+     */
+    public Set<String> transports() {
         return Collections.unmodifiableSet(transports);
     }
 
-    public Set<String> getHosts() {
+    /**
+     * Hosts of this target.
+     * @return hosts this target is valid for
+     */
+    public Set<String> hosts() {
         return Collections.unmodifiableSet(hosts);
     }
 
+    /**
+     * Configuration of this target.
+     * @return target configuration or empty if none provided
+     */
     public Optional<Config> getConfig() {
         return Optional.ofNullable(config);
     }
@@ -153,7 +169,7 @@ public final class OutboundTarget {
      * @return class to value mapping
      * @see Builder#customObject(Class, Object)
      */
-    public <T> Optional<? extends T> getCustomObject(Class<? extends T> clazz) {
+    public <T> Optional<? extends T> customObject(Class<? extends T> clazz) {
         return customObjects.getInstance(clazz);
     }
 
@@ -241,9 +257,9 @@ public final class OutboundTarget {
         private final Set<String> transports = new HashSet<>();
         private final Set<String> hosts = new HashSet<>();
         private final Set<String> paths = new HashSet<>();
+        private final ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
         private String name;
         private Config config;
-        private ClassToInstanceStore<Object> customObjects = new ClassToInstanceStore<>();
 
         private Builder() {
         }

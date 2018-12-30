@@ -31,12 +31,12 @@ public class HeaderAtnService implements SecurityProviderService {
     }
 
     @Override
-    public Class<? extends SecurityProvider> getProviderClass() {
+    public Class<? extends SecurityProvider> providerClass() {
         return HeaderAtnProvider.class;
     }
 
     @Override
-    public SecurityProvider getProviderInstance(Config config) {
-        return HeaderAtnProvider.fromConfig(config);
+    public SecurityProvider providerInstance(Config config) {
+        return HeaderAtnProvider.create(config);
     }
 }

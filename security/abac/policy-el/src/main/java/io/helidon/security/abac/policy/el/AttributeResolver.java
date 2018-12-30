@@ -44,7 +44,7 @@ public class AttributeResolver extends ELResolver {
         return getAttributed(base).map(attributed -> {
             List<FeatureDescriptor> result = new LinkedList<>();
 
-            Collection<String> attributeNames = attributed.getAttributeNames();
+            Collection<String> attributeNames = attributed.abacAttributeNames();
 
             for (String name : attributeNames) {
                 FeatureDescriptor fd = new FeatureDescriptor();
@@ -60,7 +60,7 @@ public class AttributeResolver extends ELResolver {
     @Override
     public Class<?> getType(ELContext context, Object base, Object property) {
         return getAttributed(base)
-                .flatMap(attributed -> attributed.getAttribute(String.valueOf(property)))
+                .flatMap(attributed -> attributed.abacAttribute(String.valueOf(property)))
                 .map(value -> {
                     context.setPropertyResolved(true);
                     return value.getClass();
@@ -71,7 +71,7 @@ public class AttributeResolver extends ELResolver {
     @Override
     public Object getValue(ELContext context, Object base, Object property) {
         return getAttributed(base)
-                .flatMap(attributed -> attributed.getAttribute(String.valueOf(property)))
+                .flatMap(attributed -> attributed.abacAttribute(String.valueOf(property)))
                 .map(value -> {
                     context.setPropertyResolved(true);
                     return value;

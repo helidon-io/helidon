@@ -36,18 +36,18 @@ final class DefaultAuditProvider implements AuditProvider {
         this.auditLogger = Logger.getLogger(loggerName);
     }
 
-    public static DefaultAuditProvider fromConfig(Config config) {
+    public static DefaultAuditProvider create(Config config) {
         return new DefaultAuditProvider(config.get("security.audit.defaultProvider.logger").asString().orElse("AUDIT"));
     }
 
     @Override
-    public Consumer<TracedAuditEvent> getAuditConsumer() {
+    public Consumer<TracedAuditEvent> auditConsumer() {
         return this::audit;
     }
 
     private void audit(TracedAuditEvent event) {
-        String tracingId = event.getTracingId();
-        switch (event.getSeverity()) {
+        String tracingId = event.tracingId();
+        switch (event.severity()) {
         case FAILURE:
         case SUCCESS:
         case INFO:
@@ -71,22 +71,22 @@ final class DefaultAuditProvider implements AuditProvider {
     }
 
     private void logEvent(String tracingId, TracedAuditEvent event, Level level) {
-        AuditSource auditSource = event.getAuditSource();
+        AuditSource auditSource = event.auditSource();
 
         StringBuilder locationInfo = new StringBuilder();
         locationInfo
-                .append(auditSource.getClassName().orElse("UnknownClass"))
+                .append(auditSource.className().orElse("UnknownClass"))
                 .append(" ")
-                .append(auditSource.getMethodName().orElse("UnknownMethod"))
+                .append(auditSource.methodName().orElse("UnknownMethod"))
                 .append(" ")
-                .append(auditSource.getFileName().orElse("UnknownFile"))
+                .append(auditSource.fileName().orElse("UnknownFile"))
                 .append(" ")
-                .append(auditSource.getLineNumber().orElse(-1));
+                .append(auditSource.lineNumber().orElse(-1));
 
         // if the format here is changed, also change documentation of AuditProvider
-        String msg = event.getSeverity()
+        String msg = event.severity()
                 + " "
-                + event.getEventType()
+                + event.eventType()
                 + " "
                 + tracingId
                 + " "
@@ -99,14 +99,14 @@ final class DefaultAuditProvider implements AuditProvider {
 
         String finalMsg = msg;
 
-        OptionalHelper.from(event.getThrowable())
+        OptionalHelper.from(event.throwable())
                 .ifPresentOrElse(throwable -> auditLogger.log(level,
                                                               finalMsg,
                                                               throwable), () -> auditLogger.log(level, finalMsg));
     }
 
     private String formatMessage(AuditEvent event) {
-        return String.format(event.getMessageFormat(), toObjectParams(event.getParams()));
+        return String.format(event.messageFormat(), toObjectParams(event.params()));
     }
 
     private Object[] toObjectParams(List<AuditEvent.AuditParam> parameters) {
@@ -115,9 +115,9 @@ final class DefaultAuditProvider implements AuditProvider {
 
         for (AuditEvent.AuditParam param : parameters) {
             if (param.isSensitive()) {
-                result.add(param.getName() + " (sensitive)");
+                result.add(param.name() + " (sensitive)");
             } else {
-                result.add(param.getValue().orElse("null"));
+                result.add(param.value().orElse("null"));
             }
         }
 

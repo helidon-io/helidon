@@ -119,7 +119,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             this.jwtValidator = (signedJwt, collector) -> {
 
                 MultivaluedHashMap<String, String> formValues = new MultivaluedHashMap<>();
-                formValues.putSingle("token", signedJwt.getTokenContent());
+                formValues.putSingle("token", signedJwt.tokenContent());
                 Response response = oidcConfig.introspectEndpoint().request()
                         .accept(MediaType.APPLICATION_JSON_TYPE)
                         .cacheControl(CacheControl.valueOf("no-cache, no-store, must-revalidate"))
@@ -147,7 +147,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
      * @param config configuration of this provider
      * @return a new provider configured for OIDC
      */
-    public static OidcProvider fromConfig(Config config) {
+    public static OidcProvider create(Config config) {
         return new OidcProvider(OidcConfig.create(config));
     }
 
@@ -175,19 +175,19 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         Optional<String> token = Optional.empty();
         if (oidcConfig.useHeader()) {
             token = OptionalHelper.from(token)
-                    .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.getEnv().getHeaders()))
+                    .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
                     .asOptional();
         }
 
         if (oidcConfig.useParam()) {
             token = OptionalHelper.from(token)
-                    .or(() -> paramHeaderHandler.extractToken(providerRequest.getEnv().getHeaders()))
+                    .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
                     .asOptional();
         }
 
         if (oidcConfig.useCookie()) {
             token = OptionalHelper.from(token)
-                    .or(() -> findCookie(providerRequest.getEnv().getHeaders()))
+                    .or(() -> findCookie(providerRequest.env().headers()))
                     .asOptional();
         }
 
@@ -219,7 +219,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private Set<String> expectedScopes(ProviderRequest request) {
-        List<ScopeValidator.Scopes> expectedScopes = request.getEndpointConfig()
+        List<ScopeValidator.Scopes> expectedScopes = request.endpointConfig()
                 .combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.values());
 
         Set<String> result = new HashSet<>();
@@ -298,11 +298,11 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private String origUri(ProviderRequest providerRequest) {
-        List<String> origUri = providerRequest.getEnv().getHeaders()
+        List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, CollectionsHelper.listOf());
 
         if (origUri.isEmpty()) {
-            origUri = CollectionsHelper.listOf(providerRequest.getEnv().getTargetUri().getPath());
+            origUri = CollectionsHelper.listOf(providerRequest.env().targetUri().getPath());
         }
 
         try {
@@ -327,7 +327,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             errors.log(LOGGER);
             Subject subject = buildSubject(jwt, signed);
 
-            Set<String> scopes = subject.getGrantsByType("scope")
+            Set<String> scopes = subject.grantsByType("scope")
                     .stream()
                     .map(Grant::getName)
                     .collect(Collectors.toSet());
@@ -359,14 +359,14 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         Principal principal = buildPrincipal(jwt);
 
         TokenCredential.Builder builder = TokenCredential.builder();
-        jwt.getIssueTime().ifPresent(builder::issueTime);
-        jwt.getExpirationTime().ifPresent(builder::expTime);
-        jwt.getIssuer().ifPresent(builder::issuer);
-        builder.token(signedJwt.getTokenContent());
+        jwt.issueTime().ifPresent(builder::issueTime);
+        jwt.expirationTime().ifPresent(builder::expTime);
+        jwt.issuer().ifPresent(builder::issuer);
+        builder.token(signedJwt.tokenContent());
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-        Optional<List<String>> scopes = jwt.getScopes();
+        Optional<List<String>> scopes = jwt.scopes();
 
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
@@ -382,10 +382,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private Principal buildPrincipal(Jwt jwt) {
-        String subject = jwt.getSubject()
+        String subject = jwt.subject()
                 .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
 
-        String name = jwt.getPreferredUsername()
+        String name = jwt.preferredUsername()
                 .orElse(subject);
 
         Principal.Builder builder = Principal.builder();
@@ -393,15 +393,15 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         builder.name(name)
                 .id(subject);
 
-        jwt.getPayloadClaims()
+        jwt.payloadClaims()
                 .forEach((key, jsonValue) -> builder.addAttribute(key, JwtUtil.toObject(jsonValue)));
 
-        jwt.getEmail().ifPresent(value -> builder.addAttribute("email", value));
-        jwt.getEmailVerified().ifPresent(value -> builder.addAttribute("email_verified", value));
-        jwt.getLocale().ifPresent(value -> builder.addAttribute("locale", value));
-        jwt.getFamilyName().ifPresent(value -> builder.addAttribute("family_name", value));
-        jwt.getGivenName().ifPresent(value -> builder.addAttribute("given_name", value));
-        jwt.getFullName().ifPresent(value -> builder.addAttribute("full_name", value));
+        jwt.email().ifPresent(value -> builder.addAttribute("email", value));
+        jwt.emailVerified().ifPresent(value -> builder.addAttribute("email_verified", value));
+        jwt.locale().ifPresent(value -> builder.addAttribute("locale", value));
+        jwt.familyName().ifPresent(value -> builder.addAttribute("family_name", value));
+        jwt.givenName().ifPresent(value -> builder.addAttribute("given_name", value));
+        jwt.fullName().ifPresent(value -> builder.addAttribute("full_name", value));
 
         return builder.build();
     }

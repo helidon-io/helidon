@@ -118,8 +118,8 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
      * @param config configuration of this provider
      * @return provider instance
      */
-    public static JwtProvider fromConfig(Config config) {
-        return builder().fromConfig(config).build();
+    public static JwtProvider create(Config config) {
+        return builder().config(config).build();
     }
 
     @Override
@@ -128,7 +128,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
             return AuthenticationResponse.abstain();
         }
 
-        return atnTokenHandler.extractToken(providerRequest.getEnv().getHeaders())
+        return atnTokenHandler.extractToken(providerRequest.env().headers())
                 .map(token -> {
                     SignedJwt signedJwt = SignedJwt.parseToken(token);
                     Errors errors = signedJwt.verifySignature(verifyKeys);
@@ -157,14 +157,14 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         Principal principal = buildPrincipal(jwt);
 
         TokenCredential.Builder builder = TokenCredential.builder();
-        jwt.getIssueTime().ifPresent(builder::issueTime);
-        jwt.getExpirationTime().ifPresent(builder::expTime);
-        jwt.getIssuer().ifPresent(builder::issuer);
-        builder.token(signedJwt.getTokenContent());
+        jwt.issueTime().ifPresent(builder::issueTime);
+        jwt.expirationTime().ifPresent(builder::expTime);
+        jwt.issuer().ifPresent(builder::issuer);
+        builder.token(signedJwt.tokenContent());
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
 
-        Optional<List<String>> scopes = jwt.getScopes();
+        Optional<List<String>> scopes = jwt.scopes();
 
         Subject.Builder subjectBuilder = Subject.builder()
                 .principal(principal)
@@ -182,10 +182,10 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
     }
 
     Principal buildPrincipal(Jwt jwt) {
-        String subject = jwt.getSubject()
+        String subject = jwt.subject()
                 .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
 
-        String name = jwt.getPreferredUsername()
+        String name = jwt.preferredUsername()
                 .orElse(subject);
 
         Principal.Builder builder = Principal.builder();
@@ -193,15 +193,15 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         builder.name(name)
                 .id(subject);
 
-        jwt.getPayloadClaims()
+        jwt.payloadClaims()
                 .forEach((key, jsonValue) -> builder.addAttribute(key, JwtUtil.toObject(jsonValue)));
 
-        jwt.getEmail().ifPresent(value -> builder.addAttribute("email", value));
-        jwt.getEmailVerified().ifPresent(value -> builder.addAttribute("email_verified", value));
-        jwt.getLocale().ifPresent(value -> builder.addAttribute("locale", value));
-        jwt.getFamilyName().ifPresent(value -> builder.addAttribute("family_name", value));
-        jwt.getGivenName().ifPresent(value -> builder.addAttribute("given_name", value));
-        jwt.getFullName().ifPresent(value -> builder.addAttribute("full_name", value));
+        jwt.email().ifPresent(value -> builder.addAttribute("email", value));
+        jwt.emailVerified().ifPresent(value -> builder.addAttribute("email_verified", value));
+        jwt.locale().ifPresent(value -> builder.addAttribute("locale", value));
+        jwt.familyName().ifPresent(value -> builder.addAttribute("family_name", value));
+        jwt.givenName().ifPresent(value -> builder.addAttribute("given_name", value));
+        jwt.fullName().ifPresent(value -> builder.addAttribute("full_name", value));
 
         return builder.build();
     }
@@ -218,7 +218,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
 
-        Optional<Object> maybeUsername = outboundEndpointConfig.getAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         return maybeUsername
                 .map(String::valueOf)
                 .flatMap(username -> {
@@ -250,9 +250,9 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
                 }).orElseGet(() -> {
                     Optional<Subject> maybeSubject;
                     if (subjectType == SubjectType.USER) {
-                        maybeSubject = providerRequest.getContext().getUser();
+                        maybeSubject = providerRequest.securityContext().user();
                     } else {
-                        maybeSubject = providerRequest.getContext().getService();
+                        maybeSubject = providerRequest.securityContext().service();
                     }
 
                     return maybeSubject.flatMap(subject -> {
@@ -264,8 +264,8 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
 
                             if (null == jwtOutboundTarget.jwkKid) {
                                 // just propagate existing token
-                                return subject.getPublicCredential(TokenCredential.class)
-                                        .map(tokenCredential -> propagate(jwtOutboundTarget, tokenCredential.getToken()));
+                                return subject.publicCredential(TokenCredential.class)
+                                        .map(tokenCredential -> propagate(jwtOutboundTarget, tokenCredential.token()));
                             } else {
                                 // we do have kid - we are creating a new token of our own
                                 return Optional.of(propagate(jwtOutboundTarget, subject));
@@ -277,7 +277,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
 
     private OutboundSecurityResponse propagate(JwtOutboundTarget outboundTarget, String token) {
         Map<String, List<String>> headers = new HashMap<>();
-        outboundTarget.outboundHandler.setHeader(headers, token);
+        outboundTarget.outboundHandler.header(headers, token);
         return OutboundSecurityResponse.withHeaders(headers);
     }
 
@@ -286,28 +286,28 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         Jwk jwk = signKeys.forKeyId(ot.jwkKid)
                 .orElseThrow(() -> new JwtException("Signing JWK with kid: " + ot.jwkKid + " is not defined."));
 
-        Principal principal = subject.getPrincipal();
+        Principal principal = subject.principal();
 
         Jwt.Builder builder = Jwt.builder();
 
-        principal.getAttributeNames().forEach(name -> {
-            principal.getAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
+        principal.abacAttributeNames().forEach(name -> {
+            principal.abacAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
         });
 
-        OptionalHelper.from(principal.getAttribute("full_name"))
+        OptionalHelper.from(principal.abacAttribute("full_name"))
                 .ifPresentOrElse(name -> builder.addPayloadClaim("name", name),
                                  () -> builder.removePayloadClaim("name"));
 
-        builder.subject(principal.getId())
+        builder.subject(principal.id())
                 .preferredUsername(principal.getName())
                 .issuer(issuer)
-                .algorithm(jwk.getAlgorithm());
+                .algorithm(jwk.algorithm());
 
         ot.update(builder);
 
         Jwt jwt = builder.build();
         SignedJwt signed = SignedJwt.sign(jwt, jwk);
-        ot.outboundHandler.setHeader(headers, signed.getTokenContent());
+        ot.outboundHandler.header(headers, signed.tokenContent());
 
         return OutboundSecurityResponse.withHeaders(headers);
     }
@@ -324,31 +324,42 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         builder.subject(username)
                 .preferredUsername(username)
                 .issuer(issuer)
-                .algorithm(jwk.getAlgorithm());
+                .algorithm(jwk.algorithm());
 
         ot.update(builder);
 
         Jwt jwt = builder.build();
         SignedJwt signed = SignedJwt.sign(jwt, jwk);
-        ot.outboundHandler.setHeader(headers, signed.getTokenContent());
+        ot.outboundHandler.header(headers, signed.tokenContent());
 
         return OutboundSecurityResponse.withHeaders(headers);
     }
 
     private JwtOutboundTarget toOutboundTarget(OutboundTarget outboundTarget) {
         // first check if a custom object is defined
-        Optional<? extends JwtOutboundTarget> customObject = outboundTarget.getCustomObject(JwtOutboundTarget.class);
+        Optional<? extends JwtOutboundTarget> customObject = outboundTarget.customObject(JwtOutboundTarget.class);
         if (customObject.isPresent()) {
             return customObject.get();
         }
-        return JwtOutboundTarget.fromConfig(outboundTarget.getConfig()
-                                                    .orElse(Config.empty()), defaultTokenHandler);
+        return JwtOutboundTarget.create(outboundTarget.getConfig()
+                                                .orElse(Config.empty()), defaultTokenHandler);
     }
 
     /**
      * A custom object to configure specific handling of outbound calls.
      */
     public static class JwtOutboundTarget {
+        /**
+         * Default token validity for an outbound target.
+         * Value is 1 day ({@value} seconds)
+         */
+        public static final long DEFAULT_VALIDITY_SECONDS = 60L * 60 * 24;
+        /**
+         * Default token validity before issue time.
+         * This is used to allow for a time difference on machines - the default value of {@value} seconds means that
+         * the token is valid up to {@value} seconds before it was issued.
+         */
+        public static final int DEFAULT_NOT_BEFORE_SECONDS = 5;
         private final TokenHandler outboundHandler;
         private final String jwtKid;
         private final String jwkKid;
@@ -356,29 +367,22 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
         private final int notBeforeSeconds;
         private final long validitySeconds;
 
+        private JwtOutboundTarget(Builder builder) {
+            this.outboundHandler = builder.outboundHandler;
+            this.jwtKid = builder.jwtKid;
+            this.jwkKid = builder.jwkKid;
+            this.jwtAudience = builder.jwtAudience;
+            this.notBeforeSeconds = builder.notBeforeSeconds;
+            this.validitySeconds = builder.validitySeconds;
+        }
+
         /**
-         * Create an instance to add to {@link OutboundTarget}.
+         * Get a fluent API builder to configure a new instance.
          *
-         * @param outboundHandler  token handler to inject JWT into outbound headers
-         * @param jwtKid           key id to put into a JWT
-         * @param jwkKid           key id to use to sign using JWK - if not defined, existing token will be propagated if present
-         * @param audience         audience to create a JWT for
-         * @param notBeforeSeconds seconds before now the token is valid (e.g. now - notBeforeSeconds = JWT not before)
-         * @param validitySeconds  seconds after now the token is valid (e.g. now + validitySeconds = JWT expiration time)
+         * @return a builder instance
          */
-        public JwtOutboundTarget(TokenHandler outboundHandler,
-                                 String jwtKid,
-                                 String jwkKid,
-                                 String audience,
-                                 int notBeforeSeconds,
-                                 long validitySeconds
-        ) {
-            this.outboundHandler = outboundHandler;
-            this.jwtKid = jwtKid;
-            this.jwkKid = jwkKid;
-            this.jwtAudience = audience;
-            this.notBeforeSeconds = notBeforeSeconds;
-            this.validitySeconds = validitySeconds;
+        public static Builder builder() {
+            return new Builder();
         }
 
         /**
@@ -395,21 +399,13 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
          * @param config         configuration to load data from
          * @param defaultHandler default outbound token handler
          * @return a new instance configured from config
-         * @see #JwtOutboundTarget(TokenHandler, String, String, String, int, long)
+         * @see io.helidon.security.providers.jwt.JwtProvider.JwtOutboundTarget.Builder
          */
-        public static JwtOutboundTarget fromConfig(Config config, TokenHandler defaultHandler) {
-            TokenHandler tokenHandler = config.get("outbound-token")
-                    .asNode()
-                    .map(TokenHandler::fromConfig)
-                    .orElse(defaultHandler);
-
-            return new JwtOutboundTarget(
-                    tokenHandler,
-                    config.get("jwt-kid").asString().orElse(null),
-                    config.get("jwk-kid").asString().orElse(null),
-                    config.get("jwt-audience").asString().orElse(null),
-                    config.get("jwt-not-before-seconds").asInt().orElse(5),
-                    config.get("jwt-validity-seconds").asLong().orElse(60L * 60 * 24));
+        public static JwtOutboundTarget create(Config config, TokenHandler defaultHandler) {
+            return builder()
+                    .tokenHandler(defaultHandler)
+                    .config(config)
+                    .build();
         }
 
         private void update(Jwt.Builder builder) {
@@ -423,12 +419,126 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
                     .keyId(jwtKid)
                     .audience(jwtAudience);
         }
+
+        /**
+         * Fluent API builder for {@link io.helidon.security.providers.jwt.JwtProvider.JwtOutboundTarget}.
+         */
+        public static final class Builder implements io.helidon.common.Builder<JwtOutboundTarget> {
+            private TokenHandler outboundHandler = TokenHandler.builder()
+                    .tokenHeader("Authorization")
+                    .tokenPrefix("bearer ")
+                    .build();
+            private String jwtKid;
+            private String jwkKid;
+            private String jwtAudience;
+            private int notBeforeSeconds = DEFAULT_NOT_BEFORE_SECONDS;
+            private long validitySeconds = DEFAULT_VALIDITY_SECONDS;
+
+            private Builder() {
+            }
+
+            @Override
+            public JwtOutboundTarget build() {
+                return new JwtOutboundTarget(this);
+            }
+
+            /**
+             * Update builder from configuration. See
+             * {@link JwtProvider.JwtOutboundTarget#create(Config, TokenHandler)}
+             * for configuration options description.
+             *
+             * @param config to update builder from
+             * @return updated builder instance
+             */
+            public Builder config(Config config) {
+                config.get("outbound-token")
+                        .asNode()
+                        .map(TokenHandler::create)
+                        .ifPresent(this::tokenHandler);
+
+                config.get("jwt-kid").asString().ifPresent(this::jwtKid);
+                config.get("jwk-kid").asString().ifPresent(this::jwkKid);
+                config.get("jwt-audience").asString().ifPresent(this::jwtAudience);
+                config.get("jwt-not-before-seconds").asInt().ifPresent(this::notBeforeSeconds);
+                config.get("jwt-validity-seconds").asLong().ifPresent(this::validitySeconds);
+
+                return this;
+            }
+
+            /**
+             * Outbound token hanlder to insert the token into outbound request headers.
+             *
+             * @param outboundHandler handler to use
+             * @return updated builder instance
+             */
+            public Builder tokenHandler(TokenHandler outboundHandler) {
+                this.outboundHandler = outboundHandler;
+                return this;
+            }
+
+            /**
+             * JWT key id of the outbound token, used by target service to map
+             * to configuration to validate our signature.
+             *
+             * @param jwtKid key id to be written to the JWT.
+             * @return updated builder instance
+             */
+            public Builder jwtKid(String jwtKid) {
+                this.jwtKid = jwtKid;
+                return this;
+            }
+
+            /**
+             * JWK key id to locate JWK to sign our request.
+             *
+             * @param jwkKid key id of JWK
+             * @return updated builder instance
+             */
+            public Builder jwkKid(String jwkKid) {
+                this.jwkKid = jwkKid;
+                return this;
+            }
+
+            /**
+             * JWT Audience.
+             *
+             * @param jwtAudience audience to be written to the outbound token
+             * @return updated builder instance
+             */
+            public Builder jwtAudience(String jwtAudience) {
+                this.jwtAudience = jwtAudience;
+                return this;
+            }
+
+            /**
+             * Allowed validity before issue time.
+             *
+             * @param notBeforeSeconds seconds the outbound token is valid before issue time
+             * @return updated builder instance
+             */
+            public Builder notBeforeSeconds(int notBeforeSeconds) {
+                this.notBeforeSeconds = notBeforeSeconds;
+                return this;
+            }
+
+            /**
+             * Validity of the token.
+             *
+             * @param validitySeconds seconds the token is valid for
+             * @return updated builder instance
+             */
+            public Builder validitySeconds(long validitySeconds) {
+                this.validitySeconds = validitySeconds;
+                return this;
+            }
+        }
+
     }
 
     /**
      * Fluent API builder for {@link JwtProvider}.
      */
-    public static class Builder implements io.helidon.common.Builder<JwtProvider> {
+    public static final class Builder implements io.helidon.common.Builder<JwtProvider> {
         private boolean optional = false;
         private boolean authenticate = true;
         private boolean propagate = true;
@@ -584,7 +694,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
          * @param config configuration to load from
          * @return updated builder instance
          */
-        public Builder fromConfig(Config config) {
+        public Builder config(Config config) {
             config.get("optional").as(Boolean.class).ifPresent(this::optional);
             config.get("authenticate").as(Boolean.class).ifPresent(this::authenticate);
             config.get("propagate").as(Boolean.class).ifPresent(this::propagate);
@@ -593,7 +703,7 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
             config.get("atn-token.handler").as(TokenHandler.class).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
-            config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.parseTargets(outbound)));
+            config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
 
             return this;

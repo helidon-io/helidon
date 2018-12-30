@@ -182,27 +182,27 @@ public final class SecurityAuditEvent implements AuditEvent {
     }
 
     @Override
-    public String getEventType() {
+    public String eventType() {
         return eventType;
     }
 
     @Override
-    public Optional<Throwable> getThrowable() {
+    public Optional<Throwable> throwable() {
         return throwable;
     }
 
     @Override
-    public List<AuditParam> getParams() {
+    public List<AuditParam> params() {
         return Collections.unmodifiableList(auditParameters);
     }
 
     @Override
-    public String getMessageFormat() {
+    public String messageFormat() {
         return messageFormat;
     }
 
     @Override
-    public AuditSeverity getSeverity() {
+    public AuditSeverity severity() {
         return severity;
     }
 
@@ -222,9 +222,9 @@ public final class SecurityAuditEvent implements AuditEvent {
 
         for (AuditParam param : auditParameters) {
             if (param.isSensitive()) {
-                response.append(param.getName()).append("=").append("********");
+                response.append(param.name()).append("=").append("********");
             } else {
-                response.append(param.getName()).append("=").append(param.getValue().orElse("null"));
+                response.append(param.name()).append("=").append(param.value().orElse("null"));
             }
             response.append(",");
         }

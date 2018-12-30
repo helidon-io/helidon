@@ -86,7 +86,7 @@ public class TokenHandlerTest {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("token_provider.conf"))
                 .build();
-        TokenHandler tp = TokenHandler.fromConfig(config.get("token-1"));
+        TokenHandler tp = TokenHandler.create(config.get("token-1"));
         testBearer(tp, TOKEN_VALUE);
     }
 
@@ -103,7 +103,7 @@ public class TokenHandlerTest {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("token_provider.conf"))
                 .build();
-        TokenHandler tp = TokenHandler.fromConfig(config.get("token-2"));
+        TokenHandler tp = TokenHandler.create(config.get("token-2"));
         testBearer(tp, TOKEN_VALUE);
         testCreateHeader(tp);
     }
@@ -121,7 +121,7 @@ public class TokenHandlerTest {
         assertThat(authorization.size(), is(2));
         assertThat(authorization, is(CollectionsHelper.listOf("firstToken", "secondToken")));
 
-        assertThat(tp.getTokenHeader(), is("Authorization"));
+        assertThat(tp.tokenHeader(), is("Authorization"));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class TokenHandlerTest {
         assertThat(authorization.size(), is(1));
         assertThat(authorization, is(singletonList("secondToken")));
 
-        assertThat(tp.getTokenHeader(), is("Authorization"));
+        assertThat(tp.tokenHeader(), is("Authorization"));
     }
 
     @Test
@@ -150,7 +150,7 @@ public class TokenHandlerTest {
 
     private void testCreateHeader(TokenHandler tp) {
         Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        tp.setHeader(headers, TOKEN_VALUE);
+        tp.header(headers, TOKEN_VALUE);
 
         List<String> authList = headers.get("Authorization");
         assertThat(authList, notNullValue());
@@ -173,7 +173,7 @@ public class TokenHandlerTest {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("token_provider.conf"))
                 .build();
-        TokenHandler tp = TokenHandler.fromConfig(config.get("token-4"));
+        TokenHandler tp = TokenHandler.create(config.get("token-4"));
         testBearer(tp, "bearer " + TOKEN_VALUE);
     }
 
@@ -188,7 +188,7 @@ public class TokenHandlerTest {
         Config config = Config.builder()
                 .sources(ConfigSources.classpath("token_provider.conf"))
                 .build();
-        assertThrows(NullPointerException.class, () -> TokenHandler.fromConfig(config.get("token-3")));
+        assertThrows(NullPointerException.class, () -> TokenHandler.create(config.get("token-3")));
     }
 
     @Test

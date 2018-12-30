@@ -76,7 +76,7 @@ public class BindingTest {
                                   .register(MyResource.class)
                                   .register(TestResource1.class)
                                   .register(new TestResource2())
-                                  .register(new SecurityFeature(Security.fromConfig(config)))
+                                  .register(new SecurityFeature(Security.create(config.get("security"))))
                                   .register(new ExceptionMapper<Exception>() {
                                       @Override
                                       public Response toResponse(Exception exception) {

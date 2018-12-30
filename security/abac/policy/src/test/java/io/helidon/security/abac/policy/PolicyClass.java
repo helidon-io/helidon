@@ -24,7 +24,7 @@ import io.helidon.security.ProviderRequest;
  */
 public class PolicyClass {
     public static void isAuthenticated(Errors.Collector collector, ProviderRequest request) {
-        if (!request.getContext().isAuthenticated()) {
+        if (!request.securityContext().isAuthenticated()) {
             collector.fatal("User is not authenticated");
         }
     }

@@ -21,9 +21,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 
-/**
- * TODO javadoc.
- */
 final class ReflectionUtil {
     private ReflectionUtil() {
     }

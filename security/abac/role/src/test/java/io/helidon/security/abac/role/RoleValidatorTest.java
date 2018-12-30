@@ -48,11 +48,11 @@ class RoleValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Role.create("admin"))
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(rConfig, collector, request);
 
         collector.collect().checkValid();
@@ -68,11 +68,11 @@ class RoleValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Role.create("user"))
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(rConfig, collector, request);
 
         if (collector.collect().isValid()) {
@@ -91,11 +91,11 @@ class RoleValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Role.create("admin"))
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(rConfig, collector, request);
 
         collector.collect().checkValid();
@@ -112,11 +112,11 @@ class RoleValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Role.create("user"))
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.empty());
+        when(request.service()).thenReturn(Optional.empty());
         validator.validate(rConfig, collector, request);
 
         if (collector.collect().isValid()) {
@@ -135,11 +135,11 @@ class RoleValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getService()).thenReturn(Optional.of(Subject.builder()
+        when(request.service()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("service"))
                                                                   .addGrant(Role.create("admin"))
                                                                   .build()));
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Role.create("user"))
                                                                   .build()));
@@ -159,11 +159,11 @@ class RoleValidatorTest {
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getSubject()).thenReturn(Optional.of(Subject.builder()
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("myAdmin"))
                                                                   .addGrant(Role.create("admin"))
                                                                   .build()));
-        when(request.getService()).thenReturn(Optional.of(Subject.builder()
+        when(request.service()).thenReturn(Optional.of(Subject.builder()
                                                                   .principal(Principal.create("service"))
                                                                   .addGrant(Role.create("user"))
                                                                   .build()));

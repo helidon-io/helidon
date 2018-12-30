@@ -31,7 +31,7 @@ import io.opentracing.Span;
  *
  * @param <T> Type of the builder, used to enable extensibility of this builder
  */
-public class SecurityRequestBuilder<T extends SecurityRequestBuilder> {
+public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     private final T myInstance;
     private final SecurityContext context;
     private final Map<String, Supplier<Object>> resources = new HashMap<>();
@@ -169,11 +169,11 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder> {
         return new SecurityRequestImpl(this);
     }
 
-    String getProviderName() {
+    String providerName() {
         return providerName;
     }
 
-    private class SecurityRequestImpl implements SecurityRequest {
+    private final class SecurityRequestImpl implements SecurityRequest {
         private final String providerName;
         private final boolean isOptional;
         private final Entity responseEntity;
@@ -196,21 +196,21 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder> {
         }
 
         @Override
-        public Optional<Entity> getRequestEntity() {
+        public Optional<Entity> requestEntity() {
             return Optional.ofNullable(requestEntity);
         }
 
         @Override
-        public Optional<Entity> getResponseEntity() {
+        public Optional<Entity> responseEntity() {
             return Optional.ofNullable(responseEntity);
         }
 
         @Override
-        public Span getTracingSpan() {
+        public Span tracingSpan() {
             return tracingSpan;
         }
 
-        public Map<String, Supplier<Object>> getResources() {
+        public Map<String, Supplier<Object>> resources() {
             return Collections.unmodifiableMap(resources);
         }
 

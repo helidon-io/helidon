@@ -153,8 +153,8 @@ public abstract class WebSecurityTests {
         // audit
         AuditEvent auditEvent = myAuditProvider.getAuditEvent();
         assertThat(auditEvent, notNullValue());
-        assertThat(auditEvent.getMessageFormat(), is(AUDIT_MESSAGE_FORMAT));
-        assertThat(auditEvent.getSeverity(), is(AuditEvent.AuditSeverity.SUCCESS));
+        assertThat(auditEvent.messageFormat(), is(AUDIT_MESSAGE_FORMAT));
+        assertThat(auditEvent.severity(), is(AuditEvent.AuditSeverity.SUCCESS));
     }
 
     private void testForbidden(String uri, String username, String password) {

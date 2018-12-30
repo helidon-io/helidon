@@ -62,24 +62,6 @@ public class JwkRSA extends JwkPki {
      * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.1.2.
      */
     public static final String ALG_RS512 = "RS512";
-    /*
-    TODO see security#26 as a follow up task for following constants
-    */
-    /*
-     * RSASSA-PSS using SHA-256 and MGF1 with SHA-256.
-     * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.1.2.
-     */
-    //    public static final String ALG_PS256 = "PS256";
-    /*
-     * RSASSA-PSS using SHA-384 and MGF1 with SHA-384.
-     * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.1.2.
-     */
-    //    public static final String ALG_PS384 = "PS384";
-    /*
-     * RSASSA-PSS using SHA-512 and MGF1 with SHA-512.
-     * See <a href="https://www.rfc-editor.org/rfc/rfc7518.txt">RFC 7518</a>, section 7.1.2.
-     */
-    //    public static final String ALG_PS512 = "PS512";
 
     /**
      * JWK parameter for public key modulus.
@@ -144,12 +126,6 @@ public class JwkRSA extends JwkPki {
         ALG_MAP.put(ALG_RS384, "SHA384withRSA");
         ALG_MAP.put(ALG_RS512, "SHA512withRSA");
 
-        /*
-        // the following algorithms are not yet supported - see follow up issue security#26
-        ALG_MAP.put(ALG_PS256, "SHA256withRSAandMGF1");
-        ALG_MAP.put(ALG_PS384, "SHA384withRSAandMGF1");
-        ALG_MAP.put(ALG_PS512, "SHA512withRSAandMGF1");
-        */
         ALG_MAP.put(ALG_NONE, ALG_NONE);
     }
 
@@ -171,15 +147,15 @@ public class JwkRSA extends JwkPki {
      *
      * @param json with definition of this RSA web key
      * @return new instance of this class constructed from json
-     * @see Jwk#fromJson(JsonObject) for generic method that can load any supported JWK type.
+     * @see Jwk#create(JsonObject) for generic method that can load any supported JWK type.
      */
-    public static JwkRSA fromJson(JsonObject json) {
+    public static JwkRSA create(JsonObject json) {
         return builder().fromJson(json).build();
     }
 
     @Override
-    String getSignatureAlgorithm() {
-        String jwkAlg = getAlgorithm();
+    String signatureAlgorithm() {
+        String jwkAlg = algorithm();
         String javaAlg = ALG_MAP.get(jwkAlg);
 
         if (null == javaAlg) {
@@ -281,7 +257,7 @@ public class JwkRSA extends JwkPki {
          *
          * @param json JsonObject with the JWK
          * @return updated builder instance, just call {@link #build()} to build the {@link JwkRSA} instance
-         * @see JwkRSA#fromJson(JsonObject) as a shortcut if no additional configuration is to be done
+         * @see JwkRSA#create(JsonObject) as a shortcut if no additional configuration is to be done
          */
         public Builder fromJson(JsonObject json) {
             super.fromJson(json);

@@ -54,17 +54,17 @@ public final class JerseyBuilderMain {
     private static void addUser(String user, String password, List<String> roles) {
         USERS.put(user, new UserStore.User() {
             @Override
-            public String getLogin() {
+            public String login() {
                 return user;
             }
 
             @Override
-            public char[] getPassword() {
+            public char[] password() {
                 return password.toCharArray();
             }
 
             @Override
-            public Collection<String> getRoles() {
+            public Collection<String> roles() {
                 return roles;
             }
         });

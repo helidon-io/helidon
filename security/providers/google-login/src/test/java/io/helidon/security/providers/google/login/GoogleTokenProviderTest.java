@@ -101,11 +101,11 @@ public class GoogleTokenProviderTest {
     public void testInbound() {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "bearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.syncAuthenticate(inboundRequest);
-        assertThat(response.getUser(), is(not(Optional.empty())));
-        response.getUser().ifPresent(subject -> {
-            Principal principal = subject.getPrincipal();
+        assertThat(response.user(), is(not(Optional.empty())));
+        response.user().ifPresent(subject -> {
+            Principal principal = subject.principal();
             assertThat(principal.getName(), is(name));
-            assertThat(principal.getId(), is(userId));
+            assertThat(principal.id(), is(userId));
         });
     }
 
@@ -114,9 +114,9 @@ public class GoogleTokenProviderTest {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "tearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(400));
-        assertThat(response.getResponseHeaders().get("WWW-Authenticate"), notNullValue());
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(400));
+        assertThat(response.responseHeaders().get("WWW-Authenticate"), notNullValue());
     }
 
     @Test
@@ -124,9 +124,9 @@ public class GoogleTokenProviderTest {
         ProviderRequest inboundRequest = createInboundRequest("OtherHeader", "tearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        assertThat(response.getResponseHeaders().get("WWW-Authenticate"), notNullValue());
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
+        assertThat(response.responseHeaders().get("WWW-Authenticate"), notNullValue());
     }
 
     @Test
@@ -138,9 +138,9 @@ public class GoogleTokenProviderTest {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "bearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        assertThat(response.getResponseHeaders().get("WWW-Authenticate"), notNullValue());
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
+        assertThat(response.responseHeaders().get("WWW-Authenticate"), notNullValue());
     }
 
     @Test
@@ -153,9 +153,9 @@ public class GoogleTokenProviderTest {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "bearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.authenticate(inboundRequest).toCompletableFuture().get();
 
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.FAILURE));
-        assertThat(response.getStatusCode().orElse(200), is(401));
-        assertThat(response.getResponseHeaders().get("WWW-Authenticate"), notNullValue());
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+        assertThat(response.statusCode().orElse(200), is(401));
+        assertThat(response.responseHeaders().get("WWW-Authenticate"), notNullValue());
     }
 
     private ProviderRequest createInboundRequest(String headerName, String headerValue) {
@@ -166,13 +166,13 @@ public class GoogleTokenProviderTest {
         Span secSpan = GlobalTracer.get().buildSpan("security").start();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getExecutorService()).thenReturn(ForkJoinPool.commonPool());
-        when(context.getTracer()).thenReturn(GlobalTracer.get());
-        when(context.getTracingSpan()).thenReturn(secSpan.context());
+        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
+        when(context.tracer()).thenReturn(GlobalTracer.get());
+        when(context.tracingSpan()).thenReturn(secSpan.context());
 
         ProviderRequest mock = mock(ProviderRequest.class);
-        when(mock.getContext()).thenReturn(context);
-        when(mock.getEnv()).thenReturn(env);
+        when(mock.securityContext()).thenReturn(context);
+        when(mock.env()).thenReturn(env);
 
         return mock;
     }
@@ -189,7 +189,7 @@ public class GoogleTokenProviderTest {
 
         OutboundSecurityResponse response = provider.syncOutbound(outboundRequest, outboundEnv, outboundEp);
 
-        List<String> authorization = response.getRequestHeaders().get("Authorization");
+        List<String> authorization = response.requestHeaders().get("Authorization");
 
         assertThat(authorization, notNullValue());
         assertThat(authorization.size(), is(1));
@@ -208,10 +208,10 @@ public class GoogleTokenProviderTest {
                 .build();
 
         SecurityContext context = mock(SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.of(subject));
+        when(context.user()).thenReturn(Optional.of(subject));
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
-        when(context.getExecutorService()).thenReturn(ForkJoinPool.commonPool());
+        when(request.securityContext()).thenReturn(context);
+        when(context.executorService()).thenReturn(ForkJoinPool.commonPool());
 
         return request;
     }

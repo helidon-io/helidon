@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class WebSecurityQueryParamTest {
     @Test
     public void testQueryParams() {
-        SecurityHandler securityHandler = SecurityHandler.newInstance()
+        SecurityHandler securityHandler = SecurityHandler.create()
                 .queryParam(
                         "jwt",
                         TokenHandler.builder()
@@ -62,16 +62,16 @@ public class WebSecurityQueryParamTest {
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         SecurityEnvironment env = SecurityEnvironment.create();
-        when(context.getEnv()).thenReturn(env);
+        when(context.env()).thenReturn(env);
 
         // context is a stub
         securityHandler.extractQueryParams(context, req);
         // captor captures the argument
         ArgumentCaptor<SecurityEnvironment> newHeaders = ArgumentCaptor.forClass(SecurityEnvironment.class);
-        verify(context).setEnv(newHeaders.capture());
+        verify(context).env(newHeaders.capture());
         // now validate the value we were called with
         env = newHeaders.getValue();
-        assertThat(env.getHeaders().get("BEARER_TOKEN"), is(CollectionsHelper.listOf("jwt_content")));
-        assertThat(env.getHeaders().get("NAME_FROM_REQUEST"), is(CollectionsHelper.listOf("name_content")));
+        assertThat(env.headers().get("BEARER_TOKEN"), is(CollectionsHelper.listOf("jwt_content")));
+        assertThat(env.headers().get("NAME_FROM_REQUEST"), is(CollectionsHelper.listOf("name_content")));
     }
 }

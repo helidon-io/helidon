@@ -45,7 +45,7 @@ public class SecurityMpService implements MpService {
 
         Security security;
         if (config.get("security.providers").exists()) {
-            security = Security.fromConfig(config);
+            security = Security.create(config.get("security"));
         } else {
             LOGGER.info(
                     "Security extension for microprofile is enabled, yet security configuration is missing from config "
@@ -61,7 +61,7 @@ public class SecurityMpService implements MpService {
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean().orElse(true)) {
             SecurityFeature feature = SecurityFeature.builder(security)
-                    .fromConfig(jerseyConfig)
+                    .config(jerseyConfig)
                     .build();
 
             context.getApplications().forEach(app -> app.register(feature));
@@ -70,7 +70,7 @@ public class SecurityMpService implements MpService {
         Config webServerConfig = config.get("security.web-server");
         if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
             context.getServerRoutingBuilder()
-                    .register(WebSecurity.from(security, config));
+                    .register(WebSecurity.create(security, config));
         }
 
         // for later use, e.g. for outbound security

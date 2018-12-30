@@ -53,24 +53,24 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
     private JsonWebTokenImpl(SignedJwt signed) {
         this.jwt = signed.getJwt();
         this.signed = signed;
-        BasicAttributes container = new BasicAttributes();
-        jwt.getPayloadClaims()
+        BasicAttributes container = BasicAttributes.create();
+        jwt.payloadClaims()
                 .forEach((key, jsonValue) -> container.put(key, JwtUtil.toObject(jsonValue)));
 
-        jwt.getEmail().ifPresent(value -> container.put("email", value));
-        jwt.getEmailVerified().ifPresent(value -> container.put("email_verified", value));
-        jwt.getLocale().ifPresent(value -> container.put("locale", value));
-        jwt.getFamilyName().ifPresent(value -> container.put("family_name", value));
-        jwt.getGivenName().ifPresent(value -> container.put("given_name", value));
-        jwt.getFullName().ifPresent(value -> container.put("full_name", value));
+        jwt.email().ifPresent(value -> container.put("email", value));
+        jwt.emailVerified().ifPresent(value -> container.put("email_verified", value));
+        jwt.locale().ifPresent(value -> container.put("locale", value));
+        jwt.familyName().ifPresent(value -> container.put("family_name", value));
+        jwt.givenName().ifPresent(value -> container.put("given_name", value));
+        jwt.fullName().ifPresent(value -> container.put("full_name", value));
 
         this.properties = container;
 
-        String subject = jwt.getSubject()
+        String subject = jwt.subject()
                 .orElseThrow(() -> new JwtException("JWT does not contain subject claim, cannot create principal."));
 
-        this.name = OptionalHelper.from(jwt.getUserPrincipal())
-                .or(jwt::getPreferredUsername).asOptional()
+        this.name = OptionalHelper.from(jwt.userPrincipal())
+                .or(jwt::preferredUsername).asOptional()
                 .orElse(subject);
 
         this.id = subject;
@@ -93,7 +93,7 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
 
     @Override
     public Set<String> getClaimNames() {
-        return jwt.getPayloadClaims().keySet();
+        return jwt.payloadClaims().keySet();
     }
 
     @SuppressWarnings("unchecked")
@@ -139,17 +139,17 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
     private Object getClaim(Claims claims) {
         switch (claims) {
         case raw_token:
-            return signed.getTokenContent();
+            return signed.tokenContent();
         case groups:
-            return jwt.getUserGroups().map(HashSet::new).orElse(null);
+            return jwt.userGroups().map(HashSet::new).orElse(null);
         case aud:
-            return jwt.getAudience().map(HashSet::new).orElse(null);
+            return jwt.audience().map(HashSet::new).orElse(null);
         case email_verified:
-            return jwt.getEmailVerified().orElse(null);
+            return jwt.emailVerified().orElse(null);
         case phone_number_verified:
-            return jwt.getPhoneNumberVerified().orElse(null);
+            return jwt.phoneNumberVerified().orElse(null);
         case upn:
-            return jwt.getUserPrincipal().orElse(null);
+            return jwt.userPrincipal().orElse(null);
         default:
             //do nothing, just continue to processing based on type
         }
@@ -163,11 +163,11 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
     private Optional<JsonValue> getJsonValue(String claimName) {
         if (Claims.raw_token.name().equals(claimName)) {
             // special case, raw token is not really a claim
-            return Optional.of(Json.createValue(signed.getTokenContent()));
+            return Optional.of(Json.createValue(signed.tokenContent()));
         }
         return OptionalHelper
-                .from(jwt.getPayloadClaim(claimName))
-                .or(() -> jwt.getHeaderClaim(claimName))
+                .from(jwt.payloadClaim(claimName))
+                .or(() -> jwt.headerClaim(claimName))
                 .asOptional();
     }
 
@@ -198,17 +198,17 @@ public final class JsonWebTokenImpl implements JsonWebToken, Principal {
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
-        return properties.getAttributeRaw(key);
+    public Object abacAttributeRaw(String key) {
+        return properties.abacAttributeRaw(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
-        return properties.getAttributeNames();
+    public Collection<String> abacAttributeNames() {
+        return properties.abacAttributeNames();
     }
 
     @Override
-    public String getId() {
+    public String id() {
         return id;
     }
 }

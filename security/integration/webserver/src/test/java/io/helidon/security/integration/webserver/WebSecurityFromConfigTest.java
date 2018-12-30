@@ -43,18 +43,18 @@ public class WebSecurityFromConfigTest extends WebSecurityTests {
         WebSecurityTestUtil.auditLogFinest();
         myAuditProvider = new UnitTestAuditProvider();
 
-        Config config = Config.create();
+        Config securityConfig = Config.create().get("security");
 
-        Security security = Security.builderFromConfig(config)
+        Security security = Security.builder(securityConfig)
                 .addAuditProvider(myAuditProvider).build();
 
         Routing routing = Routing.builder()
-                .register(WebSecurity.from(security, config))
+                .register(WebSecurity.create(security, securityConfig))
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
                     res.headers().contentType(MediaType.TEXT_PLAIN.withCharset("UTF-8"));
                     res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.getUser().orElse(SecurityContext.ANONYMOUS).toString())
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
                 })
                 .build();

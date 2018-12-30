@@ -78,7 +78,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
     /**
      * Get a builder instance to construct a new security provider.
-     * Alternative approach is {@link #fromConfig(Config)} (or {@link HttpBasicAuthProvider#fromConfig(Config)}).
+     * Alternative approach is {@link #create(Config)} (or {@link HttpBasicAuthProvider#create(Config)}).
      *
      * @return builder to fluently construct Basic security provider
      */
@@ -93,13 +93,13 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
      *               http-digest-auth)
      * @return instance of provider configured from provided config
      */
-    public static HttpBasicAuthProvider fromConfig(Config config) {
-        return Builder.fromConfig(config).build();
+    public static HttpBasicAuthProvider create(Config config) {
+        return builder().config(config).build();
     }
 
     private static OutboundSecurityResponse toBasicAuthOutbound(UserStore.User user) {
         String b64 = Base64.getEncoder()
-                .encodeToString((user.getLogin() + ":" + new String(user.getPassword())).getBytes(StandardCharsets.UTF_8));
+                .encodeToString((user.login() + ":" + new String(user.password())).getBytes(StandardCharsets.UTF_8));
         String basicAuthB64 = "basic " + b64;
         return OutboundSecurityResponse
                 .withHeaders(CollectionsHelper.mapOf("Authorization", CollectionsHelper.listOf(basicAuthB64)));
@@ -111,17 +111,17 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                        EndpointConfig outboundEp) {
 
         // explicitly overridden username and/or password
-        if (outboundEp.getAttributeNames().contains(EP_PROPERTY_OUTBOUND_USER)) {
+        if (outboundEp.abacAttributeNames().contains(EP_PROPERTY_OUTBOUND_USER)) {
             return true;
         }
 
-        SecurityContext secContext = providerRequest.getContext();
+        SecurityContext secContext = providerRequest.securityContext();
 
-        boolean userSupported = secContext.getUser()
-                .map(user -> user.getPrivateCredential(UserStore.User.class).isPresent()).orElse(false);
+        boolean userSupported = secContext.user()
+                .map(user -> user.privateCredential(UserStore.User.class).isPresent()).orElse(false);
 
-        boolean serviceSupported = secContext.getService()
-                .map(user -> user.getPrivateCredential(UserStore.User.class).isPresent()).orElse(false);
+        boolean serviceSupported = secContext.service()
+                .map(user -> user.privateCredential(UserStore.User.class).isPresent()).orElse(false);
 
         return userSupported || serviceSupported;
     }
@@ -132,33 +132,33 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                                     EndpointConfig outboundEp) {
 
         // first resolve user to use
-        Optional<Object> maybeUsername = outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         if (maybeUsername.isPresent()) {
             String username = maybeUsername.get().toString();
 
-            UserStore.User user = userStore.getUser(username).orElseGet(() -> userFromEndpoint(username, outboundEp));
+            UserStore.User user = userStore.user(username).orElseGet(() -> userFromEndpoint(username, outboundEp));
 
             return toBasicAuthOutbound(user);
         }
 
         // and if not present, use the one from request
-        SecurityContext secContext = providerRequest.getContext();
+        SecurityContext secContext = providerRequest.securityContext();
 
-        return OptionalHelper.from(secContext.getUser()
-                                           .flatMap(user -> user.getPrivateCredential(UserStore.User.class)))
-                .or(() -> secContext.getService().flatMap(service -> service.getPrivateCredential(UserStore.User.class)))
+        return OptionalHelper.from(secContext.user()
+                                           .flatMap(user -> user.privateCredential(UserStore.User.class)))
+                .or(() -> secContext.service().flatMap(service -> service.privateCredential(UserStore.User.class)))
                 .asOptional()
                 .map(user -> {
-                    Optional<Object> password = outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_PASSWORD);
+                    Optional<Object> password = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD);
                     if (password.isPresent()) {
                         return toBasicAuthOutbound(new UserStore.User() {
                             @Override
-                            public String getLogin() {
-                                return user.getLogin();
+                            public String login() {
+                                return user.login();
                             }
 
                             @Override
-                            public char[] getPassword() {
+                            public char[] password() {
                                 return password.map(String::valueOf).map(String::toCharArray).orElse(EMPTY_PASSWORD);
                             }
                         });
@@ -172,13 +172,13 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     private UserStore.User userFromEndpoint(String username, EndpointConfig outboundEp) {
         return new UserStore.User() {
             @Override
-            public String getLogin() {
+            public String login() {
                 return username;
             }
 
             @Override
-            public char[] getPassword() {
-                return outboundEp.getAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+            public char[] password() {
+                return outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
                         .map(String::valueOf)
                         .map(String::toCharArray)
                         .orElse(EMPTY_PASSWORD);
@@ -188,7 +188,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
 
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
-        Map<String, List<String>> headers = providerRequest.getEnv().getHeaders();
+        Map<String, List<String>> headers = providerRequest.env().headers();
         List<String> authorizationHeader = headers.get(HEADER_AUTHENTICATION);
 
         if (null == authorizationHeader) {
@@ -222,9 +222,9 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
         final String username = matcher.group(1);
         final char[] password = matcher.group(2).toCharArray();
 
-        return userStore.getUser(username)
+        return userStore.user(username)
                 .map(user -> {
-                    if (Arrays.equals(password, user.getPassword())) {
+                    if (Arrays.equals(password, user.password())) {
                         // yay, correct user and password!!!
                         if (subjectType == SubjectType.USER) {
                             return AuthenticationResponse.success(buildSubject(user));
@@ -254,11 +254,11 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     private Subject buildSubject(UserStore.User user) {
         Subject.Builder builder = Subject.builder()
                 .principal(Principal.builder()
-                                   .name(user.getLogin())
+                                   .name(user.login())
                                    .build())
                 .addPrivateCredential(UserStore.User.class, user);
 
-        user.getRoles()
+        user.roles()
                 .forEach(role -> builder.addGrant(Role.create(role)));
 
         return builder.build();
@@ -267,32 +267,35 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     /**
      * {@link HttpBasicAuthProvider} fluent API builder.
      */
-    public static class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
+    public static final class Builder implements io.helidon.common.Builder<HttpBasicAuthProvider> {
         private static final UserStore EMPTY_STORE = login -> Optional.empty();
         private UserStore userStore = EMPTY_STORE;
-        private String realm;
+        private String realm = "helidon";
         private SubjectType subjectType = SubjectType.USER;
 
         private Builder() {
         }
 
-        static Builder fromConfig(Config config) {
-            Builder builder = new Builder();
-
-            builder.realm(config.get("realm").asString().orElse("realm"));
-            config.get("principal-type").as(SubjectType.class).ifPresent(builder::subjectType);
+        /**
+         * Update this builder from configuration.
+         * @param config configuration to read, located on the node of the http basic authentication provider
+         * @return updated builder instance
+         */
+        public Builder config(Config config) {
+            config.get("realm").asString().ifPresent(this::realm);
+            config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
 
             // now users may not be configured at all
             Config usersConfig = config.get("users");
             if (usersConfig.exists()) {
                 // or it may be jst an empty list (e.g. users: with no subnodes).
                 if (!usersConfig.isLeaf()) {
-                    builder.userStore(usersConfig.as(ConfigUserStore::fromConfig)
+                    userStore(usersConfig.as(ConfigUserStore::create)
                                               .orElseThrow(() -> new HttpAuthException(
                                                       "No users configured! Key \"users\" must be in configuration")));
                 }
             }
-            return builder;
+            return this;
         }
 
         @Override
