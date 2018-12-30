@@ -28,14 +28,14 @@ public class MpTracingService implements MpService {
     public void configure(MpServiceContext context) {
         // configure tracing from server configuration
         // "known" location is:
-        Config tracingConfig = context.getHelidonConfig().get("tracing");
+        Config tracingConfig = context.helidonConfig().get("tracing");
 
         // register as global tracer and configure webserver
-        context.getServerConfigBuilder()
+        context.serverConfigBuilder()
                 .tracer(TracerBuilder.create(tracingConfig)
                                 .buildAndRegister());
 
-        context.getApplications()
+        context.applications()
                 .forEach(app -> app.register(MpTracingFilter.class));
     }
 }

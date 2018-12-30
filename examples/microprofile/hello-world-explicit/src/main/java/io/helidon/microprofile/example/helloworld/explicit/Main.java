@@ -58,7 +58,7 @@ public class Main {
 
         server.start();
 
-        System.out.println("Started application on http://" + server.getHost() + ":" + server.getPort() + "/helloworld");
+        System.out.println("Started application on http://" + server.host() + ":" + server.port() + "/helloworld");
 
         // the easiest possible explicit way to start an application:
         // Server.create(HelloWorldApplication.class).start();

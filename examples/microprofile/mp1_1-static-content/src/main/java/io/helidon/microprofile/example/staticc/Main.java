@@ -47,7 +47,7 @@ public class Main {
 
         server.start();
 
-        port = server.getPort();
+        port = server.port();
 
         now = System.nanoTime() - now;
         System.out.println("Start server: " + TimeUnit.MILLISECONDS.convert(now, TimeUnit.NANOSECONDS));

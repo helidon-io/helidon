@@ -30,7 +30,7 @@ import io.helidon.microprofile.server.spi.MpServiceContext;
 public class HealthMpService implements MpService {
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-        String contextRoot = mpServiceContext.getHelidonConfig()
+        String contextRoot = mpServiceContext.helidonConfig()
                 .get("helidon.health.web-context")
                 .asString()
                 .orElse("/health");

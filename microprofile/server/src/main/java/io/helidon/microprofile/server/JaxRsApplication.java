@@ -77,15 +77,15 @@ public final class JaxRsApplication {
         this.executorService = executorService;
     }
 
-    String getContextRoot() {
+    String contextRoot() {
         return contextRoot;
     }
 
-    ResourceConfig getConfig() {
+    ResourceConfig resourceConfig() {
         return config;
     }
 
-    Optional<ExecutorService> getExecutorService() {
+    Optional<ExecutorService> executorService() {
         return Optional.ofNullable(executorService);
     }
 

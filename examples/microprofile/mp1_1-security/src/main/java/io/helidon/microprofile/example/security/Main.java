@@ -41,8 +41,8 @@ public final class Main {
 
         now = System.nanoTime() - now;
         System.out.println("Start server: " + TimeUnit.MILLISECONDS.convert(now, TimeUnit.NANOSECONDS));
-        System.out.println("Endpoint available at http://localhost:" + server.getPort() + "/static/helloworld");
+        System.out.println("Endpoint available at http://localhost:" + server.port() + "/static/helloworld");
         System.out.println("Alternative endpoint (second application) available at http://localhost:" + server
-                .getPort() + "/other/helloworld");
+                .port() + "/other/helloworld");
     }
 }

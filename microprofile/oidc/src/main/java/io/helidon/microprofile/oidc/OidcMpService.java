@@ -26,8 +26,8 @@ import io.helidon.security.providers.oidc.OidcSupport;
 public final class OidcMpService implements MpService {
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-        mpServiceContext.getServerRoutingBuilder()
-                .register(OidcSupport.create(mpServiceContext.getHelidonConfig()));
+        mpServiceContext.serverRoutingBuilder()
+                .register(OidcSupport.create(mpServiceContext.helidonConfig()));
 
     }
 }

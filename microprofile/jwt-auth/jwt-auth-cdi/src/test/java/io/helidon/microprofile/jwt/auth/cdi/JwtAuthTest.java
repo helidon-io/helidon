@@ -124,7 +124,7 @@ class JwtAuthTest {
 
         String signedToken = response.requestHeaders().get("Authorization").get(0);
 
-        WebTarget target = client.target("http://localhost:" + server.getPort());
+        WebTarget target = client.target("http://localhost:" + server.port());
 
         // authenticated
         String httpResponse = target.path("/hello")
@@ -137,7 +137,7 @@ class JwtAuthTest {
 
     @Test
     void testPublicEndpoit() {
-        WebTarget target = client.target("http://localhost:" + server.getPort());
+        WebTarget target = client.target("http://localhost:" + server.port());
 
         // public
         String httpResponse = target.path("/public")

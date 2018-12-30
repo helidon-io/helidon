@@ -29,7 +29,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 /**
  * URL based config source.
  */
-class MpcSourceUrl implements ConfigSource {
+final class MpcSourceUrl implements ConfigSource {
 
     private final Map<String, String> props;
     private final String source;
@@ -39,7 +39,7 @@ class MpcSourceUrl implements ConfigSource {
         this.source = source;
     }
 
-    public static ConfigSource from(URL url) throws IOException {
+    public static ConfigSource create(URL url) throws IOException {
         try (InputStream inputStream = url.openStream()) {
             Properties props = new Properties();
             props.load(inputStream);
