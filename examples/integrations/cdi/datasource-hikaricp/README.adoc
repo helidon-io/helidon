@@ -1,0 +1,101 @@
+= Hikari Connection Pool Integration Example
+
+== Overview
+
+This example shows a trivial Helidon MicroProfile application that
+uses the Hikari connection pool CDI integration, shows how to package
+it into a Docker image, and shows how to run it in a Docker container.
+It also shows how to run the Oracle database in a Docker container and
+connect to it using the application's container.
+
+== Notes
+
+To create a user-defined Docker network:
+
+==================================================
+$ docker network create helidon-examples
+==================================================
+
+To run Oracle's `database/standard` Docker image in a Docker container
+named `mysql` connected to this network that publishes its ports to
+the host:
+
+==================================================
+$ docker container run --name oracle --network helidon-examples --detach -it --publish 1521:1521 --publish 5500:5500 --shm-size=3g container-registry.oracle.com/database/standard:latest
+==================================================
+
+It will take about ten minutes before the database is ready.
+
+To ensure that the sample application is configured to talk to the
+Oracle database running in this Docker container when it is run from a
+Docker container itself, verify that the following lines (among
+others) are present in
+`src/main/resources/META-INF/microprofile-config.properties`:
+
+========================================
+javax.sql.DataSource.example.dataSourceClassName=oracle.jdbc.pool.OracleDataSource
+javax.sql.DataSource.example.dataSource.url = jdbc:oracle:thin:@oracle:1521:ORCL
+javax.sql.DataSource.example.dataSource.user = sys as sysoper
+javax.sql.DataSource.example.dataSource.password = Oracle
+========================================
+
+(The second occurrence of `oracle` in the value of the
+`javax.sql.DataSource.example.dataSource.url` property above is a
+hostname that is resolvable inside the user-defined Docker network
+named `helidon-examples` and identifies the Docker container with that
+`name`.  You'll note that this hostname is exactly equal to the name
+of the `oracle` Docker container; this is not a coincidence.)
+
+To compile the sample application:
+
+==================================================
+$ mvn clean package
+==================================================
+
+To package the sample application into a Docker image named `helidon-oracle`:
+
+========================================
+$ docker image build --tag helidon-oracle target
+========================================
+
+To run the Docker image just built in a Docker container that connects
+to the same user-defined Docker network as that used by the `oracle`
+Docker container (`helidon-examples`), and which exposes port `8080`
+to the host:
+
+========================================
+$ docker container run --name helidon-oracle --rm --network helidon-examples --publish 8080:8080 helidon-oracle:latest
+========================================
+
+To see the results of running the sample application:
+
+================================
+$ curl http://localhost:8080/tables
+================================
+
+To stop the `oracle` Docker container:
+
+================================
+$ docker container stop oracle
+================================
+
+To remove the `oracle` Docker container:
+
+================================
+$ docker container rm mysql
+================================
+
+== References
+
+Running the Oracle database in a Docker container:
+
+https://technology.amis.nl/2017/12/30/oracle-database-in-a-docker-container-from-oracle-container-registry/
+
+Another guide:
+
+https://technology.amis.nl/2017/11/18/run-oracle-database-in-docker-using-prebaked-image-from-oracle-container-registry-a-two-minute-guide/
+
+Docker bridge networking documentation:
+
+https://docs.docker.com/network/bridge/
+
