@@ -12,17 +12,17 @@ container.
 
 To create a user-defined Docker network:
 
-==================================================
+```sh
 $ docker network create helidon-examples
-==================================================
+```
 
 To run MySQL's `mysql:8` Docker image in a Docker container named
 `mysql` connected to this network that publishes all of its ports to
 the host and uses `tiger` as the MySQL root password:
 
-==================================================
+```sh
 $ docker run --name mysql --network helidon-examples --detach --env MYSQL_ROOT_PASSWORD=tiger --publish-all mysql:8
-==================================================
+```
 
 To ensure that the sample application is configured to talk to MySQL
 running in this Docker container when it is run from a Docker
@@ -30,12 +30,12 @@ container itself, verify that the following lines (among others) are
 present in
 `src/main/resources/META-INF/microprofile-config.properties`:
 
-========================================
+```sh
 javax.sql.DataSource.example.dataSourceClassName=com.mysql.cj.jdbc.MysqlDataSource
 javax.sql.DataSource.example.dataSource.url = jdbc:mysql://mysql:3306
 javax.sql.DataSource.example.dataSource.user = root
 javax.sql.DataSource.example.dataSource.password = tiger
-========================================
+```
 
 (The second occurrence of `mysql` in the value of the
 `javax.sql.DataSource.example.dataSource.url` property above is a
@@ -46,42 +46,42 @@ of the `mysql` Docker container; this is not a coincidence.)
 
 To compile the sample application:
 
-==================================================
+```sh
 $ mvn clean package
-==================================================
+```
 
 To package the sample application into a Docker image named `helidon-mysql`:
 
-========================================
+```sh
 $ docker image build --tag helidon-mysql target
-========================================
+```
 
 To run the Docker image just built in a Docker container that connects
 to the same user-defined Docker network as that used by the `mysql`
 Docker container (`helidon-examples`), and which exposes port `8080`
 to the host:
 
-========================================
+```sh
 $ docker container run --rm --network helidon-examples --publish 8080:8080 helidon-mysql:latest
-========================================
+```
 
 To see the results of running the sample application:
 
-================================
+```sh
 $ curl http://localhost:8080/tables
-================================
+```
 
 To stop the `mysql` Docker container:
 
-================================
+```sh
 $ docker container stop mysql
-================================
+```
 
 To remove the `mysql` Docker container:
 
-================================
+```
 $ docker container rm mysql
-================================
+```
 
 == References
 
