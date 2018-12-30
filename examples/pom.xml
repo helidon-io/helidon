@@ -45,6 +45,7 @@
         <module>todo-app</module>
         <module>quickstarts</module>
         <module>guides</module>
+        <module>health</module>
     </modules>
 
     <build>
