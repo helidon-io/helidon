@@ -20,7 +20,8 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Class CommandDataTest.
@@ -31,27 +32,27 @@ public class CommandDataTest {
     public void testSuccessRatio() {
         CircuitBreakerHelper.CommandData data = new CircuitBreakerHelper.CommandData(6);
         Arrays.asList(true, true, true, false, false, false).forEach(data::pushResult);
-        assertEquals(3.0d / 6, data.getSuccessRatio());
+        assertThat(data.getSuccessRatio(), is(3.0d / 6));
     }
 
     @Test
     public void testFailureRatio() {
         CircuitBreakerHelper.CommandData data = new CircuitBreakerHelper.CommandData(4);
         Arrays.asList(true, false, false, false).forEach(data::pushResult);
-        assertEquals(3.0d / 4, data.getFailureRatio());
+        assertThat(data.getFailureRatio(), is(3.0d / 4));
     }
 
     @Test
     public void testPushResult() {
         CircuitBreakerHelper.CommandData data = new CircuitBreakerHelper.CommandData(2);
         Arrays.asList(true, false, false, false, true, true).forEach(data::pushResult);     // last two count
-        assertEquals(0.0d, data.getFailureRatio());
+        assertThat(data.getFailureRatio(), is(0.0d));
     }
 
     @Test
     public void testSizeLessCapacity() {
         CircuitBreakerHelper.CommandData data = new CircuitBreakerHelper.CommandData(6);
         Arrays.asList(true, false, false).forEach(data::pushResult);
-        assertEquals(-1.0d, data.getFailureRatio());    // not enough data
+        assertThat(data.getFailureRatio(), is(-1.0d));    // not enough data
     }
 }

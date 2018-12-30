@@ -44,11 +44,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HealthEndpointTest {
@@ -135,7 +135,7 @@ class HealthEndpointTest {
         // Test the JSON
         final JsonObject json = getJson(response);
         final JsonArray checks = json.getJsonArray("checks");
-        assertNotNull(checks);
+        assertThat(checks, notNullValue());
         for (int i = 0; i < finalCheckNames.size(); i++) {
             assertThat(checks.getJsonObject(i).getString("name"), equalTo(finalCheckNames.get(i)));
         }
@@ -145,7 +145,7 @@ class HealthEndpointTest {
     void noHealthChecksResultsInSuccess() {
         final HealthEndpoint endpoint = new HealthEndpoint(new InstanceStub(emptyList()), null, null);
         final Response response = endpoint.getHealth();
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
 
         // Test the JSON
         final JsonObject json = getJson(response);
@@ -167,9 +167,9 @@ class HealthEndpointTest {
 
         // Test the JSON
         final JsonObject json = getJson(response);
-        assertEquals("a", json.getJsonArray("checks").getJsonObject(0).getString("name"));
-        assertEquals("g", json.getJsonArray("checks").getJsonObject(1).getString("name"));
-        assertEquals("v", json.getJsonArray("checks").getJsonObject(2).getString("name"));
+        assertThat(json.getJsonArray("checks").getJsonObject(0).getString("name"), is("a"));
+        assertThat(json.getJsonArray("checks").getJsonObject(1).getString("name"), is("g"));
+        assertThat(json.getJsonArray("checks").getJsonObject(2).getString("name"), is("v"));
     }
 
     @ParameterizedTest
@@ -177,13 +177,13 @@ class HealthEndpointTest {
     void passingHealthChecksResultInSuccess(List<HealthCheck> goodChecks) {
         final HealthEndpoint endpoint = new HealthEndpoint(new InstanceStub(goodChecks), null, null);
         final Response response = endpoint.getHealth();
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
 
         // Test the JSON
         final JsonObject json = getJson(response);
-        assertEquals("UP", json.getString("outcome"));
-        assertNotNull(json.getJsonArray("checks"));
-        assertEquals(goodChecks.size(), json.getJsonArray("checks").size());
+        assertThat(json.getString("outcome"), is("UP"));
+        assertThat(json.getJsonArray("checks"), notNullValue());
+        assertThat(json.getJsonArray("checks"), hasSize(goodChecks.size()));
     }
 
     @ParameterizedTest
@@ -191,13 +191,13 @@ class HealthEndpointTest {
     void failingHealthChecksResultInFailure(List<HealthCheck> badChecks) {
         final HealthEndpoint endpoint = new HealthEndpoint(new InstanceStub(badChecks), null, null);
         final Response response = endpoint.getHealth();
-        assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), response.getStatus());
+        assertThat(response.getStatus(), is(Response.Status.SERVICE_UNAVAILABLE.getStatusCode()));
 
         // Test the JSON
         final JsonObject json = getJson(response);
-        assertEquals("DOWN", json.getString("outcome"));
-        assertNotNull(json.getJsonArray("checks"));
-        assertEquals(badChecks.size(), json.getJsonArray("checks").size());
+        assertThat(json.getString("outcome"), is("DOWN"));
+        assertThat(json.getJsonArray("checks"), notNullValue());
+        assertThat(json.getJsonArray("checks"), hasSize(badChecks.size()));
     }
 
     @ParameterizedTest
@@ -205,13 +205,13 @@ class HealthEndpointTest {
     void brokenHealthChecksResultInFailure(List<HealthCheck> brokenChecks) {
         final HealthEndpoint endpoint = new HealthEndpoint(new InstanceStub(brokenChecks), null, null);
         final Response response = endpoint.getHealth();
-        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertThat(response.getStatus(), is(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()));
 
         // Test the JSON
         final JsonObject json = getJson(response);
-        assertEquals("DOWN", json.getString("outcome"));
-        assertNotNull(json.getJsonArray("checks"));
-        assertEquals(brokenChecks.size(), json.getJsonArray("checks").size());
+        assertThat(json.getString("outcome"), is("DOWN"));
+        assertThat(json.getJsonArray("checks"), notNullValue());
+        assertThat(json.getJsonArray("checks"), hasSize(brokenChecks.size()));
     }
 
     private JsonObject getJson(Response response) {

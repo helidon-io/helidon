@@ -22,12 +22,12 @@ import io.helidon.security.jwt.jwk.Jwk;
 
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 /**
  * Unit test for {@link JsonWebTokenImpl}.
@@ -94,7 +94,7 @@ class JsonWebTokenImplTest {
 
         JsonWebTokenImpl impl = JsonWebTokenImpl.create(signed);
 
-        Assertions.assertAll(
+        assertAll(
                 () -> testClaimType(impl, Claims.sub),
                 () -> testClaimType(impl, Claims.groups),
                 () -> testClaimType(impl, Claims.iss)

@@ -23,9 +23,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class DeadlockHealthCheckTest {
     private ThreadMXBean threadBean;
@@ -48,7 +48,7 @@ class DeadlockHealthCheckTest {
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
         assertThat(HealthCheckResponse.State.DOWN, equalTo(response.getState()));
-        assertFalse(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(false));
     }
 
     @Test
@@ -57,6 +57,6 @@ class DeadlockHealthCheckTest {
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckResponse response = check.call();
         assertThat(HealthCheckResponse.State.UP, equalTo(response.getState()));
-        assertFalse(response.getData().isPresent());
+        assertThat(response.getData().isPresent(), is(false));
     }
 }
