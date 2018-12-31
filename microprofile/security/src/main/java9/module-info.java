@@ -17,14 +17,14 @@
 /**
  * Microprofile configuration module.
  */
-module io.helidon.mp.security {
+module io.helidon.microprofile.security {
     requires java.logging;
 
     requires transitive io.helidon.security;
     requires io.helidon.security.providers.abac;
     requires transitive io.helidon.security.integration.jersey;
     requires transitive io.helidon.security.integration.webserver;
-    requires io.helidon.mp.server;
+    requires io.helidon.microprofile.server;
 
     provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.security.SecurityMpService;
 

@@ -17,7 +17,7 @@
 /**
  * Eclipse Microprofile Tracing implementation for helidon microprofile.
  */
-module io.helidon.mp.tracing {
+module io.helidon.microprofile.tracing {
     requires java.logging;
     requires java.annotation;
 
@@ -28,7 +28,7 @@ module io.helidon.mp.tracing {
     requires cdi.api;
     requires javax.inject;
 
-    requires io.helidon.mp.server;
+    requires io.helidon.microprofile.server;
     requires io.helidon.common;
     requires io.helidon.webserver;
     requires transitive io.helidon.tracing;

@@ -17,13 +17,13 @@
 /**
  * Microprofile health module.
  */
-module io.helidon.mp.health {
+module io.helidon.microprofile.health {
     requires java.logging;
     requires java.management;
 
     requires io.helidon.common;
     requires io.helidon.health;
-    requires io.helidon.mp.server;
+    requires io.helidon.microprofile.server;
 
     requires cdi.api;
     requires javax.inject;

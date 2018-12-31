@@ -17,7 +17,7 @@
 /**
  * Microprofile metrics implementation.
  */
-module io.helidon.mp.metrics {
+module io.helidon.microprofile.metrics {
     requires java.logging;
 
     requires static cdi.api;
@@ -25,7 +25,7 @@ module io.helidon.mp.metrics {
     requires static javax.interceptor.api;
     requires static java.annotation;
 
-    requires io.helidon.mp.server;
+    requires io.helidon.microprofile.server;
     requires transitive io.helidon.metrics;
 
     requires transitive microprofile.config.api;
