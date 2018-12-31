@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
@@ -49,11 +50,8 @@ public class MetricsMpServiceTest {
 
     @BeforeAll
     public static void initializeServer() throws Exception {
-        Weld weld = new Weld();
-        WeldContainer cdiContainer = weld.initialize();
         server = Server.builder()
                 .addResourceClass(HelloWorldResource.class)
-                .cdiContainer(cdiContainer)
                 .config(MpConfig.builder().config(Config.create()).build())
                 .host("localhost")
                 // choose a random available port
