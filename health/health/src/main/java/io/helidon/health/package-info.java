@@ -13,18 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Aggregator module for microprofile 1.2.
+ * Health check support for helidon SE.
  */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
-
-    requires io.helidon.health.checks;
-}
+package io.helidon.health;

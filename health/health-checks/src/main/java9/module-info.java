@@ -15,16 +15,19 @@
  */
 
 /**
- * Aggregator module for microprofile 1.2.
+ * Helidon health checks.
  */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
+module io.helidon.health.checks {
+    requires java.logging;
+    requires java.management;
 
-    requires io.helidon.health.checks;
+    requires static cdi.api;
+    requires javax.inject;
+
+    requires io.helidon.common;
+    requires io.helidon.health;
+    requires microprofile.config.api;
+    requires microprofile.health.api;
+
+    exports io.helidon.health.checks;
 }

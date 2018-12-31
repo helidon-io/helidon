@@ -58,7 +58,10 @@ public class Main {
 
         server.start();
 
-        System.out.println("Started application on http://" + server.host() + ":" + server.port() + "/helloworld");
+        String endpoint = "http://" + server.host() + ":" + server.port();
+        System.out.println("Started application on     " + endpoint + "/helloworld");
+        System.out.println("Metrics available on       " + endpoint + "/metrics");
+        System.out.println("Heatlh checks available on " + endpoint + "/health");
 
         // the easiest possible explicit way to start an application:
         // Server.create(HelloWorldApplication.class).start();
