@@ -15,16 +15,24 @@
  */
 
 /**
- * Aggregator module for microprofile 1.2.
+ * Microprofile health module.
  */
-module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
-    requires transitive io.helidon.mp.metrics;
-    requires transitive io.helidon.mp.faulttolerance;
-    requires transitive io.helidon.mp.jwt.auth.cdi;
+module io.helidon.mp.health {
+    requires java.logging;
+    requires java.management;
 
-    requires io.helidon.health.checks;
+    requires io.helidon.common;
+    requires io.helidon.health;
+    requires io.helidon.mp.server;
+
+    requires cdi.api;
+    requires javax.inject;
+    requires java.ws.rs;
+    requires org.glassfish.java.json;
+    requires microprofile.config.api;
+    requires microprofile.health.api;
+
+    exports io.helidon.microprofile.health;
+
+    provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.health.HealthMpService;
 }

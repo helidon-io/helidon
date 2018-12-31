@@ -26,17 +26,39 @@
         <artifactId>helidon-microprofile-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
     <groupId>io.helidon.microprofile.health</groupId>
-    <artifactId>helidon-microprofile-health-project</artifactId>
+    <artifactId>helidon-microprofile-health</artifactId>
     <name>Helidon Microprofile Health</name>
 
     <description>
-        Microprofile health implementation
+        Microprofile health check implementation
     </description>
 
-    <modules>
-        <module>health-core</module>
-        <module>health-checks</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.health</groupId>
+            <artifactId>microprofile-health-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>internal-test-libs</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

@@ -15,9 +15,14 @@
  */
 package io.helidon.examples.health.basics;
 
+import io.helidon.health.HealthSupport;
+import io.helidon.health.checks.HealthChecks;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
 
 /**
  * Main class of health check integration example.
@@ -27,14 +32,37 @@ public final class Main {
     private Main() {
     }
 
+    /**
+     * Start the example. Prints endpoints to standard output.
+     *
+     * @param args not used
+     */
     public static void main(String[] args) {
+        HealthSupport health = HealthSupport.builder()
+                .add(HealthChecks.healthChecks())
+                .add((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
+                        .up()
+                        .withData("time", System.currentTimeMillis())
+                        .build())
+                .build();
+
         Routing routing = Routing.builder()
+                .register(health)
+                .get("/hello", (req, res) -> res.send("Hello World!"))
                 .build();
 
-        ServerConfiguration build = ServerConfiguration.builder()
+        ServerConfiguration serverConfig = ServerConfiguration.builder()
                 .build();
 
-        WebServer ws = WebServer.create(builder)
+        WebServer ws = WebServer.create(serverConfig, routing);
+
+        ws.start()
+                .thenApply(webServer -> {
+                    String endpoint = "http://localhost:" + webServer.port();
+                    System.out.println("Hello World started on " + endpoint + "/hello");
+                    System.out.println("Health checks available on " + endpoint + "/health");
+                    return null;
+                });
 
     }
 }
