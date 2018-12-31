@@ -17,11 +17,11 @@
 /**
  * Microprofile OIDC integration.
  */
-module io.helidon.mp.oidc {
+module io.helidon.microprofile.oidc {
     requires java.logging;
 
-    requires io.helidon.mp.server;
-    requires io.helidon.mp.security;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.microprofile.security;
     requires io.helidon.security.providers.oidc;
 
     exports io.helidon.microprofile.oidc;

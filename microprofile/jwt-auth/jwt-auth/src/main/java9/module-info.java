@@ -17,7 +17,7 @@
 /**
  * Microprofile jwt module.
  */
-module io.helidon.mp.jwt.auth {
+module io.helidon.microprofile.jwt.auth {
     requires java.logging;
 
     requires cdi.api;

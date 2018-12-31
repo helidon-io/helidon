@@ -17,15 +17,15 @@
 /**
  * Microprofile fault tolerance implementation.
  */
-module io.helidon.mp.faulttolerance {
+module io.helidon.microprofile.faulttolerance {
     requires java.logging;
     requires java.annotation;
     requires javax.inject;
     requires javax.interceptor.api;
 
     requires io.helidon.common.configurable;
-    requires io.helidon.mp.config;
-    requires io.helidon.mp.server;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.server;
 
     requires cdi.api;
     requires hystrix.core;

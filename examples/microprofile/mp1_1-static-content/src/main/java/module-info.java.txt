@@ -27,5 +27,5 @@ module io.helidon.microprofile.example.staticc {
     requires javax.inject;
     requires java.ws.rs;
     requires microprofile.config.api;
-    requires io.helidon.mp.server;
+    requires io.helidon.microprofile.server;
 }

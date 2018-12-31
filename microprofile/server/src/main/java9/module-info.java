@@ -18,8 +18,8 @@
  * Implementation of a layer that binds microprofile components together and
  * runs an HTTP server.
  */
-module io.helidon.mp.server {
-    requires transitive io.helidon.mp.config;
+module io.helidon.microprofile.server {
+    requires transitive io.helidon.microprofile.config;
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.webserver.jersey;
 

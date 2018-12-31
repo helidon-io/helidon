@@ -17,13 +17,13 @@
 /**
  * CDI extension for microprofile jwt implementation.
  */
-module io.helidon.mp.jwt.auth.cdi {
+module io.helidon.microprofile.jwt.auth.cdi {
     requires java.logging;
     requires cdi.api;
     requires javax.inject;
     requires microprofile.config.api;
 
-    requires transitive io.helidon.mp.jwt.auth;
+    requires transitive io.helidon.microprofile.jwt.auth;
 
     exports io.helidon.microprofile.jwt.auth.cdi;
 

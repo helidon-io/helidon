@@ -17,7 +17,7 @@
 /**
  * Microprofile configuration module.
  */
-module io.helidon.mp.config {
+module io.helidon.microprofile.config {
     requires java.logging;
 
     requires transitive io.helidon.config;

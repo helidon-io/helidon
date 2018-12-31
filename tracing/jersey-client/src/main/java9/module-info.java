@@ -37,7 +37,7 @@ module io.helidon.tracing.jersey.client {
     exports io.helidon.tracing.jersey.client;
 
     // needed to propagate tracing context from server to client
-    opens io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey,io.helidon.mp.tracing;
+    opens io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey,io.helidon.microprofile.tracing;
     exports io.helidon.tracing.jersey.client.internal;
 
     provides AutoDiscoverable with io.helidon.tracing.jersey.client.ClientTracingAutoDiscoverable;
