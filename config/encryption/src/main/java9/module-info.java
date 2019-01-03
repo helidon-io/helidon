@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,16 @@
  */
 
 /**
- * Microprofile configuration module.
+ * Module supporting encryption of secrets in configuration files.
  */
-module io.helidon.microprofile.config {
+module io.helidon.config.encryption {
     requires java.logging;
 
+    // for RSA encrypted keys
+    requires transitive io.helidon.common.pki;
     requires transitive io.helidon.config;
-    requires transitive microprofile.config.api;
-    requires io.helidon.config.encryption;
 
-    exports io.helidon.microprofile.config;
+    exports io.helidon.config.encryption;
 
-    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.microprofile.config.MpConfigProviderResolver;
-
-    uses org.eclipse.microprofile.config.spi.ConfigSource;
-    uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-    uses org.eclipse.microprofile.config.spi.Converter;
+    provides io.helidon.config.spi.ConfigFilter with io.helidon.config.encryption.SecureConfigFilterService;
 }

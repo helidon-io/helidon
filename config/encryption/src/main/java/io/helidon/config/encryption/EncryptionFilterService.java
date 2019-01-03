@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 
+package io.helidon.config.encryption;
+
+import io.helidon.config.Config;
+import io.helidon.config.spi.ConfigFilter;
+
 /**
- * Microprofile configuration module.
+ * A Java service for {@link EncryptionFilter}.
  */
-module io.helidon.microprofile.config {
-    requires java.logging;
+public class EncryptionFilterService implements ConfigFilter {
+    private ConfigFilter filter;
 
-    requires transitive io.helidon.config;
-    requires transitive microprofile.config.api;
-    requires io.helidon.config.encryption;
+    @Override
+    public String apply(Config.Key key, String stringValue) {
+        if (null == filter) {
+            return stringValue;
+        }
 
-    exports io.helidon.microprofile.config;
+        return filter.apply(key, stringValue);
+    }
 
-    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.microprofile.config.MpConfigProviderResolver;
-
-    uses org.eclipse.microprofile.config.spi.ConfigSource;
-    uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-    uses org.eclipse.microprofile.config.spi.Converter;
+    @Override
+    public void init(Config config) {
+        this.filter = EncryptionFilter.fromConfig().apply(config);
+    }
 }

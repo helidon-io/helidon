@@ -15,20 +15,9 @@
  */
 
 /**
- * Microprofile configuration module.
+ * Support for encrypted properties.
+ *
+ * @see io.helidon.config.encryption.Main For encrypting values
+ * @see io.helidon.config.encryption.EncryptionFilter For usage with config
  */
-module io.helidon.microprofile.config {
-    requires java.logging;
-
-    requires transitive io.helidon.config;
-    requires transitive microprofile.config.api;
-    requires io.helidon.config.encryption;
-
-    exports io.helidon.microprofile.config;
-
-    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.microprofile.config.MpConfigProviderResolver;
-
-    uses org.eclipse.microprofile.config.spi.ConfigSource;
-    uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-    uses org.eclipse.microprofile.config.spi.Converter;
-}
+package io.helidon.config.encryption;
