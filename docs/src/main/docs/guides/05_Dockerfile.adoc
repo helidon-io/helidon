@@ -354,6 +354,7 @@ the application using a locally available Docker daemon.
                       <jmxFlag>-XX:InitialRAMFraction=2</jmxFlag>
                       <jmxFlag>-XX:MinRAMFraction=2</jmxFlag>
                       <jmxFlag>-XX:MaxRAMFraction=2</jmxFlag>
+                      <jmxFlag>-XX:+UseG1GC</jmxFlag>
                   </jvmFlags>
 
                   <mainClass>${mainClass}</mainClass>
