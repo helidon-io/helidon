@@ -304,11 +304,11 @@ https://github.com/GoogleContainerTools/distroless[distroless] base image that
 can result in a smaller final image.
 
 We'll be using the `jib-maven-plugin` in this example. With
-`jib-maven-plugin` you don't need a Dockerfile
+`jib-maven-plugin`, you don't need a Dockerfile
 and it creates a final Docker image that follows a set
 of best-practices for packaging Java applications in a container.
 
-Docker is only required if you are going to install the image locally.
+The `docker` command is only required if you are going to install the image locally.
 It is *not* required to build and _push the image_ to a Docker Registry,
  such as Docker Hub. This can be accomplished via `mvn jib:build` after
 https://github.com/GoogleContainerTools/jib/tree/master/jib-maven-plugin#configuration[configuring which
@@ -316,9 +316,9 @@ Registry to connect to].
 This fits well in an environment where administrative permissions
  are unavailable on developer machines to install or run Docker.
 
-Add the following plugin to the `pom.xml`. This adds a goal to
-the Maven `package` phase that containerizes the application
-using a locally available Docker daemon.
+To add Jib to this example, add the following plugin to the `pom.xml`.
+This adds a goal to the Maven `package` phase that containerizes
+the application using a locally available Docker daemon.
 
 [source,xml,subs="verbatim,attributes"]
 .pom.xml
@@ -354,9 +354,6 @@ using a locally available Docker daemon.
                       <jmxFlag>-XX:InitialRAMFraction=2</jmxFlag>
                       <jmxFlag>-XX:MinRAMFraction=2</jmxFlag>
                       <jmxFlag>-XX:MaxRAMFraction=2</jmxFlag>
-                      <jmxFlag>-XX:+UseG1GC</jmxFlag>
-                      <jmxFlag>-XX:MaxGCPauseMillis=100</jmxFlag>
-                      <jmxFlag>-XX:+UseStringDeduplication</jmxFlag>
                   </jvmFlags>
 
                   <mainClass>${mainClass}</mainClass>
