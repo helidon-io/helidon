@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -62,9 +62,13 @@ Config secrets = Config.withSources(
         .disableSystemPropertiesSource()         // <2>
         .build();
 
-assert secrets.get("username").asString()        // <3>
+assert secrets.get("username")                   // <3>
+        .asString()
+        .get()
         .equals("jose");
-assert secrets.get("password").asString()        // <4>
+assert secrets.get("password")                   // <4>
+        .asString()
+        .get()
         .equals("^ery$ecretP&ssword");
 ----
 
@@ -88,46 +92,46 @@ for further details. The numerous variants of the `from` method construct
 ==== Subtree of Another `Config`
 [source,java]
 ----
-Config anotherConfig = Config.from(classpath("application.conf"));
+Config anotherConfig = Config.create(classpath("application.conf"));
 
-Config config = Config.from(
-        ConfigSources.from(anotherConfig.get("data")));
+Config config = Config.create(
+        ConfigSources.create(anotherConfig.get("data")));
 ----
 ==== `Properties` Object
 [source,java]
 ----
-Config config = Config.from(
-        ConfigSources.from(System.getProperties()).build());                // <1>
+Config config = Config.create(
+        ConfigSources.create(System.getProperties()).build());                // <1>
 ----
 
 ==== `String` of a Given Media Type
 [source,java]
 ----
-Config config = Config.from(
-        ConfigSources.from("app.greeting = Hi", "text/x-java-properties")); // <2>
+Config config = Config.create(
+        ConfigSources.create("app.greeting = Hi", "text/x-java-properties")); // <2>
 ----
 ==== `Map`
 [source,java]
 ----
-Config config = Config.from(
-        ConfigSources.from(Map.of("app.page-size", "20"))
+Config config = Config.crate(
+        ConfigSources.create(Map.of("app.page-size", "20"))
             .lax()             // <3>
             .build());         // <1>
 ----
 ==== _ad hoc_ Config Nodes
 [source,java]
 ----
-Config config = Config.from(
-        ConfigSources.from(ObjectNode.builder()
+Config config = Config.create(
+        ConfigSources.create(ObjectNode.builder()
                                    .addList("app.basic-range", ListNode.builder()
                                            .addValue("-20")
                                            .addValue("20")
                                            .build())
                                    .build()));
 ----
-<1> `ConfigSources.from` variants for `Properties` or `Map` arguments return a
+<1> `ConfigSources.create` variants for `Properties` or `Map` arguments return a
  `ConfigSources.MapBuilder` instance.
-<2> A similar `from` variant accepts a `Readable` instead of a `String`.
+<2> A similar `create` variant accepts a `Readable` instead of a `String`.
 <3> `MapBuilder` by default throws an exception if a key appears more than once 
 in the map. The `lax()` method relaxes this; the config system logs a warning instead.
 
@@ -175,16 +179,20 @@ providers: [
 [source,java]
 .Using `prefixed` config source
 ----
-Config config = Config.from(
+Config config = Config.create(
         ConfigSources.prefixed("app",                    // <1>
                                classpath("app.conf")),   // <2>
         ConfigSources.prefixed("data",                   // <3>
                                classpath("data.conf"))); // <4>
 
-assert config.get("app.greeting").asString()             // <5>
+assert config.get("app.greeting")                        // <5>
+        .asString()
+        .get()
         .equals("Hello");
 
-assert config.get("data.providers.0.name").asString()    // <6>
+assert config.get("data.providers.0.name")               // <6>
+        .asString()
+        .get()
         .equals("Provider1");
 ----
 
@@ -204,8 +212,8 @@ sources gives your application a way to access all config elements distinctly ev
 if their keys would otherwise conflict.
 
 ===== Merging Strategies
-The `ConfigSources.from(Supplier<ConfigSource>...)` and `ConfigSources.from(List<Supplier<ConfigSource>...)`
-methods return a `CompositeConfigSource`.
+The `ConfigSources.create(Supplier<ConfigSource>...)` and `ConfigSources.create(List<Supplier<ConfigSource>...)`
+methods return a `CompositeBuilder`.
 By default, earlier sources in the list have higher priority than later ones, meaning
 that if the same key appears in two or more sources the source earlier in the
 list prevails.
@@ -221,15 +229,15 @@ and use it instead to provide a different algorithm.
 [source,java]
 .Composite config source example
 ----
-Config config = Config.from(                                                 // <1>
-        ConfigSources.from(file("conf/dev.properties").optional(),           // <2>
+Config config = Config.create(                                               // <1>
+        ConfigSources.create(file("conf/dev.properties").optional(),         // <2>
                            file("conf/config.properties").optional())        // <2>
                 .add(classpath("application.properties"))                    // <3>
                 .mergingStrategy(ConfigSources.MergingStrategy.fallback())); // <4>
 ----
 
 <1> Creates a new `Config` instance from a single composite config source.
-<2> Method `ConfigSources.from(sources...)` returns `CompositeBuilder` instance
+<2> Method `ConfigSources.create(sources...)` returns `CompositeBuilder` instance
  initialized with two sources (from `dev.properties` and `config.properties`
  files).
 <3> Adds third config source (`application.properties` on
@@ -256,8 +264,8 @@ has to figure out what parser to use. It does so by:
 Most applications let the config system try to infer the media type of the
 config source. 
 
-By default config source implementations use the Java
-`java.nio.file.Files.probeContentType(Path)` API to infer the source media type from
+By default config source implementations use the Java Service
+`java.nio.file.spi.FileTypeDetector` API to infer the source media type from
 the source, typically (but not always) based on the file type portion of the file path. 
 The config system registers implementations of
 the `java.nio.file.spi.FileTypeDetector` SPI that recognize 
@@ -275,7 +283,7 @@ because there might be more than one inferred media type.
 [source,java]
 .Specify `mediaType` for config source
 ----
-Config config = Config.from(classpath("props")                             // <1>
+Config config = Config.create(classpath("props")                             // <1>
                                     .mediaType("text/x-java-properties")); // <2>
 ----
 
@@ -321,7 +329,7 @@ media type.
 [source,java]
 .Specify `parser` for config source
 ----
-Config config = Config.from(classpath("props")                            // <1>
+Config config = Config.create(classpath("props")                            // <1>
                                     .parser(ConfigParsers.properties())); // <2>
 ----
 
@@ -361,7 +369,7 @@ app: >                             # <1>
 [source,java]
 .Specify JSON as media type for node
 ----
-Config config = Config.from(
+Config config = Config.create(
         classpath("application.yaml")
                 .mediaTypeMapping(                          // <1>
                         key -> "app".equals(key.toString()) // <2>
@@ -369,20 +377,20 @@ Config config = Config.from(
                                 : null));
 
 assert config.get("secrets.username").asString()            // <3>
-        .equals("jose");
+        .get().equals("jose");
 assert config.get("secrets.password").asString()            // <3>
-        .equals("^ery$ecretP&ssword");
+        .get().equals("^ery$ecretP&ssword");
 
 assert config.get("app").type() == Type.OBJECT;             // <4>
 
 assert config.get("app.greeting")                           // <3>
-        .asString().equals("Hello");
+        .asString().get().equals("Hello");
 assert config.get("app.page-size")                          // <3>
-        .asInt() == 20;
+        .asInt().get() == 20;
 assert config.get("app.basic-range.0")                      // <3>
-        .asInt() == -20;
+        .asInt().get() == -20;
 assert config.get("app.basic-range.1")                      // <3>
-        .asInt() == 20;
+        .asInt().get() == 20;
 ----
 
 <1> The source builder's `mediaTypeMapping` method accepts a function 
@@ -406,7 +414,7 @@ you want to use for parsing those keys' values.
 [source,java]
 .Specify JSON formatted property' parser instance
 ----
-Config config = Config.from(
+Config config = Config.create(
         ConfigSources.classpath("application.yaml")
                 .parserMapping(                                           // <1>
                         key -> "app".equals(key.toString())               // <2>
@@ -427,7 +435,7 @@ builders, sources, etc., you can instead prepare _meta-configuration_ in a file
 that declares the sources to load and their attributes. 
 
 You can either specify the meta-config file in your application or
-allow the config sytem to search for and load meta-config from a preset
+allow the config system to search for and load meta-config from a preset
 list of possible sources.
 
 ==== Loading Config by Specifying a Meta-configuration File [[Config-Advanced-Sources-MetaSource]]
@@ -436,9 +444,9 @@ the configuration specified by a meta-config file by:
 
 * invoking the link:{javadoc-base-url-api}/ConfigSources.html#load-io.helidon.config.Config-[`ConfigSources.load(Config)`]
 method, passing a config object read from the meta-config source as the argument;
-* invoking the link:{javadoc-base-url-api}/Config.html#loadSources-java.util.function.Supplier...[`Config.loadSources`]
-method, or
 * invoking the link:{javadoc-base-url-api}/Config.html#loadSourcesFrom-java.util.function.Supplier...[`Config.loadSourcesFrom`]
+method, or
+* invoking the link:{javadoc-base-url-api}/Config.html#builderLoadSourcesFrom-java.util.function.Supplier...[`Config.builderLoadSourceFrom`]
 method.
 
 These methods return either a `Config` tree or a `Config.Builder` which
@@ -449,7 +457,7 @@ build a config tree, rather than as the config data itself.
 ==== Loading Config from an Implicit Meta-configuration File [[Config-Advanced-Config-MetaConfig]]
 The <<config/01_introduction.adoc,introduction>> section shows how to use
 `Config.create()` to load config from one of several possible default config files.
-That same method also searches for one of severl possible default meta-config files
+That same method also searches for one of several possible default meta-config files
 from which to load config sources to be used for the default config.
 
 The `Config.create()` method determines the default configuration from
@@ -670,7 +678,7 @@ classpath to load a `Config` tree:
 ConfigSource sourceFromMetaConfig = ConfigSources.load(  // <1>
         classpath("config-meta-all.conf")).build();      // <2>
 
-Config config = Config.from(sourceFromMetaConfig);       // <3>
+Config config = Config.create(sourceFromMetaConfig);       // <3>
 ----
 <1> The `ConfigSources.load` method creates a config source for the eventual config
 from the config source argument which specifies the meta-config.
@@ -769,17 +777,17 @@ names `oracle` and `oracle.com`.
 [source,java]
 .Working with configuration with dot character in node name
 ----
-Config config = Config.from(classpath("application.json"));
+Config config = Config.create(classpath("application.json"));
 
 // node `oracle`
-assert config.get("oracle.com").asBoolean() == true;                         // <1>
-assert config.get("oracle").get("com").asBoolean() == true;                  // <1>
+assert config.get("oracle.com").asBoolean().get() == true;                   // <1>
+assert config.get("oracle").get("com").asBoolean().get() == true;            // <1>
 assert config.get("oracle.com").type() == Type.VALUE;                        // <2>
 assert config.get("oracle.com").name().equals("com");                        // <3>
 // node `oracle.com`
-assert config.get("oracle~1com.secured").asBoolean() == true;                // <4>
+assert config.get("oracle~1com.secured").asBoolean().get() == true;          // <4>
 assert config.get(Key.escapeName("oracle.com"))                              // <5>
-        .get("secured").asBoolean() == true;
+        .get("secured").asBoolean().get() == true;
 assert config.get(Key.escapeName("oracle.com")).type() == Type.OBJECT;       // <6>
 assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // <7>
 ----
@@ -829,6 +837,7 @@ pairs which replace the value otherwise returned for the name, and then add that
 document as an override source to a config builder. 
 
 There are some key differences between overrides and filters.
+
 * Because overrides are loaded
 from sources those sources can change while your application runs and so the
 overrides they that prescribe can change. 
@@ -902,12 +911,12 @@ strategy instances.
 ----
 ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // <1>
 
-Config config = Config.from(
+Config config = Config.create(
         ConfigSources.file("conf/dev.properties")
                 .pollingStrategy(
                         PollingStrategies.regular(Duration.ofSeconds(2)) // <2>
                                 .executor(executor)),                    // <3>
-        ConfigSources.file("conf/config.properties")
+        ConfigSources.create("conf/config.properties")
                 .pollingStrategy(
                         path -> PollingStrategies.watch(path)            // <4>
                                 .executor(executor)));                   // <5>
@@ -963,7 +972,7 @@ the override source above.
 
 === Composite Config Source Executor
 When your application supplies multiple sources to a config builder, as with
-`Config.from(Supplier<ConfigSource>...)` and `Config.from(List<Supplier<ConfigSource>>)`,
+`Config.create(Supplier<ConfigSource>...)` and `Config.create(List<Supplier<ConfigSource>>)`,
 the config system 
 automatically uses a _composite config source_ which aggregates the separate
 sources but also listens for changes to any of the individual sources so it can
@@ -990,8 +999,8 @@ The default is `100` milliseconds.
 ----
 ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);       // <1>
 
-Config config = Config.from(
-        ConfigSources.from(file("conf/dev.properties")                         // <2>
+Config config = Config.create(
+        ConfigSources.create(file("conf/dev.properties")                         // <2>
                                    .pollingStrategy(PollingStrategies::watch),
                            file("conf/config.properties")                      // <2>
                                    .pollingStrategy(PollingStrategies::watch))
@@ -1001,7 +1010,7 @@ Config config = Config.from(
 ----
 
 <1> Prepares a thread pool executor.
-<2> `ConfigSources.from(Supplier<ConfigSource>...)` creates and returns a 
+<2> `ConfigSources.create(Supplier<ConfigSource>...)` creates and returns a
 `CompositeBuilder` based on the two sources.
 <3> Specifies a particular executor for monitoring and change event notification.
 <4> Sets the subscriber's buffer size to 4 events. The composite source discards 
@@ -1027,7 +1036,7 @@ defaults to 256 but you can tailor this value as needed.
 ----
 Executor executor = Executors.newCachedThreadPool();        // <1>
 
-Config config = Config.withSources(
+Config config = Config.create(
         file("conf/config.properties")
                 .pollingStrategy(PollingStrategies::watch))
         .changesExecutor(executor)                          // <2>
@@ -1054,7 +1063,7 @@ pool executor for each retry policy instance.
 ----
 ScheduledExecutorService executor = Executors.newScheduledThreadPool(2, myThreadFactory); // <1>
 
-Config config = Config.from(
+Config config = Config.create(
         ConfigSources.file("conf/dev.properties")
                 .optional()                                                               // <2>
                 .retryPolicy(RetryPolicies.repeat(2)                                      // <3>

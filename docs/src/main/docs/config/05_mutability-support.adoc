@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ different polling strategy:
 [source,java]
 .Build a `Config` with a different `PollingStrategy` for each config source
 ----
-Config config = Config.from(
+Config config = Config.create(
         ConfigSources.file("conf/dev.properties")
                 .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) // <1>
                 .optional(),
@@ -265,6 +265,6 @@ value.
 
 [IMPORTANT]
 =========
-Supplier support requires that you build the `Config` object from sources that
+Supplier support requires that you create the `Config` object from config sources that
 have proper polling strategies set up. 
 

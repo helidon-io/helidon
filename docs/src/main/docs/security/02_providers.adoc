@@ -419,7 +419,7 @@ Builder example, starting from inside out:
 ----
 // Configuration of public key certificate to validate inbound requests
         KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.from(Paths.get("keystore.p12")))
+                .keystore(Resource.create(Paths.get("keystore.p12")))
                 .keystorePassphrase("password".toCharArray())
                 .certAlias("service_cert")
                 .build();
@@ -489,7 +489,7 @@ Builder example, starting from inside out (rsa only, as hmac is significantly
 ----
 // Configuration of private key to sign outbound requests
 KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-        .keystore(Resource.from(Paths.get("src/main/resources/keystore.p12")))
+        .keystore(Resource.create(Paths.get("src/main/resources/keystore.p12")))
         .keystorePassphrase("password".toCharArray())
         .keyAlias("myPrivateKey")
         .build();
