@@ -20,35 +20,34 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.security.providers</groupId>
-        <artifactId>helidon-security-providers-project</artifactId>
+        <groupId>io.helidon.config</groupId>
+        <artifactId>helidon-config-project</artifactId>
         <version>0.11.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-security-providers-header</artifactId>
-    <name>Helidon Security Providers Header authentication</name>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>helidon-config-encryption</artifactId>
+    <name>Helidon Config Encryption Filter</name>
+
+    <description>
+        Configuration filter checking property values and decrypting them if needed. Also provides tools to encrypt values to
+        store them in config files.
+    </description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-common</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security</groupId>
-            <artifactId>helidon-security-util</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-key-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-encryption</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.bundles</groupId>
-            <artifactId>helidon-bundles-config</artifactId>
+            <artifactId>helidon-config-yaml</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
@@ -59,13 +58,24 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>io.helidon.config.encryption.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

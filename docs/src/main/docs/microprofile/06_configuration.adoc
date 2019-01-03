@@ -56,19 +56,19 @@ security:
 
 === Protecting Configuration Secrets 
 
-If you don't provide an explicit instance of Helidon Config to a MicroProfile server, then the 
-secure config filter **is enabled by default**. However, if you don't configure it, the secure config filter
+In Helidon MP, the secure config filter ** enabled by default**. However, if you don't configure it, the secure config filter
  only supports a template for aliasing that checks that no clear text passwords are
  present (template ${CLEAR=...}.
 
-To add the secure config filter:
+In Helidon SE, you may add support for this filter with dependency (loaded through a java service mechanism):
 
-[source,java]
-.Add secure config filter
+[source,xml]
+.Maven Dependency
 ----
-Config helidonConfig = Config.builder()
-    .addFilter(SecureConfigFilter.fromConfig())
-    .build();
+<dependency>
+    <groupId>io.helidon.config</groupId>
+    <artifactId>helidon-config-encryption</artifactId>
+</dependency>
 ----
 
 Put encrypted values into your

@@ -30,7 +30,7 @@ Support for encrypting secrets in configuration files.
 ----
 <dependency>
     <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-secure</artifactId>
+    <artifactId>helidon-config-encryption</artifactId>
 </dependency>
 ----
 

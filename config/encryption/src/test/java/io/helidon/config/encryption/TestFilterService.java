@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
+package io.helidon.config.encryption;
+
+import io.helidon.config.Config;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
- * Microprofile configuration module.
+ * Test for automatic filter loading.
  */
-module io.helidon.microprofile.config {
-    requires java.logging;
+class TestFilterService {
+    @Test
+    void testFiltering() {
+        Config config = Config.create();
 
-    requires transitive io.helidon.config;
-    requires transitive microprofile.config.api;
-    requires io.helidon.config.encryption;
+        String value = config.get("pwd3").asString().get();
 
-    exports io.helidon.microprofile.config;
-
-    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.microprofile.config.MpConfigProviderResolver;
-
-    uses org.eclipse.microprofile.config.spi.ConfigSource;
-    uses org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-    uses org.eclipse.microprofile.config.spi.Converter;
+        assertThat(value, is(AbstractSecureConfigTest.TEST_STRING));
+    }
 }
