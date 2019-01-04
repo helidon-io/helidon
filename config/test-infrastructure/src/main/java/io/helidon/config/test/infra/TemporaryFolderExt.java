@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,6 +123,11 @@ public class TemporaryFolderExt implements BeforeEachCallback, AfterEachCallback
 
             @Override
             public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+                if (!Files.isWritable(path)) {
+                    //When you try to delete the file on Windows and it is marked as read-only
+                    //it would fail unless this change
+                    path.toFile().setWritable(true);
+                }
                 Files.delete(path);
                 return FileVisitResult.CONTINUE;
             }
