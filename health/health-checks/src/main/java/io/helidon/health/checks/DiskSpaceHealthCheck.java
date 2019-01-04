@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Formatter;
+import java.util.Locale;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -117,16 +119,18 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
     }
 
     static String format(long bytes) {
+        //Formatter ensures that returned delimiter will be always the same
+        Formatter formatter = new Formatter(Locale.US);
         if (bytes >= PB) {
-            return String.format("%.2f PB", bytes / (double) PB);
+            return formatter.format("%.2f PB", bytes / (double) PB).toString();
         } else if (bytes >= TB) {
-            return String.format("%.2f TB", bytes / (double) TB);
+            return formatter.format("%.2f TB", bytes / (double) TB).toString();
         } else if (bytes >= GB) {
-            return String.format("%.2f GB", bytes / (double) GB);
+            return formatter.format("%.2f GB", bytes / (double) GB).toString();
         } else if (bytes >= MB) {
-            return String.format("%.2f MB", bytes / (double) MB);
+            return formatter.format("%.2f MB", bytes / (double) MB).toString();
         } else if (bytes >= KB) {
-            return String.format("%.2f KB", bytes / (double) KB);
+            return formatter.format("%.2f KB", bytes / (double) KB).toString();
         } else {
             return bytes + " bytes";
         }
@@ -167,9 +171,12 @@ public final class DiskSpaceHealthCheck implements HealthCheck {
         long usedInBytes = totalInBytes - diskFreeInBytes;
         long threshold = (long) ((thresholdPercent / 100) * totalInBytes);
 
+        //Formatter ensures that returned delimiter will be always the same
+        Formatter formatter = new Formatter(Locale.US);
+
         return HealthCheckResponse.named("diskSpace")
                 .state(threshold >= usedInBytes)
-                .withData("percentFree", String.format("%.2f%%", 100 * ((double) diskFreeInBytes / totalInBytes)))
+                .withData("percentFree", formatter.format("%.2f%%", 100 * ((double) diskFreeInBytes / totalInBytes)).toString())
                 .withData("free", DiskSpaceHealthCheck.format(diskFreeInBytes))
                 .withData("freeBytes", diskFreeInBytes)
                 .withData("total", DiskSpaceHealthCheck.format(totalInBytes))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link Resource}.
  */
 class ResourceTest {
-    private static final String COPYRIGHT_TEXT = "Copyright (c) 2017,2018 Oracle and/or its affiliates. All rights reserved.\n";
+    private static final String COPYRIGHT_TEXT = "Copyright (c) 2017,2018 Oracle and/or its affiliates. All rights reserved.";
     // intentionally UTF-8 string
     private static final String STRING_CONTENT = "abcdefgčřžúů";
     private static Config config;
@@ -97,19 +97,19 @@ class ResourceTest {
     @Test
     void testConfigPath() {
         Resource resource = Resource.create(config.get("test-1"), "resource").get();
-        assertThat(resource.string(), is(COPYRIGHT_TEXT));
+        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigClasPath() {
         Resource resource = Resource.create(config.get("test-2"), "resource").get();
-        assertThat(resource.string(), is(COPYRIGHT_TEXT));
+        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test
     void testConfigUrl() {
         Resource resource = Resource.create(config.get("test-3"), "resource").get();
-        assertThat(resource.string(), is(COPYRIGHT_TEXT));
+        assertThat(resource.string().trim(), is(COPYRIGHT_TEXT));
     }
 
     @Test

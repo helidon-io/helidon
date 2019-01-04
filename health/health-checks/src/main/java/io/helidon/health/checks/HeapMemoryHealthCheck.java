@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package io.helidon.health.checks;
+
+import java.util.Formatter;
+import java.util.Locale;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -85,6 +88,8 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
+        //Formatter ensures that returned delimiter will be always the same
+        Formatter formatter = new Formatter(Locale.US);
         final long freeMemory = rt.freeMemory();
         final long totalMemory = rt.totalMemory();
         final long maxMemory = rt.maxMemory();
@@ -92,7 +97,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
         final long threshold = (long) ((thresholdPercent / 100) * maxMemory);
         return HealthCheckResponse.named("heapMemory")
                 .state(threshold >= usedMemory)
-                .withData("percentFree", String.format("%.2f%%", 100 * ((double) (maxMemory - usedMemory) / maxMemory)))
+                .withData("percentFree", formatter.format("%.2f%%", 100 * ((double) (maxMemory - usedMemory) / maxMemory)).toString())
                 .withData("free", DiskSpaceHealthCheck.format(freeMemory))
                 .withData("freeBytes", freeMemory)
                 .withData("max", DiskSpaceHealthCheck.format(maxMemory))
