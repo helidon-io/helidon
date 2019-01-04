@@ -95,7 +95,8 @@ public final class EncryptionFilter implements ConfigFilter {
         }
 
         if (null != privateKey && !(privateKey instanceof RSAPrivateKey)) {
-            throw new ConfigEncryptionException("Private key must be an RSA private key, but is: " + privateKey.getClass().getName());
+            throw new ConfigEncryptionException("Private key must be an RSA private key, but is: "
+                                                        + privateKey.getClass().getName());
         }
 
         ConfigFilter noOp = (key, stringValue) -> stringValue;
