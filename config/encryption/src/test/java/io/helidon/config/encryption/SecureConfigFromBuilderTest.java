@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Test secure config filter configured through a builder.
+ * Test config encryption filter configured through a builder.
  */
 public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
     private static Config config;

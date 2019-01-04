@@ -26,7 +26,7 @@ import static io.helidon.common.CollectionsHelper.mapOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for secure config filter configured through configuration itself.
+ * Unit test for config encryption filter configured through configuration itself.
  */
 public class SecureConfigFromConfigTest extends AbstractSecureConfigTest {
     private static Config config;

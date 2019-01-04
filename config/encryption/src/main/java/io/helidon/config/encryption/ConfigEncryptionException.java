@@ -22,7 +22,7 @@ package io.helidon.config.encryption;
 public class ConfigEncryptionException extends RuntimeException {
 
     /**
-     * Constructs a new secure config exception with the specified detail message.
+     * Constructs a new config encryption exception with the specified detail message.
      *
      * @param message the detail message. The detail message is saved for
      *                later retrieval by the {@link #getMessage()} method.

@@ -26,5 +26,5 @@ module io.helidon.config.encryption {
 
     exports io.helidon.config.encryption;
 
-    provides io.helidon.config.spi.ConfigFilter with io.helidon.config.encryption.SecureConfigFilterService;
+    provides io.helidon.config.spi.ConfigFilter with io.helidon.config.encryption.EncryptionFilterService;
 }
