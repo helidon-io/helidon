@@ -149,17 +149,20 @@ abstract class AbstractConfigImpl implements Config {
         return asList(Config.class);
     }
 
-    private void subscribe() {
+    void subscribe() {
         try {
             subscriberLock.readLock().lock();
             if (subscriber == null) {
                 subscriberLock.readLock().unlock();
                 subscriberLock.writeLock().lock();
                 try {
-                    if (subscriber == null) {
-                        waitForSubscription(1, TimeUnit.SECONDS);
+                    try {
+                        if (subscriber == null) {
+                            waitForSubscription(1, TimeUnit.SECONDS);
+                        }
+                    } finally {
+                        subscriberLock.readLock().lock();
                     }
-                    subscriberLock.readLock().lock();
                 } finally {
                     subscriberLock.writeLock().unlock();
                 }

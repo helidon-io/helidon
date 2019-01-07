@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017-2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,292 +16,105 @@
 
 package io.helidon.config;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import io.helidon.common.CollectionsHelper;
-
+import io.helidon.common.GenericType;
+import io.helidon.common.reactive.Flow;
+import io.helidon.config.internal.ConfigKeyImpl;
+import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigNode;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
-
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
- * General tests of {@link Config} to be extended by test classes for missing, value, object and list node types.
+ * Unit tests of the {@link AbstractConfigImpl} class.
  */
-public abstract class AbstractConfigImplTest {
-
-    private Config config;
-
-    protected static final int MAX_LEVELS = 3;
-    private static final Config CONFIG = ConfigTest.createTestConfig(MAX_LEVELS);
-    
-    private TestContext context = null;
-
-    protected static class TestContext {
-        private final String key;
-        private final int level;
-        private final boolean detached;
-        
-        TestContext(String key, int level, boolean detached) {
-            this.key = key;
-            this.level = level;
-            this.detached = detached;
-        }
-    }
-    
-    protected void init(TestContext context) {
-        this.context = context;
-        this.config = context.detached ? CONFIG.get(context.key).detach() : CONFIG.get(context.key);
-    }
-    
-    protected void init(boolean detached) {
-        context = new TestContext("", 0, detached);
-        config = detached
-                      ? ConfigTest.createTestConfig(1).detach()
-                      : ConfigTest.createTestConfig(1);
-    }
-    
-    protected int level() {
-        return context.level;
-    }
-    
-    protected AbstractConfigImplTest() {
-    }
-
-    protected Config config(String key) {
-        return config.get(key);
-    }
-
-    protected Config configViaSupplier(String key) {
-        return config.get(key).asNode().supplier().get();
-    }
-
-    protected void testTimestamp(Config config) {
-        Instant timestamp = config.timestamp();
-        assertThat(timestamp, greaterThan(Instant.now().minusSeconds(60)));
-        assertThat(timestamp, lessThan(Instant.now()));
-    }
+public class AbstractConfigImplTest {
 
     @Test
-    void testMappingManagerConvert() {
-        // TODO implement
+    void testConfigCorrectUnlocking() {
+        // GIVEN
+        RuntimeException exception = new RuntimeException("LOCKS UNLOCK TEST");
+
+        // a provider with a publisher that throws an exception when calling 'subscribe()'
+        ProviderImpl providerMock = mock(ProviderImpl.class);
+        Flow.Publisher<ConfigDiff> publisherMock = Mockito.mock(Flow.Publisher.class);
+        when(providerMock.changes()).thenReturn(publisherMock);
+        Mockito.doThrow(exception).when(publisherMock).subscribe(Mockito.any());
+
+        // and an almost empty stub of AbstractConfigImpl
+        AbstractConfigImpl config = configStub(
+                Config.Type.LIST,
+                mock(ConfigKeyImpl.class),
+                mock(ConfigKeyImpl.class),
+                new ConfigFactory(
+                        mock(ConfigMapperManager.class),
+                        mock(ConfigNode.ObjectNode.class),
+                        mock(ConfigFilter.class),
+                        providerMock),
+                mock(ConfigMapperManager.class));
+
+        // WHEN we reproduce issue https://github.com/oracle/helidon/issues/299
+        try {
+            config.subscribe();
+        } catch (Exception e) {
+            // THEN
+            // we get the exception we threw and not a 'java.lang.IllegalMonitorStateException'
+            assertThat(e, equalTo(exception));
+        }
     }
 
-    @Test
-    void testConfigValueConvert() {
-        // TODO implement
-    }
-    
-    public abstract void testTimestamp(TestContext context);
-
-    public abstract void testDetach(TestContext context);
-
-    public abstract void testTypeExists(TestContext context);
-
-    public abstract void testTypeIsLeaf(TestContext context);
-
-    public abstract void testAsNode(TestContext context);
-
-    public abstract void testIfExists(TestContext context);
-
-    public abstract void testValue(TestContext context);
-
-    public abstract void testAs(TestContext context);
-
-    public abstract void testAsList(TestContext context);
-
-    public abstract void testAsString(TestContext context);
-
-    public abstract void testAsBoolean(TestContext context);
-
-    public abstract void testAsInt(TestContext context);
-
-    public abstract void testAsLong(TestContext context);
-
-    public abstract void testAsDouble(TestContext context);
-
-    public abstract void testAsNodeList(TestContext context);
-
-    public abstract void testAsMap(TestContext context);
-
-    public abstract void testTraverse(TestContext context);
-
-    public abstract void testTraverseWithPredicate(TestContext context);
-
-    public abstract void testToString(TestContext context);
-
-    public abstract void testTimestampSupplier(TestContext context);
-
-    public abstract void testDetachSupplier(TestContext context);
-
-    public abstract void testTypeExistsSupplier(TestContext context);
-
-    public abstract void testTypeIsLeafSupplier(TestContext context);
-
-    public abstract void testNodeSupplier(TestContext context);
-
-    public abstract void testIfExistsSupplier(TestContext context);
-
-    public abstract void testTraverseSupplier(TestContext context);
-
-    public abstract void testTraverseWithPredicateSupplier(TestContext context);
-
-    public abstract void testToStringSupplier(TestContext context);
-
-    //
-    // helpers
-    //
-
-    public static List<String> objectNames(int level) {
-        return CollectionsHelper.listOf("text-" + level + "@VALUE",
-                       "object-" + level + "@OBJECT",
-                       "list-" + level + "@LIST",
-                       "bool-" + level + "@VALUE",
-                       "double-" + level + "@VALUE",
-                       "int-" + level + "@VALUE",
-                       "long-" + level + "@VALUE",
-                       "str-list-" + level + "@LIST");
-    }
-
-
-    public static List<String> nodeNames(List<Config> nodeList) {
-        return nodeList.stream()
-                .map(AbstractConfigImplTest::nodeName)
-                .collect(Collectors.toList());
-    }
-
-    public static String nodeName(Config node) {
-        return node.name() + "@" + node.type();
-    }
-
-    public static class ValueConfigBean {
-        static final ValueConfigBean EMPTY = new ValueConfigBean("EMPTY", "");
-
-        private final String meta;
-        private final String text;
-
-        public ValueConfigBean(String meta, String text) {
-            this.meta = meta;
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        static ValueConfigBean empty() {
-            return EMPTY;
-        }
-
-        public static ValueConfigBean fromString(String string) {
-            return new ValueConfigBean("fromString", string);
-        }
-
-        // unit test support to build for comparison
-        public static ValueConfigBean utFromConfig(String string) {
-            return new ValueConfigBean("fromConfig", string);
-        }
-
-        public static ValueConfigBean fromConfig(Config config) {
-            return new ValueConfigBean("fromConfig", config.asString().get());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
+    private AbstractConfigImpl configStub(Config.Type type, final ConfigKeyImpl prefix, final ConfigKeyImpl key,
+            final ConfigFactory factory, final ConfigMapperManager configMapperManager) {
+        return new AbstractConfigImpl(type, prefix, key, factory, configMapperManager) {
+            @Override
+            public boolean hasValue() {
                 return false;
             }
 
-            ValueConfigBean that = (ValueConfigBean) o;
-
-            if (!meta.equals(that.meta)) {
-                return false;
+            @Override
+            public Stream<Config> traverse(Predicate<Config> predicate) {
+                return null;
             }
-            return text.equals(that.text);
-        }
 
-        @Override
-        public int hashCode() {
-            int result = meta.hashCode();
-            result = 31 * result + text.hashCode();
-            return result;
-        }
+            @Override
+            public <T> ConfigValue<T> as(GenericType<T> genericType) {
+                return null;
+            }
 
-        @Override
-        public String toString() {
-            return "ValueConfigBean{" +
-                    "meta='" + meta + '\'' +
-                    ", text='" + text + '\'' +
-                    '}';
-        }
+            @Override
+            public <T> ConfigValue<T> as(Class<T> type) {
+                return null;
+            }
+
+            @Override
+            public <T> ConfigValue<T> as(Function<Config, T> mapper) {
+                return null;
+            }
+
+            @Override
+            public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigMappingException {
+                return null;
+            }
+
+            @Override
+            public <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException {
+                return null;
+            }
+
+            @Override
+            public ConfigValue<Map<String, String>> asMap() throws MissingValueException {
+                return null;
+            }
+        };
     }
-
-    public static class ObjectConfigBean {
-        static final ObjectConfigBean EMPTY = new ObjectConfigBean("EMPTY", "");
-
-        private final String meta;
-        private final String text;
-
-        public ObjectConfigBean(String meta, String text) {
-            this.meta = meta;
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
-
-        public static ObjectConfigBean empty() {
-            return EMPTY;
-        }
-
-        public static ObjectConfigBean fromConfig(Config config) {
-            return new ObjectConfigBean("fromConfig", "key:" + nodeName(config));
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            ObjectConfigBean that = (ObjectConfigBean) o;
-
-            if (!meta.equals(that.meta)) {
-                return false;
-            }
-            return text.equals(that.text);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = meta.hashCode();
-            result = 31 * result + text.hashCode();
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "ObjectConfigBean{" +
-                    "meta='" + meta + '\'' +
-                    ", text='" + text + '\'' +
-                    '}';
-        }
-    }
-
-    public static class NoMapperConfigBean {
-        private NoMapperConfigBean() {
-        }
-    }
-
 }

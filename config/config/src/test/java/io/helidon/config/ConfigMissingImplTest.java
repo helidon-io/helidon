@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests {@link Config} API in case the node is {@link Config.Type#MISSING} type, i.e. {@link ConfigMissingImpl}.
  */
-public class ConfigMissingImplTest extends AbstractConfigImplTest {
+public class ConfigMissingImplTest extends AbstractConfigImplTestBase {
 
     public static Stream<TestContext> initParams() {
         return Stream.of(

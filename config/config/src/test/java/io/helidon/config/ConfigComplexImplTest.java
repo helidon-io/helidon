@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Methods common to {@link ConfigObjectImplTest} and {@link ConfigListImplTest}.
  */
-public abstract class ConfigComplexImplTest extends AbstractConfigImplTest {
+public abstract class ConfigComplexImplTest extends AbstractConfigImplTestBase {
     @Override
     @MethodSource("initParams")
     @ParameterizedTest
