@@ -3,66 +3,47 @@
 == Overview
 
 This example shows a trivial Helidon MicroProfile application that
-uses the MySQL CDI integration, how to package it into a Docker image,
-and how to run it in a Docker container.  It also shows how to run
-MySQL in a Docker container and connect to it using the application's
-container.
+uses the MySQL CDI integration.  It also shows how to run MySQL in a
+Docker container and connect to it using the application.
 
 == Notes
 
-To create a user-defined Docker network:
-
-```sh
-$ docker network create helidon-examples
-```
-
 To run MySQL's `mysql:8` Docker image in a Docker container named
-`mysql` connected to this network that publishes all of its ports to
-the host and uses `tiger` as the MySQL root password:
+`mysql` that publishes its port 3306 to the host machine's port 3306
+and uses `tiger` as the MySQL root password and that will
+automatically be removed when it is stopped:
 
 ```sh
-$ docker run --name mysql --network helidon-examples --detach --env MYSQL_ROOT_PASSWORD=tiger --publish-all mysql:8
+$ docker run --rm --name mysql --detach --env MYSQL_ROOT_PASSWORD=tiger --publish 3306:3306 mysql:8
 ```
+
+(Note that in the `3306:3306` option value above the first port number
+is the port number on the host (i.e. your physical machine running
+`docker`) and the second number (after the colon) is the port number
+on the Docker container.)
 
 To ensure that the sample application is configured to talk to MySQL
-running in this Docker container when it is run from a Docker
-container itself, verify that the following lines (among others) are
-present in
+running in this Docker container, verify that the following lines
+(among others) are present in
 `src/main/resources/META-INF/microprofile-config.properties`:
 
 ```sh
 javax.sql.DataSource.example.dataSourceClassName=com.mysql.cj.jdbc.MysqlDataSource
-javax.sql.DataSource.example.dataSource.url = jdbc:mysql://mysql:3306
+javax.sql.DataSource.example.dataSource.url = jdbc:mysql://localhost:3306
 javax.sql.DataSource.example.dataSource.user = root
 javax.sql.DataSource.example.dataSource.password = tiger
 ```
 
-(The second occurrence of `mysql` in the value of the
-`javax.sql.DataSource.example.dataSource.url` property above is a
-hostname that is resolvable inside the user-defined Docker network
-named `helidon-examples` and identifies the Docker container with that
-`name`.  You'll note that this hostname is exactly equal to the name
-of the `mysql` Docker container; this is not a coincidence.)
-
-To compile the sample application:
+To compile and package the sample application:
 
 ```sh
 $ mvn clean package
 ```
 
-To package the sample application into a Docker image named `helidon-mysql`:
+To run the sample application:
 
 ```sh
-$ docker image build --tag helidon-mysql target
-```
-
-To run the Docker image just built in a Docker container that connects
-to the same user-defined Docker network as that used by the `mysql`
-Docker container (`helidon-examples`), and which exposes port `8080`
-to the host:
-
-```sh
-$ docker container run --rm --network helidon-examples --publish 8080:8080 helidon-mysql:latest
+$ java -jar target/helidon-integrations-examples-datasource-hikaricp-mysql-*.jar
 ```
 
 To see the results of running the sample application:
@@ -71,16 +52,10 @@ To see the results of running the sample application:
 $ curl http://localhost:8080/tables
 ```
 
-To stop the `mysql` Docker container:
+To stop and remove the `mysql` Docker container:
 
 ```sh
 $ docker container stop mysql
-```
-
-To remove the `mysql` Docker container:
-
-```
-$ docker container rm mysql
 ```
 
 == References
@@ -88,8 +63,3 @@ $ docker container rm mysql
 MySQL Docker documentation:
 
 https://hub.docker.com/_/mysql?tab=description
-
-Docker bridge networking documentation:
-
-https://docs.docker.com/network/bridge/
-
