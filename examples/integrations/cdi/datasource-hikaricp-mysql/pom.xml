@@ -31,7 +31,6 @@
 
     <properties>
         <dependenciesDirectory>libs</dependenciesDirectory>
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <kubernetesSecretName>${project.artifactId}</kubernetesSecretName>
         <spotbugs.exclude>${project.basedir}/src/main/spotbugs/exclusions.xml</spotbugs.exclude>
     </properties>
@@ -84,7 +83,7 @@
             <dependency>
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
-                <version>${helidon.version}</version>
+                <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -144,7 +143,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
             <scope>runtime</scope>
             <exclusions>
                 <exclusion>
@@ -156,7 +155,7 @@
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config-cdi</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
