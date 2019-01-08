@@ -58,12 +58,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <!-- TO BE REMOVED - deprecated -->
-                <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-zipkin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-test-support</artifactId>
                 <version>${project.version}</version>
