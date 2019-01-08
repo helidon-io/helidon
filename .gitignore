@@ -22,3 +22,5 @@ node/
 *.swp
 .gradle/
 build/
+.project
+.settings/
