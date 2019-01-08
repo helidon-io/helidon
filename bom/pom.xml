@@ -248,6 +248,17 @@
                 <artifactId>helidon-metrics</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- health checks -->
+            <dependency>
+                <groupId>io.helidon.health</groupId>
+                <artifactId>helidon-health</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.health</groupId>
+                <artifactId>helidon-health-checks</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- jwt -->
             <dependency>
