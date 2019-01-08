@@ -109,6 +109,30 @@ backend:
               items:
                 -  includes:
                      - "extensions/*.adoc"
+            - title: "Metrics"
+              pathprefix: "/metrics"
+              glyph:
+                type: "icon"
+                value: "av_timer"
+              items:
+                - includes:
+                    - "metrics/*.adoc"
+            - title: "Tracing"
+              pathprefix: "/tracing"
+              glyph:
+                type: "icon"
+                value: "timeline"
+              items:
+                - includes:
+                    - "tracing/*.adoc"
+            - title: "Health Checks"
+              pathprefix: "/health"
+              glyph:
+                type: "icon"
+                value: "favorite_outline"
+              items:
+                - includes:
+                    - "health/*.adoc"
             - title: "Guides"
               pathprefix: "/guides"
               glyph:

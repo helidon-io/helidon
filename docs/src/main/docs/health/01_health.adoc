@@ -1,0 +1,133 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Health Checks
+:description: Helidon health checks
+:keywords: helidon, health-checks, health, check
+
+== Health Check Support
+Health check support in Helidon SE provides:
+
+1. Endpoint `/health` - a configurable endpoint that exposes health checks in JSON
+    format specified by Microprofile Heatlh Check specification
+2. Base set of health checks (additional dependency)
+
+Health Check Support in Helidon SE serves as a core for Helidon MP implementation of Microprofile Health Check specification.
+
+
+=== Prerequisites
+
+Declare the following dependency in your project:
+
+[source,xml,subs="verbatim,attributes"]
+.Health Check Dependency
+----
+    <dependency>
+        <groupId>io.helidon.health</groupId>
+        <artifactId>helidon-health</artifactId>
+    </dependency>
+----
+
+To enable built-in health checks, add the following dependency:
+
+[source,xml,subs="verbatim,attributes"]
+.Health Check Dependency
+----
+    <dependency>
+        <groupId>io.helidon.health</groupId>
+        <artifactId>helidon-health-checks</artifactId>
+    </dependency>
+----
+
+
+=== Using Health Checks in Your Application
+To enable Health checks, register it with the WebServer.
+
+[source,java]
+.Configuring Health checks in WebServer
+----
+import io.helidon.metrics.MetricsSupport;
+. . .
+
+HealthSupport health = HealthSuport.builder()
+    .add(HealthChecks.healthChecks())               // <1>
+    .add((HealthCheck) () -> HealthCheckResponse.named("exampleHealthCheck")
+                 .up()
+                 .withData("time", System.currentTimeMillis())
+                 .build())                          // <2>
+    .build();
+
+Routing.builder()
+        .register(health)                           // <3>
+        .register("/hello", (req, res) -> res.send("HelloWorld"))
+        .build();
+----
+<1> Add built-in health checks (requires `helidon-health-checks` dependency)
+<2> Add a custom health check - this example just returns `UP` and current time
+<3> Register health support with web server routing (adds `/health` endpoint)
+
+=== Accessing Health Endpoint
+
+Access metrics data via the `/health` endpoint.
+
+The JSON format (using built-in health checks and the custom health check from example above):
+
+[source,json]
+.Health Check Response
+----
+{
+    "outcome": "UP",
+    "checks": [
+        {
+            "name": "deadlock",
+            "state": "UP"
+        },
+        {
+            "name": "diskSpace",
+            "state": "UP",
+            "data": {
+                "free": "211.00 GB",
+                "freeBytes": 226563444736,
+                "percentFree": "45.31%",
+                "total": "465.72 GB",
+                "totalBytes": 500068036608
+            }
+        },
+        {
+            "name": "exampleHealthCheck",
+            "state": "UP",
+            "data": {
+                "time": 1546958376613
+            }
+        },
+        {
+            "name": "heapMemory",
+            "state": "UP",
+            "data": {
+                "free": "215.15 MB",
+                "freeBytes": 225600496,
+                "max": "3.56 GB",
+                "maxBytes": 3817865216,
+                "percentFree": "99.17%",
+                "total": "245.50 MB",
+                "totalBytes": 257425408
+            }
+        }
+    ]
+}
+----
