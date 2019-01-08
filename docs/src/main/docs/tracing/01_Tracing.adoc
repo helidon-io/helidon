@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,42 +16,44 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Tracing Support
-:description: Helidon Reactive WebServer Tracing Support
-:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver
+= Tracing
+:description: Helidon Tracing Support
+= :keywords: helidon, tracing
 
 == Tracing Support
-Helidon includes Zipkin support for OpenTracing. When enabled, the WebServer
- sends its tracing events to Zipkin.
+Helidon includes support for tracing through `OpenTracing` APIs. Tracing
+is integrated with WebServer and Security.
+
+Support for specific tracers is abstracted, so your application can depend on
+the abstraction layer and provide a specific tracer implementation as a Java
+`ServiceLoader` service.
+
 
 === Maven Coordinates
 
-Declare the following dependency in your project:
+Declare the following dependency in your project to use the tracer abstraction:
 
 [source,xml,subs="verbatim,attributes"]
-.WebServer Zipkin Support Dependency
+.Tracer Abstraction
 ----
 <dependency>
     <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-zipkin</artifactId>
+    <artifactId>helidon-tracing</artifactId>
 </dependency>
 ----
 
-=== Configuring Tracing Support
-To enable Zipkin integration, configure `Tracer` on the
- `ServerConfiguration.Builder`.
+=== Configuring Tracing
+
+To configure tracer with WebServer:
 
 [source,java]
 .Configuring OpenTracing `Tracer`
 ----
 ServerConfiguration.builder()
-                   .tracer(TracerBuilder.create("my-application") //<1>
+                   .tracer(TracerBuilder.create("my-application")                    // <1>
                                  .collectorUri(URI.create("http://10.0.0.18:9411"))  // <2>
                                  .build())
                    .build()
 ----
-<1> The name of the application to associate with the tracing events
-<2> Zipkin endpoint for the tracing events
-
-image::webserver/zipkin.png[Zipkin example, align="center"]
-
+<1> The name of the application (service) to associate with the tracing events
+<2> Endpoint for the tracing events, specific to the tracer used, usually loaded from Config

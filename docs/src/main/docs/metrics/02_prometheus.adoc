@@ -1,0 +1,62 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Prometheus Metrics
+:description: Helidon Prometheus metrics
+:keywords: helidon, metrics, prometheus
+
+== Metrics Support
+Helidon WebServer can serve Prometheus metrics.
+
+This document only describes how to register the support with WebServer and how to customize
+the configuration. For reference on using Prometheus, please use Prometheus documentation.
+
+Helidon has its own metrics implementation, please refer to <<metrics/01_metrics.adoc,Helidon Metrics>>
+
+=== Prerequisites
+
+Declare the following dependency in your project:
+
+[source,xml,subs="verbatim,attributes"]
+.Prometheus Metrics Dependency
+----
+    <dependency>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics-prometheus</artifactId>
+    </dependency>
+----
+
+=== Using Prometheus Metrics in Your Application
+To enable Prometheus Metrics, register it with the WebServer.
+
+[source,java]
+.Configuring Prometheus Metrics in WebServer
+----
+import io.helidon.metrics.prometheus.PrometheusSupport;
+. . .
+
+Routing.builder()
+                .register(PrometheusSupport.create())
+                .register("/myapp", new MyService())
+                .build();
+----
+
+The example above uses the default `CollectorRegistry` and exposes an endpoint
+`/metrics`. You can use fluent API builder obtained by `PrometheusSupport.builder()` to
+configure a different `CollectorRegistry` or a different path.
+

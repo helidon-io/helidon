@@ -16,14 +16,17 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Metrics and Health Support
-:description: Helidon Reactive WebServer metrics and health support
-:keywords: helidon, reactive, reactive streams, reactive java, reactive webserver, metrics
+= Metrics
+:description: Helidon metrics
+:keywords: helidon, metrics
 
 == Metrics Support
-Helidon WebServer includes support for MicroProfile Metrics. MicroProfile
-Metrics has a variety of metric types and two reporting formats that
-are exposed at the `/metrics` endpoint.
+Metrics support in Helidon SE provides:
+
+1. Endpoint `/metrics` - a configurable endpoint that exposes metrics information in JSON (as specified by
+    Microprofile Metrics specification), or plain text (as used by Prometheus metrics)
+2. Base set of metrics, available on `/metrics/base`, as specified by Microprofile Metrics specification
+3. Helidon specific set of metrics, available on `/metrics/vendor`
 
 
 === Prerequisites
@@ -31,7 +34,7 @@ are exposed at the `/metrics` endpoint.
 Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
-.Webserver Metrics Dependency
+.Metrics Dependency
 ----
     <dependency>
         <groupId>io.helidon.metrics</groupId>
@@ -126,6 +129,7 @@ For full details see the
 https://github.com/eclipse/microprofile-metrics/releases[MicroProfile Metrics]
 specification.
 
+Metrics support in Helidon SE serves as a core for Helidon MP implementation of Microprofile Metrics specification
 
 == Implementing a Health Check
 
