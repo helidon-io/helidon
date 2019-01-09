@@ -35,7 +35,6 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.common.reactive.SubmissionPublisher;
-import io.helidon.webserver.spi.BareRequest;
 import io.helidon.webserver.utils.TestUtils;
 
 import org.junit.jupiter.api.Test;

@@ -36,8 +36,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.SocketConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
+import io.helidon.webserver.BareRequest;
+import io.helidon.webserver.BareResponse;
 
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;

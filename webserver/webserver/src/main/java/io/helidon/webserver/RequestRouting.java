@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;

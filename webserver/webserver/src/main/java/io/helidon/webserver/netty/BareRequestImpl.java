@@ -30,7 +30,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.spi.BareRequest;
+import io.helidon.webserver.BareRequest;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;

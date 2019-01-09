@@ -42,7 +42,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.spi.BareRequest;
 
 import io.opentracing.Span;
 import io.opentracing.Tracer;

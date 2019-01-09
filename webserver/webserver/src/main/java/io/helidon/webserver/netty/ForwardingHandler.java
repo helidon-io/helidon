@@ -24,8 +24,8 @@ import javax.net.ssl.SSLEngine;
 
 import io.helidon.webserver.BadRequestException;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
+import io.helidon.webserver.BareRequest;
+import io.helidon.webserver.BareResponse;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

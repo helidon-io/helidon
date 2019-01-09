@@ -29,7 +29,6 @@ import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.SetCookie;
-import io.helidon.webserver.spi.BareResponse;
 
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.jupiter.api.Test;

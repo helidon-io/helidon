@@ -44,7 +44,6 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.SetCookie;
 import io.helidon.common.http.Utils;
-import io.helidon.webserver.spi.BareResponse;
 
 /**
  * A {@link ResponseHeaders} implementation on top of {@link HashParameters}.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.spi;
+package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -24,10 +24,6 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.SocketClosedException;
-import io.helidon.webserver.WebServer;
-
 
 /**
  * Bare (minimal) representation of HTTP Response. Used by {@link WebServer WebServer} implementations to invoke

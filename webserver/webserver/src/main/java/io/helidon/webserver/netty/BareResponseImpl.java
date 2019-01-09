@@ -33,7 +33,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
 import io.helidon.webserver.ConnectionClosedException;
 import io.helidon.webserver.SocketClosedException;
-import io.helidon.webserver.spi.BareResponse;
+import io.helidon.webserver.BareResponse;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;

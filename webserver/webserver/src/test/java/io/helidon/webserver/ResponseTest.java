@@ -28,7 +28,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.spi.BareResponse;
 
 import io.opentracing.SpanContext;
 import org.junit.jupiter.api.Test;

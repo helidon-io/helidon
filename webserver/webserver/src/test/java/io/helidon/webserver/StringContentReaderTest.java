@@ -27,7 +27,6 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.spi.BareRequest;
 
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;

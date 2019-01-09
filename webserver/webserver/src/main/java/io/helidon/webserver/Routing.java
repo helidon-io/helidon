@@ -22,8 +22,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
 
 /**
  * Routing represents composition of HTTP request-response handlers with routing rules. It is together with

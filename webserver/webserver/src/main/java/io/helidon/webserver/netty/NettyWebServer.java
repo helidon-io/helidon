@@ -55,7 +55,7 @@ import io.netty.util.concurrent.Future;
 /**
  * The Netty based WebServer implementation.
  */
-class NettyWebServer implements WebServer {
+public class NettyWebServer implements WebServer {
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
 
@@ -75,7 +75,7 @@ class NettyWebServer implements WebServer {
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
 
-    NettyWebServer(ServerConfiguration config,
+    public NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
