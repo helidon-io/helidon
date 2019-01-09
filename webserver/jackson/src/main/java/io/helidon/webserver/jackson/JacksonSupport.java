@@ -50,8 +50,9 @@ public final class JacksonSupport implements Service, Handler {
      * @exception NullPointerException if {@code objectMapperProvider}
      * is {@code null}
      */
-    @SuppressWarnings("checkstyle:linelength")
-    public JacksonSupport(final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends ObjectMapper> objectMapperProvider) {
+    public JacksonSupport(final BiFunction<? super ServerRequest,
+                                           ? super ServerResponse,
+                                           ? extends ObjectMapper> objectMapperProvider) {
         super();
         this.objectMapperProvider = Objects.requireNonNull(objectMapperProvider);
     }
