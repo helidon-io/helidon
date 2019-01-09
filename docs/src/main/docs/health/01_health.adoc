@@ -46,7 +46,7 @@ Declare the following dependency in your project:
 To enable built-in health checks, add the following dependency:
 
 [source,xml,subs="verbatim,attributes"]
-.Health Check Dependency
+.Health Checks Dependency
 ----
     <dependency>
         <groupId>io.helidon.health</groupId>
@@ -83,7 +83,7 @@ Routing.builder()
 
 === Accessing Health Endpoint
 
-Access metrics data via the `/health` endpoint.
+Access health check data via the `/health` endpoint.
 
 The JSON format (using built-in health checks and the custom health check from example above):
 
