@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,8 +110,8 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
         List<MediaType> result = this.acceptedtypesCache;
         if (result == null) {
             List<String> acceptValues = all(Http.Header.ACCEPT);
-            result = acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.equals(acceptValues.get(0)) ?
-                    HUC_ACCEPT_DEFAULT_TYPES : acceptValues.stream()
+            result = acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.equals(acceptValues.get(0))
+                    ? HUC_ACCEPT_DEFAULT_TYPES : acceptValues.stream()
                             .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
                             .map(String::trim)
                             .map(MediaType::parse)
