@@ -77,10 +77,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-netty</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-json</artifactId>
         </dependency>
         <dependency>

@@ -51,12 +51,6 @@
             <artifactId>helidon-security-util</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-netty</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
         <!--
         Must explicitly mention used providers in tests, as some have dependency on this project (e.g. oidc)
         -->

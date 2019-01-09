@@ -33,7 +33,6 @@
 
     <modules>
         <module>webserver</module>
-        <module>netty</module>
         <module>jersey</module>
         <module>json</module>
         <module>test-support</module>

@@ -41,12 +41,12 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-jersey</artifactId>
+            <artifactId>helidon-webserver</artifactId>
             <version>${helidon.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-netty</artifactId>
+            <artifactId>helidon-webserver-jersey</artifactId>
             <version>${helidon.version}</version>
         </dependency>
         <dependency>

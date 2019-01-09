@@ -55,7 +55,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-netty</artifactId>
+            <artifactId>helidon-webserver</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

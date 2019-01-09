@@ -19,6 +19,5 @@
  */
 module io.helidon.bundles.jersey {
     requires transitive io.helidon.webserver;
-    requires transitive io.helidon.webserver.netty;
     requires transitive io.helidon.webserver.jersey;
 }
