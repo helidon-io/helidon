@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,13 +60,13 @@ import io.helidon.webserver.WebServer;
  * with {@link JsonStructure JSON} objects.
  *
  * <h3>Get Instance</h3>
- * Use factory methods {@link #get()} or {@link #create(Map)} to acquire an instance.
+ * Use factory methods {@link #create()} or {@link #create(Map)} to acquire an instance.
  *
  * <h3>Usage with Routing</h3>
  * {@code JsonSupport} should be registered on the routing before any business logic handlers.
  * <pre>{@code
  * Routing.builder()
- *        .register(JsonSupport.get())
+ *        .register(JsonSupport.create())
  *        .etc.... // Business logic related handlers
  * }</pre>
  * Instance behaves also as a routing filter. It means that it can be registered on any routing rule (for example HTTP method)
@@ -74,7 +74,7 @@ import io.helidon.webserver.WebServer;
  * <pre>{@code
  * // Register JsonSupport only for POST of 'foo'
  * Routing.builder()
- *        .post("/foo/{}", JsonSupport.get())
+ *        .post("/foo/{}", JsonSupport.create())
  *        .post("/foo/bar", ...) // It can use JSON structures
  *        .get("/foo/bar", ...);  // It can NOT use JSON structures
  * }</pre>
@@ -116,7 +116,7 @@ public final class JsonSupport implements Service, Handler {
      * {@link Http.Method HTTP method}.
      * <p>
      * This method is called from {@link Routing} during build process. The user should register whole class
-     * ot the routing: {@code Routing.builder().}{@link Routing.Builder#register(Service...) register}{@code (JsonSupport.get())}.
+     * ot the routing: {@code Routing.builder().}{@link Routing.Builder#register(Service...) register}{@code (JsonSupport.create())}.
      *
      * @param routingRules a routing configuration where JSON support should be registered
      * @see Routing
@@ -132,7 +132,7 @@ public final class JsonSupport implements Service, Handler {
      * <p>
      * This method is called from {@link Routing} during build process. The user should register whole class
      * ot the routing criteria. For example: {@code Routing.builder().}
-     * {@link Routing.Builder#post(String, Handler...) post}{@code ("/foo", JsonSupport.get())}.
+     * {@link Routing.Builder#post(String, Handler...) post}{@code ("/foo", JsonSupport.create())}.
      * <p>
      * It calls {@code ServerRequest.}{@link ServerRequest#next() next()} method to invoke following handlers with
      * particular business logic.
@@ -302,7 +302,7 @@ public final class JsonSupport implements Service, Handler {
      *
      * @return a singleton instance with default configuration
      */
-    public static JsonSupport get() {
+    public static JsonSupport create() {
         return DefaultJsonSupportHolder.INSTANCE;
     }
 
@@ -315,7 +315,7 @@ public final class JsonSupport implements Service, Handler {
      */
     public static JsonSupport create(Map<String, ?> config) {
         if (config == null || config.isEmpty()) {
-            return get();
+            return create();
         } else {
             return new JsonSupport(config);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public final class Main {
     // tag::createRoutingBasic[]
         greetService = new GreetService(); // <1>
         return Routing.builder()
-                .register(JsonSupport.get()) // <2>
+                .register(JsonSupport.create()) // <2>
     // end::createRoutingBasic[]
     // tag::registerMetrics[]
                 .register(metrics) // <1>

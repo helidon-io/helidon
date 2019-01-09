@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public final class HealthSupport implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get(webContext, JsonSupport.get())
+        rules.get(webContext, JsonSupport.create())
                 .get(webContext, (req, res) -> {
                     HealthResponse hres = callHealthChecks();
 
@@ -156,6 +156,28 @@ public final class HealthSupport implements Service {
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Create a new HealthSupport with no health checks configured.
+     * The endpoint will always return {@code UP}.
+     *
+     * @return health support configured with no health checks
+     */
+    public static HealthSupport create(){
+        return builder().build();
+    }
+
+    /**
+     * Create a new HealthSupport with no health checks, configured from provided config.
+     * The endpoint will always return {@code UP}.
+     *
+     * @param config configuration of this health check, used only to get {@code web-context} property to configure
+     *      {@link Builder#webContext(String)}
+     * @return health support configured with no health checks
+     */
+    public static HealthSupport create(Config config) {
+        return builder().config(config).build();
     }
 
     /**

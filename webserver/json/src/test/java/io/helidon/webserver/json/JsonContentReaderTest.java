@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class JsonContentReaderTest {
     public void simpleJsonObject() throws Exception {
         Flux<DataChunk> flux = Flux.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
 
-        CompletionStage<? extends JsonObject> stage = JsonSupport.get()
+        CompletionStage<? extends JsonObject> stage = JsonSupport.create()
                                                                  .reader()
                                                                  .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonObject.class);
 
@@ -58,7 +58,7 @@ public class JsonContentReaderTest {
     public void incompatibleTypes() throws Exception {
         Flux<DataChunk> flux = Flux.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
 
-        CompletionStage<? extends JsonArray> stage = JsonSupport.get()
+        CompletionStage<? extends JsonArray> stage = JsonSupport.create()
                 .reader()
                 .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonArray.class);
 
@@ -77,7 +77,7 @@ public class JsonContentReaderTest {
     public void simpleJsonArray() throws Exception {
         Flux<DataChunk> flux = Flux.just("[ \"val\" ]").map(s -> DataChunk.create(s.getBytes()));
 
-        CompletionStage<? extends JsonArray> stage = JsonSupport.get()
+        CompletionStage<? extends JsonArray> stage = JsonSupport.create()
                 .reader()
                 .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonArray.class);
 
@@ -89,7 +89,7 @@ public class JsonContentReaderTest {
     public void invalidJson() throws Exception {
         Flux<DataChunk> flux = Flux.just("{ \"p\" : \"val\" ").map(s -> DataChunk.create(s.getBytes()));
 
-        CompletionStage<? extends JsonObject> stage = JsonSupport.get()
+        CompletionStage<? extends JsonObject> stage = JsonSupport.create()
                 .reader()
                 .applyAndCast(ReactiveStreamsAdapter.publisherToFlow(flux), JsonObject.class);
         try {
@@ -103,7 +103,7 @@ public class JsonContentReaderTest {
 
     @Test
     public void defaultJsonSupportAsSingleton() {
-        assertThat(JsonSupport.get(), sameInstance(JsonSupport.get()));
+        assertThat(JsonSupport.create(), sameInstance(JsonSupport.create()));
         assertThat(JsonSupport.create(null), sameInstance(JsonSupport.create(null)));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -285,7 +285,7 @@ public final class MetricsSupport implements Service {
         });
 
         rules.anyOf(CollectionsHelper.listOf(Http.Method.GET, Http.Method.OPTIONS),
-                    JsonSupport.get());
+                    JsonSupport.create());
 
         // routing to root of metrics
         rules.get(context, (req, res) -> getMultiple(req, res, base, app, vendor))

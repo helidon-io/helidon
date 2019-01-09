@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class JsonSupportTest {
     @Test
     public void pingPong() throws Exception {
         Routing routing = Routing.builder()
-                                 .register(JsonSupport.get())
+                                 .register(JsonSupport.create())
                                  .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                                  .build();
         JsonObject json = createJson();
@@ -68,7 +68,7 @@ public class JsonSupportTest {
     @Test
     public void invalidJson() throws Exception {
         Routing routing = Routing.builder()
-                .register(JsonSupport.get())
+                .register(JsonSupport.create())
                 .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                 .build();
         TestResponse response = TestClient.create(routing)
@@ -94,7 +94,7 @@ public class JsonSupportTest {
     @Test
     public void acceptHeaders() throws Exception {
         Routing routing = Routing.builder()
-                .register(JsonSupport.get())
+                .register(JsonSupport.create())
                 .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
                 .build();
         JsonObject json = createJson();

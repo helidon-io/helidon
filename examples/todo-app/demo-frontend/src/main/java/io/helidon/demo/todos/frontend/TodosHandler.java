@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public final class TodosHandler implements Service {
     @Override
     public void update(final Routing.Rules rules) {
         rules
-                .any(JsonSupport.get())
+                .any(JsonSupport.create())
                 .get("/todo/{id}", this::getSingle)
                 .delete("/todo/{id}", this::delete)
                 .put("/todo/{id}", this::update)
