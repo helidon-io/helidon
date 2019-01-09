@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
@@ -36,6 +37,22 @@ import io.helidon.common.http.Utils;
  * A {@link RequestHeaders} implementation on top of {@link ReadOnlyParameters}.
  */
 class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
+
+    /**
+     * Header value of the non compliant {@code Accept} header sent by
+     * {@link HTTPURLConnection} when none is set.
+     * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
+     */
+    static final String HUC_ACCEPT_DEFAULT = "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2";
+
+    /**
+     * Accepted types for {@link #HUC_ACCEPT_DEFAULT}.
+     */
+    private static final List<MediaType> HUC_ACCEPT_DEFAULT_TYPES = CollectionsHelper.listOf(
+                MediaType.TEXT_HTML,
+                MediaType.parse("image/gif"),
+                MediaType.parse("image/jpeg"),
+                MediaType.parse("*/*; q=.2"));
 
     private final Object internalLock = new Object();
     private volatile Parameters cookies;
@@ -92,7 +109,9 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
     public List<MediaType> acceptedTypes() {
         List<MediaType> result = this.acceptedtypesCache;
         if (result == null) {
-            result = all(Http.Header.ACCEPT).stream()
+            List<String> acceptValues = all(Http.Header.ACCEPT);
+            result = acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.equals(acceptValues.get(0)) ?
+                    HUC_ACCEPT_DEFAULT_TYPES : acceptValues.stream()
                             .flatMap(h -> Utils.tokenize(',', "\"", false, h).stream())
                             .map(String::trim)
                             .map(MediaType::parse)

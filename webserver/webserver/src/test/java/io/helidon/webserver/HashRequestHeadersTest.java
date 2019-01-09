@@ -37,6 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests {@link HashRequestHeaders}.
@@ -102,6 +103,26 @@ public class HashRequestHeadersTest {
         assertThat(hs.acceptedTypes().get(2), is(createMt("text", "html", CollectionsHelper.mapOf("level", "1"))));
         assertThat(hs.acceptedTypes().get(3),
                    is(createMt("text", "html", CollectionsHelper.mapOf("level", "2", "q", "0.4"))));
+    }
+
+    @Test
+    public void hucDefaultAccept(){
+        try {
+            HashRequestHeaders hs = withHeader(Http.Header.ACCEPT, HashRequestHeaders.HUC_ACCEPT_DEFAULT);
+            assertThat(hs.acceptedTypes().get(0), is(MediaType.TEXT_HTML));
+            assertThat(hs.acceptedTypes().get(1), is(createMt("image", "gif")));
+            assertThat(hs.acceptedTypes().get(2), is(createMt("image", "jpeg")));
+            assertThat(hs.acceptedTypes().get(3), is(createMt("*", "*", CollectionsHelper.mapOf("q", ".2"))));
+        } catch(IllegalStateException ex){
+            Assertions.fail(ex.getMessage(), ex);
+        }
+    }
+
+    private MediaType createMt(String type, String subtype) {
+        return MediaType.builder()
+                .type(type)
+                .subtype(subtype)
+                .build();
     }
 
     private MediaType createMt(String type, String subtype, Map<String, String> params) {
