@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -178,7 +178,7 @@ methods on the `Config` class to do this.
 |===
 |Method |Usage
 
-|`asNodeList()` |Returns a ConfigValue<List<Config>>, for nodes of type `OBJECT` contains child nodes as a `List`.
+|`asNodeList()` |Returns a ConfigValue<List<Config>>. For nodes of type `OBJECT` contains child nodes as a `List`.
 |`hasValue()` |For any node reports if the node has a value. This can be true for
 any node type except `MISSING`.
 |`isLeaf()` |Reports whether the node has no child nodes. Leaf nodes have no children
@@ -213,8 +213,8 @@ assert appNodeNames.get(1).equals("greeting");    // <4>
 assert appNodeNames.get(2).equals("page-size");   // <4>
 ----
 
-<1> Get the ConfigValue with child `Config` instances.;
-<2> Map the node list to names using the java stream API (if present)
+<1> Get the ConfigValue with child `Config` instances.
+<2> Map the node list to names using the Java Stream API (if present)
 <3> Use an empty list if the "app" node does not exist
 <4> Check that the list contains the expected child names: `basic-range`, `greeting` and `page-size`.
 

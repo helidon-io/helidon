@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ Notes on Built-in Conversions to Simple Types
 ====
 ^1^ All conversions can throw `MissingValueException` (if no value exists at the 
 requested key and no default is provided) and
-`ConfigMappingException` (if some error occurred performing the data mapping).
+`ConfigMappingException` (if some error occurred while performing the data mapping).
 
 ^2^ The `Config.asXXX` methods internally use the Java-provided `XXX.parseXXX` methods, so here 
 a missing or unparseable string gives `false` because that is how `Boolean.parseBoolean`
@@ -139,7 +139,7 @@ You might want to avoid changing the target class or you
 might not even be able to if you do not control its source.
 
 Here are two approaches that will always work without requiring changes
-to the target class. For both you write your own conversion function.
+to the target class. For both approaches, you write your own conversion function.
 The difference is in how your application triggers the use of that mapper.
 
 ==== Use Custom Mapper Explicitly: `Config.as` method
@@ -266,9 +266,10 @@ uses Java reflection to search for those ways to perform the mapping.
 Your application facilitates this implicit mapping either by adding to the 
 POJO class or by providing a builder class for it.
 
-This feature is available in Object mapping module, and is added through java service
-load mechanism. This is no longer part of core Config module, as it depends on reflection
-and introduces a lot of magic.
+This feature is available in Object mapping module, and is added through Java `ServiceLoader`
+mechanism. This is no longer part of core Config module, as it depends on reflection
+and introduces a lot of magic (see the list of supported mapping methods below, also
+uses reflection to invoke the methods and to map configuration values to fields/methods etc.).
 
 [source,xml]
 .Config object mapping Dependency in `pom.xml`
@@ -375,9 +376,8 @@ an instance of the POJO class initialized with the values passed as arguments.
 
 The following sections describe these patterns in more detail.
 
-This feature is available in Object mapping module, and is added through java service
-load mechanism. This is no longer part of core Config module, as it depends on reflection
-and introduces a lot of magic.
+This feature is available in Object mapping module, and is added through Java `ServiceLoader`
+mechanism. This is no longer part of core Config module, as it depends on reflection.
 
 [source,xml]
 .Config object mapping Dependency in `pom.xml`
@@ -529,7 +529,7 @@ the _builder_ as a JavaBean and
 3. invokes the builder's `build()` method to create the new instance of the target
 class.
 
-You can Augment the target class with the public static `builder()` method:
+You can augment the target class with the public static `builder()` method:
 
 [source,java]
 .JavaBean for `app` properties, via a `Builder`

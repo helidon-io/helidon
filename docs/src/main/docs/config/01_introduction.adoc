@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ which can change what values are returned for selected keys.
 
 The `Config` object lets your application retrieve config data as a typed ConfigValue.
 
-ConfigValue<T> can be used to obtain a:
+ConfigValue<T> can be used to obtain:
 * an `Optional<T>` value _from a single node_,
 * the `T` value _from a single node_ interpreted as a basic Java type
 (primitive or simple object) already known to the config system (such as

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -316,26 +316,26 @@ data structure into the type in the key.
 The provider may also implement other methods for finer tuned conversion mechanisms:
 
 * `genericTypeMappers()` returns a map with entries for specific `GenericType` conversions,
-    e.g. when the provider supports only mapping for `GenericType<Map<String, Integer>>`
+    for example when the provider supports only mapping for `GenericType<Map<String, Integer>>`
 * `mapper(Class)` returns a conversion function (optional) that converts a config node
     to the typed instance (if supported by this provider)
 * `mapper(GenericType)` returns a conversion function (optional) that coverts a config node
-    to the GenericType (if supported by this provider) - e.g. in case this provider supporst
+    to the GenericType (if supported by this provider) - for example in case this provider supports
     any Map<String, ?> type, such as `Map<String, Integer>` and `Map<String, Double>`
 
 The config conversion system works as follows:
 
 For `Config.as(Class)`:
 
-1. check if a conversion function exists for the class requested (from method `mappers()`)
-2. check if a conversion function is provided by any `ConfigMapperProvider` with method `mapper(Class)`
-3. check if a conversion function exists for a generic type for the class requested (from method `genericTypeMappers`)
-4. check if a conversion function is provided by any `ConfigMapperProvider` with method `mapper(GenericType)` for
-    a generic type for the class requested
+1. Check whether a conversion function exists for the class requested (from method `mappers()`).
+2. Check whether a conversion function is provided by any `ConfigMapperProvider` with method `mapper(Class)`.
+3. Check whether a conversion function exists for a generic type for the class requested (from method `genericTypeMappers`).
+4. Check whether a conversion function is provided by any `ConfigMapperProvider` with method `mapper(GenericType)` for
+    a generic type for the class requested.
 
 For `Config.as(GenericType)` - the first two steps are skipped.
 
-The config system also uses the Java service loader mechanism to load automatically,
+The config system also uses the Java `ServiceLoader` mechanism to load automatically,
 for all builders, any mappers returned by the providers listed in the 
 `META-INF/services/io.helidon.config.spi.ConfigMapperProvider` resource on the
 runtime classpath. The application can prevent autoloading of mappers for a

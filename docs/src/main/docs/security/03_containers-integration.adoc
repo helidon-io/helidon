@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ There are two steps to configure security with web server:
 Routing.builder()
     // This is step 1 - register security instance with web server processing
     // security - instance of security either from config or from a builder
-    // securityDefaults - default enforcement for each route that hase a security definition
+    // securityDefaults - default enforcement for each route that has a security definition
     .register(WebSecurity.create(security).securityDefaults(WebSecurity.authenticate()))
     // this is step 2 - protect a route
     // protect this route with authentication (from defaults) and role "user"
