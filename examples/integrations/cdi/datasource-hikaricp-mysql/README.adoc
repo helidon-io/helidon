@@ -14,7 +14,7 @@ and uses `tiger` as the MySQL root password and that will
 automatically be removed when it is stopped:
 
 ```sh
-$ docker run --rm --name mysql --detach --env MYSQL_ROOT_PASSWORD=tiger --publish 3306:3306 mysql:8
+$ docker container run --rm --name mysql --detach --env MYSQL_ROOT_PASSWORD=tiger --publish 3306:3306 mysql:8
 ```
 
 (Note that in the `3306:3306` option value above the first port number
