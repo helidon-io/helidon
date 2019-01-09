@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,7 +268,7 @@ public class Main {
     public void supports() {
         Routing routing = Routing.builder()
                                  .register(StaticContentSupport.create("/static"))
-                                 .register("/hello", JsonSupport.get())
+                                 .register("/hello", JsonSupport.create())
                                  .get("/hello/{what}", (req, res) -> res.send(Json.createObjectBuilder()
                                                                                   .add("message",
                                                                                        "Hello " + req.path()
