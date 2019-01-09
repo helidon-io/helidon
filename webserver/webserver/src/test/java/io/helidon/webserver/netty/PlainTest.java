@@ -29,7 +29,7 @@ import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.testsupport.SocketHttpClient;
+import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.hamcrest.collection.IsMapContaining;
 import org.junit.jupiter.api.AfterAll;

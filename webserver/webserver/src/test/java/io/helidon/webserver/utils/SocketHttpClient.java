@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.testsupport;
+package io.helidon.webserver.utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;

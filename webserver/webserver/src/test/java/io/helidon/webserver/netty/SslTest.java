@@ -39,7 +39,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.SSLContextBuilder;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.testsupport.LoggingTestUtils;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,26 +81,6 @@ public class SslTest {
                              .get(10, TimeUnit.SECONDS);
 
         LOGGER.info("Started secured server at: https://localhost:" + webServer.port());
-    }
-
-    /**
-     * Java main method to start the secured server at port {@code 8443}.
-     * <p>
-     * Once started, run either
-     * <pre><code>
-     *     curl https://localhost:8443/ -vvv --insecure
-     * </code></pre>
-     * or open the {@code https://localhost:8443} in your browser.
-     * <p>
-     * Note that the certificate is self-signed.
-     *
-     * @param args not used
-     * @throws Exception in case of an error
-     */
-    public static void main(String[] args) throws Exception {
-        LogManager.getLogManager().readConfiguration(LoggingTestUtils.class.getResourceAsStream("/logging-test.properties"));
-
-        startServer(8443);
     }
 
     @Test

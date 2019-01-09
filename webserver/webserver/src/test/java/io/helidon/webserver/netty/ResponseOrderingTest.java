@@ -38,7 +38,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.testsupport.LoggingTestUtils;
 
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
@@ -75,8 +74,6 @@ public class ResponseOrderingTest {
      * @param args not used
      */
     public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
-        LoggingTestUtils.initializeLogging();
-
         Routing routing = Routing.builder()
                 .any("/multi", (req, res) -> {
                     CompletionStage<? extends String> content = req.content().as(String.class);
