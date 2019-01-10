@@ -91,7 +91,7 @@ class RequestRouting implements Routing {
                         return null;
                     });
             // Process path
-            String p = bareRequest.uri().normalize().getPath();
+            String p = bareRequest.uri().normalize().getRawPath();
             if (p.charAt(p.length() - 1) == '/') {
                 p = p.substring(0, p.length() - 1);
             }

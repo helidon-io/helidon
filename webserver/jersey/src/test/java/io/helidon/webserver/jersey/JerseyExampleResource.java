@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -175,7 +175,6 @@ public class JerseyExampleResource {
         return Response.accepted(content).build();
     }
 
-
     @GET
     @Path("query")
     public Response query(@QueryParam("a") String a, @QueryParam("b") String b) {
@@ -192,5 +191,17 @@ public class JerseyExampleResource {
     @Path("requestUri")
     public String getRequestUri(@Context UriInfo uriInfo) {
         return uriInfo.getRequestUri().getPath();
+    }
+
+    @GET
+    @Path("encoding/{id}")
+    public String pathEncoding1(@PathParam("id") String param) {
+        return param;
+    }
+
+    @Path("encoding/{id:[^/_]*}/done")
+    @GET
+    public String pathEncoding2(@PathParam("id") String param) {
+        return param;
     }
 }
