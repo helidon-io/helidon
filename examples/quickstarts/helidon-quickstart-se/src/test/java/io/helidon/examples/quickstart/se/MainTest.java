@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,12 @@ public class MainTest {
         jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");
+
+        conn = getURLConnection("GET", "/health");
+        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
+
+        conn = getURLConnection("GET", "/metrics");
+        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
     }
 
     private HttpURLConnection getURLConnection(String method, String path) throws Exception {
@@ -92,6 +98,7 @@ public class MainTest {
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
         conn.setRequestProperty("Accept", "application/json");
+        System.out.println("Connecting: " + method + " " + url);
         return conn;
     }
 }

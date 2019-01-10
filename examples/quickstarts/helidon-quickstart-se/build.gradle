@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,9 @@ dependencies {
     compile "io.helidon:helidon-bom:${project.helidonversion}"
     compile 'io.helidon.bundles:helidon-bundles-webserver'
     compile 'io.helidon.config:helidon-config-yaml'
+    compile 'io.helidon.health:helidon-health'
+    compile 'io.helidon.health:helidon-health-checks'
+    compile 'io.helidon.metrics:helidon-metrics'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
 }
