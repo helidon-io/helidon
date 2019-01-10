@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,15 @@ public class NettyWebServer implements WebServer {
     private volatile boolean started;
     private final AtomicBoolean shutdownThreadGroupsInitiated = new AtomicBoolean(false);
 
+    /**
+     * Creates a new instance.
+     *
+     * @param config a server configuration instance
+     * @param routing       a default routing instance
+     * @param namedRoutings the named routings of the configured additional server sockets. If there is no
+     *                      named routing for a given named additional server socket configuration, a default
+     *                      routing is used.
+     */
     public NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings) {
@@ -313,6 +322,7 @@ public class NettyWebServer implements WebServer {
         return contextualRegistry;
     }
 
+    @Override
     public int port(String name) {
         Channel channel = channels.get(name);
         if (channel == null) {
