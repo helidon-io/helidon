@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ class RequestRouting implements Routing {
                         return null;
                     });
             // Process path
-            String p = bareRequest.uri().normalize().getPath();
+            String p = bareRequest.uri().normalize().getRawPath();
             if (p.charAt(p.length() - 1) == '/') {
                 p = p.substring(0, p.length() - 1);
             }

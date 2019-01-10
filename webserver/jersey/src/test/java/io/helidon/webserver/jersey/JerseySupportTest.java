@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -271,6 +271,24 @@ public class JerseySupportTest {
         inputStream.close();
 
         assertThat(s, endsWith("/requestUri"));
+    }
+
+    @Test
+    public void pathEncoding1() {
+        Response response = webTarget.path("jersey/first/encoding/abc%3F")
+                .request()
+                .get();
+
+        doAssert(response, "abc?");
+    }
+
+    @Test
+    public void pathEncoding2() {
+        Response response = webTarget.path("jersey/first/encoding/abc%3B/done")
+                .request()
+                .get();
+
+        doAssert(response, "abc;");
     }
 
     static StringBuilder longData(int bytes) {
