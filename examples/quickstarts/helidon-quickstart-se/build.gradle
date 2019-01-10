@@ -41,6 +41,9 @@ dependencies {
     compile "io.helidon:helidon-bom:${project.helidonversion}"
     compile 'io.helidon.bundles:helidon-bundles-webserver'
     compile 'io.helidon.config:helidon-config-yaml'
+    compile 'io.helidon.health:helidon-health'
+    compile 'io.helidon.health:helidon-health-checks'
+    compile 'io.helidon.metrics:helidon-metrics'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
 }

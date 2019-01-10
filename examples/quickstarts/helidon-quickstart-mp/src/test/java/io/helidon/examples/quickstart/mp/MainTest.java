@@ -70,6 +70,18 @@ class MainTest {
                 .get(JsonObject.class);
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");
+
+        r = client
+                .target(getConnectionString("/metrics"))
+                .request()
+                .get();
+        Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+
+        r = client
+                .target(getConnectionString("/health"))
+                .request()
+                .get();
+        Assertions.assertEquals(200, r.getStatus(), "GET health status code");
     }
 
     @AfterAll

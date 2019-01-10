@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
+import io.helidon.health.HealthSupport;
+import io.helidon.health.checks.HealthChecks;
+import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
@@ -80,12 +83,19 @@ public final class Main {
     /**
      * Creates new {@link Routing}.
      *
-     * @return routing configured with JSON support and a service
+     * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server
      */
     private static Routing createRouting(Config config) {
+
+        HealthSupport health = HealthSupport.builder()
+                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
+                .build();
+
         return Routing.builder()
                 .register(JsonSupport.create())
+                .register(health)                   // Health at "/health"
+                .register(MetricsSupport.create())  // Metrics at "/metrics"
                 .register("/greet", new GreetService(config))
                 .build();
     }
