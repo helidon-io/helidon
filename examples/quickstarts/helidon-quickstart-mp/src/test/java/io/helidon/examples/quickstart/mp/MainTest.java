@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,18 @@ class MainTest {
                 .get(JsonObject.class);
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");
+
+        r = client
+                .target(getConnectionString("/metrics"))
+                .request()
+                .get();
+        Assertions.assertEquals(200, r.getStatus(), "GET metrics status code");
+
+        r = client
+                .target(getConnectionString("/health"))
+                .request()
+                .get();
+        Assertions.assertEquals(200, r.getStatus(), "GET health status code");
     }
 
     @AfterAll

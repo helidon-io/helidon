@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,9 +58,9 @@ public class GreetService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules
-            .get("/", this::getDefaultMessage)
-            .get("/{name}", this::getMessage)
-            .put("/greeting/{greeting}", this::updateGreeting);
+            .get("/", this::getDefaultMessageHandler)
+            .get("/{name}", this::getMessageHandler)
+            .put("/greeting/{greeting}", this::updateGreetingHandler);
     }
 
     /**
@@ -68,7 +68,7 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void getDefaultMessage(ServerRequest request,
+    private void getDefaultMessageHandler(ServerRequest request,
                                    ServerResponse response) {
         sendResponse(response, "World");
     }
@@ -78,7 +78,7 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void getMessage(ServerRequest request,
+    private void getMessageHandler(ServerRequest request,
                             ServerResponse response) {
         String name = request.path().param("name");
         sendResponse(response, name);
@@ -98,7 +98,7 @@ public class GreetService implements Service {
      * @param request the server request
      * @param response the server response
      */
-    private void updateGreeting(ServerRequest request,
+    private void updateGreetingHandler(ServerRequest request,
                                 ServerResponse response) {
         greeting = request.path().param("greeting");
 
@@ -107,4 +107,5 @@ public class GreetService implements Service {
                 .build();
         response.send(returnObject);
     }
+
 }

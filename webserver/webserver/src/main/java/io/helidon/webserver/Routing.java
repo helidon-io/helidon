@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
 
 /**
  * Routing represents composition of HTTP request-response handlers with routing rules. It is together with
