@@ -34,7 +34,6 @@
     </description>
 
     <properties>
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.webserver.examples.translator.frontend.Main</mainClass>
 
         <docker.image.name>${docker.registry}/skeppare/helidon/helidon-webserver-translator-frontend:${project.version}</docker.image.name>
@@ -110,27 +109,27 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-jersey</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-jersey</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-zipkin</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.examples.webserver</groupId>
@@ -156,7 +155,7 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-test-support</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

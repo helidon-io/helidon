@@ -35,7 +35,6 @@
     </description>
 
     <properties>
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.webserver.examples.tutorial.Main</mainClass>
     </properties>
 
@@ -43,12 +42,12 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-reactive</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
@@ -67,7 +66,7 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-test-support</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

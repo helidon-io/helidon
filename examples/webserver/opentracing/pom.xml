@@ -34,7 +34,6 @@
     </description>
 
     <properties>
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.webserver.examples.opentracing.ZipkinExampleMain</mainClass>
 
         <docker.image.name>${docker.registry}/helidon-webserver-opentracing-example:${project.version}</docker.image.name>
@@ -98,17 +97,17 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-jersey</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-zipkin</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -128,7 +127,7 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-test-support</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
