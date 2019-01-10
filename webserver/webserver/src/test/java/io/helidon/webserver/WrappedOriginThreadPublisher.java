@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;

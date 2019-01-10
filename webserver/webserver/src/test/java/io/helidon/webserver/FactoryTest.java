@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
-
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
+package io.helidon.webserver;
 
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-
 
 /**
  * The FactoryTest.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.net.InetAddress;
 import java.security.SecureRandom;
@@ -32,12 +32,6 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.common.reactive.SubmissionPublisher;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.SocketConfiguration;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.BareRequest;
-import io.helidon.webserver.BareResponse;
 
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;

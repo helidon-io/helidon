@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,14 +31,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.SSLContextBuilder;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.SocketConfiguration;
-import io.helidon.webserver.WebServer;
 
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.logging.LoggingFeature;

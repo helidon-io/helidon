@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.util.List;
 import java.util.Map;
@@ -31,9 +31,6 @@ import java.util.logging.Logger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.BareResponse;
-import io.helidon.webserver.ConnectionClosedException;
-import io.helidon.webserver.SocketClosedException;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;

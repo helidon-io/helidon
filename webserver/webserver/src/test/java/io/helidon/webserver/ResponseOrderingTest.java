@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -36,8 +36,6 @@ import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.WebServer;
 
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;

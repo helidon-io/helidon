@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
-
-import io.helidon.webserver.BadRequestException;
-import io.helidon.webserver.BareRequest;
-import io.helidon.webserver.BareResponse;
-import io.helidon.webserver.Routing;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

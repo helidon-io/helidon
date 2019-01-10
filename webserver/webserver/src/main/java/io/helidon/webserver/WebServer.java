@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.ContextualRegistry;
-import io.helidon.webserver.netty.NettyWebServer;
 
 /**
  * Represents a immutably configured WEB server.

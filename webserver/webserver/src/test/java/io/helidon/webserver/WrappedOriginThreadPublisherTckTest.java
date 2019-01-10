@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;

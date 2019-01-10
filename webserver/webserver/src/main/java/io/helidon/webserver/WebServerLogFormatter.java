@@ -14,7 +14,23 @@
  * limitations under the License.
  */
 
+package io.helidon.webserver;
+
+import java.util.logging.LogRecord;
+import java.util.logging.SimpleFormatter;
+import java.util.regex.Pattern;
+
 /**
- * Netty based implementation of WebServer HTTP IO SPI.
+ * The WebServerLogFormatter provides a way to customize logging messages.
  */
-package io.helidon.webserver.netty;
+public class WebServerLogFormatter extends SimpleFormatter {
+
+    private static final Pattern THREAD_PATTERN = Pattern.compile("!thread!");
+
+    @Override
+    public String format(LogRecord record) {
+        String message = super.format(record);
+
+        return THREAD_PATTERN.matcher(message).replaceAll(Thread.currentThread().toString());
+    }
+}

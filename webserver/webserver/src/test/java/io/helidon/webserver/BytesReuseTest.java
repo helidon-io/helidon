@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,12 +35,6 @@ import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
-import io.helidon.webserver.BadRequestException;
-import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.ServerRequest;
-import io.helidon.webserver.WebServer;
 import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.AfterAll;

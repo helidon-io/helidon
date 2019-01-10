@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;

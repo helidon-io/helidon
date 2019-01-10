@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -29,8 +29,6 @@ import javax.net.ssl.SSLEngine;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.BareRequest;
-import io.helidon.webserver.WebServer;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpRequest;

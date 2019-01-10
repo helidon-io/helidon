@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.Reference;

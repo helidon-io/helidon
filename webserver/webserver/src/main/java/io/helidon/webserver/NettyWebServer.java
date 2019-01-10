@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -55,7 +55,7 @@ import io.netty.util.concurrent.Future;
 /**
  * The Netty based WebServer implementation.
  */
-public class NettyWebServer implements WebServer {
+class NettyWebServer implements WebServer {
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
 
@@ -84,7 +84,7 @@ public class NettyWebServer implements WebServer {
      *                      named routing for a given named additional server socket configuration, a default
      *                      routing is used.
      */
-    public NettyWebServer(ServerConfiguration config,
+    NettyWebServer(ServerConfiguration config,
                    Routing routing,
                    Map<String, Routing> namedRoutings) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();

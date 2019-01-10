@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 
 import java.util.Queue;
@@ -23,10 +23,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 
-import io.helidon.webserver.ExperimentalConfiguration;
-import io.helidon.webserver.Http2Configuration;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.netty.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
+import io.helidon.webserver.HelidonConnectionHandler.HelidonHttp2ConnectionHandlerBuilder;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

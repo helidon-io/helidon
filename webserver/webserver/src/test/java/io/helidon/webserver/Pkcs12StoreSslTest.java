@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.netty;
+package io.helidon.webserver;
 
 import java.util.concurrent.TimeUnit;
 
@@ -26,10 +26,6 @@ import javax.ws.rs.core.Response;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
-import io.helidon.webserver.Routing;
-import io.helidon.webserver.SSLContextBuilder;
-import io.helidon.webserver.ServerConfiguration;
-import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
