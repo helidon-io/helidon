@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,13 @@
 package io.helidon.webserver;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.ContextualRegistry;
-import io.helidon.webserver.spi.WebServerFactory;
 
 /**
  * Represents a immutably configured WEB server.
@@ -313,8 +310,7 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
-            WebServer result = loadFactory()
-                                    .newWebServer(configuration == null
+            WebServer result = new NettyWebServer(configuration == null
                                                           ? ServerBasicConfig.DEFAULT_CONFIGURATION
                                                           : configuration,
                                                   defaultRouting, routings);
@@ -322,15 +318,6 @@ public interface WebServer {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }
             return result;
-        }
-
-        private WebServerFactory loadFactory() {
-            Iterator<WebServerFactory> implementations = ServiceLoader.load(WebServerFactory.class).iterator();
-            if (implementations.hasNext()) {
-                return implementations.next();
-            }
-
-            throw new IllegalStateException("No implementation found for SPI: " + WebServerFactory.class.getName());
         }
     }
 }
