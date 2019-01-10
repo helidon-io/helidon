@@ -34,7 +34,6 @@
     </description>
 
     <properties>
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.config.examples.changes.Main</mainClass>
     </properties>
 
@@ -42,17 +41,17 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-reactive</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

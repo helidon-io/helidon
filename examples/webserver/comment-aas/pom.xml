@@ -32,7 +32,6 @@
     <description>Comments As A Service example application</description>
 
     <properties>
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.webserver.examples.comments.Main</mainClass>
     </properties>
 
@@ -40,12 +39,12 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-netty</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.projectreactor</groupId>
@@ -54,12 +53,12 @@
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-etcd</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -74,7 +73,7 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-test-support</artifactId>
-            <version>${helidon.version}</version>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
