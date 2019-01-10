@@ -7,13 +7,22 @@ uses the Hikari connection pool CDI integration.  It also shows how to
 run the Oracle database in a Docker container and connect the
 application to it.
 
+= Prerequisites
+
+You'll need an Oracle account in order to log in to the Oracle
+Container Registry.  The Oracle Container Registry is where the Docker
+image housing the Oracle database is located.  To set up an Oracle
+account if you don't already have one, see
+https://profile.oracle.com/myprofile/account/create-account.jspx[the
+Oracle account creation website].
+
 == Notes
 
 To log in to the Oracle Container Registry (which you will need to do
-in order to pull Oracle database images from it):
+in order to download Oracle database Docker images from it):
 
 ```sh
-$ docker login -u your.name@yourdomain.com -p yourpasswordhere container-registry.oracle.com
+$ docker login -u youroracleaccountusername -p youroracleaccountpassword container-registry.oracle.com
 ```
 
 For more information on the Oracle Container Registry, please visit
@@ -21,13 +30,18 @@ https://container-registry.oracle.com[its website].
 
 To run Oracle's `database/standard` Docker image in a Docker container
 named `oracle` that publishes ports 1521 and 5500 to
-the host:
+the host while relying on the defaults for all other settings:
 
 ```sh
 $ docker container run --name oracle --detach -it --publish 1521:1521 --publish 5500:5500 --shm-size=3g container-registry.oracle.com/database/standard:latest
 ```
 
 It will take about ten minutes before the database is ready.
+
+For more information on the Oracle database image used by this
+example, you can
+https://container-registry.oracle.com/pls/apex/f?p=113:4:3827722129447::NO:4:P4_REPOSITORY,AI_REPOSITORY,AI_REPOSITORY_NAME,P4_REPOSITORY_NAME,P4_EULA_ID,P4_BUSINESS_AREA_ID:8,8,Oracle%20Database%20Standard%20Edition%202,Oracle%20Database%20Standard%20Edition%202,1,0&cs=3nIcgJHiB_JVq-TKtUGpXhgubcpYkxbkLuLVaSJiNUK0IvSbCvuInbyzUFw9Ynh95xG4QGEYYpBbKKOVKpCnzAw[visit
+the relevant section of the Oracle Container Registry website].
 
 To ensure that the sample application is configured to talk to the
 Oracle database running in this Docker container, verify that the
@@ -70,14 +84,4 @@ To remove the `oracle` Docker container:
 ```sh
 $ docker container rm oracle
 ```
-
-== References
-
-Running the Oracle database in a Docker container:
-
-https://technology.amis.nl/2017/12/30/oracle-database-in-a-docker-container-from-oracle-container-registry/
-
-Another guide:
-
-https://technology.amis.nl/2017/11/18/run-oracle-database-in-docker-using-prebaked-image-from-oracle-container-registry-a-two-minute-guide/
 
