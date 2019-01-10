@@ -101,13 +101,22 @@ To create a custom provider selection policy, create a class that implements
 "io.helidon.security.spi.ProviderSelectionPolicy".
 
 == Framework integration
-To integrate a new framework, you should create a single Security
-instance shared for a scope (e.g. one application). Security instance
-has a method to create a SecurityContext (request scope).
-Use tools of the framework integrated to add annotations support (if feasible).
+Security provides integration with Helidon WebServer (`helidon-security-integration-webserver`)
+ and with Jersey (`helidon-security-integration-jersey`).
 
-The following annotations should be supported:
+These integrations use APIs that are available to integrate any framework/application (for example
+we could integrate security with messaging, such as JMS).
 
+To create a new integration, an instance of `Security` class is needed, as it handles
+all configured providers. Usually a single `Security` instance is used for an application.
+
+`Security` is then used to create an instance of `SecurityContext`, that should be used
+for interaction with a single user - in HTTP, we create a single `SecurityContext` per
+request.
+
+`SecurityContext` is used to invoke authentication, authorization, and outbound security requests.
+
+Helidon security also defines a set of annotations:
 1. @Authenticated - access to resources must follow authentication rules defined by the annotation
 2. @Authorized - access to resources must follow authorization rules defined by the annotation
 3. @Audited - to configure auditing
@@ -115,3 +124,6 @@ The following annotations should be supported:
     1. RolesAllowed
     2. DenyAll
     3. PermitAll
+
+If the protected resources (in Helidon MP, these are JAX-RS resource classes and methods) can
+be annotated, the integration should at least support the annotations mentioned above.
