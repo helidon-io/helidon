@@ -7,33 +7,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
-- io.helidon.common.SpiHelper is removed (incompatible with java9+)
-- io.helidon.common.configurable.Resource is refactored to align with development guidelines
-    - factory methods "from" renamed to "create"
-    - factory method "fromPath" removed, use create(Paths.get(pathString))
-    - getters renamed - removed "get" word
-- io.helidon.common.http.Http is refactored to align with development guidelines
-    - factory method "of" renamed to "find", as it returns an Optional
-    - other factory methods renamed to "create"
-- io.helidon.common.http.MediaType is refactored to align with development guidelines
-    - removed constructors - only factory methods and Builder pattern available now
-    - added factory method "create" to support most common use cases
-    - added fluent API Builder to build more complex instances
-    - getters renamed - removed "get" word
-- io.helidon.common.http.SetCookie is refactored to align with development guidelines
-    - class is immutable now
-    - removed constructors - only factory methods and Builder pattern available now
-    - added factory method "create" to support most common use cases
-    - added fluent API Builder to build more complex instances
-- io.helidon.common.pki.KeyConfig is refactored to align with development guidelines
-    - factory methods "from" renamed to "create"
-    - getters renamed - removed "get" word
-    - Builder method "fromConfig" renamed to "config"
-    - Builders now implement io.helidon.common.Builder
-    
+We've made a number of API changes for this release in preparation for our
+1.0 release. This means when you upgrade to 0.11.0 you will need to make
+changes to your application. We apologies for the inconvenience, but we
+wanted to get these changes in before 1.0. For details see
+[API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0)
+
 ### Improvements
 
+- API refactoring. See [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0) 
+- WebServer: Add health support in SE [287](https://github.com/oracle/helidon/pull/287)
+- MicroProfile: JWT Auth [208](https://github.com/oracle/helidon/pull/208) 
+- MicroProfile: update to Fault Tolerance 1.1.3 [253](https://github.com/oracle/helidon/pull/253)
+- WebServer: update Netty to 4.1.30 [269](https://github.com/oracle/helidon/pull/269)
+- CDI Extensions: Add MySQL CDI integration example [284](https://github.com/oracle/helidon/pull/284)
+- Config: GenericType support for config mapping [238](https://github.com/oracle/helidon/pull/238)
+- Config: Java Beans support [197](https://github.com/oracle/helidon/issues/197)
+- Build: build on Windows [252](https://github.com/oracle/helidon/pull/252)
+- Documentation: Add Creating Docker Images guide  [182](https://github.com/oracle/helidon/pull/182)
+- Documentation: add development guidelines
+
 ### Fixes
+
+- WebServer: detect and allow the default Accept header sent by HTTPURLConnection [309](https://github.com/oracle/helidon/pull/309)
+- WebServer: Ensure proper path encoding with Jersey [317](https://github.com/oracle/helidon/pull/309)
+- CDI Extensions: Add integrations modules to the bom pom [198](https://github.com/oracle/helidon/pull/198)
+- Fault Tolerance: Memory improvement [180](https://github.com/oracle/helidon/pull/180) 
+- Build: fails when compiling with Java 11 [225](https://github.com/oracle/helidon/issues/225)
 
 ## [0.10.5] - 2018-11-06
 
