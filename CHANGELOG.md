@@ -7,6 +7,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+### Improvements
+
+### Fixes
+
+## [0.11.0] - 2019-01-11
+
+### Notes
+
 We've made a number of API changes for this release in preparation for our
 1.0 release. This means when you upgrade to 0.11.0 you will need to make
 changes to your application. We apologies for the inconvenience, but we
@@ -119,7 +127,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/0.10.5...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/0.11.0...HEAD
+[0.11.0]: https://github.com/oracle/helidon/compare/0.10.5...0.11.0
 [0.10.5]: https://github.com/oracle/helidon/compare/0.10.4...0.10.5
 [0.10.4]: https://github.com/oracle/helidon/compare/0.10.3...0.10.4
 [0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3
