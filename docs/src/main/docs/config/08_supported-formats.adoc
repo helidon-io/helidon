@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ The YAML parser handles the following media type:
 [source,java]
 .Automatic selection
 ----
-Config config = Config.from(classpath("application.yaml")); // <1>
+Config config = Config.create(classpath("application.yaml")); // <1>
 ----
 
 <1> The config system automatically maps the file type `.yaml` to the media type `application/x-yaml`
@@ -92,7 +92,7 @@ which the Helidon YAML parser matches.
 [source,java]
 .YAML parser specified - no file type on source
 ----
-Config config = Config.from(classpath("my-config")                                    // <1>
+Config config = Config.create(classpath("my-config")                                    // <1>
                                     .parser(YamlConfigParserBuilder.buildDefault())); // <2>
 ----
 
@@ -106,7 +106,7 @@ The `buildDefault()` method creates a config parser with default behavior.
 [source,java]
 .Media type specified
 ----
-Config config = Config.from(classpath("my-config")                     // <1>
+Config config = Config.create(classpath("my-config")                     // <1>
                                     .mediaType("application/x-yaml")); // <2>
 ----
 
@@ -118,7 +118,7 @@ use its matching algorithm with the available parsers to choose a parser for tha
 [source,java]
 .YAML parser specified because parser services disabled 
 ----
-Config config = Config.withSources(classpath("application.yaml"))
+Config config = Config.builder(classpath("application.yaml"))
         .disableParserServices()                                  // <1>
         .addParser(YamlConfigParserBuilder.buildDefault())        // <2>
         .build();
@@ -163,7 +163,7 @@ The parser handles the following media types:
 [source,java]
 .Automatic selection
 ----
-Config config = Config.from(classpath("application.conf")); // <1>
+Config config = Config.create(classpath("application.conf")); // <1>
 ----
 
 <1> The config system automatically maps the file type `.conf` to the media type `application/hocon
@@ -175,7 +175,7 @@ The same module and parser supports file type `.json` and the media type
 [source,java]
 .HOCON parser specified - no file type on source
 ----
-Config config = Config.from(classpath("my-config")                                     // <1>
+Config config = Config.create(classpath("my-config")                                     // <1>
                                     .parser(HoconConfigParserBuilder.buildDefault())); // <2>
 ----
 
@@ -188,7 +188,7 @@ The `buildDefault()` method creates a config parser with default behavior.
 [source,java]
 .Media type specified
 ----
-Config config = Config.from(classpath("my-config")                    // <1>
+Config config = Config.create(classpath("my-config")                    // <1>
                                     .mediaType("application/hocon")); // <2>
 ----
 
@@ -201,7 +201,7 @@ type.
 [source,java]
 .HOCON parser specified because parser services disabled
 ----
-Config config = Config.withSources(classpath("application.conf"))
+Config config = Config.builder(classpath("application.conf"))
         .disableParserServices()                                  // <1>
         .addParser(HoconConfigParserBuilder.buildDefault())       // <2>
         .build();
@@ -213,7 +213,7 @@ Config config = Config.withSources(classpath("application.conf"))
 [source,java]
 .Customized HOCON parser
 ----
-Config config = Config.withSources(classpath("application.conf"))
+Config config = Config.builder(classpath("application.conf"))
         .disableParserServices()
         .addParser(HoconConfigParserBuilder.create()              // <1>
                            .disableResolving()                    // <2>
@@ -265,14 +265,14 @@ link:{javadoc-base-url-api}/etcd/EtcdConfigSourceBuilder.html[`EtcdConfigSourceB
 [source,java]
 .Use Etcd config source
 ----
-Config config = Config.from(
+Config config = Config.create(
         EtcdConfigSourceBuilder                             // <1>
-                .from(URI.create("http://my-etcd:2379"),    // <2>
+                .create(URI.create("http://my-etcd:2379"),  // <2>
                       "/config.yaml",                       // <3>
                       EtcdConfigSourceBuilder.EtcdApi.v3)); // <4>
 ----
 
-<1> Use the factory method `EtcdConfigSourceBuilder.from` to initialize the builder.
+<1> Use the factory method `EtcdConfigSourceBuilder.create` to initialize the builder.
 <2> Specify the Etcd endpoint address.
 <3> Specify the Etcd key of the configuration document.
 <4> Version of the Etcd API to use; `v2` and `v3` are supported.
@@ -290,9 +290,9 @@ The Etcd support includes a polling strategy designed for an etcd config source.
 [source,java]
 .Use Etcd config source
 ----
-Config config = Config.from(
+Config config = Config.create(
         EtcdConfigSourceBuilder
-                .from(URI.create("http://my-etcd:2379"), "/config.yaml", EtcdApi.v3)
+                .create(URI.create("http://my-etcd:2379"), "/config.yaml", EtcdApi.v3)
                 .pollingStrategy(EtcdWatchPollingStrategy::new));                    // <1>
 ----
 
@@ -373,15 +373,15 @@ link:{javadoc-base-url-api}/git/GitConfigSourceBuilder.html[`GitConfigSourceBuil
 [source,java]
 .Use git config source
 ----
-Config config = Config.from(
+Config config = Config.create(
         GitConfigSourceBuilder
-                .from("application.conf")                                           // <1>
+                .create("application.conf")                                           // <1>
                     .uri(URI.create("https://github.com/okosatka/test-config.git")) // <2>
                     .directory(Paths.get("/config"))                                // <3>
                     .branch("dev"));                                                // <4>
 ----
 
-<1> Use the factory method `GitConfigSourceBuilder.from` to initialize the builder
+<1> Use the factory method `GitConfigSourceBuilder.create` to initialize the builder
  with a mandatory  path to the configuration file.
 <2> Specify the git repository URI.
 <3> Specify a directory where the git repository is already cloned or it will be cloned.
@@ -401,9 +401,9 @@ associating the `regular` built-in polling strategy with the source.
 [source,java]
 .Use of git config source with polling strategy
 ----
-Config config = Config.from(
+Config config = Config.create(
         GitConfigSourceBuilder
-                .from("application.conf")
+                .create("application.conf")
                 .uri(URI.create("https://github.com/okosatka/test-config.git"))
                 .pollingStrategy(PollingStrategies.regular(Duration.ofMinutes(5)))); // <1>
 ----

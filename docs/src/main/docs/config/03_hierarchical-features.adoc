@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -159,16 +159,15 @@ config value exists.
 |Method |Usage
 
 | `exists` |Returns `true` or `false`
-| `ifExists` +
-`ifExistsOrElse`| Execute functional operations for present or missing nodes
+| `ifExists` | Execute functional operations for present nodes
 | `type` | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node
 represents a config value that _does not_ exist
-| `asOptionalXXX` | On the returned `Optional<XXX>` invoke `isPresent` or one of
-the other, functional, methods such as `ifPresent`
+| `as` | Returns the `ConfigValue` with the correct type that has all methods of `Optional`
+    and a few additional ones - see javadoc link:{javadoc-base-url-api}/ConfigValue.html
 |===
 
 The config system throws a `MissingValueException` if the application tries to
-access the value of a missing node.
+access the value of a missing node by invoking the `ConfigValue.get()` method.
 
 == Access by General Navigation
 Some applications might need to work with configuration without knowing its
@@ -179,53 +178,51 @@ methods on the `Config` class to do this.
 |===
 |Method |Usage
 
-|`asNodeList()` +
-`asNodeList(default)` |For nodes of type `OBJECT` returns the child nodes as a `List`.
+|`asNodeList()` |Returns a ConfigValue<List<Config>>. For nodes of type `OBJECT` contains child nodes as a `List`.
 |`hasValue()` |For any node reports if the node has a value. This can be true for
 any node type except `MISSING`.
 |`isLeaf()` |Reports whether the node has no child nodes. Leaf nodes have no children
 and has a single value.
 |`key()` |Returns the fully-qualified path of the node using dotted notation.
 |`name()` |Returns the name of the node (the last part of the key).
-|`node()` |Returns an `Optional<Config>` wrapped around the node 
-|`nodeList()` a|Returns an `Optional<List<Config>>` consisting of
-
-* child nodes if the node is a `Type.OBJECT`
-* element nodes if the node is a `Type.LIST`
-* `Optional.empty()` if the node is a `Type.MISSING`
-Throws `ConfigMappingException` if the node is a `Type.VALUE`
-
+|`asNode()` |Returns a `ConfigValue<Config>` wrapped around the node
 | `traverse()` +
 `traverse(Predicate<Config>)` | Returns a `Stream<Config>` as an iterative
 deepening depth-first traversal of the subtree
 |`type()` |Returns the `Type` enum value for the node: `OBJECT`, `LIST`, `VALUE`,
 or `MISSING`
-|`value()` |Returns the `String` value for the node, throwing `ConfigMappingException`
-if the node has no value (e.g., for some `Type.Object` or `Type.List` nodes)
 |===
 
 [source,java]
 .List names of child nodes of an _object_ node
 ----
 List<String> appNodeNames = config.get("app")
-        .asNodeList()                             // <1>
-        .stream().map(Config::name).sorted()      // <2>
-        .collect(Collectors.toList());            // <2>
+            .asNodeList()                              // <1>
+            .map(nodes -> {                            // <2>
+                return nodes
+                        .stream()
+                        .map(Config::name)
+                        .sorted()
+                        .collect(Collectors.toList());
+            })
+            .orElse(Collections.emptyList());          // <3>
 
-assert appNodeNames.get(0).equals("basic-range"); // <3>
-assert appNodeNames.get(1).equals("greeting");    // <3>
-assert appNodeNames.get(2).equals("page-size");   // <3>
+
+assert appNodeNames.get(0).equals("basic-range"); // <4>
+assert appNodeNames.get(1).equals("greeting");    // <4>
+assert appNodeNames.get(2).equals("page-size");   // <4>
 ----
 
-<1> Get child nodes of the `app` _object_ node as a `List` of ``Config`` instances.
-<2> Use the Java `Stream` API to collect all child names.
-<3> Check that the list contains the expected child names: `basic-range`, `greeting` and `page-size`.
+<1> Get the ConfigValue with child `Config` instances.
+<2> Map the node list to names using the Java Stream API (if present)
+<3> Use an empty list if the "app" node does not exist
+<4> Check that the list contains the expected child names: `basic-range`, `greeting` and `page-size`.
 
 [source,java]
 .List child nodes of a _list_ node
 ----
 List<Config> providers = config.get("data.providers")
-        .asNodeList();                                               // <1>
+        .asNodeList().orElse(Collections.emptyList());               // <1>
 
 assert providers.get(0).key().toString().equals("data.providers.0"); // <2>
 assert providers.get(1).key().toString().equals("data.providers.1"); // <2>

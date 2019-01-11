@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -48,21 +48,29 @@ The app can navigate explicitly among the nodes in the tree and fetch a node's
 value
 [source,java]
 ----
-Optional<String> pageSize = Config.get("web").get("page-size").value();
+int pageSize = config
+                .get("web")
+                .get("page-size")
+                .asInt()
+                .orElse(20);
 ----
 or it can address a node in the tree using the config key's dotted name 
 [source,java]
 ----
-int pageSize = Config.get("web.page-size").asInt();
+int pageSize = config
+                .get("web.page-size")
+                .asInt()
+                .orElse(20);
 ----
 As part of
 retrieving a value from a node, the config system applies _config filters_
 which can change what values are returned for selected keys. 
 
-The `Config` object lets your application retrieve config data as:
+The `Config` object lets your application retrieve config data as a typed ConfigValue.
 
-* an `Optional<String>` value _from a single node_,
-* the `String` value _from a single node_ interpreted as a basic Java type 
+ConfigValue<T> can be used to obtain:
+* an `Optional<T>` value _from a single node_,
+* the `T` value _from a single node_ interpreted as a basic Java type
 (primitive or simple object) already known to the config system (such as
 a `boolean` or a `Double`), or
 * a complex Java type _from a subtree_ of the config tree.
@@ -126,27 +134,28 @@ java.home=homeFromProps # will be ignored
 ----
 import io.helidon.config.Config; // <1>
 ...
-        Config config = Config.create(); // <2>
-        System.out.println(String.format(
-                      "greeting is %s\n"
-                    + "web.debug is %b\n"
-                    + "web.page-size is %d\n"
-                    + "web.ratio is %f\n"
-                    + "bl.initial-id is %d\n"
-                    + "origin is %s\n"
-                    + "java.home is %s",
-                config.get("greeting").asString(),  // <3>
-                config.get("web.debug").asBoolean(),
-                config.get("web.page-size").asInt(),
-                config.get("web.ratio").asDouble(),
-                config.get("bl.initial-id").asLong(),
-                config.get("origin").asString(),
-                config.get("java.home").asString()));
+Config config = Config.create(); // <2>
+System.out.println(String.format(
+        "greeting is %s\n"
+                + "web.debug is %b\n"
+                + "web.page-size is %d\n"
+                + "web.ratio is %f\n"
+                + "bl.initial-id is %d\n"
+                + "origin is %s\n"
+                + "java.home is %s",
+        config.get("greeting").asString().orElse("Default greeting"),  // <3>
+        config.get("web.debug").asBoolean().orElse(false),
+        config.get("web.page-size").asInt().orElse(50),
+        config.get("web.ratio").asDouble().orElse(2.0),
+        config.get("bl.initial-id").asLong().orElse(1L),
+        config.get("origin").asString().orElse("defaults"),
+        config.get("java.home").asString().get())); // <4>
 ----
 <1> Import `Config`.
 <2> Create the root of the `Config` tree from the default sources.
 <3> Retrieve various values by their dotted names and decode them as the appropriate 
-Java types.
+Java types, providing default values if the property is missing.
+<4> Retrieve the value (and fail with a runtime exception if missing)
  
 When you build and run your project, the output will look like this:
 [source]
@@ -187,8 +196,8 @@ one of the files below; it _does not_ merge all such files it can find.
 |Source |Helidon maven artifact ID (group ID: `io.helidon.config`) |Notes
 
 |`application.yaml` |`helidon-config-yaml` |YAML format http://yaml.org
-|`application.conf` |`helidon-config-hcon` |HOCON format https://github.com/lightbend/config#using-hocon-the-json-superset
-|`application.json` |`helidon-config-hcon` |JSON format https://json.org/
+|`application.conf` |`helidon-config-hocon` |HOCON format https://github.com/lightbend/config#using-hocon-the-json-superset
+|`application.json` |`helidon-config-hocon` |JSON format https://json.org/
 |`application.properties` |`helidon-config` |Java properties format
 |===
 
