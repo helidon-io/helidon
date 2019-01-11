@@ -16,8 +16,9 @@
 
 package io.helidon.config;
 
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,14 +64,11 @@ public class AbstractConfigImplTest {
                         providerMock),
                 mock(ConfigMapperManager.class));
 
-        // WHEN we reproduce issue https://github.com/oracle/helidon/issues/299
-        try {
-            config.subscribe();
-        } catch (Exception e) {
-            // THEN
-            // we get the exception we threw and not a 'java.lang.IllegalMonitorStateException'
-            assertThat(e, equalTo(exception));
-        }
+        // WHEN we reproduce the issue https://github.com/oracle/helidon/issues/299
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, config::subscribe);
+
+        // THEN we get the exception we threw and not a 'java.lang.IllegalMonitorStateException'
+        assertThat(runtimeException, sameInstance(exception));
     }
 
     private AbstractConfigImpl configStub(Config.Type type, final ConfigKeyImpl prefix, final ConfigKeyImpl key,
