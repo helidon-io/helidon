@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.examples.integrations</groupId>
     <artifactId>helidon-examples-integrations-project</artifactId>
-    <name>Helidon CDI Extensions Examples</name>
+    <name>Helidon Integrations Examples</name>
     <packaging>pom</packaging>
 
     <modules>

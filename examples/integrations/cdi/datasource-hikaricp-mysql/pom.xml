@@ -27,7 +27,7 @@
       <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-examples-datasource-hikaricp-mysql</artifactId>
-    <name>Helidon Integrations Examples DataSource/HikariCP MySQL</name>
+    <name>Helidon CDI Extensions Examples DataSource/HikariCP MySQL</name>
 
     <properties>
         <dependenciesDirectory>libs</dependenciesDirectory>

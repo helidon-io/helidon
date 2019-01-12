@@ -27,7 +27,7 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-integrations-datasource-hikaricp</artifactId>
-    <name>Helidon Integrations Examples DataSource/HikariCP</name>
+    <name>Helidon CDI Extensions Examples DataSource/HikariCP</name>
 
     <properties>
         <dependenciesDirectory>libs</dependenciesDirectory>
