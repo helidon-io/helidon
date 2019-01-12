@@ -24,7 +24,7 @@
     <parent>
       <groupId>io.helidon.examples.integrations.cdi</groupId>
       <artifactId>helidon-examples-integrations-cdi-project</artifactId>
-      <version>0.11.0-SNAPSHOT</version>
+      <version>0.11.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-examples-datasource-hikaricp-mysql</artifactId>
     <name>Helidon CDI Extensions Examples DataSource/HikariCP MySQL</name>

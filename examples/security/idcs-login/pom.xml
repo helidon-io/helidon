@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples.security</groupId>
         <artifactId>helidon-examples-security-project</artifactId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>0.11.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-security-oidc</artifactId>
     <name>Helidon Security Examples IDCS Login</name>
