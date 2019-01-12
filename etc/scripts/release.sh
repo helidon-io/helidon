@@ -171,7 +171,7 @@ update_version(){
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
     -DprocessAllModules=true \
-    -Pexamples,integrations,docs
+    -Pexamples,integrations,docs,tck -e
 
   # Invoke prepare hook
   if [ -n "${PREPARE_HOOKS}" ]; then

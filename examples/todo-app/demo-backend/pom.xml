@@ -27,7 +27,7 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-todos-backend</artifactId>
-    <name>Helidon Examples TODOs Demo Backend</name>
+    <name>Helidon Examples ToDo Demo Backend</name>
 
     <description>
         Back-end part of the demo, uses Helidon Microprofile

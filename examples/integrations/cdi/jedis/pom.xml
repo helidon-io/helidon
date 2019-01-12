@@ -26,7 +26,7 @@
         <version>0.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-integrations-jedis</artifactId>
-    <name>Helidon Integrations Examples Jedis</name>
+    <name>Helidon CDI Extensions Examples Jedis</name>
 
     <properties>
         <dependenciesDirectory>libs</dependenciesDirectory>
