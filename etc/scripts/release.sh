@@ -110,10 +110,10 @@ fi
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
-readonly PREPARE_HOOKS=( ${WS_DIR}/examples/archetypes/set-version.sh )
+readonly PREPARE_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/set-version.sh )
 
 # Hooks for deployment work
-readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
+readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
 
 source ${WS_DIR}/etc/scripts/wercker-env.sh
 
