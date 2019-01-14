@@ -101,29 +101,32 @@ To create a custom provider selection policy, create a class that implements
 "io.helidon.security.spi.ProviderSelectionPolicy".
 
 == Framework integration
-Security provides integration with Helidon WebServer (`helidon-security-integration-webserver`)
+The Security component supports integration with Helidon WebServer (`helidon-security-integration-webserver`)
  and with Jersey (`helidon-security-integration-jersey`).
 
-These integrations use APIs that are available to integrate any framework/application (for example
-we could integrate security with messaging, such as JMS).
+Existing integrations (WebServer and Jersey) use Helidon Security APIs that are available to integrate any
+framework/application (for example we could integrate security with messaging, such as JMS).
 
 To create a new integration, an instance of `Security` class is needed, as it handles
 all configured providers. Usually a single `Security` instance is used for an application.
 
-`Security` is then used to create an instance of `SecurityContext`, that should be used
-for interaction with a single user - in HTTP, we create a single `SecurityContext` per
-request.
+`Security` is then used to create an instance of `SecurityContext`, which is used
+for interaction with a single user. A single `SecurityContext` ic created for each HTTP
+request in Jersey and WebServer integration.
 
 `SecurityContext` is used to invoke authentication, authorization, and outbound security requests.
 
-Helidon security also defines a set of annotations:
-1. @Authenticated - access to resources must follow authentication rules defined by the annotation
-2. @Authorized - access to resources must follow authorization rules defined by the annotation
-3. @Audited - to configure auditing
-4. Annotations from javax.annotation-api, such as (optional):
-    1. RolesAllowed
-    2. DenyAll
-    3. PermitAll
+Helidon Security also defines a set of annotations:
+
+* `@Authenticated` - access to resources must follow authentication rules defined by the annotation
+* `@Authorized` - access to resources must follow authorization rules defined by the annotation
+* `@Audited` - to configure auditing
 
 If the protected resources (in Helidon MP, these are JAX-RS resource classes and methods) can
-be annotated, the integration should at least support the annotations mentioned above.
+be annotated, the integration component must use these annotations when deciding how to secure
+the endpoint (for example the Jersey integration looks for `@Authenticated` annotation and if
+found, attempts authentication of the request).
+
+As other components of Helidon Security (such as ABAC validators) query the request for annotations,
+the integration component should also collect all annotations from the resource and correctly configure
+them when creating the security request.
