@@ -130,12 +130,12 @@ public class RoutingTest {
     public void filteringExample() {
         assertThrows(RuntimeException.class, () -> {
             Routing.builder()
-                    .anyOf(Arrays.asList(Http.Method.PUT, Http.Method.POST), "/foo", RequestPredicate.whenRequest()
+                    .anyOf(Arrays.asList(Http.Method.PUT, Http.Method.POST), "/foo", RequestPredicate.create()
                             .containsHeader("my-gr8-header")
                             .thenApply((req, resp) -> {
                                 // Some logic.
                             }))
-                    .get("/foo", RequestPredicate.whenRequest()
+                    .get("/foo", RequestPredicate.create()
                             .is(req -> isUserAuthenticated(req))
                             .accepts("application/json")
                             .thenApply((req, resp) -> {

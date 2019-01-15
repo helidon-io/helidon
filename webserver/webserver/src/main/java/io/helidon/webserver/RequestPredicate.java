@@ -205,17 +205,7 @@ public interface RequestPredicate extends Predicate<ServerRequest> {
      *
      * @return New empty instance (accepts all requests).
      */
-    static RequestPredicate whenRequest() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Combines several provided predicates in short circuit OR manner.
-     *
-     * @param predicates to combine.
-     * @return Combined predicate.
-     */
-    static RequestPredicate any(RequestPredicate... predicates) {
+    static RequestPredicate create() {
         throw new UnsupportedOperationException();
     }
 
