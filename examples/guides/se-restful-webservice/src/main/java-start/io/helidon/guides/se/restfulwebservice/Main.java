@@ -23,7 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.json.JsonSupport;
+import io.helidon.media.jsonp.server.JsonSupport;
 
 /**
  * Simple Hello World rest application.

@@ -28,7 +28,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
-import io.helidon.webserver.ContentReaders;
+import io.helidon.media.common.ContentReaders;
+import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.HttpException;
 import io.helidon.webserver.RequestPredicate;
@@ -36,7 +37,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.jersey.JerseySupport;
-import io.helidon.webserver.json.JsonSupport;
 
 /**
  * This example consists of few first tutorial steps of WebServer API. Each step is represented by a single method.

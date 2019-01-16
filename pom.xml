@@ -200,6 +200,7 @@
     <modules>
         <module>common</module>
         <module>config</module>
+        <module>media</module>
         <module>webserver</module>
         <module>security</module>
         <module>bom</module>

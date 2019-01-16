@@ -34,7 +34,6 @@
     <modules>
         <module>webserver</module>
         <module>jersey</module>
-        <module>json</module>
         <module>test-support</module>
     </modules>
 </project>
