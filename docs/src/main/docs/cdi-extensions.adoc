@@ -41,7 +41,7 @@ To install an extension, ensure that the extension and its runtime dependencies 
 The following examples show how to specify the required dependencies for the Helidon CDI extensions in your Maven POM (`pom.xml`).
  
 * To install the extension for HikariCP data sources, specify the following dependency:
-+
+
     <dependency>
       <groupId>io.helidon.integrations.cdi</groupId>
       <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
@@ -50,7 +50,7 @@ The following examples show how to specify the required dependencies for the Hel
     </dependency>
   
 * To install the extension for Jedis clients, specify the following dependency:
-+
+
     <dependency>
       <groupId>io.helidon.integrations.cdi</groupId>
       <artifactId>helidon-integrations-cdi-jedis</artifactId>
@@ -59,14 +59,12 @@ The following examples show how to specify the required dependencies for the Hel
     </dependency>
   
 * To install the extension for Oracle Cloud Infrastructure Object Storage clients, you must first clone and install the Oracle Cloud Infrastructure Java SDK because it is not available, currently, in Maven Central.
-+
+
  1. Clone the Oracle Cloud Infrastructure Java SDK artifacts.
-+  
+
   git clone --depth 1 --branch v1.2.44 https://github.com/oracle/oci-java-sdk.git
      
  2. Install the Oracle Cloud Infrastructure Java SDK artifacts in your local Maven repository.
-+
-  *On UNIX-like hosts:*
 
       mvn -B -U -f oci-java-sdk.git/pom.xml \
           -Dmaven.test.skip=true \
@@ -76,18 +74,7 @@ The following examples show how to specify the required dependencies for the Hel
           -pl bmc-objectstorage \
           -am \
           install
-      
- On Windows:
-+      
-      mvn -B -U -f oci-java-sdk.git/pom.xml ^
-          -Dmaven.test.skip=true ^
-          -Dmaven.source.skip=true ^
-          -Dmaven.javadoc.skip=true ^
-          -Dlombok.delombok.skip=true ^
-          -pl bmc-objectstorage ^
-          -am ^
-          install
-   
+         
    3. Specify the following dependency in your application's Maven POM:
    
       <dependency>
@@ -107,25 +94,18 @@ The following examples show how to create a `DataSource` named `orders` in your 
 
 * Field-injection example:
 
-[source,java]
-----
-@Inject
-@Named("orders")
-private DataSource ordersDataSource;
-----
+ @Inject
+ @Named("orders")
+ private DataSource ordersDataSource;
 
 * Constructor-injection example:
 
-[source,java]
-----
-private final DataSource ds;
-  
-@Inject
-public YourConstructor(@Named("orders") DataSource ds) {
-  super();
-  this.ds = ds;
-}
-----
+ private final DataSource ds; 
+ @Inject
+ public YourConstructor(@Named("orders") DataSource ds) {
+   super();
+   this.ds = ds;
+ }
 
 The extension implements this injection point by creating an https://static.javadoc.io/com.zaxxer/HikariCP/2.7.8/com/zaxxer/hikari/HikariDataSource.html[HikariDataSource] object in the http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application scope].
 
@@ -145,25 +125,18 @@ The following examples show how to create and inject a Jedis pool named `orders`
 
 * Field-injection example:
 
-[source,java]
-----
-@Inject
-@Named("orders")
-private JedisPool ordersPool;
-----
+ @Inject
+ @Named("orders")
+ private JedisPool ordersPool;
 
 * Constructor-injection example:
 
-[source,java]
-----
-private final JedisPool ordersPool;
-
-@Inject
-public YourConstructor(@Named("orders") JedisPool pool) {
-  super();
-  this.ordersPool = pool;
-}
-----
+ private final JedisPool ordersPool;
+ @Inject
+ public YourConstructor(@Named("orders") JedisPool pool) {
+   super();
+   this.ordersPool = pool;
+ }
 
 The extension implements this injection point by creating an https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPool.html[JedisPool] object in the http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application scope].
 
@@ -185,7 +158,6 @@ For example, a property with the name `redis.clients.jedis.JedisPool.orders.port
 * Constructor-injection example:
 
  private final ObjectStorage client;
-     
  @Inject
  public YourConstructor(@Named("orders") ObjectStorage client) {
    super();
