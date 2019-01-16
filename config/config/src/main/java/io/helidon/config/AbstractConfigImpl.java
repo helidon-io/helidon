@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,17 +149,20 @@ abstract class AbstractConfigImpl implements Config {
         return asList(Config.class);
     }
 
-    private void subscribe() {
+    void subscribe() {
         try {
             subscriberLock.readLock().lock();
             if (subscriber == null) {
                 subscriberLock.readLock().unlock();
                 subscriberLock.writeLock().lock();
                 try {
-                    if (subscriber == null) {
-                        waitForSubscription(1, TimeUnit.SECONDS);
+                    try {
+                        if (subscriber == null) {
+                            waitForSubscription(1, TimeUnit.SECONDS);
+                        }
+                    } finally {
+                        subscriberLock.readLock().lock();
                     }
-                    subscriberLock.readLock().lock();
                 } finally {
                     subscriberLock.writeLock().unlock();
                 }
