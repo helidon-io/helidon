@@ -64,9 +64,9 @@ The following examples show how to specify the required dependencies for the Hel
 </dependency>
 ----
   
-* To install the extension for Oracle Cloud Infrastructure Object Storage clients:
+* To install the extension for Oracle Cloud Infrastructure Object Storage clients, you must first clone and install the Oracle Cloud Infrastructure Java SDK because it is not available, currently, in Maven Central.
 
-   1. Clone the Oracle Cloud Infrastructure Java SDK artifacts. This step is necessary because, currently, the Oracle Cloud Infrastructure Java SDK is not available in the Maven repository.
+   1. Clone the Oracle Cloud Infrastructure Java SDK artifacts.
    
       [source,bash]
       ----
