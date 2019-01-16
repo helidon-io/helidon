@@ -18,6 +18,8 @@ package io.helidon.webserver;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -39,20 +41,25 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
+import io.helidon.media.common.ContentReaders;
 
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
-import static io.helidon.webserver.StringContentReader.requestContentCharset;
-
 /**
  * The basic abstract implementation of {@link ServerRequest}.
  */
 abstract class Request implements ServerRequest {
+
+    /**
+     * The default charset to use in case that no charset or no mime-type is defined in the content type header.
+     */
+    static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private final BareRequest bareRequest;
     private final WebServer webServer;
@@ -88,6 +95,20 @@ abstract class Request implements ServerRequest {
         this.queryParams = request.queryParams;
         this.headers = request.headers;
         this.content = new Content(request.content);
+    }
+
+    /**
+     * Obtain the charset from the request.
+     *
+     * @param request the request to extract the charset from
+     * @return the charset or {@link #DEFAULT_CHARSET} if none found
+     */
+    static Charset requestContentCharset(ServerRequest request) {
+        return request.headers()
+                .contentType()
+                .flatMap(MediaType::charset)
+                .map(Charset::forName)
+                .orElse(DEFAULT_CHARSET);
     }
 
     protected abstract Tracer tracer();
@@ -257,7 +278,6 @@ abstract class Request implements ServerRequest {
             return new InternalReader<>(aClass -> aClass.isAssignableFrom(clazz), reader);
         }
 
-
         @Override
         @SuppressWarnings("unchecked")
         public <T> CompletionStage<T> as(Class<T> type) {
@@ -266,7 +286,7 @@ abstract class Request implements ServerRequest {
             try {
                 readersLock.readLock().lock();
 
-                 result = readersWithDefaults()
+                result = readersWithDefaults()
                         .filter(reader -> reader.accept(type))
                         .findFirst()
                         // in this context, the cast is absurd, although it's needed;
@@ -290,9 +310,9 @@ abstract class Request implements ServerRequest {
         private void finishSpanWithError(Span readSpan, Throwable t) {
             Tags.ERROR.set(readSpan, Boolean.TRUE);
             readSpan.log(CollectionsHelper.mapOf("event", "error",
-                                "error.kind", "Exception",
-                                "error.object", t,
-                                "message", t.toString()));
+                                                 "error.kind", "Exception",
+                                                 "error.object", t,
+                                                 "message", t.toString()));
             readSpan.finish();
         }
 
@@ -314,10 +334,9 @@ abstract class Request implements ServerRequest {
                     reader(InputStream.class, ContentReaders.inputStreamReader())));
         }
 
-        private StringContentReader stringContentReader() {
-            String charset = requestContentCharset(Request.this);
-            StringContentReader reader = ContentReaders.cachedStringReader(charset);
-            return reader != null ? reader : new StringContentReader(charset);
+        private Reader<String> stringContentReader() {
+            Charset charset = requestContentCharset(Request.this);
+            return ContentReaders.stringReader(charset);
         }
 
         @Override

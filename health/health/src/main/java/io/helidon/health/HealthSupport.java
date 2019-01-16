@@ -35,9 +35,9 @@ import javax.json.JsonObjectBuilder;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.Service;
-import io.helidon.webserver.json.JsonSupport;
 
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;

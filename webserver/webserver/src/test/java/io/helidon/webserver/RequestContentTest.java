@@ -35,6 +35,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.common.reactive.SubmissionPublisher;
+import io.helidon.media.common.ContentReaders;
 import io.helidon.webserver.utils.TestUtils;
 
 import org.junit.jupiter.api.Test;
@@ -295,9 +296,7 @@ public class RequestContentTest {
                       .subscribe(byteBuffer -> {
                                      fail("Should not have been called!");
                                  },
-                                 throwable -> {
-                                     receivedThrowable.set(throwable);
-                                 });
+                                 receivedThrowable::set);
 
         Throwable throwable = receivedThrowable.get();
         assertThat(throwable, allOf(instanceOf(IllegalArgumentException.class),
@@ -316,21 +315,18 @@ public class RequestContentTest {
 
         request.content()
                .registerReader(LocalDate.class,
-                               (publisher, clazz) -> new StringContentReader(request).apply(publisher)
-                                                                                     .thenApply(LocalDate::parse));
+                               (publisher, clazz) -> ContentReaders.stringReader(Request.requestContentCharset(request))
+                               .apply(publisher)
+                               .thenApply(LocalDate::parse));
 
         CompletionStage<String> complete =
                 request.content()
                        .as(LocalDate.class)
-                       .thenApply(o -> {
-                           StringBuilder sb = new StringBuilder();
-                           sb.append(o.getDayOfMonth())
-                             .append("/")
-                             .append(o.getMonthValue())
-                             .append("/")
-                             .append(o.getYear());
-                           return sb.toString();
-                       });
+                       .thenApply(o -> o.getDayOfMonth()
+                               + "/"
+                               + o.getMonthValue()
+                               + "/"
+                               + o.getYear());
 
         String result = complete.toCompletableFuture().get(10, TimeUnit.SECONDS);
         assertThat(result, is("2/1/2010"));

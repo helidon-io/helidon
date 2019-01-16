@@ -19,6 +19,7 @@
  */
 module io.helidon.webserver {
     requires io.helidon.common;
+    requires transitive io.helidon.media.common;
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.common.pki;
     requires transitive io.helidon.common.reactive;

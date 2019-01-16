@@ -43,11 +43,6 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.webserver</groupId>
-                <artifactId>helidon-webserver-json</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics-prometheus</artifactId>
                 <version>${project.version}</version>
@@ -55,6 +50,22 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-test-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- media -->
+            <dependency>
+                <groupId>io.helidon.media</groupId>
+                <artifactId>helidon-media-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.media.jsonp</groupId>
+                <artifactId>helidon-media-jsonp-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.media.jsonp</groupId>
+                <artifactId>helidon-media-jsonp-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- config -->

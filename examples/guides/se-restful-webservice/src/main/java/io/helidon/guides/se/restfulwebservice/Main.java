@@ -38,7 +38,7 @@ import io.helidon.webserver.ServerResponse;
 // end::importsHealth2[]
 // tag::importsEnd[]
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.json.JsonSupport;
+import io.helidon.media.jsonp.server.JsonSupport;
 // end::importsEnd[]
 // tag::importsHealth3[]
 import javax.json.Json;

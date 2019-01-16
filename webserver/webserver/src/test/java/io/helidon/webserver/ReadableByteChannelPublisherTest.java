@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.IntFunction;
 
 import io.helidon.common.reactive.RetrySchema;
+import io.helidon.media.common.ReadableByteChannelPublisher;
 import io.helidon.webserver.utils.CollectingSubscriber;
 
 import org.hamcrest.core.IsInstanceOf;
@@ -40,7 +41,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests {@link ReadableByteChannelPublisher}.
+ * Tests {@link io.helidon.media.common.ReadableByteChannelPublisher}.
  */
 public class ReadableByteChannelPublisherTest {
 
