@@ -17,7 +17,6 @@
 package io.helidon.webserver;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.http.Http;
@@ -25,19 +24,14 @@ import io.helidon.common.http.Http;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Demonstrates routing configuration API included in WebServer builder.
- * Demonstrates other outing features
+ * Tests {@link Routing#route(BareRequest, BareResponse)}.
  */
 public class RoutingTest {
 
-    /**
-     * Use fluent routing API to cover HTTP methods and Paths with handlers.
-     */
     @Test
     public void basicRouting() {
         final RoutingChecker checker = new RoutingChecker();
@@ -50,17 +44,14 @@ public class RoutingTest {
                 })
                 .build();
 
-        routing.route(requestStub("/user", Http.Method.POST), responseStub());
+        routing.route(mockRequest("/user", Http.Method.POST), mockResponse());
         assertThat(checker.handlersInvoked(), is("defaultUserHandler"));
 
         checker.reset();
-        routing.route(requestStub("/user/john", Http.Method.GET), responseStub());
+        routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
         assertThat(checker.handlersInvoked(), is("namedUserHandler"));
     }
 
-    /**
-     * Use routing API to register filter. Filter is just handler which calls {@code request.next()}.
-     */
     @Test
     public void routeFilters() {
         final RoutingChecker checker = new RoutingChecker();
@@ -88,21 +79,18 @@ public class RoutingTest {
                 })
                 .build();
 
-        routing.route(requestStub("/admin/user", Http.Method.POST), responseStub());
+        routing.route(mockRequest("/admin/user", Http.Method.POST), mockResponse());
         assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,postAdminUser"));
 
         checker.reset();
-        routing.route(requestStub("/admin/user/john", Http.Method.GET), responseStub());
+        routing.route(mockRequest("/admin/user/john", Http.Method.GET), mockResponse());
         assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,getAdminUser"));
 
         checker.reset();
-        routing.route(requestStub("/admin", Http.Method.POST), responseStub());
+        routing.route(mockRequest("/admin", Http.Method.POST), mockResponse());
         assertThat(checker.handlersInvoked(), is("anyPath1,anyPath2,anyAdmin,postAdminAudit"));
     }
 
-    /**
-     * Use <i>sub-routers</i> to organize code to services/resources or attach third party filters.
-     */
     @Test
     public void subRouting() {
         final RoutingChecker checker = new RoutingChecker();
@@ -115,42 +103,15 @@ public class RoutingTest {
                     });
                 }).build();
 
-        routing.route(requestStub("/user/john", Http.Method.GET), responseStub());
+        routing.route(mockRequest("/user/john", Http.Method.GET), mockResponse());
         assertThat(checker.handlersInvoked(), is("getUser"));
 
         checker.reset();
-        routing.route(requestStub("/user", Http.Method.POST), responseStub());
+        routing.route(mockRequest("/user", Http.Method.POST), mockResponse());
         assertThat(checker.handlersInvoked(), is("createUser"));
     }
 
-    /**
-     * Use RequestPredicate fluent API for more advanced routing.
-     */
-    @Test
-    public void filteringExample() {
-        assertThrows(RuntimeException.class, () -> {
-            Routing.builder()
-                    .anyOf(Arrays.asList(Http.Method.PUT, Http.Method.POST), "/foo", RequestPredicate.create()
-                            .containsHeader("my-gr8-header")
-                            .thenApply((req, resp) -> {
-                                // Some logic.
-                            }))
-                    .get("/foo", RequestPredicate.create()
-                            .is(req -> isUserAuthenticated(req))
-                            .accepts("application/json")
-                            .thenApply((req, resp) -> {
-                                // Something with authenticated user
-                            }))
-                    .build();
-        });
-
-    }
-
-    public boolean isUserAuthenticated(ServerRequest request) {
-        return true;
-    }
-
-    private static BareRequest requestStub(String path, Http.Method method) {
+    static BareRequest mockRequest(String path, Http.Method method) {
         BareRequest bareRequestMock = Mockito.mock(BareRequest.class);
         Mockito.doReturn(URI.create("http://0.0.0.0:1234/" + path)).when(bareRequestMock).uri();
         Mockito.doReturn(method).when(bareRequestMock).method();
@@ -158,7 +119,7 @@ public class RoutingTest {
         return bareRequestMock;
     }
 
-    private static BareResponse responseStub(){
+    static BareResponse mockResponse(){
         BareResponse bareResponseMock = Mockito.mock(BareResponse.class);
         final CompletableFuture<BareResponse> completedFuture =
                 CompletableFuture.completedFuture(bareResponseMock);
@@ -167,7 +128,7 @@ public class RoutingTest {
         return bareResponseMock;
     }
 
-    private static final class RoutingChecker {
+    static final class RoutingChecker {
 
         String str = "";
 
