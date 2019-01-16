@@ -41,42 +41,33 @@ To install an extension, ensure that the extension and its runtime dependencies 
 The following examples show how to specify the required dependencies for the Helidon CDI extensions in your Maven POM (`pom.xml`).
  
 * To install the extension for HikariCP data sources, specify the following dependency:
-
-[source,xml]
-----
-<dependency>
-  <groupId>io.helidon.integrations.cdi</groupId>
-  <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-  <version>1.0.0</version>
-  <scope>runtime</scope>
-</dependency>
-----
++
+    <dependency>
+      <groupId>io.helidon.integrations.cdi</groupId>
+      <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+      <version>1.0.0</version>
+      <scope>runtime</scope>
+    </dependency>
   
 * To install the extension for Jedis clients, specify the following dependency:
- 
-[source,xml]
-----
-<dependency>
-  <groupId>io.helidon.integrations.cdi</groupId>
-  <artifactId>helidon-integrations-cdi-jedis</artifactId>
-  <version>1.0.0</version>
-  <scope>runtime</scope>
-</dependency>
-----
++
+    <dependency>
+      <groupId>io.helidon.integrations.cdi</groupId>
+      <artifactId>helidon-integrations-cdi-jedis</artifactId>
+      <version>1.0.0</version>
+      <scope>runtime</scope>
+    </dependency>
   
 * To install the extension for Oracle Cloud Infrastructure Object Storage clients, you must first clone and install the Oracle Cloud Infrastructure Java SDK because it is not available, currently, in Maven Central.
++
+ 1. Clone the Oracle Cloud Infrastructure Java SDK artifacts.
++  
+  git clone --depth 1 --branch v1.2.44 https://github.com/oracle/oci-java-sdk.git
+     
+ 2. Install the Oracle Cloud Infrastructure Java SDK artifacts in your local Maven repository.
++
+  *On UNIX-like hosts:*
 
-   1. Clone the Oracle Cloud Infrastructure Java SDK artifacts.
-   
-      [source,bash]
-      ----
-      git clone --depth 1 --branch v1.2.44 https://github.com/oracle/oci-java-sdk.git
-      ----
-      
-   2. Install the Oracle Cloud Infrastructure Java SDK artifacts in your local Maven repository.
-   
-      [source,bash]
-      ----
       mvn -B -U -f oci-java-sdk.git/pom.xml \
           -Dmaven.test.skip=true \
           -Dmaven.source.skip=true \
@@ -85,19 +76,26 @@ The following examples show how to specify the required dependencies for the Hel
           -pl bmc-objectstorage \
           -am \
           install
-      ----  
+      
+ On Windows:
++      
+      mvn -B -U -f oci-java-sdk.git/pom.xml ^
+          -Dmaven.test.skip=true ^
+          -Dmaven.source.skip=true ^
+          -Dmaven.javadoc.skip=true ^
+          -Dlombok.delombok.skip=true ^
+          -pl bmc-objectstorage ^
+          -am ^
+          install
    
    3. Specify the following dependency in your application's Maven POM:
    
-      [source,xml]
-      ----
       <dependency>
          <groupId>io.helidon.integrations.cdi</groupId>
          <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
          <version>1.0.0</version>
          <scope>runtime</scope>
       </dependency>
-      ----
 
 == Injecting an object using a CDI extension
 
@@ -181,24 +179,18 @@ For example, a property with the name `redis.clients.jedis.JedisPool.orders.port
 
 * Field-injection example:
 
-[source,java]
-----
-@Inject
-private ObjectStorage client;
-----
+ @Inject
+ private ObjectStorage client;
 
 * Constructor-injection example:
 
-[source,java]
-----
-private final ObjectStorage client;
-
-@Inject
-public YourConstructor(@Named("orders") ObjectStorage client) {
-  super();
-  this.client = client;
-}
-----
+ private final ObjectStorage client;
+     
+ @Inject
+ public YourConstructor(@Named("orders") ObjectStorage client) {
+   super();
+   this.client = client;
+ }
 
 The extension implements this injection point by creating an Object Storage client object in the http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application scope].
 
