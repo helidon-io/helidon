@@ -26,15 +26,11 @@
 
 == Overview
 
-Helidon provides https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[portable extensions] that you can use to inject the following objects into your applications:
+Helidon provides https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[portable extensions] that you can use to inject the following objects into your Helidon MicroProfile applications:
 
 * HikariCP data sources
 * Jedis clients
 * Oracle Cloud Infrastructure Object Storage clients
-
-[OPEN] Add a line or two describing each service.
-
-[OPEN] We might want to explain why we picked these 3 services. Something more than just saying they're popular. And possibly mention that we’ll provide extensions for other services in the future, without naming any specifically of course.
 
 == Installing a CDI extension
 
@@ -42,7 +38,7 @@ The Helidon CDI extensions are available as https://mvnrepository.com/artifact/i
 
 To install an extension, ensure that the extension and its runtime dependencies are specified on your application's runtime classpath.
 
-The following examples show how to specify the required dependencies for the Helidon CDI extensions in your Maven POM (`pom.xml`)
+The following examples show how to specify the required dependencies for the Helidon CDI extensions in your Maven POM (`pom.xml`).
  
 * To install the extension for HikariCP data sources, specify the following dependency:
 
@@ -70,7 +66,7 @@ The following examples show how to specify the required dependencies for the Hel
   
 * To install the extension for Oracle Cloud Infrastructure Object Storage clients:
 
-   1. Clone the Oracle Cloud Infrastructure Java SDK artifacts.
+   1. Clone the Oracle Cloud Infrastructure Java SDK artifacts. This step is necessary because, currently, the Oracle Cloud Infrastructure Java SDK is not available in the Maven repository.
    
       [source,bash]
       ----
@@ -105,7 +101,7 @@ The following examples show how to specify the required dependencies for the Hel
 
 == Injecting an object using a CDI extension
 
-The following are examples of field-injection and constructor-injection for each of the Helicon CDI extensions:
+The following are examples of field injection and constructor injection for each of the Helicon CDI extensions:
  
 === Injecting a HikariCP data source
 
@@ -147,7 +143,7 @@ For example, a property with the name `javax.sql.DataSource.orders.dataSourceCla
   
 === Injecting a Jedis client
 
-The following examples show how to create an Jedis pool named `orders` in your application code.
+The following examples show how to create and inject a Jedis pool named `orders` in your application code.
 
 * Field-injection example:
 
@@ -207,7 +203,7 @@ public YourConstructor(@Named("orders") ObjectStorage client) {
 The extension implements this injection point by creating an Object Storage client object in the http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application scope].
 
 To locate the configuration of the object, the extension uses the https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3/index.html?overview-summary.html[MicroProfile
-Config API]. The following https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3/org/eclipse/microprofile/config/Config.html#getPropertyNames--[Property
+Config API]. The following https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3/org/eclipse/microprofile/config/Config.html#getPropertyNames--[property
 names] are used to establish a connection to Oracle Cloud Infrastructure Object
 Storage:
 
