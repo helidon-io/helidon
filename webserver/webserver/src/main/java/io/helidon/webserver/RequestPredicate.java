@@ -118,7 +118,7 @@ public final class RequestPredicate {
      * @return instance of {@link ConditionalHandler} that can be used to
      * specify another {@link Handler} to use when this predicates does not
      * match the request
-     * @see {@link ConditionalHandler#otherwise(Handler) }
+     * @see ConditionalHandler#otherwise(Handler)
      */
     public ConditionalHandler thenApply(final Handler handler) {
         return new ConditionalHandler(this, handler);
