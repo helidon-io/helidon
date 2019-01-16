@@ -28,12 +28,12 @@ import io.helidon.common.http.MediaType;
 /**
  * Fluent API to compose complex request conditions.
  *
- * First you start by creating a new instance with the {@link #create()} method,
- * then you chain methods that represent a logical expression, finally you terminate
- * with s using the {@link #thenApply(Handler) } method.
+ * Use {@link #create()} to initialize a new instance, then add conditions by
+ * chaining method calls and finally use the {@link #thenApply(Handler)} to create
+ * a {@link ConditionalHandler}.
  *
  * <h3>Examples</h3>
- * <p>Invoke a {@link Handler} only when the request contains a header {@code foo}
+ * <p>Invoke a {@link Handler} only when the request contains a header name {@code foo}
  * and accepts {@code text/plain}, otherwise return a response with {@code 404} code.
  * <pre>{@code
  * RequestPredicate.create()
@@ -44,7 +44,7 @@ import io.helidon.common.http.MediaType;
  *                 });
  * }</pre>
  * <p>Invoke a {@link Handler} that is invoked only when the request contains
- * a header {@code foo} header, otherwise invoke another handler that throws an
+ * a header named {@code foo} header, otherwise invoke another handler that throws an
  * exception.
  * <pre>{@code
  * RequestPredicate.create()
@@ -469,7 +469,7 @@ public final class RequestPredicate {
     }
 
     /**
-     * A {@link Handler} that conditionally delegates to other {link Handler}
+     * A {@link Handler} that conditionally delegates to other {@link Handler}
      * instances based on a {@link RequestPredicate}.
      *
      * There can be at most 2 handlers: a required one for matched requests and
