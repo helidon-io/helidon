@@ -16,7 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -65,12 +64,12 @@ public final class RequestPredicate {
     private static final Expression EMPTY_EXPR = (a, b) -> a;
 
     /**
-     * The first predicate in the expression chain.
+     * The first predicate in the predicate chain.
      */
     private final RequestPredicate tail;
 
     /**
-     * The next predicate in the expression chain.
+     * The next predicate in the predicate chain.
      */
     private RequestPredicate next;
 
@@ -80,7 +79,7 @@ public final class RequestPredicate {
     private final Expression expr;
 
     /**
-     * Create the new empty predicate.
+     * Create an empty predicate.
      */
     private RequestPredicate(){
         this.tail = this;
@@ -125,7 +124,7 @@ public final class RequestPredicate {
     }
 
     /**
-     * Compute the current value for this predicate.
+     * Evaluate this predicate.
      * @param request the server request
      * @return the computed value
      */
@@ -172,13 +171,11 @@ public final class RequestPredicate {
      * @return new predicate representing the logical expression of the previous
      * predicate expression <b>and</b> the logical expression implemented by this
      * method
-     * @throws NullPointerException if the specified content type array is null
+     * @throws NullPointerException if the specified methods array is null
      */
     public RequestPredicate isOfMethod(final String... methods) {
         Objects.requireNonNull(methods, "methods");
-        return and((req) ->
-                Arrays.asList(methods)
-                        .stream()
+        return and((req) -> Stream.of(methods)
                         .map(String::toUpperCase)
                         .anyMatch(req.method().name()::equals));
     }
@@ -190,13 +187,11 @@ public final class RequestPredicate {
      * @return new predicate representing the logical expression of the previous
      * predicate expression <b>and</b> the logical expression implemented by this
      * method
-     * @throws NullPointerException if the specified content type array is null
+     * @throws NullPointerException if the methods type array is null
      */
     public RequestPredicate isOfMethod(final Method... methods) {
         Objects.requireNonNull(methods, "methods");
-        return and((req) ->
-                Arrays.asList(methods)
-                        .stream()
+        return and((req) -> Stream.of(methods)
                         .map(Method::name)
                         .anyMatch(req.method().name()::equals));
     }
@@ -211,9 +206,27 @@ public final class RequestPredicate {
      * @throws NullPointerException if the specified name is null
      */
     public RequestPredicate containsHeader(final String name) {
-        Objects.requireNonNull(name, "header name");
-        return and((req) ->
-                req.headers().value(name).isPresent());
+        return containsHeader(name, (c) -> true);
+    }
+
+    /**
+     * Accept requests only when the specified header contains a given value.
+     *
+     * If the request contains more then one header, it will be accepted
+     * if <b>any</b> of the values is equal to the provided value.
+     *
+     * @param name header name
+     * @param value the expected header value
+     * @return composed predicate representing the logical expression of the previous
+     * predicate expression <b>and</b> the logical expression implemented by this
+     * method
+     * @throws NullPointerException if the specified name or value is null
+     */
+    public RequestPredicate containsHeader(final String name,
+            final String value) {
+
+        Objects.requireNonNull(value, "header value");
+        return containsHeader(name, value::equals);
     }
 
     /**
@@ -243,31 +256,6 @@ public final class RequestPredicate {
     }
 
     /**
-     * Accept requests only when the specified header contains a given value.
-     *
-     * If the request contains more then one header, it will be accepted
-     * if <b>any</b> of the values is equal to the provided value.
-     *
-     * @param name header name
-     * @param value the expected header value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
-     * @throws NullPointerException if the specified name or value is null
-     */
-    public RequestPredicate containsHeader(final String name,
-            final String value) {
-
-        Objects.requireNonNull(name, "header name");
-        Objects.requireNonNull(value, "header value");
-        return and((req) -> {
-            Optional<String> headerValue = req.headers().value(name);
-            return headerValue.isPresent()
-                    && headerValue.get().equals(value);
-        });
-    }
-
-    /**
      * Accept requests only when the specified query parameter exists.
      *
      * @param name query parameter name
@@ -277,10 +265,25 @@ public final class RequestPredicate {
      * @throws NullPointerException if the specified name is null
      */
     public RequestPredicate containsQueryParameter(final String name) {
-        Objects.requireNonNull(name, "query param name");
-        return and((req) -> req.queryParams()
-                .first(name)
-                .isPresent());
+        return containsQueryParameter(name, (c) -> true);
+    }
+
+    /**
+     * Accept requests only when the specified query parameter contains a given
+     * value.
+     *
+     * @param name query parameter name
+     * @param value expected query parameter value
+     * @return composed predicate representing the logical expression of the previous
+     * predicate expression <b>and</b> the logical expression implemented by this
+     * method
+     * @throws NullPointerException if the specified name or value is null
+     */
+    public RequestPredicate containsQueryParameter(final String name,
+            final String value) {
+
+        Objects.requireNonNull(value, "query param value");
+        return containsQueryParameter(name, value::equals);
     }
 
     /**
@@ -305,28 +308,6 @@ public final class RequestPredicate {
     }
 
     /**
-     * Accept requests only when the specified query parameter contains a given
-     * value.
-     *
-     * @param name query parameter name
-     * @param value expected query parameter value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
-     * @throws NullPointerException if the specified name or value is null
-     */
-    public RequestPredicate containsQueryParameter(final String name,
-            final String value) {
-
-        Objects.requireNonNull(name, "query param name");
-        Objects.requireNonNull(value, "query param value");
-        return and((req) -> req.queryParams()
-                .all(name)
-                .stream()
-                .anyMatch(value::equals));
-    }
-
-    /**
      * Accept request only when the specified cookie exists.
      *
      * @param name cookie name
@@ -336,11 +317,24 @@ public final class RequestPredicate {
      * @throws NullPointerException if the specified name is null
      */
     public RequestPredicate containsCookie(final String name) {
-        Objects.requireNonNull(name, "cookie name");
-        return and((req) -> req.headers()
-                .values("cookie")
-                .stream()
-                .anyMatch((c) -> c.startsWith(name + "=")));
+        return containsCookie(name, (c) -> true);
+    }
+
+    /**
+     * Accept requests only when the specified cookie contains a given value.
+     *
+     * @param name cookie name
+     * @param value expected cookie value
+     * @return composed predicate representing the logical expression of the previous
+     * predicate expression <b>and</b> the logical expression implemented by this
+     * method
+     * @throws NullPointerException if the specified name or value is null
+     */
+    public RequestPredicate containsCookie(final String name,
+            final String value) {
+
+        Objects.requireNonNull(value, "cookie value");
+        return containsCookie(name, value::equals);
     }
 
     /**
@@ -363,28 +357,6 @@ public final class RequestPredicate {
                 .all(name)
                 .stream()
                 .anyMatch((c) -> predicate.test(c)));
-    }
-
-    /**
-     * Accept requests only when the specified cookie contains a given value.
-     *
-     * @param name cookie name
-     * @param value expected cookie value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
-     * @throws NullPointerException if the specified name or value is null
-     */
-    public RequestPredicate containsCookie(final String name,
-            final String value) {
-
-        Objects.requireNonNull(name, "cookie name");
-        Objects.requireNonNull(value, "cookie value");
-        return and((req) -> req.headers()
-                .cookies()
-                .all(name)
-                .stream()
-                .anyMatch(value::equals));
     }
 
     /**
@@ -543,7 +515,7 @@ public final class RequestPredicate {
     }
 
     /**
-     * Recursive evaluation of a predicate chain.
+     * Recursive evaluation of a predicate in a predicate chain.
      * @param currentValue the initial value
      * @param predicate the predicate to resolve the new value
      * @param request the server request
@@ -560,9 +532,8 @@ public final class RequestPredicate {
     }
 
     /**
-     * An expression is part of a chain of other expressions, it computes a value
-     * based on an input object and the current value of the chain.
-     * @param <T> input object type
+     * An expression is the represents some logic that evaluates a {@code boolean}
+     * value based on a current {@code boolean} value and an input object.
      */
     @FunctionalInterface
     private interface Expression {
@@ -570,9 +541,9 @@ public final class RequestPredicate {
         /**
          * Evaluate this expression.
          * @param currentValue the current value
-         * @param input the input object
+         * @param request the input object
          * @return the new value
          */
-        boolean eval(boolean currentValue, ServerRequest input);
+        boolean eval(boolean currentValue, ServerRequest request);
     }
 }
