@@ -702,7 +702,7 @@ public class RequestPredicateTest {
         RequestPredicate requestPredicate = RequestPredicate.create()
                 .containsCookie("my-cookie");
         requestPredicate.containsHeader("my-header");
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             requestPredicate.containsHeader("my-param");
         });
     }
