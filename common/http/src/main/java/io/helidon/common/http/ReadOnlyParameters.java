@@ -86,7 +86,7 @@ public class ReadOnlyParameters implements Parameters {
     @Override
     public Optional<String> first(String name) {
         return Optional.ofNullable(data.get(name)).map(l ->
-                l != null && !l.isEmpty() ? l.get(0) : null);
+                !l.isEmpty() ? l.get(0) : null);
     }
 
     @Override
