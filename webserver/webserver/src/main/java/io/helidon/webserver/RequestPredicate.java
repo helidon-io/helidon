@@ -127,7 +127,7 @@ public final class RequestPredicate {
      * @return the created predicate
      */
     private RequestPredicate nextCondition(final Condition newCondition){
-        if(next != null){
+        if (next != null) {
             throw new IllegalStateException("next predicate already set");
         }
         this.next = new RequestPredicate(this.first, newCondition);
