@@ -48,14 +48,6 @@
             <artifactId>helidon-media-jsonp-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.glassfish</groupId>-->
-            <!--<artifactId>javax.json</artifactId>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>io.projectreactor</groupId>-->
-            <!--<artifactId>reactor-core</artifactId>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
