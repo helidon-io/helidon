@@ -588,6 +588,115 @@ public class RequestPredicateTest {
         assertThat(checker.handlersInvoked(), is("doesNotHaveContentType"));
     }
 
+    @Test
+    public void multipleConditions() {
+        final RoutingChecker checker = new RoutingChecker();
+        Routing routing = Routing.builder()
+                .any("/multiple", RequestPredicate.create()
+                        .accepts(MediaType.TEXT_PLAIN)
+                        .hasContentType(MediaType.TEXT_PLAIN)
+                        .containsQueryParameter("my-param")
+                        .containsCookie("my-cookie")
+                        .isOfMethod(Http.Method.GET)
+                        .thenApply((req, resp) -> {
+                            checker.handlerInvoked("hasAllConditions");
+                        }).otherwise((req, res) -> {
+                            checker.handlerInvoked("doesNotHaveAllConditions");
+                        }))
+                .build();
+
+        routing.route(mockRequest("/multiple?my-param=abc",
+                mapOf("Content-Type", listOf("text/plain"),
+                      "Accept", listOf("text/plain"),
+                      "Cookie", listOf("my-cookie=abc"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("hasAllConditions"));
+
+        checker.reset();
+        routing.route(mockRequest("/multiple?my-param=abc",
+                mapOf("Accept", listOf("text/plain"),
+                      "Cookie", listOf("my-cookie=abc"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
+    }
+
+    @Test
+    public void and(){
+        final RoutingChecker checker = new RoutingChecker();
+        Routing routing = Routing.builder()
+                .get("/and", RequestPredicate.create()
+                        .accepts(MediaType.TEXT_PLAIN)
+                        .and((req) -> req.headers().first("my-header").isPresent())
+                        .thenApply((req, resp) -> {
+                            checker.handlerInvoked("hasAllConditions");
+                        }).otherwise((req, res) -> {
+                            checker.handlerInvoked("doesNotHaveAllConditions");
+                        }))
+                .build();
+
+        routing.route(mockRequest("/and",
+                mapOf("Accept", listOf("text/plain"),
+                      "my-header", listOf("abc"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("hasAllConditions"));
+
+        checker.reset();
+        routing.route(mockRequest("/and",
+                mapOf("Accept", listOf("text/plain"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
+    }
+
+    @Test
+    public void or(){
+        final RoutingChecker checker = new RoutingChecker();
+        Routing routing = Routing.builder()
+                .get("/or", RequestPredicate.create()
+                        .hasContentType(MediaType.TEXT_PLAIN)
+                        .or((req) -> req.headers().first("my-header").isPresent())
+                        .thenApply((req, resp) -> {
+                            checker.handlerInvoked("hasAnyCondition");
+                        }).otherwise((req, res) -> {
+                            checker.handlerInvoked("doesNotHaveAnyCondition");
+                        }))
+                .build();
+
+        routing.route(mockRequest("/or",
+                mapOf("Content-Type", listOf("text/plain"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("hasAnyCondition"));
+
+        checker.reset();
+        routing.route(mockRequest("/or",
+                mapOf("my-header", listOf("abc"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("hasAnyCondition"));
+
+        checker.reset();
+        routing.route(mockRequest("/or", mapOf()), mockResponse());
+        assertThat(checker.handlersInvoked(), is("doesNotHaveAnyCondition"));
+    }
+
+    @Test
+    public void negate(){
+        final RoutingChecker checker = new RoutingChecker();
+        Routing routing = Routing.builder()
+                .get("/negate", RequestPredicate.create()
+                        .hasContentType(MediaType.TEXT_PLAIN)
+                        .containsCookie("my-cookie")
+                        .negate()
+                        .thenApply((req, resp) -> {
+                            checker.handlerInvoked("hasAllConditions");
+                        }).otherwise((req, res) -> {
+                            checker.handlerInvoked("doesNotHaveAllConditions");
+                        }))
+                .build();
+
+        routing.route(mockRequest("/negate",
+                mapOf("Content-Type", listOf("application/json"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("hasAllConditions"));
+
+        checker.reset();
+        routing.route(mockRequest("/negate",
+                mapOf("Content-Type", listOf("text/plain"),
+                        "Cookie", listOf("my-cookie=abc"))), mockResponse());
+        assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
+    }
+
     private static BareRequest mockRequest(final String path) {
         BareRequest bareRequestMock = RoutingTest.mockRequest(path,
                 Http.Method.GET);
