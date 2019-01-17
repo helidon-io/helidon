@@ -697,6 +697,16 @@ public class RequestPredicateTest {
         assertThat(checker.handlersInvoked(), is("doesNotHaveAllConditions"));
     }
 
+    @Test
+    public void nextAlreadySet(){
+        RequestPredicate requestPredicate = RequestPredicate.create()
+                .containsCookie("my-cookie");
+        requestPredicate.containsHeader("my-header");
+        assertThrows(IllegalArgumentException.class, () -> {
+            requestPredicate.containsHeader("my-param");
+        });
+    }
+
     private static BareRequest mockRequest(final String path) {
         BareRequest bareRequestMock = RoutingTest.mockRequest(path,
                 Http.Method.GET);

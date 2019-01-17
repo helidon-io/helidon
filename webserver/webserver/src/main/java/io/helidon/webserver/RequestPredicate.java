@@ -25,14 +25,34 @@ import io.helidon.common.http.Http.Method;
 import io.helidon.common.http.MediaType;
 
 /**
- * Fluent API to compose complex request conditions.
+ * Fluent API that allows to create chains of request conditions for composing
+ * logical expressions to match requests.
  *
- * Use {@link #create()} to initialize a new instance, then add conditions by
- * chaining method calls and finally use the {@link #thenApply(Handler)} to create
+ *<p>
+ * A new expression can be created using the {@link #create()} method. This method
+ * will initialize an expression with an empty condition that will match any
+ * request.
+ *<p>
+ * Conditions are added to the expression by chaining method invocations and form
+ * a logical <b>AND</b> expression. Each method invocation will return a different
+ * instance representing the last condition in the expression. Each instance can
+ * represent only one condition, invoking a method representing a condition more
+ * than once per instance will throw an {@link IllegalStateException}.
+ *<p>
+ * The expression can be evaluated against a request using the
+ * {@link #test(ServerRequest)} method, or a {@link ConditionalHandler} can be
+ * used to evaluate the expression and delegate to other handlers based on the
+ * result of the evaluation.
+ *<p>
+ * The {@link #thenApply(Handler)} method can be invoked on an expression to create
  * a {@link ConditionalHandler}.
- *
+ *<p>
+ * The handler to be used for matching requests is passed as parameter to
+ * {@link #thenApply(Handler)} and the handler to be used for requests that do not
+ * match can be specified using {@link ConditionalHandler#otherwise(Handler) }.
  * <h3>Examples</h3>
- * <p>Invoke a {@link Handler} only when the request contains a header name {@code foo}
+ * <p>
+ * Invoke a {@link Handler} only when the request contains a header name {@code foo}
  * and accepts {@code text/plain}, otherwise return a response with {@code 404} code.
  * <pre>{@code
  * RequestPredicate.create()
@@ -42,9 +62,9 @@ import io.helidon.common.http.MediaType;
  *                     // handler logic
  *                 });
  * }</pre>
- * <p>Invoke a {@link Handler} that is invoked only when the request contains
- * a header named {@code foo} header, otherwise invoke another handler that throws an
- * exception.
+ * <p>
+ * Invoke a {@link Handler} only when the request contains a header named {@code foo}
+ * otherwise invoke another handler that throws an exception.
  * <pre>{@code
  * RequestPredicate.create()
  *                 .containsHeader("foo")
@@ -59,54 +79,58 @@ import io.helidon.common.http.MediaType;
 public final class RequestPredicate {
 
     /**
-     * An expression that returns the current value.
+     * A condition that returns the current value.
      */
-    private static final Expression EMPTY_EXPR = (a, b) -> a;
+    private static final Condition EMPTY_CONDITION = (a, b) -> a;
 
     /**
      * The first predicate in the predicate chain.
      */
-    private final RequestPredicate tail;
+    private final RequestPredicate first;
 
     /**
      * The next predicate in the predicate chain.
      */
-    private RequestPredicate next;
+    private volatile RequestPredicate next;
 
     /**
-     * The expression for this predicate.
+     * The condition for this predicate.
      */
-    private final Expression expr;
+    private final Condition condition;
 
     /**
      * Create an empty predicate.
      */
     private RequestPredicate(){
-        this.tail = this;
+        this.first = this;
         this.next = null;
-        this.expr = EMPTY_EXPR;
+        this.condition = EMPTY_CONDITION;
     }
 
     /**
-     * Create a composed predicate with the given expression.
-     * @param tail the first predicate in the chain
-     * @param expr the expression for the new predicate
+     * Create a composed predicate with the given condition.
+     * @param first the first predicate in the chain
+     * @param expr the condition for the new predicate
      */
-    private RequestPredicate(final RequestPredicate tail,
-            final Expression expr){
+    private RequestPredicate(final RequestPredicate first,
+            final Condition cond){
 
-        this.tail = tail;
+        this.first = first;
         this.next = null;
-        this.expr = expr;
+        this.condition = cond;
     }
 
     /**
      * Create a composed predicate and add it in the predicate chain.
-     * @param newExpr the expression for the new predicate
+     * @param newCondition the condition for the new predicate
+     * @throws IllegalStateException if the next condition is already set
      * @return the created predicate
      */
-    private RequestPredicate nextExpr(final Expression newExpr){
-        this.next = new RequestPredicate(this.tail, newExpr);
+    private RequestPredicate nextCondition(final Condition newCondition){
+        if(next != null){
+            throw new IllegalStateException("next predicate already set");
+        }
+        this.next = new RequestPredicate(this.first, newCondition);
         return this.next;
     }
 
@@ -129,7 +153,7 @@ public final class RequestPredicate {
      * @return the computed value
      */
     public boolean test(final ServerRequest request) {
-        return eval(/* initial value */ true, this.tail, request);
+        return eval(/* initial value */ true, this.first, request);
     }
 
     /**
@@ -137,11 +161,11 @@ public final class RequestPredicate {
      * between this predicate and another predicate.
      *
      * @param predicate predicate to compose with
-     * @return composed predicate between the logical expression of the current
-     * predicate <b>and</b> the provided predicate
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      */
     public RequestPredicate and(final Predicate<ServerRequest> predicate) {
-        return nextExpr((exprVal, req) -> exprVal && predicate.test(req));
+        return nextCondition((exprVal, req) -> exprVal && predicate.test(req));
     }
 
     /**
@@ -149,11 +173,11 @@ public final class RequestPredicate {
      * between this predicate and another predicate.
      *
      * @param predicate predicate that compute the new value
-     * @return composed predicate between the logical expression of the current
-     * predicate <b>or</b> the provided predicate
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>OR</b> the provided predicate
      */
     public RequestPredicate or(final Predicate<ServerRequest> predicate) {
-        return nextExpr((exprVal, req) -> exprVal || predicate.test(req));
+        return nextCondition((exprVal, req) -> exprVal || predicate.test(req));
     }
 
     /**
@@ -161,16 +185,15 @@ public final class RequestPredicate {
      * @return new predicate that represents the logical negation of this predicate.
      */
     public RequestPredicate negate() {
-        return nextExpr((exprVal, req) -> !exprVal);
+        return nextCondition((exprVal, req) -> !exprVal);
     }
 
     /**
      * Accepts only requests with one of specified HTTP methods.
      *
      * @param methods Acceptable method names
-     * @return new predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified methods array is null
      */
     public RequestPredicate isOfMethod(final String... methods) {
@@ -184,9 +207,8 @@ public final class RequestPredicate {
      * Accepts only requests with one of specified HTTP methods.
      *
      * @param methods Acceptable method names
-     * @return new predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the methods type array is null
      */
     public RequestPredicate isOfMethod(final Method... methods) {
@@ -200,9 +222,8 @@ public final class RequestPredicate {
      * Accept requests only when the specified header name exists.
      *
      * @param name header name
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name is null
      */
     public RequestPredicate containsHeader(final String name) {
@@ -217,9 +238,8 @@ public final class RequestPredicate {
      *
      * @param name header name
      * @param value the expected header value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or value is null
      */
     public RequestPredicate containsHeader(final String name,
@@ -238,9 +258,8 @@ public final class RequestPredicate {
      *
      * @param name header name
      * @param predicate predicate to match the header value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or predicate is null
      */
     public RequestPredicate containsHeader(final String name,
@@ -248,20 +267,18 @@ public final class RequestPredicate {
 
         Objects.requireNonNull(name, "header name");
         Objects.requireNonNull(predicate, "header predicate");
-        return and((req) -> {
-            Optional<String> headerValue = req.headers().value(name);
-            return headerValue.isPresent()
-                    && predicate.test(headerValue.get());
-        });
+        return and((req) -> req.headers()
+                .value(name)
+                .filter(predicate)
+                .isPresent());
     }
 
     /**
      * Accept requests only when the specified query parameter exists.
      *
      * @param name query parameter name
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name is null
      */
     public RequestPredicate containsQueryParameter(final String name) {
@@ -274,9 +291,8 @@ public final class RequestPredicate {
      *
      * @param name query parameter name
      * @param value expected query parameter value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or value is null
      */
     public RequestPredicate containsQueryParameter(final String name,
@@ -291,9 +307,8 @@ public final class RequestPredicate {
      *
      * @param name query parameter name
      * @param predicate to match the query parameter value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or predicate is null
      */
     public RequestPredicate containsQueryParameter(final String name,
@@ -311,9 +326,8 @@ public final class RequestPredicate {
      * Accept request only when the specified cookie exists.
      *
      * @param name cookie name
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name is null
      */
     public RequestPredicate containsCookie(final String name) {
@@ -325,9 +339,8 @@ public final class RequestPredicate {
      *
      * @param name cookie name
      * @param value expected cookie value
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or value is null
      */
     public RequestPredicate containsCookie(final String name,
@@ -342,9 +355,8 @@ public final class RequestPredicate {
      *
      * @param name cookie name
      * @param predicate predicate to match the cookie value
-     * @return new predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified name or predicate is null
      */
     public RequestPredicate containsCookie(final String name,
@@ -356,16 +368,15 @@ public final class RequestPredicate {
                 .cookies()
                 .all(name)
                 .stream()
-                .anyMatch((c) -> predicate.test(c)));
+                .anyMatch(predicate));
     }
 
     /**
      * Accept requests only when it accepts any of the given content types.
      *
      * @param contentType the content types to test
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified content type array is null
      */
     public RequestPredicate accepts(final String... contentType) {
@@ -379,9 +390,8 @@ public final class RequestPredicate {
      * Only accept request that accepts any of the given content types.
      *
      * @param contentType the content types to test
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified content type array is null
      */
     public RequestPredicate accepts(final MediaType... contentType) {
@@ -395,9 +405,8 @@ public final class RequestPredicate {
      * Only accept requests with any of the given content types.
      *
      * @param contentType Content type
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified content type array is null
      */
     public RequestPredicate hasContentType(final String... contentType) {
@@ -415,9 +424,8 @@ public final class RequestPredicate {
      * Only accept requests with any of the given content types.
      *
      * @param contentType Content type
-     * @return composed predicate representing the logical expression of the previous
-     * predicate expression <b>and</b> the logical expression implemented by this
-     * method
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
      * @throws NullPointerException if the specified content type array is null
      */
     public RequestPredicate hasContentType(final MediaType... contentType) {
@@ -445,8 +453,9 @@ public final class RequestPredicate {
      * instances based on a {@link RequestPredicate}.
      *
      * There can be at most 2 handlers: a required one for matched requests and
-     * an optional one non matched requests. If the handler for non matched
-     * requests is not provided, such request will return a {@code 404} response.
+     * an optional one for requests that are not matched. If the handler for non
+     * matched requests is not provided, such request will return a {@code 404}
+     * response.
      */
     public static class ConditionalHandler implements Handler {
 
@@ -515,7 +524,7 @@ public final class RequestPredicate {
     }
 
     /**
-     * Recursive evaluation of a predicate in a predicate chain.
+     * Recursive evaluation of a predicate chain.
      * @param currentValue the initial value
      * @param predicate the predicate to resolve the new value
      * @param request the server request
@@ -524,7 +533,7 @@ public final class RequestPredicate {
     private static boolean eval(final boolean currentValue,
             final RequestPredicate predicate, final ServerRequest request){
 
-        boolean newValue = predicate.expr.eval(currentValue, request);
+        boolean newValue = predicate.condition.eval(currentValue, request);
         if (predicate.next != null) {
             return eval(newValue, predicate.next, request);
         }
@@ -532,15 +541,15 @@ public final class RequestPredicate {
     }
 
     /**
-     * An expression is the represents some logic that evaluates a {@code boolean}
+     * A condition represents some logic that evaluates a {@code boolean}
      * value based on a current {@code boolean} value and an input object.
      */
     @FunctionalInterface
-    private interface Expression {
+    private interface Condition {
 
         /**
-         * Evaluate this expression.
-         * @param currentValue the current value
+         * Evaluate this condition as part of a logical expression.
+         * @param currentValue the current value of the expression
          * @param request the input object
          * @return the new value
          */
