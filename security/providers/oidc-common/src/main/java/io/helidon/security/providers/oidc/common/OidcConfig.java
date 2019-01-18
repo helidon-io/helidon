@@ -237,7 +237,7 @@ public final class OidcConfig {
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
 
-    private static final JsonReaderFactory jsonFactory = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
 
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";
@@ -804,7 +804,7 @@ public final class OidcConfig {
             if ((null == oidcMetadata) && oidcMetadataWellKnown) {
                 try {
                     String wellKnown = identityUri + OidcConfig.DEFAULT_OIDC_METADATA_URI;
-                    oidcMetadata = jsonFactory.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
+                    oidcMetadata = JSON.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
                     LOGGER.finest(() -> "OIDC Metadata loaded from well known URI: " + wellKnown);
                 } catch (Exception e) {
                     collector.fatal(e, "Failed to load metadata: " + e.getClass().getName() + ": " + e.getMessage());
@@ -1000,7 +1000,7 @@ public final class OidcConfig {
          * @return udpated builder instance
          */
         public Builder oidcMetadata(Resource resource) {
-            this.oidcMetadata = jsonFactory.createReader(resource.stream()).readObject();
+            this.oidcMetadata = JSON.createReader(resource.stream()).readObject();
             return this;
         }
 

@@ -54,7 +54,7 @@ import io.helidon.security.jwt.jwk.Jwk;
 @SuppressWarnings("WeakerAccess") // getters should be public
 public class Jwt {
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
     /*
     Header claims
     */
@@ -500,7 +500,7 @@ public class Jwt {
             return rawValue;
         }
 
-        return jsonFactory.createArrayBuilder()
+        return JSON.createArrayBuilder()
                 .add(rawValue)
                 .build();
     }
@@ -835,7 +835,7 @@ public class Jwt {
      * @return JsonObject for header
      */
     public JsonObject headerJson() {
-        JsonObjectBuilder objectBuilder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
         headerClaims.forEach(objectBuilder::add);
 
         algorithm.ifPresent(it -> objectBuilder.add("alg", it));
@@ -852,7 +852,7 @@ public class Jwt {
      * @return JsonObject for payload
      */
     public JsonObject payloadJson() {
-        JsonObjectBuilder objectBuilder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
         payloadClaims.forEach(objectBuilder::add);
 
         // known payload
@@ -863,12 +863,12 @@ public class Jwt {
         this.subject.ifPresent(it -> objectBuilder.add("sub", it));
         this.userPrincipal.ifPresent(it -> objectBuilder.add("upn", it));
         this.userGroups.ifPresent(it -> {
-            JsonArrayBuilder jab = jsonFactory.createArrayBuilder();
+            JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
             objectBuilder.add("groups", jab);
         });
         this.audience.ifPresent(it -> {
-            JsonArrayBuilder jab = jsonFactory.createArrayBuilder();
+            JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
             objectBuilder.add("aud", jab);
         });

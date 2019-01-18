@@ -55,7 +55,7 @@ public final class Main {
     private static GreetService greetService;
     // end::greetServiceDecl[]
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     /**
      * Cannot be instantiated.
@@ -159,7 +159,7 @@ public final class Main {
                     .status(Http.Status.OK_200) //<2>
                     .send();
         } else {
-            JsonObject returnObject = jsonFactory.createObjectBuilder() //<3>
+            JsonObject returnObject = JSON.createObjectBuilder() //<3>
                     .add("error", greetServiceError)
                     .build();
             response

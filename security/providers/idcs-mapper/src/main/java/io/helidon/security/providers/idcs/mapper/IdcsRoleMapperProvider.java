@@ -56,7 +56,7 @@ import io.helidon.security.spi.SubjectMappingProvider;
 public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProvider.class.getName());
     private static final String ACCESS_TOKEN_KEY = "access_token";
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     private final EvictableCache<String, List<? extends Grant>> roleCache;
     private final WebTarget assertEndpoint;
@@ -136,10 +136,10 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
 
     private Optional<List<? extends Grant>> getGrantsFromServer(String subject) {
         return getAppToken().flatMap(appToken -> {
-            JsonObjectBuilder requestBuilder = jsonFactory.createObjectBuilder();
+            JsonObjectBuilder requestBuilder = JSON.createObjectBuilder();
             requestBuilder.add("mappingAttributeValue", subject);
             requestBuilder.add("includeMemberships", true);
-            JsonArrayBuilder arrayBuilder = jsonFactory.createArrayBuilder();
+            JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
 

@@ -42,7 +42,7 @@ public final class Todo {
     /**
      * Factory for creating JSON builders.
      */
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     /**
      * The TODO ID.
@@ -175,7 +175,7 @@ public final class Todo {
      */
     public JsonObject forDb() {
         //to store to DB
-        JsonObjectBuilder builder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         return builder.add("id", id)
                 .add("user", userId)
                 .add("message", title)
@@ -190,7 +190,7 @@ public final class Todo {
      */
     public JsonObject forRest() {
         //to send over to rest
-        JsonObjectBuilder builder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         return builder.add("id", id)
                 .add("user", userId)
                 .add("title", title)

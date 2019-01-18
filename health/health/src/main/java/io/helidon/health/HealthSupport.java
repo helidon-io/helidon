@@ -55,7 +55,7 @@ public final class HealthSupport implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     private final String webContext;
     private final List<HealthCheck> healthChecks;
@@ -108,17 +108,17 @@ public final class HealthSupport implements Service {
     }
 
     private JsonObject toJson(State state, List<HcResponse> responses) {
-        final JsonObjectBuilder jsonBuilder = jsonFactory.createObjectBuilder()
+        final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder()
                 .add("outcome", state.toString());
 
-        final JsonArrayBuilder checkArrayBuilder = jsonFactory.createArrayBuilder();
+        final JsonArrayBuilder checkArrayBuilder = JSON.createArrayBuilder();
 
         for (HcResponse r : responses) {
-            JsonObjectBuilder checkBuilder = jsonFactory.createObjectBuilder();
+            JsonObjectBuilder checkBuilder = JSON.createObjectBuilder();
             checkBuilder.add("name", r.name());
             checkBuilder.add("state", r.state().toString());
             Optional<Map<String, Object>> data = r.data();
-            data.ifPresent(m -> checkBuilder.add("data", jsonFactory.createObjectBuilder(m)));
+            data.ifPresent(m -> checkBuilder.add("data", JSON.createObjectBuilder(m)));
 
             checkArrayBuilder.add(checkBuilder);
         }

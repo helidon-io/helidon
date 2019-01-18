@@ -55,7 +55,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 public class GreetResource {
 // end::classDecl[]
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     /**
      * The greeting message provider.
@@ -132,7 +132,7 @@ public class GreetResource {
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
         greeting.setMessage(newGreeting);
 
-        return jsonFactory.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("greeting", newGreeting)
                 .build();
     }
@@ -142,7 +142,7 @@ public class GreetResource {
     private JsonObject createResponse(String who) { // <1>
         String msg = String.format("%s %s!", greeting.getMessage(), who); // <2>
 
-        return jsonFactory.createObjectBuilder() // <3>
+        return JSON.createObjectBuilder() // <3>
                 .add("message", msg)
                 .build();
     }

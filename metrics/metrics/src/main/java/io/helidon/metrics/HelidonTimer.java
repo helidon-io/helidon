@@ -21,8 +21,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Histogram;
@@ -200,7 +198,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
 
     @Override
     public void jsonData(JsonObjectBuilder builder) {
-        JsonObjectBuilder myBuilder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
         myBuilder.add("count", getCount());
         myBuilder.add("meanRate", getMeanRate());

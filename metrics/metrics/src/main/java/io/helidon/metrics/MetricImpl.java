@@ -36,7 +36,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * Base for our implementations of various metrics.
  */
 abstract class MetricImpl extends Metadata implements HelidonMetric {
-    static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
     private static final Pattern COLON_UNDERSCORE = Pattern.compile(":_");
@@ -129,7 +129,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
 
     @Override
     public void jsonMeta(JsonObjectBuilder builder) {
-        JsonObjectBuilder metaBuilder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder metaBuilder = JSON.createObjectBuilder();
 
         addNonEmpty(metaBuilder, "unit", getUnit());
         addNonEmpty(metaBuilder, "unit", getUnit());

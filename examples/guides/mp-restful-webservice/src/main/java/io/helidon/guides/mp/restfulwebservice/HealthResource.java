@@ -36,7 +36,7 @@ import javax.ws.rs.core.Response;
 public class HealthResource {
 // end::classDecl[]
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     // tag::greetingDecl[]
     @Inject // <1>
@@ -59,7 +59,7 @@ public class HealthResource {
         if (greetResourceError == null) {  // <4>
             response = Response.ok().build();
         } else {
-            JsonObject returnObject = jsonFactory.createObjectBuilder()
+            JsonObject returnObject = JSON.createObjectBuilder()
                     .add("error", greetResourceError)
                     .build();
             response = Response

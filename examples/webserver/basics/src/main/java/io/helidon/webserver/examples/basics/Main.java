@@ -54,7 +54,7 @@ import io.helidon.webserver.json.JsonSupport;
  */
 public class Main {
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     // ---------------- EXAMPLES
 
@@ -272,7 +272,7 @@ public class Main {
         Routing routing = Routing.builder()
                                  .register(StaticContentSupport.create("/static"))
                                  .register("/hello", JsonSupport.create())
-                                 .get("/hello/{what}", (req, res) -> res.send(jsonFactory.createObjectBuilder()
+                                 .get("/hello/{what}", (req, res) -> res.send(JSON.createObjectBuilder()
                                                                                   .add("message",
                                                                                        "Hello " + req.path()
                                                                                                      .param("what"))

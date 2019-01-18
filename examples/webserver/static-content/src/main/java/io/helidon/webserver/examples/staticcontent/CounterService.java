@@ -34,7 +34,7 @@ import io.helidon.webserver.json.JsonSupport;
  */
 public class CounterService implements Service {
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
     private final LongAdder allAccessCounter = new LongAdder();
     private final AtomicInteger apiAccessCounter = new AtomicInteger();
 
@@ -52,7 +52,7 @@ public class CounterService implements Service {
 
     private void handleGet(ServerRequest request, ServerResponse response) {
         int apiAcc = apiAccessCounter.incrementAndGet();
-        JsonObject result = jsonFactory.createObjectBuilder()
+        JsonObject result = JSON.createObjectBuilder()
                                 .add("all", allAccessCounter.longValue())
                                 .add("api", apiAcc)
                                 .build();

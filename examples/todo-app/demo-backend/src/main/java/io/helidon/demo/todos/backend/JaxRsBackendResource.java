@@ -54,7 +54,7 @@ import io.opentracing.Span;
 @ApplicationScoped
 public class JaxRsBackendResource {
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     /**
      * The database service facade.
@@ -87,7 +87,7 @@ public class JaxRsBackendResource {
                 .asChildOf(context.tracingSpan())
                 .start();
 
-        JsonArrayBuilder builder = jsonFactory.createArrayBuilder();
+        JsonArrayBuilder builder = JSON.createArrayBuilder();
         backendService.list(context.tracingSpan(), getUserId(context))
                       .forEach(data -> builder.add(data.forRest()));
 

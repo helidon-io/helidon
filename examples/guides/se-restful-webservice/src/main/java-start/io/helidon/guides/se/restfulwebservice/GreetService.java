@@ -49,7 +49,7 @@ public class GreetService implements Service {
      */
     private static final Config CONFIG = Config.create().get("app");
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     /**
      * The config value for the key {@code greeting}.
@@ -77,7 +77,7 @@ public class GreetService implements Service {
                                    final ServerResponse response) {
         String msg = String.format("%s %s!", greeting, "World");
 
-        JsonObject returnObject = jsonFactory.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -93,7 +93,7 @@ public class GreetService implements Service {
         String name = request.path().param("name");
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = jsonFactory.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -108,7 +108,7 @@ public class GreetService implements Service {
                                 final ServerResponse response) {
         greeting = request.path().param("greeting");
 
-        JsonObject returnObject = jsonFactory.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);

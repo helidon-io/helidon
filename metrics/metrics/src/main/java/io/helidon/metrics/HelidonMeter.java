@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -134,7 +132,7 @@ final class HelidonMeter extends MetricImpl implements Meter {
     */
     @Override
     public void jsonData(JsonObjectBuilder builder) {
-        JsonObjectBuilder myBuilder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
         myBuilder.add("count", getCount());
         myBuilder.add("meanRate", getMeanRate());

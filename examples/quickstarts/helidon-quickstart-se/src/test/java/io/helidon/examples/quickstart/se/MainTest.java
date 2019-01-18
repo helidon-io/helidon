@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 public class MainTest {
 
     private static WebServer webServer;
-    private static final JsonReaderFactory jsonFactory = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
 
     @BeforeAll
     public static void startTheServer() throws Exception {
@@ -67,14 +67,14 @@ public class MainTest {
 
         conn = getURLConnection("GET","/greet");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
-        JsonReader jsonReader = jsonFactory.createReader(conn.getInputStream());
+        JsonReader jsonReader = JSON.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
                 "default message");
 
         conn = getURLConnection("GET", "/greet/Joe");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
-        jsonReader = jsonFactory.createReader(conn.getInputStream());
+        jsonReader = JSON.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
                 "hello Joe message");
@@ -83,7 +83,7 @@ public class MainTest {
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response3");
         conn = getURLConnection("GET", "/greet/Jose");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
-        jsonReader = jsonFactory.createReader(conn.getInputStream());
+        jsonReader = JSON.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");

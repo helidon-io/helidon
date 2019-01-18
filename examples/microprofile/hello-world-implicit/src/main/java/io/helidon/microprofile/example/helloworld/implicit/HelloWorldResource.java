@@ -45,7 +45,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @RequestScoped
 public class HelloWorldResource {
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     private final Config config;
     private final Logger logger;
@@ -100,7 +100,7 @@ public class HelloWorldResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getHello(@PathParam("name") String name) {
-        return jsonFactory.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("name", name)
                 .add("requestId", requestId)
                 .add("appName", applicationName)

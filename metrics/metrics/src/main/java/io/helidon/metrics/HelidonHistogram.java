@@ -19,8 +19,6 @@ package io.helidon.metrics;
 import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Histogram;
@@ -156,7 +154,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
     @Override
     public void jsonData(JsonObjectBuilder builder) {
-        JsonObjectBuilder myBuilder = jsonFactory.createObjectBuilder();
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
         myBuilder.add("count", getCount());
         Snapshot snapshot = getSnapshot();

@@ -90,7 +90,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(JwtAuthProvider.class.getName());
 
-    private static final JsonReaderFactory jsonFactory = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
 
     /**
      * Configure this for outbound requests to override user to use.
@@ -634,7 +634,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         .resource(Resource.create("public key from PKCS8", jwkJson))
                         .build();
             }
-            JsonObject jsonObject = jsonFactory.createReader(new StringReader(jwkJson)).readObject();
+            JsonObject jsonObject = JSON.createReader(new StringReader(jwkJson)).readObject();
             return JwkKeys.builder().addKey(Jwk.create(jsonObject)).build();
         }
 

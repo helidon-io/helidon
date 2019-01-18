@@ -47,7 +47,7 @@ import javax.ws.rs.core.MediaType;
 @RequestScoped
 public class GreetResource {
 
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     /**
      * The greeting message provider.
@@ -105,7 +105,7 @@ public class GreetResource {
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) {
         greetingProvider.setMessage(newGreeting);
 
-        return jsonFactory.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("greeting", newGreeting)
                 .build();
     }
@@ -113,7 +113,7 @@ public class GreetResource {
     private JsonObject createResponse(String who) {
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
 
-        return jsonFactory.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
     }

@@ -57,7 +57,7 @@ public final class JwtUtil {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
 
     private JwtUtil() {
     }
@@ -269,7 +269,7 @@ public final class JwtUtil {
             return ((Address) object).getJson();
         }
         if (object instanceof Collection) {
-            return jsonFactory.createArrayBuilder((Collection) object).build();
+            return JSON.createArrayBuilder((Collection) object).build();
         }
         return Json.createValue(String.valueOf(object));
     }
@@ -427,7 +427,7 @@ public final class JwtUtil {
          * @return Address as a Json object
          */
         public JsonObject getJson() {
-            JsonObjectBuilder objectBuilder = jsonFactory.createObjectBuilder();
+            JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
 
             formatted.ifPresent(it -> objectBuilder.add("formatted", it));
             streetAddress.ifPresent(it -> objectBuilder.add("street_address", it));

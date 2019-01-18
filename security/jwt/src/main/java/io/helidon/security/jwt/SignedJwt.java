@@ -40,7 +40,7 @@ public final class SignedJwt {
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
-    private static final JsonReaderFactory jsonFactory = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
 
     private final String tokenContent;
     private final JsonObject headerJson;
@@ -183,7 +183,7 @@ public final class SignedJwt {
 
     private static JsonObject parseJson(String jsonString, Errors.Collector collector, String description) {
         try {
-            return jsonFactory.createReader(new StringReader(jsonString)).readObject();
+            return JSON.createReader(new StringReader(jsonString)).readObject();
         } catch (Exception e) {
             collector.fatal(jsonString, description + " is not a valid JSON object");
             return null;
