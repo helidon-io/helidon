@@ -168,7 +168,7 @@ public class Main {
      */
     public void advancedRouting() {
         Routing routing = Routing.builder()
-                                 .get("/foo", RequestPredicate.whenRequest()
+                                 .get("/foo", RequestPredicate.create()
                                                               .accepts(MediaType.TEXT_PLAIN)
                                                               .containsHeader("bar")
                                                               .thenApply((req, res) -> res.send()))

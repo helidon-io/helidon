@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,8 @@ public class ReadOnlyParameters implements Parameters {
 
     @Override
     public Optional<String> first(String name) {
-        return Optional.ofNullable(data.get(name)).map(l -> l.get(0));
+        return Optional.ofNullable(data.get(name)).map(l ->
+                !l.isEmpty() ? l.get(0) : null);
     }
 
     @Override
