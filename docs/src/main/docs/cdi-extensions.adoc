@@ -67,7 +67,7 @@ The following examples show how to specify the required dependencies for the Hel
      
  2. Install the Oracle Cloud Infrastructure Java SDK artifacts in your local Maven repository.
 
-      mvn -B -U -f oci-java-sdk.git/pom.xml \
+      mvn -B -U -f oci-java-sdk/pom.xml \
           -Dmaven.test.skip=true \
           -Dmaven.source.skip=true \
           -Dmaven.javadoc.skip=true \
