@@ -71,76 +71,6 @@
         </profile>
         <profile>
             <!--
-                Developers use this profile with the generate-sources phase to convert
-                the README.adoc file at the top-level of the project into the
-                pre-included format so it will render nicely on GitHub.
-
-                Usage:
-                    mvn -Padoc-preinclude generate-sources
-            -->
-            <id>adoc-preinclude</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>io.helidon.build-tools</groupId>
-                            <artifactId>sitegen-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>preinclude-adoc</id>
-                                    <configuration>
-                                        <includes>
-                                            <include>README.adoc</include>
-                                        </includes>
-                                    </configuration>
-                                    <goals>
-                                        <goal>preprocess-adoc</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <!--
-                Developers use this profile with the generate-sources phase to convert
-                the README.adoc file at the top-level of the project into the
-                natural format so it uses the familiar AsciiDoc include:: syntax
-                rather than the pre-included syntax created by the adoc-preinclude profile.
-
-                Usage:
-                    mvn -Padoc-naturalize generate-sources
-            -->
-            <id>adoc-naturalize</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>io.helidon.build-tools</groupId>
-                            <artifactId>sitegen-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>naturalize-adoc</id>
-                                    <configuration>
-                                        <outputType>natural</outputType>
-                                        <includes>
-                                            <include>README.adoc</include>
-                                        </includes>
-                                    </configuration>
-                                    <goals>
-                                        <goal>preprocess-adoc</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-        <profile>
-            <!--
                 Pipeline builds use this profile with the generate-sources phase to convert
                 the README.adoc file at the top-level of the project into the
                 pre-included format but store it in a different location, then compare
@@ -153,29 +83,27 @@
             -->
             <id>adoc-check</id>
             <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>io.helidon.build-tools</groupId>
-                            <artifactId>sitegen-maven-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>check-adoc</id>
-                                    <configuration>
-                                        <includes>
-                                            <include>README.adoc</include>
-                                        </includes>
-                                        <outputDirectory>${project.build.directory}/tmp/adoc</outputDirectory>
-                                        <check>true</check>
-                                    </configuration>
-                                    <goals>
-                                        <goal>preprocess-adoc</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>sitegen-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>check-adoc</id>
+                                <configuration>
+                                    <includes>
+                                        <include>README.adoc</include>
+                                    </includes>
+                                    <outputDirectory>${project.build.directory}/tmp/adoc</outputDirectory>
+                                    <check>true</check>
+                                </configuration>
+                                <goals>
+                                    <goal>preprocess-adoc</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>
