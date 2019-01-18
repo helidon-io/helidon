@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.ws.rs.client.Entity;
@@ -55,6 +56,7 @@ import io.helidon.security.spi.SubjectMappingProvider;
 public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProvider.class.getName());
     private static final String ACCESS_TOKEN_KEY = "access_token";
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
 
     private final EvictableCache<String, List<? extends Grant>> roleCache;
     private final WebTarget assertEndpoint;
@@ -134,10 +136,10 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
 
     private Optional<List<? extends Grant>> getGrantsFromServer(String subject) {
         return getAppToken().flatMap(appToken -> {
-            JsonObjectBuilder requestBuilder = Json.createObjectBuilder();
+            JsonObjectBuilder requestBuilder = jsonFactory.createObjectBuilder();
             requestBuilder.add("mappingAttributeValue", subject);
             requestBuilder.add("includeMemberships", true);
-            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+            JsonArrayBuilder arrayBuilder = jsonFactory.createArrayBuilder();
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
 

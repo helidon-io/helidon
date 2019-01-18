@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.guides.mp.restfulwebservice;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -34,6 +35,8 @@ import javax.ws.rs.core.Response;
 @RequestScoped
 public class HealthResource {
 // end::classDecl[]
+
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
 
     // tag::greetingDecl[]
     @Inject // <1>
@@ -56,7 +59,7 @@ public class HealthResource {
         if (greetResourceError == null) {  // <4>
             response = Response.ok().build();
         } else {
-            JsonObject returnObject = Json.createObjectBuilder()
+            JsonObject returnObject = jsonFactory.createObjectBuilder()
                     .add("error", greetResourceError)
                     .build();
             response = Response

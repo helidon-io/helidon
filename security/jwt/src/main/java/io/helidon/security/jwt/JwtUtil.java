@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -56,6 +57,7 @@ public final class JwtUtil {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
 
     private JwtUtil() {
     }
@@ -267,7 +269,7 @@ public final class JwtUtil {
             return ((Address) object).getJson();
         }
         if (object instanceof Collection) {
-            return Json.createArrayBuilder((Collection) object).build();
+            return jsonFactory.createArrayBuilder((Collection) object).build();
         }
         return Json.createValue(String.valueOf(object));
     }
@@ -425,7 +427,7 @@ public final class JwtUtil {
          * @return Address as a Json object
          */
         public JsonObject getJson() {
-            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+            JsonObjectBuilder objectBuilder = jsonFactory.createObjectBuilder();
 
             formatted.ifPresent(it -> objectBuilder.add("formatted", it));
             streetAddress.ifPresent(it -> objectBuilder.add("street_address", it));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.guides.se.restfulwebservice;
 
 //tag::importsStart[]
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
@@ -60,6 +61,8 @@ public class GreetService implements Service {
     // tag::CONFIG[]
     private static final Config CONFIG = Config.create().get("app"); // <1>
     // end::CONFIG[]
+
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
 
     /**
      * The config value for the key {@code greeting}.
@@ -112,7 +115,7 @@ public class GreetService implements Service {
                                    final ServerResponse response) {
         String msg = String.format("%s %s!", greeting, "World"); // <1>
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = jsonFactory.createObjectBuilder()
                 .add("message", msg) // <2>
                 .build();
         response.send(returnObject); // <3>
@@ -130,7 +133,7 @@ public class GreetService implements Service {
         String name = request.path().param("name"); // <1>
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = jsonFactory.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -147,7 +150,7 @@ public class GreetService implements Service {
                                 final ServerResponse response) {
         greeting = request.path().param("greeting"); // <1>
 
-        JsonObject returnObject = Json.createObjectBuilder() // <2>
+        JsonObject returnObject = jsonFactory.createObjectBuilder() // <2>
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);

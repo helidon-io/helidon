@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.guides.se.restfulwebservice;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
@@ -48,6 +49,8 @@ public class GreetService implements Service {
      */
     private static final Config CONFIG = Config.create().get("app");
 
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+
     /**
      * The config value for the key {@code greeting}.
      */
@@ -74,7 +77,7 @@ public class GreetService implements Service {
                                    final ServerResponse response) {
         String msg = String.format("%s %s!", greeting, "World");
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = jsonFactory.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -90,7 +93,7 @@ public class GreetService implements Service {
         String name = request.path().param("name");
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = jsonFactory.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -105,7 +108,7 @@ public class GreetService implements Service {
                                 final ServerResponse response) {
         greeting = request.path().param("greeting");
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = jsonFactory.createObjectBuilder()
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);

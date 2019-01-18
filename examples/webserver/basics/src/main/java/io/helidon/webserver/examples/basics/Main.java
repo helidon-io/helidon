@@ -22,6 +22,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -52,6 +53,8 @@ import io.helidon.webserver.json.JsonSupport;
  * It is also java executable main class. Use a method name as a command line parameter to execute.
  */
 public class Main {
+
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
 
     // ---------------- EXAMPLES
 
@@ -269,7 +272,7 @@ public class Main {
         Routing routing = Routing.builder()
                                  .register(StaticContentSupport.create("/static"))
                                  .register("/hello", JsonSupport.create())
-                                 .get("/hello/{what}", (req, res) -> res.send(Json.createObjectBuilder()
+                                 .get("/hello/{what}", (req, res) -> res.send(jsonFactory.createObjectBuilder()
                                                                                   .add("message",
                                                                                        "Hello " + req.path()
                                                                                                      .param("what"))

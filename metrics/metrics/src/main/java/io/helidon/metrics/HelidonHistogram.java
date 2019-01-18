@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Histogram;
@@ -155,7 +156,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
 
     @Override
     public void jsonData(JsonObjectBuilder builder) {
-        JsonObjectBuilder myBuilder = Json.createObjectBuilder();
+        JsonObjectBuilder myBuilder = jsonFactory.createObjectBuilder();
 
         myBuilder.add("count", getCount());
         Snapshot snapshot = getSnapshot();

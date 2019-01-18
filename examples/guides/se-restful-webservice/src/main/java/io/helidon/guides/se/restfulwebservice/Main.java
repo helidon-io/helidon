@@ -42,6 +42,7 @@ import io.helidon.webserver.json.JsonSupport;
 // end::importsEnd[]
 // tag::importsHealth3[]
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 // end::importsHealth3[]
 
@@ -53,6 +54,8 @@ public final class Main {
     // tag::greetServiceDecl[]
     private static GreetService greetService;
     // end::greetServiceDecl[]
+
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
 
     /**
      * Cannot be instantiated.
@@ -156,7 +159,7 @@ public final class Main {
                     .status(Http.Status.OK_200) //<2>
                     .send();
         } else {
-            JsonObject returnObject = Json.createObjectBuilder() //<3>
+            JsonObject returnObject = jsonFactory.createObjectBuilder() //<3>
                     .add("error", greetServiceError)
                     .build();
             response

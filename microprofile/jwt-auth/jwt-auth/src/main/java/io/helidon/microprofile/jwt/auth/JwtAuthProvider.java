@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
@@ -88,6 +89,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(JwtAuthProvider.class.getName());
+
+    private static final JsonReaderFactory jsonFactory = Json.createReaderFactory(null);
 
     /**
      * Configure this for outbound requests to override user to use.
@@ -631,7 +634,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         .resource(Resource.create("public key from PKCS8", jwkJson))
                         .build();
             }
-            JsonObject jsonObject = Json.createReader(new StringReader(jwkJson)).readObject();
+            JsonObject jsonObject = jsonFactory.createReader(new StringReader(jwkJson)).readObject();
             return JwkKeys.builder().addKey(Jwk.create(jsonObject)).build();
         }
 

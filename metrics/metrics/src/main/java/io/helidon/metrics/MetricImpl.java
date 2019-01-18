@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -35,6 +36,8 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * Base for our implementations of various metrics.
  */
 abstract class MetricImpl extends Metadata implements HelidonMetric {
+    static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
     private static final Pattern COLON_UNDERSCORE = Pattern.compile(":_");
     private static final Pattern CAMEL_CASE = Pattern.compile("(.)(\\p{Upper})");
@@ -48,6 +51,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
     private static final long KILOBYTES = 1000;
     private static final long MEGABYTES = 1000 * KILOBYTES;
     private static final long GIGABYTES = 1000 * MEGABYTES;
+
 
     static {
         //see https://prometheus.io/docs/practices/naming/#base-units
@@ -125,7 +129,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
 
     @Override
     public void jsonMeta(JsonObjectBuilder builder) {
-        JsonObjectBuilder metaBuilder = Json.createObjectBuilder();
+        JsonObjectBuilder metaBuilder = jsonFactory.createObjectBuilder();
 
         addNonEmpty(metaBuilder, "unit", getUnit());
         addNonEmpty(metaBuilder, "unit", getUnit());

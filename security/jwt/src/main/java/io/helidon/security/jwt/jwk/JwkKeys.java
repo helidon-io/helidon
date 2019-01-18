@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
 
 import io.helidon.common.configurable.Resource;
 
@@ -49,6 +51,7 @@ import io.helidon.common.configurable.Resource;
  */
 public final class JwkKeys {
     private static final Logger LOGGER = Logger.getLogger(JwkKeys.class.getName());
+    private static final JsonReaderFactory jsonFactory = Json.createReaderFactory(null);
 
     private final Map<String, Jwk> keyMap = new HashMap<>();
     private final List<Jwk> noKeyIdKeys = new LinkedList<>();
@@ -135,7 +138,7 @@ public final class JwkKeys {
         public Builder resource(Resource resource) {
             Objects.requireNonNull(resource, "Json resource must not be null");
             try (InputStream is = resource.stream()) {
-                JsonObject jsonObject = Json.createReader(is).readObject();
+                JsonObject jsonObject = jsonFactory.createReader(is).readObject();
                 addKeys(jsonObject);
             } catch (IOException e) {
                 LOGGER.log(Level.WARNING, "Failed to close input stream on resource: " + resource);

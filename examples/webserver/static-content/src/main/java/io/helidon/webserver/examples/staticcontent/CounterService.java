@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.webserver.Routing;
@@ -33,6 +34,7 @@ import io.helidon.webserver.json.JsonSupport;
  */
 public class CounterService implements Service {
 
+    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
     private final LongAdder allAccessCounter = new LongAdder();
     private final AtomicInteger apiAccessCounter = new AtomicInteger();
 
@@ -50,7 +52,7 @@ public class CounterService implements Service {
 
     private void handleGet(ServerRequest request, ServerResponse response) {
         int apiAcc = apiAccessCounter.incrementAndGet();
-        JsonObject result = Json.createObjectBuilder()
+        JsonObject result = jsonFactory.createObjectBuilder()
                                 .add("all", allAccessCounter.longValue())
                                 .add("api", apiAcc)
                                 .build();
