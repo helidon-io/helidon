@@ -49,10 +49,10 @@ public class AbstractConfigSourceTest {
         TestingConfigSource.Builder builder = TestingConfigSource.builder();
 
         assertThat(builder.isMandatory(), is(true));
-        assertThat(builder.getChangesExecutor(), is(DEFAULT_CHANGES_EXECUTOR));
-        assertThat(builder.getChangesMaxBuffer(), is(Flow.defaultBufferSize()));
-        assertThat(builder.getMediaTypeMapping(), is(nullValue()));
-        assertThat(builder.getParserMapping(), is(nullValue()));
+        assertThat(builder.changesExecutor(), is(DEFAULT_CHANGES_EXECUTOR));
+        assertThat(builder.changesMaxBuffer(), is(Flow.defaultBufferSize()));
+        assertThat(builder.mediaTypeMapping(), is(nullValue()));
+        assertThat(builder.parserMapping(), is(nullValue()));
     }
 
     @Test
@@ -97,8 +97,8 @@ public class AbstractConfigSourceTest {
                 .changesExecutor(myExecutor)
                 .changesMaxBuffer(1);
 
-        assertThat(builder.getChangesExecutor(), is(myExecutor));
-        assertThat(builder.getChangesMaxBuffer(), is(1));
+        assertThat(builder.changesExecutor(), is(myExecutor));
+        assertThat(builder.changesMaxBuffer(), is(1));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class AbstractConfigSourceTest {
         when(context.findParser(MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
                 .thenReturn(Optional.of(new ConfigParser() { //NOT used parser
                     @Override
-                    public Set<String> getSupportedMediaTypes() {
+                    public Set<String> supportedMediaTypes() {
                         return CollectionsHelper.setOf(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
                     }
 
@@ -201,14 +201,14 @@ public class AbstractConfigSourceTest {
 
     @Test
     public void testInitAll() {
-        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init(Config.from(ConfigSources.from(
+        TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init(Config.create(ConfigSources.create(
                 CollectionsHelper.mapOf("media-type-mapping.yaml", "application/x-yaml",
                        "media-type-mapping.password", "application/base64"))));
 
         //media-type-mapping
-        assertThat(builder.getMediaTypeMapping().apply(Config.Key.of("yaml")), is("application/x-yaml"));
-        assertThat(builder.getMediaTypeMapping().apply(Config.Key.of("password")), is("application/base64"));
-        assertThat(builder.getMediaTypeMapping().apply(Config.Key.of("unknown")), is(nullValue()));
+        assertThat(builder.mediaTypeMapping().apply(Config.Key.create("yaml")), is("application/x-yaml"));
+        assertThat(builder.mediaTypeMapping().apply(Config.Key.create("password")), is("application/base64"));
+        assertThat(builder.mediaTypeMapping().apply(Config.Key.create("unknown")), is(nullValue()));
     }
 
     @Test
@@ -216,7 +216,7 @@ public class AbstractConfigSourceTest {
         TestingConfigSource.TestingBuilder builder = TestingConfigSource.builder().init((Config.empty()));
 
         //media-type-mapping
-        assertThat(builder.getMediaTypeMapping(), is(nullValue()));
+        assertThat(builder.mediaTypeMapping(), is(nullValue()));
     }
 
 }

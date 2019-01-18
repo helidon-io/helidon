@@ -52,7 +52,7 @@ public class RetryPolicyImpl implements RetryPolicy {
     private final Duration callTimeout;
     private final Duration overallTimeout;
     private final ScheduledExecutorService executorService;
-    private volatile ScheduledFuture future;
+    private volatile ScheduledFuture<?> future;
 
     /**
      * Initialize retry policy.
@@ -83,6 +83,7 @@ public class RetryPolicyImpl implements RetryPolicy {
 
         Duration currentDelay = Duration.ZERO;
         long overallTimeoutsLeft = overallTimeout.toMillis();
+        Throwable last = null;
         for (int i = 0; i <= retries; i++) {
             try {
                 LOGGER.finest("next delay: " + currentDelay);
@@ -95,20 +96,20 @@ public class RetryPolicyImpl implements RetryPolicy {
                 ScheduledFuture<T> localFuture = executorService.schedule(call::get, currentDelay.toMillis(), MILLISECONDS);
                 future = localFuture;
                 return localFuture.get(min(currentDelay.plus(callTimeout).toMillis(), overallTimeoutsLeft), MILLISECONDS);
+            } catch (ConfigException e) {
+                throw e;
+            } catch (CancellationException e) {
+                throw new ConfigException("An invocation has been canceled.", e);
+            } catch (InterruptedException e) {
+                throw new ConfigException("An invocation has been interrupted.", e);
+            } catch (TimeoutException e) {
+                throw new ConfigException("A timeout has been reached.", e);
             } catch (Throwable t) {
-                if (t instanceof CancellationException) {
-                    throw new ConfigException("An invocation has been canceled.", t);
-                }
-                if (t instanceof InterruptedException) {
-                    throw new ConfigException("An invocation has been interrupted.", t);
-                }
-                if (t instanceof TimeoutException) {
-                    throw new ConfigException("A timeout has been reached.", t);
-                }
+                last = t;
             }
             currentDelay = nextDelay(i, currentDelay);
         }
-        throw new ConfigException("All repeated calls failed.");
+        throw new ConfigException("All repeated calls failed.", last);
     }
 
     Duration nextDelay(int invocation, Duration currentDelay) {
@@ -129,23 +130,44 @@ public class RetryPolicyImpl implements RetryPolicy {
         return false;
     }
 
-    public int getRetries() {
+    /**
+     * Number of retries.
+     * @return retries
+     */
+    public int retries() {
         return retries;
     }
 
-    public Duration getDelay() {
+    /**
+     * Delay between retries.
+     *
+     * @return delay
+     */
+    public Duration delay() {
         return delay;
     }
 
-    public double getDelayFactor() {
+    /**
+     * Delay multiplication factor.
+     * @return delay factor
+     */
+    public double delayFactor() {
         return delayFactor;
     }
 
-    public Duration getCallTimeout() {
+    /**
+     * Timeout of the call.
+     * @return call timeout
+     */
+    public Duration callTimeout() {
         return callTimeout;
     }
 
-    public Duration getOverallTimeout() {
+    /**
+     * Overall timeout.
+     * @return overall timeout
+     */
+    public Duration overallTimeout() {
         return overallTimeout;
     }
 }

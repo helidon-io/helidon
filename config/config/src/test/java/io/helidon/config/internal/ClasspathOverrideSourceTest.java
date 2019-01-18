@@ -29,14 +29,14 @@ import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.hamcrest.core.Is;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
 
 /**
  * Tests {@link ClasspathOverrideSource}.
@@ -63,11 +63,9 @@ public class ClasspathOverrideSourceTest {
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
                 .build();
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            overrideSource.load();
-        });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test
@@ -102,9 +100,9 @@ public class ClasspathOverrideSourceTest {
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
         ConfigException ex = assertThrows(ConfigException.class, () -> {
-            assertThat(builder.getPollingStrategyInternal(), Is.is(PollingStrategies.nop()));
+            assertThat(builder.pollingStrategyInternal(), Is.is(PollingStrategies.nop()));
         });
-        assertTrue(ex.getMessage().startsWith("Could not find a filesystem path for resource 'not-exists'"));
+        assertThat(ex.getMessage(), startsWith("Could not find a filesystem path for resource 'not-exists'"));
     }
 
     @Test
@@ -112,8 +110,8 @@ public class ClasspathOverrideSourceTest {
         ClasspathBuilder builder = (ClasspathBuilder) OverrideSources.classpath("io/helidon/config/overrides.properties")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.getPollingStrategyInternal()).getPath(),
+        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
+        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
                    is(ClasspathSourceHelper.resourcePath("io/helidon/config/overrides.properties")));
     }
 

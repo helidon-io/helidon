@@ -704,7 +704,7 @@ public final class ConfigMappers {
     static <T> Function<Config, T> wrap(Function<String, T> mapper) {
         return (node) -> nodeValue(node)
                 .map(value -> safeMap(node.key(), value, mapper))
-                .orElseThrow(MissingValueException.supplierForKey(node.key()));
+                .orElseThrow(MissingValueException.createSupplier(node.key()));
     }
 
     private static Optional<String> nodeValue(Config node) {

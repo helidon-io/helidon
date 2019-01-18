@@ -18,7 +18,8 @@ package io.helidon.microprofile.faulttolerance;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * This test class should run in its own VM to avoid clashes with system
@@ -41,6 +42,6 @@ public class ConfigMethodTest extends FaultToleranceTest {
     @Test
     public void testRetryWithFallbackOverrideMethod() {
         RetryBean bean = newBean(RetryBean.class);
-        assertEquals("success", bean.retryWithFallback());      // passes no fallback
+        assertThat(bean.retryWithFallback(), is("success"));      // passes no fallback
     }
 }

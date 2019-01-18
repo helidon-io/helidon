@@ -68,7 +68,12 @@
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchTest"/>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.clientserver.ParrallelBulkheadTest"/>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchRetryTest"/>
-            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchConfigTest"/>
+            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadSynchConfigTest">
+                <methods>
+                    <!-- should be fixed by newer version - fails tests intermittently, though often -->
+                    <exclude name="testBulkheadClassSemaphore3"/>
+                </methods>
+            </class>
             <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.BulkheadAsynchRetryTest">
                 <methods>
                     <!-- https://github.com/eclipse/microprofile-fault-tolerance/issues/357 -->

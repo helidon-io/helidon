@@ -97,7 +97,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
                         "text-text", "string value",
                         "int-p", "2147483647",
                         "long-p", "9223372036854775807",
@@ -116,7 +116,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("key", stringValue)))
+                .sources(ConfigSources.create(CollectionsHelper.mapOf("key", stringValue)))
                 .build();
 
         assertThat(manager.map(config.get("key"), type), is(expectedValue));
@@ -204,7 +204,7 @@ public class ConfigMappersTest {
                                                                ConfigMapperManager.MapperProviders.create());
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
+                .sources(ConfigSources.create(CollectionsHelper.mapOf("key", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")))
                 .build();
 
         assertThat(manager.map(config.get("key"), Pattern.class).toString(),
@@ -241,7 +241,7 @@ public class ConfigMappersTest {
 
     private Config createConfig() {
         return Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
                         "key1", "value1",
                         "key2.key21", "value21",
                         "key2.key22", "value22",

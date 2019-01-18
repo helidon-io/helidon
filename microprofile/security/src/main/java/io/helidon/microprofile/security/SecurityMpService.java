@@ -24,9 +24,9 @@ import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Security;
-import io.helidon.security.abac.AbacProvider;
-import io.helidon.security.jersey.SecurityFeature;
-import io.helidon.security.webserver.WebSecurity;
+import io.helidon.security.integration.jersey.SecurityFeature;
+import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.providers.abac.AbacProvider;
 
 /**
  * Security extension.
@@ -41,11 +41,11 @@ public class SecurityMpService implements MpService {
     @Override
     public void configure(MpServiceContext context) {
         //this uses helidon config heavily
-        Config config = context.getHelidonConfig();
+        Config config = context.helidonConfig();
 
         Security security;
         if (config.get("security.providers").exists()) {
-            security = Security.fromConfig(config);
+            security = Security.create(config.get("security"));
         } else {
             LOGGER.info(
                     "Security extension for microprofile is enabled, yet security configuration is missing from config "
@@ -61,16 +61,16 @@ public class SecurityMpService implements MpService {
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean().orElse(true)) {
             SecurityFeature feature = SecurityFeature.builder(security)
-                    .fromConfig(jerseyConfig)
+                    .config(jerseyConfig)
                     .build();
 
-            context.getApplications().forEach(app -> app.register(feature));
+            context.applications().forEach(app -> app.register(feature));
         }
 
         Config webServerConfig = config.get("security.web-server");
         if (webServerConfig.exists() && webServerConfig.get("enabled").asBoolean().orElse(true)) {
-            context.getServerRoutingBuilder()
-                    .register(WebSecurity.from(security, config));
+            context.serverRoutingBuilder()
+                    .register(WebSecurity.create(security, config));
         }
 
         // for later use, e.g. for outbound security

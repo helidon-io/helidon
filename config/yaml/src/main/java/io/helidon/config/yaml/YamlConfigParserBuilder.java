@@ -16,13 +16,14 @@
 
 package io.helidon.config.yaml;
 
+import io.helidon.common.Builder;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.yaml.internal.YamlConfigParser;
 
 /**
  * YAML ConfigParser Builder.
  */
-public final class YamlConfigParserBuilder {
+public final class YamlConfigParserBuilder implements Builder<ConfigParser> {
 
     private YamlConfigParserBuilder() {
     }
@@ -53,6 +54,7 @@ public final class YamlConfigParserBuilder {
      *
      * @return new instance of YAML ConfigParser.
      */
+    @Override
     public ConfigParser build() {
         return new YamlConfigParser();
     }

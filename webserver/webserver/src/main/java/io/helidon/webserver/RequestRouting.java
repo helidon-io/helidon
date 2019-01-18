@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -67,7 +65,7 @@ class RequestRouting implements Routing {
     @Override
     public void route(BareRequest bareRequest, BareResponse bareResponse) {
         try {
-            WebServer webServer = bareRequest.getWebServer();
+            WebServer webServer = bareRequest.webServer();
             Span span = createRequestSpan(tracer(webServer), bareRequest);
             RoutedResponse response = new RoutedResponse(webServer, bareResponse, span.context());
             response.whenSent()
@@ -93,14 +91,14 @@ class RequestRouting implements Routing {
                         return null;
                     });
             // Process path
-            String p = bareRequest.getUri().normalize().getPath();
+            String p = bareRequest.uri().normalize().getRawPath();
             if (p.charAt(p.length() - 1) == '/') {
                 p = p.substring(0, p.length() - 1);
             }
             if (p.isEmpty()) {
                 p = "/";
             }
-            Crawler crawler = new Crawler(routes, p, bareRequest.getMethod());
+            Crawler crawler = new Crawler(routes, p, bareRequest.method());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers, span);
             nextRequests.next();
         } catch (Error | RuntimeException e) {
@@ -121,10 +119,10 @@ class RequestRouting implements Routing {
     private Span createRequestSpan(Tracer tracer, BareRequest request) {
         Tracer.SpanBuilder spanBuilder = tracer.buildSpan("HTTP Request")
                 .withTag(Tags.COMPONENT.getKey(), "helidon-webserver")
-                .withTag(Tags.HTTP_METHOD.getKey(), request.getMethod().name())
-                .withTag(Tags.HTTP_URL.getKey(), request.getUri().toString());
+                .withTag(Tags.HTTP_METHOD.getKey(), request.method().name())
+                .withTag(Tags.HTTP_URL.getKey(), request.uri().toString());
 
-        Map<String, String> headersMap = request.getHeaders()
+        Map<String, String> headersMap = request.headers()
                                                 .entrySet()
                                                 .stream()
                                                 .filter(entry -> !entry.getValue().isEmpty())

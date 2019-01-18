@@ -31,13 +31,13 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ConfigMappers} with focus on factory method and constructor initialization.
@@ -51,7 +51,7 @@ public class FactoryMethodConfigMapperTest {
     @Test
     public void testAmbiguousConstructors() {
         Config config = Config.empty();
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.as(AmbiguousConstructorsBean.class).get();
         });
 
@@ -63,7 +63,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testTransientConstructor() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")
@@ -97,7 +97,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testNoConfigValueConstructor() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.arg0", "1")
                         .addValue("app.arg1", "this:is/my?uri")
@@ -130,11 +130,11 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testMissingParamsConstructor() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.get("app")
                     .as(ConstructorBean.class)
                     .get();
@@ -146,7 +146,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testDefaultsConstructor() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 
@@ -170,7 +170,7 @@ public class FactoryMethodConfigMapperTest {
     public void testAmbiguousFromMethods() {
         Config config = Config.empty();
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.as(AmbiguousFromMethodsBean.class).get();
         });
 
@@ -182,7 +182,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testTransientFromMethod() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.number", "1")
                         .addValue("app.uri", "this:is/my?uri")
@@ -216,7 +216,7 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testNoConfigValueFromMethod() {
-        Config config = Config.from(ConfigSources.from(
+        Config config = Config.create(ConfigSources.create(
                 ObjectNode.builder()
                         .addValue("app.arg0", "1")
                         .addValue("app.arg1", "this:is/my?uri")
@@ -249,22 +249,23 @@ public class FactoryMethodConfigMapperTest {
 
     @Test
     public void testMissingParamsFromMethod() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 
-        ConfigMappingException ex = Assertions.assertThrows(ConfigMappingException.class, () -> {
+        ConfigMappingException ex = assertThrows(ConfigMappingException.class, () -> {
             config.get("app")
                     .as(FromMethodBean.class)
                     .get();
         });
-        Assertions.assertTrue(stringContainsInOrder(CollectionsHelper.listOf(
-                "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")).matches(ex.getMessage()));
+        assertThat(ex.getMessage(),
+                   stringContainsInOrder(CollectionsHelper.listOf(
+                "'app'", "FromMethodBean", "Missing value for parameter 'uri'.")));
     }
 
     @Test
     public void testDefaultsFromMethod() {
-        Config config = Config.from(ConfigSources.from(CollectionsHelper.mapOf(
+        Config config = Config.create(ConfigSources.create(CollectionsHelper.mapOf(
                 "app.number", "1"
         )));
 

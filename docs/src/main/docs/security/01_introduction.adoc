@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 :description: Helidon Security introduction
 :keywords: helidon, security
 
-Cloud Security provides the following features
+Helidon Security provides the following features
 
 . Authentication - support for authenticating incoming requests, creating a
  security Subject with Principal and Grants. Principal represents current user/service.
@@ -116,13 +116,13 @@ See <<_tools,Secure config>> for details about encrypting passwords in
 .Security from configuration
 ----
 // uses io.helidon.Config
-Security security = Security.fromConfig(config);
+Security security = Security.create(config);
 ----
 
 [source,conf]
 .Security from configuration - configuration
 ----
-# Uses secure config tool to encryp passwords
+# Uses config encryption filter to encrypt passwords
 security.providers: [
     {
         http-basic-auth {
@@ -154,7 +154,7 @@ security.providers: [
 .Security from configuration and builder
 ----
 // uses io.helidon.Config
-Security security = Security.builderFromConfig(config)
+Security security = Security.builder(config)
                 .addProvider(...)
                 .build();
 

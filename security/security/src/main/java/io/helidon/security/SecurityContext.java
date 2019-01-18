@@ -53,7 +53,7 @@ public interface SecurityContext {
      *
      * @return security request builder
      */
-    SecurityRequestBuilder securityRequestBuilder();
+    SecurityRequestBuilder<?> securityRequestBuilder();
 
     /**
      * A builder to build a {@link SecurityRequest} with a specific environment.
@@ -61,7 +61,7 @@ public interface SecurityContext {
      * @param environment environment to use for this request
      * @return security request builder
      */
-    SecurityRequestBuilder securityRequestBuilder(SecurityEnvironment environment);
+    SecurityRequestBuilder<?> securityRequestBuilder(SecurityEnvironment environment);
 
     /**
      * Authenticator client builder to use for programmatic authentication.
@@ -104,7 +104,7 @@ public interface SecurityContext {
     /**
      * Return true if the user is authenticated.
      * This only cares about USER! not about service. To check if service is authenticated, use
-     * {@link #getService()} and check the resulting optional.
+     * {@link #service()} and check the resulting optional.
      *
      * @return true for authenticated user, false otherwise (e.g. no subject or {@link #ANONYMOUS})
      */
@@ -132,7 +132,7 @@ public interface SecurityContext {
      *
      * @return executor service to use to execute asynchronous tasks related to security
      */
-    ExecutorService getExecutorService();
+    ExecutorService executorService();
 
     /**
      * Check if user is in specified role if supported by global authorization provider.
@@ -159,15 +159,15 @@ public interface SecurityContext {
      *
      * @return current context service (client) subject. If there is no service/client, returns empty.
      */
-    Optional<Subject> getService();
+    Optional<Subject> service();
 
     /**
      * Returns service principal if service is authenticated.
      *
      * @return current context service principal, or empty if none authenticated
      */
-    default Optional<Principal> getServicePrincipal() {
-        return getService().map(Subject::getPrincipal);
+    default Optional<Principal> servicePrincipal() {
+        return service().map(Subject::principal);
     }
 
     /**
@@ -175,8 +175,8 @@ public interface SecurityContext {
      *
      * @return name of currently authenticated service or null.
      */
-    default String getServiceName() {
-        return getServicePrincipal().map(Principal::getName).orElse(null);
+    default String serviceName() {
+        return servicePrincipal().map(Principal::getName).orElse(null);
     }
 
     /**
@@ -184,15 +184,15 @@ public interface SecurityContext {
      *
      * @return current context user subject. If there is no authenticated user, returns empty.
      */
-    Optional<Subject> getUser();
+    Optional<Subject> user();
 
     /**
      * Returns user principal if user is authenticated.
      *
      * @return current context user principal, or empty if none authenticated
      */
-    default Optional<Principal> getUserPrincipal() {
-        return getUser().map(Subject::getPrincipal);
+    default Optional<Principal> userPrincipal() {
+        return user().map(Subject::principal);
     }
 
     /**
@@ -200,8 +200,8 @@ public interface SecurityContext {
      *
      * @return name of currently authenticated user or null.
      */
-    default String getUserName() {
-        return getUserPrincipal().map(Principal::getName).orElse(null);
+    default String userName() {
+        return userPrincipal().map(Principal::getName).orElse(null);
     }
 
     /**
@@ -225,17 +225,17 @@ public interface SecurityContext {
      *
      * @return Open tracing Span context of current security context
      */
-    SpanContext getTracingSpan();
+    SpanContext tracingSpan();
 
     /**
      * Provides the tracer to create new spans. If you use this, we can control whether tracing is enabled or disabled
      * as part of security.
      * If you use {@link io.opentracing.util.GlobalTracer#get()} you will get around this.
      *
-     * @return {@link Tracer} to build custom {@link Span Spans}. Use in combination with {@link #getTracingSpan()} to
+     * @return {@link Tracer} to build custom {@link Span Spans}. Use in combination with {@link #tracingSpan()} to
      * create a nice tree of spans
      */
-    Tracer getTracer();
+    Tracer tracer();
 
     /**
      * Id of this context instance. Created as security instance id : context id (depends on container integration or
@@ -243,7 +243,7 @@ public interface SecurityContext {
      *
      * @return id uniquely identifying this context
      */
-    String getId();
+    String id();
 
     /**
      * Get time instance, that can be used to obtain current time consistent with the security framework.
@@ -253,7 +253,7 @@ public interface SecurityContext {
      * @return time instance to obtain current time
      * @see SecurityTime#get()
      */
-    SecurityTime getServerTime();
+    SecurityTime serverTime();
 
     /**
      * Current {@link SecurityEnvironment}. For web, this probably won't change, as the environment
@@ -262,7 +262,7 @@ public interface SecurityContext {
      *
      * @return environment of current security context (e.g. to use for ABAC)
      */
-    SecurityEnvironment getEnv();
+    SecurityEnvironment env();
 
     /**
      * Set a new security environment to be used int this context.
@@ -271,8 +271,8 @@ public interface SecurityContext {
      * @see SecurityEnvironment#derive()
      * @see SecurityEnvironment#builder(SecurityTime)
      */
-    default void setEnv(io.helidon.common.Builder<SecurityEnvironment> envBuilder) {
-        setEnv(envBuilder.build());
+    default void env(Supplier<SecurityEnvironment> envBuilder) {
+        env(envBuilder.get());
     }
 
     /**
@@ -281,30 +281,30 @@ public interface SecurityContext {
      * @param env environment to use for further security operations
      * @see SecurityEnvironment#derive()
      */
-    void setEnv(SecurityEnvironment env);
+    void env(SecurityEnvironment env);
 
     /**
      * Current endpoint configuration.
      *
      * @return configuration specific to current endpoint (annotations, config, custom object, attributes)
      */
-    EndpointConfig getEndpointConfig();
+    EndpointConfig endpointConfig();
 
     /**
      * Set endpoint configuration to use for subsequent security requests.
      *
      * @param ec configuration specific to current endpoint (annotations, config, custom object, attributes)
      */
-    void setEndpointConfig(EndpointConfig ec);
+    void endpointConfig(EndpointConfig ec);
 
     /**
      * Shortcut method to set {@link EndpointConfig} using a builder rather than built instance.
-     * Shortcut to {@link #setEndpointConfig(EndpointConfig)}
+     * Shortcut to {@link #endpointConfig(EndpointConfig)}
      *
      * @param epBuilder builder of an endpoint configuration
      */
-    default void setEndpointConfig(io.helidon.common.Builder<EndpointConfig> epBuilder) {
-        setEndpointConfig(epBuilder.build());
+    default void endpointConfig(Supplier<EndpointConfig> epBuilder) {
+        endpointConfig(epBuilder.get());
     }
 
     /**
@@ -332,7 +332,7 @@ public interface SecurityContext {
 
         Builder(Security security) {
             this.security = security;
-            this.executorServiceSupplier = security.getExecutorService();
+            this.executorServiceSupplier = security.executorService();
         }
 
         @Override
@@ -346,35 +346,35 @@ public interface SecurityContext {
             return new SecurityContextImpl(this);
         }
 
-        Security getSecurity() {
+        Security security() {
             return security;
         }
 
-        String getId() {
+        String id() {
             return id;
         }
 
-        Supplier<ExecutorService> getExecutorServiceSupplier() {
+        Supplier<ExecutorService> executorServiceSupplier() {
             return executorServiceSupplier;
         }
 
-        SecurityTime getServerTime() {
+        SecurityTime serverTime() {
             return serverTime;
         }
 
-        Tracer getTracingTracer() {
+        Tracer tracingTracer() {
             return tracingTracer;
         }
 
-        SpanContext getTracingSpan() {
+        SpanContext tracingSpan() {
             return tracingSpan;
         }
 
-        SecurityEnvironment getEnv() {
+        SecurityEnvironment env() {
             return env;
         }
 
-        EndpointConfig getEc() {
+        EndpointConfig endpointConfig() {
             return ec;
         }
 

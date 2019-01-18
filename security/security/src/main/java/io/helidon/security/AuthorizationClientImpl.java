@@ -40,9 +40,9 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
         this.request = request;
         this.providerName = providerName;
         this.providerRequest = new ProviderRequest(context,
-                                                   request.getResources(),
-                                                   request.getRequestEntity(),
-                                                   request.getResponseEntity());
+                                                   request.resources(),
+                                                   request.requestEntity(),
+                                                   request.responseEntity());
     }
 
     @Override
@@ -50,7 +50,7 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
         // TODO ABAC - if annotated with Attribute meta annot, make sure that all are processed
         return security.resolveAtzProvider(providerName)
                 .map(providerInstance -> providerInstance.authorize(providerRequest).thenApply(response -> {
-                    if (response.getStatus().isSuccess()) {
+                    if (response.status().isSuccess()) {
                         //Audit success
                         context.audit(SecurityAuditEvent.success(
                                 AuditEvent.AUTHZ_TYPE_PREFIX + ".authorize",
@@ -59,7 +59,7 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
                                                                 .plain("provider", providerInstance.getClass().getName()))
                                               .addParam(AuditEvent.AuditParam.plain("request", this))
                                               .addParam(AuditEvent.AuditParam.plain("subject",
-                                                                                    context.getUser()
+                                                                                    context.user()
                                                                                             .orElse(SecurityContext.ANONYMOUS))));
                     } else {
                         //Audit failure
@@ -70,12 +70,12 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
                                                                 .plain("provider", providerInstance.getClass().getName()))
                                               .addParam(AuditEvent.AuditParam.plain("request", this))
                                               .addParam(AuditEvent.AuditParam.plain("subject",
-                                                                                    context.getUser()
+                                                                                    context.user()
                                                                                             .orElse(SecurityContext.ANONYMOUS)))
                                               .addParam(AuditEvent.AuditParam
-                                                                .plain("message", response.getDescription().orElse(null)))
+                                                                .plain("message", response.description().orElse(null)))
                                               .addParam(AuditEvent.AuditParam
-                                                                .plain("exception", response.getThrowable().orElse(null))));
+                                                                .plain("exception", response.throwable().orElse(null))));
                     }
 
                     return response;
@@ -88,7 +88,7 @@ final class AuthorizationClientImpl implements SecurityClient<AuthorizationRespo
                                                             .plain("provider", providerInstance.getClass().getName()))
                                           .addParam(AuditEvent.AuditParam.plain("request", this))
                                           .addParam(AuditEvent.AuditParam.plain("subject",
-                                                                                context.getUser()
+                                                                                context.user()
                                                                                         .orElse(SecurityContext.ANONYMOUS)))
                                           .addParam(AuditEvent.AuditParam.plain("message", throwable.getMessage()))
                                           .addParam(AuditEvent.AuditParam.plain("exception", throwable)));

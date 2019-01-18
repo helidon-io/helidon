@@ -19,9 +19,11 @@ package io.helidon.config.tests.mappers1;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 
-import static org.hamcrest.Matchers.containsString;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Same test as {@link MapperServicesEnabledTest} with {@link Config.Builder#disableMapperServices()}.
@@ -36,18 +38,14 @@ public class MapperServicesDisabledTest extends AbstractMapperServicesTest {
 
     @Test
     public void testLogger() {
-        ConfigMappingException cme = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            getLogger();
-        });
-        Assertions.assertTrue(containsString(LOGGER_KEY).matches(cme.getMessage()));
+        ConfigMappingException cme = assertThrows(ConfigMappingException.class, this::getLogger);
+        assertThat(cme.getMessage(), containsString(LOGGER_KEY));
     }
 
     @Test
     public void testLocale() {
-        ConfigMappingException cme = Assertions.assertThrows(ConfigMappingException.class, () -> {
-            getLocale();
-        });
-        Assertions.assertTrue(containsString(LOCALE_KEY).matches(cme.getMessage()));
+        ConfigMappingException cme = assertThrows(ConfigMappingException.class, this::getLocale);
+        assertThat(cme.getMessage(), containsString(LOCALE_KEY));
     }
 
 }

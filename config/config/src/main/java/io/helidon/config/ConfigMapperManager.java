@@ -85,7 +85,7 @@ class ConfigMapperManager implements ConfigMapper {
     <T> Optional<? extends BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
         Mapper<T> mapper = (Mapper<T>) mappers.get(type);
         if (null == mapper) {
-            return mapperProviders.findMapper(type, Config.Key.of(""));
+            return mapperProviders.findMapper(type, Config.Key.create(""));
         } else {
             return Optional.of(mapper);
         }
@@ -229,7 +229,7 @@ class ConfigMapperManager implements ConfigMapper {
 
         SingleValueConfigImpl(ConfigMapperManager mapperManager, String key, String value) {
             this.mapperManager = mapperManager;
-            this.key = Key.of(key);
+            this.key = Key.create(key);
             this.value = value;
 
             this.timestamp = Instant.now();

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.guides</groupId>
+        <artifactId>helidon-guides-project</artifactId>
+        <version>0.11.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>mp-restful-webservice</artifactId>
+    <packaging>jar</packaging>
+    <name>Helidon Guides MP RESTful Web Service</name>
+
+    <properties>
+        <!-- tag::helidonVersion[] -->
+        <helidon.version>0.11.1-SNAPSHOT</helidon.version>
+        <!-- end::helidonVersion[] -->
+        <!-- tag::javaVersions[] -->
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <!-- end::javaVersions[] -->
+        <!-- tag::libsCopying[] -->
+        <libs.classpath.prefix>libs</libs.classpath.prefix>
+        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
+        <!-- end::libsCopying[] -->
+    </properties>
+    
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <pluginManagement>
+            <plugins>
+                <!-- tag::mainClassPlugin[] -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.5</version>
+                    <configuration>  <!--2-->
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+                                <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
+                                <mainClass>${mainClass}</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <!-- end::mainClassPlugin[] -->
+            </plugins>
+        </pluginManagement>
+        
+        <plugins>
+            <!-- tag::copyDependencies[] -->
+            <plugin> <!--3-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${copied.libs.dir}</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                            <excludeScope>test</excludeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- end::copyDependencies[] -->
+        </plugins>
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- tag::helidonDepMgt[] -->
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${helidon.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- end::helidonDepMgt[] -->
+            <!-- tag::activationDepMgt[] -->
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>javax.activation-api</artifactId>
+                <version>1.2.0</version>
+            </dependency>
+            <!-- end::activationDepMgt[] -->
+        </dependencies>
+    </dependencyManagement>
+    
+    <dependencies>
+        <!-- tag::helidonMPBundleDep[] -->
+        <dependency> <!--1-->
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-1.2</artifactId>
+        </dependency>
+        <!-- end::helidonMPBundleDep[] -->
+        <!-- tag::gfJsonBDep[] -->
+        <dependency> <!--2-->
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-binding</artifactId>
+        </dependency>
+        <!-- end::gfJsonBDep[] -->
+        <!-- tag::jandexDep[] -->
+        <dependency> <!--3-->
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <!-- end::jandexDep[] -->
+        <!-- tag::activationDep[] -->
+        <dependency> <!--4-->
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- end::activationDep[] -->
+        <!-- tag::metricsDependency[] -->
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- end::metricsDependency[] -->
+        
+    </dependencies>
+</project>

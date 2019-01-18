@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,21 +70,23 @@ public interface RequestHeaders extends Headers {
     List<MediaType> acceptedTypes();
 
     /**
-     * Test if provided type is acceptable as a response for this request.
+     * Test if the given media type is acceptable as a response for this request.
+     * A media type is accepted if the {@code Accept} header is not present in the
+     * request or if it contains the provided media type.
      *
-     * @param mediaType a media type to test if it is acceptable.
-     * @return {@code true} if provided type is acceptable.
-     * @throws NullPointerException if parameter {@code mediaType} is {@code null}.
+     * @param mediaType the media type to test
+     * @return {@code true} if provided type is acceptable, {@code false} otherwise
+     * @throws NullPointerException if the provided type is {@code null}.
      */
     boolean isAccepted(MediaType mediaType);
 
     /**
-     * Optionally returns single media type from provided parameters which is best accepted by the client.
-     * Method uses content negotiation {@value io.helidon.common.http.Http.Header#ACCEPT} header parameter and returns an empty
-     * value in case
-     * that nothing match.
+     * Optionally returns a single media type from the given media types that is the
+     * best one accepted by the client.
+     * Method uses content negotiation {@value io.helidon.common.http.Http.Header#ACCEPT}
+     * header parameter and returns an empty value in case nothing matches.
      *
-     * @param mediaTypes Supported media type candidates.
+     * @param mediaTypes media type candidates.
      * @return an accepted media type.
      */
     Optional<MediaType> bestAccepted(MediaType... mediaTypes);

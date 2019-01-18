@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,10 +110,10 @@ fi
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 # Hooks for version substitution work
-readonly PREPARE_HOOKS=( ${WS_DIR}/examples/archetypes/set-version.sh )
+readonly PREPARE_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/set-version.sh )
 
 # Hooks for deployment work
-readonly PERFORM_HOOKS=( ${WS_DIR}/examples/archetypes/deploy-archetypes.sh )
+readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
 
 source ${WS_DIR}/etc/scripts/wercker-env.sh
 
@@ -171,7 +171,7 @@ update_version(){
     -DnewVersion="${FULL_VERSION}" \
     -Dproperty=helidon.version \
     -DprocessAllModules=true \
-    -Pexamples,integrations,docs
+    -Pexamples,integrations,docs,tck -e
 
   # Invoke prepare hook
   if [ -n "${PREPARE_HOOKS}" ]; then

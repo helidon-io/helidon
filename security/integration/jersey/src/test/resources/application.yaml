@@ -18,7 +18,7 @@ security:
   providers:
     # Security provider - basic authentication (supports roles) - default
     - name: "TestProvider"
-      class: "io.helidon.security.jersey.BindingTestProvider"
+      class: "io.helidon.security.integration.jersey.BindingTestProvider"
   jersey:
     defaults:
       # If set to true, only annotated (@Authenticated) resources will be authorized

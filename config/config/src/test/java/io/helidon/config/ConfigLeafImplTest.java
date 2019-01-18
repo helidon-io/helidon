@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests {@link Config} API in case the node is {@link Config.Type#VALUE} type, i.e. {@link ConfigLeafImpl}.
  */
-public class ConfigLeafImplTest extends AbstractConfigImplTest {
+public class ConfigLeafImplTest extends AbstractConfigImplTestBase {
 
     public static Stream<TestContext> initParams() {
         return Stream.of(

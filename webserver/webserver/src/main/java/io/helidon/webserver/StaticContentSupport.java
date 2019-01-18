@@ -158,7 +158,7 @@ public class StaticContentSupport implements Service {
     /**
      * Fluent builder of the StaticContent detailed parameters.
      */
-    public static class Builder implements io.helidon.common.Builder {
+    public static class Builder implements io.helidon.common.Builder<StaticContentSupport> {
 
         private final Path fsRoot;
         private final String clRoot;
@@ -223,6 +223,7 @@ public class StaticContentSupport implements Service {
          *
          * @return a new instance
          */
+        @Override
         public StaticContentSupport build() {
             ContentTypeSelector selector = new ContentTypeSelector(specificContentTypes);
             StaticContentHandler handler;

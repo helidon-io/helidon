@@ -47,7 +47,7 @@ import io.helidon.common.configurable.Resource;
  * .forKeyId("cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df");
  * </pre>
  */
-public class JwkKeys {
+public final class JwkKeys {
     private static final Logger LOGGER = Logger.getLogger(JwkKeys.class.getName());
 
     private final Map<String, Jwk> keyMap = new HashMap<>();
@@ -59,7 +59,7 @@ public class JwkKeys {
     }
 
     /**
-     * Create a new builder for {@link JwkKeys}.
+     * Create a new builder for this class.
      *
      * @return builder instance
      */
@@ -92,9 +92,12 @@ public class JwkKeys {
     /**
      * Builder of {@link JwkKeys}.
      */
-    public static class Builder implements io.helidon.common.Builder<JwkKeys> {
+    public static final class Builder implements io.helidon.common.Builder<JwkKeys> {
         private final List<Jwk> noKeyIdKeys = new LinkedList<>();
         private final Map<String, Jwk> keyMap = new HashMap<>();
+
+        private Builder() {
+        }
 
         /**
          * Build a new keys instance.
@@ -114,10 +117,10 @@ public class JwkKeys {
          */
         public Builder addKey(Jwk key) {
             Objects.requireNonNull(key, "Key must not be null");
-            if (null == key.getKeyId()) {
+            if (null == key.keyId()) {
                 noKeyIdKeys.add(key);
             } else {
-                keyMap.put(key.getKeyId(), key);
+                keyMap.put(key.keyId(), key);
             }
             return this;
         }
@@ -145,7 +148,7 @@ public class JwkKeys {
             JsonArray keyArray = jsonObject.getJsonArray("keys");
             keyArray.forEach(it -> {
                 JsonObject aKey = (JsonObject) it;
-                addKey(Jwk.fromJson(aKey));
+                addKey(Jwk.create(aKey));
             });
         }
     }

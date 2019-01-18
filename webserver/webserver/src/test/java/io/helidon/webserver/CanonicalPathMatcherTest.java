@@ -18,7 +18,8 @@ package io.helidon.webserver;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Class CanonicalPathMatcherTest.
@@ -28,7 +29,7 @@ public class CanonicalPathMatcherTest {
     @Test
     public void testLeadingSlashMatching() {
         PathPattern.CanonicalPathMatcher matcher = new PathPattern.CanonicalPathMatcher("/");
-        assertEquals(new PathPattern.PositiveResult(null, "/greet/me"),
-                     matcher.prefixMatch("/greet/me"));
+        assertThat(matcher.prefixMatch("/greet/me"),
+                   is(new PathPattern.PositiveResult(null, "/greet/me")));
     }
 }

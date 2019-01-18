@@ -18,10 +18,11 @@ package io.helidon.config;
 
 import java.nio.file.Path;
 import java.nio.file.WatchEvent.Modifier;
+import java.nio.file.WatchService;
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Supplier;
 
+import io.helidon.common.Builder;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.FilesystemWatchPollingStrategy;
 import io.helidon.config.internal.ScheduledPollingStrategy;
@@ -77,7 +78,7 @@ public final class PollingStrategies {
     /**
      * A builder for a scheduled polling strategy.
      */
-    public static final class ScheduledBuilder implements Supplier<PollingStrategy> {
+    public static final class ScheduledBuilder implements Builder<PollingStrategy> {
 
         private static final String INTERVAL_KEY = "interval";
 
@@ -104,7 +105,7 @@ public final class PollingStrategies {
          *                                supplied configuration node to an instance of a given Java type.
          * @see PollingStrategies#regular(Duration)
          */
-        public static ScheduledBuilder from(Config metaConfig) throws ConfigMappingException, MissingValueException {
+        public static ScheduledBuilder create(Config metaConfig) throws ConfigMappingException, MissingValueException {
             return PollingStrategies.regular(metaConfig.get(INTERVAL_KEY).as(Duration.class).get());
         }
 
@@ -126,9 +127,10 @@ public final class PollingStrategies {
          *
          * @return the new instance
          */
+        @Override
         public PollingStrategy build() {
             ScheduledExecutorService executor = this.executor;
-            return new ScheduledPollingStrategy(recurringPolicy, executor);
+            return ScheduledPollingStrategy.create(recurringPolicy, executor);
         }
 
         @Override
@@ -140,7 +142,7 @@ public final class PollingStrategies {
     /**
      * A builder for a filesystem watch polling strategy.
      */
-    public static final class FilesystemWatchBuilder implements Supplier<PollingStrategy> {
+    public static final class FilesystemWatchBuilder implements Builder<PollingStrategy> {
 
         private final Path path;
         private ScheduledExecutorService executor = null;
@@ -165,7 +167,7 @@ public final class PollingStrategies {
 
         /**
          * Add modifiers to be used when registering the {@link java.nio.file.WatchService}.
-         * See {@link Path#register(WatchService, WatchEvent.Kind[], WatchEvent.Modifier[])
+         * See {@link Path#register(WatchService, java.nio.file.WatchEvent.Kind[], Modifier...)}
          * Path.register}.
          *
          * @param modifiers the modifiers to add
@@ -181,6 +183,7 @@ public final class PollingStrategies {
          *
          * @return the new instance
          */
+        @Override
         public PollingStrategy build() {
             FilesystemWatchPollingStrategy strategy =
                     new FilesystemWatchPollingStrategy(path, executor);

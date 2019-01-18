@@ -25,11 +25,10 @@ import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.ConfigSources.from;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests {@link InMemoryOverrideSource}.
@@ -39,14 +38,14 @@ public class InMemoryOverrideSourceTest {
     @Test
     public void testWildcards() {
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .overrides(OverrideSources.from(CollectionsHelper.mapOf("*.*.url", "URL1")))
+                .overrides(OverrideSources.create(CollectionsHelper.mapOf("*.*.url", "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -62,14 +61,14 @@ public class InMemoryOverrideSourceTest {
     @Test
     public void testWildcards2() {
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .overrides(OverrideSources.from(CollectionsHelper.mapOf("*.url", "URL1")))
+                .overrides(OverrideSources.create(CollectionsHelper.mapOf("*.url", "URL1")))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -85,14 +84,14 @@ public class InMemoryOverrideSourceTest {
     @Test
     public void testAsConfigFilter() {
         Config config = Config.builder()
-                .sources(from(
+                .sources(ConfigSources.create(
                         CollectionsHelper.mapOf(
                                 "aaa.bbb.name", "app-name",
                                 "aaa.bbb.url", "URL0",
                                 "aaa.anything", "1",
                                 "bbb", "ahoy"
                         )))
-                .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.fromWildcards(
+                .addFilter(new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
                         CollectionsHelper.mapOf("*.*.url", "URL1")
                                 .entrySet()
                                 .stream()
@@ -111,11 +110,11 @@ public class InMemoryOverrideSourceTest {
     }
 
     @Test
-    public void testBuilderDefault() {
+    void testBuilderDefault() {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
                 new InMemoryOverrideSource.Builder(CollectionsHelper.listOf()).build();
         });
-        assertTrue(ex.getMessage().startsWith("Override values cannot be empty."));
+        assertThat(ex.getMessage(), startsWith("Override values cannot be empty."));
     }
 
     @Test
@@ -123,7 +122,7 @@ public class InMemoryOverrideSourceTest {
         NullPointerException ex = assertThrows(NullPointerException.class, () -> {
             new InMemoryOverrideSource.Builder(null);
         });
-        assertTrue(ex.getMessage().startsWith("overrideValues cannot be null"));
+        assertThat(ex.getMessage(), startsWith("overrideValues cannot be null"));
     }
 
 }

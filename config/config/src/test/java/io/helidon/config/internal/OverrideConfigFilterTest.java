@@ -43,7 +43,7 @@ public class OverrideConfigFilterTest {
         OverrideConfigFilter filter = new OverrideConfigFilter(() -> null);
 
         assertThat(filter, notNullValue());
-        assertThat(filter.apply(Config.Key.of("name"), "ondrej"), is("ondrej"));
+        assertThat(filter.apply(Config.Key.create("name"), "ondrej"), is("ondrej"));
     }
 
     @Test
@@ -51,12 +51,12 @@ public class OverrideConfigFilterTest {
         OverrideConfigFilter filter = new OverrideConfigFilter(CollectionsHelper::listOf);
 
         assertThat(filter, notNullValue());
-        assertThat(filter.apply(Config.Key.of("name"), "ondrej"), is("ondrej"));
+        assertThat(filter.apply(Config.Key.create("name"), "ondrej"), is("ondrej"));
     }
 
     @Test
     public void testCreateFilterWithParam() {
-        OverrideConfigFilter filter = new OverrideConfigFilter(() -> OverrideSource.OverrideData.fromWildcards(
+        OverrideConfigFilter filter = new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
                 ORDERED_MAP
                         .entrySet()
                         .stream()
@@ -64,12 +64,12 @@ public class OverrideConfigFilterTest {
                         .collect(Collectors.toList())).data());
 
         assertThat(filter, notNullValue());
-        assertThat(filter.apply(Config.Key.of("name"), "ondrej"), is("libor"));
+        assertThat(filter.apply(Config.Key.create("name"), "ondrej"), is("libor"));
     }
 
     @Test
     public void testWithRegexizeFunction() {
-        OverrideConfigFilter filter = new OverrideConfigFilter(() -> OverrideSource.OverrideData.fromWildcards(
+        OverrideConfigFilter filter = new OverrideConfigFilter(() -> OverrideSource.OverrideData.createFromWildcards(
                 ORDERED_MAP
                         .entrySet()
                         .stream()
@@ -77,6 +77,6 @@ public class OverrideConfigFilterTest {
                         .collect(Collectors.toList())).data());
 
         assertThat(filter, notNullValue());
-        assertThat(filter.apply(Config.Key.of("name"), "ondrej"), is("libor"));
+        assertThat(filter.apply(Config.Key.create("name"), "ondrej"), is("libor"));
     }
 }

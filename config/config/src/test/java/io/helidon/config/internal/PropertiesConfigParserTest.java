@@ -23,14 +23,14 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParserException;
 
+import org.junit.jupiter.api.Test;
+
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static io.helidon.config.internal.PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link PropertiesConfigParser}.
@@ -40,7 +40,7 @@ public class PropertiesConfigParserTest {
     @Test
     public void testGetSupportedMediaTypes() {
         PropertiesConfigParser parser = new PropertiesConfigParser();
-        assertThat(parser.getSupportedMediaTypes(), containsInAnyOrder(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
+        assertThat(parser.supportedMediaTypes(), containsInAnyOrder(MEDIA_TYPE_TEXT_JAVA_PROPERTIES));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class PropertiesConfigParserTest {
 
     @Test
     public void testParseThrowsConfigParserException() {
-        Assertions.assertThrows(ConfigParserException.class, () -> {
+        assertThrows(ConfigParserException.class, () -> {
                 PropertiesConfigParser parser = new PropertiesConfigParser();
             parser.parse((StringContent) () -> null);
         });
@@ -67,7 +67,7 @@ public class PropertiesConfigParserTest {
     @FunctionalInterface
     private interface StringContent extends ConfigParser.Content {
         @Override
-        default String getMediaType() {
+        default String mediaType() {
             return MEDIA_TYPE_TEXT_JAVA_PROPERTIES;
         }
 

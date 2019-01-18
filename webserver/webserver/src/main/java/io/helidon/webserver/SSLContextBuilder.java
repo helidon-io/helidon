@@ -72,10 +72,10 @@ public final class SSLContextBuilder implements Builder<SSLContext> {
      * @throws IllegalStateException in case of a problem; will wrap either an instance of {@link IOException} or
      *                               a {@link GeneralSecurityException}
      */
-    public static SSLContext fromConfig(Config sslConfig) {
+    public static SSLContext create(Config sslConfig) {
         return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
-                                      .sessionCacheSize(sslConfig.get("sessionCacheSize").asInt().orElse(0))
-                                      .sessionTimeout(sslConfig.get("sessionTimeout").asInt().orElse(0))
+                                      .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
+                                      .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
                                       .trustConfig(KeyConfig.create(sslConfig.get("trust")))
                                       .build();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.interfaces.RSAPublicKey;
@@ -68,9 +69,9 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
-import io.helidon.security.providers.OutboundConfig;
-import io.helidon.security.providers.OutboundTarget;
-import io.helidon.security.providers.TokenCredential;
+import io.helidon.security.providers.common.OutboundConfig;
+import io.helidon.security.providers.common.OutboundTarget;
+import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
@@ -168,7 +169,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return AuthenticationResponse.abstain();
         }
 
-        List<LoginConfig> loginConfigs = providerRequest.getEndpointConfig()
+        List<LoginConfig> loginConfigs = providerRequest.endpointConfig()
                 .combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION);
 
         try {
@@ -183,7 +184,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
-        return atnTokenHandler.extractToken(providerRequest.getEnv().getHeaders())
+        return atnTokenHandler.extractToken(providerRequest.env().headers())
                 .map(token -> {
                     SignedJwt signedJwt = SignedJwt.parseToken(token);
                     Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
@@ -212,10 +213,10 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         JsonWebTokenImpl principal = buildPrincipal(jwt, signedJwt);
 
         TokenCredential.Builder builder = TokenCredential.builder();
-        jwt.getIssueTime().ifPresent(builder::issueTime);
-        jwt.getExpirationTime().ifPresent(builder::expTime);
-        jwt.getIssuer().ifPresent(builder::issuer);
-        builder.token(signedJwt.getTokenContent());
+        jwt.issueTime().ifPresent(builder::issueTime);
+        jwt.expirationTime().ifPresent(builder::expTime);
+        jwt.issuer().ifPresent(builder::issuer);
+        builder.token(signedJwt.tokenContent());
         builder.addToken(JsonWebToken.class, principal);
         builder.addToken(Jwt.class, jwt);
         builder.addToken(SignedJwt.class, signedJwt);
@@ -226,10 +227,10 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 .principal(principal)
                 .addPublicCredential(TokenCredential.class, builder.build());
 
-        Optional<List<String>> userGroups = jwt.getUserGroups();
+        Optional<List<String>> userGroups = jwt.userGroups();
         userGroups.ifPresent(groups -> groups.forEach(group -> subjectBuilder.addGrant(Role.create(group))));
 
-        Optional<List<String>> scopes = jwt.getScopes();
+        Optional<List<String>> scopes = jwt.scopes();
         scopes.ifPresent(scopeList ->
                                  scopeList.forEach(scope -> subjectBuilder.addGrant(Grant.builder()
                                                                                             .name(scope)
@@ -255,7 +256,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
 
-        Optional<Object> maybeUsername = outboundEndpointConfig.getAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
         return maybeUsername
                 .map(String::valueOf)
                 .flatMap(username -> {
@@ -286,9 +287,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 }).orElseGet(() -> {
                     Optional<Subject> maybeSubject;
                     if (subjectType == SubjectType.USER) {
-                        maybeSubject = providerRequest.getContext().getUser();
+                        maybeSubject = providerRequest.securityContext().user();
                     } else {
-                        maybeSubject = providerRequest.getContext().getService();
+                        maybeSubject = providerRequest.securityContext().service();
                     }
 
                     return maybeSubject.flatMap(subject -> {
@@ -300,8 +301,8 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
                             if (null == jwtOutboundTarget.jwkKid) {
                                 // just propagate existing token
-                                return subject.getPublicCredential(TokenCredential.class)
-                                        .map(tokenCredential -> propagate(jwtOutboundTarget, tokenCredential.getToken()));
+                                return subject.publicCredential(TokenCredential.class)
+                                        .map(tokenCredential -> propagate(jwtOutboundTarget, tokenCredential.token()));
                             } else {
                                 // we do have kid - we are creating a new token of our own
                                 return Optional.of(propagate(jwtOutboundTarget, subject));
@@ -313,7 +314,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
     private OutboundSecurityResponse propagate(JwtOutboundTarget outboundTarget, String token) {
         Map<String, List<String>> headers = new HashMap<>();
-        outboundTarget.outboundHandler.setHeader(headers, token);
+        outboundTarget.outboundHandler.header(headers, token);
         return OutboundSecurityResponse.withHeaders(headers);
     }
 
@@ -322,27 +323,27 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         Jwk jwk = signKeys.forKeyId(ot.jwkKid)
                 .orElseThrow(() -> new JwtException("Signing JWK with kid: " + ot.jwkKid + " is not defined."));
 
-        Principal principal = subject.getPrincipal();
+        Principal principal = subject.principal();
 
         Jwt.Builder builder = Jwt.builder();
 
-        principal.getAttributeNames().forEach(name -> {
-            principal.getAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
+        principal.abacAttributeNames().forEach(name -> {
+            principal.abacAttribute(name).ifPresent(val -> builder.addPayloadClaim(name, val));
         });
 
-        OptionalHelper.from(principal.getAttribute("full_name"))
+        OptionalHelper.from(principal.abacAttribute("full_name"))
                 .ifPresentOrElse(name -> builder.addPayloadClaim("name", name),
                                  () -> builder.removePayloadClaim("name"));
 
-        builder.subject(principal.getId())
+        builder.subject(principal.id())
                 .preferredUsername(principal.getName())
                 .issuer(issuer)
-                .algorithm(jwk.getAlgorithm());
+                .algorithm(jwk.algorithm());
 
         ot.update(builder);
 
         // MP specific
-        if (!principal.getAttribute("upn").isPresent()) {
+        if (!principal.abacAttribute("upn").isPresent()) {
             builder.userPrincipal(principal.getName());
         }
 
@@ -351,7 +352,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         Jwt jwt = builder.build();
         SignedJwt signed = SignedJwt.sign(jwt, jwk);
-        ot.outboundHandler.setHeader(headers, signed.getTokenContent());
+        ot.outboundHandler.header(headers, signed.tokenContent());
 
         return OutboundSecurityResponse.withHeaders(headers);
     }
@@ -368,20 +369,20 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         builder.subject(username)
                 .preferredUsername(username)
                 .issuer(issuer)
-                .algorithm(jwk.getAlgorithm());
+                .algorithm(jwk.algorithm());
 
         ot.update(builder);
 
         Jwt jwt = builder.build();
         SignedJwt signed = SignedJwt.sign(jwt, jwk);
-        ot.outboundHandler.setHeader(headers, signed.getTokenContent());
+        ot.outboundHandler.header(headers, signed.tokenContent());
 
         return OutboundSecurityResponse.withHeaders(headers);
     }
 
     private JwtOutboundTarget toOutboundTarget(OutboundTarget outboundTarget) {
         // first check if a custom object is defined
-        Optional<? extends JwtOutboundTarget> customObject = outboundTarget.getCustomObject(JwtOutboundTarget.class);
+        Optional<? extends JwtOutboundTarget> customObject = outboundTarget.customObject(JwtOutboundTarget.class);
         if (customObject.isPresent()) {
             return customObject.get();
         }
@@ -444,7 +445,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         public static JwtOutboundTarget fromConfig(Config config, TokenHandler defaultHandler) {
             TokenHandler tokenHandler = config.get("outbound-token")
                     .asNode()
-                    .map(TokenHandler::fromConfig)
+                    .map(TokenHandler::create)
                     .orElse(defaultHandler);
 
             return new JwtOutboundTarget(
@@ -546,8 +547,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         private JwkKeys loadJwkKeysFromLocation(String uri) {
-            Path path = Paths.get(uri);
-            if (Files.exists(path)) {
+            Path path;
+            try {
+                path = Paths.get(uri);
+            } catch (InvalidPathException e) {
+                path = null;
+            }
+            if (path != null && Files.exists(path)) {
                 try {
                     return loadJwkKeys(new String(Files.readAllBytes(path), UTF_8));
                 } catch (IOException e) {
@@ -626,7 +632,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                         .build();
             }
             JsonObject jsonObject = Json.createReader(new StringReader(jwkJson)).readObject();
-            return JwkKeys.builder().addKey(Jwk.fromJson(jsonObject)).build();
+            return JwkKeys.builder().addKey(Jwk.create(jsonObject)).build();
         }
 
         /**
@@ -814,12 +820,12 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("atn-token.handler").as(TokenHandler::fromConfig).ifPresent(this::atnTokenHandler);
+            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
             config.get("atn-token.default-key-id").asString().ifPresent(this::defaultKeyId);
             config.get("atn-token.verify-key").asString().ifPresent(this::publicKeyPath);
-            config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.parseTargets(outbound)));
+            config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
 
             org.eclipse.microprofile.config.Config mpConfig = ConfigProviderResolver.instance().getConfig();

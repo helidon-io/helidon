@@ -34,13 +34,13 @@ import io.helidon.security.util.AbacSupport;
  * A request sent to security providers.
  * Contains all information that may be needed to authenticate or authorize a request:
  * <ul>
- * <li>User's subject: {@link #getSubject()} - if user is authenticated</li>
- * <li>Service subject: {@link #getService()} - if service is authenticated</li>
- * <li>Environment information: {@link #getEnv()} - path, method etc.</li>
+ * <li>User's subject: {@link #subject()} - if user is authenticated</li>
+ * <li>Service subject: {@link #service()} - if service is authenticated</li>
+ * <li>Environment information: {@link #env()} - path, method etc.</li>
  * <li>Object: {@link #getObject()} - target resource, if provided by user</li>
- * <li>Security context: {@link #getContext()} - current subjects and information about security context of this
+ * <li>Security context: {@link #securityContext()} - current subjects and information about security context of this
  * request</li>
- * <li>Endpoint configuration: {@link #getEndpointConfig()} - annotations, endpoint specific configuration, custom objects,
+ * <li>Endpoint configuration: {@link #endpointConfig()} - annotations, endpoint specific configuration, custom objects,
  * custom atttributes</li>
  * </ul>
  */
@@ -74,12 +74,12 @@ public class ProviderRequest implements AbacSupport {
             }
         }
 
-        this.env = context.getEnv();
-        this.epConfig = context.getEndpointConfig();
+        this.env = context.env();
+        this.epConfig = context.endpointConfig();
         this.context = context;
         this.resource = Optional.ofNullable(object);
-        this.subject = context.getUser();
-        this.service = context.getService();
+        this.subject = context.user();
+        this.service = context.service();
 
         contextRoot.put("env", env);
         subject.ifPresent(user -> contextRoot.put("subject", user));
@@ -88,7 +88,7 @@ public class ProviderRequest implements AbacSupport {
 
     /**
      * Get a value of a property from an object.
-     * If object implements {@link AbacSupport} the value is obtained through {@link AbacSupport#getAttribute(String)}, if not,
+     * If object implements {@link AbacSupport} the value is obtained through {@link AbacSupport#abacAttribute(String)}, if not,
      * the value is obtained by reflection from a public field or a public getter method.
      * The method name may be (for attribute called for example "audit"):
      * <ul>
@@ -164,26 +164,52 @@ public class ProviderRequest implements AbacSupport {
         }
     }
 
-    public EndpointConfig getEndpointConfig() {
+    /**
+     * Configuration of the invoked endpoint, such as annotations declared.
+     * @return endpoint config
+     */
+    public EndpointConfig endpointConfig() {
         return epConfig;
     }
 
-    public SecurityContext getContext() {
+    /**
+     * Security context associated with current request.
+     * @return security context
+     */
+    public SecurityContext securityContext() {
         return context;
     }
 
-    public Optional<Subject> getSubject() {
+    /**
+     * Current user subject, if already authenticated.
+     * @return user subject or empty
+     */
+    public Optional<Subject> subject() {
         return subject;
     }
 
-    public Optional<Subject> getService() {
+    /**
+     * Current service subject, if already authenticated.
+     * @return service subject or empty.
+     */
+    public Optional<Subject> service() {
         return service;
     }
 
-    public SecurityEnvironment getEnv() {
+    /**
+     * Environment of current request, such as the URI invoked, time to use for security decisions etc.
+     * @return security environment
+     */
+    public SecurityEnvironment env() {
         return env;
     }
 
+    /**
+     * The object of this request. Security request may be configured for a specific entity (e.g. if this is an entity
+     * modification request, the entity itself may be provided to help in a security task.
+     *
+     * @return the object or empty if not known
+     */
     public Optional<Object> getObject() {
         return resource.map(ObjectWrapper::getValue);
     }
@@ -192,8 +218,10 @@ public class ProviderRequest implements AbacSupport {
      * Access request message entity.
      *
      * @return Entity of the request, if current request has entity
+     * @deprecated entity access is going to be removed from security
      */
-    public Optional<Entity> getRequestEntity() {
+    @Deprecated
+    public Optional<Entity> requestEntity() {
         return requestEntity;
     }
 
@@ -201,22 +229,24 @@ public class ProviderRequest implements AbacSupport {
      * Access response message entity.
      *
      * @return Entity of the response, if current response can have entity
+     * @deprecated entity access is going to be removed from security
      */
-    public Optional<Entity> getResponseEntity() {
+    @Deprecated
+    public Optional<Entity> responseEntity() {
         return responseEntity;
     }
 
     @Override
-    public Object getAttributeRaw(String key) {
+    public Object abacAttributeRaw(String key) {
         return contextRoot.get(key);
     }
 
     @Override
-    public Collection<String> getAttributeNames() {
+    public Collection<String> abacAttributeNames() {
         return contextRoot.keySet();
     }
 
-    private static class ObjectWrapper implements AbacSupport {
+    private static final class ObjectWrapper implements AbacSupport {
         private final Supplier<Object> valueSupplier;
         private volatile Object value;
         private volatile AbacSupport container;
@@ -226,21 +256,21 @@ public class ProviderRequest implements AbacSupport {
         }
 
         @Override
-        public Object getAttributeRaw(String key) {
+        public Object abacAttributeRaw(String key) {
             checkValue();
 
             if (null != container) {
-                return container.getAttributeRaw(key);
+                return container.abacAttributeRaw(key);
             }
             return ProviderRequest.getValue(value, key);
         }
 
         @Override
-        public Collection<String> getAttributeNames() {
+        public Collection<String> abacAttributeNames() {
             checkValue();
 
             if (null != container) {
-                return container.getAttributeNames();
+                return container.abacAttributeNames();
             }
 
             throw new UnsupportedOperationException("Property names are not available for general Object types, such as: "
@@ -263,12 +293,12 @@ public class ProviderRequest implements AbacSupport {
                             final Map<?, ?> map = (Map<?, ?>) value;
                             container = new AbacSupport() {
                                 @Override
-                                public Object getAttributeRaw(String key) {
+                                public Object abacAttributeRaw(String key) {
                                     return map.get(key);
                                 }
 
                                 @Override
-                                public Collection<String> getAttributeNames() {
+                                public Collection<String> abacAttributeNames() {
                                     return map.keySet()
                                             .stream()
                                             .map(String::valueOf)

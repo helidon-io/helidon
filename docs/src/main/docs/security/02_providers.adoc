@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ The following providers are implemented:
 * <<HTTP Signatures,HTTP Signatures>>
 * <<ABAC (Attribute based access control) Authorization Provider,ABAC Authorization>>
 * Google Login Authentication Provider
-    - please see security example: https://github.com/oracle/helidon/tree/master/security/examples/google-login
+    - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/google-login
 * OIDC (Open ID Connect) Authentication provider - an OAuth extension for authentication
-    - please see security example: https://github.com/oracle/helidon/tree/master/security/examples/idcs-login
+    - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/idcs-login
 * IDCS Role Mapping Provider - a role mapper that can be used with any authentication provider, retrieves roles from IDCS
-    - please see security example: https://github.com/oracle/helidon/tree/master/security/examples/idcs-login
+    - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/idcs-login
 
 === JWT Provider
 
@@ -50,9 +50,9 @@ support for generating a brand new token based on configuration of this provider
 |===
 |Property |Value
 
-|Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-jwt
-|Provider package |io.helidon.security.provider.jwt
+|Maven groupId |io.helidon.security.providers
+|Maven artifactId |helidon-security-providers-jwt
+|Provider package |io.helidon.security.providers.jwt
 |Provider class |JwtProvider
 |Provider key |jwt
 |===
@@ -60,17 +60,14 @@ support for generating a brand new token based on configuration of this provider
 This provider is:
 
 * Authentication Provider
-* [line-through]#Authorization Provider#
 * Outbound Security Provider
-* [line-through]#Audit Provider#
-
 
 [source,xml]
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-jwt</artifactId>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-jwt</artifactId>
 </dependency>
 ----
 
@@ -162,9 +159,9 @@ Note that basic authentication sends username and password unencrypted over the 
 |===
 |Property |Value
 
-|Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-http-auth
-|Provider package |io.helidon.security.provider.httpauth
+|Maven groupId |io.helidon.security.providers
+|Maven artifactId |helidon-security-providers-http-auth
+|Provider package |io.helidon.security.providers.httpauth
 |Provider class |HttpBasicAuthProvider
 |Provider key |http-basic-auth
 |===
@@ -172,17 +169,14 @@ Note that basic authentication sends username and password unencrypted over the 
 This provider is:
 
 * Authentication Provider
-* [line-through]#Authorization Provider#
 * Outbound Security Provider
-* [line-through]#Audit Provider#
-
 
 [source,xml]
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-http-auth</artifactId>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
 </dependency>
 ----
 
@@ -192,9 +186,9 @@ All configuration options:
 |===
 |key |default value |description
 
-|realm | realm |Authentication realm - may be shown to user by browser
+|realm | helidon |Authentication realm - may be shown to user by browser
 |principal-type |USER |Type of subject authenticated by this provider - USER or SERVICE
-|users | |A list of users (login, password and roles). Currently to externalize this you must use builder approach.
+|users | none |A list of users (login, password and roles). Currently to externalize this you must use builder approach.
 |===
 
 Example configuration with a single user (may have more):
@@ -252,9 +246,9 @@ Note that basic authentication sends username and password unencrypted over the 
 |===
 |Property |Value
 
-|Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-http-auth
-|Provider package |io.helidon.security.provider.httpauth
+|Maven groupId |io.helidon.security.providers
+|Maven artifactId |helidon-security-providers-http-auth
+|Provider package |io.helidon.security.providers.httpauth
 |Provider class |HttpDigestAuthProvider
 |Provider key |http-digest-auth
 |===
@@ -262,16 +256,13 @@ Note that basic authentication sends username and password unencrypted over the 
 This provider is:
 
 * Authentication Provider
-* [line-through]#Authorization Provider#
-* [line-through]#Outbound Security Provider#
-* [line-through]#Audit Provider#
 
 [source,xml]
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-http-auth</artifactId>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-http-auth</artifactId>
 </dependency>
 ----
 
@@ -282,9 +273,9 @@ All configuration options:
 |===
 |key |default value |description
 
-|realm | realm |Authentication realm - may be shown to user by browser
+|realm |helidon |Authentication realm - may be shown to user by browser
 |principal-type |USER |Type of subject authenticated by this provider - USER or SERVICE
-|users | |A list of users (login, password and roles). Currently to externalize this you must use builder approach.
+|users |none |A list of users (login, password and roles). Currently to externalize this you must use builder approach.
 |algorithm |MD5 |Only MD5 supported
 |nonce-timeout-millis |1 day |Number of milliseconds for the nonce timeout
 |server-secret |random |A string to use as a server secret - this is to use digest auth between multiple servers (e.g. when in a cluster). Used to encrypt nonce. This must not be known outside of this app, as others may create digest requests we would trust.
@@ -329,9 +320,9 @@ care of authentication and propagates the user in a header).
 |===
 |Property |Value
 
-|Maven groupId |io.helidon.security
-|Maven artifactId |helidon-security-provider-header-atn
-|Provider package |io.helidon.security.provider.header
+|Maven groupId |io.helidon.security.providers
+|Maven artifactId |helidon-security-providers-header
+|Provider package |io.helidon.security.providers.header
 |Provider class |HeaderAtnProvider
 |Provider key |header-atn
 |===
@@ -339,16 +330,14 @@ care of authentication and propagates the user in a header).
 This provider is:
 
 * Authentication Provider
-* [line-through]#Authorization Provider#
 * Outbound Security Provider
-* [line-through]#Audit Provider#
 
 [source,xml]
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-header-atn</artifactId>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-header</artifactId>
 </dependency>
 ----
 
@@ -362,7 +351,7 @@ All configuration options:
 |authenticate| true |If set to false, authentication will not be attempted
 |propagate | true |If set to false, identity propagation will not be done
 |principal-type | USER |Can be USER or SERVICE
-|atn-token | | Token extraction and propagation, you can define which header to use and how to extract it
+|atn-token | none | Token extraction and propagation, you can define which header to use and how to extract it
 |outbound-token | atn-token | If outbound token should be created differently than inbound
 |===
 
@@ -406,8 +395,8 @@ Support for HTTP Signatures (both inbound and outbound).
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-http-signature</artifactId>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers  -http-sign</artifactId>
 </dependency>
 ----
 
@@ -430,7 +419,7 @@ Builder example, starting from inside out:
 ----
 // Configuration of public key certificate to validate inbound requests
         KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-                .keystore(Resource.from(Paths.get("keystore.p12")))
+                .keystore(Resource.create(Paths.get("keystore.p12")))
                 .keystorePassphrase("password".toCharArray())
                 .certAlias("service_cert")
                 .build();
@@ -500,7 +489,7 @@ Builder example, starting from inside out (rsa only, as hmac is significantly
 ----
 // Configuration of private key to sign outbound requests
 KeyConfig keyConfig = KeyConfig.keystoreBuilder()
-        .keystore(Resource.from(Paths.get("src/main/resources/keystore.p12")))
+        .keystore(Resource.create(Paths.get("src/main/resources/keystore.p12")))
         .keystorePassphrase("password".toCharArray())
         .keyAlias("myPrivateKey")
         .build();
@@ -551,7 +540,6 @@ outbound: [
         name = "service2-rsa"
         hosts = ["service2"]
         paths = ["/service2-rsa"]
-http://[]
 
         signature {
             key-id = "service1-rsa"
@@ -580,6 +568,7 @@ This provider is an authorization provider validating various attributes against
 configured validators.
 
 Any attribute of the following objects can be used:
+
  - environment (such as time of request) - e.g. env.time.year
  - subject (user) - e.g. subject.principal.id
  - subject (service) - e.g. service.principal.id
@@ -593,8 +582,8 @@ the request is denied.
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security-provider-abac</artifactId>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-abac</artifactId>
 </dependency>
 ----
 

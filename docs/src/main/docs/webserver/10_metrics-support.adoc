@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ Declare the following dependency in your project:
 .Webserver Metrics Dependency
 ----
     <dependency>
-        <groupId>io.helidon.microprofile.metrics</groupId>
-        <artifactId>helidon-metrics-se</artifactId>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics</artifactId>
     </dependency>
 ----
 
@@ -177,7 +177,7 @@ public class HealthCheckService implements Service {
 
         // Get WebServer config from the "server" section of application.yaml
         ServerConfiguration serverConfig = ServerConfiguration.
-            fromConfig(config.get("server"));
+            create(config.get("server"));
 
         WebServer server = WebServer.builder(createRouting())  //<1>
                         .configuration(serverConfig)

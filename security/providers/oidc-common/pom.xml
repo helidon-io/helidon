@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,18 +19,18 @@
         xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <groupId>io.helidon.security.providers</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
-        <groupId>io.helidon.security</groupId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>0.11.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>helidon-security-provider-oidc-common</artifactId>
+    <artifactId>helidon-security-providers-oidc-common</artifactId>
     <name>Helidon Security Providers OIDC Common</name>
 
     <dependencies>
         <dependency>
             <!-- Token handling -->
-            <groupId>io.helidon.security</groupId>
+            <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -57,8 +57,8 @@
             <artifactId>javax.activation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-config</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

@@ -33,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Builder;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ClasspathConfigSource;
@@ -77,8 +78,8 @@ public final class ConfigSources {
      * @param config the original {@code Config}
      * @return {@code ConfigSource} for the same {@code Config} as the original
      */
-    public static ConfigSource from(Config config) {
-        return ConfigSources.from(config.asMap().get()).get();
+    public static ConfigSource create(Config config) {
+        return ConfigSources.create(config.asMap().get()).get();
     }
 
     /**
@@ -94,7 +95,7 @@ public final class ConfigSources {
      * @see ConfigNode.ObjectNode.Builder
      * @see ConfigNode.ListNode.Builder
      */
-    public static ConfigSource from(ConfigNode.ObjectNode objectNode) {
+    public static ConfigSource create(ConfigNode.ObjectNode objectNode) {
         return new ConfigSource() {
             @Override
             public String description() {
@@ -112,18 +113,18 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@link Readable readable content} and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#getStamp() content timestamp}.
+     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
      * @param readable  a {@code Readable} providing the configuration content
      * @param mediaType a configuration media type
      * @return a config source
      */
-    public static ConfigSource from(Readable readable, String mediaType) {
+    public static ConfigSource create(Readable readable, String mediaType) {
         return InMemoryConfigSource.builder()
                 .mediaType(mediaType)
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
-                .content("Readable", ConfigParser.Content.from(readable, mediaType, Optional.of(Instant.now())))
+                .content("Readable", ConfigParser.Content.create(readable, mediaType, Optional.of(Instant.now())))
                 .build();
     }
 
@@ -131,18 +132,18 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@code String} content and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link ConfigParser.Content#getStamp() content timestamp}.
+     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
      * @param content   a configuration content
      * @param mediaType a configuration media type
      * @return a config source
      */
-    public static ConfigSource from(String content, String mediaType) {
+    public static ConfigSource create(String content, String mediaType) {
         return InMemoryConfigSource.builder()
                 .mediaType(mediaType)
                 .changesExecutor(Runnable::run)
                 .changesMaxBuffer(1)
-                .content("String", ConfigParser.Content.from(new StringReader(content), mediaType, Optional.of(Instant.now())))
+                .content("String", ConfigParser.Content.create(new StringReader(content), mediaType, Optional.of(Instant.now())))
                 .build();
     }
 
@@ -152,9 +153,9 @@ public final class ConfigSources {
      *
      * @param map a map
      * @return new Builder instance
-     * @see #from(Properties)
+     * @see #create(Properties)
      */
-    public static MapBuilder from(Map<String, String> map) {
+    public static MapBuilder create(Map<String, String> map) {
         return new MapBuilder(map);
     }
 
@@ -164,9 +165,9 @@ public final class ConfigSources {
      *
      * @param properties properties
      * @return new Builder instance
-     * @see #from(Map)
+     * @see #create(Map)
      */
-    public static MapBuilder from(Properties properties) {
+    public static MapBuilder create(Properties properties) {
         return new MapBuilder(properties);
     }
 
@@ -189,7 +190,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for config derived from system properties
      */
     public static ConfigSource systemProperties() {
-        return from(System.getProperties()).lax().build();
+        return create(System.getProperties()).lax().build();
     }
 
     /**
@@ -199,7 +200,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for config derived from environment variables
      */
     public static ConfigSource environmentVariables() {
-        return from(System.getenv()).lax().build();
+        return create(System.getenv()).lax().build();
     }
 
     /**
@@ -271,16 +272,16 @@ public final class ConfigSources {
      * @return new composite config source builder instance initialized from config sources.
      * @see CompositeBuilder
      * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
+     * @see #create(Supplier[])
+     * @see #create(List)
      * @see #load(Supplier[])
      * @see #load(Config)
-     * @see Config#from(Supplier[])
-     * @see Config#withSources(Supplier[])
+     * @see Config#create(Supplier[])
+     * @see Config#builder(Supplier[])
      */
     @SafeVarargs
-    public static CompositeBuilder from(Supplier<ConfigSource>... configSources) {
-        return from(CollectionsHelper.listOf(configSources));
+    public static CompositeBuilder create(Supplier<ConfigSource>... configSources) {
+        return create(CollectionsHelper.listOf(configSources));
     }
 
     /**
@@ -298,14 +299,14 @@ public final class ConfigSources {
      * @return new composite config source builder instance initialized from config sources.
      * @see CompositeBuilder
      * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
+     * @see #create(Supplier[])
+     * @see #create(List)
      * @see #load(Supplier[])
      * @see #load(Config)
-     * @see Config#from(Supplier[])
-     * @see Config#withSources(Supplier[])
+     * @see Config#create(Supplier[])
+     * @see Config#builder(Supplier[])
      */
-    public static CompositeBuilder from(List<Supplier<ConfigSource>> configSources) {
+    public static CompositeBuilder create(List<Supplier<ConfigSource>> configSources) {
         return new CompositeBuilder(configSources);
     }
 
@@ -315,7 +316,7 @@ public final class ConfigSources {
      * provided meta-sources.
      * <p>
      * Each meta-source must contain the {@code sources} property which is an
-     * array of config sources. See {@link ConfigSource#from(Config)} for more
+     * array of config sources. See {@link ConfigSource#create(Config)} for more
      * information about the format of meta-configuration.
      * <p>
      * The returned builder is a {@code CompositeBuilder} that combines the
@@ -329,16 +330,16 @@ public final class ConfigSources {
      * specified meta-sources.
      * @see CompositeBuilder
      * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
+     * @see #create(Supplier[])
+     * @see #create(List)
      * @see #load(Supplier[])
      * @see #load(Config)
-     * @see Config#loadSources(Supplier[])
+     * @see Config#builderLoadSourcesFrom(Supplier[])
      * @see Config#loadSourcesFrom(Supplier[])
      */
     @SafeVarargs
     public static CompositeBuilder load(Supplier<ConfigSource>... metaSources) {
-        return load(Config.withSources(metaSources)
+        return load(Config.builder(metaSources)
                             .disableEnvironmentVariablesSource()
                             .disableSystemPropertiesSource()
                             .build());
@@ -350,7 +351,7 @@ public final class ConfigSources {
      * provided meta-configuration.
      * <p>
      * The meta-configuration must contain the {@code sources} property which is
-     * an array of config sources. See {@link ConfigSource#from(Config)} for
+     * an array of config sources. See {@link ConfigSource#create(Config)} for
      * more information about the format of meta-configuration.
      * <p>
      * The returned builder is a {@code CompositeBuilder} that combines the
@@ -364,11 +365,11 @@ public final class ConfigSources {
      * specified meta-config
      * @see CompositeBuilder
      * @see MergingStrategy
-     * @see #from(Supplier[])
-     * @see #from(List)
+     * @see #create(Supplier[])
+     * @see #create(List)
      * @see #load(Supplier[])
      * @see #load(Config)
-     * @see Config#loadSources(Supplier[])
+     * @see Config#builderLoadSourcesFrom(Supplier[])
      * @see Config#loadSourcesFrom(Supplier[])
      */
     public static CompositeBuilder load(Config metaConfig) {
@@ -376,11 +377,11 @@ public final class ConfigSources {
                 .asNodeList()
                 .orElse(CollectionsHelper.listOf())
                 .stream()
-                .map(node -> node.as(ConfigSource::from))
+                .map(node -> node.as(ConfigSource::create))
                 .map(ConfigValue::get)
                 .collect(Collectors.toList());
 
-        return ConfigSources.from(sources);
+        return ConfigSources.create(sources);
     }
 
     /**
@@ -414,7 +415,7 @@ public final class ConfigSources {
      * <strong>not</strong> support
      * {@link ConfigSource#changes() ConfigSource mutability}.
      */
-    public static final class MapBuilder implements Supplier<ConfigSource> {
+    public static final class MapBuilder implements Builder<ConfigSource> {
 
         private static final String PROPERTIES_NAME = "properties";
         private static final String SYS_PROPS_NAME = "sys-props";
@@ -472,6 +473,7 @@ public final class ConfigSources {
          *
          * @return {@link MapConfigSource} based on the specified {@code Map} or {@code Properties}
          */
+        @Override
         public ConfigSource build() {
             return new MapConfigSource(map, strict, mapSourceName);
         }
@@ -528,11 +530,11 @@ public final class ConfigSources {
      * </tr>
      * </table>
      *
-     * @see ConfigSources#from(Supplier...)
+     * @see ConfigSources#create(Supplier...)
      * @see MergingStrategy
      * @see MergingStrategy#fallback() default merging strategy
      */
-    public static class CompositeBuilder implements Supplier<ConfigSource> {
+    public static class CompositeBuilder implements Builder<ConfigSource> {
 
         private static final long DEFAULT_CHANGES_DEBOUNCE_TIMEOUT = 100;
 
@@ -646,6 +648,7 @@ public final class ConfigSources {
          *
          * @return new instance of Composite ConfigSource.
          */
+        @Override
         public ConfigSource build() {
             final List<ConfigSource> finalConfigSources = new LinkedList<>();
             finalConfigSources.addAll(configSources);
@@ -681,7 +684,7 @@ public final class ConfigSources {
      * An algorithm for combining multiple {@code ConfigNode.ObjectNode} root nodes
      * into a single {@code ConfigNode.ObjectNode} root node.
      *
-     * @see ConfigSources#from(Supplier...)
+     * @see ConfigSources#create(Supplier...)
      * @see CompositeBuilder
      * @see CompositeBuilder#mergingStrategy(MergingStrategy)
      * @see #fallback() default merging strategy

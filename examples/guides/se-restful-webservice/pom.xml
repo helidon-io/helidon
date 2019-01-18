@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,14 +21,14 @@
     <parent>
         <artifactId>helidon-guides-project</artifactId>
         <groupId>io.helidon.guides</groupId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>0.11.1-SNAPSHOT</version>
     </parent>
     <artifactId>se-restful-webservice</artifactId>
     <name>Helidon Guides SE RESTful Web Service</name>
 
     <properties>
         <!-- tag::helidonVersion[] -->
-        <helidon.version>0.11.0-SNAPSHOT</helidon.version>
+        <helidon.version>0.11.1-SNAPSHOT</helidon.version>
         <!-- end::helidonVersion[] -->
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
@@ -183,8 +183,8 @@
     <dependencies>
         <!-- tag::webserverBundleDependency[] -->
         <dependency> <!--1-->
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-bundle</artifactId>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-webserver</artifactId>
         </dependency>
         <!-- end::webserverBundleDependency[] -->
         <!-- tag::configYamlDependency[] -->
@@ -195,8 +195,8 @@
         <!-- end::configYamlDependency[] -->
         <!-- tag::metricsDependency[] -->
         <dependency>
-            <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-metrics-se</artifactId>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
         </dependency>
         <!-- end::metricsDependency[] -->
         <dependency>

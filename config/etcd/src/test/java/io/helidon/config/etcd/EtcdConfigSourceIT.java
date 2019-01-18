@@ -50,7 +50,7 @@ public class EtcdConfigSourceIT {
         putConfiguration(version, "/application.conf");
         Config config = Config.builder()
                 .sources(EtcdConfigSourceBuilder
-                                 .from(DEFAULT_URI, "configuration", version)
+                                 .create(DEFAULT_URI, "configuration", version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
                                  .build())
                 .addParser(new HoconConfigParser())
@@ -65,9 +65,9 @@ public class EtcdConfigSourceIT {
         putConfiguration(version, "/application.conf");
         Config config = Config.builder()
                 .sources(EtcdConfigSourceBuilder
-                                 .from(DEFAULT_URI, "configuration", version)
+                                 .create(DEFAULT_URI, "configuration", version)
                                  .mediaType(MEDIA_TYPE_APPLICATION_HOCON)
-                                 .pollingStrategy(EtcdWatchPollingStrategy::new)
+                                 .pollingStrategy(EtcdWatchPollingStrategy::create)
                                  .build())
                 .addParser(new HoconConfigParser())
                 .build();

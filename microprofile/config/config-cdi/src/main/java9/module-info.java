@@ -17,13 +17,13 @@
 /**
  * CDI extension for microprofile config implementation.
  */
-module io.helidon.mp.config.cdi {
+module io.helidon.microprofile.config.cdi {
     requires java.logging;
     requires cdi.api;
     requires javax.inject;
     requires io.helidon.common;
     requires io.helidon.config;
-    requires io.helidon.mp.config;
+    requires io.helidon.microprofile.config;
     requires microprofile.config.api;
 
     exports io.helidon.microprofile.config.cdi;

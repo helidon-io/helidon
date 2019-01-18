@@ -55,14 +55,14 @@ public class ConfigSourceTest {
 
     @Test
     public void testFromObjectNodeDescription() {
-        ConfigSource configSource = ConfigSources.from(ObjectNode.empty());
+        ConfigSource configSource = ConfigSources.create(ObjectNode.empty());
 
         assertThat(configSource.description(), is("InMemoryConfig[ObjectNode]"));
     }
 
     @Test
     public void testFromObjectNodeLoad() {
-        ConfigSource configSource = ConfigSources.from(ObjectNode.empty());
+        ConfigSource configSource = ConfigSources.create(ObjectNode.empty());
 
         configSource.init(mock(ConfigContext.class));
         assertThat(configSource.load().get().entrySet(), is(empty()));
@@ -71,7 +71,7 @@ public class ConfigSourceTest {
     @Test
     public void testFromReadableDescription() {
         ConfigSource configSource = ConfigSources
-                .from(new StringReader("aaa=bbb"), PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                .create(new StringReader("aaa=bbb"), PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
         assertThat(configSource.description(), is("InMemoryConfig[Readable]"));
     }
@@ -82,7 +82,7 @@ public class ConfigSourceTest {
         when(context.findParser(any())).thenReturn(Optional.of(ConfigParsers.properties()));
 
         ConfigSource configSource = ConfigSources
-                .from(new StringReader("aaa=bbb"), PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+                .create(new StringReader("aaa=bbb"), PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
         configSource.init(context);
         assertThat(configSource.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));
@@ -91,7 +91,7 @@ public class ConfigSourceTest {
     @ExtendWith(RestoreSystemPropertiesExt.class)
     @Test
     public void testFromTextDescription() {
-        ConfigSource configSource = ConfigSources.from("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+        ConfigSource configSource = ConfigSources.create("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
         assertThat(configSource.description(), is("InMemoryConfig[String]"));
     }
@@ -103,7 +103,7 @@ public class ConfigSourceTest {
                 argThat(PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES::equals)))
                 .thenReturn(Optional.of(ConfigParsers.properties()));
 
-        ConfigSource configSource = ConfigSources.from("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
+        ConfigSource configSource = ConfigSources.create("aaa=bbb", PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
         configSource.init(context);
         assertThat(configSource.load().get().get("aaa"), ValueNodeMatcher.valueNode("bbb"));

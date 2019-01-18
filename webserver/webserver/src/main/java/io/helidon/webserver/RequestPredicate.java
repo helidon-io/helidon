@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,226 +16,489 @@
 
 package io.helidon.webserver;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+import io.helidon.common.http.Http.Method;
 import io.helidon.common.http.MediaType;
 
 /**
- * Fluent API to define complex request conditions. Suitable for definition of more complex routing in {@link Routing.Rules}.
- * <p>
- * Construct condition using {@link #whenRequest()} method and fluent API. Then create request handler using
- * {@link #thenApply(Handler)})} method.
+ * Fluent API that allows to create chains of request conditions for composing
+ * logical expressions to match requests.
+ *
+ *<p>
+ * A new expression can be created using the {@link #create()} method. This method
+ * will initialize an expression with an empty condition that will match any
+ * request.
+ *<p>
+ * Conditions are added to the expression by chaining method invocations and form
+ * a logical <b>AND</b> expression. Each method invocation will return a different
+ * instance representing the last condition in the expression. Each instance can
+ * represent only one condition, invoking a method representing a condition more
+ * than once per instance will throw an {@link IllegalStateException}.
+ *<p>
+ * The expression can be evaluated against a request using the
+ * {@link #test(ServerRequest)} method, or a {@link ConditionalHandler} can be
+ * used to evaluate the expression and delegate to other handlers based on the
+ * result of the evaluation.
+ *<p>
+ * The {@link #thenApply(Handler)} method can be invoked on an expression to create
+ * a {@link ConditionalHandler}.
+ *<p>
+ * The handler to be used for matching requests is passed as parameter to
+ * {@link #thenApply(Handler)} and the handler to be used for requests that do not
+ * match can be specified using {@link ConditionalHandler#otherwise(Handler) }.
  * <h3>Examples</h3>
- * <p>Creates {@link Handler} which executes provided logic only if request contains {@code foo} header and accepts
- * {@code text/plain}. If not, then it calls {@link ServerRequest#next() req.next()}.
+ * <p>
+ * Invoke a {@link Handler} only when the request contains a header name {@code foo}
+ * and accepts {@code text/plain}, otherwise return a response with {@code 404} code.
  * <pre>{@code
- * RequestPredicate.whenRequest()
+ * RequestPredicate.create()
  *                 .containsHeader("foo")
  *                 .accepts(MediaType.TEXT_PLAIN)
  *                 .thenApply((req, resp) -> {
- *                     // Some logic
+ *                     // handler logic
  *                 });
  * }</pre>
- * <p>Creates {@link Handler} which executes provided logic only if request contains {@code foo} header. If not, then it executes
- * '<i>otherwise logic</i>' which, in this case, throws a {@code RuntimeException}.
+ * <p>
+ * Invoke a {@link Handler} only when the request contains a header named {@code foo}
+ * otherwise invoke another handler that throws an exception.
  * <pre>{@code
- * RequestPredicate.whenRequest()
+ * RequestPredicate.create()
  *                 .containsHeader("foo")
  *                 .thenApply((req, resp) -> {
- *                     // Some logic
+ *                     // handler logic
  *                 })
  *                 .otherwise(req, resp) -> {
  *                     throw new RuntimeException("Missing 'foo' header!");
  *                 });
  * }</pre>
  */
-public interface RequestPredicate extends Predicate<ServerRequest> {
+public final class RequestPredicate {
+
+    /**
+     * A condition that returns the current value.
+     */
+    private static final Condition EMPTY_CONDITION = (a, b) -> a;
+
+    /**
+     * The first predicate in the predicate chain.
+     */
+    private final RequestPredicate first;
+
+    /**
+     * The next predicate in the predicate chain.
+     */
+    private volatile RequestPredicate next;
+
+    /**
+     * The condition for this predicate.
+     */
+    private final Condition condition;
+
+    /**
+     * Create an empty predicate.
+     */
+    private RequestPredicate(){
+        this.first = this;
+        this.next = null;
+        this.condition = EMPTY_CONDITION;
+    }
+
+    /**
+     * Create a composed predicate with the given condition.
+     * @param first the first predicate in the chain
+     * @param expr the condition for the new predicate
+     */
+    private RequestPredicate(final RequestPredicate first,
+            final Condition cond){
+
+        this.first = first;
+        this.next = null;
+        this.condition = cond;
+    }
+
+    /**
+     * Create a composed predicate and add it in the predicate chain.
+     * @param newCondition the condition for the new predicate
+     * @throws IllegalStateException if the next condition is already set
+     * @return the created predicate
+     */
+    private RequestPredicate nextCondition(final Condition newCondition){
+        if (next != null) {
+            throw new IllegalStateException("next predicate already set");
+        }
+        this.next = new RequestPredicate(this.first, newCondition);
+        return this.next;
+    }
+
+    /**
+     * Set the {@link Handler} to use when this predicate matches the request.
+     *
+     * @param handler handler to use this predicate instance matches
+     * @return instance of {@link ConditionalHandler} that can be used to
+     * specify another {@link Handler} to use when this predicates does not
+     * match the request
+     * @see ConditionalHandler#otherwise(Handler)
+     */
+    public ConditionalHandler thenApply(final Handler handler) {
+        return new ConditionalHandler(this, handler);
+    }
+
+    /**
+     * Evaluate this predicate.
+     * @param request the server request
+     * @return the computed value
+     */
+    public boolean test(final ServerRequest request) {
+        return eval(/* initial value */ true, this.first, request);
+    }
+
+    /**
+     * Returns a composed predicate that represents a logical AND expression
+     * between this predicate and another predicate.
+     *
+     * @param predicate predicate to compose with
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     */
+    public RequestPredicate and(final Predicate<ServerRequest> predicate) {
+        return nextCondition((exprVal, req) -> exprVal && predicate.test(req));
+    }
+
+    /**
+     * Returns a composed predicate that represents a logical OR expression
+     * between this predicate and another predicate.
+     *
+     * @param predicate predicate that compute the new value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>OR</b> the provided predicate
+     */
+    public RequestPredicate or(final Predicate<ServerRequest> predicate) {
+        return nextCondition((exprVal, req) -> exprVal || predicate.test(req));
+    }
+
+    /**
+     * Return a predicate that represents the logical negation of this predicate.
+     * @return new predicate that represents the logical negation of this predicate.
+     */
+    public RequestPredicate negate() {
+        return nextCondition((exprVal, req) -> !exprVal);
+    }
 
     /**
      * Accepts only requests with one of specified HTTP methods.
      *
-     * @param methodNames Acceptable method names.
-     * @return New enhanced instance.
+     * @param methods Acceptable method names
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified methods array is null
      */
-    RequestPredicate isOfMethod(String... methodNames);
-
-    /**
-     * Accepts only requests with specified header name.
-     *
-     * @param headerName Header name.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsHeader(String headerName);
-
-    /**
-     * Accepts only requests with specified header containing valid value.
-     * <p>
-     * If request contains more then one header instance, then value predicate is called for all instances. Request is accepted
-     * if ANY predicate call returns {@code true}.
-     *
-     * @param headerName Header name.
-     * @param headerValuePredicate Predicate for header value. Is called for all header values.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsHeader(String headerName, Predicate<String> headerValuePredicate);
-
-    /**
-     * Accepts only requests with specified header containing valid value.
-     * <p>
-     * If request contains more then one header instance, then value is tested for all instances. Request is accepted
-     * if ANY value equals to provided.
-     *
-     * @param headerName Header name.
-     * @param value Expected header value.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsHeader(String headerName, String value);
-
-    /**
-     * Accepts only requests with specified query parameter.
-     *
-     * @param queryParameterName Query parameter
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsQueryParameter(String queryParameterName);
-
-    /**
-     * Accepts only requests with specified query parameter.
-     *
-     * @param queryParameterName Query parameter name.
-     * @param parameterValuePredicate Predicate for a parameter value.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsQueryParameter(String queryParameterName, Predicate<String> parameterValuePredicate);
-
-    /**
-     * Accepts only requests with specified query parameter.
-     *
-     * @param queryParameterName Query parameter name.
-     * @param value Expected value.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsQueryParameter(String queryParameterName, String value);
-
-    /**
-     * Accepts only requests with specified cookie name.
-     *
-     * @param cookieName Cookie name.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsCookie(String cookieName);
-
-    /**
-     * Accepts only requests with specified cookie containing valid value.
-     *
-     * @param cookieName Header name.
-     * @param cookieValuePredicate Predicate for a cookie value.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsCookie(String cookieName, Predicate<String> cookieValuePredicate);
-
-    /**
-     * Accepts only requests with specified cookie containing valid value.
-     *
-     * @param cookieName Header name.
-     * @param value Predicate for a cookie value.
-     * @return New enhanced instance.
-     */
-    RequestPredicate containsCookie(String cookieName, String value);
-
-    /**
-     * Accepts only requests accepting any of specified content types.
-     *
-     * @param contentType Content type.
-     * @return New enhanced instance.
-     */
-    RequestPredicate accepts(String... contentType);
-
-    /**
-     * Accepts only requests accepting any of specified content types.
-     *
-     * @param contentType Content type.
-     * @return New enhanced instance.
-     */
-    RequestPredicate accepts(MediaType... contentType);
-
-    /**
-     * Accepts only requests of any specified content types.
-     *
-     * @param contentType Content type.
-     * @return New enhanced instance.
-     */
-    RequestPredicate hasContentType(String... contentType);
-
-    /**
-     * Accepts by free form condition. Equivalent method for {@link #and(Predicate)}.
-     *
-     * @param requestPredicate A request predicate.
-     * @return New enhanced instance.
-     */
-    RequestPredicate is(Predicate<? super ServerRequest> requestPredicate);
-
-    /**
-     * Creates request-response handler/filter which calls provided handler only if this predicate accepts provided request,
-     * otherwise call {@link ServerRequest#next()} method.
-     *
-     * @param handler to apply if this instance accepts provided request.
-     * @return a conditional handler.
-     */
-    ConditionalHandler thenApply(Handler handler);
-
-    @Override
-    default RequestPredicate and(Predicate<? super ServerRequest> other) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    default RequestPredicate negate() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    default RequestPredicate or(Predicate<? super ServerRequest> other) {
-        throw new UnsupportedOperationException();
+    public RequestPredicate isOfMethod(final String... methods) {
+        Objects.requireNonNull(methods, "methods");
+        return and((req) -> Stream.of(methods)
+                        .map(String::toUpperCase)
+                        .anyMatch(req.method().name()::equals));
     }
 
     /**
-     * Creates new empty instance {@link RequestPredicate} instance. It can be used as a base for fluent construction of
-     * complex predicate.
+     * Accepts only requests with one of specified HTTP methods.
      *
-     * @return New empty instance (accepts all requests).
+     * @param methods Acceptable method names
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the methods type array is null
      */
-    static RequestPredicate whenRequest() {
-        throw new UnsupportedOperationException();
+    public RequestPredicate isOfMethod(final Method... methods) {
+        Objects.requireNonNull(methods, "methods");
+        return and((req) -> Stream.of(methods)
+                        .map(Method::name)
+                        .anyMatch(req.method().name()::equals));
     }
 
     /**
-     * Combines several provided predicates in short circuit OR manner.
+     * Accept requests only when the specified header name exists.
      *
-     * @param predicates to combine.
-     * @return Combined predicate.
+     * @param name header name
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name is null
      */
-    static RequestPredicate any(RequestPredicate... predicates) {
-        throw new UnsupportedOperationException();
+    public RequestPredicate containsHeader(final String name) {
+        return containsHeader(name, (c) -> true);
     }
 
     /**
-     * A {@link Handler} which executes provided logic only if provided condition is satisfied.
-     * An instance can be created using {@link RequestPredicate#thenApply(Handler)} method.
+     * Accept requests only when the specified header contains a given value.
+     *
+     * If the request contains more then one header, it will be accepted
+     * if <b>any</b> of the values is equal to the provided value.
+     *
+     * @param name header name
+     * @param value the expected header value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name or value is null
      */
-    class ConditionalHandler implements Handler {
+    public RequestPredicate containsHeader(final String name,
+            final String value) {
 
+        Objects.requireNonNull(value, "header value");
+        return containsHeader(name, value::equals);
+    }
+
+    /**
+     * Accept requests only when the specified header is valid.
+     *
+     * A header is valid when the supplied predicate matches the header value.
+     * If the request contains more than one header, it will be accepted if the
+     * predicate matches <b>any</b> of the values.
+     *
+     * @param name header name
+     * @param predicate predicate to match the header value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name or predicate is null
+     */
+    public RequestPredicate containsHeader(final String name,
+            final Predicate<String> predicate) {
+
+        Objects.requireNonNull(name, "header name");
+        Objects.requireNonNull(predicate, "header predicate");
+        return and((req) -> req.headers()
+                .value(name)
+                .filter(predicate)
+                .isPresent());
+    }
+
+    /**
+     * Accept requests only when the specified query parameter exists.
+     *
+     * @param name query parameter name
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name is null
+     */
+    public RequestPredicate containsQueryParameter(final String name) {
+        return containsQueryParameter(name, (c) -> true);
+    }
+
+    /**
+     * Accept requests only when the specified query parameter contains a given
+     * value.
+     *
+     * @param name query parameter name
+     * @param value expected query parameter value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name or value is null
+     */
+    public RequestPredicate containsQueryParameter(final String name,
+            final String value) {
+
+        Objects.requireNonNull(value, "query param value");
+        return containsQueryParameter(name, value::equals);
+    }
+
+    /**
+     * Accept requests only when the specified query parameter is valid.
+     *
+     * @param name query parameter name
+     * @param predicate to match the query parameter value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name or predicate is null
+     */
+    public RequestPredicate containsQueryParameter(final String name,
+            final Predicate<String> predicate) {
+
+        Objects.requireNonNull(name, "query param name");
+        Objects.requireNonNull(predicate, "query param predicate");
+        return and((req) -> req.queryParams()
+                .all(name)
+                .stream()
+                .anyMatch(predicate));
+    }
+
+    /**
+     * Accept request only when the specified cookie exists.
+     *
+     * @param name cookie name
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name is null
+     */
+    public RequestPredicate containsCookie(final String name) {
+        return containsCookie(name, (c) -> true);
+    }
+
+    /**
+     * Accept requests only when the specified cookie contains a given value.
+     *
+     * @param name cookie name
+     * @param value expected cookie value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name or value is null
+     */
+    public RequestPredicate containsCookie(final String name,
+            final String value) {
+
+        Objects.requireNonNull(value, "cookie value");
+        return containsCookie(name, value::equals);
+    }
+
+    /**
+     * Accept requests only when the specified cookie is valid.
+     *
+     * @param name cookie name
+     * @param predicate predicate to match the cookie value
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified name or predicate is null
+     */
+    public RequestPredicate containsCookie(final String name,
+            final Predicate<String> predicate) {
+
+        Objects.requireNonNull(name, "cookie name");
+        Objects.requireNonNull(predicate, "cookie predicate");
+        return and((req) -> req.headers()
+                .cookies()
+                .all(name)
+                .stream()
+                .anyMatch(predicate));
+    }
+
+    /**
+     * Accept requests only when it accepts any of the given content types.
+     *
+     * @param contentType the content types to test
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified content type array is null
+     */
+    public RequestPredicate accepts(final String... contentType) {
+        Objects.requireNonNull(contentType, "content types");
+        return and((req) ->
+                Stream.of(contentType).anyMatch((mt) ->
+                        req.headers().isAccepted(MediaType.parse(mt))));
+    }
+
+    /**
+     * Only accept request that accepts any of the given content types.
+     *
+     * @param contentType the content types to test
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified content type array is null
+     */
+    public RequestPredicate accepts(final MediaType... contentType) {
+        Objects.requireNonNull(contentType, "accepted media types");
+        return and((req) ->
+                Stream.of(contentType).anyMatch((mt) ->
+                        req.headers().isAccepted(mt)));
+    }
+
+    /**
+     * Only accept requests with any of the given content types.
+     *
+     * @param contentType Content type
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified content type array is null
+     */
+    public RequestPredicate hasContentType(final String... contentType) {
+        Objects.requireNonNull(contentType, "accepted media types");
+        return and((req) -> {
+            Optional<MediaType> actualContentType = req.headers().contentType();
+            return actualContentType.isPresent()
+                    && Stream.of(contentType)
+                        .anyMatch((mt) -> actualContentType.get()
+                                .equals(MediaType.parse(mt)));
+                });
+    }
+
+    /**
+     * Only accept requests with any of the given content types.
+     *
+     * @param contentType Content type
+     * @return composed predicate representing the logical expression between
+     * this predicate <b>AND</b> the provided predicate
+     * @throws NullPointerException if the specified content type array is null
+     */
+    public RequestPredicate hasContentType(final MediaType... contentType) {
+        Objects.requireNonNull(contentType, "content types");
+        return and((req) -> {
+            Optional<MediaType> actualContentType = req.headers().contentType();
+            return actualContentType.isPresent()
+                    && Stream.of(contentType)
+                        .anyMatch((mt) -> actualContentType.get()
+                                .equals(mt));
+                });
+    }
+
+    /**
+     * Creates new empty {@link RequestPredicate} instance.
+     *
+     * @return new empty predicate (accepts all requests).
+     */
+    public static RequestPredicate create() {
+        return new RequestPredicate();
+    }
+
+    /**
+     * A {@link Handler} that conditionally delegates to other {@link Handler}
+     * instances based on a {@link RequestPredicate}.
+     *
+     * There can be at most 2 handlers: a required one for matched requests and
+     * an optional one for requests that are not matched. If the handler for non
+     * matched requests is not provided, such request will return a {@code 404}
+     * response.
+     */
+    public static class ConditionalHandler implements Handler {
+
+        /**
+         * The condition for the delegation.
+         */
         private final RequestPredicate condition;
+
+        /**
+         * The {@link Handler} to use when the predicate matches.
+         */
         private final Handler acceptHandler;
+
+        /**
+         * The {@link Handler} to use when the predicate does not match.
+         */
         private final Handler declineHandler;
 
-        private ConditionalHandler(RequestPredicate condition, Handler acceptHandler, Handler declineHandler) {
+        /**
+         * Create a new instance.
+         * @param condition the predicate
+         * @param acceptHandler the predicate to use when the predicate matches
+         * @param declineHandler the predicate to use when the predicate does not
+         * match.
+         */
+        private ConditionalHandler(final RequestPredicate condition,
+                final Handler acceptHandler, final Handler declineHandler) {
+
             this.condition = condition;
             this.acceptHandler = acceptHandler;
-            this.declineHandler = declineHandler == null ? ((req, res) -> req.next()) : declineHandler;
+            this.declineHandler = declineHandler == null
+                    ? ((req, res) -> req.next()) : declineHandler;
         }
 
-        ConditionalHandler(RequestPredicate condition, Handler acceptHandler) {
+        /**
+         * Create a new instance.
+         * @param condition the predicate
+         * @param acceptHandler the predicate to use when the predicate matches
+         * match
+         */
+        private ConditionalHandler(final RequestPredicate condition,
+                final Handler acceptHandler) {
+
             this(condition, acceptHandler, null);
         }
 
@@ -249,14 +512,47 @@ public interface RequestPredicate extends Predicate<ServerRequest> {
         }
 
         /**
-         * Creates new {@link Handler} instance which executes this handler if condition was satisfied, <i>otherwise</i>
-         * executes provided {@code handler}.
+         * Set the {@link Handler} to use when the predicate does not match the
+         * request.
          *
-         * @param handler a handler which is executed when condition was not satisfied.
-         * @return a new handler.
+         * @param handler handler to use when the predicate does not match
+         * @return created {@link Handler}
          */
-        public Handler otherwise(Handler handler) {
-            return new ConditionalHandler(condition.negate(), handler, acceptHandler);
+        public Handler otherwise(final Handler handler) {
+            return new ConditionalHandler(condition, acceptHandler, handler);
         }
+    }
+
+    /**
+     * Recursive evaluation of a predicate chain.
+     * @param currentValue the initial value
+     * @param predicate the predicate to resolve the new value
+     * @param request the server request
+     * @return the evaluated value
+     */
+    private static boolean eval(final boolean currentValue,
+            final RequestPredicate predicate, final ServerRequest request){
+
+        boolean newValue = predicate.condition.eval(currentValue, request);
+        if (predicate.next != null) {
+            return eval(newValue, predicate.next, request);
+        }
+        return newValue;
+    }
+
+    /**
+     * A condition represents some logic that evaluates a {@code boolean}
+     * value based on a current {@code boolean} value and an input object.
+     */
+    @FunctionalInterface
+    private interface Condition {
+
+        /**
+         * Evaluate this condition as part of a logical expression.
+         * @param currentValue the current value of the expression
+         * @param request the input object
+         * @return the new value
+         */
+        boolean eval(boolean currentValue, ServerRequest request);
     }
 }

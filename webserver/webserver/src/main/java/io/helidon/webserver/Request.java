@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.webserver;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -39,21 +41,25 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
-import io.helidon.webserver.spi.BareRequest;
+import io.helidon.media.common.ContentReaders;
 
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
-import static io.helidon.webserver.StringContentReader.requestContentCharset;
-
 /**
  * The basic abstract implementation of {@link ServerRequest}.
  */
 abstract class Request implements ServerRequest {
+
+    /**
+     * The default charset to use in case that no charset or no mime-type is defined in the content type header.
+     */
+    static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private final BareRequest bareRequest;
     private final WebServer webServer;
@@ -72,8 +78,8 @@ abstract class Request implements ServerRequest {
         this.bareRequest = req;
         this.webServer = webServer;
         this.context = ContextualRegistry.create(webServer.context());
-        this.queryParams = UriComponent.decodeQuery(req.getUri().getRawQuery(), true);
-        this.headers = new HashRequestHeaders(bareRequest.getHeaders());
+        this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
+        this.headers = new HashRequestHeaders(bareRequest.headers());
         this.content = new Content();
     }
 
@@ -91,6 +97,20 @@ abstract class Request implements ServerRequest {
         this.content = new Content(request.content);
     }
 
+    /**
+     * Obtain the charset from the request.
+     *
+     * @param request the request to extract the charset from
+     * @return the charset or {@link #DEFAULT_CHARSET} if none found
+     */
+    static Charset requestContentCharset(ServerRequest request) {
+        return request.headers()
+                .contentType()
+                .flatMap(MediaType::charset)
+                .map(Charset::forName)
+                .orElse(DEFAULT_CHARSET);
+    }
+
     protected abstract Tracer tracer();
 
     @Override
@@ -105,22 +125,22 @@ abstract class Request implements ServerRequest {
 
     @Override
     public Http.RequestMethod method() {
-        return bareRequest.getMethod();
+        return bareRequest.method();
     }
 
     @Override
     public Http.Version version() {
-        return bareRequest.getVersion();
+        return bareRequest.version();
     }
 
     @Override
     public URI uri() {
-        return bareRequest.getUri();
+        return bareRequest.uri();
     }
 
     @Override
     public String query() {
-        return bareRequest.getUri().getRawQuery();
+        return bareRequest.uri().getRawQuery();
     }
 
     @Override
@@ -130,27 +150,27 @@ abstract class Request implements ServerRequest {
 
     @Override
     public String fragment() {
-        return bareRequest.getUri().getFragment();
+        return bareRequest.uri().getFragment();
     }
 
     @Override
     public String localAddress() {
-        return bareRequest.getLocalAddress();
+        return bareRequest.localAddress();
     }
 
     @Override
     public int localPort() {
-        return bareRequest.getLocalPort();
+        return bareRequest.localPort();
     }
 
     @Override
     public String remoteAddress() {
-        return bareRequest.getRemoteAddress();
+        return bareRequest.remoteAddress();
     }
 
     @Override
     public int remotePort() {
-        return bareRequest.getRemotePort();
+        return bareRequest.remotePort();
     }
 
     @Override
@@ -258,7 +278,6 @@ abstract class Request implements ServerRequest {
             return new InternalReader<>(aClass -> aClass.isAssignableFrom(clazz), reader);
         }
 
-
         @Override
         @SuppressWarnings("unchecked")
         public <T> CompletionStage<T> as(Class<T> type) {
@@ -267,7 +286,7 @@ abstract class Request implements ServerRequest {
             try {
                 readersLock.readLock().lock();
 
-                 result = readersWithDefaults()
+                result = readersWithDefaults()
                         .filter(reader -> reader.accept(type))
                         .findFirst()
                         // in this context, the cast is absurd, although it's needed;
@@ -291,9 +310,9 @@ abstract class Request implements ServerRequest {
         private void finishSpanWithError(Span readSpan, Throwable t) {
             Tags.ERROR.set(readSpan, Boolean.TRUE);
             readSpan.log(CollectionsHelper.mapOf("event", "error",
-                                "error.kind", "Exception",
-                                "error.object", t,
-                                "message", t.toString()));
+                                                 "error.kind", "Exception",
+                                                 "error.object", t,
+                                                 "message", t.toString()));
             readSpan.finish();
         }
 
@@ -315,10 +334,9 @@ abstract class Request implements ServerRequest {
                     reader(InputStream.class, ContentReaders.inputStreamReader())));
         }
 
-        private StringContentReader stringContentReader() {
-            String charset = requestContentCharset(Request.this);
-            StringContentReader reader = ContentReaders.cachedStringReader(charset);
-            return reader != null ? reader : new StringContentReader(charset);
+        private Reader<String> stringContentReader() {
+            Charset charset = requestContentCharset(Request.this);
+            return ContentReaders.stringReader(charset);
         }
 
         @Override

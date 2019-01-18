@@ -37,22 +37,22 @@ public interface MpServiceContext {
      *
      * @return config instance
      */
-    org.eclipse.microprofile.config.Config getConfig();
+    org.eclipse.microprofile.config.Config config();
 
     /**
      * The Helidon config instance used to configure this server (will have same
-     * properties as {@link #getConfig()}).
+     * properties as {@link #config()}).
      *
      * @return Helidon config instance
      */
-    Config getHelidonConfig();
+    Config helidonConfig();
 
     /**
      * Access existing applications configured with the server.
      *
      * @return list of all applications
      */
-    List<ResourceConfig> getApplications();
+    List<ResourceConfig> applications();
 
     /**
      * Add a jersey application to the server. Context will be introspected from {@link javax.ws.rs.ApplicationPath} annotation.
@@ -75,21 +75,21 @@ public interface MpServiceContext {
      *
      * @return The CDI container
      */
-    SeContainer getCdiContainer();
+    SeContainer cdiContainer();
 
     /**
      * Helidon web server configuration builder that can be used to re-configure the web server.
      *
      * @return web server configuration builder
      */
-    ServerConfiguration.Builder getServerConfigBuilder();
+    ServerConfiguration.Builder serverConfigBuilder();
 
     /**
      * Helidon webserver routing builder that can be used to add routes to the webserver.
      *
      * @return server routing builder
      */
-    Routing.Builder getServerRoutingBuilder();
+    Routing.Builder serverRoutingBuilder();
 
     /**
      * Register an instance of a class for later use (e.g. for outbound configuration).

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,19 +56,19 @@ security:
 
 === Protecting Configuration Secrets 
 
-If you don't provide an explicit instance of Helidon Config to a MicroProfile server, then the 
-secure config filter **is enabled by default**. However, if you don't configure it, the secure config filter
+In Helidon MP, the config encryption filter ** enabled by default**. However, if you don't configure it, the filter
  only supports a template for aliasing that checks that no clear text passwords are
  present (template ${CLEAR=...}.
 
-To add the secure config filter:
+In Helidon SE, you may add support for this filter with dependency (loaded through a java service mechanism):
 
-[source,java]
-.Add secure config filter
+[source,xml]
+.Maven Dependency
 ----
-Config helidonConfig = Config.builder()
-    .addFilter(SecureConfigFilter.fromConfig())
-    .build();
+<dependency>
+    <groupId>io.helidon.config</groupId>
+    <artifactId>helidon-config-encryption</artifactId>
+</dependency>
 ----
 
 Put encrypted values into your
@@ -101,7 +101,7 @@ The supported templates are:
 
 === Requiring encryption 
 
-The secure config filter has an option that defines whether
+The config encryption filter has an option that defines whether
 encryption is required or not. If it's set to true, which is the default, then:
  
 * Configuration values with ${CLEAR=...} template will cause an exception when
@@ -115,13 +115,13 @@ encrypting the value and is also provided to the application.
 
 ==== Encrypting values (AES)
 
-The secure config filter provides a Main class `io.helidon.security.tools.config.Main`
+The config encryption filter provides a Main class `io.helidon.config.encryption.Main`
  that can be used to encrypt values.
 
 [source,bash]
 .Encrypt secret `secretToEncrypt` using shared secret `masterPassword`
 ----
-java io.helidon.security.tools.config.Main aes masterPassword secretToEncrypt
+java io.helidon.config.encryption.Main aes masterPassword secretToEncrypt
 ----
 
 The tool returns the string to be entered into configuration as the value of a
@@ -144,24 +144,24 @@ This approach is based on a pair of keys: a public key which is known to anybody
 - a value encrypted by a public key can only be decrypted by the private key
 - a value encrypted by a private key can only be decrypted by the public key
 
-When using the secure config filter, you should encrypt the configuration values 
+When using the config encryption filter, you should encrypt the configuration values
 using the public key, and give the application process access to the 
 private key to decrypt the values.
 
 ==== Encrypting values (RSA)
-The secure config filter provides a Main class `io.helidon.security.tools.config.Main`
+The config encryption filter provides a Main class `io.helidon.config.encryption.Main`
  that can be used to encrypt values.
 
 [source,bash]
 .Encrypt secret `secretToEncrypt` using public certificate in a keystore
 ----
-java io.helidon.security.tools.config.Main rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
+java io.helidon.config.encryption Main rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
 ----
 
 The tool returns the string to be entered into configuration as the value of a
  property.
 
-==== Configure secure config filter (RSA)
+==== Configure config encryption filter (RSA)
 
 You can configure the properties of a private key. These
  keys are prefixed with `security.config.rsa`

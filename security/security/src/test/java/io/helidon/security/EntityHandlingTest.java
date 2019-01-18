@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.SubmissionPublisher;
-import io.helidon.security.provider.ProviderForTesting;
+import io.helidon.security.providers.ProviderForTesting;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +65,7 @@ public class EntityHandlingTest {
     public void reactiveTest() throws Throwable {
         CountDownLatch cdl = new CountDownLatch(1);
 
-        context.setEnv(context.getEnv()
+        context.env(context.env()
                                .derive()
                                .method("POST")
                                .path("/post"));
@@ -77,7 +77,7 @@ public class EntityHandlingTest {
 
         AuthenticationClientImpl authClient = (AuthenticationClientImpl) context.atnClientBuilder().build();
 
-        Optional<Entity> requestMessage = request.getRequestEntity();
+        Optional<Entity> requestMessage = request.requestEntity();
 
         OptionalHelper.from(requestMessage).ifPresentOrElse(message -> message.filter(byteBufferPublisher -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -113,7 +113,7 @@ public class EntityHandlingTest {
             return bPublisher;
         }), () -> fail("Request message should have been present"));
 
-        request.getResponseEntity().ifPresent(message -> fail("Response message should not be present"));
+        request.responseEntity().ifPresent(message -> fail("Response message should not be present"));
 
         publisher.submit(ByteBuffer.wrap(REQUEST_BYTES.getBytes()));
         publisher.close();

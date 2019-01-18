@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -177,7 +178,7 @@ public interface ServerConfiguration extends SocketConfiguration {
      * @param config the externalized configuration
      * @return a new instance
      */
-    static ServerConfiguration fromConfig(Config config) {
+    static ServerConfiguration create(Config config) {
         return builder(config).build();
     }
 
@@ -232,7 +233,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param sslContextBuilder ssl context builder; will be built as a first step of this method execution
          * @return an updated builder
          */
-        public Builder ssl(io.helidon.common.Builder<? extends SSLContext> sslContextBuilder) {
+        public Builder ssl(Supplier<? extends SSLContext> sslContextBuilder) {
             defaultSocketBuilder.ssl(sslContextBuilder);
             return this;
         }
@@ -351,10 +352,10 @@ public interface ServerConfiguration extends SocketConfiguration {
          *                                   a first step of this method execution
          * @return an updated builder
          */
-        public Builder addSocket(String name, io.helidon.common.Builder<SocketConfiguration> socketConfigurationBuilder) {
+        public Builder addSocket(String name, Supplier<SocketConfiguration> socketConfigurationBuilder) {
             Objects.requireNonNull(name, "Parameter 'name' must not be null!");
 
-            return addSocket(name, socketConfigurationBuilder != null ? socketConfigurationBuilder.build() : null);
+            return addSocket(name, socketConfigurationBuilder != null ? socketConfigurationBuilder.get() : null);
         }
 
         /**
@@ -388,8 +389,8 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
          * @return updated builder
          */
-        public Builder tracer(io.helidon.common.Builder<? extends Tracer> tracerBuilder) {
-            this.tracer = tracerBuilder != null ? tracerBuilder.build() : null;
+        public Builder tracer(Supplier<? extends Tracer> tracerBuilder) {
+            this.tracer = tracerBuilder != null ? tracerBuilder.get() : null;
             return this;
         }
 
@@ -442,7 +443,7 @@ public interface ServerConfiguration extends SocketConfiguration {
                 if (http2Config.exists()) {
                     Http2Configuration.Builder http2Builder = new Http2Configuration.Builder();
                     http2Config.get("enable").asBoolean().ifPresent(http2Builder::enable);
-                    http2Config.get("maxContentLength").asInt().ifPresent(http2Builder::maxContentLength);
+                    http2Config.get("max-content-length").asInt().ifPresent(http2Builder::maxContentLength);
                     experimentalBuilder.http2(http2Builder.build());
                 }
                 experimental = experimentalBuilder.build();
@@ -466,7 +467,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             Config sslConfig = config.get("ssl");
             if (sslConfig.exists()) {
                 try {
-                    soConfigBuilder.ssl(SSLContextBuilder.fromConfig(sslConfig));
+                    soConfigBuilder.ssl(SSLContextBuilder.create(sslConfig));
                 } catch (IllegalStateException e) {
                     throw new ConfigException("Cannot load SSL configuration.", e);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import io.helidon.webserver.ServerResponse;
 // end::importsHealth2[]
 // tag::importsEnd[]
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.json.JsonSupport;
+import io.helidon.media.jsonp.server.JsonSupport;
 // end::importsEnd[]
 // tag::importsHealth3[]
 import javax.json.Json;
@@ -74,7 +74,7 @@ public final class Main {
     // tag::createRoutingBasic[]
         greetService = new GreetService(); // <1>
         return Routing.builder()
-                .register(JsonSupport.get()) // <2>
+                .register(JsonSupport.create()) // <2>
     // end::createRoutingBasic[]
     // tag::registerMetrics[]
                 .register(metrics) // <1>
@@ -120,7 +120,7 @@ public final class Main {
 
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
-                ServerConfiguration.fromConfig(config.get("server")); // <1>
+                ServerConfiguration.create(config.get("server")); // <1>
 
         WebServer server = WebServer.create(serverConfig, createRouting()); // <2>
 

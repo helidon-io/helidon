@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.json.JsonSupport;
+import io.helidon.media.jsonp.server.JsonSupport;
 
 /**
  * Simple Hello World rest application.
@@ -42,7 +42,7 @@ public final class Main {
      */
     private static Routing createRouting() {
         return Routing.builder()
-                .register(JsonSupport.get())
+                .register(JsonSupport.create())
                 .register("/greet", new GreetService())
                 .build();
     }

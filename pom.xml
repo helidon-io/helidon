@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-project</artifactId>
-    <version>0.11.0-SNAPSHOT</version>
+    <version>0.11.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Project</name>
@@ -134,7 +134,7 @@
         <version.lib.microprofile-jwt>1.1.1</version.lib.microprofile-jwt>
         <version.lib.microprofile-metrics-api>1.1</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-fault-tolerance-api>1.1.3</version.lib.microprofile-fault-tolerance-api>
-        <version.lib.mockito>2.15.0</version.lib.mockito>
+        <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
         <version.lib.netty>4.1.30.Final</version.lib.netty>
         <version.lib.oci-java-sdk-objectstorage>1.2.44</version.lib.oci-java-sdk-objectstorage>
@@ -200,10 +200,15 @@
     <modules>
         <module>common</module>
         <module>config</module>
+        <module>media</module>
         <module>webserver</module>
         <module>security</module>
         <module>bom</module>
         <module>microprofile</module>
+        <module>tracing</module>
+        <module>bundles</module>
+        <module>metrics</module>
+        <module>health</module>
     </modules>
 
     <build>

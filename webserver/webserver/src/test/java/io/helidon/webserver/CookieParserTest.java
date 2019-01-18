@@ -20,11 +20,10 @@ import io.helidon.common.http.Parameters;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -35,17 +34,17 @@ public class CookieParserTest {
     @Test
     public void emptyAndNull() throws Exception {
         Parameters p = HashRequestHeaders.CookieParser.parse(null);
-        assertNotNull(p);
-        assertTrue(p.toMap().isEmpty());
+        assertThat(p, notNullValue());
+        assertThat(p.toMap().isEmpty(), is(true));
         p = HashRequestHeaders.CookieParser.parse("");
-        assertNotNull(p);
-        assertTrue(p.toMap().isEmpty());
+        assertThat(p, notNullValue());
+        assertThat(p.toMap().isEmpty(), is(true));
     }
 
     @Test
     public void basicMultiValue() throws Exception {
         Parameters p = HashRequestHeaders.CookieParser.parse("foo=bar; aaa=bbb; c=what_the_hell; aaa=ccc");
-        assertNotNull(p);
+        assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb", "ccc"));
         assertThat(p.all("c"), contains("what_the_hell"));
@@ -55,19 +54,19 @@ public class CookieParserTest {
     public void rfc2965() throws Exception {
         String header = "$version=1; foo=bar; $Domain=google.com, aaa=bbb, c=cool; $Domain=google.com; $Path=\"/foo\"";
         Parameters p = HashRequestHeaders.CookieParser.parse(header);
-        assertNotNull(p);
+        assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb"));
         assertThat(p.all("c"), contains("cool"));
-        assertFalse(p.first("$Domain").isPresent());
-        assertFalse(p.first("$Path").isPresent());
-        assertFalse(p.first("$Version").isPresent());
+        assertThat(p.first("$Domain").isPresent(), is(false));
+        assertThat(p.first("$Path").isPresent(), is(false));
+        assertThat(p.first("$Version").isPresent(), is(false));
     }
 
     @Test
     public void unquote() throws Exception {
         Parameters p = HashRequestHeaders.CookieParser.parse("foo=\"bar\"; aaa=bbb; c=\"what_the_hell\"; aaa=\"ccc\"");
-        assertNotNull(p);
+        assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb", "ccc"));
     }

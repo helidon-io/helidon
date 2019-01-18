@@ -18,7 +18,7 @@
  * Aggregator module for microprofile 1.1.
  */
 module io.helidon.microprofile.v1_1 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
+    requires transitive io.helidon.microprofile.config.cdi;
+    requires transitive io.helidon.microprofile.config;
+    requires transitive io.helidon.microprofile.server;
 }

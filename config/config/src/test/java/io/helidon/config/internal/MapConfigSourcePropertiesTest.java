@@ -30,13 +30,13 @@ import io.helidon.config.test.infra.RestoreSystemPropertiesExt;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link MapConfigSource} from {@link Properties} method.
@@ -52,7 +52,7 @@ public class MapConfigSourcePropertiesTest {
         Properties props = new Properties();
         props.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
-        ConfigSource configSource = ConfigSources.from(props).build();
+        ConfigSource configSource = ConfigSources.create(props).build();
 
         ConfigNode.ObjectNode objectNode = configSource.load().get();
         assertThat(objectNode.get(TEST_SYS_PROP_NAME), valueNode(TEST_SYS_PROP_VALUE));
@@ -61,7 +61,7 @@ public class MapConfigSourcePropertiesTest {
     @Test
     public void testFromPropertiesDescription() {
         Properties props = new Properties();
-        ConfigSource configSource = ConfigSources.from(props).build();
+        ConfigSource configSource = ConfigSources.create(props).build();
 
         assertThat(configSource.description(), is("MapConfig[properties]"));
     }
@@ -72,7 +72,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.name", "app-name");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(properties))
+                .sources(ConfigSources.create(properties))
                 .build();
 
         assertThat(config.get("app.name").asString().get(), CoreMatchers.is("app-name"));
@@ -84,7 +84,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.port", "8080");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(properties))
+                .sources(ConfigSources.create(properties))
                 .build();
 
         assertThat(config.get("app").get("port").asInt().get(), is(8080));
@@ -93,11 +93,11 @@ public class MapConfigSourcePropertiesTest {
 
     @Test
     public void testMissingValue() {
-        Assertions.assertThrows(MissingValueException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Properties properties = new Properties();
 
             Config config = Config.builder()
-                    .sources(ConfigSources.from(properties))
+                    .sources(ConfigSources.create(properties))
                     .build();
 
             config.get("app.port").asInt().get();
@@ -112,7 +112,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("security", "on");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(properties))
+                .sources(ConfigSources.create(properties))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -129,7 +129,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.port", "8080");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(properties))
+                .sources(ConfigSources.create(properties))
                 .build()
                 .get("app");
 
@@ -148,7 +148,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.name", "app-name");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(properties))
+                .sources(ConfigSources.create(properties))
                 .build();
 
         assertThat(config.get("app.name")
@@ -165,7 +165,7 @@ public class MapConfigSourcePropertiesTest {
         properties.setProperty("app.1", "one");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(properties))
+                .sources(ConfigSources.create(properties))
                 .build();
 
         assertThat(config.get("app").asNodeList().get().size(), CoreMatchers.is(2));
@@ -184,7 +184,7 @@ public class MapConfigSourcePropertiesTest {
                 + "uri.localhost=http://localhost\n";
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(PROPS, PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
+                .sources(ConfigSources.create(PROPS, PropertiesConfigParser.MEDIA_TYPE_TEXT_JAVA_PROPERTIES))
                 .addParser(ConfigParsers.properties())
                 .build();
 

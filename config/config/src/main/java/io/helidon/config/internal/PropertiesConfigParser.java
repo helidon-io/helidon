@@ -57,7 +57,7 @@ public class PropertiesConfigParser implements ConfigParser {
     private static final Set<String> SUPPORTED_MEDIA_TYPES = CollectionsHelper.setOf(MEDIA_TYPE_TEXT_JAVA_PROPERTIES);
 
     @Override
-    public Set<String> getSupportedMediaTypes() {
+    public Set<String> supportedMediaTypes() {
         return SUPPORTED_MEDIA_TYPES;
     }
 

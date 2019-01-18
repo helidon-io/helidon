@@ -25,10 +25,9 @@ import static io.helidon.common.http.Http.Method.OPTIONS;
 import static io.helidon.common.http.Http.Method.POST;
 import static io.helidon.common.http.Http.Method.PUT;
 import static io.helidon.common.http.Http.Method.TRACE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests {@link RouteListRoutingRules}.
@@ -62,64 +61,64 @@ public class RouteListRoutingRulesTest {
                 .head("/foo", VOID_HANDLER)
                 .head(PathPattern.compile("/bar"), VOID_HANDLER)
                 .aggregate()
-                .getRouteList();
-        assertNotNull(routes);
-        assertEquals(7*3, routes.size());
-        assertEquals(7, routes.acceptedMethods().size());
+                .routeList();
+        assertThat(routes, notNullValue());
+        assertThat(routes.size(), is(7*3));
+        assertThat(routes.acceptedMethods().size(), is(7));
 
-        assertTrue(routes.get(0).accepts(GET));
-        assertFalse(routes.get(0).accepts(POST));
-        assertTrue(routes.get(1).accepts(GET));
-        assertFalse(routes.get(1).accepts(PUT));
-        assertTrue(routes.get(2).accepts(GET));
-        assertFalse(routes.get(2).accepts(DELETE));
+        assertThat(routes.get(0).accepts(GET), is(true));
+        assertThat(routes.get(0).accepts(POST), is(false));
+        assertThat(routes.get(1).accepts(GET), is(true));
+        assertThat(routes.get(1).accepts(PUT), is(false));
+        assertThat(routes.get(2).accepts(GET), is(true));
+        assertThat(routes.get(2).accepts(DELETE), is(false));
 
-        assertTrue(routes.get(3).accepts(POST));
-        assertFalse(routes.get(3).accepts(GET));
-        assertTrue(routes.get(4).accepts(POST));
-        assertFalse(routes.get(4).accepts(GET));
-        assertTrue(routes.get(5).accepts(POST));
-        assertFalse(routes.get(5).accepts(GET));
+        assertThat(routes.get(3).accepts(POST), is(true));
+        assertThat(routes.get(3).accepts(GET), is(false));
+        assertThat(routes.get(4).accepts(POST), is(true));
+        assertThat(routes.get(4).accepts(GET), is(false));
+        assertThat(routes.get(5).accepts(POST), is(true));
+        assertThat(routes.get(5).accepts(GET), is(false));
 
-        assertTrue(routes.get(6).accepts(DELETE));
-        assertFalse(routes.get(6).accepts(GET));
-        assertTrue(routes.get(7).accepts(DELETE));
-        assertFalse(routes.get(7).accepts(GET));
-        assertTrue(routes.get(8).accepts(DELETE));
-        assertFalse(routes.get(8).accepts(GET));
+        assertThat(routes.get(6).accepts(DELETE), is(true));
+        assertThat(routes.get(6).accepts(GET), is(false));
+        assertThat(routes.get(7).accepts(DELETE), is(true));
+        assertThat(routes.get(7).accepts(GET), is(false));
+        assertThat(routes.get(8).accepts(DELETE), is(true));
+        assertThat(routes.get(8).accepts(GET), is(false));
 
-        assertTrue(routes.get(9).accepts(PUT));
-        assertFalse(routes.get(9).accepts(GET));
-        assertTrue(routes.get(10).accepts(PUT));
-        assertFalse(routes.get(10).accepts(GET));
-        assertTrue(routes.get(11).accepts(PUT));
-        assertFalse(routes.get(11).accepts(GET));
+        assertThat(routes.get(9).accepts(PUT), is(true));
+        assertThat(routes.get(9).accepts(GET), is(false));
+        assertThat(routes.get(10).accepts(PUT), is(true));
+        assertThat(routes.get(10).accepts(GET), is(false));
+        assertThat(routes.get(11).accepts(PUT), is(true));
+        assertThat(routes.get(11).accepts(GET), is(false));
 
-        assertTrue(routes.get(12).accepts(TRACE));
-        assertFalse(routes.get(12).accepts(GET));
-        assertTrue(routes.get(13).accepts(TRACE));
-        assertFalse(routes.get(13).accepts(GET));
-        assertTrue(routes.get(14).accepts(TRACE));
-        assertFalse(routes.get(14).accepts(GET));
+        assertThat(routes.get(12).accepts(TRACE), is(true));
+        assertThat(routes.get(12).accepts(GET), is(false));
+        assertThat(routes.get(13).accepts(TRACE), is(true));
+        assertThat(routes.get(13).accepts(GET), is(false));
+        assertThat(routes.get(14).accepts(TRACE), is(true));
+        assertThat(routes.get(14).accepts(GET), is(false));
 
-        assertTrue(routes.get(15).accepts(OPTIONS));
-        assertFalse(routes.get(15).accepts(GET));
-        assertTrue(routes.get(16).accepts(OPTIONS));
-        assertFalse(routes.get(16).accepts(GET));
-        assertTrue(routes.get(17).accepts(OPTIONS));
-        assertFalse(routes.get(17).accepts(GET));
+        assertThat(routes.get(15).accepts(OPTIONS), is(true));
+        assertThat(routes.get(15).accepts(GET), is(false));
+        assertThat(routes.get(16).accepts(OPTIONS), is(true));
+        assertThat(routes.get(16).accepts(GET), is(false));
+        assertThat(routes.get(17).accepts(OPTIONS), is(true));
+        assertThat(routes.get(17).accepts(GET), is(false));
 
-        assertTrue(routes.get(18).accepts(HEAD));
-        assertFalse(routes.get(18).accepts(GET));
-        assertTrue(routes.get(19).accepts(HEAD));
-        assertFalse(routes.get(19).accepts(GET));
-        assertTrue(routes.get(20).accepts(HEAD));
-        assertFalse(routes.get(20).accepts(GET));
+        assertThat(routes.get(18).accepts(HEAD), is(true));
+        assertThat(routes.get(18).accepts(GET), is(false));
+        assertThat(routes.get(19).accepts(HEAD), is(true));
+        assertThat(routes.get(19).accepts(GET), is(false));
+        assertThat(routes.get(20).accepts(HEAD), is(true));
+        assertThat(routes.get(20).accepts(GET), is(false));
 
         PathMatcher.PrefixResult result = routes.prefixMatch("/any");
-        assertNotNull(result);
-        assertTrue(result.matches());
-        assertEquals("/any", result.remainingPart());
+        assertThat(result, notNullValue());
+        assertThat(result.matches(), is(true));
+        assertThat(result.remainingPart(), is("/any"));
     }
 
     @Test
@@ -131,18 +130,18 @@ public class RouteListRoutingRulesTest {
                 .post("/bar", VOID_HANDLER)
                 .post("/bar", (req, res) -> {}, (req, res) -> {})
                 .aggregate()
-                .getRouteList();
-        assertNotNull(routes);
-        assertEquals(6, routes.size());
-        assertEquals(0, routes.acceptedMethods().size());
-        assertTrue(routes.get(0).accepts(GET));
-        assertFalse(routes.get(0).accepts(POST));
-        assertTrue(routes.get(1).accepts(POST));
-        assertTrue(routes.get(1).accepts(GET));
-        assertTrue(routes.get(2).accepts(DELETE));
-        assertTrue(routes.get(3).accepts(POST));
-        assertTrue(routes.get(4).accepts(POST));
-        assertTrue(routes.get(5).accepts(POST));
+                .routeList();
+        assertThat(routes, notNullValue());
+        assertThat(routes.size(), is(6));
+        assertThat(routes.acceptedMethods().size(), is(0));
+        assertThat(routes.get(0).accepts(GET), is(true));
+        assertThat(routes.get(0).accepts(POST), is(false));
+        assertThat(routes.get(1).accepts(POST), is(true));
+        assertThat(routes.get(1).accepts(GET), is(true));
+        assertThat(routes.get(2).accepts(DELETE), is(true));
+        assertThat(routes.get(3).accepts(POST), is(true));
+        assertThat(routes.get(4).accepts(POST), is(true));
+        assertThat(routes.get(5).accepts(POST), is(true));
     }
 
     @Test
@@ -156,22 +155,22 @@ public class RouteListRoutingRulesTest {
                 .register("/bar", c -> c.delete(VOID_HANDLER)
                                                      .put(VOID_HANDLER))
                 .aggregate()
-                .getRouteList();
-        assertNotNull(routes);
-        assertEquals(5, routes.size());
-        assertEquals(4, routes.acceptedMethods().size());
-        assertTrue(routes.get(0).accepts(POST));
-        assertFalse(routes.get(0).accepts(GET));
-        assertTrue(routes.get(1).accepts(GET));
-        assertFalse(routes.get(1).accepts(POST));
-        assertTrue(routes.get(2).accepts(POST));
-        assertFalse(routes.get(2).accepts(GET));
-        assertTrue(routes.get(3).accepts(DELETE));
-        assertFalse(routes.get(3).accepts(GET));
-        assertTrue(routes.get(4) instanceof RouteList);
-        assertTrue(routes.get(4).accepts(DELETE));
-        assertTrue(routes.get(4).accepts(PUT));
-        assertFalse(routes.get(4).accepts(GET));
+                .routeList();
+        assertThat(routes, notNullValue());
+        assertThat(routes.size(), is(5));
+        assertThat(routes.acceptedMethods().size(), is(4));
+        assertThat(routes.get(0).accepts(POST), is(true));
+        assertThat(routes.get(0).accepts(GET), is(false));
+        assertThat(routes.get(1).accepts(GET), is(true));
+        assertThat(routes.get(1).accepts(POST), is(false));
+        assertThat(routes.get(2).accepts(POST), is(true));
+        assertThat(routes.get(2).accepts(GET), is(false));
+        assertThat(routes.get(3).accepts(DELETE), is(true));
+        assertThat(routes.get(3).accepts(GET), is(false));
+        assertThat(routes.get(4) instanceof RouteList, is(true));
+        assertThat(routes.get(4).accepts(DELETE), is(true));
+        assertThat(routes.get(4).accepts(PUT), is(true));
+        assertThat(routes.get(4).accepts(GET), is(false));
     }
 
     @Test
@@ -181,9 +180,9 @@ public class RouteListRoutingRulesTest {
                 .register("/foo", c -> {})
                 .post("/bar", VOID_HANDLER)
                 .aggregate()
-                .getRouteList();
-        assertNotNull(routes);
-        assertEquals(2, routes.size());
-        assertEquals(2, routes.acceptedMethods().size());
+                .routeList();
+        assertThat(routes, notNullValue());
+        assertThat(routes.size(), is(2));
+        assertThat(routes.acceptedMethods().size(), is(2));
     }
 }

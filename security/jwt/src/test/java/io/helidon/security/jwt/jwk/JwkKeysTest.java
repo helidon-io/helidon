@@ -105,22 +105,22 @@ public class JwkKeysTest {
     public void testAuth0JwkDocument() {
         String keyId = "QzBCMDM1QTI2MjRFMTFDNDBDRTYwRkU4RDdEMzU5RTcwNDRBNjhCNQ";
         OptionalHelper.from(auth0Keys.forKeyId(keyId)).ifPresentOrElse(key -> {
-            assertThat(key.getAlgorithm(), is(JwkRSA.ALG_RS256));
-            assertThat(key.getKeyType(), is(Jwk.KEY_TYPE_RSA));
-            assertThat(key.getUsage(), is(Optional.of(Jwk.USE_SIGNATURE)));
-            assertThat(key.getKeyId(), is(keyId));
+            assertThat(key.algorithm(), is(JwkRSA.ALG_RS256));
+            assertThat(key.keyType(), is(Jwk.KEY_TYPE_RSA));
+            assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
+            assertThat(key.keyId(), is(keyId));
 
             assertThat(key, instanceOf(JwkPki.class));
             assertThat(key, instanceOf(JwkRSA.class));
 
             JwkPki pki = (JwkPki) key;
-            assertThat(pki.getCertificateChain(), not(Optional.empty()));
-            assertThat(pki.getPrivateKey(), is(Optional.empty()));
-            assertThat(pki.getPublicKey(), not(Optional.empty()));
-            assertThat(pki.getSha1Thumbprint(), not(Optional.empty()));
-            assertThat(Base64.getUrlEncoder().encodeToString(pki.getSha1Thumbprint().get()),
+            assertThat(pki.certificateChain(), not(Optional.empty()));
+            assertThat(pki.privateKey(), is(Optional.empty()));
+            assertThat(pki.publicKey(), not(Optional.empty()));
+            assertThat(pki.sha1Thumbprint(), not(Optional.empty()));
+            assertThat(Base64.getUrlEncoder().encodeToString(pki.sha1Thumbprint().get()),
                        is("QzBCMDM1QTI2MjRFMTFDNDBDRTYwRkU4RDdEMzU5RTcwNDRBNjhCNQ=="));
-            assertThat(pki.getSha256Thumbprint(), is(Optional.empty()));
+            assertThat(pki.sha256Thumbprint(), is(Optional.empty()));
         }, () -> fail("Key with id \"" + keyId + "\" should be presenit in auth0-jwk.json file"));
     }
 
@@ -147,20 +147,20 @@ public class JwkKeysTest {
 
     private void testRsa(String keyId, String algorithm) {
         OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
-            assertThat(key.getAlgorithm(), is(algorithm));
-            assertThat(key.getKeyType(), is(Jwk.KEY_TYPE_RSA));
-            assertThat(key.getUsage(), is(Optional.of(Jwk.USE_SIGNATURE)));
-            assertThat(key.getKeyId(), is(keyId));
+            assertThat(key.algorithm(), is(algorithm));
+            assertThat(key.keyType(), is(Jwk.KEY_TYPE_RSA));
+            assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
+            assertThat(key.keyId(), is(keyId));
 
             assertThat(key, instanceOf(JwkPki.class));
             assertThat(key, instanceOf(JwkRSA.class));
 
             JwkPki pki = (JwkPki) key;
-            assertThat(pki.getCertificateChain(), is(Optional.empty()));
-            assertThat(pki.getPrivateKey(), not(Optional.empty()));
-            assertThat(pki.getPublicKey(), not(Optional.empty()));
-            assertThat(pki.getSha1Thumbprint(), is(Optional.empty()));
-            assertThat(pki.getSha256Thumbprint(), is(Optional.empty()));
+            assertThat(pki.certificateChain(), is(Optional.empty()));
+            assertThat(pki.privateKey(), not(Optional.empty()));
+            assertThat(pki.publicKey(), not(Optional.empty()));
+            assertThat(pki.sha1Thumbprint(), is(Optional.empty()));
+            assertThat(pki.sha256Thumbprint(), is(Optional.empty()));
 
             // now test sign/verify
             byte[] bytes = "someTextToSign 3232".getBytes(StandardCharsets.UTF_8);
@@ -190,21 +190,21 @@ public class JwkKeysTest {
 
     private void testEc(String keyId, String algorithm) {
         OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
-            assertThat(key.getAlgorithm(), is(algorithm));
-            assertThat(key.getKeyType(), is(Jwk.KEY_TYPE_EC));
-            assertThat(key.getUsage(), is(Optional.of(Jwk.USE_SIGNATURE)));
-            assertThat(key.getKeyId(), is(keyId));
-            assertThat(key.getOperations(), is(Optional.empty()));
+            assertThat(key.algorithm(), is(algorithm));
+            assertThat(key.keyType(), is(Jwk.KEY_TYPE_EC));
+            assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
+            assertThat(key.keyId(), is(keyId));
+            assertThat(key.operations(), is(Optional.empty()));
 
             assertThat(key, instanceOf(JwkPki.class));
             assertThat(key, instanceOf(JwkEC.class));
 
             JwkPki pki = (JwkPki) key;
-            assertThat(pki.getCertificateChain(), is(Optional.empty()));
-            assertThat(pki.getPrivateKey(), not(Optional.empty()));
-            assertThat(pki.getPublicKey(), not(Optional.empty()));
-            assertThat(pki.getSha1Thumbprint(), is(Optional.empty()));
-            assertThat(pki.getSha256Thumbprint(), is(Optional.empty()));
+            assertThat(pki.certificateChain(), is(Optional.empty()));
+            assertThat(pki.privateKey(), not(Optional.empty()));
+            assertThat(pki.publicKey(), not(Optional.empty()));
+            assertThat(pki.sha1Thumbprint(), is(Optional.empty()));
+            assertThat(pki.sha256Thumbprint(), is(Optional.empty()));
 
             // now test sign/verify
             byte[] bytes = "someTextToSign 3232".getBytes(StandardCharsets.UTF_8);
@@ -225,11 +225,11 @@ public class JwkKeysTest {
 
     private void testOct(String keyId, String algorithm) {
         OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
-            assertThat(key.getAlgorithm(), is(algorithm));
-            assertThat(key.getKeyType(), is(Jwk.KEY_TYPE_OCT));
-            assertThat(key.getUsage(), is(Optional.of(Jwk.USE_SIGNATURE)));
-            assertThat(key.getKeyId(), is(keyId));
-            assertThat(key.getOperations(), is(Optional.empty()));
+            assertThat(key.algorithm(), is(algorithm));
+            assertThat(key.keyType(), is(Jwk.KEY_TYPE_OCT));
+            assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
+            assertThat(key.keyId(), is(keyId));
+            assertThat(key.operations(), is(Optional.empty()));
 
             assertThat(key, instanceOf(JwkOctet.class));
             assertThat(key, not(instanceOf(JwkPki.class)));
@@ -254,12 +254,12 @@ public class JwkKeysTest {
     public void testCustomOct() {
         String keyId = "hmac-secret-001";
         OptionalHelper.from(customKeys.forKeyId(keyId)).ifPresentOrElse(key -> {
-            assertThat(key.getAlgorithm(), is(JwkOctet.ALG_HS256));
-            assertThat(key.getKeyType(), is(Jwk.KEY_TYPE_OCT));
-            assertThat(key.getUsage(), is(Optional.empty()));
-            assertThat(key.getKeyId(), is(keyId));
-            assertThat(key.getOperations(), is(Optional.of(CollectionsHelper.listOf(Jwk.OPERATION_SIGN,
-                                                                                    Jwk.OPERATION_VERIFY))));
+            assertThat(key.algorithm(), is(JwkOctet.ALG_HS256));
+            assertThat(key.keyType(), is(Jwk.KEY_TYPE_OCT));
+            assertThat(key.usage(), is(Optional.empty()));
+            assertThat(key.keyId(), is(keyId));
+            assertThat(key.operations(), is(Optional.of(CollectionsHelper.listOf(Jwk.OPERATION_SIGN,
+                                                                                 Jwk.OPERATION_VERIFY))));
 
             assertThat(key, instanceOf(JwkOctet.class));
             assertThat(key, not(instanceOf(JwkPki.class)));
@@ -290,8 +290,8 @@ public class JwkKeysTest {
             JwkEC ec = (JwkEC) keyFromFile;
 
             JwkEC ecKey = JwkEC.builder()
-                    .publicKey((ECPublicKey) ec.getPublicKey())
-                    .privateKey((ECPrivateKey) ec.getPrivateKey().get())
+                    .publicKey((ECPublicKey) ec.publicKey())
+                    .privateKey((ECPrivateKey) ec.privateKey().get())
                     .algorithm(JwkEC.ALG_ES256)
                     .keyId(keyId)
                     .usage(Jwk.USE_SIGNATURE)
@@ -302,21 +302,21 @@ public class JwkKeysTest {
                     .build();
 
             OptionalHelper.from(keys.forKeyId(keyId)).ifPresentOrElse(key -> {
-                assertThat(key.getAlgorithm(), is(JwkEC.ALG_ES256));
-                assertThat(key.getKeyType(), is(Jwk.KEY_TYPE_EC));
-                assertThat(key.getUsage(), is(Optional.of(Jwk.USE_SIGNATURE)));
-                assertThat(key.getKeyId(), is(keyId));
-                assertThat(key.getOperations(), is(Optional.empty()));
+                assertThat(key.algorithm(), is(JwkEC.ALG_ES256));
+                assertThat(key.keyType(), is(Jwk.KEY_TYPE_EC));
+                assertThat(key.usage(), is(Optional.of(Jwk.USE_SIGNATURE)));
+                assertThat(key.keyId(), is(keyId));
+                assertThat(key.operations(), is(Optional.empty()));
 
                 assertThat(key, instanceOf(JwkPki.class));
                 assertThat(key, instanceOf(JwkEC.class));
 
                 JwkPki pki = (JwkPki) key;
-                assertThat(pki.getCertificateChain(), is(Optional.empty()));
-                assertThat(pki.getPrivateKey(), not(Optional.empty()));
-                assertThat(pki.getPublicKey(), not(Optional.empty()));
-                assertThat(pki.getSha1Thumbprint(), is(Optional.empty()));
-                assertThat(pki.getSha256Thumbprint(), is(Optional.empty()));
+                assertThat(pki.certificateChain(), is(Optional.empty()));
+                assertThat(pki.privateKey(), not(Optional.empty()));
+                assertThat(pki.publicKey(), not(Optional.empty()));
+                assertThat(pki.sha1Thumbprint(), is(Optional.empty()));
+                assertThat(pki.sha256Thumbprint(), is(Optional.empty()));
 
                 // now test sign/verify
                 byte[] bytes = "someTextToSign 3232".getBytes(StandardCharsets.UTF_8);

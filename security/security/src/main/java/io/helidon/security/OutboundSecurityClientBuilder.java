@@ -17,6 +17,7 @@
 package io.helidon.security;
 
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 
@@ -49,7 +50,7 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
         return new OutboundSecurityClientImpl(security,
                                               context,
                                               super.buildRequest(),
-                                              super.getProviderName(),
+                                              super.providerName(),
                                               outboundEnvironment,
                                               outboundEndpointConfig);
     }
@@ -71,8 +72,8 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
      * @param outboundEnvironment environment builder to use for outbound call
      * @return updated builder instance
      */
-    public OutboundSecurityClientBuilder outboundEnvironment(Builder<SecurityEnvironment> outboundEnvironment) {
-        return outboundEnvironment(outboundEnvironment.build());
+    public OutboundSecurityClientBuilder outboundEnvironment(Supplier<SecurityEnvironment> outboundEnvironment) {
+        return outboundEnvironment(outboundEnvironment.get());
     }
 
     /**
@@ -92,8 +93,8 @@ public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<Outbou
      * @param outboundEndpointConfig endpoint config builder to use for outbound call
      * @return updated builder instance
      */
-    public OutboundSecurityClientBuilder outboundEndpointConfig(Builder<EndpointConfig> outboundEndpointConfig) {
-        return outboundEndpointConfig(outboundEndpointConfig.build());
+    public OutboundSecurityClientBuilder outboundEndpointConfig(Supplier<EndpointConfig> outboundEndpointConfig) {
+        return outboundEndpointConfig(outboundEndpointConfig.get());
     }
 
     /**

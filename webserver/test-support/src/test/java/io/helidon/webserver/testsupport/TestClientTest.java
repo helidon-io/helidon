@@ -26,7 +26,8 @@ import io.helidon.webserver.Routing;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
@@ -47,8 +48,8 @@ public class TestClientTest {
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
                 .get();
-        assertEquals(Http.Status.OK_200, response.status());
-        assertEquals("a", sb.toString());
+        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(sb.toString(), is("a"));
     }
 
     @Test
@@ -79,22 +80,22 @@ public class TestClientTest {
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
                 .get();
-        assertEquals("foo-get", sb.toString());
+        assertThat(sb.toString(), is("foo-get"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/foo")
                 .post();
-        assertEquals("foo-post", sb.toString());
+        assertThat(sb.toString(), is("foo-post"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/foo")
                 .put();
-        assertEquals("foo-put", sb.toString());
+        assertThat(sb.toString(), is("foo-put"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/foo/bar")
                 .get();
-        assertEquals("foo/bar-get", sb.toString());
+        assertThat(sb.toString(), is("foo/bar-get"));
     }
 
     @Test
@@ -128,22 +129,22 @@ public class TestClientTest {
         TestResponse response = TestClient.create(routing)
                 .path("/foo/a")
                 .get();
-        assertEquals("foo-get:a", sb.toString());
+        assertThat(sb.toString(), is("foo-get:a"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/foo/a")
                 .post();
-        assertEquals("foo-post:a", sb.toString());
+        assertThat(sb.toString(), is("foo-post:a"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/bar/n/baz")
                 .get();
-        assertEquals("baz-get:n", sb.toString());
+        assertThat(sb.toString(), is("baz-get:n"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/bar/n/kuk")
                 .get();
-        assertEquals("bar-get:n:kuk", sb.toString());
+        assertThat(sb.toString(), is("bar-get:n:kuk"));
     }
 
     @Test
@@ -172,12 +173,12 @@ public class TestClientTest {
         TestResponse response = TestClient.create(routing)
                 .path("/foo")
                 .get();
-        assertEquals("A-foo-get", sb.toString());
+        assertThat(sb.toString(), is("A-foo-get"));
         sb.setLength(0);
         response = TestClient.create(routing)
                 .path("/bar")
                 .get();
-        assertEquals("A-B-bar-get", sb.toString());
+        assertThat(sb.toString(), is("A-B-bar-get"));
     }
 
     @Test
@@ -213,7 +214,7 @@ public class TestClientTest {
                 .path("/anything/anywhere")
                 .get();
 
-        assertEquals(status, response.status());
+        assertThat(response.status(), is(status));
     }
 
 
@@ -256,8 +257,8 @@ public class TestClientTest {
 
         latch.await(10, TimeUnit.SECONDS);
 
-        assertEquals("any-test-exception-complete", sb.toString());
-        assertEquals(417, response.status().code());
+        assertThat(sb.toString(), is("any-test-exception-complete"));
+        assertThat(response.status(), is(Http.Status.EXPECTATION_FAILED_417));
     }
 
     @Test
@@ -271,7 +272,7 @@ public class TestClientTest {
                 .path("/nonexisting")
                 .get();
 
-        assertEquals(Http.Status.NOT_FOUND_404, response.status());
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
     @Test
@@ -307,8 +308,8 @@ public class TestClientTest {
                 .path("/anything/anywhere")
                 .get();
 
-        assertEquals("any-exceptionHandler-httpExceptionHandler-throwableHandler", sb.toString());
-        assertEquals(777, response.status().code());
+        assertThat(sb.toString(), is("any-exceptionHandler-httpExceptionHandler-throwableHandler"));
+        assertThat(response.status().code(), is(777));
     }
 
     @Test
@@ -336,8 +337,8 @@ public class TestClientTest {
                 .path("/anything/anywhere")
                 .get();
 
-        assertEquals("any-httpExceptionHandler-", sb.toString());
-        assertEquals(Http.Status.INTERNAL_SERVER_ERROR_500, response.status());
+        assertThat(sb.toString(), is("any-httpExceptionHandler-"));
+        assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
     }
 
     @Test
@@ -367,8 +368,8 @@ public class TestClientTest {
                 .path("/anything/anywhere")
                 .get();
 
-        assertEquals("any-throwableHandler", sb.toString());
-        assertEquals(300, response.status().code());
+        assertThat(sb.toString(), is("any-throwableHandler"));
+        assertThat(response.status().code(), is(300));
     }
 
     @Test
@@ -412,9 +413,9 @@ public class TestClientTest {
                 .queryParameter("a", IllegalArgumentException.class.getSimpleName())
                 .get();
 
-        assertEquals("any-throwableHandler-IllegalStateExceptionHandler-any-throwableHandler-"
-                             + "IllegalArgumentExceptionHandler-", sb.toString());
-        assertEquals(Http.Status.INTERNAL_SERVER_ERROR_500, responseIse.status());
-        assertEquals(Http.Status.INTERNAL_SERVER_ERROR_500, responseIae.status());
+        assertThat(sb.toString(), is("any-throwableHandler-IllegalStateExceptionHandler-any-throwableHandler-"
+                             + "IllegalArgumentExceptionHandler-"));
+        assertThat(responseIse.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+        assertThat(responseIae.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
     }
 }

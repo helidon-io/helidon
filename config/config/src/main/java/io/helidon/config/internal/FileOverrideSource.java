@@ -65,7 +65,7 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
 
         try {
             OverrideData overrideData = OverrideSource.OverrideData
-                    .from(new StringReader(FileSourceHelper.safeReadContent(filePath)));
+                    .create(new StringReader(FileSourceHelper.safeReadContent(filePath)));
             return new Data<>(Optional.of(overrideData), digest);
         } catch (IOException e) {
             throw new ConfigException("Cannot load data from source.", e);
@@ -105,7 +105,7 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
         }
 
         @Override
-        protected Path getTarget() {
+        protected Path target() {
             return path;
         }
 
@@ -120,8 +120,8 @@ public class FileOverrideSource extends AbstractOverrideSource<byte[]> {
             return new FileOverrideSource(this, path);
         }
 
-        PollingStrategy getPollingStrategyInternal() { //just for testing purposes
-            return super.getPollingStrategy();
+        PollingStrategy pollingStrategyInternal() { //just for testing purposes
+            return super.pollingStrategy();
         }
     }
 }

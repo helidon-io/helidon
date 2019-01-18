@@ -59,7 +59,7 @@ import io.opentracing.Tracer;
  * This class is used to "bootstrap" security and integrate it with other frameworks; runtime
  * main entry point is {@link SecurityContext}.
  * <p>
- * It is possible to configure it manually using {@link #builder()} or use {@link #fromConfig(Config)} to initialize using
+ * It is possible to configure it manually using {@link #builder()} or use {@link #create(Config)} to initialize using
  * configuration support.
  * <p>
  * Security is constructed from various providers {@link SecurityProvider} and
@@ -67,7 +67,7 @@ import io.opentracing.Tracer;
  * secure a request.
  *
  * @see #builder()
- * @see #fromConfig(Config)
+ * @see #create(Config)
  */
 public final class Security {
     /**
@@ -121,7 +121,7 @@ public final class Security {
         atnProviders.addAll(builder.atnProviders);
         outboundProviders.addAll(builder.outboundProviders);
 
-        builder.auditProviders.forEach(auditProvider -> auditors.add(auditProvider.getAuditConsumer()));
+        builder.auditProviders.forEach(auditProvider -> auditors.add(auditProvider.auditConsumer()));
 
         audit(instanceUuid, SecurityAuditEvent.info(
                 AuditEvent.SECURITY_TYPE_PREFIX + ".configure",
@@ -177,14 +177,13 @@ public final class Security {
      * Creates new instance based on configuration values.
      * <p>
      *
-     * @param config Config instance
+     * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
      */
-    public static Security fromConfig(Config config) {
+    public static Security create(Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
         return builder()
                 .config(config)
-                .fromConfig(config)
                 .build();
     }
 
@@ -192,14 +191,13 @@ public final class Security {
      * Creates new instance based on configuration values.
      * <p>
      *
-     * @param config Config instance
+     * @param config Config instance located on security configuration ("providers" is an expected child)
      * @return new instance.
      */
-    public static Builder builderFromConfig(Config config) {
+    public static Builder builder(Config config) {
         Objects.requireNonNull(config, "Configuration must not be null");
         return builder()
-                .config(config)
-                .fromConfig(config);
+                .config(config);
     }
 
     /**
@@ -220,7 +218,7 @@ public final class Security {
      * @return set of roles the user/service is in
      */
     public static Set<String> getRoles(Subject subject) {
-        return subject.getGrants(Role.class)
+        return subject.grants(Role.class)
                 .stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
@@ -229,7 +227,7 @@ public final class Security {
     void audit(String tracingId, AuditEvent event) {
         // must build within scope of the audit method, as we want to send our caller...
 
-        AuditProvider.AuditSource auditSource = AuditProvider.AuditSource.build();
+        AuditProvider.AuditSource auditSource = AuditProvider.AuditSource.create();
         for (Consumer<AuditProvider.TracedAuditEvent> auditor : auditors) {
             auditor.accept(SecurityUtil.wrapEvent(tracingId, auditSource, event));
         }
@@ -244,15 +242,15 @@ public final class Security {
      *
      * @return time to access current time for security decisions
      */
-    public SecurityTime getServerTime() {
+    public SecurityTime serverTime() {
         return serverTime;
     }
 
-    Supplier<ExecutorService> getExecutorService() {
+    Supplier<ExecutorService> executorService() {
         return executorService;
     }
 
-    ProviderSelectionPolicy getProviderSelectionPolicy() {
+    ProviderSelectionPolicy providerSelectionPolicy() {
         return providerSelectionPolicy;
     }
 
@@ -292,7 +290,7 @@ public final class Security {
      *
      * @return {@link Tracer}, may be a no-op tracer if tracing is disabled
      */
-    public Tracer getTracer() {
+    public Tracer tracer() {
         return securityTracer;
     }
 
@@ -302,7 +300,7 @@ public final class Security {
      *
      * @return Collection of annotations expected by configured providers.
      */
-    public Collection<Class<? extends Annotation>> getCustomAnnotations() {
+    public Collection<Class<? extends Annotation>> customAnnotations() {
         return annotations;
     }
 
@@ -320,7 +318,7 @@ public final class Security {
      * @return a child node of security configuration
      * @throws IllegalArgumentException in case you request child in one of the forbidden trees
      */
-    public Config getConfig(String child) {
+    public Config configFor(String child) {
         String test = child.trim();
         if (test.isEmpty()) {
             throw new IllegalArgumentException("Root of security configuration is not available");
@@ -377,7 +375,13 @@ public final class Security {
         return SecurityEnvironment.builder(serverTime);
     }
 
-    public Optional<SubjectMappingProvider> getSubjectMapper() {
+    /**
+     * Subject mapping provider used to map subject(s) authenticated by {@link io.helidon.security.spi.AuthenticationProvider}
+     *  to a new {@link io.helidon.security.Subject}, e.g. to add roles.
+     *
+     * @return subject mapping provider to use or empty if none defined
+     */
+    public Optional<SubjectMappingProvider> subjectMapper() {
         return subjectMappingProvider;
     }
 
@@ -461,7 +465,7 @@ public final class Security {
         }
 
         /**
-         * Disable open tracing support in this security instance. This will cause method {@link SecurityContext#getTracer()} to
+         * Disable open tracing support in this security instance. This will cause method {@link SecurityContext#tracer()} to
          * return a no-op tracer.
          *
          * @return updated builder instance
@@ -488,8 +492,8 @@ public final class Security {
          * @param providerBuilder Builder of a provider, method build will be immediately called
          * @return updated builder instance
          */
-        public Builder addProvider(io.helidon.common.Builder<? extends SecurityProvider> providerBuilder) {
-            return addProvider(providerBuilder.build());
+        public Builder addProvider(Supplier<? extends SecurityProvider> providerBuilder) {
+            return addProvider(providerBuilder.get());
         }
 
         /**
@@ -532,8 +536,8 @@ public final class Security {
          * @param name            name of the provider, if null, this provider will not be referencable from other scopes
          * @return updated builder instance
          */
-        public Builder addProvider(io.helidon.common.Builder<? extends SecurityProvider> providerBuilder, String name) {
-            return addProvider(providerBuilder.build(), name);
+        public Builder addProvider(Supplier<? extends SecurityProvider> providerBuilder, String name) {
+            return addProvider(providerBuilder.get(), name);
         }
 
         /**
@@ -554,8 +558,8 @@ public final class Security {
          * @param builder Builder of provider to use as the default for this runtime.
          * @return updated builder instance
          */
-        public Builder authenticationProvider(io.helidon.common.Builder<? extends AuthenticationProvider> builder) {
-            return authenticationProvider(builder.build());
+        public Builder authenticationProvider(Supplier<? extends AuthenticationProvider> builder) {
+            return authenticationProvider(builder.get());
         }
 
         /**
@@ -576,8 +580,8 @@ public final class Security {
          * @param builder Builder of provider to use as the default for this runtime.
          * @return updated builder instance
          */
-        public Builder authorizationProvider(io.helidon.common.Builder<? extends AuthorizationProvider> builder) {
-            return authorizationProvider(builder.build());
+        public Builder authorizationProvider(Supplier<? extends AuthorizationProvider> builder) {
+            return authorizationProvider(builder.get());
         }
 
         /**
@@ -600,8 +604,8 @@ public final class Security {
          * @param builder builder of provider to add
          * @return updated builder instance
          */
-        public Builder addAuthenticationProvider(io.helidon.common.Builder<? extends AuthenticationProvider> builder) {
-            return addAuthenticationProvider(builder.build());
+        public Builder addAuthenticationProvider(Supplier<? extends AuthenticationProvider> builder) {
+            return addAuthenticationProvider(builder.get());
         }
 
         /**
@@ -631,9 +635,9 @@ public final class Security {
          * @param name    name of provider, may be null or empty, but as such will not be rerefencable by name
          * @return updated builder instance
          */
-        public Builder addAuthenticationProvider(io.helidon.common.Builder<? extends AuthenticationProvider> builder,
+        public Builder addAuthenticationProvider(Supplier<? extends AuthenticationProvider> builder,
                                                  String name) {
-            return addAuthenticationProvider(builder.build(), name);
+            return addAuthenticationProvider(builder.get(), name);
         }
 
         /**
@@ -652,8 +656,8 @@ public final class Security {
          * @param builder builder of provider instance
          * @return updated builder instance
          */
-        public Builder addAuthorizationProvider(io.helidon.common.Builder<? extends AuthorizationProvider> builder) {
-            return addAuthorizationProvider(builder.build());
+        public Builder addAuthorizationProvider(Supplier<? extends AuthorizationProvider> builder) {
+            return addAuthorizationProvider(builder.get());
         }
 
         /**
@@ -685,8 +689,8 @@ public final class Security {
          * @param name    name of provider, may be null or empty, but as such will not be referencable
          * @return updated builder instance
          */
-        public Builder addAuthorizationProvider(io.helidon.common.Builder<? extends AuthorizationProvider> builder, String name) {
-            return addAuthorizationProvider(builder.build(), name);
+        public Builder addAuthorizationProvider(Supplier<? extends AuthorizationProvider> builder, String name) {
+            return addAuthorizationProvider(builder.get(), name);
         }
 
         /**
@@ -711,8 +715,8 @@ public final class Security {
          * @param builder Builder of provider instance
          * @return updated builder instance
          */
-        public Builder addOutboundSecurityProvider(io.helidon.common.Builder<? extends OutboundSecurityProvider> builder) {
-            return addOutboundSecurityProvider(builder.build());
+        public Builder addOutboundSecurityProvider(Supplier<? extends OutboundSecurityProvider> builder) {
+            return addOutboundSecurityProvider(builder.get());
         }
 
         /**
@@ -723,9 +727,9 @@ public final class Security {
          * @param name  name of the provider for reference from configuration
          * @return updated builder instance.
          */
-        public Builder addOutboundSecurityProvider(io.helidon.common.Builder<? extends OutboundSecurityProvider> build,
+        public Builder addOutboundSecurityProvider(Supplier<? extends OutboundSecurityProvider> build,
                                                    String name) {
-            return addOutboundSecurityProvider(build.build(), name);
+            return addOutboundSecurityProvider(build.get(), name);
         }
 
         /**
@@ -778,8 +782,8 @@ public final class Security {
          * @param builder Builder of provider instance
          * @return updated builder instance
          */
-        public Builder addAuditProvider(io.helidon.common.Builder<? extends AuditProvider> builder) {
-            return addAuditProvider(builder.build());
+        public Builder addAuditProvider(Supplier<? extends AuditProvider> builder) {
+            return addAuditProvider(builder.get());
         }
 
         /**
@@ -791,6 +795,7 @@ public final class Security {
          */
         public Builder config(Config config) {
             this.config = config;
+            fromConfig(config);
             return this;
         }
 
@@ -806,7 +811,7 @@ public final class Security {
             }
 
             if (auditProviders.isEmpty()) {
-                DefaultAuditProvider provider = config.as(DefaultAuditProvider::fromConfig).get();
+                DefaultAuditProvider provider = config.as(DefaultAuditProvider::create).get();
                 addAuditProvider(provider);
             }
 
@@ -823,16 +828,9 @@ public final class Security {
             return new Security(this);
         }
 
-        /**
-         * Adds configured providers from config to this builder.
-         *
-         * @param config configuration
-         * @return updated builder instance
-         */
-        Builder fromConfig(Config config) {
-            this.config = config.get("security");
-            config.get("security.environment.server-time").as(SecurityTime::from).ifPresent(this::serverTime);
-            executorSupplier(ThreadPoolSupplier.create(config.get("security.environment.executor-service")));
+        private void fromConfig(Config config) {
+            config.get("environment.server-time").as(SecurityTime::create).ifPresent(this::serverTime);
+            executorSupplier(ThreadPoolSupplier.create(config.get("environment.executor-service")));
 
             Map<String, SecurityProviderService> configKeyToService = new HashMap<>();
             Map<String, SecurityProviderService> classNameToService = new HashMap<>();
@@ -840,9 +838,9 @@ public final class Security {
             //add all providers from service loaders
             String knownKeys = loadProviderServices(configKeyToService, classNameToService);
 
-            config.get("security.tracing.enabled").as(Boolean.class).ifPresent(this::tracingEnabled);
+            config.get("tracing.enabled").as(Boolean.class).ifPresent(this::tracingEnabled);
             //iterate through all providers and find them
-            config.get("security.providers").asList(Config.class).get().forEach(pConf -> {
+            config.get("providers").asList(Config.class).get().forEach(pConf -> {
                 AtomicReference<SecurityProviderService> service = new AtomicReference<>();
                 AtomicReference<Config> providerSpecific = new AtomicReference<>();
 
@@ -882,7 +880,7 @@ public final class Security {
                 if (null == providerService) {
                     provider = SecurityUtil.instantiate(className, SecurityProvider.class, providerSpecificConfig);
                 } else {
-                    provider = providerService.getProviderInstance(providerSpecificConfig);
+                    provider = providerService.providerInstance(providerSpecificConfig);
                 }
 
                 if (isAuthn && (provider instanceof AuthenticationProvider)) {
@@ -907,7 +905,7 @@ public final class Security {
                         "Security is not configured. At least one security provider MUST be present.");
             }
 
-            String defaultAtnProvider = config.get("security.default-authentication-provider").asString().orElse(null);
+            String defaultAtnProvider = config.get("default-authentication-provider").asString().orElse(null);
             if (null != defaultAtnProvider) {
                 authenticationProvider(atnProviders.stream()
                                                .filter(nsp -> nsp.getName().equals(defaultAtnProvider))
@@ -920,7 +918,7 @@ public final class Security {
                                                                                                 + "configuration exists")));
             }
 
-            String defaultAtzProvider = config.get("security.default-authorization-provider").asString().orElse(null);
+            String defaultAtzProvider = config.get("default-authorization-provider").asString().orElse(null);
             if (null != defaultAtzProvider) {
                 authorizationProvider(atzProviders.stream()
                                               .filter(nsp -> nsp.getName().equals(defaultAtzProvider))
@@ -934,10 +932,10 @@ public final class Security {
             }
 
             // now policy
-            config = config.get("security.provider-policy");
+            config = config.get("provider-policy");
             ProviderSelectionPolicyType pType = config.get("type")
                     .asString()
-                    .map(ProviderSelectionPolicyType::from)
+                    .map(ProviderSelectionPolicyType::valueOf)
                     .orElse(ProviderSelectionPolicyType.FIRST);
 
             switch (pType) {
@@ -945,7 +943,7 @@ public final class Security {
                 providerSelectionPolicy = FirstProviderSelectionPolicy::new;
                 break;
             case COMPOSITE:
-                providerSelectionPolicy = CompositeProviderSelectionPolicy.fromConfig(config);
+                providerSelectionPolicy = CompositeProviderSelectionPolicy.create(config);
                 break;
             case CLASS:
                 providerSelectionPolicy = findProviderSelectionPolicy(config);
@@ -953,8 +951,6 @@ public final class Security {
             default:
                 throw new IllegalStateException("Invalid enum option: " + pType + ", probably version mis-match");
             }
-
-            return this;
         }
 
         private void executorSupplier(Supplier<ExecutorService> supplier) {
@@ -968,7 +964,7 @@ public final class Security {
             return pConf.get("name").asString().orElseGet(() -> {
                 if (null == providerSpecificConfig) {
                     if (null == className) {
-                        return providerService.getProviderClass().getSimpleName();
+                        return providerService.providerClass().getSimpleName();
                     } else {
                         int index = className.indexOf('.');
                         if (index > -1) {
@@ -1030,7 +1026,7 @@ public final class Security {
                     configKeyToService.put(configKey, service);
                     configKeys.add(configKey);
                 }
-                Class<? extends SecurityProvider> theClass = service.getProviderClass();
+                Class<? extends SecurityProvider> theClass = service.providerClass();
                 classNameToService.put(theClass.getName(), service);
             });
             return String.join(", ", configKeys);

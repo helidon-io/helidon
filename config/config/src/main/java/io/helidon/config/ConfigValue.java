@@ -106,7 +106,7 @@ public interface ConfigValue<T> {
      */
     default T get() throws MissingValueException, ConfigMappingException {
         return asOptional()
-                .orElseThrow(() -> MissingValueException.forKey(key()));
+                .orElseThrow(() -> MissingValueException.create(key()));
     }
 
     /**

@@ -47,13 +47,13 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
      * Created handler forwards any error created during entity read or conversion to the standard error handling
      * ({@link ServerRequest#next(Throwable)}).
      *
-     * @param entityType             a java type of the entity
-     * @param entityHandler          an entity handler to handle request entity
-     * @param <T>                    a type of the entity
+     * @param entityType    a java type of the entity
+     * @param entityHandler an entity handler to handle request entity
+     * @param <T>           a type of the entity
      * @return new {@code Handler} instance
      */
-    static <T> Handler of(Class<T> entityType, EntityHandler<T> entityHandler) {
-        return of(entityType, entityHandler, null);
+    static <T> Handler create(Class<T> entityType, EntityHandler<T> entityHandler) {
+        return create(entityType, entityHandler, null);
     }
 
     /**
@@ -67,7 +67,9 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
      * @param <T>                    a type of the entity
      * @return new {@code Handler} instance
      */
-    static <T> Handler of(Class<T> entityType, EntityHandler<T> entityHandler, ErrorHandler<Throwable> entityReadErrorHandler) {
+    static <T> Handler create(Class<T> entityType,
+                              EntityHandler<T> entityHandler,
+                              ErrorHandler<Throwable> entityReadErrorHandler) {
         Objects.requireNonNull(entityType, "Parameter 'publisherType' is null!");
         Objects.requireNonNull(entityHandler, "Parameter 'entityHandler' is null!");
         return (req, res) -> {
@@ -83,20 +85,20 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
                 return;
             }
             cs.thenAccept(entity -> entityHandler.accept(req, res, entity))
-                .exceptionally(throwable -> {
-                    if (entityReadErrorHandler == null) {
-                        req.next(throwable instanceof CompletionException ? throwable.getCause() : throwable);
-                    } else {
-                        entityReadErrorHandler.accept(req, res, throwable);
-                    }
-                    return null;
-                });
+                    .exceptionally(throwable -> {
+                        if (entityReadErrorHandler == null) {
+                            req.next(throwable instanceof CompletionException ? throwable.getCause() : throwable);
+                        } else {
+                            entityReadErrorHandler.accept(req, res, throwable);
+                        }
+                        return null;
+                    });
         };
     }
 
     /**
      * Handles {@link ServerRequest request}, {@link ServerResponse response} and HTTP request content entity.
-     * Used as functional parameter in {@link #of(Class, EntityHandler)} method.
+     * Used as functional parameter in {@link #create(Class, EntityHandler)} method.
      *
      * @param <T> a type of the content entity
      */

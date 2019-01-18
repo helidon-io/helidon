@@ -75,7 +75,7 @@ public abstract class SecurityResponse {
      *
      * @return SecurityStatus as the provider responded
      */
-    public SecurityStatus getStatus() {
+    public SecurityStatus status() {
         return status;
     }
 
@@ -84,7 +84,7 @@ public abstract class SecurityResponse {
      *
      * @return HTTP status code the provider wants to use, or empty if not set
      */
-    public OptionalInt getStatusCode() {
+    public OptionalInt statusCode() {
         return (statusCode == -1 ? OptionalInt.empty() : OptionalInt.of(statusCode));
     }
 
@@ -93,7 +93,7 @@ public abstract class SecurityResponse {
      *
      * @return Description of current status (optional)
      */
-    public Optional<String> getDescription() {
+    public Optional<String> description() {
         return Optional.ofNullable(description);
     }
 
@@ -102,7 +102,7 @@ public abstract class SecurityResponse {
      *
      * @return Exception causing current failure (optional)
      */
-    public Optional<Throwable> getThrowable() {
+    public Optional<Throwable> throwable() {
         return Optional.ofNullable(throwable);
     }
 
@@ -112,7 +112,7 @@ public abstract class SecurityResponse {
      *
      * @return Map of headers to merge with existing headers
      */
-    public Map<String, List<String>> getRequestHeaders() {
+    public Map<String, List<String>> requestHeaders() {
         return requestHeaders;
     }
 
@@ -122,7 +122,7 @@ public abstract class SecurityResponse {
      *
      * @return Map of headers to merge with existing headers
      */
-    public Map<String, List<String>> getResponseHeaders() {
+    public Map<String, List<String>> responseHeaders() {
         return responseHeaders;
     }
 
@@ -152,7 +152,7 @@ public abstract class SecurityResponse {
          *
          * The provider should have:
          * <ul>
-         * <li>Updated entity (through {@link SecurityRequest#getResponseEntity()}</li>
+         * <li>Updated entity (through {@link SecurityRequest#responseEntity()}</li>
          * <li>Updated headers (through {@link SecurityResponseBuilder#responseHeader(String, String)}</li>
          * <li>Updated status code (through {@link SecurityResponseBuilder#statusCode(int)}</li>
          * </ul>

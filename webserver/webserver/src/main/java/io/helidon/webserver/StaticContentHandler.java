@@ -223,7 +223,7 @@ abstract class StaticContentHandler {
         response.send();
     }
 
-    String getWelcomePageName() {
+    String welcomePageName() {
         return welcomeFilename;
     }
 
@@ -235,7 +235,7 @@ abstract class StaticContentHandler {
      * @param responseHeaders an HTTP response headers
      */
     void processContentType(Path path, RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
-        processContentType(getFileName(path), requestHeaders, responseHeaders);
+        processContentType(fileName(path), requestHeaders, responseHeaders);
     }
 
     /**
@@ -254,7 +254,7 @@ abstract class StaticContentHandler {
     }
 
     // spotbugs... path.getFileName may return null :(
-    static String getFileName(Path path) {
+    static String fileName(Path path) {
         Path fileName = path.getFileName();
 
         if (null == fileName) {

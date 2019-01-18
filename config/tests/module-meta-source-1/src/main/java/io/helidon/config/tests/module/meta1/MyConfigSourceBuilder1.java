@@ -80,7 +80,7 @@ public class MyConfigSourceBuilder1
     }
 
     @Override
-    protected MyEndpoint1 getTarget() {
+    protected MyEndpoint1 target() {
         return endpoint;
     }
 

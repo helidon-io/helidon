@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 
 == Cloud Security Container Integrations
 
-The following containers are integrated with Cloud Security:
+The following containers are integrated with Helidon Security:
 
 === Web server
 
@@ -32,7 +32,7 @@ Integration of <<webserver/01_introduction.adoc,reactive web server>>
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
+    <groupId>io.helidon.security.integration</groupId>
     <artifactId>helidon-security-integration-webserver</artifactId>
 </dependency>
 ----
@@ -51,9 +51,8 @@ There are two steps to configure security with web server:
 Routing.builder()
     // This is step 1 - register security instance with web server processing
     // security - instance of security either from config or from a builder
-    // gateDefaults - default enforcement for each route that hase a security gate
-    // (to be changed in the future to "securedDefaults" and "secured")
-    .register(WebSecurity.from(security).gateDefaults(WebSecurity.authenticate()))
+    // securityDefaults - default enforcement for each route that has a security definition
+    .register(WebSecurity.create(security).securityDefaults(WebSecurity.authenticate()))
     // this is step 2 - protect a route
     // protect this route with authentication (from defaults) and role "user"
     .get("/service1", WebSecurity.rolesAllowed("user"), (req, res) -> {
@@ -67,7 +66,7 @@ Routing.builder()
 ----
 Routing.builder()
     // helper method to load both security and web server security from configuration
-    .register(WebSecurity.from(config))
+    .register(WebSecurity.create(config))
     // continue with web server route configuration
     .build();
 ----
@@ -100,7 +99,7 @@ Integration of Jersey (JAX-RS implementation) both for inbound and outbound secu
 .Maven Dependency
 ----
 <dependency>
-    <groupId>io.helidon.security</groupId>
+    <groupId>io.helidon.security.integration</groupId>
     <artifactId>helidon-security-integration-jersey</artifactId>
 </dependency>
 ----

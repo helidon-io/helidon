@@ -42,9 +42,9 @@ public class AbstractOverrideSourceTest {
         };
 
         assertThat(builder.isMandatory(), is(true));
-        assertThat(builder.getChangesExecutor(), is(AbstractSource.Builder.DEFAULT_CHANGES_EXECUTOR));
-        assertThat(builder.getChangesMaxBuffer(), is(Flow.defaultBufferSize()));
-        assertThat(builder.getPollingStrategy(), is(PollingStrategies.nop()));
+        assertThat(builder.changesExecutor(), is(AbstractSource.Builder.DEFAULT_CHANGES_EXECUTOR));
+        assertThat(builder.changesMaxBuffer(), is(Flow.defaultBufferSize()));
+        assertThat(builder.pollingStrategy(), is(PollingStrategies.nop()));
     }
 
     @Test

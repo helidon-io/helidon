@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -57,9 +57,9 @@ Then, in your application code, load the configuration from that file.
 [source,java]
 .WebServer initialization using the `application.conf` file located on the classpath
 ----
-ServerConfiguration configuration = ServerConfiguration.fromConfig(
+ServerConfiguration configuration = ServerConfiguration.create(
         Config.builder()
-              .source(ClasspathConfigSource.from("application.conf"))
+              .source(classpath("application.conf"))
               .build());
 
 WebServer webServer = WebServer.create(configuration, routing);

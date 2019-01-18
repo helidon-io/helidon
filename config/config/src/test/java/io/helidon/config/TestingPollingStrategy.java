@@ -39,7 +39,7 @@ public class TestingPollingStrategy implements PollingStrategy {
     public Instant submitEvent() {
         PollingEvent pollingEvent = PollingEvent.now();
         ticksPublisher.submit(pollingEvent);
-        return pollingEvent.getTimestamp();
+        return pollingEvent.timestamp();
     }
 
 }

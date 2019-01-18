@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.common.reactive.SubmissionPublisher;
-import io.helidon.webserver.spi.BareRequest;
+import io.helidon.media.common.ContentReaders;
 import io.helidon.webserver.utils.TestUtils;
 
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -62,7 +61,7 @@ public class RequestContentTest {
 
     private static Request requestTestStub(Publisher<DataChunk> flux) {
         BareRequest bareRequestMock = Mockito.mock(BareRequest.class);
-        Mockito.doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).getUri();
+        Mockito.doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         Mockito.doReturn(ReactiveStreamsAdapter.publisherToFlow(flux)).when(bareRequestMock).bodyPublisher();
         return new RequestTestStub(bareRequestMock, Mockito.mock(WebServer.class));
     }
@@ -79,7 +78,7 @@ public class RequestContentTest {
                       .subscribe(chunk -> sb.append(TestUtils.requestChunkAsString(chunk))
                                             .append("-"));
 
-        assertEquals("first-second-third-", sb.toString());
+        assertThat(sb.toString(), is("first-second-third-"));
     }
 
     @Test
@@ -100,13 +99,13 @@ public class RequestContentTest {
             return ReactiveStreamsAdapter.publisherToFlow(stringFlux);
         });
 
-        assertEquals("", sb.toString(), "Apply filter is expected to be called after a subscription!");
+        assertThat("Apply filter is expected to be called after a subscription!", sb.toString(), is(""));
 
         ReactiveStreamsAdapter.publisherFromFlow(request.content())
                       .subscribe(chunk -> sb.append(TestUtils.requestChunkAsString(chunk))
                                             .append("-"));
 
-        assertEquals("apply_filter-FIRST-SECOND-THIRD-", sb.toString());
+        assertThat(sb.toString(), is("apply_filter-FIRST-SECOND-THIRD-"));
     }
 
     @Test
@@ -297,9 +296,7 @@ public class RequestContentTest {
                       .subscribe(byteBuffer -> {
                                      fail("Should not have been called!");
                                  },
-                                 throwable -> {
-                                     receivedThrowable.set(throwable);
-                                 });
+                                 receivedThrowable::set);
 
         Throwable throwable = receivedThrowable.get();
         assertThat(throwable, allOf(instanceOf(IllegalArgumentException.class),
@@ -318,24 +315,21 @@ public class RequestContentTest {
 
         request.content()
                .registerReader(LocalDate.class,
-                               (publisher, clazz) -> new StringContentReader(request).apply(publisher)
-                                                                                     .thenApply(LocalDate::parse));
+                               (publisher, clazz) -> ContentReaders.stringReader(Request.requestContentCharset(request))
+                               .apply(publisher)
+                               .thenApply(LocalDate::parse));
 
         CompletionStage<String> complete =
                 request.content()
                        .as(LocalDate.class)
-                       .thenApply(o -> {
-                           StringBuilder sb = new StringBuilder();
-                           sb.append(o.getDayOfMonth())
-                             .append("/")
-                             .append(o.getMonthValue())
-                             .append("/")
-                             .append(o.getYear());
-                           return sb.toString();
-                       });
+                       .thenApply(o -> o.getDayOfMonth()
+                               + "/"
+                               + o.getMonthValue()
+                               + "/"
+                               + o.getYear());
 
         String result = complete.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        assertEquals("2/1/2010", result);
+        assertThat(result, is("2/1/2010"));
     }
 
     @Test
@@ -345,7 +339,7 @@ public class RequestContentTest {
 
         CompletionStage<String> complete = request.content().as(byte[].class).thenApply(String::new);
 
-        assertEquals("test-string", complete.toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
@@ -355,7 +349,7 @@ public class RequestContentTest {
 
         CompletionStage<? extends String> complete = request.content().as(String.class);
 
-        assertEquals("test-string", complete.toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
@@ -379,6 +373,6 @@ public class RequestContentTest {
 
         CompletionStage<? extends String> complete = request.content().as(String.class);
 
-        assertEquals("TEST-STRING", complete.toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("TEST-STRING"));
     }
 }

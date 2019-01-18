@@ -49,7 +49,7 @@ class ConfigValueTest {
         emptyValue = new ConfigValue<CustomValue>() {
             @Override
             public Config.Key key() {
-                return Config.Key.of("empty");
+                return Config.Key.create("empty");
             }
 
             @Override
@@ -80,7 +80,7 @@ class ConfigValueTest {
         fullValue = new ConfigValue<CustomValue>() {
             @Override
             public Config.Key key() {
-                return Config.Key.of("full");
+                return Config.Key.create("full");
             }
 
             @Override

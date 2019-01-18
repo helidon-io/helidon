@@ -31,15 +31,16 @@ import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Tests {@link FileOverrideSource}.
@@ -77,11 +78,9 @@ public class FileOverrideSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        ConfigException ex = assertThrows(ConfigException.class, () -> {
-            overrideSource.load();
-        });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test
@@ -115,8 +114,8 @@ public class FileOverrideSourceTest {
         FileBuilder builder = (FileBuilder) OverrideSources.file("overrides.properties")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.getPollingStrategyInternal()).getPath(),
+        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
+        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
                    is(Paths.get("overrides.properties")));
     }
 

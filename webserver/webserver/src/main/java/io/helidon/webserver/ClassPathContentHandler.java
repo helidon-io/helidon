@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -53,15 +52,19 @@ class ClassPathContentHandler extends FileSystemContentHandler {
 
     @Override
     boolean doHandle(Http.RequestMethod method, Path path, ServerRequest request, ServerResponse response) throws IOException {
-        URL url = classLoader.getResource(path.toString());
+        //Backwards slash replacement is workaround used because of windows compatibility.
+        //It will be changed in upcoming refactor of this method: https://github.com/oracle/helidon/issues/256
+        URL url = classLoader.getResource(path.toString().replace('\\', '/'));
         if (url == null) {
             return false;
         }
 
         // If URL exists then it can be directory and we have to try locate a welcome page
-        String welcomePageName = getWelcomePageName();
+        String welcomePageName = welcomePageName();
         if ((welcomePageName != null) && !welcomePageName.isEmpty()) {
-            URL welcomeUrl = classLoader.getResource(path.resolve(welcomePageName).toString());
+            //Backwards slash replacement is workaround used because of windows compatibility.
+            //It will be changed in upcoming refactor of this method: https://github.com/oracle/helidon/issues/256
+            URL welcomeUrl = classLoader.getResource(path.resolve(welcomePageName).toString().replace('\\', '/'));
             if (welcomeUrl != null) {
                 // we must redirect to this endpoint, as otherwise we may have invalid relative references from the welcome file
                 String rawFullPath = request.uri().getRawPath();
@@ -93,7 +96,7 @@ class ClassPathContentHandler extends FileSystemContentHandler {
                 processModifyHeaders(extrEntry.lastModified, request.headers(), response.headers());
             }
 
-            String entryName = extrEntry.entryName == null ? getFileName(path) : extrEntry.entryName;
+            String entryName = extrEntry.entryName == null ? fileName(path) : extrEntry.entryName;
 
             processContentType(entryName,
                                request.headers(),
@@ -117,7 +120,7 @@ class ClassPathContentHandler extends FileSystemContentHandler {
             if (jarEntry.isDirectory()) {
                 return new ExtractedJarEntry(jarEntry.getName()); // a directory
             }
-            Instant lastModified = getLastModified(url);
+            Instant lastModified = getLastModified(jarFile.getName());
 
             // Extract JAR entry to file
             try (InputStream is = jarFile.getInputStream(jarEntry)) {
@@ -134,14 +137,7 @@ class ClassPathContentHandler extends FileSystemContentHandler {
         }
     }
 
-    private Instant getLastModified(URL jarUrl) throws IOException {
-        // Decode potentially encoded parameters
-        String path = URI.create(jarUrl.getPath()).getPath();
-        int jarDelimIdx = path.indexOf("!/");
-        if (jarDelimIdx > -1) {
-            path = path.substring(0, jarDelimIdx);
-        }
-
+    private Instant getLastModified(String path) throws IOException {
         Path file = Paths.get(path);
 
         if (Files.exists(file) && Files.isRegularFile(file)) {

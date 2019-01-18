@@ -313,7 +313,7 @@ class BuilderImpl implements Config.Builder {
         if (targetSources.size() == 1) {
             targetConfigSource = targetSources.get(0);
         } else {
-            targetConfigSource = ConfigSources.from(targetSources.toArray(new ConfigSource[0])).build();
+            targetConfigSource = ConfigSources.create(targetSources.toArray(new ConfigSource[0])).build();
         }
         targetConfigSource.init(context);
         return targetConfigSource;
@@ -343,7 +343,7 @@ class BuilderImpl implements Config.Builder {
     //
 
     static ConfigSource defaultConfigSource() {
-        return ConfigSources.from(
+        return ConfigSources.create(
                 new UseFirstAvailableConfigSource(
                         ConfigSources.load(
                                 new UseFirstAvailableConfigSource(
@@ -456,7 +456,7 @@ class BuilderImpl implements Config.Builder {
                 throw new NullPointerException("Unknown media type of resource.");
             }
             return configParsers.stream()
-                    .filter(parser -> parser.getSupportedMediaTypes().contains(mediaType))
+                    .filter(parser -> parser.supportedMediaTypes().contains(mediaType))
                     .findFirst();
         }
 

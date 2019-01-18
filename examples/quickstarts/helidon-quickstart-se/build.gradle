@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'io.helidon.examples'
+version = '1.0-SNAPSHOT'
+
+description = """quickstart-se"""
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+ext {
+    helidonversion = '0.11.1-SNAPSHOT'
+}
+
+repositories {
+    maven { url "http://repo.maven.apache.org/maven2" }
+    mavenLocal()
+}
+
+dependencies {
+    compile "io.helidon:helidon-bom:${project.helidonversion}"
+    compile 'io.helidon.bundles:helidon-bundles-webserver'
+    compile 'io.helidon.config:helidon-config-yaml'
+    compile 'io.helidon.health:helidon-health'
+    compile 'io.helidon.health:helidon-health-checks'
+    compile 'io.helidon.metrics:helidon-metrics'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+}
+
+// define a custom task to copy all dependencies in the runtime classpath
+// into build/libs/libs
+// uses built-in Copy
+task copyLibs(type: Copy) {
+  from configurations.runtime
+  into 'build/libs/libs'
+}
+
+// add it as a dependency of built-in task 'assemble'
+copyLibs.dependsOn jar
+assemble.dependsOn copyLibs
+
+// default jar configuration
+// set the main classpath
+// add each jar under build/libs/libs into the classpath
+jar {
+  archiveName = "${project.name}.jar"
+  manifest {
+    attributes ('Main-Class': 'io.helidon.examples.quickstart.se.Main',
+                'Class-Path': configurations.runtime.files.collect { "libs/$it.name" }.join(' ')
+               )
+  }
+}
+

@@ -50,7 +50,7 @@ public abstract class SynchronousProvider implements SecurityProvider {
     public final CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
         return CompletableFuture
                 .supplyAsync(() -> syncAuthenticate(providerRequest),
-                             providerRequest.getContext().getExecutorService());
+                             providerRequest.securityContext().executorService());
     }
 
     /**
@@ -65,7 +65,7 @@ public abstract class SynchronousProvider implements SecurityProvider {
      */
     public final CompletionStage<AuthorizationResponse> authorize(ProviderRequest providerRequest) {
         return CompletableFuture.supplyAsync(() -> syncAuthorize(providerRequest),
-                                             providerRequest.getContext().getExecutorService());
+                                             providerRequest.securityContext().executorService());
     }
 
     /**
@@ -83,7 +83,7 @@ public abstract class SynchronousProvider implements SecurityProvider {
                                                                             SecurityEnvironment outboundEnv,
                                                                             EndpointConfig outboundConfig) {
         return CompletableFuture.supplyAsync(() -> syncOutbound(providerRequest, outboundEnv, outboundConfig),
-                                             providerRequest.getContext().getExecutorService());
+                                             providerRequest.securityContext().executorService());
     }
 
     /**

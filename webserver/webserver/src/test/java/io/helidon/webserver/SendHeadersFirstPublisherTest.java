@@ -33,8 +33,8 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -59,7 +59,7 @@ public class SendHeadersFirstPublisherTest {
         ForkJoinPool.commonPool().submit(() -> publisher.subscribe(subscriber));
         // Assert
         String s = subscriber.whenComplete.get(5, TimeUnit.SECONDS);
-        assertEquals("[SEND]abc[COMPLETE]", s);
+        assertThat(s, is("[SEND]abc[COMPLETE]"));
         assertThat(tracer.finishedSpans(), IsCollectionContaining.hasItem(span));
     }
 
@@ -79,7 +79,7 @@ public class SendHeadersFirstPublisherTest {
         ForkJoinPool.commonPool().submit(() -> publisher.subscribe(subscriber));
         // Assert
         String s = subscriber.whenComplete.get(5, TimeUnit.SECONDS);
-        assertEquals("[SEND][COMPLETE]", s);
+        assertThat(s, is("[SEND][COMPLETE]"));
         assertThat(tracer.finishedSpans(), IsCollectionContaining.hasItem(span));
     }
 
@@ -100,12 +100,12 @@ public class SendHeadersFirstPublisherTest {
         // First path
         ForkJoinPool.commonPool().submit(() -> publisher.subscribe(subscriber));
         String s = subscriber.whenComplete.get(5, TimeUnit.SECONDS);
-        assertEquals("[SEND-FIRST][COMPLETE]", s);
+        assertThat(s, is("[SEND-FIRST][COMPLETE]"));
         // Second fail
         subscriberFail.buffer.setLength(0);
         ForkJoinPool.commonPool().submit(() -> publisher.subscribe(subscriberFail));
         s = subscriberFail.whenComplete.exceptionally(t -> t.getClass().getSimpleName()).get(5, TimeUnit.SECONDS);
-        assertEquals("IllegalStateException", s);
+        assertThat(s, is("IllegalStateException"));
         assertThat(tracer.finishedSpans(), IsCollectionContaining.hasItem(span));
     }
 

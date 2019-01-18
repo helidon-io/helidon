@@ -170,7 +170,7 @@ public class ConfigCdiExtension implements Extension {
         // we also must support injection of Config itself
         abd.addBean()
                 .addType(Config.class)
-                .createWith(creationalContext -> ((MpConfig) configResolver.getConfig()).getConfig());
+                .createWith(creationalContext -> ((MpConfig) configResolver.getConfig()).helidonConfig());
 
         abd.addBean()
                 .addType(org.eclipse.microprofile.config.Config.class)
@@ -373,7 +373,7 @@ public class ConfigCdiExtension implements Extension {
 
             if (q.rawType() == q.typeArg()) {
                 // not a generic
-                return config.getValueWithDefault(configKey, q.rawType(), defaultValue);
+                return config.valueWithDefault(configKey, q.rawType(), defaultValue);
             }
             // generic declaration
             return getParametrizedConfigValue(config,
@@ -394,7 +394,7 @@ public class ConfigCdiExtension implements Extension {
 
             if (rawType.isAssignableFrom(Optional.class)) {
                 if (typeArg == typeArg2) {
-                    return Optional.ofNullable(mpConfig.getValueWithDefault(configKey, typeArg, defaultValue));
+                    return Optional.ofNullable(mpConfig.valueWithDefault(configKey, typeArg, defaultValue));
                 } else {
                     return Optional
                             .ofNullable(getParametrizedConfigValue(mpConfig,
@@ -428,7 +428,7 @@ public class ConfigCdiExtension implements Extension {
                 }
             } else if (rawType.isAssignableFrom(Supplier.class)) {
                 if (typeArg == typeArg2) {
-                    return (Supplier) () -> mpConfig.getValueWithDefault(configKey, typeArg, defaultValue);
+                    return (Supplier) () -> mpConfig.valueWithDefault(configKey, typeArg, defaultValue);
                 } else {
                     return (Supplier) () -> getParametrizedConfigValue(mpConfig,
                                                                        configKey,
@@ -438,7 +438,7 @@ public class ConfigCdiExtension implements Extension {
                                                                        typeArg2);
                 }
             } else if (rawType.isAssignableFrom(Map.class)) {
-                return mpConfig.getConfig().get(configKey).detach().asMap();
+                return mpConfig.helidonConfig().get(configKey).detach().asMap();
             } else if (rawType.isAssignableFrom(Set.class)) {
                 return mpConfig.asSet(configKey, typeArg);
             } else {
@@ -453,7 +453,7 @@ public class ConfigCdiExtension implements Extension {
             Object value = getConfigValue(context);
             if (null == value && qualifier.rawType().isPrimitive()) {
                 // primitive field, not configured, no default
-                throw MissingValueException.forKey(Config.Key.of(qualifier.key()));
+                throw MissingValueException.create(Config.Key.create(qualifier.key()));
             }
 
             return value;

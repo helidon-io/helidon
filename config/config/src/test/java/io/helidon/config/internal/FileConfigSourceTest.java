@@ -43,20 +43,19 @@ import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.test.infra.TemporaryFolderExt;
 
 import org.hamcrest.core.Is;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
-import org.junit.jupiter.api.Assertions;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -94,7 +93,7 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.getMediaType(), is(TEST_MEDIA_TYPE));
+        assertThat(configSource.mediaType(), is(TEST_MEDIA_TYPE));
     }
 
     @Test
@@ -105,7 +104,7 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.getMediaType(), Is.is("text/x-java-properties"));
+        assertThat(configSource.mediaType(), Is.is("text/x-java-properties"));
     }
 
     @Test
@@ -116,7 +115,7 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        assertThat(configSource.getMediaType(), is(nullValue()));
+        assertThat(configSource.mediaType(), is(nullValue()));
     }
 
     @Test
@@ -126,12 +125,12 @@ public class FileConfigSourceTest {
                 .changesMaxBuffer(1)
                 .build();
 
-        ConfigException ex = Assertions.assertThrows(ConfigException.class, () -> {
+        ConfigException ex = assertThrows(ConfigException.class, () -> {
             configSource.init(mock(ConfigContext.class));
             configSource.load();
         });
-        assertTrue(instanceOf(ConfigException.class).matches(ex.getCause()));
-        assertTrue(ex.getMessage().startsWith("Cannot load data from mandatory source"));
+        assertThat(ex.getCause(), instanceOf(ConfigException.class));
+        assertThat(ex.getMessage(), startsWith("Cannot load data from mandatory source"));
     }
 
     @Test
@@ -142,7 +141,7 @@ public class FileConfigSourceTest {
 
         configSource.init(content -> Optional.of(new ConfigParser() {
             @Override
-            public Set<String> getSupportedMediaTypes() {
+            public Set<String> supportedMediaTypes() {
                 return new HashSet<String>() {{
                     add("application/hocon");
                 }};
@@ -151,7 +150,7 @@ public class FileConfigSourceTest {
             @Override
             public ObjectNode parse(Content content) throws ConfigParserException {
                 assertThat(content, notNullValue());
-                assertThat(content.getMediaType(), is("application/hocon"));
+                assertThat(content.mediaType(), is("application/hocon"));
                 try {
                     assertThat((char) ConfigHelper.createReader(content.asReadable()).read(), is('#'));
                 } catch (IOException e) {
@@ -179,7 +178,7 @@ public class FileConfigSourceTest {
                 .mediaType("application/hocon")
                 .build();
 
-        assertNotNull(configSource);
+        assertThat(configSource, notNullValue());
     }
 
     private static String getDir() {
@@ -236,8 +235,8 @@ public class FileConfigSourceTest {
         FileBuilder builder = (FileBuilder) ConfigSources.file("application.conf")
                 .pollingStrategy(TestingPathPollingStrategy::new);
 
-        assertThat(builder.getPollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
-        assertThat(((TestingPathPollingStrategy) builder.getPollingStrategyInternal()).getPath(),
+        assertThat(builder.pollingStrategyInternal(), instanceOf(TestingPathPollingStrategy.class));
+        assertThat(((TestingPathPollingStrategy) builder.pollingStrategyInternal()).getPath(),
                    is(Paths.get("application.conf")));
     }
 

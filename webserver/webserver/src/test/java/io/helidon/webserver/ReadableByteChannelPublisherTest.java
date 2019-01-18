@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,23 +30,22 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.IntFunction;
 
 import io.helidon.common.reactive.RetrySchema;
+import io.helidon.media.common.ReadableByteChannelPublisher;
 import io.helidon.webserver.utils.CollectingSubscriber;
 
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests {@link ReadableByteChannelPublisher}.
+ * Tests {@link io.helidon.media.common.ReadableByteChannelPublisher}.
  */
 public class ReadableByteChannelPublisherTest {
 
-    private static final long TEST_DATA_SIZE = 250 * 1024;
+    private static final int TEST_DATA_SIZE = 250 * 1024;
 
     @Test
     public void allData() throws Exception {
@@ -56,12 +55,14 @@ public class ReadableByteChannelPublisherTest {
         ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
         // assert
         byte[] bytes = subscriber.result().get(5, TimeUnit.SECONDS);
-        assertEquals(TEST_DATA_SIZE, bytes.length);
+        assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
-        assertEquals(1, pc.threads.size());
-        assertFalse(pc.isOpen());
-        assertTrue(pc.readMethodCallCounter > (subscriber.onNextCounter() * 2),
-                "Publisher did not concatenate read results to minimize output chunks!");
+        assertThat(pc.threads.size(), is(1));
+        assertThat(pc.isOpen(), is(false));
+        assertThat("Publisher did not concatenate read results to minimize output chunks!",
+                   pc.readMethodCallCounter > (subscriber.onNextCounter() * 2),
+                   is(true));
+
     }
 
     @Test
@@ -72,10 +73,10 @@ public class ReadableByteChannelPublisherTest {
         ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
         // assert
         byte[] bytes = subscriber.result().get(5, TimeUnit.SECONDS);
-        assertEquals(TEST_DATA_SIZE, bytes.length);
+        assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
-        assertEquals(2, pc.threads.size());
-        assertFalse(pc.isOpen());
+        assertThat(pc.threads.size(), is(2));
+        assertThat(pc.isOpen(), is(false));
     }
 
     @Test
@@ -86,10 +87,10 @@ public class ReadableByteChannelPublisherTest {
         ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
         // assert
         byte[] bytes = subscriber.result().get(5, TimeUnit.SECONDS);
-        assertEquals(TEST_DATA_SIZE, bytes.length);
+        assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
-        assertEquals(1, pc.threads.size());
-        assertFalse(pc.isOpen());
+        assertThat(pc.threads.size(), is(1));
+        assertThat(pc.isOpen(), is(false));
     }
 
     @Test
@@ -131,7 +132,7 @@ public class ReadableByteChannelPublisherTest {
     }
 
     private void assertByteSequence(byte[] bytes) {
-        assertNotNull(bytes);
+        assertThat(bytes, notNullValue());
         int index = 0;
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] != PeriodicalChannel.SEQUENCE[index]) {

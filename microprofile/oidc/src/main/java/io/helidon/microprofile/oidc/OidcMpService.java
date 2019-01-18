@@ -18,7 +18,7 @@ package io.helidon.microprofile.oidc;
 
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
-import io.helidon.security.oidc.OidcSupport;
+import io.helidon.security.providers.oidc.OidcSupport;
 
 /**
  * Microprofile extension that brings support for Open ID Connect.
@@ -26,8 +26,8 @@ import io.helidon.security.oidc.OidcSupport;
 public final class OidcMpService implements MpService {
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-        mpServiceContext.getServerRoutingBuilder()
-                .register(OidcSupport.create(mpServiceContext.getHelidonConfig()));
+        mpServiceContext.serverRoutingBuilder()
+                .register(OidcSupport.create(mpServiceContext.helidonConfig()));
 
     }
 }

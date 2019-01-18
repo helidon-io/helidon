@@ -52,43 +52,43 @@ final class SecurityContextImpl implements SecurityContext {
     private volatile AtomicBoolean atzChecked = new AtomicBoolean(false);
 
     SecurityContextImpl(Builder builder) {
-        this.security = builder.getSecurity();
-        this.tracingId = builder.getId();
-        this.requestSpan = builder.getTracingSpan();
-        this.executorService = builder.getExecutorServiceSupplier();
-        this.securityTracer = builder.getTracingTracer();
-        this.serverTime = builder.getServerTime();
-        this.environment = builder.getEnv();
-        this.ec = builder.getEc();
+        this.security = builder.security();
+        this.tracingId = builder.id();
+        this.requestSpan = builder.tracingSpan();
+        this.executorService = builder.executorServiceSupplier();
+        this.securityTracer = builder.tracingTracer();
+        this.serverTime = builder.serverTime();
+        this.environment = builder.env();
+        this.ec = builder.endpointConfig();
     }
 
     @Override
-    public SpanContext getTracingSpan() {
+    public SpanContext tracingSpan() {
         return requestSpan;
     }
 
     @Override
-    public Tracer getTracer() {
+    public Tracer tracer() {
         return securityTracer;
     }
 
     @Override
-    public String getId() {
+    public String id() {
         return tracingId;
     }
 
     @Override
-    public SecurityTime getServerTime() {
+    public SecurityTime serverTime() {
         return serverTime;
     }
 
     @Override
-    public SecurityRequestBuilder securityRequestBuilder() {
-        return securityRequestBuilder(getEnv());
+    public SecurityRequestBuilder<?> securityRequestBuilder() {
+        return securityRequestBuilder(env());
     }
 
     @Override
-    public SecurityRequestBuilder securityRequestBuilder(SecurityEnvironment environment) {
+    public SecurityRequestBuilder<?> securityRequestBuilder(SecurityEnvironment environment) {
         return new SecurityRequestBuilder(this);
     }
 
@@ -121,7 +121,7 @@ final class SecurityContextImpl implements SecurityContext {
 
     @Override
     public boolean isAuthenticated() {
-        return getUser().isPresent();
+        return user().isPresent();
 
     }
 
@@ -131,7 +131,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public ExecutorService getExecutorService() {
+    public ExecutorService executorService() {
         return executorService.get();
     }
 
@@ -142,11 +142,11 @@ final class SecurityContextImpl implements SecurityContext {
             return false;
         }
 
-        Optional<AuthorizationProvider> authorizationProvider = security.getProviderSelectionPolicy()
+        Optional<AuthorizationProvider> authorizationProvider = security.providerSelectionPolicy()
                 .selectProvider(AuthorizationProvider.class);
 
         return authorizationProvider.map(provider -> provider.isUserInRole(currentSubject, role))
-                .orElseGet(() -> getUser().map(Security::getRoles)
+                .orElseGet(() -> user().map(Security::getRoles)
                         .orElse(CollectionsHelper.setOf())
                         .stream()
                         .anyMatch(role::equals));
@@ -199,7 +199,7 @@ final class SecurityContextImpl implements SecurityContext {
     public void runAs(String role, Runnable runnable) {
         Subject currentSubject = this.currentSubject;
         Subject runAsSubject = Subject.builder()
-                .principal(currentSubject.getPrincipal())
+                .principal(currentSubject.principal())
                 .addGrant(Role.create(role))
                 .build();
 
@@ -207,7 +207,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public Optional<Subject> getService() {
+    public Optional<Subject> service() {
         if (serviceSubject == ANONYMOUS) {
             return Optional.empty();
         }
@@ -221,7 +221,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public Optional<Subject> getUser() {
+    public Optional<Subject> user() {
         if (currentSubject == ANONYMOUS) {
             return Optional.empty();
         }
@@ -235,7 +235,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public EndpointConfig getEndpointConfig() {
+    public EndpointConfig endpointConfig() {
         Lock lock = ecLock.readLock();
         try {
             lock.lock();
@@ -246,7 +246,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public void setEndpointConfig(EndpointConfig ec) {
+    public void endpointConfig(EndpointConfig ec) {
         Lock lock = ecLock.writeLock();
         try {
             lock.lock();
@@ -257,7 +257,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public SecurityEnvironment getEnv() {
+    public SecurityEnvironment env() {
         Lock rl = envLock.readLock();
         try {
             rl.lock();
@@ -268,7 +268,7 @@ final class SecurityContextImpl implements SecurityContext {
     }
 
     @Override
-    public void setEnv(SecurityEnvironment env) {
+    public void env(SecurityEnvironment env) {
         Lock lock = envLock.writeLock();
         try {
             lock.lock();

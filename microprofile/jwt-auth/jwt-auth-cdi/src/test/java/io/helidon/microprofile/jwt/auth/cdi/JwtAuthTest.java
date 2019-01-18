@@ -106,10 +106,10 @@ class JwtAuthTest {
         JwtAuthProvider provider = JwtAuthProvider.create(Config.create().get("security.providers.0.mp-jwt-auth"));
 
         io.helidon.security.SecurityContext context = Mockito.mock(io.helidon.security.SecurityContext.class);
-        when(context.getUser()).thenReturn(Optional.of(subject));
+        when(context.user()).thenReturn(Optional.of(subject));
 
         ProviderRequest request = mock(ProviderRequest.class);
-        when(request.getContext()).thenReturn(context);
+        when(request.securityContext()).thenReturn(context);
         SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
                 .path("/rsa")
                 .transport("http")
@@ -122,9 +122,9 @@ class JwtAuthTest {
 
         OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
 
-        String signedToken = response.getRequestHeaders().get("Authorization").get(0);
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
 
-        WebTarget target = client.target("http://localhost:" + server.getPort());
+        WebTarget target = client.target("http://localhost:" + server.port());
 
         // authenticated
         String httpResponse = target.path("/hello")
@@ -137,7 +137,7 @@ class JwtAuthTest {
 
     @Test
     void testPublicEndpoit() {
-        WebTarget target = client.target("http://localhost:" + server.getPort());
+        WebTarget target = client.target("http://localhost:" + server.port());
 
         // public
         String httpResponse = target.path("/public")

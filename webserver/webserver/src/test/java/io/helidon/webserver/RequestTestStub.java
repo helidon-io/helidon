@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.webserver;
 
 import java.net.URI;
 
-import io.helidon.webserver.spi.BareRequest;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -56,7 +55,7 @@ public class RequestTestStub extends Request {
 
     private static BareRequest bareRequestMock() {
         BareRequest bareRequestMock = mock(BareRequest.class);
-        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).getUri();
+        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
         return bareRequestMock;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
+import io.helidon.media.common.ContentWriters;
 import io.helidon.webserver.utils.CollectingSubscriber;
 
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * A test for {@link ContentWriters}
+ * A test for {@link io.helidon.media.common.ContentWriters}
  */
 public class ContentWritersTest {
 
@@ -42,7 +42,7 @@ public class ContentWritersTest {
         CollectingSubscriber subscriber = new CollectingSubscriber();
         subscriber.subscribeOn(publisher);
         byte[] result = subscriber.result().get();
-        assertThat(bytes, Is.is(result));
+        assertThat(bytes, is(result));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class ContentWritersTest {
         CollectingSubscriber subscriber = new CollectingSubscriber();
         subscriber.subscribeOn(publisher);
         byte[] result = subscriber.result().get();
-        assertThat("abc".getBytes(StandardCharsets.ISO_8859_1), Is.is(result));
+        assertThat("abc".getBytes(StandardCharsets.ISO_8859_1), is(result));
     }
 
     @Test
@@ -65,7 +65,7 @@ public class ContentWritersTest {
         CollectingSubscriber subscriber = new CollectingSubscriber();
         subscriber.subscribeOn(publisher);
         byte[] result = subscriber.result().get();
-        assertEquals(0, result.length);
+        assertThat(result.length, is(0));
     }
 
     @Test
@@ -76,6 +76,6 @@ public class ContentWritersTest {
         CollectingSubscriber subscriber = new CollectingSubscriber();
         subscriber.subscribeOn(publisher);
         byte[] result = subscriber.result().get();
-        assertEquals(data, new String(result, StandardCharsets.UTF_8));
+        assertThat(new String(result, StandardCharsets.UTF_8), is(data));
     }
 }

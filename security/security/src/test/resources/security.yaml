@@ -58,7 +58,6 @@ security:
       optional: true
       client-id: "1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com"
     - name: "http-signatures"
-      # class: "io.helidon.security.httpsign.HttpSignProvider"
       # if headers are missing in request, abstain
       http-signatures:
         optional: true

@@ -24,11 +24,11 @@ import io.helidon.config.spi.OverrideSource;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the resolving of key token on config sources like:
@@ -43,7 +43,7 @@ public class KeyTokenResolvingTest {
     @Test
     public void testResolveTokenConfig() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("ad", "ad1")
                                                     .addValue("$region.$ad.url", "http://localhost:8080")
                                                     .addValue("region", "region-eu1")
@@ -64,7 +64,7 @@ public class KeyTokenResolvingTest {
     @Test
     public void testDisableResolveTokenConfig() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("ad", "ad1")
                                                     .addValue("$region.$ad.url", "http://localhost:8080")
                                                     .addValue("region", "region-eu1")
@@ -86,7 +86,7 @@ public class KeyTokenResolvingTest {
     @Test
     public void testResolveTokenConfig2() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("env.ad", "ad1")
                                                     .addValue("env.region", "region-eu1")
                                                     .addValue("${env.region}.${env.ad}.url", "http://localhost:8080")
@@ -107,7 +107,7 @@ public class KeyTokenResolvingTest {
     @Test
     public void testResolveTokenConfig3() {
         Config config = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("env.ad", "ad1")
                                                     .addValue("env.region", "region-eu1")
                                                     .addObject("${env.region}", ConfigNode.ObjectNode.builder()
@@ -131,7 +131,7 @@ public class KeyTokenResolvingTest {
 
     @Test
     public void testResolveTokenConfig4() {
-        Supplier<OverrideSource> overrideSource = OverrideSources.from(new LinkedHashMap<String,String>() {
+        Supplier<OverrideSource> overrideSource = OverrideSources.create(new LinkedHashMap<String,String>() {
                                                                            {
                                                                                put("prod.inventory.logging.level", "WARN");
                                                                                put("test.*.logging.level", "FINE");
@@ -142,7 +142,7 @@ public class KeyTokenResolvingTest {
 
         // configuration with a source that declares the environment is 'test'
         Config testConfig = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     // the only difference in config source
                                                     .addValue("env", "test")
                                                     .addValue("component", "inventory")
@@ -155,7 +155,7 @@ public class KeyTokenResolvingTest {
 
         // configuration with a source that declares the environment is 'prod'
         Config prodConfig = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     // the only difference in config source
                                                     .addValue("env", "prod")
                                                     .addValue("component", "inventory")
@@ -176,7 +176,7 @@ public class KeyTokenResolvingTest {
     public void testResolveChainedTokensConfig() {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             Config config = Config.builder()
-                    .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                    .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                         .addValue("region", "")
                                                         .addValue("$region", "missing")
                                                         .build()))
@@ -186,14 +186,14 @@ public class KeyTokenResolvingTest {
 
             config.traverse().forEach(System.out::println);
         });
-        assertTrue(ex.getMessage().startsWith("Missing value in token 'region' definition"));
+        assertThat(ex.getMessage(), startsWith("Missing value in token 'region' definition"));
     }
 
     @Test
     public void testResolveTokenMissingValue() {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("$region.$ad.url", "http://localhost:8080")
                                                     .addValue("region", "region-eu1")
                                                     .build()))
@@ -201,7 +201,7 @@ public class KeyTokenResolvingTest {
                 .disableEnvironmentVariablesSource()
                 .build();
         });
-        assertTrue(ex.getMessage().startsWith("Missing token 'ad' to resolve"));
+        assertThat(ex.getMessage(), startsWith("Missing token 'ad' to resolve"));
 
     }
 
@@ -209,7 +209,7 @@ public class KeyTokenResolvingTest {
     public void testResolveTokenReferenceToReference() {
         ConfigException ex = assertThrows(ConfigException.class, () -> {
             Config config = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("env.region", "eu")
                                                     .addValue("$region.url", "http://localhost:8080")
                                                     .addValue("region", "${env.region}")
@@ -220,7 +220,7 @@ public class KeyTokenResolvingTest {
 
             config.traverse().forEach(System.out::println);
         });
-        assertTrue(ex.getMessage().startsWith("Key token 'region' references to a reference in value. A recursive references is not allowed"));
+        assertThat(ex.getMessage(), startsWith("Key token 'region' references to a reference in value. A recursive references is not allowed"));
 
         
 
@@ -230,7 +230,7 @@ public class KeyTokenResolvingTest {
     public void testResolveTokenWithDottedValue() {
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(ConfigNode.ObjectNode.builder()
+                .sources(ConfigSources.create(ConfigNode.ObjectNode.builder()
                                                     .addValue("domain", "oracle.com")
                                                     .addValue("$domain.sso", "on")
                                                     .addValue(Config.Key.escapeName("seznam.cz") + ".sso", "off")

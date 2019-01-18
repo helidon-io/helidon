@@ -16,7 +16,7 @@
 /**
  * Mappers that can map {@link io.helidon.config.Config} to classes with factory methods, classes with Builders and
  * general "bean" classes with constructor and setters.
- * The magic is happening in {@link io.helidon.config.objectmapping.BeansConfigMapperProvider} which is a service implementing
+ * The magic is happening in {@link io.helidon.config.objectmapping.ObjectConfigMapperProvider} which is a service implementing
  * {@link io.helidon.config.spi.ConfigMapperProvider}.
  */
 package io.helidon.config.objectmapping;

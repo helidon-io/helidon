@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,17 +29,17 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.webserver.BareRequest;
+import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
-import io.helidon.webserver.spi.BareRequest;
-import io.helidon.webserver.spi.BareResponse;
 
 import reactor.core.publisher.Flux;
 
@@ -76,9 +76,9 @@ public class TestClient {
      * @return new instance
      * @throws NullPointerException if routing parameter is null
      */
-    public static TestClient create(Builder<Routing> routingBuilder) {
+    public static TestClient create(Supplier<Routing> routingBuilder) {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
-        return create(routingBuilder.build());
+        return create(routingBuilder.get());
     }
 
     /**
@@ -164,42 +164,42 @@ public class TestClient {
         }
 
         @Override
-        public TestWebServer getWebServer() {
+        public TestWebServer webServer() {
             return webServer;
         }
 
         @Override
-        public Http.RequestMethod getMethod() {
+        public Http.RequestMethod method() {
             return method;
         }
 
         @Override
-        public Http.Version getVersion() {
+        public Http.Version version() {
             return version;
         }
 
         @Override
-        public URI getUri() {
+        public URI uri() {
             return path;
         }
 
         @Override
-        public String getLocalAddress() {
+        public String localAddress() {
             return "0.0.0.0";
         }
 
         @Override
-        public int getLocalPort() {
+        public int localPort() {
             return 9999;
         }
 
         @Override
-        public String getRemoteAddress() {
+        public String remoteAddress() {
             return "127.0.0.1";
         }
 
         @Override
-        public int getRemotePort() {
+        public int remotePort() {
             return 3333;
         }
 
@@ -209,7 +209,7 @@ public class TestClient {
         }
 
         @Override
-        public Map<String, List<String>> getHeaders() {
+        public Map<String, List<String>> headers() {
             return headers;
         }
 
@@ -238,7 +238,7 @@ public class TestClient {
             this.webServer = webServer;
         }
 
-        TestWebServer getWebServer() {
+        TestWebServer webServer() {
             return webServer;
         }
 

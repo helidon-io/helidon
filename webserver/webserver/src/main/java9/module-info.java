@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
  */
 module io.helidon.webserver {
     requires io.helidon.common;
+    requires transitive io.helidon.media.common;
     requires transitive io.helidon.common.http;
     requires transitive io.helidon.common.pki;
     requires transitive io.helidon.common.reactive;
@@ -28,9 +29,13 @@ module io.helidon.webserver {
     requires java.logging;
     requires opentracing.api;
     requires opentracing.noop;
+    requires io.netty.handler;
+    requires io.netty.codec.http;
+    requires io.netty.codec;
+    requires io.netty.transport;
+    requires io.netty.common;
+    requires io.netty.buffer;
+    requires io.netty.codec.http2;
 
     exports io.helidon.webserver;
-    exports io.helidon.webserver.spi;
-
-    uses io.helidon.webserver.spi.WebServerFactory;
 }

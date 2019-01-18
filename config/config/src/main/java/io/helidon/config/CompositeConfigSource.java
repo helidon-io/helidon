@@ -131,11 +131,11 @@ class CompositeConfigSource implements ConfigSource {
         return lastObjectNode;
     }
 
-    Optional<ObjectNode> getLastObjectNode() {
+    Optional<ObjectNode> lastObjectNode() {
         return lastObjectNode;
     }
 
-    List<ConfigSourceChangeEventSubscriber> getCompositeConfigSourcesSubscribers() {
+    List<ConfigSourceChangeEventSubscriber> compositeConfigSourcesSubscribers() {
         return compositeConfigSourcesSubscribers;
     }
 

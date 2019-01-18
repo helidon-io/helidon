@@ -103,7 +103,7 @@ public interface Server {
      *
      * @return CDI container instance (standard edition)
      */
-    SeContainer getContainer();
+    SeContainer cdiContainer();
 
     /**
      * Start this server (can only be used once).
@@ -128,7 +128,7 @@ public interface Server {
      *
      * @return host name
      */
-    String getHost();
+    String host();
 
     /**
      * Get the port this server listens on or {@code -1} if the server is not
@@ -136,7 +136,7 @@ public interface Server {
      *
      * @return port
      */
-    int getPort();
+    int port();
 
     /**
      * Builder to build {@link Server} instance.
@@ -187,13 +187,13 @@ public interface Server {
             }
 
             if (null == defaultExecutorService) {
-                defaultExecutorService = ThreadPoolSupplier.create(config.getConfig().get("server.executor-service"));
+                defaultExecutorService = ThreadPoolSupplier.create(config.helidonConfig().get("server.executor-service"));
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");
 
             if (null == cdiContainer) {
-                cdiContainer = getCurrentContainter()
+                cdiContainer = currentContainter()
                         .orElseGet(() -> {
                             containerCreated = true;
                             return createContainter(classLoader);
@@ -249,7 +249,7 @@ public interface Server {
             }
         }
 
-        private Optional<SeContainer> getCurrentContainter() {
+        private Optional<SeContainer> currentContainter() {
             try {
                 CDI<Object> current = CDI.current();
                 STARTUP_LOGGER.finest("CDI.current()");
@@ -275,7 +275,7 @@ public interface Server {
             // not in CDI
             SeContainerInitializer initializer = SeContainerInitializer.newInstance();
             initializer.setClassLoader(classLoader);
-            Map<String, Object> props = new HashMap<>(config.getConfig()
+            Map<String, Object> props = new HashMap<>(config.helidonConfig()
                                                               .get("cdi")
                                                               .detach()
                                                               .asMap()
@@ -346,7 +346,7 @@ public interface Server {
          *                 service
          * @return updated builder instance
          */
-        public Builder setDefaultExecutorServiceSupplier(Supplier<? extends ExecutorService> supplier) {
+        public Builder defaultExecutorServiceSupplier(Supplier<? extends ExecutorService> supplier) {
             this.defaultExecutorService = supplier;
             return this;
         }
@@ -536,35 +536,35 @@ public interface Server {
             return this;
         }
 
-        public List<JaxRsApplication> getApplications() {
+        public List<JaxRsApplication> applications() {
             return new LinkedList<>(applications);
         }
 
-        SeContainer getCdiContainer() {
+        SeContainer cdiContainer() {
             return cdiContainer;
         }
 
-        Config getConfig() {
+        Config config() {
             return config;
         }
 
-        String getHost() {
+        String host() {
             return host;
         }
 
-        int getPort() {
+        int port() {
             return port;
         }
 
-        List<MpService> getExtensions() {
+        List<MpService> extensions() {
             return extensions;
         }
 
-        boolean getContainerCreated() {
+        boolean containerCreated() {
             return containerCreated;
         }
 
-        ExecutorService getDefaultExecutorService() {
+        ExecutorService defaultExecutorService() {
             return defaultExecutorService.get();
         }
 

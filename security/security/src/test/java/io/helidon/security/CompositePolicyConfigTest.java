@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.config.Config;
-import io.helidon.security.provider.PathBasedProvider;
-import io.helidon.security.provider.ResourceBasedProvider;
+import io.helidon.security.providers.PathBasedProvider;
+import io.helidon.security.providers.ResourceBasedProvider;
 import io.helidon.security.spi.ProviderSelectionPolicy;
 import io.helidon.security.spi.SecurityProvider;
 
@@ -38,12 +38,12 @@ public class CompositePolicyConfigTest extends CompositePolicyTest {
     public static void initClass() {
         Config config = Config.create();
 
-        security = Security.fromConfig(config);
+        security = Security.create(config.get("security"));
 
         PathBasedProvider pbp = new PathBasedProvider();
         ResourceBasedProvider rbp = new ResourceBasedProvider();
 
-        psp = CompositeProviderSelectionPolicy.fromConfig(config.get("unit.test"))
+        psp = CompositeProviderSelectionPolicy.create(config.get("unit.test"))
                 .apply(new ProviderSelectionPolicy.Providers() {
                     @Override
                     public <T extends SecurityProvider> List<NamedProvider<T>> getProviders(Class<T> providerType) {

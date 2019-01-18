@@ -115,7 +115,7 @@ public class EtcdWatchPollingStrategyTest {
 
         assertThat(initLatch.await(1000, TimeUnit.MILLISECONDS), is(true));
 
-        assertThat(etcdClient.getWatchPublisher("key").getNumberOfSubscribers(), is(1));
+        assertThat(etcdClient.watchPublisher("key").getNumberOfSubscribers(), is(1));
     }
 
     private static class MockEtcdWatchPollingStrategy extends EtcdWatchPollingStrategy {
@@ -129,7 +129,7 @@ public class EtcdWatchPollingStrategyTest {
         }
 
         @Override
-        EtcdClient getEtcdClient() {
+        EtcdClient etcdClient() {
             return etcdClient;
         }
     }

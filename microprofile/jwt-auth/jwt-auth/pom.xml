@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-microprofile-jwt-project</artifactId>
         <groupId>io.helidon.microprofile.jwt</groupId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>0.11.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -49,7 +49,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security</groupId>
+            <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -65,7 +65,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security</groupId>
+            <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>

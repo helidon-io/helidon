@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * <h3><a name="pattern">Web Server Path Pattern</a></h3>
  * While user can implement this interface to implement any specific needs the primary construction method is
- * {@link #from(String)} factory method. The method accepts <i>Web Server Path Pattern</i> format.
+ * {@link #create(String)} factory method. The method accepts <i>Web Server Path Pattern</i> format.
  *
  * <table border="0" cellpadding="1" cellspacing="0"
  *  summary="Web Server path pattern description">
@@ -67,7 +67,7 @@ public interface PathMatcher {
      * @throws NullPointerException if parameter {@code pathPattern} is {@code null}.
      * @throws IllegalPathPatternException if provided pattern is not valid Web Server path pattern.
      */
-    static PathMatcher from(String pathPattern) throws NullPointerException, IllegalPathPatternException {
+    static PathMatcher create(String pathPattern) throws NullPointerException, IllegalPathPatternException {
         return PathPattern.compile(pathPattern);
     }
 

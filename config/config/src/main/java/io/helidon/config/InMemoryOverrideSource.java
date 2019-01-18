@@ -75,7 +75,7 @@ class InMemoryOverrideSource extends AbstractOverrideSource<Object> {
         @Override
         public InMemoryOverrideSource build() {
             if (!overrideWildcards.isEmpty()) {
-                overrideData = OverrideSource.OverrideData.fromWildcards(overrideWildcards);
+                overrideData = OverrideSource.OverrideData.createFromWildcards(overrideWildcards);
             } else {
                 throw new ConfigException("Override values cannot be empty.");
             }

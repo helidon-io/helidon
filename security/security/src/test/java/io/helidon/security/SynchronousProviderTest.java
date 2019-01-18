@@ -51,9 +51,9 @@ public class SynchronousProviderTest {
     }
 
     private void checkResponse(SecurityResponse response) {
-        assertThat(response.getStatus(), is(SecurityResponse.SecurityStatus.ABSTAIN));
-        assertThat(response.getDescription().isPresent(), is(true));
-        assertThat(response.getDescription().get(), is("unit.test"));
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
+        assertThat(response.description().isPresent(), is(true));
+        assertThat(response.description().get(), is("unit.test"));
     }
 
     private class Atn extends SynchronousProvider implements AuthenticationProvider {

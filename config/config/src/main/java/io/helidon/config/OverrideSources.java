@@ -59,7 +59,7 @@ public final class OverrideSources {
      * @param overrideValues a map of wildcards to values
      * @return a new instance of {@code OverrideSource}
      */
-    public static OverrideSource from(Map<String, String> overrideValues) {
+    public static OverrideSource create(Map<String, String> overrideValues) {
         return InMemoryOverrideSource.builder(overrideValues).build();
     }
 

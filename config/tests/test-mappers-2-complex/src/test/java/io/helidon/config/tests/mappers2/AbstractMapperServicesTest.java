@@ -33,7 +33,7 @@ public abstract class AbstractMapperServicesTest {
 
     protected Config.Builder configBuilder() {
         return Config.builder()
-                .sources(ConfigSources.from(CollectionsHelper.mapOf(
+                .sources(ConfigSources.create(CollectionsHelper.mapOf(
                         LOGGER_KEY, this.getClass().getName(),
                         LOCALE_KEY + ".language", "cs",
                         LOCALE_KEY + ".country", "CZ",

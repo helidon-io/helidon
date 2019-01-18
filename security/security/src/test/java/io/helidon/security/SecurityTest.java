@@ -19,7 +19,7 @@ package io.helidon.security;
 import java.net.URI;
 import java.util.Optional;
 
-import io.helidon.security.provider.ProviderForTesting;
+import io.helidon.security.providers.ProviderForTesting;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,7 @@ public class SecurityTest {
     @Test
     public void testSecurityProviderAuthn() {
         SecurityContext context = security.contextBuilder("unitTest")
-                .env(SecurityEnvironment.builder(security.getServerTime())
+                .env(SecurityEnvironment.builder(security.serverTime())
                              .method("GET")
                              .path("/test")
                              .targetUri(URI.create("http://localhost/test"))
@@ -74,51 +74,51 @@ public class SecurityTest {
 
         // current thread should have the correct subject
         assertThat(context.isAuthenticated(), is(true));
-        assertThat(authenticate.getUser(), is(Optional.of(SYSTEM)));
+        assertThat(authenticate.user(), is(Optional.of(SYSTEM)));
 
         // should work from context
-        assertThat(context.getUser(), is(Optional.of(SYSTEM)));
+        assertThat(context.user(), is(Optional.of(SYSTEM)));
 
         context.runAs(SecurityContext.ANONYMOUS, () -> assertThat(context.isAuthenticated(), is(false)));
 
         // and correct once again
-        assertThat(context.getUser(), is(Optional.of(SYSTEM)));
+        assertThat(context.user(), is(Optional.of(SYSTEM)));
     }
 
     @Test
     public void testSecurityProviderAuthz() {
         SecurityContext context = security.contextBuilder("unitTest").build();
 
-        SecurityEnvironment.Builder envBuilder = context.getEnv().derive()
+        SecurityEnvironment.Builder envBuilder = context.env().derive()
                 .method("GET")
                 .path("/test")
                 .targetUri(URI.create("http://localhost/test"));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
+        context.env(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
 
         // default authorizationClient
         AuthorizationResponse response = context.atzClientBuilder().buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
+        assertThat(response.status().isSuccess(), is(false));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "PERMIT"));
+        context.env(envBuilder.addAttribute("resourceType", "PERMIT"));
         response = context.atzClientBuilder().buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(true));
+        assertThat(response.status().isSuccess(), is(true));
 
         // non-default authorizationClient
-        context.setEnv(envBuilder.addAttribute("resourceType", "DENY"));
+        context.env(envBuilder.addAttribute("resourceType", "DENY"));
         response = context.atzClientBuilder()
                 .explicitProvider("FirstInstance")
                 .buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(false));
+        assertThat(response.status().isSuccess(), is(false));
 
-        context.setEnv(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
+        context.env(envBuilder.addAttribute("resourceType", "SECOND_DENY"));
         response = context.atzClientBuilder()
                 .explicitProvider("FirstInstance")
                 .buildAndGet();
 
-        assertThat(response.getStatus().isSuccess(), is(true));
+        assertThat(response.status().isSuccess(), is(true));
     }
 }

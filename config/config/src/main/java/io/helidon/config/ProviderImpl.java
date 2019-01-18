@@ -137,7 +137,7 @@ class ProviderImpl implements Config.Context {
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
                                                   this);
-        Config config = factory.getConfig();
+        Config config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);
         // caching
@@ -165,7 +165,7 @@ class ProviderImpl implements Config.Context {
                 return token;
             };
         }
-        return ObjectNodeBuilderImpl.from(rootNode, resolveTokenFunction).build();
+        return ObjectNodeBuilderImpl.create(rootNode, resolveTokenFunction).build();
     }
 
     private Map<String, String> flattenNodes(ConfigNode node) {
@@ -306,7 +306,7 @@ class ProviderImpl implements Config.Context {
         return changesPublisher;
     }
 
-    SubmissionPublisher<ConfigDiff> getChangesSubmitter() {
+    SubmissionPublisher<ConfigDiff> changesSubmitter() {
         return changesSubmitter;
     }
 

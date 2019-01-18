@@ -68,20 +68,20 @@ public class ConfigDiffTest {
     public void testNoChange() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThat(diff.changedKeys(), is(empty()));
 
     }
@@ -90,20 +90,20 @@ public class ConfigDiffTest {
     public void testChangeLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b");
 
     }
@@ -112,20 +112,20 @@ public class ConfigDiffTest {
     public void testAddLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.c");
 
     }
@@ -134,20 +134,20 @@ public class ConfigDiffTest {
     public void testRemovedLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.c");
 
     }
@@ -156,20 +156,20 @@ public class ConfigDiffTest {
     public void testChangedAndRemovedLeaves() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.c");
 
     }
@@ -178,20 +178,20 @@ public class ConfigDiffTest {
     public void testLeafChangedToObject() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.b.a");
 
     }
@@ -200,20 +200,20 @@ public class ConfigDiffTest {
     public void testObjectChangedToLeaf() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_CHANGED_LEAF_TO_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "", "a", "a.b", "a.b.a");
 
     }
@@ -222,20 +222,20 @@ public class ConfigDiffTest {
     public void testAddedObject() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "a.c.a", "a.c", "a", "");
 
     }
@@ -244,20 +244,20 @@ public class ConfigDiffTest {
     public void testRemovedObject() throws Exception {
 
         Config left = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES_ADDED_OBJECT))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES_ADDED_OBJECT))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         Config right = Config.builder()
-                .sources(ConfigSources.from(OBJECT_WITH_LEAVES))
+                .sources(ConfigSources.create(OBJECT_WITH_LEAVES))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
 
         ConfigDiff diff = ConfigDiff.from(left, right);
 
-        assertThat(diff.getConfig(), is(right));
+        assertThat(diff.config(), is(right));
         assertThatChangedKeysContainsInAnyOrder(diff, "a.c.a", "a.c", "a", "");
 
     }

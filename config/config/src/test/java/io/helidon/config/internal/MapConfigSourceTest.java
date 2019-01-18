@@ -31,7 +31,6 @@ import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -49,7 +49,7 @@ public class MapConfigSourceTest {
 
     @Test
     public void testDescription() throws MalformedURLException {
-        ConfigSource configSource = ConfigSources.from(CollectionsHelper.mapOf()).build();
+        ConfigSource configSource = ConfigSources.create(CollectionsHelper.mapOf()).build();
 
         assertThat(configSource.description(), is("MapConfig[map]"));
     }
@@ -59,7 +59,7 @@ public class MapConfigSourceTest {
         Map<String, String> map = CollectionsHelper.mapOf("app.name", "app-name");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(map))
+                .sources(ConfigSources.create(map))
                 .build();
 
         assertThat(config.get("app.name").asString().get(), is("app-name"));
@@ -70,7 +70,7 @@ public class MapConfigSourceTest {
         Map<String, String> map = CollectionsHelper.mapOf("app.port", "8080");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(map))
+                .sources(ConfigSources.create(map))
                 .build();
 
         assertThat(config.get("app").get("port").asInt().get(), is(8080));
@@ -81,9 +81,9 @@ public class MapConfigSourceTest {
     public void testMissingValue() {
         Map<String, String> map = CollectionsHelper.mapOf();
 
-        Assertions.assertThrows(MissingValueException.class, () -> {
+        assertThrows(MissingValueException.class, () -> {
             Config config = Config.builder()
-                    .sources(ConfigSources.from(map))
+                    .sources(ConfigSources.create(map))
                     .build();
 
             config.get("app.port").asInt().get();
@@ -98,7 +98,7 @@ public class MapConfigSourceTest {
                 "security", "on");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(map))
+                .sources(ConfigSources.create(map))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
@@ -115,7 +115,7 @@ public class MapConfigSourceTest {
                 "app.port", "8080");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(map))
+                .sources(ConfigSources.create(map))
                 .build()
                 .get("app");
 
@@ -138,7 +138,7 @@ public class MapConfigSourceTest {
         Map<String, String> map = CollectionsHelper.mapOf("app.name", "app-name");
 
         Config config = Config.builder()
-                .sources(ConfigSources.from(map))
+                .sources(ConfigSources.create(map))
                 .build();
 
         assertThat(config.get("app.name")
@@ -155,7 +155,7 @@ public class MapConfigSourceTest {
         map.put("app", "app-name");
         map.put("app.port", "8080");
 
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.from(map).lax().build();
+        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).lax().build();
         mapConfigSource.init(mock(ConfigContext.class));
         ObjectNode objectNode = mapConfigSource.load().get();
 
@@ -170,7 +170,7 @@ public class MapConfigSourceTest {
         map.put("app.port", "8080");
         map.put("app", "app-name");
 
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.from(map).lax().build();
+        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).lax().build();
         mapConfigSource.init(mock(ConfigContext.class));
         ObjectNode objectNode = mapConfigSource.load().get();
 
@@ -185,9 +185,9 @@ public class MapConfigSourceTest {
         map.put("app", "app-name");
         map.put("app.port", "8080");
 
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.from(map).build();
+        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).build();
 
-        Assertions.assertThrows(ConfigException.class, () -> {
+        assertThrows(ConfigException.class, () -> {
             mapConfigSource.init(mock(ConfigContext.class));
             mapConfigSource.load();
         });
@@ -200,9 +200,9 @@ public class MapConfigSourceTest {
         map.put("app.port", "8080");
         map.put("app", "app-name");
 
-        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.from(map).build();
+        MapConfigSource mapConfigSource = (MapConfigSource) ConfigSources.create(map).build();
 
-        Assertions.assertThrows(ConfigException.class, () -> {
+        assertThrows(ConfigException.class, () -> {
             mapConfigSource.init(mock(ConfigContext.class));
             mapConfigSource.load();
         });

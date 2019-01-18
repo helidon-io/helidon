@@ -33,8 +33,8 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
     InMemoryConfigSource(InMemoryConfigSource.Builder builder) {
         super(builder);
 
-        uri = builder.getUri();
-        content = builder.getContent();
+        uri = builder.uri();
+        content = builder.content();
     }
 
     @Override
@@ -82,11 +82,11 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
             return new InMemoryConfigSource(this);
         }
 
-        private String getUri() {
+        private String uri() {
             return uri;
         }
 
-        private ConfigParser.Content getContent() {
+        private ConfigParser.Content content() {
             return content;
         }
     }

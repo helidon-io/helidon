@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package io.helidon.webserver.jersey;
 
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Map;
@@ -121,8 +123,9 @@ public class JerseySupport implements Service {
 
     private static URI requestUri(ServerRequest req) {
         try {
-            URI partialUri = new URI(req.isSecure() ? "https" : "http", null, req.localAddress(),
-                                     req.localPort(), req.path().absolute().toString(), null, null);
+            // Creating a URI from a URL avoids re-encoding of characters like '%'
+            URI partialUri = new URL(req.isSecure() ? "https" : "http", req.localAddress(),
+                                     req.localPort(), req.path().absolute().toString()).toURI();
             StringBuilder sb = new StringBuilder(partialUri.toString());
             if (req.uri().toString().endsWith("/") && sb.charAt(sb.length() - 1) != '/') {
                 sb.append('/');
@@ -138,7 +141,7 @@ public class JerseySupport implements Service {
                   .append(req.fragment());
             }
             return new URI(sb.toString());
-        } catch (URISyntaxException e) {
+        } catch (URISyntaxException | MalformedURLException e) {
             throw new IllegalStateException("Unable to create a request URI from the request info.", e);
         }
     }
@@ -349,7 +352,7 @@ public class JerseySupport implements Service {
     /**
      * Builder for convenient way to create {@link JerseySupport}.
      */
-    public static class Builder implements Configurable<Builder>, io.helidon.common.Builder {
+    public static final class Builder implements Configurable<Builder>, io.helidon.common.Builder<JerseySupport> {
 
         private ResourceConfig resourceConfig;
         private ExecutorService executorService;
@@ -370,6 +373,7 @@ public class JerseySupport implements Service {
          *
          * @return built module
          */
+        @Override
         public JerseySupport build() {
             return new JerseySupport(resourceConfig, executorService);
         }

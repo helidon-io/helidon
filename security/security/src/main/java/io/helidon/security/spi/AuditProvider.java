@@ -47,12 +47,12 @@ import io.helidon.security.AuditEvent;
 @FunctionalInterface
 public interface AuditProvider extends SecurityProvider {
     /**
-     * Return you subscriber for audit events. The method is invoked synchronously, so if you want to have low impact on
-     * performance, you should handler possible asynchronous processing in the provider implementation.
+     * Return your subscriber for audit events. The method is invoked synchronously, so if you want to have low impact on
+     * performance, you should handle possible asynchronous processing in the provider implementation.
      *
      * @return Consumer that will receive all audit events of this security realm
      */
-    Consumer<TracedAuditEvent> getAuditConsumer();
+    Consumer<TracedAuditEvent> auditConsumer();
 
     /**
      * Audit event sent to Audit provider. Wraps tracing id and AuditEvent sent by
@@ -64,14 +64,14 @@ public interface AuditProvider extends SecurityProvider {
          *
          * @return String with tracing id
          */
-        String getTracingId();
+        String tracingId();
 
         /**
          * Source of this audit event (class, method, line number etc.).
          *
          * @return Source of the audit event
          */
-        AuditSource getAuditSource();
+        AuditSource auditSource();
 
         /**
          * Creates a formatted message from this events message format and parameters.
@@ -79,12 +79,12 @@ public interface AuditProvider extends SecurityProvider {
          * @return formatted message
          */
         default String formatMessage() {
-            List<AuditParam> params = getParams();
+            List<AuditParam> params = params();
             List<Object> msgParams = new ArrayList<>(params.size());
 
-            params.forEach(auditParam -> msgParams.add(auditParam.getValue().orElse("")));
+            params.forEach(auditParam -> msgParams.add(auditParam.value().orElse("")));
 
-            return String.format(getMessageFormat(), msgParams.toArray(new Object[0]));
+            return String.format(messageFormat(), msgParams.toArray(new Object[0]));
         }
     }
 
@@ -97,7 +97,7 @@ public interface AuditProvider extends SecurityProvider {
          *
          * @return AuditSource for current stack trace
          */
-        static AuditSource build() {
+        static AuditSource create() {
             StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
             //I want to filter out all methods in the root of security package
             //including security builder
@@ -136,22 +136,22 @@ public interface AuditProvider extends SecurityProvider {
 
                 return new AuditSource() {
                     @Override
-                    public Optional<String> getClassName() {
+                    public Optional<String> className() {
                         return Optional.of(stackFrame.getClassName());
                     }
 
                     @Override
-                    public Optional<String> getMethodName() {
+                    public Optional<String> methodName() {
                         return Optional.of(stackFrame.getMethodName());
                     }
 
                     @Override
-                    public Optional<String> getFileName() {
+                    public Optional<String> fileName() {
                         return Optional.ofNullable(stackFrame.getFileName());
                     }
 
                     @Override
-                    public OptionalInt getLineNumber() {
+                    public OptionalInt lineNumber() {
                         return (stackFrame.getLineNumber() < 0)
                                 ? OptionalInt.empty()
                                 : OptionalInt.of(stackFrame.getLineNumber());
@@ -175,19 +175,35 @@ public interface AuditProvider extends SecurityProvider {
             return packageName.equals(AuditProvider.class.getPackage().getName());
         }
 
-        default Optional<String> getClassName() {
+        /**
+         * Name of the class that caused this event.
+         * @return class name or empty if not provided
+         */
+        default Optional<String> className() {
             return Optional.empty();
         }
 
-        default Optional<String> getMethodName() {
+        /**
+         * Method name that caused this event.
+         * @return method name or empty if not provided
+         */
+        default Optional<String> methodName() {
             return Optional.empty();
         }
 
-        default Optional<String> getFileName() {
+        /**
+         * File name of the source that caused this event.
+         * @return file name or empty if not provided
+         */
+        default Optional<String> fileName() {
             return Optional.empty();
         }
 
-        default OptionalInt getLineNumber() {
+        /**
+         * Line number within the source file that caused this event.
+         * @return line number or empty if not provided
+         */
+        default OptionalInt lineNumber() {
             return OptionalInt.empty();
         }
     }

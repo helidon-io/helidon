@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.webserver;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Flow.Publisher;
+import io.helidon.media.common.PublisherInputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -26,7 +28,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests {@link PublisherInputStream}.
+ * Tests {@link io.helidon.media.common.PublisherInputStream}.
  */
 public class PublisherInputStreamTest {
 

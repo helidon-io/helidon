@@ -65,7 +65,7 @@ class ServerImplTest {
         server.start();
 
         try {
-            WebTarget target = client.target("http://localhost:" + server.getPort());
+            WebTarget target = client.target("http://localhost:" + server.port());
 
             String first = target.path("/app1/test1").request().get(String.class);
             String second = target.path("/app2/test2").request().get(String.class);
@@ -96,7 +96,7 @@ class ServerImplTest {
         server.start();
 
         try {
-            WebTarget target = client.target("http://localhost:" + server.getPort());
+            WebTarget target = client.target("http://localhost:" + server.port());
 
             String first = target.path("/app1/test1").request().get(String.class);
             String second = target.path("/app2/test2").request().get(String.class);

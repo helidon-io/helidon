@@ -39,7 +39,7 @@ final class OrderedProperties {
         properties.load(reader);
     }
 
-    LinkedHashMap<String, String> getOrderedMap() {
+    LinkedHashMap<String, String> orderedMap() {
         return map;
     }
 }

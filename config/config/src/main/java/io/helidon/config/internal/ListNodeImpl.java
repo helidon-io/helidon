@@ -70,7 +70,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
 
     @Override
     public MergeableNode merge(MergeableNode node) {
-        switch (node.getNodeType()) {
+        switch (node.nodeType()) {
         case OBJECT:
             return mergeWithObject((ObjectNodeImpl) node);
         case LIST:
@@ -124,7 +124,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
             throw new ConfigException(
                     String.format("Cannot merge OBJECT members %s%s with an LIST node%s.",
                                   unprocessedPeerNames,
-                                  formatFrom(node.getDescription()),
+                                  formatFrom(node.description()),
                                   formatFrom(description)));
         } else {
             return builder.build();
@@ -148,7 +148,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         return this;
     }
 
-    public String getDescription() {
+    public String description() {
         return description;
     }
 

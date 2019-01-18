@@ -372,7 +372,7 @@ final class ReflectionUtil {
                 Object builder = builderType.cast(builderHandler.invoke());
 
                 for (PropertyAccessor<?> builderAccessor : builderAccessors) {
-                    builderAccessor.set(builder, config.get(builderAccessor.getName()));
+                    builderAccessor.set(builder, config.get(builderAccessor.name()));
                 }
 
                 return buildType.cast(buildHandler.invoke(builder));
@@ -413,7 +413,7 @@ final class ReflectionUtil {
                                                     createDefaultSupplier(name, value));
         }
 
-        public String getName() {
+        public String name() {
             return name;
         }
 
@@ -432,7 +432,7 @@ final class ReflectionUtil {
             }
         }
 
-        MethodHandle getHandle() {
+        MethodHandle handle() {
             return handle;
         }
 
@@ -465,7 +465,7 @@ final class ReflectionUtil {
                     try {
                         return config.convert(type, annotation.withDefault());
                     } catch (ConfigMappingException e) {
-                        throw new ConfigMappingException(Config.Key.of(name),
+                        throw new ConfigMappingException(Config.Key.create(name),
                                                          "Provided default value \""
                                                                  + annotation.withDefault()
                                                                  + "\" cannot be converted to correct type \""

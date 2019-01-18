@@ -125,19 +125,19 @@ class ConfigSourceConfigMapper implements Function<Config, ConfigSource> {
             break;
         case PREFIXED_TYPE:
             configSource = ConfigSources.prefixed(properties.get(KEY_KEY).asString().orElse(""),
-                                                  properties.as(ConfigSource::from).get());
+                                                  properties.as(ConfigSource::create).get());
             break;
         case CLASSPATH_TYPE:
-            configSource = properties.as(ClasspathConfigSource::from).get();
+            configSource = properties.as(ClasspathConfigSource::create).get();
             break;
         case FILE_TYPE:
-            configSource = properties.as(FileConfigSource::from).get();
+            configSource = properties.as(FileConfigSource::create).get();
             break;
         case DIRECTORY_TYPE:
-            configSource = properties.as(DirectoryConfigSource::from).get();
+            configSource = properties.as(DirectoryConfigSource::create).get();
             break;
         case URL_TYPE:
-            configSource = properties.as(UrlConfigSource::from).get();
+            configSource = properties.as(UrlConfigSource::create).get();
             break;
         default:
             configSource = null;

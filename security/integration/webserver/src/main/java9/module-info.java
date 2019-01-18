@@ -17,7 +17,7 @@
 /**
  * Security integration with Helidon Webserver.
  */
-module io.helidon.security.adapter.webserver {
+module io.helidon.security.integration.webserver {
     requires java.logging;
     requires java.annotation;
 
@@ -25,5 +25,5 @@ module io.helidon.security.adapter.webserver {
     requires transitive io.helidon.security.util;
     requires io.helidon.webserver;
 
-    exports io.helidon.security.webserver;
+    exports io.helidon.security.integration.webserver;
 }

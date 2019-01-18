@@ -18,10 +18,13 @@
  * Aggregator module for microprofile 1.2.
  */
 module io.helidon.microprofile.v1_2 {
-    requires transitive io.helidon.mp.config.cdi;
-    requires transitive io.helidon.mp.config;
-    requires transitive io.helidon.mp.server;
-    requires transitive io.helidon.mp.health;
+    requires transitive io.helidon.microprofile.config.cdi;
+    requires transitive io.helidon.microprofile.config;
+    requires transitive io.helidon.microprofile.server;
+    requires transitive io.helidon.microprofile.health;
+    requires transitive io.helidon.microprofile.metrics;
+    requires transitive io.helidon.microprofile.faulttolerance;
+    requires transitive io.helidon.microprofile.jwt.auth.cdi;
 
-    requires io.helidon.mp.health.checks;
+    requires io.helidon.health.checks;
 }

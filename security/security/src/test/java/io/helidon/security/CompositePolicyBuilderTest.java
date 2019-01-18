@@ -19,8 +19,8 @@ package io.helidon.security;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.security.provider.PathBasedProvider;
-import io.helidon.security.provider.ResourceBasedProvider;
+import io.helidon.security.providers.PathBasedProvider;
+import io.helidon.security.providers.ResourceBasedProvider;
 import io.helidon.security.spi.ProviderSelectionPolicy;
 import io.helidon.security.spi.SecurityProvider;
 
