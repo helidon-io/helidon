@@ -70,17 +70,6 @@
             </modules>
         </profile>
         <profile>
-            <!--
-                Pipeline builds use this profile with the generate-sources phase to convert
-                the README.adoc file at the top-level of the project into the
-                pre-included format but store it in a different location, then compare
-                the two to make sure they match. If they do not match, then the
-                developer has probably updated the content but forgot to run
-                adoc-preinclude to make the file more GitHub-friendly.
-
-                Usage:
-                    mvn -Padoc-check generate-sources
-            -->
             <id>adoc-check</id>
             <build>
                 <plugins>
