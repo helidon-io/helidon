@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.security.abac.scope;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
@@ -39,15 +39,22 @@ public class ScopeValidatorTest {
     @Test
     public void testScopesAndPermit() {
         ScopeValidator validator = ScopeValidator.create();
-        List<ScopeValidator.Scope> annots = new LinkedList<>();
         ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
         when(annot.value()).thenReturn("calendar_get");
-        annots.add(annot);
-        annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_update");
-        annots.add(annot);
+        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
+        when(annotTwo.value()).thenReturn("calendar_update");
 
-        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(annots);
+        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
+        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
+                annot,
+                annotTwo
+        });
+
+        EndpointConfig ep = mock(EndpointConfig.class);
+        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+                .thenReturn(CollectionsHelper.listOf(scopes));
+
+        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
@@ -71,15 +78,22 @@ public class ScopeValidatorTest {
     @Test
     public void testScopesAndDeny() {
         ScopeValidator validator = ScopeValidator.create();
-        List<ScopeValidator.Scope> annots = new LinkedList<>();
         ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
         when(annot.value()).thenReturn("calendar_get");
-        annots.add(annot);
-        annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_update");
-        annots.add(annot);
+        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
+        when(annotTwo.value()).thenReturn("calendar_update");
 
-        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(annots);
+        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
+        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
+                annot,
+                annotTwo
+        });
+
+        EndpointConfig ep = mock(EndpointConfig.class);
+        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+                .thenReturn(CollectionsHelper.listOf(scopes));
+
+        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
@@ -104,15 +118,22 @@ public class ScopeValidatorTest {
                 .useOrOperator(true)
                 .build();
 
-        List<ScopeValidator.Scope> annots = new LinkedList<>();
         ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
         when(annot.value()).thenReturn("calendar_get");
-        annots.add(annot);
-        annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_update");
-        annots.add(annot);
+        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
+        when(annotTwo.value()).thenReturn("calendar_update");
 
-        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(annots);
+        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
+        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
+                annot,
+                annotTwo
+        });
+
+        EndpointConfig ep = mock(EndpointConfig.class);
+        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+                .thenReturn(CollectionsHelper.listOf(scopes));
+
+        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);
@@ -135,15 +156,22 @@ public class ScopeValidatorTest {
                 .useOrOperator(true)
                 .build();
 
-        List<ScopeValidator.Scope> annots = new LinkedList<>();
         ScopeValidator.Scope annot = mock(ScopeValidator.Scope.class);
         when(annot.value()).thenReturn("calendar_get");
-        annots.add(annot);
-        annot = mock(ScopeValidator.Scope.class);
-        when(annot.value()).thenReturn("calendar_update");
-        annots.add(annot);
+        ScopeValidator.Scope annotTwo = mock(ScopeValidator.Scope.class);
+        when(annotTwo.value()).thenReturn("calendar_update");
 
-        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(annots);
+        ScopeValidator.Scopes scopes = mock(ScopeValidator.Scopes.class);
+        when(scopes.value()).thenReturn(new ScopeValidator.Scope[] {
+                annot,
+                annotTwo
+        });
+
+        EndpointConfig ep = mock(EndpointConfig.class);
+        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+                .thenReturn(CollectionsHelper.listOf(scopes));
+
+        ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
 
         Errors.Collector collector = Errors.collector();
         ProviderRequest request = mock(ProviderRequest.class);

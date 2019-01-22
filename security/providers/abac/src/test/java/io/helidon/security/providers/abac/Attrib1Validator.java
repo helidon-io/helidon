@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package io.helidon.security.providers.abac;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 
@@ -51,18 +53,20 @@ public class Attrib1Validator implements AbacValidator<Attrib1Validator.Attrib1C
     }
 
     @Override
-    public Attrib1Config fromAnnotations(List<? extends Annotation> annotations) {
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof Attrib1) {
-                return new Attrib1Config(((Attrib1) annotation).value());
+    public Attrib1Config fromAnnotations(EndpointConfig endpointConfig) {
+        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
+            List<Annotation> annotations = new ArrayList<>();
+            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
+                annotations.addAll(list);
+            }
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof Attrib1) {
+                    return new Attrib1Config(((Attrib1) annotation).value());
+                }
             }
         }
         return new Attrib1Config(false);
-    }
-
-    @Override
-    public Attrib1Config combine(Attrib1Config parent, Attrib1Config child) {
-        return new Attrib1Config(true);
     }
 
     @Override

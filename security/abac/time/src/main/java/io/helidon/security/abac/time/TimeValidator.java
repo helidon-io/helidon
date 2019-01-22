@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import java.util.Set;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.AbacAnnotation;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
@@ -81,33 +82,35 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
     }
 
     @Override
-    public TimeConfig fromAnnotations(List<? extends Annotation> annotations) {
+    public TimeConfig fromAnnotations(EndpointConfig endpointConfig) {
         TimeConfig.Builder builder = TimeConfig.builder();
 
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof DaysOfWeek) {
-                DaysOfWeek daw = (DaysOfWeek) annotation;
-                for (DayOfWeek dayOfWeek : daw.value()) {
-                    builder.addDaysOfWeek(dayOfWeek);
-                }
-            } else if (annotation instanceof TimesOfDay) {
-                TimesOfDay tods = (TimesOfDay) annotation;
-                for (TimeOfDay tod : tods.value()) {
+        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
+            List<Annotation> annotations = new ArrayList<>();
+            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
+                annotations.addAll(list);
+            }
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof DaysOfWeek) {
+                    DaysOfWeek daw = (DaysOfWeek) annotation;
+                    for (DayOfWeek dayOfWeek : daw.value()) {
+                        builder.addDaysOfWeek(dayOfWeek);
+                    }
+                } else if (annotation instanceof TimesOfDay) {
+                    TimesOfDay tods = (TimesOfDay) annotation;
+                    for (TimeOfDay tod : tods.value()) {
+                        builder.addBetween(LocalTime.parse(tod.from()),
+                                           LocalTime.parse(tod.to()));
+                    }
+                } else if (annotation instanceof TimeOfDay) {
+                    TimeOfDay tod = (TimeOfDay) annotation;
                     builder.addBetween(LocalTime.parse(tod.from()),
                                        LocalTime.parse(tod.to()));
                 }
-            } else if (annotation instanceof TimeOfDay) {
-                TimeOfDay tod = (TimeOfDay) annotation;
-                builder.addBetween(LocalTime.parse(tod.from()),
-                                   LocalTime.parse(tod.to()));
             }
         }
         return builder.build();
-    }
-
-    @Override
-    public TimeConfig combine(TimeConfig parent, TimeConfig child) {
-        return parent.combineWith(child);
     }
 
     @Override
@@ -118,7 +121,7 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(TimesOfDay.class, DaysOfWeek.class);
+        return CollectionsHelper.setOf(TimesOfDay.class, TimeOfDay.class, DaysOfWeek.class);
     }
 
     /**

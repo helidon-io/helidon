@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.security.integration.jersey.spi;
+package io.helidon.security.providers.common.spi;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -255,11 +255,11 @@ public interface AnnotationAnalyzer {
             /**
              * Authorization response.
              *
-             * @param atzResponse authorization response flag
+             * @param authorizeResponse authorization response flag
              * @return updated builder instance
              */
-            public Builder atzResponse(Flag atzResponse) {
-                this.atzResponse = atzResponse;
+            public Builder authorizeResponse(Flag authorizeResponse) {
+                this.atzResponse = authorizeResponse;
                 return this;
             }
 

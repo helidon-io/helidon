@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import java.time.temporal.ChronoField;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityTime;
@@ -45,16 +47,20 @@ public class TimeValidatorTest {
     @BeforeAll
     public static void initClass() {
         validator = TimeValidator.create();
+        EndpointConfig ep = mock(EndpointConfig.class);
 
         TimeValidator.TimeOfDay tod = mock(TimeValidator.TimeOfDay.class);
         when(tod.from()).thenReturn("08:15:00");
         when(tod.to()).thenReturn("12:00");
         annotations.add(tod);
 
-        tod = mock(TimeValidator.TimeOfDay.class);
-        when(tod.from()).thenReturn("12:30:00");
-        when(tod.to()).thenReturn("17:30");
-        annotations.add(tod);
+        TimeValidator.TimeOfDay tod2 = mock(TimeValidator.TimeOfDay.class);
+        when(tod2.from()).thenReturn("12:30:00");
+        when(tod2.to()).thenReturn("17:30");
+        annotations.add(tod2);
+
+        when(ep.combineAnnotations(TimeValidator.TimeOfDay.class, EndpointConfig.AnnotationScope.CLASS))
+                .thenReturn(CollectionsHelper.listOf(tod, tod2));
 
         TimeValidator.DaysOfWeek dow = mock(TimeValidator.DaysOfWeek.class);
         when(dow.value()).thenReturn(new DayOfWeek[] {
@@ -65,8 +71,11 @@ public class TimeValidatorTest {
                 DayOfWeek.FRIDAY
         });
         annotations.add(dow);
+        when(ep.combineAnnotations(TimeValidator.DaysOfWeek.class, EndpointConfig.AnnotationScope.CLASS))
+                .thenReturn(CollectionsHelper.listOf(dow));
 
-        timeConfig = validator.fromAnnotations(annotations);
+
+        timeConfig = validator.fromAnnotations(ep);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,11 @@
  */
 module io.helidon.security.abac.role {
     requires io.helidon.security.providers.abac;
+    requires io.helidon.security.providers.common;
 
     exports io.helidon.security.abac.role;
 
     provides io.helidon.security.providers.abac.spi.AbacValidatorService with io.helidon.security.abac.role.RoleValidatorService;
+
+    uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 }
