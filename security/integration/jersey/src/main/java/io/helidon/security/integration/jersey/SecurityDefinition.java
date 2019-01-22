@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import io.helidon.security.AuditEvent;
 import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
-import io.helidon.security.integration.jersey.spi.AnnotationAnalyzer;
+import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 /**
  * Definition of security for one a method, resource class or application class.

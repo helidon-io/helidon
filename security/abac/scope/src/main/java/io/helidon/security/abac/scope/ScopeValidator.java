@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +36,7 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.AbacAnnotation;
@@ -106,26 +106,24 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
     }
 
     @Override
-    public ScopesConfig fromAnnotations(List<? extends Annotation> annotations) {
+    public ScopesConfig fromAnnotations(EndpointConfig endpointConfig) {
         List<Scope> scopes = new ArrayList<>();
-
-        for (Annotation annot : annotations) {
-            if (annot instanceof Scopes) {
-                scopes.addAll(Arrays.asList(((Scopes) annot).value()));
-            } else if (annot instanceof Scope) {
-                scopes.add((Scope) annot);
+        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
+            List<Annotation> annotations = new ArrayList<>();
+            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
+                annotations.addAll(list);
+            }
+            for (Annotation annot : annotations) {
+                if (annot instanceof Scopes) {
+                    scopes.addAll(Arrays.asList(((Scopes) annot).value()));
+                } else if (annot instanceof Scope) {
+                    scopes.add((Scope) annot);
+                }
             }
         }
 
         return ScopesConfig.create(scopes);
-    }
-
-    @Override
-    public ScopesConfig combine(ScopesConfig parent, ScopesConfig child) {
-        List<String> allScopes = new LinkedList<>();
-        allScopes.addAll(parent.requiredScopes());
-        allScopes.addAll(child.requiredScopes());
-        return ScopesConfig.create(allScopes.toArray(new String[0]));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.security.providers.abac.spi;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.providers.abac.AbacAnnotation;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
@@ -45,7 +45,7 @@ public interface AbacValidator<T extends AbacValidatorConfig> {
      * Provide extension annotations supported by this validator (e.g. {@link javax.annotation.security.RolesAllowed}).
      * Annotations will be collected according to framework in use. For JAX-RS, annotations from application class, resource
      * class and resource methods will be collected.
-     * The annotations will be transformed to configuration by {@link #fromAnnotations(List)}.
+     * The annotations will be transformed to configuration by {@link #fromAnnotations(EndpointConfig)}.
      *
      * @return Collection of annotations this provider expects.
      */
@@ -78,19 +78,10 @@ public interface AbacValidator<T extends AbacValidatorConfig> {
     /**
      * Load configuration class instance from annotations this validator expects.
      *
-     * @param annotations annotations collected from resource if annotations are supported
+     * @param endpointConfig endpoint config
      * @return instance of configuration class
      */
-    T fromAnnotations(List<? extends Annotation> annotations);
-
-    /**
-     * Combine two configuration (such as one obtained from annotation and one from config).
-     *
-     * @param parent The parent configuration (e.g. obtained from annotation)
-     * @param child  The child configuration (e.g. obtained from explicit object)
-     * @return combined configuration
-     */
-    T combine(T parent, T child);
+    T fromAnnotations(EndpointConfig endpointConfig);
 
     /**
      * Validate that the configuration provided would grant access to the resource.

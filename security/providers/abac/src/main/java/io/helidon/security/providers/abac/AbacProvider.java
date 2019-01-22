@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import javax.annotation.security.DenyAll;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.Errors;
@@ -153,7 +155,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
                             }
 
                             if (!annotationConfig.isEmpty()) {
-                                attributes.add(new RuntimeAttribute(validator, validator.fromAnnotations(annotationConfig)));
+                                attributes.add(new RuntimeAttribute(validator, validator.fromAnnotations(epConfig)));
                             }
                         });
             }
@@ -265,7 +267,7 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
 
         for (Class<? extends Annotation> type : allAnnotations.keySet()) {
             AbacAnnotation abacAnnotation = type.getAnnotation(AbacAnnotation.class);
-            if (null != abacAnnotation || RolesAllowed.class.equals(type)) {
+            if (null != abacAnnotation || isSupportedAnnotation(type)) {
                 attributeAnnotations++;
                 if (!supportedAnnotations.contains(type)) {
                     unsupported++;
@@ -290,6 +292,12 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
                 collector.fatal(this, "Supported annotations: " + supportedAnnotations);
             }
         }
+    }
+
+    private boolean isSupportedAnnotation(Class<? extends Annotation> type) {
+        return RolesAllowed.class.equals(type)
+                || PermitAll.class.equals(type)
+                || DenyAll.class.equals(type);
     }
 
     /**

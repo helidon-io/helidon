@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ module io.helidon.security.integration.jersey {
 
     requires transitive io.helidon.security;
     requires transitive io.helidon.security.annotations;
+    requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security.util;
     requires transitive java.ws.rs;
     requires jersey.common;
@@ -31,10 +32,9 @@ module io.helidon.security.integration.jersey {
     requires javax.inject;
 
     exports io.helidon.security.integration.jersey;
-    exports io.helidon.security.integration.jersey.spi;
 
     // needed for jersey injection
     opens io.helidon.security.integration.jersey to hk2.locator,hk2.utils;
 
-    uses io.helidon.security.integration.jersey.spi.AnnotationAnalyzer;
+    uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 }

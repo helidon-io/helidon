@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,8 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
-import java.lang.reflect.Method;
-
-import javax.annotation.security.PermitAll;
-
 import io.helidon.config.Config;
-import io.helidon.security.integration.jersey.spi.AnnotationAnalyzer;
+import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 import org.eclipse.microprofile.auth.LoginConfig;
 
@@ -75,24 +71,4 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
         return builder.build();
     }
 
-    @Override
-    public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        return analyze(maybeAnnotated.getAnnotation(PermitAll.class), previousResponse);
-    }
-
-    @Override
-    public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
-        return analyze(maybeAnnotated.getAnnotation(PermitAll.class), previousResponse);
-
-    }
-
-    private static AnalyzerResponse analyze(PermitAll annotation, AnalyzerResponse previousResponse) {
-        if (null == annotation) {
-            return AnalyzerResponse.abstain();
-        }
-
-        return AnalyzerResponse.builder(previousResponse)
-                .authenticationResponse(Flag.OPTIONAL)
-                .build();
-    }
 }
