@@ -23,8 +23,8 @@ import io.helidon.security.ClassToInstanceStore;
 
 /**
  * Provides capability to extensions to enforce authentication and authorization even when
- * the resource is not annotated with {@link io.helidon.security.annotations.Authenticated} or
- * {@link io.helidon.security.annotations.Authorized}.
+ * the resource is not annotated with io.helidon.security.annotations.Authenticated or
+ * io.helidon.security.annotations.Authorized.
  * This is loaded using a {@link java.util.ServiceLoader} - integration with Security is done automatically as long as the
  * implementation is discovered as a java service.
  */
