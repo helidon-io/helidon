@@ -46,6 +46,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
 
 /**
  * Utilities for JWT and JWK parsing.
@@ -57,7 +58,10 @@ public final class JwtUtil {
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
+
+    // Avoid reloading JSON providers. See https://github.com/eclipse-ee4j/jsonp/issues/154
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
 
     private JwtUtil() {
     }
@@ -245,22 +249,22 @@ public final class JwtUtil {
 
     private static JsonValue toJson(Object object) {
         if (object instanceof String) {
-            return Json.createValue((String) object);
+            return JSON_PROVIDER.createValue((String) object);
         }
         if (object instanceof Integer) {
-            return Json.createValue((Integer) object);
+            return JSON_PROVIDER.createValue((Integer) object);
         }
         if (object instanceof Double) {
-            return Json.createValue((Double) object);
+            return JSON_PROVIDER.createValue((Double) object);
         }
         if (object instanceof Long) {
-            return Json.createValue((Long) object);
+            return JSON_PROVIDER.createValue((Long) object);
         }
         if (object instanceof BigDecimal) {
-            return Json.createValue((BigDecimal) object);
+            return JSON_PROVIDER.createValue((BigDecimal) object);
         }
         if (object instanceof BigInteger) {
-            return Json.createValue((BigInteger) object);
+            return JSON_PROVIDER.createValue((BigInteger) object);
         }
         if (object instanceof Boolean) {
             return ((Boolean) object) ? JsonValue.TRUE : JsonValue.FALSE;
@@ -271,7 +275,7 @@ public final class JwtUtil {
         if (object instanceof Collection) {
             return JSON.createArrayBuilder((Collection) object).build();
         }
-        return Json.createValue(String.valueOf(object));
+        return JSON_PROVIDER.createValue(String.valueOf(object));
     }
 
     private static Locale toLocale(String locale) {
