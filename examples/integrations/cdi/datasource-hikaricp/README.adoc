@@ -7,7 +7,7 @@ uses the Hikari connection pool CDI integration.  It also shows how to
 run the Oracle database in a Docker container and connect the
 application to it.
 
-= Prerequisites
+== Prerequisites
 
 You'll need an Oracle account in order to log in to the Oracle
 Container Registry.  The Oracle Container Registry is where the Docker
@@ -84,4 +84,3 @@ To remove the `oracle` Docker container:
 ```sh
 $ docker container rm oracle
 ```
-
