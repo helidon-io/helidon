@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 
     Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
@@ -16,20 +15,20 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-:adoc-dir: {guides-dir}/mp-restful-webservice/src/main/docs
-:java-base: {adoc-dir}/../java/io/helidon/guides/mp/restfulwebservice
+:java-base: src/main/java/io/helidon/guides/mp/restfulwebservice
 :greet-app: {java-base}/GreetApplication.java
 :main-class: {java-base}/Main.java
 :greet-resource-class: {java-base}/GreetResource.java
 :greeting-message-class: {java-base}/GreetingMessage.java
 :greet-application-class: {java-base}/GreetApplication.java
 :health-resource-class: {java-base}/HealthResource.java
-:pom: {adoc-dir}/../../../pom.xml
-:meta-inf-dir: {adoc-dir}/../resources/META-INF
+:pom: pom.xml
+:src-main-resources: src/main/resources
+:meta-inf-dir: {src-main-resources}/META-INF
 :beans-xml: {meta-inf-dir}/beans.xml
 :config-file: {meta-inf-dir}/microprofile-config.properties
-:logging-properties-file: {adoc-dir}/../resources/logging.properties
-:se-guide-adoc: {guides-dir}/se-restful-webservice/src/main/docs/index.adoc
+:logging-properties-file: {src-main-resources}/logging.properties
+:se-guide-adoc: ../se-restful-webservice/README.adoc
 
 
 = The MP RESTful Web Service Guide
@@ -58,7 +57,7 @@ We create the app in these main steps:
 
 . Add code to record simple metrics.
 
-This guide walks you through the code and helps you understand what each part of the 
+This guide walks you through the code and helps you understand what each part of the
 code does as you write the app. But if you prefer, you can get the finished code for this example.
 See the <<downloading,downloading>> section for instructions.
 
@@ -109,23 +108,57 @@ then `cd` to the `<artifactId>` directory you specified.
 === Update your `pom.xml`
 Add the properties and dependencies listed here if they don't exist in your `pom.xml`:
 [source,xml,subs="verbatim,attributes"]
+// _include::1-3:{pom}[tags=helidonVersion;javaVersions]
+// _include::8-19:{pom}[tags=helidonDepMgt;activationDepMgt]
 ----
     <properties>
-include::{pom}[tags=helidonVersion;javaVersions]
+        <helidon.version>0.11.1-SNAPSHOT</helidon.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-include::{pom}[tags=helidonDepMgt;activationDepMgt]
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${helidon.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>javax.activation-api</artifactId>
+                <version>1.2.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 ----
 Now you can add Helidon dependencies to your project without having to specify the version.
 For this example add these dependencies:
 [source,xml]
+// _include::1-19:{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
 ----
     <dependencies>
-include::{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
+        <dependency> <!--1-->
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-1.2</artifactId>
+        </dependency>
+        <dependency> <!--2-->
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-binding</artifactId>
+        </dependency>
+        <dependency> <!--3-->
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency> <!--4-->
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 ----
 <1> Incorporates the Helidon MicroProfile bundle.
@@ -134,19 +167,93 @@ include::{pom}[tags=helidonMPBundleDep;gfJsonBDep;jandexDep;activationDep]
 <4> Adds the activation API.
 
 If you run your project from the IDE, the IDE typically handles the main class and places
-dependent JARs on the runtime classpath for you and your pom is now ready to go. 
+dependent JARs on the runtime classpath for you and your pom is now ready to go.
 
-include::{se-guide-adoc}[tag=runMavenOutsideIDE]
+// _include::0-65:{se-guide-adoc}[tag=runMavenOutsideIDE]
+==== To run Maven outside your IDE
+If you want to use Maven yourself,
+outside the IDE, then add the following to your pom. (This is typical with Maven
+projects and is not specific to Helidon or this example):
+[source,xml]
+// _include::3-4:{pom}[tag=libsCopying]
+// _include::11-24:{pom}[tag=mainClassPlugin]
+// _include::28-49:{pom}[tag=copyDependencies]
+----
+    <properties>
+        ...
+        <mainClass>your-fully-qualified-main-class</mainClass> <!--1-->
+        <libs.classpath.prefix>libs</libs.classpath.prefix>
+        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
+        ...
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.5</version>
+                    <configuration>  <!--2-->
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+                                <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
+                                <mainClass>${mainClass}</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin> <!--3-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${copied.libs.dir}</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                            <excludeScope>test</excludeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+----
+<1> Make sure to specify your own main class path.
+<2> Instructs Maven what main class to set in the JAR's manifest and what prefix to use for
+copied dependency JARs.
+<3> Tells Maven to package the dependency JARs in the specified directory relative to the project's JAR.
 
 === Create an MP config file
-This file contains settings for the Helidon web server and the 
-application. Note that the MP Config specification says that 
+This file contains settings for the Helidon web server and the
+application. Note that the MP Config specification says that
 configuration data is read, by default, from `META-INF/microprofile-config.properties`;
 the application does not have to do anything in code to load it.
 [source]
 .src/main/resources/META-INF/microprofile-config.properties
+// _include::0-7:{config-file}[tag=configContent]
 ----
-include::{config-file}[tag=configContent]
+# Application properties. This is the default greeting
+# <1>
+app.greeting=Hello
+
+# Microprofile server properties
+# <2>
+server.port=8080
+server.host=0.0.0.0
 ----
 <1> Initial application greeting.
 <2> Web server configuration.
@@ -155,29 +262,53 @@ include::{config-file}[tag=configContent]
 This file controls logging within the application.
 [source,java]
 .src/main/resources/logging.properties
+// _include::0-10:{logging-properties-file}[tag=loggingProps]
 ----
-include::{logging-properties-file}[tag=loggingProps]
+# Send messages to the console
+handlers=java.util.logging.ConsoleHandler
+
+# Global default logging level. Can be overriden by specific handlers and loggers
+.level=INFO
+
+# Helidon Web Server has a custom log formatter that extends SimpleFormatter.
+# It replaces "!thread!" with the current thread name
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.ConsoleHandler.formatter=io.helidon.webserver.netty.WebServerLogFormatter
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
 ----
 
-=== Create an "empty" `beans.xml` 
+=== Create an "empty" `beans.xml`
 We need to make sure JAX-RS searches for beans. This file accomplishes that.
 [source,java]
 .src/main/resources/META-INF/beans.xml
+// _include::1-7:{beans-xml}[tag=beans]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
-include::{beans-xml}[tag=beans]
+<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                           http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
+       version="2.0"
+       bean-discovery-mode="annotated">
+</beans>
 ----
 
 === Create a bean to hold the greeting message
-The app contains a default greeting loaded from configuration which the user 
-can set via HTTP. 
+The app contains a default greeting loaded from configuration which the user
+can set via HTTP.
 The app stores the current message in a JAX-RS bean so we can inject it where
 we need it.
 
 Add these imports:
 [source,java]
+// _include::0-5:{greeting-message-class}[tags=mainImports;mpImports]
 ----
-include::{greeting-message-class}[tags=mainImports;mpImports]
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 ----
 
 . Create `GreetingMessage.java`
@@ -190,15 +321,20 @@ because your application might receive multiple concurrent HTTP requests that
 try to modify the message. One way is to add an `AtomicReference` for a `String`:
 +
 [source,java]
+// _include::0-0:{greeting-message-class}[tag=messageDecl]
 ----
-include::{greeting-message-class}[tag=messageDecl]
+    private final AtomicReference<String> message = new AtomicReference<>();
 ----
 . Add a constructor annotated with `javax.inject.Inject` and which
 accepts the initial message value as a `String`.
 +
 [source,java]
+// _include::0-3:{greeting-message-class}[tag=ctor]
 ----
-include::{greeting-message-class}[tag=ctor]
+    @Inject // <1>
+    public GreetingMessage(@ConfigProperty(name = "app.greeting") String message) { // <2>
+        this.message.set(message); // <3>
+    }
 ----
 <1> Causes the annotated parameter to be processed and injected.
 <2> The `ConfigProperty` annotation triggers automatic MP config processing
@@ -209,10 +345,16 @@ MP config source: `META-INF/microprofile-config.properties`.
 . Add a getter and setter for the `message`
 +
 [source,java]
+// _include::0-2:{greeting-message-class}[tag=getter]
+// _include::4-6:{greeting-message-class}[tag=setter]
 ----
-include::{greeting-message-class}[tag=getter]
+    String getMessage() {
+        return message.get();
+    }
 
-include::{greeting-message-class}[tag=setter]
+    void setMessage(String message) {
+        this.message.set(message);
+    }
 ----
 
 === Create a JAX-RS root resource for the application
@@ -220,8 +362,18 @@ This class defines the endpoints for the application.
 
 Add these imports:
 [source,java]
+// _include::0-9:{greet-resource-class}[tag=javaxImports]
 ----
-include::{greet-resource-class}[tag=javaxImports]
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 ----
 
 . Create the `GreetResource.java` file.
@@ -229,16 +381,21 @@ Mark it as request-scoped and declare the common path prefix that
 all endpoints in the resource share.
 +
 [source,java]
+// _include::0-2:{greet-resource-class}[tag=classDecl]
 ----
-include::{greet-resource-class}[tag=classDecl]
+@Path("/greet")
+@RequestScoped
+public class GreetResource {
 }
 ----
 
 . Create a private field for the application's `GreetingMessage`
 +
 [source,java]
+// _include::0-1:{greet-resource-class}[tag=greetingMessageDecl]
 ----
-include::{greet-resource-class}[tag=greetingMessageDecl]
+    @Inject
+    private GreetingMessage greeting;
 ----
 The system injects our application-scoped `GreetingMessage`
 instance.
@@ -247,8 +404,15 @@ instance.
 return to the clients.
 +
 [source,java]
+// _include::0-6:{greet-resource-class}[tag=createResponse]
 ----
-include::{greet-resource-class}[tag=createResponse]
+    private JsonObject createResponse(String who) { // <1>
+        String msg = String.format("%s %s!", greeting.getMessage(), who); // <2>
+
+        return Json.createObjectBuilder() // <3>
+                .add("message", msg)
+                .build();
+    }
 ----
 <1> `who` is the name of the end-user we want to greet
 <2> Retrieves the message from the `GreetingMessage` bean and embeds the end-user name
@@ -259,8 +423,14 @@ in it.
 . Returning the default message
 +
 [source,java]
+// _include::0-5:{greet-resource-class}[tag=getDefaultMessage]
 ----
-include::{greet-resource-class}[tag=getDefaultMessage]
+    @SuppressWarnings("checkstyle:designforextension")
+    @GET // <1>
+    @Produces(MediaType.APPLICATION_JSON) // <2>
+    public JsonObject getDefaultMessage() {
+        return createResponse("World");
+    }
 ----
 <1> Indicates the HTTP method: `GET`.
 <2> Tells JAX-RS that this method returns JSON.
@@ -268,8 +438,15 @@ include::{greet-resource-class}[tag=getDefaultMessage]
 . Returning the personalized greeting
 +
 [source,java]
+// _include::0-6:{greet-resource-class}[tag=getMessageWithName]
 ----
-include::{greet-resource-class}[tag=getMessageWithName]
+    @SuppressWarnings("checkstyle:designforextension")
+    @Path("/{name}") // <1>
+    @GET // <2>
+    @Produces(MediaType.APPLICATION_JSON) // <3>
+    public JsonObject getMessage(@PathParam("name") String name) { // <4>
+        return createResponse(name);
+    }
 ----
 <1> Declares the path parameter which is the name to use for personalizing
 the returned message.
@@ -280,8 +457,19 @@ the returned message.
 . Setting a new greeting message
 +
 [source,java]
+// _include::0-10:{greet-resource-class}[tag=setGreeting]
 ----
-include::{greet-resource-class}[tag=setGreeting]
+    @SuppressWarnings("checkstyle:designforextension")
+    @Path("/greeting/{greeting}") // <1>
+    @PUT // <2>
+    @Produces(MediaType.APPLICATION_JSON) // <3>
+    public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
+        greeting.setMessage(newGreeting);
+
+        return Json.createObjectBuilder()
+                .add("greeting", newGreeting)
+                .build();
+    }
 ----
 <1> Identifies the path parameter for the new greeting text.
 <2> It's an HTTP `PUT`.
@@ -292,14 +480,32 @@ include::{greet-resource-class}[tag=setGreeting]
 JAX-RS looks for an `Application`. Create `GreetApplication.java`.
 Add these imports:
 [source,java]
+// _include::0-6:{greet-application-class}[tags=javaImports;helidonImports]
 ----
-include::{greet-application-class}[tags=javaImports;helidonImports]
+import java.util.Set;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
+
+import io.helidon.common.CollectionsHelper;
 ----
 
 [source,java]
 .GreetApplication.java
+// _include::0-10:{greet-application-class}[tags=greetAppBody;!healthAdditionToGetClasses]
 ----
-include::{greet-application-class}[tags=greetAppBody;!healthAdditionToGetClasses]
+@ApplicationScoped // <1>
+@ApplicationPath("/") // <2>
+public class GreetApplication extends Application { // <3>
+
+    @Override
+    public Set<Class<?>> getClasses() {
+        return CollectionsHelper.setOf(
+                GreetResource.class
+        );
+    }
+}
 ----
 <1> Have JAX-RS create only one instance of this class.
 <2> No path prefix for this application.
@@ -311,15 +517,24 @@ add to this method later.
 === Write the `Main` class
 Add these imports:
 [source,java]
+// _include::0-2:{main-class}[tags=javaImports;helidonMPImports]
 ----
-include::{main-class}[tags=javaImports;helidonMPImports]
+import java.io.IOException;
+import java.util.logging.LogManager;
+import io.helidon.microprofile.server.Server;
 ----
 
 . Add the `startServer` method
 +
 [source,java]
+// _include::0-5:{main-class}[tag=startServer]
 ----
-include::{main-class}[tag=startServer]
+    static Server startServer() {
+        // Server will automatically pick up configuration from
+        // microprofile-config.properties
+        // and Application classes annotated as @ApplicationScoped
+        return Server.create().start(); // <1>
+    }
 ----
 <1> Automatically reads server configuration from `microprofile-config.properties`
 and then starts the reactive web server.
@@ -327,39 +542,138 @@ and then starts the reactive web server.
 . Write a method to initialize logging
 +
 [source,java]
+// _include::0-4:{main-class}[tag=setupLogging]
 ----
-include::{main-class}[tag=setupLogging]
+    private static void setupLogging() throws IOException {
+        // load logging configuration
+        LogManager.getLogManager().readConfiguration(
+                Main.class.getResourceAsStream("/logging.properties")); // <1>
+    }
 ----
 <1> Loads logging config from `logging.properties`
 
 . Add or modify the `main` method
 +
 [source,java]
+// _include::0-6:{main-class}[tag=main]
 ----
-include::{main-class}[tag=main]
+    public static void main(final String[] args) throws IOException {
+        setupLogging();
+
+        Server server = startServer();
+
+        System.out.println("http://localhost:" + server.port() + "/greet");
+    }
 ----
 
 == Build and run
-include::{se-guide-adoc}[tag=buildAndRun]
+// _include::0-39:{se-guide-adoc}[tag=buildAndRun]
+You can use your IDE's features to build and run the project directly.
+
+Or, to use Maven outside the IDE, build your app this way:
+[source,bash]
+mvn package
+
+and run it like this:
+[source,bash]
+java -jar target/your-jar-name.jar
+
+Once you have started your app, from another command window run these commands
+to access its functions (order is important for the last two):
+[[curl-command-table]]
+|====
+|Command |Result |Function
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet
+a|[listing]
+{"message":"Hello World!"}
+|Returns a greeting with no personalization
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Joe
+a|[listing]
+{"message":"Hello Joe!"}
+|Returns the personalized greeting
+
+a|[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/Hola
+a|[listing]
+{"greeting":"Hola"}
+|Changes the greeting
+
+a|[source,bash]
+curl -X GET http://localhost:8080/greet/Jose
+a|[listing]
+{"message":"Hola Jose!"}
+|Shows that the greeting change took effect
+|====
 
 == Add health checks
-include::{se-guide-adoc}[tag=addHealthChecksIntro]
+// _include::0-36:{se-guide-adoc}[tag=addHealthChecksIntro]
+A well-behaved microservice reports on its own health.
+Two common approaches for checking health, often used together, are:
+
+- readiness - a simple verification that the service has been started, has initialized itself,
+and is ready to respond to requests; and
+- liveness - often a more thorough assessment of whether
+and how well the service can do its job.
+
+For example, Kubernetes can ping your service's
+readiness endpoint after it starts the pod containing the service to determine
+when the service is ready to accept requests, withholding traffic until the readiness
+endpoint reports success. Kubernetes can use the liveness endpoint to find out if
+the service considers itself able to function, attempting a pod restart if the
+endpoint reports a problem.
+
+In general a liveness check might assess:
+
+- service health - whether the service itself can do its job correctly
+- host health - if the host has sufficient resources (for example, disk space)
+for the service to operate
+- health of other, dependent services - if other services on which this service
+depends are themselves OK.
+
+For this example we define our service as "alive" in a very trivial way.
+Our greeting service does not depend on any
+host resources (like disk space) or any other services. So we choose to define our
+greeting service to be OK if the greeting text has been assigned
+_and is not empty_ when trimmed of leading or trailing white space. Otherwise we
+consider the service to be unhealthy, in which case the service will
+still respond but its answers might not be what we want.
+
+Normally we would
+write our service to make
+sure that a newly-assigned greeting is non-empty _before_
+accepting it. But omitting that validation lets us create an easy health check
+that we can use by simply setting the greeting to blank from
+a `curl` command.
 
 === Add a new JAX-RS resource class
 Create `HealthResource.java` to define the endpoints for checking if the service is
-active and if it is ready. 
+active and if it is ready.
 
 Add these imports:
 [source,java]
+// _include::0-6:{health-resource-class}[tag=javaxImports]
 ----
-include::{health-resource-class}[tag=javaxImports]
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
 ----
 
 . Declare the class with these annotations:
 +
 [source,java]
+// _include::0-2:{health-resource-class}[tag=classDecl]
 ----
-include::{health-resource-class}[tag=classDecl]
+@Path("/")
+@RequestScoped
+public class HealthResource {
 }
 ----
 
@@ -367,8 +681,10 @@ include::{health-resource-class}[tag=classDecl]
 is the only input to the active check in our simple implementation.
 +
 [source,java]
+// _include::0-1:{health-resource-class}[tag=greetingDecl]
 ----
-include::{health-resource-class}[tag=greetingDecl]
+    @Inject // <1>
+    private GreetingMessage greeting; // <2>
 ----
 <1> Indicates that JAX-RS should inject the field.
 <2> Because `GreetingMessage` is an application-scoped bean, JAX-RS will inject a
@@ -378,15 +694,40 @@ reference to the single instance every time it creates this request-scoped resou
 (healthy) or not.
 +
 [source,java]
+// _include::0-5:{health-resource-class}[tag=checkHealthMethod]
 ----
-include::{health-resource-class}[tag=checkHealthMethod]
+    private String checkHealth(String greeting) {
+        if (greeting == null || greeting.trim().length() == 0) {
+            return "greeting is not set or is empty";
+        }
+        return null;
+    }
 ----
 
 . Add the method to implement the `/alive` endpoint
 +
 [source,java]
+// _include::0-18:{health-resource-class}[tag=aliveMethod]
 ----
-include::{health-resource-class}[tag=aliveMethod]
+    @SuppressWarnings("checkstyle:designforextension")
+    @Path("/alive") // <1>
+    @GET // <2>
+    public Response alive() {
+        Response response;
+
+        String greetResourceError = checkHealth(greeting.getMessage()); // <3>
+        if (greetResourceError == null) {  // <4>
+            response = Response.ok().build();
+        } else {
+            JsonObject returnObject = Json.createObjectBuilder()
+                    .add("error", greetResourceError)
+                    .build();
+            response = Response
+                    .status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(returnObject).build();
+        }
+        return response;
+    }
 ----
 <1> Implements the path `/alive`.
 <2> It's an HTTP `GET`.
@@ -397,8 +738,14 @@ null if the resource is OK.
 . Add the method to implement `/ready`
 +
 [source,java]
+// _include::0-5:{health-resource-class}[tag=readyMethod]
 ----
-include::{health-resource-class}[tag=readyMethod]
+    @SuppressWarnings("checkstyle:designforextension")
+    @Path("/ready")
+    @GET
+    public Response ready() {
+        return Response.ok().build();
+    }
 ----
 
 === Update `GreetApplication`
@@ -406,45 +753,110 @@ In the `getClasses` method add `HealthResource.class` to the arguments
 passed to `CollectionsHelper.setOf`:
 
 [source,java]
+// _include::0-6:{greet-application-class}[tags=getClassesMethod]
 ----
-include::{greet-application-class}[tags=getClassesMethod]
+    @Override
+    public Set<Class<?>> getClasses() {
+        return CollectionsHelper.setOf(
+                GreetResource.class
+                , HealthResource.class
+        );
+    }
 ----
 
-include::{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
+// _include::0-41:{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
+=== Stop, rebuild and rerun your service
+
+. Stop any running instance of your app.
+. Rebuild the app and then run it.
+
+
+=== Try the readiness check
+Access the readiness check endpoint:
+[source,bash]
+curl -i -X GET http://localhost:8080/ready
+
+Our readiness check returns no payload, just the 200 status, so you won't see any data
+displayed. The `-i` option shows the
+200 status in the response.
+
+=== Try the liveness check
+. Ping the health check endpoint
++
+Without changing the greeting, ping the health endpoint:
+[source,bash]
+curl -i -X GET http://localhost:8080/alive
++
+The greeting is valid and in that case our health check code simply returns a 200
+with no payload.
+
+. Set the greeting to a blank
++
+[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/%20
++
+Our code to update the greeting accepts this and saves it as the new greeting.
+
+. Ping the health check endpoint again with the same command as before
++
+[source,bash]
+curl -i -X GET http://localhost:8080/alive
++
+This time you should see
+[listing]
+{"error":"greeting is not set or is empty"}
++
+and with the `-i` added to the `curl` command you would see the 500 status returned.
 
 == Add metrics support
-include::{se-guide-adoc}[tag=metricsIntro]
+// _include::0-1:{se-guide-adoc}[tag=metricsIntro]
+As a simple illustration of using metrics, we revise our greeting service to count how many times
+a client sends a request to the app.
 
 . Add the metrics dependency to `pom.xml`
 +
 [source,xml]
+// _include::0-4:{pom}[tag=metricsDependency]
 ----
-include::{pom}[tag=metricsDependency]
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 ----
 
-. Annotate each method to be measured, in our case `getDefaultMessage`, 
+. Annotate each method to be measured, in our case `getDefaultMessage`,
 `getMessage`, and `updateGreeting`. (We annotate `updateGreeting` for simplicity
 and so the metrics
-reported here have the same values as for the Helidon SE RESTful web 
+reported here have the same values as for the Helidon SE RESTful web
 service example. In a real application we might measure the `update` method separately
 from the `get` methods.)
 +
 Add these imports:
 +
 [source,java]
+// _include::0-1:{greet-resource-class}[tag=metricsImports]
 ----
-include::{greet-resource-class}[tag=metricsImports]
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 ----
 +
 [source,java]
+// _include::0-6:{greet-resource-class}[tag=countedAnno]
 ----
-include::{greet-resource-class}[tag=countedAnno]
+    @Counted(// <1>
+            name = "accessctr", // <2>
+            reusable = true,    // <3>
+            description = "Total greetings accesses",
+            displayName = "Access Counter",
+            monotonic = true,   // <4>
+            unit = MetricUnits.NONE)
 ----
 <1> Marks this method as measured by a `Counter` metric.
 <2> Declares the unique name for this counter among all metrics.
 <3> Allows the same counter to accumulate uses of multiple methods.
 <4> Indicates that the metrics system should increment the counter on each invocation but
-_not_ decrement it when the method returns. 
+_not_ decrement it when the method returns.
 
 === Stop, rebuild and rerun your application
 
@@ -456,7 +868,7 @@ Use the same `curl` commands as before to send requests to
 the server:
 
 |====
-|Command 
+|Command
 a|[source,bash]
 curl -X GET http://localhost:8080/greet
 a|[source,bash]
@@ -488,20 +900,20 @@ resource that records the metric (`io_helidon_guides_mp_restfulwebservice_greet_
 had added `absolute=true` to the `@Counted` annotation attributes then the name would be
 simply `accessctr`.
 
-. The first two lines are gathered from the metadata we included in the `@Counted` 
+. The first two lines are gathered from the metadata we included in the `@Counted`
 annotation.
 
 . As expected, the value for the counter is 4.
 
-A `curl` to `http://localhost:8080/metrics` lists not only our application-scoped 
-metric but all the _base_ and _vendor_ metrics as defined in the MP metrics spec. 
-For example, you will see a `vendor:requests_count` 
-counter. This will be larger than our counter because that counter also tracks 
+A `curl` to `http://localhost:8080/metrics` lists not only our application-scoped
+metric but all the _base_ and _vendor_ metrics as defined in the MP metrics spec.
+For example, you will see a `vendor:requests_count`
+counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
 == (Optional) Download the example source [[downloading]]
-Instead of building the application using the code snippets in this guide, 
+Instead of building the application using the code snippets in this guide,
 you can download it.
 
 . Clone the link:https://github.com/oracle/helidon[`git` workspace
@@ -514,4 +926,3 @@ for Helidon]
 mvn package
 java -jar target/mp-restful-webservice.jar
 ----
-
