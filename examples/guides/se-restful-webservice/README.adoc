@@ -15,11 +15,11 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-:adoc-dir: {guides-dir}/se-restful-webservice/src/main/docs
-:java-base: {adoc-dir}/../java/io/helidon/guides/se/restfulwebservice
+:java-base: src/main/java/io/helidon/guides/se/restfulwebservice
 :greet-service: {java-base}/GreetService.java
 :main-class: {java-base}/Main.java
-:pom: {adoc-dir}/../../../pom.xml
+:pom: pom.xml
+:src-main-resources: src/main/resources
 
 
 = The RESTful Web Service Guide
@@ -48,7 +48,7 @@ We create the app in three main steps:
 
 . Add code to record simple metrics.
 
-This guide walks you through the code and helps you understand what each part of the 
+This guide walks you through the code and helps you understand what each part of the
 code does as you write the app. But if you prefer, you can get the finished code for this example.
 See the <<downloading,downloading>> section for instructions.
 
@@ -82,30 +82,48 @@ mvn archetype:generate -DarchetypeGroupId=org.apache.maven.archetypes -Darchetyp
 === Update your `pom.xml`
 Add the properties and dependencies listed here if they don't exist in your `pom.xml`:
 [source,xml,subs="verbatim,attributes"]
+// _include::1-3:{pom}[tags=helidonVersion;javaVersions]
+// _include::8-14:{pom}[tag=depMgt]
 ----
     <properties>
-include::{pom}[tags=helidonVersion;javaVersions]
+        <helidon.version>0.11.1-SNAPSHOT</helidon.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-include::{pom}[tag=depMgt]
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${helidon.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 ----
 Now you can add Helidon dependencies to your project without having to specify the version.
 For this example add these dependencies:
 [source,xml]
+// _include::1-8:{pom}[tags=webserverBundleDependency;configYamlDependency]
 ----
     <dependencies>
-include::{pom}[tags=webserverBundleDependency;configYamlDependency]
+        <dependency> <!--1-->
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-webserver</artifactId>
+        </dependency>
+        <dependency> <!--2-->
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
     </dependencies>
 ----
 <1> Incorporates the Helidon web server.
 <2> Pulls in support for YAML as a config format.
 
 If you run your project from the IDE, the IDE typically handles the main class and places
-dependent JARs on the runtime classpath for you and your pom is now ready to go. 
+dependent JARs on the runtime classpath for you and your pom is now ready to go.
 
 // tag::runMavenOutsideIDE[]
 ==== To run Maven outside your IDE
@@ -113,22 +131,60 @@ If you want to use Maven yourself,
 outside the IDE, then add the following to your pom. (This is typical with Maven
 projects and is not specific to Helidon or this example):
 [source,xml]
+// _include::3-4:{pom}[tag=libsCopying]
+// _include::11-24:{pom}[tag=mainClassPlugin]
+// _include::28-49:{pom}[tag=copyDependencies]
 ----
     <properties>
         ...
         <mainClass>your-fully-qualified-main-class</mainClass> <!--1-->
-include::{pom}[tag=libsCopying]
+        <libs.classpath.prefix>libs</libs.classpath.prefix>
+        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
         ...
     </properties>
 
     <build>
         <pluginManagement>
             <plugins>
-include::{pom}[tag=mainClassPlugin]
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.5</version>
+                    <configuration>  <!--2-->
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+                                <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
+                                <mainClass>${mainClass}</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
-include::{pom}[tag=copyDependencies]
+            <plugin> <!--3-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${copied.libs.dir}</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                            <excludeScope>test</excludeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 ----
@@ -146,8 +202,14 @@ Create this config file:
 
 .`src/main/resources/application.yaml`
 [source,yaml]
+// _include::0-5:{src-main-resources}/application.yaml[tag=configContent]
 ----
-include::../resources/application.yaml[tag=configContent]
+app:
+  greeting: "Hello" # <1>
+
+server:             # <2>
+  port: 8080
+  host: 0.0.0.0
 ----
 <1> Sets the initial greeting text for responses from the service
 <2> Sets how the service will listen for requests
@@ -155,8 +217,19 @@ include::../resources/application.yaml[tag=configContent]
 === Create a logging properties file
 .`src/main/resources/logging.properties`
 [source]
+// _include::0-10:{src-main-resources}/logging.properties[tag=loggingProps]
 ----
-include::../resources/logging.properties[tag=loggingProps]
+# Send messages to the console
+handlers=java.util.logging.ConsoleHandler
+
+# Global default logging level. Can be overriden by specific handlers and loggers
+.level=INFO
+
+# Helidon Web Server has a custom log formatter that extends SimpleFormatter.
+# It replaces "!thread!" with the current thread name
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.ConsoleHandler.formatter=io.helidon.webserver.netty.WebServerLogFormatter
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n
 ----
 
 === Create your "Greet" Service
@@ -165,17 +238,27 @@ URL path. We'll start with just one service: the greeting service.
 
 Create a new Java class `GreetService.java` as follows. Add these Java `import` statements:
 [source,java]
+// _include::0-7:{greet-service}[tags=importsStart;importsWebServer]
 ----
-include::{greet-service}[tags=importsStart;importsWebServer]
+import javax.json.Json;
+import javax.json.JsonObject;
+
+import io.helidon.config.Config;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import io.helidon.webserver.Service;
 ----
 
 . Make `GreetService` implement `io.helidon.webserver.Service`.
-. Set two static fields by reading the config file and setting the initial greeting from 
+. Set two static fields by reading the config file and setting the initial greeting from
 the loaded config:
 +
 [source,java]
+// _include::0-1:{greet-service}[tags=CONFIG;greetingDef]
 ----
-include::{greet-service}[tags=CONFIG;greetingDef]
+    private static final Config CONFIG = Config.create().get("app"); // <1>
+    private String greeting = CONFIG.get("greeting").asString().orElse("Ciao"); // <2>
 ----
 <1> Loads the config from the (default) `application.yaml` resource you created earlier
 and loads the subtree rooted at the `app` entry into the `CONFIG` field. The
@@ -187,34 +270,69 @@ entry is missing from the loaded config.
 .. Returning the default greeting
 +
 [source,java]
+// _include::0-8:{greet-service}[tag=getDefaultMessage]
 ----
-include::{greet-service}[tag=getDefaultMessage]
----- 
+    private void getDefaultMessage(final ServerRequest request,
+                                   final ServerResponse response) {
+        String msg = String.format("%s %s!", greeting, "World"); // <1>
+
+        JsonObject returnObject = Json.createObjectBuilder()
+                .add("message", msg) // <2>
+                .build();
+        response.send(returnObject); // <3>
+    }
+----
 <1> Gets the greeting (defaults to "Hello") from the current setting (and adds "World").
 <2> Creates the JSON response from the message and builds the response.
 <3> Sends the response to the client.
 .. Returning a personalized greeting
 +
 [source,java]
+// _include::0-9:{greet-service}[tag=getMessage]
 ----
-include::{greet-service}[tag=getMessage]
+    private void getMessage(final ServerRequest request,
+                            final ServerResponse response) {
+        String name = request.path().param("name"); // <1>
+        String msg = String.format("%s %s!", greeting, name);
+
+        JsonObject returnObject = Json.createObjectBuilder()
+                .add("message", msg)
+                .build();
+        response.send(returnObject);
+    }
 ----
-<1> Get the name from the URL path in the request and use it in buildig the 
+<1> Get the name from the URL path in the request and use it in buildig the
 JSON response.
 The rest of the method is the same as `getDefaultMessage`.
 .. Updating the greeting
 +
 [source,java]
+// _include::0-8:{greet-service}[tag=updateGreeting]
 ----
-include::{greet-service}[tag=updateGreeting]
+    private void updateGreeting(final ServerRequest request,
+                                final ServerResponse response) {
+        greeting = request.path().param("greeting"); // <1>
+
+        JsonObject returnObject = Json.createObjectBuilder() // <2>
+                .add("greeting", greeting)
+                .build();
+        response.send(returnObject);
+    }
 ----
 <1> Save the new greeting from the URL path in the request.
 <2> Compose the JSON response to confirm the new setting for `greeting`.
 . Link your logic with the correct URL paths
 +
 [source,java]
+// _include::0-6:{greet-service}[tags=updateStart;updateGetsAndPuts]
 ----
-include::{greet-service}[tags=updateStart;updateGetsAndPuts]
+    @Override
+    public final void update(final Routing.Rules rules) { // <1>
+        rules
+            .get("/", this::getDefaultMessage) //<2>
+            .get("/{name}", this::getMessage) //<3>
+            .put("/greeting/{greeting}", this::updateGreeting); //<4>
+    }
 ----
 <1> Each service overrides `update` to define its routing rules.
 <2> Handle `GET` requests with no extra path using `getDefaultMessage`.
@@ -229,39 +347,79 @@ and makes it aware of your greeting service.
 
 Add these Java `import` statements:
 [source,java]
+// _include::0-4:{main-class}[tags=importsStart;importsWebServer;importsEnd]
 ----
-include::{main-class}[tags=importsStart;importsWebServer;importsEnd]
+import io.helidon.config.Config;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.ServerConfiguration;
+import io.helidon.webserver.WebServer;
+import io.helidon.media.jsonp.server.JsonSupport;
 ----
 . Add a field to your main class to hold a reference to a `GreetService` instance.
 +
 [source,java]
+// _include::0-0:{main-class}[tag=greetServiceDecl]
 ----
-include::{main-class}[tag=greetServiceDecl]
+    private static GreetService greetService;
 ----
 
 . Add a method to your main class to set up routing for your app.
 +
 [source,java]
+// _include::0-6:{main-class}[tags=createRoutingStart;createRoutingBasic;registerGreetService;createRoutingEnd]
 ----
-include::{main-class}[tags=createRoutingStart;createRoutingBasic;registerGreetService;createRoutingEnd]
+    private static Routing createRouting() {
+        greetService = new GreetService(); // <1>
+        return Routing.builder()
+                .register(JsonSupport.create()) // <2>
+                .register("/greet", greetService) // <3>
+                .build();
+    }
 ----
 <1> Creates and saves the reference to the `GreetService`. (We'll use `greeting` reference again
 later when we add support for health checking.)
 <2> Tells the Helidon web server that you want to use JSON.
-<3> Associates the greeting service with the `/greet` path. 
+<3> Associates the greeting service with the `/greet` path.
 
 . Add the `startServer` method.
 +
 [source,java]
+// _include::0-26:{main-class}[tag=startServer]
 ----
-include::{main-class}[tag=startServer]
+    protected static WebServer startServer() throws IOException {
+
+        // load logging configuration
+        LogManager.getLogManager().readConfiguration(
+                Main.class.getResourceAsStream("/logging.properties"));
+
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        // Get webserver config from the "server" section of application.yaml
+        ServerConfiguration serverConfig =
+                ServerConfiguration.create(config.get("server")); // <1>
+
+        WebServer server = WebServer.create(serverConfig, createRouting()); // <2>
+
+        // Start the server and print some info.
+        server.start().thenAccept(ws -> { // <3>
+            System.out.println(
+                    "WEB server is up! http://localhost:" + ws.port());
+        });
+
+        // Server threads are not demon. NO need to block. Just react.
+        server.whenShutdown().thenRun(() // <4>
+                -> System.out.println("WEB server is DOWN. Good bye!"));
+
+        return server;
+    }
 ----
 <1> Gets the webserver config from the "server" section of `application.yaml`. The
-config system automatically maps the config's `host` and `port` to those 
+config system automatically maps the config's `host` and `port` to those
 attributes of `ServerConfiguration`.
 <2> Creates the web server using the routing rules from the `createRouting` method.
 <3> Starts the web server, then logs a message.
-<4> Set up a shutdown hook so when the web server is shut down (for example, by ^C on the console) 
+<4> Set up a shutdown hook so when the web server is shut down (for example, by ^C on the console)
 the app prints a message.
 
 . Write your main method
@@ -269,8 +427,9 @@ the app prints a message.
 Add
 +
 [source,java]
+// _include::0-0:{main-class}[tag=mainContent]
 ----
-include::{main-class}[tag=mainContent]
+        startServer();
 ----
 +
 to your main method.
@@ -287,7 +446,7 @@ and run it like this:
 [source,bash]
 java -jar target/your-jar-name.jar
 
-Once you have started your app, from another command window run these commands 
+Once you have started your app, from another command window run these commands
 to access its functions (order is important for the last two):
 [[curl-command-table]]
 |====
@@ -329,8 +488,8 @@ and is ready to respond to requests; and
 - liveness - often a more thorough assessment of whether
 and how well the service can do its job.
 
-For example, Kubernetes can ping your service's 
-readiness endpoint after it starts the pod containing the service to determine 
+For example, Kubernetes can ping your service's
+readiness endpoint after it starts the pod containing the service to determine
 when the service is ready to accept requests, withholding traffic until the readiness
 endpoint reports success. Kubernetes can use the liveness endpoint to find out if
 the service considers itself able to function, attempting a pod restart if the
@@ -344,19 +503,19 @@ for the service to operate
 - health of other, dependent services - if other services on which this service
 depends are themselves OK.
 
-For this example we define our service as "alive" in a very trivial way. 
+For this example we define our service as "alive" in a very trivial way.
 Our greeting service does not depend on any
 host resources (like disk space) or any other services. So we choose to define our
 greeting service to be OK if the greeting text has been assigned
 _and is not empty_ when trimmed of leading or trailing white space. Otherwise we
 consider the service to be unhealthy, in which case the service will
-still respond but its answers might not be what we want. 
+still respond but its answers might not be what we want.
 
-Normally we would 
-write our service to make 
+Normally we would
+write our service to make
 sure that a newly-assigned greeting is non-empty _before_
 accepting it. But omitting that validation lets us create an easy health check
-that we can use by simply setting the greeting to blank from 
+that we can use by simply setting the greeting to blank from
 a `curl` command.
 // end::addHealthChecksIntro[]
 
@@ -366,8 +525,14 @@ For our simple service, assess health simply by making sure the greeting contain
 something other than blanks.
 
 [source,java]
+// _include::0-5:{greet-service}[tag=checkHealth]
 ----
-include::{greet-service}[tag=checkHealth]
+    String checkHealth() {
+        if (greeting == null || greeting.trim().length() == 0) { //<1>
+           return "greeting is not set or is empty";
+        }
+        return null;
+    }
 ----
 
 === Add code to `Main.java`
@@ -377,20 +542,50 @@ to the `Main` class.
 
 Add these imports:
 [source,java]
-include::{main-class}[tags=importsHealth1;importsHealth2;importsHealth3]
+import io.helidon.common.http.Http;
+import io.helidon.webserver.ServerRequest;
+import io.helidon.webserver.ServerResponse;
+import javax.json.Json;
+import javax.json.JsonObject;
 
 . Add a new `ready` method
 +
 [source,java]
+// _include::0-5:{main-class}[tag=ready]
 ----
-include::{main-class}[tag=ready]
+    private static void ready(final ServerRequest request,
+                       final ServerResponse response) {
+        response
+                .status(Http.Status.OK_200)
+                .send();
+    }
 ----
 This method simply returns 200 so the client knows the service is up.
 . Add a new `alive` method
 +
 [source,java]
+// _include::0-19:{main-class}[tag=alive]
 ----
-include::{main-class}[tag=alive]
+    private static void alive(final ServerRequest request,
+                        final ServerResponse response) {
+        /*
+         * Return 200 if the greeting is set to something non-null and non-empty;
+         * return 500 (server error) otherwise.
+         */
+        String greetServiceError = greetService.checkHealth(); //<1>
+        if (greetServiceError == null) {
+            response
+                    .status(Http.Status.OK_200) //<2>
+                    .send();
+        } else {
+            JsonObject returnObject = Json.createObjectBuilder() //<3>
+                    .add("error", greetServiceError)
+                    .build();
+            response
+                    .status(Http.Status.INTERNAL_SERVER_ERROR_500) //<4>
+                    .send(returnObject);
+        }
+    }
 ----
 <1> Delegates to `GreetService` to evaluate the liveness of the service -- in our case, is the greeting non-empty.
 <2> Replies with a simple 200 for the health case.
@@ -403,8 +598,10 @@ In the `createRouting` method in `Main.java` insert these lines immediately
 after the `.register` invocations:
 +
 [source,java]
+// _include::0-1:{main-class}[tag=createRoutingHealth]
 ----
-include::{main-class}[tag=createRoutingHealth]
+                .get("/alive", Main::alive)
+                .get("/ready", Main::ready)
 ----
 These link the health-related endpoints your code is exposing to the new methods.
 
@@ -438,7 +635,7 @@ Without changing the greeting, ping the health endpoint:
 curl -i -X GET http://localhost:8080/alive
 +
 The greeting is valid and in that case our health check code simply returns a 200
-with no payload. 
+with no payload.
 
 . Set the greeting to a blank
 +
@@ -468,26 +665,32 @@ a client sends a request to the app.
 . Add the metrics dependency to `pom.xml`
 +
 [source,xml]
+// _include::0-3:{pom}[tag=metricsDependency]
 ----
-include::{pom}[tag=metricsDependency]
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </dependency>
 ----
 . Enable metrics in `Main.java`
 +
 Add these imports:
 +
 [source,java]
+// _include::0-0:{main-class}[tag=importsMetrics]
 ----
-include::{main-class}[tag=importsMetrics]
+import io.helidon.metrics.MetricsSupport;
 ----
-.. Register metrics support in request routing 
+.. Register metrics support in request routing
 +
 In `Main.createRouting`:
 
 ... Just before the code instantiates `GreetService` add this:
 +
 [source,java]
+// _include::0-0:{main-class}[tag=initMetrics]
 ----
-include::{main-class}[tag=initMetrics]
+        final MetricsSupport metrics = MetricsSupport.create(); // <1>
 ----
 <1> Initializes the metrics infrastructure in Helidon.
 
@@ -495,8 +698,9 @@ include::{main-class}[tag=initMetrics]
 add this
 +
 [source,java]
+// _include::0-0:{main-class}[tag=registerMetrics]
 ----
-include::{main-class}[tag=registerMetrics]
+                .register(metrics) // <1>
 ----
 <1> Registers the `MetricsSupport` handler with the web server's
 handler chain.
@@ -504,15 +708,28 @@ handler chain.
 Here is the whole, updated method:
 +
 [source,java]
-include::{main-class}[tag=createRoutingFull]
+    private static Routing createRouting() {
+        final MetricsSupport metrics = MetricsSupport.create(); // <1>
+        greetService = new GreetService(); // <1>
+        return Routing.builder()
+                .register(JsonSupport.create()) // <2>
+                .register(metrics) // <1>
+                .register("/greet", greetService) // <3>
+                .get("/alive", Main::alive)
+                .get("/ready", Main::ready)
+                .build();
+    }
 
 . Revise `GreetService.java` for metrics
 +
 Add these imports:
 +
 [source,java]
+// _include::0-2:{greet-service}[tags=importsHelidonMetrics;importsMPMetrics]
 ----
-include::{greet-service}[tags=importsHelidonMetrics;importsMPMetrics]
+import io.helidon.metrics.RegistryFactory;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 ----
 
 .. Register a metric in `GreetService.java`
@@ -520,8 +737,11 @@ include::{greet-service}[tags=importsHelidonMetrics;importsMPMetrics]
 Add these declarations as private fields:
 +
 [source,java]
+// _include::0-2:{greet-service}[tags=metricsRegistration;counterRegistration]
 ----
-include::{greet-service}[tags=metricsRegistration;counterRegistration]
+    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+            .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
+    private final Counter greetCounter = registry.counter("accessctr"); // <2>
 ----
 <1> Refers to the application-scoped metrics registry.
 <2> Declares a metric of type `counter`.
@@ -531,8 +751,12 @@ include::{greet-service}[tags=metricsRegistration;counterRegistration]
 Add this method:
 +
 [source,java]
+// _include::0-3:{greet-service}[tag=displayThread]
 ----
-include::{greet-service}[tag=displayThread]
+    private void displayThread() {
+        String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
+        System.out.println("Method=" + methodName + " " + "Thread=" + Thread.currentThread().getName());
+    }
 ----
 
 .. Create a request handler to update the counter
@@ -540,8 +764,14 @@ include::{greet-service}[tag=displayThread]
 Add this method:
 +
 [source,java]
+// _include::0-5:{greet-service}[tag=counterFilter]
 ----
-include::{greet-service}[tag=counterFilter]
+    private void counterFilter(final ServerRequest request,
+                               final ServerResponse response) {
+        displayThread(); // <1>
+        greetCounter.inc(); // <2>
+        request.next(); // <3>
+    }
 ----
 <1> Shows which method is handling the request.
 <2> Updates the counter metric.
@@ -553,8 +783,9 @@ To the `update` method add this line immediately before the
 existing `get` invocations.
 +
 [source,java]
+// _include::0-0:{greet-service}[tag=updateForCounter]
 ----
-include::{greet-service}[tag=updateForCounter]
+            .any(this::counterFilter) // <1>
 ----
 <1> Invokes `counterFilter` for _any_ incoming request.
 
@@ -612,11 +843,11 @@ a|[listing]
 reflecting the request arrival rate)
 |====
 The request count is higher because the access to `/metrics` to retrieve the
-monitoring data is _not_ handled by our app's rules and filters but by the 
+monitoring data is _not_ handled by our app's rules and filters but by the
 metrics infrastructure.
 
 == (Optional) Download the example source [[downloading]]
-Instead of building the application using the code snippets in this guide, 
+Instead of building the application using the code snippets in this guide,
 you can download it.
 
 
@@ -630,4 +861,3 @@ for Helidon]
 mvn package
 java -jar target/se-restful-webservice.jar
 ----
-
