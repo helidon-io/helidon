@@ -68,7 +68,7 @@ class OriginThreadPublisher implements Flow.Publisher<DataChunk> {
      *                       is responsible to send the data as determined by the semaphore (i.e., to properly
      *                       acquire a permission to send the data; to not send when the number of permits is zero).
      * @param referenceQueue the reference queue to associate the
-     *                       {@link io.helidon.webserver.netty.ReferenceHoldingQueue.ReleasableReference} instances with
+     *                       {@link io.helidon.webserver.ReferenceHoldingQueue.ReleasableReference} instances with
      */
     OriginThreadPublisher(UnboundedSemaphore semaphore, ReferenceHoldingQueue<ByteBufRequestChunk> referenceQueue) {
         this.semaphore = semaphore;
@@ -79,7 +79,7 @@ class OriginThreadPublisher implements Flow.Publisher<DataChunk> {
      * Create same thread publisher.
      *
      * @param referenceQueue the reference queue to associate the
-     *                       {@link io.helidon.webserver.netty.ReferenceHoldingQueue.ReleasableReference} instances with
+     *                       {@link io.helidon.webserver.ReferenceHoldingQueue.ReleasableReference} instances with
      */
     OriginThreadPublisher(ReferenceHoldingQueue<ByteBufRequestChunk> referenceQueue) {
         this(new UnboundedSemaphore(), referenceQueue);
