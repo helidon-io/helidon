@@ -31,7 +31,7 @@ import static io.helidon.config.PollingStrategies.regular;
  * <p>
  * Shows the Overrides feature where values from config sources might be overridden by override source.
  * <p>
- * In this example, {@code application.yaml} is mean to be default application configuration distributed with an app, containing
+ * In this example, {@code application.yaml} is meant to be default application configuration distributed with an app, containing
  * a wildcard configuration nodes representing the defaults for every environment and pod as well as a default definition of
  * these values. The source {@code conf/priority-config.yaml} is a higher priority configuration source which can be in a real
  * app dynamically changed (i.e. {@code Kubernetes ConfigMap} mapped as the file) and contains the current {@code env} and {@code

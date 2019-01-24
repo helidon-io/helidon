@@ -4,6 +4,19 @@
 This example shows how to load configuration from a Git repository
 and switch which branch to load from at runtime.
 
+## Prerequisites
+The example assumes that the GitHub repository <https://github.com/helidonrobot/test-config>
+has a branch named `test` that contains `application.conf` which sets the key
+`greeting` to value `hello`. (This repository and branch should always be present.)
+
+The code uses the environment variable `ENVIRONMENT_NAME` to fetch the branch name
+in the GitHub repository to use; it uses `master` by default (which does _not_ 
+contain the expected value).
+
+The example application constructs a `Config` instance from that file in the 
+GitHub repository and branch, prints out the value for key `greeting`, and 
+checks to make sure the value is the expected `hello`.
+
 ## Build
 
 ```
@@ -16,6 +29,3 @@ mvn package
 export ENVIRONMENT_NAME=test
 mvn exec:java
 ```
-
-Note that the application determines which Git branch to load from
-based on the `ENVIRONMENT_NAME` environment variable.
