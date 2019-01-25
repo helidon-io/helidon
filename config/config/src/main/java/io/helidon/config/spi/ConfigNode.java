@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import io.helidon.common.Builder;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.ListNodeBuilderImpl;
 import io.helidon.config.internal.ObjectNodeBuilderImpl;
