@@ -59,13 +59,13 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
     static final class Builder extends AbstractParsableConfigSource.Builder<InMemoryConfigSource.Builder, Void> {
 
         private String uri;
-        private ConfigParser.Content content;
+        private ConfigParser.Content<Object> content;
 
         Builder() {
             super(Void.class);
         }
 
-        Builder content(String uri, ConfigParser.Content content) {
+        Builder content(String uri, ConfigParser.Content<Object> content) {
             Objects.requireNonNull(uri, "uri cannot be null");
             Objects.requireNonNull(content, "content cannot be null");
 
@@ -86,7 +86,7 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
             return uri;
         }
 
-        private ConfigParser.Content content() {
+        private ConfigParser.Content<Object> content() {
             return content;
         }
     }

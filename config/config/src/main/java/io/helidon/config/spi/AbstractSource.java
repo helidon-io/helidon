@@ -349,6 +349,15 @@ public abstract class AbstractSource<T, S> implements Source<T> {
         }
 
         /**
+         * Returns current builder instance
+         *
+         * @return builder instance
+         */
+        protected B thisBuilder() {
+            return thisBuilder;
+        }
+
+        /**
          * Initialize builder from specified configuration properties.
          * <p>
          * Supported configuration {@code properties}:

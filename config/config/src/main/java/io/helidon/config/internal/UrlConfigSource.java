@@ -89,7 +89,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     @Override
-    protected ConfigParser.Content content() throws ConfigException {
+    protected ConfigParser.Content<Instant> content() throws ConfigException {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(GET_METHOD);

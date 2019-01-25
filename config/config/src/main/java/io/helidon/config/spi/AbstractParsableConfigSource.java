@@ -130,7 +130,6 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      */
     public abstract static class Builder<B extends Builder<B, T>, T> extends AbstractConfigSource.Builder<B, T> {
         private static final String MEDIA_TYPE_KEY = "media-type";
-        private final B thisBuilder;
         private String mediaType;
         private ConfigParser parser;
 
@@ -141,8 +140,6 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          */
         protected Builder(Class<T> targetType) {
             super(targetType);
-
-            thisBuilder = (B) this;
         }
 
         /**
@@ -172,7 +169,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
         public B mediaType(String mediaType) {
             this.mediaType = mediaType;
 
-            return thisBuilder;
+            return thisBuilder();
         }
 
         /**
@@ -186,7 +183,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
         public B parser(ConfigParser parser) {
             this.parser = parser;
 
-            return thisBuilder;
+            return thisBuilder();
         }
 
         /**
