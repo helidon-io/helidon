@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.config.examples.git;
 
 import java.io.IOException;
@@ -25,6 +24,25 @@ import io.helidon.config.git.GitConfigSourceBuilder;
 
 /**
  * Git source example.
+ * <p>
+ * This example expects:
+ * <ol>
+ * <li>a Git repository {@code helidonrobot/test-config} which contains:
+ * <ol type="a">
+ * <li>the branch {@code test} containing {@code application.conf} which sets
+ * {@code greeting} to {@code hello},
+ * <li>the branch {@code main} containing the file {@code application.conf}
+ * which sets the property {@code greeting} to any value other than
+ * {@code hello},
+ * <li>optionally, any other branch in which {@code application.conf} sets
+ * {@code greeting} to {@code hello}.
+ * </ol>
+ * <li>the environment variable {@code ENVIRONMENT_NAME} set to:
+ * <ol type="a">
+ * <li>{@code test}, or
+ * <li>the name of the optional additional branch described above.
+ * </ol>
+ * </ol>
  */
 public class Main {
 
@@ -43,14 +61,13 @@ public class Main {
 
         // we expect a name of the current environment in envvar ENVIRONMENT_NAME
         // in this example we just set envvar in maven plugin 'exec', but can be set in k8s pod via ConfigMap
-
         Config env = Config.create(ConfigSources.environmentVariables());
 
         System.out.println("Loading from branch " + env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("null"));
 
         Config config = Config.create(
                 GitConfigSourceBuilder.create("application.conf")
-                        .uri(URI.create("https://github.com/okosatka/test-config.git"))
+                        .uri(URI.create("https://github.com/helidonrobot/test-config.git"))
                         .branch(env.get(ENVIRONMENT_NAME_PROPERTY).asString().orElse("master"))
                         .build());
 

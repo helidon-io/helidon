@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,14 +49,13 @@ public class OnChangeExample {
 
         logSecrets(secrets);
 
-        // subscribe using simple onChange function
+        // subscribe using simple onChange consumer -- could be a lambda as well
         secrets.onChange(OnChangeExample::logSecrets);
     }
 
-    private static boolean logSecrets(Config secrets) {
+    private static void logSecrets(Config secrets) {
         LOGGER.info("Loaded secrets are u: " + secrets.get("username").asString().get()
                             + ", p: " + secrets.get("password").asString().get());
-        return true; // -> continue listening on config changes
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import static io.helidon.config.PollingStrategies.regular;
  * <p>
  * Shows the Overrides feature where values from config sources might be overridden by override source.
  * <p>
- * In this example, {@code application.yaml} is mean to be default application configuration distributed with an app, containing
+ * In this example, {@code application.yaml} is meant to be default application configuration distributed with an app, containing
  * a wildcard configuration nodes representing the defaults for every environment and pod as well as a default definition of
  * these values. The source {@code conf/priority-config.yaml} is a higher priority configuration source which can be in a real
  * app dynamically changed (i.e. {@code Kubernetes ConfigMap} mapped as the file) and contains the current {@code env} and {@code
