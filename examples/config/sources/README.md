@@ -6,7 +6,7 @@ configuration sources.
 
 1. [`DirectorySourceExample.java`](./src/main/java/io/helidon/config/examples/sources/DirectorySourceExample.java)
 reads configuration from multiple files in a directory by specifying only the directory.
-2. [`LoadSourcesExample.java`](./src/main/java/io/helidon/config/examples/source/LoadSourcesExample.java)
+2. [`LoadSourcesExample.java`](./src/main/java/io/helidon/config/examples/sources/LoadSourcesExample.java)
 uses _meta-configuration_ files [`conf/meta-config.yaml`](./conf/meta-config.yaml) 
 and [`src/main/resources/meta-config.yaml`](./src/main/resources/meta-config.yaml)
 which contain not the configuration itself but

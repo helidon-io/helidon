@@ -12,8 +12,8 @@ uses `Config.changes` to register an application-specific `Flow.Subscriber` with
 config-provided `Flow.Publisher` to be notified of changes to the underlying 
 configuration source as they occur
 2. [`OnChangeExample.java`](./src/main/java/io/helidon/config/examples/changes/OnChangeExample.java):
-uses `Config.onChange`, passing either a method reference or a lambda expression
-which the config system invokes when the config source changes
+uses `Config.onChange`, passing either a method reference (a lambda expression
+would also work) which the config system invokes when the config source changes
 )
 
 ## Latest-value supplier

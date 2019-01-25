@@ -7,9 +7,11 @@ and switch which branch to load from at runtime.
 ## Prerequisites
 The example assumes that the GitHub repository <https://github.com/helidonrobot/test-config>
 has a branch named `test` that contains `application.conf` which sets the key
-`greeting` to value `hello`. (This repository and branch should always be present.)
+`greeting` to value `hello`. (The Helidon team has created and populated this 
+repository.)
 
-The code uses the environment variable `ENVIRONMENT_NAME` to fetch the branch name
+The code in [`Main.java`](./src/main/java/io/helidon/config/examples/git/Main.java)
+uses the environment variable `ENVIRONMENT_NAME` to fetch the branch name
 in the GitHub repository to use; it uses `master` by default (which does _not_ 
 contain the expected value).
 

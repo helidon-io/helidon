@@ -1,12 +1,13 @@
 
 # Helidon Config Basic Example
 
-This example shows the basics of using Helidon SE Config:
+This example shows the basics of using Helidon SE Config. The
+[Main.java](./src/main/java/io/helidon/config/examples/basics/Main.java) class shows:
 
-* Loading configuration from a resource (`application.conf`) on the
-classpath containing config in HOCON 
-(Human-Optimized Config Object Notation) format
-* Getting configuration values of various types
+* loading configuration from a resource 
+[`application.conf`](./src/main/resources/application.conf) on the classpath 
+containing config in HOCON (Human-Optimized Config Object Notation) format
+* getting configuration values of various types
 
 ## Build
 
