@@ -26,4 +26,4 @@
 
 Create and build a RESTful web service as your first Helidon MP application.
 
-include::{guides-dir}/mp-restful-webservice/src/main/docs/index.adoc[leveloffset=+1]
+include::{guides-dir}/mp-restful-webservice/README.adoc[leveloffset=+1]
