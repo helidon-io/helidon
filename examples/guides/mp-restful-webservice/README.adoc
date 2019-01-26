@@ -789,7 +789,7 @@ passed to `CollectionsHelper.setOf`:
     }
 ----
 
-// _include::0-45:{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
+// _include::0-47:{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;tryLiveness]
 === Stop, rebuild and rerun your service
 
 . Stop any running instance of your app.
@@ -816,6 +816,7 @@ curl -i -X GET http://localhost:8080/alive
 The greeting is valid and in that case our health check code simply returns a 200
 with no payload.
 --
+
 . Set the greeting to a blank
 +
 --
@@ -824,6 +825,7 @@ curl -X PUT http://localhost:8080/greet/greeting/%20
 
 Our code to update the greeting accepts this and saves it as the new greeting.
 --
+
 . Ping the health check endpoint again with the same command as before
 +
 --
