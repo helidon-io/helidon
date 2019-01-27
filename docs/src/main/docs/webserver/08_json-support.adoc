@@ -47,7 +47,7 @@ Then you can add routes that handle and return JSON.
 ----
 Routing.builder()
        .register(JsonSupport.create()) // <1>
-       .post("/sayhello", Handler.of(JsonObject.class, this::sayHello)) // <2>
+       .post("/sayhello", Handler.create(JsonObject.class, this::sayHello)) // <2>
        .build();
 ----
 <1> Register JsonSupport to enable transformation from and to `JsonObject` objects
