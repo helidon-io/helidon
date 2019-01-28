@@ -56,16 +56,19 @@ Routing.builder()
 [source,java]
 .Handler that receives and returns JSON objects
 ----
-private void sayHello(ServerRequest req, ServerResponse res, JsonObject json) { // <1>
-        JsonObject msg = Json.createObjectBuilder()   // <2>
+private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(Collections.emptyMap()); <1>
+
+private void sayHello(ServerRequest req, ServerResponse res, JsonObject json) { // <2>
+        JsonObject msg = jsonFactory.createObjectBuilder()   // <3>
           .add("message", "Hello " + json.getString("name"))
           .build();
-        res.send(msg);                            // <3>
+        res.send(msg);                            // <4>
 }
 ----
-<1> JsonObject is passed to handler
-<2> Create a JsonObject using JSON-P to hold return data
-<3> Send JsonObject in response
+<1> Using a `JsonBuilderFactory` is more efficient than `Json.createObjectBuilder()`
+<2> JsonObject is passed to handler
+<3> Create a JsonObject using JSON-P to hold return data
+<4> Send JsonObject in response
 
 [source,bash]
 .Example of posting JSON to sayHello endpoint

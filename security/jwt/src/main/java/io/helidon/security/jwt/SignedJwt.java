@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
 
 import io.helidon.common.Errors;
 import io.helidon.security.jwt.jwk.Jwk;
@@ -39,6 +41,7 @@ public final class SignedJwt {
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final String tokenContent;
     private final JsonObject headerJson;
@@ -181,7 +184,7 @@ public final class SignedJwt {
 
     private static JsonObject parseJson(String jsonString, Errors.Collector collector, String description) {
         try {
-            return Json.createReader(new StringReader(jsonString)).readObject();
+            return JSON.createReader(new StringReader(jsonString)).readObject();
         } catch (Exception e) {
             collector.fatal(jsonString, description + " is not a valid JSON object");
             return null;

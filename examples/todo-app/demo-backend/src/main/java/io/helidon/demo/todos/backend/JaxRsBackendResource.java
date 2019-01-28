@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package io.helidon.demo.todos.backend;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -52,6 +54,8 @@ import io.opentracing.Span;
 @Authorized
 @ApplicationScoped
 public class JaxRsBackendResource {
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The database service facade.
@@ -84,7 +88,7 @@ public class JaxRsBackendResource {
                 .asChildOf(context.tracingSpan())
                 .start();
 
-        JsonArrayBuilder builder = Json.createArrayBuilder();
+        JsonArrayBuilder builder = JSON.createArrayBuilder();
         backendService.list(context.tracingSpan(), getUserId(context))
                       .forEach(data -> builder.add(data.forRest()));
 

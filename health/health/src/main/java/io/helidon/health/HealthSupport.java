@@ -17,6 +17,7 @@ package io.helidon.health;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
@@ -53,6 +55,8 @@ public final class HealthSupport implements Service {
     public static final String DEFAULT_WEB_CONTEXT = "/health";
 
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final String webContext;
     private final List<HealthCheck> healthChecks;
@@ -105,17 +109,17 @@ public final class HealthSupport implements Service {
     }
 
     private JsonObject toJson(State state, List<HcResponse> responses) {
-        final JsonObjectBuilder jsonBuilder = Json.createObjectBuilder()
+        final JsonObjectBuilder jsonBuilder = JSON.createObjectBuilder()
                 .add("outcome", state.toString());
 
-        final JsonArrayBuilder checkArrayBuilder = Json.createArrayBuilder();
+        final JsonArrayBuilder checkArrayBuilder = JSON.createArrayBuilder();
 
         for (HcResponse r : responses) {
-            JsonObjectBuilder checkBuilder = Json.createObjectBuilder();
+            JsonObjectBuilder checkBuilder = JSON.createObjectBuilder();
             checkBuilder.add("name", r.name());
             checkBuilder.add("state", r.state().toString());
             Optional<Map<String, Object>> data = r.data();
-            data.ifPresent(m -> checkBuilder.add("data", Json.createObjectBuilder(m)));
+            data.ifPresent(m -> checkBuilder.add("data", JSON.createObjectBuilder(m)));
 
             checkArrayBuilder.add(checkBuilder);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.net.URL;
 import java.net.HttpURLConnection;
@@ -23,6 +24,7 @@ import java.net.HttpURLConnection;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
 
 import io.helidon.webserver.WebServer;
 
@@ -34,6 +36,7 @@ import org.junit.jupiter.api.Test;
 public class MainTest {
 
     private static WebServer webServer;
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     @BeforeAll
     public static void startTheServer() throws Exception {
@@ -58,14 +61,14 @@ public class MainTest {
 
         conn = getURLConnection("GET","/greet");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
-        JsonReader jsonReader = Json.createReader(conn.getInputStream());
+        JsonReader jsonReader = JSON.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hello World!", jsonObject.getString("message"),
                 "default message");
 
         conn = getURLConnection("GET", "/greet/Joe");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response2");
-        jsonReader = Json.createReader(conn.getInputStream());
+        jsonReader = JSON.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
                 "hello Joe message");
@@ -74,7 +77,7 @@ public class MainTest {
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response3");
         conn = getURLConnection("GET", "/greet/Jose");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
-        jsonReader = Json.createReader(conn.getInputStream());
+        jsonReader = JSON.createReader(conn.getInputStream());
         jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hola Jose!", jsonObject.getString("message"),
                 "hola Jose message");

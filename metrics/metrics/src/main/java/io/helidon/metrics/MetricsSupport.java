@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -23,6 +24,7 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
@@ -76,6 +78,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * }</pre>
  */
 public final class MetricsSupport implements Service {
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
     private final Registry base;
     private final Registry app;
@@ -240,7 +243,7 @@ public final class MetricsSupport implements Service {
 
     // unit testable
     static JsonObject toJsonData(Registry... registries) {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         for (Registry registry : registries) {
             if (!registry.empty()) {
                 builder.add(registry.type(), toJsonData(registry));
@@ -250,14 +253,14 @@ public final class MetricsSupport implements Service {
     }
 
     static JsonObject toJsonData(Registry registry) {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
                 .forEach(mpMetric -> mpMetric.jsonData(builder));
         return builder.build();
     }
 
     static JsonObject toJsonMeta(Registry... registries) {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         for (Registry registry : registries) {
             if (!registry.empty()) {
                 builder.add(registry.type(), toJsonMeta(registry));
@@ -267,7 +270,7 @@ public final class MetricsSupport implements Service {
     }
 
     static JsonObject toJsonMeta(Registry registry) {
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
                 .forEach(mpMetric -> mpMetric.jsonMeta(builder));
         return builder.build();
@@ -309,7 +312,7 @@ public final class MetricsSupport implements Service {
         OptionalHelper.from(registry.getMetric(metricName))
                 .ifPresentOrElse(metric -> {
                     if (requestsJsonData(req.headers())) {
-                        JsonObjectBuilder builder = Json.createObjectBuilder();
+                        JsonObjectBuilder builder = JSON.createObjectBuilder();
                         metric.jsonData(builder);
                         res.send(builder.build());
                     } else {
@@ -344,7 +347,7 @@ public final class MetricsSupport implements Service {
         OptionalHelper.from(registry.getMetric(metricName))
                 .ifPresentOrElse(metric -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
-                        JsonObjectBuilder builder = Json.createObjectBuilder();
+                        JsonObjectBuilder builder = JSON.createObjectBuilder();
                         metric.jsonMeta(builder);
                         res.send(builder.build());
                     } else {

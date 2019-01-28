@@ -17,6 +17,7 @@
 package io.helidon.guides.se.restfulwebservice;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.logging.LogManager;
 
 // tag::importsHealth1[]
@@ -42,6 +43,7 @@ import io.helidon.media.jsonp.server.JsonSupport;
 // end::importsEnd[]
 // tag::importsHealth3[]
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 // end::importsHealth3[]
 
@@ -53,6 +55,8 @@ public final class Main {
     // tag::greetServiceDecl[]
     private static GreetService greetService;
     // end::greetServiceDecl[]
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * Cannot be instantiated.
@@ -156,7 +160,7 @@ public final class Main {
                     .status(Http.Status.OK_200) //<2>
                     .send();
         } else {
-            JsonObject returnObject = Json.createObjectBuilder() //<3>
+            JsonObject returnObject = JSON.createObjectBuilder() //<3>
                     .add("error", greetServiceError)
                     .build();
             response

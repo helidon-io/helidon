@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.function.Function;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonString;
@@ -52,6 +53,8 @@ import io.helidon.security.jwt.jwk.Jwk;
  */
 @SuppressWarnings("WeakerAccess") // getters should be public
 public class Jwt {
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     /*
     Header claims
     */
@@ -497,7 +500,7 @@ public class Jwt {
             return rawValue;
         }
 
-        return Json.createArrayBuilder()
+        return JSON.createArrayBuilder()
                 .add(rawValue)
                 .build();
     }
@@ -832,7 +835,7 @@ public class Jwt {
      * @return JsonObject for header
      */
     public JsonObject headerJson() {
-        JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
         headerClaims.forEach(objectBuilder::add);
 
         algorithm.ifPresent(it -> objectBuilder.add("alg", it));
@@ -849,7 +852,7 @@ public class Jwt {
      * @return JsonObject for payload
      */
     public JsonObject payloadJson() {
-        JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+        JsonObjectBuilder objectBuilder = JSON.createObjectBuilder();
         payloadClaims.forEach(objectBuilder::add);
 
         // known payload
@@ -860,12 +863,12 @@ public class Jwt {
         this.subject.ifPresent(it -> objectBuilder.add("sub", it));
         this.userPrincipal.ifPresent(it -> objectBuilder.add("upn", it));
         this.userGroups.ifPresent(it -> {
-            JsonArrayBuilder jab = Json.createArrayBuilder();
+            JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
             objectBuilder.add("groups", jab);
         });
         this.audience.ifPresent(it -> {
-            JsonArrayBuilder jab = Json.createArrayBuilder();
+            JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
             objectBuilder.add("aud", jab);
         });
