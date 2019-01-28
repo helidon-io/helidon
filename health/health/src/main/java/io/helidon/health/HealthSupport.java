@@ -17,6 +17,7 @@ package io.helidon.health;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -55,7 +56,7 @@ public final class HealthSupport implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(HealthSupport.class.getName());
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final String webContext;
     private final List<HealthCheck> healthChecks;

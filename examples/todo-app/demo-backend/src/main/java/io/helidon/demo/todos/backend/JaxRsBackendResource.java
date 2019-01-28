@@ -16,6 +16,7 @@
 
 package io.helidon.demo.todos.backend;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -54,7 +55,7 @@ import io.opentracing.Span;
 @ApplicationScoped
 public class JaxRsBackendResource {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The database service facade.

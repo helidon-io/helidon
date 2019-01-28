@@ -16,6 +16,7 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.net.URL;
 import java.net.HttpURLConnection;
@@ -35,7 +36,7 @@ import org.junit.jupiter.api.Test;
 public class MainTest {
 
     private static WebServer webServer;
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     @BeforeAll
     public static void startTheServer() throws Exception {

@@ -18,6 +18,7 @@ package io.helidon.demo.todos.backend;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.UUID;
 
 import javax.json.Json;
@@ -42,7 +43,7 @@ public final class Todo {
     /**
      * Factory for creating JSON builders.
      */
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The TODO ID.

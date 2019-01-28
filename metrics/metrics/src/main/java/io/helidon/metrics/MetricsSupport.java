@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -77,7 +78,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * }</pre>
  */
 public final class MetricsSupport implements Service {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
     private final Registry base;
     private final Registry app;

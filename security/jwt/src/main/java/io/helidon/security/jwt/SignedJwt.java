@@ -20,6 +20,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +41,7 @@ public final class SignedJwt {
             .compile("([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9/=+]+)\\.([a-zA-Z0-9_\\-/=+]*)");
     private static final Base64.Decoder URL_DECODER = Base64.getUrlDecoder();
     private static final Base64.Encoder URL_ENCODER = Base64.getUrlEncoder();
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final String tokenContent;
     private final JsonObject headerJson;

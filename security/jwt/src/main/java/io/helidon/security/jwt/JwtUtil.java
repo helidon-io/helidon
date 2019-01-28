@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -60,7 +61,7 @@ public final class JwtUtil {
     private static final Pattern LOCALE_PATTERN = Pattern.compile("(\\w+)_(\\w+)");
 
     // Avoid reloading JSON providers. See https://github.com/eclipse-ee4j/jsonp/issues/154
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonProvider JSON_PROVIDER = JsonProvider.provider();
 
     private JwtUtil() {

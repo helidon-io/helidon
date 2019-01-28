@@ -17,6 +17,7 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -237,7 +238,7 @@ public final class OidcConfig {
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
 
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";

@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -54,7 +55,7 @@ import io.helidon.webserver.json.JsonSupport;
  */
 public class Main {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     // ---------------- EXAMPLES
 

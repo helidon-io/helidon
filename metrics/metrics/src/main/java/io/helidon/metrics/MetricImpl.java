@@ -32,11 +32,13 @@ import javax.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
+import java.util.Collections;
+
 /**
  * Base for our implementations of various metrics.
  */
 abstract class MetricImpl extends Metadata implements HelidonMetric {
-    static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
     private static final Pattern COLON_UNDERSCORE = Pattern.compile(":_");

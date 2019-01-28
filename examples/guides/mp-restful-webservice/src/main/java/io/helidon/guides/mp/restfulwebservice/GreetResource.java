@@ -16,6 +16,8 @@
 
 package io.helidon.guides.mp.restfulwebservice;
 
+import java.util.Collections;
+
 // tag::javaxImports[]
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -55,7 +57,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 public class GreetResource {
 // end::classDecl[]
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The greeting message provider.

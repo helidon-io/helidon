@@ -18,6 +18,7 @@ package io.helidon.security.jwt.jwk;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,7 +51,7 @@ import io.helidon.common.configurable.Resource;
  */
 public final class JwkKeys {
     private static final Logger LOGGER = Logger.getLogger(JwkKeys.class.getName());
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final Map<String, Jwk> keyMap = new HashMap<>();
     private final List<Jwk> noKeyIdKeys = new LinkedList<>();

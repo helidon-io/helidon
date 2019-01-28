@@ -16,6 +16,8 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
+import java.util.Collections;
+
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -49,7 +51,7 @@ public class GreetService implements Service {
      */
     private static final Config CONFIG = Config.create().get("app");
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The config value for the key {@code greeting}.

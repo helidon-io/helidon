@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -90,7 +91,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class JwtAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(JwtAuthProvider.class.getName());
 
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(null);
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     /**
      * Configure this for outbound requests to override user to use.

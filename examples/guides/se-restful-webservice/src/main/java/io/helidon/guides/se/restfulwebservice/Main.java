@@ -17,6 +17,7 @@
 package io.helidon.guides.se.restfulwebservice;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.logging.LogManager;
 
 // tag::importsHealth1[]
@@ -55,7 +56,7 @@ public final class Main {
     private static GreetService greetService;
     // end::greetServiceDecl[]
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * Cannot be instantiated.

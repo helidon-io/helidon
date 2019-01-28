@@ -17,6 +17,7 @@
 package io.helidon.microprofile.example.helloworld.explicit;
 
 import java.net.URI;
+import java.util.Collections;
 
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.spi.BeanManager;
@@ -40,7 +41,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Path("helloworld")
 @RequestScoped
 public class HelloWorldResource {
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private final Config config;
     private final String applicationName;
     private final URI applicationUri;

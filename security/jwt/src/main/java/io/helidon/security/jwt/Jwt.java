@@ -54,7 +54,7 @@ import io.helidon.security.jwt.jwk.Jwk;
 @SuppressWarnings("WeakerAccess") // getters should be public
 public class Jwt {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     /*
     Header claims
     */

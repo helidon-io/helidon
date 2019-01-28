@@ -15,6 +15,8 @@
  */
 package io.helidon.guides.mp.restfulwebservice;
 
+import java.util.Collections;
+
 // tag::javaxImports[]
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -36,7 +38,7 @@ import javax.ws.rs.core.Response;
 public class HealthResource {
 // end::classDecl[]
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     // tag::greetingDecl[]
     @Inject // <1>

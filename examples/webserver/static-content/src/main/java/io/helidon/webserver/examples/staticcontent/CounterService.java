@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.examples.staticcontent;
 
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -34,7 +35,7 @@ import io.helidon.webserver.json.JsonSupport;
  */
 public class CounterService implements Service {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private final LongAdder allAccessCounter = new LongAdder();
     private final AtomicInteger apiAccessCounter = new AtomicInteger();
 

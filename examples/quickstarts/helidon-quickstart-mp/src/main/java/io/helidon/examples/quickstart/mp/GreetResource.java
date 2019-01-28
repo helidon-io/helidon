@@ -16,6 +16,8 @@
 
 package io.helidon.examples.quickstart.mp;
 
+import java.util.Collections;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
@@ -47,7 +49,7 @@ import javax.ws.rs.core.MediaType;
 @RequestScoped
 public class GreetResource {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The greeting message provider.

@@ -26,6 +26,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import java.util.Collections;
+
 /**
  * A simple service to greet you. Examples:
  *
@@ -48,7 +50,7 @@ public class GreetService implements Service {
      */
     private String greeting;
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     GreetService(Config config) {
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");

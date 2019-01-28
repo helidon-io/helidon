@@ -15,6 +15,7 @@
  */
 package io.helidon.security.providers.idcs.mapper;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +57,7 @@ import io.helidon.security.spi.SubjectMappingProvider;
 public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProvider.class.getName());
     private static final String ACCESS_TOKEN_KEY = "access_token";
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final EvictableCache<String, List<? extends Grant>> roleCache;
     private final WebTarget assertEndpoint;
