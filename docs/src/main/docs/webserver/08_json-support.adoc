@@ -56,7 +56,7 @@ Routing.builder()
 [source,java]
 .Handler that receives and returns JSON objects
 ----
-private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null); <1>
+private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(Collections.emptyMap()); <1>
 
 private void sayHello(ServerRequest req, ServerResponse res, JsonObject json) { // <2>
         JsonObject msg = jsonFactory.createObjectBuilder()   // <3>
