@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.config.examples.changes;
 
 import java.util.logging.Level;
@@ -29,12 +28,31 @@ import static io.helidon.config.PollingStrategies.regular;
 import static java.time.Duration.ofSeconds;
 
 /**
- * Example shows how to listen on Config node changes using {@link Flow.Subscriber}.
- * Method {@link Flow.Subscriber#onNext(Object) onNext} is invoked with new instance of Config,
- * see {@link Config#changes()} for more detail.
+ * Example shows how to listen on Config node changes using
+ * {@link Flow.Subscriber}. Method {@link Flow.Subscriber#onNext(Object) onNext}
+ * is invoked with new instance of Config, see {@link Config#changes()} for more
+ * detail.
  * <p>
- * The feature is based on using {@link io.helidon.config.spi.PollingStrategy} with
- * selected config source(s) to check for changes.
+ * The feature is based on using {@link io.helidon.config.spi.PollingStrategy}
+ * with selected config source(s) to check for changes.
+ * <p>
+ * <h2>A note about {@code Config.changes() }, {@code Flow.Publisher}, and
+ * {@code Flow.Subscriber}</h2>
+ * This example uses the {@link Config#changes() } API. That method is marked as
+ * deprecated because it its return type is the Helidon-specific interface
+ * {@link Flow.Publisher} which mimics the interface with the same name in Java
+ * 9 and later. Similarly the {@link Flow.Publisher#subscribe} method accepts a
+ * Helidon-specific {@link Flow.Subscriber}.
+ * <p>
+ * Once Helidon requires Java 9 or later (as opposed to Java 8), the
+ * {@code Config.changes()} API might change to return the Java
+ * {@code Flow.Subscriber} interface instead of the Helidon-specific one. By
+ * marking the method as deprecated we encourage developers to be very careful
+ * in how they use the method and, specifically, its return value and the
+ * argument to {@code subscribe}. Developers should avoid propagating these
+ * Helidon-specific types throughout their code to minimize the disruption
+ * if and when the {@code Config.changes()} method evolves to return the Java,
+ * not Helidon, {@code Flow.Publisher}.
  */
 public class ChangesSubscriberExample {
 
@@ -46,18 +64,18 @@ public class ChangesSubscriberExample {
     public void run() {
         Config config = Config
                 .create(file("conf/dev.yaml")
-                              .optional()
-                              .pollingStrategy(PollingStrategies::watch),
+                        .optional()
+                        .pollingStrategy(PollingStrategies::watch),
                         file("conf/config.yaml")
-                              .optional()
-                              .pollingStrategy(regular(ofSeconds(2))),
+                                .optional()
+                                .pollingStrategy(regular(ofSeconds(2))),
                         classpath("default.yaml")
-                              .pollingStrategy(regular(ofSeconds(10))));
+                                .pollingStrategy(regular(ofSeconds(10))));
 
         // first greeting
         greeting(config.get("app"));
 
-        // subscribe using custom Flow.Subscriber
+        // subscribe using custom Flow.Subscriber - see class-level JavaDoc
         config.get("app").changes()
                 .subscribe(new AppConfigSubscriber());
     }
@@ -84,8 +102,8 @@ public class ChangesSubscriberExample {
         @Override
         public void onError(Throwable throwable) {
             LOGGER.log(Level.WARNING,
-                       throwable,
-                       () -> "Config Changes support failed. " + throwable.getLocalizedMessage());
+                    throwable,
+                    () -> "Config Changes support failed. " + throwable.getLocalizedMessage());
         }
 
         @Override
