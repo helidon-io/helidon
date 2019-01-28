@@ -16,6 +16,8 @@
 
 package io.helidon.examples.quickstart.se;
 
+import java.util.Collections;
+
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -25,8 +27,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-
-import java.util.Collections;
 
 /**
  * A simple service to greet you. Examples:
