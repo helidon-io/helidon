@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package io.helidon.microprofile.example.helloworld.explicit;
 
 import java.net.URI;
+import java.util.Collections;
 
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -39,6 +41,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Path("helloworld")
 @RequestScoped
 public class HelloWorldResource {
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private final Config config;
     private final String applicationName;
     private final URI applicationUri;
@@ -84,7 +87,7 @@ public class HelloWorldResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getHello(@PathParam("name") String name) {
-        return Json.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("name", name)
                 .add("appName", applicationName)
                 .add("appUri", String.valueOf(applicationUri))

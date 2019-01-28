@@ -16,7 +16,10 @@
 
 package io.helidon.examples.quickstart.se;
 
+import java.util.Collections;
+
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
@@ -46,6 +49,8 @@ public class GreetService implements Service {
      * The config value for the key {@code greeting}.
      */
     private String greeting;
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     GreetService(Config config) {
         this.greeting = config.get("app.greeting").asString().orElse("Ciao");
@@ -87,7 +92,7 @@ public class GreetService implements Service {
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -102,7 +107,7 @@ public class GreetService implements Service {
                                 ServerResponse response) {
         greeting = request.path().param("greeting");
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);

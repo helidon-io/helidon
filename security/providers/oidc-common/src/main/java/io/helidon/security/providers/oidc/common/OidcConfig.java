@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -235,6 +237,8 @@ public final class OidcConfig {
     public static final String PARAM_HEADER_NAME = "X_OIDC_TOKEN_HEADER";
 
     private static final Logger LOGGER = Logger.getLogger(OidcConfig.class.getName());
+
+    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_OIDC_METADATA_URI = "/.well-known/openid-configuration";
@@ -801,7 +805,7 @@ public final class OidcConfig {
             if ((null == oidcMetadata) && oidcMetadataWellKnown) {
                 try {
                     String wellKnown = identityUri + OidcConfig.DEFAULT_OIDC_METADATA_URI;
-                    oidcMetadata = Json.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
+                    oidcMetadata = JSON.createReader(Resource.create(URI.create(wellKnown)).stream()).readObject();
                     LOGGER.finest(() -> "OIDC Metadata loaded from well known URI: " + wellKnown);
                 } catch (Exception e) {
                     collector.fatal(e, "Failed to load metadata: " + e.getClass().getName() + ": " + e.getMessage());
@@ -997,7 +1001,7 @@ public final class OidcConfig {
          * @return udpated builder instance
          */
         public Builder oidcMetadata(Resource resource) {
-            this.oidcMetadata = Json.createReader(resource.stream()).readObject();
+            this.oidcMetadata = JSON.createReader(resource.stream()).readObject();
             return this;
         }
 

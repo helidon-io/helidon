@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ package io.helidon.demo.todos.backend;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.UUID;
 
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -37,6 +39,11 @@ public final class Todo {
      */
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSVV");
+
+    /**
+     * Factory for creating JSON builders.
+     */
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The TODO ID.
@@ -169,7 +176,7 @@ public final class Todo {
      */
     public JsonObject forDb() {
         //to store to DB
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         return builder.add("id", id)
                 .add("user", userId)
                 .add("message", title)
@@ -184,7 +191,7 @@ public final class Todo {
      */
     public JsonObject forRest() {
         //to send over to rest
-        JsonObjectBuilder builder = Json.createObjectBuilder();
+        JsonObjectBuilder builder = JSON.createObjectBuilder();
         return builder.add("id", id)
                 .add("user", userId)
                 .add("title", title)

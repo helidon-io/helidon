@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.examples.quickstart.mp;
 
+import java.util.Collections;
+
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -45,6 +48,8 @@ import javax.ws.rs.core.MediaType;
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The greeting message provider.
@@ -102,7 +107,7 @@ public class GreetResource {
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) {
         greetingProvider.setMessage(newGreeting);
 
-        return Json.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("greeting", newGreeting)
                 .build();
     }
@@ -110,7 +115,7 @@ public class GreetResource {
     private JsonObject createResponse(String who) {
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
 
-        return Json.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
     }
