@@ -238,9 +238,10 @@ URL path. We'll start with just one service: the greeting service.
 
 Create a new Java class `GreetService.java` as follows. Add these Java `import` statements:
 [source,java]
-// _include::0-7:{greet-service}[tags=importsStart;importsWebServer]
+// _include::0-8:{greet-service}[tags=importsStart;importsWebServer]
 ----
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
@@ -278,7 +279,7 @@ entry is missing from the loaded config.
                                    final ServerResponse response) {
         String msg = String.format("%s %s!", greeting, "World"); // <1>
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("message", msg) // <2>
                 .build();
         response.send(returnObject); // <3>
@@ -300,7 +301,7 @@ entry is missing from the loaded config.
         String name = request.path().param("name"); // <1>
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -321,7 +322,7 @@ The rest of the method is the same as `getDefaultMessage`.
                                 final ServerResponse response) {
         greeting = request.path().param("greeting"); // <1>
 
-        JsonObject returnObject = Json.createObjectBuilder() // <2>
+        JsonObject returnObject = JSON.createObjectBuilder() // <2>
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);
@@ -601,7 +602,7 @@ This method simply returns 200 so the client knows the service is up.
                     .status(Http.Status.OK_200) //<2>
                     .send();
         } else {
-            JsonObject returnObject = Json.createObjectBuilder() //<3>
+            JsonObject returnObject = JSON.createObjectBuilder() //<3>
                     .add("error", greetServiceError)
                     .build();
             response
