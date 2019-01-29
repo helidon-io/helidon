@@ -92,6 +92,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
         RoleConfig.Builder builder = RoleConfig.builder();
 
         for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
+            //Order of the annotations matters because of annotation handling.
             List<Annotation> annotations = new ArrayList<>();
             for (Class<? extends Annotation> annotation : supportedAnnotations()) {
                 annotations.addAll(endpointConfig.combineAnnotations(annotation, value));
@@ -126,11 +127,11 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
 
     @Override
     public void validate(RoleConfig config, Errors.Collector collector, ProviderRequest request) {
-        if (config.permitAll()) {
+        if (config.denyAll()) {
+            collector.fatal(this, "Access denied by DenyAll.");
             return;
         }
-        if (config.denyAll()) {
-            collector.fatal(this, "This target is not accessible by any means!");
+        if (config.permitAll()) {
             return;
         }
         validate(config.userRolesAllowed(), collector, request.subject(), SubjectType.USER);
@@ -165,6 +166,7 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
+        //Order of the annotations matters because of annotation handling.
         return CollectionsHelper.listOf(RolesAllowed.class, Roles.class, RolesContainer.class, PermitAll.class, DenyAll.class);
     }
 
@@ -403,6 +405,8 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
             public Builder config(Config config) {
                 config.get("user").asList(String.class).ifPresent(this::addRoles);
                 config.get("service").asList(String.class).ifPresent(this::addServiceRoles);
+                config.get("permit-all").asBoolean().ifPresent(this::permitAll);
+                config.get("deny-all").asBoolean().ifPresent(this::denyAll);
                 return this;
             }
         }

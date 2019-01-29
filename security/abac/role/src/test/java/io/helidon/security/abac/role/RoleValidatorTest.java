@@ -24,6 +24,7 @@ import javax.annotation.security.RolesAllowed;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.Errors;
+import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
@@ -31,6 +32,7 @@ import io.helidon.security.Role;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -41,6 +43,15 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link RoleValidator}.
  */
 class RoleValidatorTest {
+
+    static Config config;
+
+    @BeforeAll
+    static void beforeAll() {
+        config = Config.create();
+    }
+
+
     @Test
     void testRolesAllowedPermit() {
         RoleValidator validator = RoleValidator.create();
@@ -369,6 +380,78 @@ class RoleValidatorTest {
                                                                .build()));
         when(request.service()).thenReturn(Optional.empty());
         validator.validate(rConfig, collector, request);
+
+        if (collector.collect().isValid()) {
+            fail("DenyAll is set on this method, this should have failed");
+        }
+    }
+
+    @Test
+    void testRolesFromConfig() {
+        RoleValidator roleValidator = RoleValidator.create();
+        RoleValidator.RoleConfig roleConfig = roleValidator.fromConfig(config.get("test1"));
+
+        Errors.Collector collector = Errors.collector();
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
+                                                               .principal(Principal.create("myAdmin"))
+                                                               .addGrant(Role.create("admin"))
+                                                               .build()));
+
+        roleValidator.validate(roleConfig, collector, request);
+
+        collector.collect().checkValid();
+    }
+
+    @Test
+    void testRolesAndPermitAllFromConfig() {
+        RoleValidator roleValidator = RoleValidator.create();
+        RoleValidator.RoleConfig roleConfig = roleValidator.fromConfig(config.get("test2"));
+
+        Errors.Collector collector = Errors.collector();
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
+                                                               .principal(Principal.create("myAdmin"))
+                                                               .addGrant(Role.create("test"))
+                                                               .build()));
+
+        roleValidator.validate(roleConfig, collector, request);
+
+        collector.collect().checkValid();
+    }
+
+    @Test
+    void testRolesAndDenyAllFromConfig() {
+        RoleValidator roleValidator = RoleValidator.create();
+        RoleValidator.RoleConfig roleConfig = roleValidator.fromConfig(config.get("test3"));
+
+        Errors.Collector collector = Errors.collector();
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
+                                                               .principal(Principal.create("myAdmin"))
+                                                               .addGrant(Role.create("test"))
+                                                               .build()));
+
+        roleValidator.validate(roleConfig, collector, request);
+
+        if (collector.collect().isValid()) {
+            fail("DenyAll is set on this method, this should have failed");
+        }
+    }
+
+    @Test
+    void testAllAccessModificationsOnTheSameLevelFromConfig() {
+        RoleValidator roleValidator = RoleValidator.create();
+        RoleValidator.RoleConfig roleConfig = roleValidator.fromConfig(config.get("test4"));
+
+        Errors.Collector collector = Errors.collector();
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.subject()).thenReturn(Optional.of(Subject.builder()
+                                                               .principal(Principal.create("myAdmin"))
+                                                               .addGrant(Role.create("test"))
+                                                               .build()));
+
+        roleValidator.validate(roleConfig, collector, request);
 
         if (collector.collect().isValid()) {
             fail("DenyAll is set on this method, this should have failed");
