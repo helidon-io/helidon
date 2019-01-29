@@ -45,11 +45,13 @@ public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
 
     private static AnalyzerResponse analyze(PermitAll permitAll, AnalyzerResponse previousResponse) {
         if (permitAll == null) {
-            return AnalyzerResponse.abstain();
+            return AnalyzerResponse.builder(previousResponse)
+                    .build();
         }
 
         return AnalyzerResponse.builder(previousResponse)
                 .authenticationResponse(Flag.OPTIONAL)
+                .authorizeResponse(Flag.OPTIONAL)
                 .build();
     }
 }
