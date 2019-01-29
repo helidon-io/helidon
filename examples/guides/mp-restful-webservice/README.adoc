@@ -369,11 +369,12 @@ This class defines the endpoints for the application.
 
 Add these imports:
 [source,java]
-// _include::0-9:{greet-resource-class}[tag=javaxImports]
+// _include::0-10:{greet-resource-class}[tag=javaxImports]
 ----
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -419,7 +420,7 @@ return to the clients.
     private JsonObject createResponse(String who) { // <1>
         String msg = String.format("%s %s!", greeting.getMessage(), who); // <2>
 
-        return Json.createObjectBuilder() // <3>
+        return JSON.createObjectBuilder() // <3>
                 .add("message", msg)
                 .build();
     }
@@ -480,7 +481,7 @@ the returned message.
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
         greeting.setMessage(newGreeting);
 
-        return Json.createObjectBuilder()
+        return JSON.createObjectBuilder()
                 .add("greeting", newGreeting)
                 .build();
     }
@@ -674,11 +675,12 @@ active and if it is ready.
 
 Add these imports:
 [source,java]
-// _include::0-6:{health-resource-class}[tag=javaxImports]
+// _include::0-7:{health-resource-class}[tag=javaxImports]
 ----
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -742,7 +744,7 @@ reference to the single instance every time it creates this request-scoped resou
         if (greetResourceError == null) {  // <4>
             response = Response.ok().build();
         } else {
-            JsonObject returnObject = Json.createObjectBuilder()
+            JsonObject returnObject = JSON.createObjectBuilder()
                     .add("error", greetResourceError)
                     .build();
             response = Response
