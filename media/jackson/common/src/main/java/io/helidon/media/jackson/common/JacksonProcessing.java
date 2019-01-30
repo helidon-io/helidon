@@ -89,8 +89,8 @@ public final class JacksonProcessing {
     }
 
     /**
-     * Returns a function (writer) converting {@link JsonStructure} to the {@link Flow.Publisher Publisher}
-     * of {@link DataChunk}s.
+     * Returns a function (writer) converting {@link Object}s to {@link Flow.Publisher Publisher}s
+     * of {@link DataChunk}s by using the supplied {@link ObjectMapper}.
      *
      * @param objectMapper the {@link ObjectMapper} to use; must not be {@code null}
      * @return created function
