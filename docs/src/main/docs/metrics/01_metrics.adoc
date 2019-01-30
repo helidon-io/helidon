@@ -26,7 +26,7 @@ Metrics support in Helidon SE provides:
 1. Endpoint `/metrics` - a configurable endpoint that exposes metrics information in JSON (as specified by
     Microprofile Metrics specification), or plain text (as used by Prometheus metrics)
 2. Base set of metrics, available on `/metrics/base`, as specified by Microprofile Metrics specification
-3. Helidon specific set of metrics, available on `/metrics/vendor`
+3. Helidon specific set of metrics, available at `/metrics/vendor`
 
 
 === Prerequisites

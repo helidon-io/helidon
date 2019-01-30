@@ -24,7 +24,7 @@
 Helidon WebServer can serve Prometheus metrics.
 
 This document only describes how to register the support with WebServer and how to customize
-the configuration. For reference on using Prometheus, please use Prometheus documentation.
+the configuration. For reference on using Prometheus, please refer to Prometheus documentation.
 
 Helidon has its own metrics implementation, please refer to <<metrics/01_metrics.adoc,Helidon Metrics>>
 
