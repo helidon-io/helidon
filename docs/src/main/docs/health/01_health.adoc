@@ -24,7 +24,7 @@
 Health check support in Helidon SE provides:
 
 1. Endpoint `/health` - a configurable endpoint that exposes health checks in JSON
-    format specified by Microprofile Heatlh Check specification
+    format specified by Microprofile Health Check specification
 2. Base set of health checks (additional dependency)
 
 Health Check Support in Helidon SE serves as a core for Helidon MP implementation of Microprofile Health Check specification.
@@ -56,7 +56,7 @@ To enable built-in health checks, add the following dependency:
 
 
 === Using Health Checks in Your Application
-To enable Health checks, register it with the WebServer.
+To enable Health checks, register them with the WebServer.
 
 [source,java]
 .Configuring Health checks in WebServer
@@ -85,7 +85,7 @@ Routing.builder()
 
 Access health check data via the `/health` endpoint.
 
-The JSON format (using built-in health checks and the custom health check from example above):
+Using the built-in and custom health checks from the example above, the response in JSON format is:
 
 [source,json]
 .Health Check Response
