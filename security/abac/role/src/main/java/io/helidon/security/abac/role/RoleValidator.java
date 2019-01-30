@@ -97,19 +97,21 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
             for (Class<? extends Annotation> annotation : supportedAnnotations()) {
                 annotations.addAll(endpointConfig.combineAnnotations(annotation, value));
             }
+            List<String> roles = new ArrayList<>();
+            List<String> serviceRoles = new ArrayList<>();
             for (Annotation annotation : annotations) {
                 if (annotation instanceof RolesAllowed) {
                     // these are user roles by default
-                    builder.addRoles(Arrays.asList(((RolesAllowed) annotation).value()));
+                    roles.addAll(Arrays.asList(((RolesAllowed) annotation).value()));
                     builder.permitAll(false);
                     builder.denyAll(false);
                 } else if (annotation instanceof Roles) {
                     // these are configured
                     Roles r = (Roles) annotation;
                     if (r.subjectType() == SubjectType.USER) {
-                        builder.addRoles(Arrays.asList(r.value()));
+                        roles.addAll(Arrays.asList(r.value()));
                     } else {
-                        builder.addServiceRoles(Arrays.asList(r.value()));
+                        serviceRoles.addAll(Arrays.asList(r.value()));
                     }
                     builder.permitAll(false);
                     builder.denyAll(false);
@@ -120,6 +122,12 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
                     builder.permitAll(false);
                     builder.denyAll(true);
                 }
+            }
+            if (!roles.isEmpty()) {
+                builder.clearRoles().addRoles(roles);
+            }
+            if (!serviceRoles.isEmpty()) {
+                builder.clearServiceRoles().addServiceRoles(serviceRoles);
             }
         }
         return builder.build();
@@ -335,8 +343,27 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
              * @return updated builder instance
              */
             public Builder addRoles(Collection<String> rolesAllowed) {
-                this.userRolesAllowed.clear();
                 this.userRolesAllowed.addAll(rolesAllowed);
+                return this;
+            }
+
+            /**
+             * Clears all roles currently set to this builder.
+             *
+             * @return updated builder instance
+             */
+            public Builder clearRoles() {
+                this.userRolesAllowed.clear();
+                return this;
+            }
+
+            /**
+             * Clears all service roles currently set to this builder.
+             *
+             * @return updated builder instance
+             */
+            public Builder clearServiceRoles() {
+                this.serviceRolesAllowed.clear();
                 return this;
             }
 
