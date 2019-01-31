@@ -101,6 +101,14 @@ backend:
               items:
                 -  includes:
                      - "microprofile/*.adoc"
+            - title: "Extensions"
+              pathprefix: "/extensions"
+              glyph:
+                type: "icon"
+                value: "extension"
+              items:
+                -  includes:
+                     - "extensions/*.adoc"
             - title: "Guides"
               pathprefix: "/guides"
               glyph:
