@@ -67,15 +67,22 @@ public final class Main {
 
         WebServer server = WebServer.create(serverConfig, createRouting(config));
 
-        // Start the server and print some info.
-        server.start().thenAccept(ws -> {
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/greet");
-        });
+        // Try to start the server. If successful, print some info and arrange to
+        // print a message at shutdown. If unsuccessful, print the exception.
+        server.start()
+            .thenAccept(ws -> {
+                System.out.println(
+                        "WEB server is up! http://localhost:" + ws.port() + "/greet");
+                ws.whenShutdown().thenRun(()
+                    -> System.out.println("WEB server is DOWN. Good bye!"));
+                })
+            .exceptionally(t -> {
+                System.err.println("Startup failed: " + t.getMessage());
+                t.printStackTrace(System.err);
+                return null;
+            });
 
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(()
-                -> System.out.println("WEB server is DOWN. Good bye!"));
+        // Server threads are not daemon. No need to block. Just react.
 
         return server;
     }
