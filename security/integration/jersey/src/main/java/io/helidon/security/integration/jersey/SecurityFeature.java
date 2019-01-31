@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,16 @@ public final class SecurityFeature implements Feature {
     /**
      * Create a new instance of security feature for a security component.
      *
+     * This constructor is workaround solution for Jersey instantiation problem.
+     */
+    public SecurityFeature() {
+        this.security = null;
+        this.featureConfig = null;
+    }
+
+    /**
+     * Create a new instance of security feature for a security component.
+     *
      * @param security Fully configured security component to integrate with Jersey
      */
     public SecurityFeature(Security security) {
@@ -84,8 +94,7 @@ public final class SecurityFeature implements Feature {
         RuntimeType runtimeType = context.getConfiguration().getRuntimeType();
         //register server
         if (runtimeType != RuntimeType.SERVER) {
-            throw new IllegalStateException(
-                    "SecurityFeature is only available for server side Jersey. For clients, please use ClientSecurityFeature");
+            return false;
         }
 
         context.register(SecurityPreMatchingFilter.class);
