@@ -21,10 +21,10 @@
 = :keywords: helidon, tracing
 
 == Tracing Support
-Helidon includes support for tracing through `OpenTracing` APIs. Tracing
-is integrated with WebServer and Security.
+Helidon includes support for tracing through the `https://opentracing.io/[OpenTracing]` APIs.
+Tracing is integrated with WebServer and Security.
 
-Support for specific tracers is abstracted, so your application can depend on
+Support for specific tracers is abstracted. Your application can depend on
 the abstraction layer and provide a specific tracer implementation as a Java
 `ServiceLoader` service.
 
@@ -56,4 +56,4 @@ ServerConfiguration.builder()
                    .build()
 ----
 <1> The name of the application (service) to associate with the tracing events
-<2> Endpoint for the tracing events, specific to the tracer used, usually loaded from Config
+<2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config

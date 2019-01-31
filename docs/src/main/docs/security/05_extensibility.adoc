@@ -111,7 +111,7 @@ To create a new integration, an instance of `Security` class is needed, as it ha
 all configured providers. Usually a single `Security` instance is used for an application.
 
 `Security` is then used to create an instance of `SecurityContext`, which is used
-for interaction with a single user. A single `SecurityContext` ic created for each HTTP
+for interaction with a single user. A single `SecurityContext` is created for each HTTP
 request in Jersey and WebServer integration.
 
 `SecurityContext` is used to invoke authentication, authorization, and outbound security requests.
@@ -124,9 +124,9 @@ Helidon Security also defines a set of annotations:
 
 If the protected resources (in Helidon MP, these are JAX-RS resource classes and methods) can
 be annotated, the integration component must use these annotations when deciding how to secure
-the endpoint (for example the Jersey integration looks for `@Authenticated` annotation and if
-found, attempts authentication of the request).
+the endpoint. For example, the Jersey integration checks whether the @Authenticated annotation exists. If it does, then
+the integration component attempts to authenticate the request.
 
-As other components of Helidon Security (such as ABAC validators) query the request for annotations,
+Because other components of Helidon Security (such as ABAC validators) query the request for annotations,
 the integration component should also collect all annotations from the resource and correctly configure
 them when creating the security request.
