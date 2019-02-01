@@ -56,5 +56,5 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
 }
 ----
 
-Security in Helidon MicroProfile is built on top of Jersey's and be enabled/disabled
+Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
 using the property `security.jersey.enabled=[true|false]`.
