@@ -16,8 +16,11 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
+import java.util.Collections;
+
 //tag::importsStart[]
 import javax.json.Json;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
@@ -30,9 +33,11 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+// end::importsWebServer[]
+// tag::importsHealth[]
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
-// end::importsWebServer[]
+// end::importsHealth[]
 // tag::importsMPMetrics[]
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -60,6 +65,8 @@ public class GreetService implements Service {
      * The config value for the key {@code greeting}.
      */
     private String greeting;
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * Create metric registry.
@@ -127,7 +134,7 @@ public class GreetService implements Service {
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
@@ -143,7 +150,7 @@ public class GreetService implements Service {
                                 ServerResponse response) {
         greeting = request.path().param("greeting"); //<1>
 
-        JsonObject returnObject = Json.createObjectBuilder() //<2>
+        JsonObject returnObject = JSON.createObjectBuilder() //<2>
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);

@@ -170,7 +170,7 @@ for JSON and config support and for the key parts of the web server.
 --
 [source,java]
 ----
-include::{greet-service}[tag=ctor]
+include::{greet-service}[tag=ctor,indent=0]
 ----
 Here the code looks up the initial greeting from the configuration object 
 and saves it.
@@ -224,6 +224,7 @@ include::{greet-service}[tag=updateGreeting,indent=0]
 ==== `Main.java`
 The job of `Main` is to create and start the web server. It uses the configuration 
 in the config file to initialize the server, registering the greeting service with it.
+The `startServer` method does most of the work.
 
 . Create and configure the server.
 +
@@ -358,8 +359,19 @@ a `curl` command.
 // end::addHealthChecksIntro[]
 
 === Revise `GreetService.java`
-Add a method that returns a `HealthCheckResponse`. This will make it
-very easy to add our custom check to the built-in ones already in the code.
+. Add health-related imports.
++
+--
+[source,java]
+----
+include::{greet-service}[tag=importsHealth]
+----
+--
+. Add a liveness check method.
++
+--
+The new method returns a `HealthCheckResponse`. This will make it
+very easy to add our custom health check to the built-in ones already in the code.
 
 [source,java]
 ----
@@ -373,6 +385,7 @@ greeting service to be considered alive.
 is _down_, in this case adding an explanation.
 <4> For a valid greeting the response says the service is _up_.
 <5> Either way, have the builder build the response.
+--
 
 === Revise `Main.java`
 We need to slightly modify the `createRouting` method by adding our custom health check to the `HealthSupportBuilder`.
@@ -448,6 +461,23 @@ wrong:
 and with the `-i` added to the `curl` command you would see status 503 "Service 
 Unavailable" returned.
 --
+
+. Set the greeting back to "Hello"
++
+--
+[source,bash]
+curl -X PUT http://localhost:8080/greet/greeting/Hello
+--
+
+. Check the health again
++
+--
+[source,bash]
+curl -i -X GET http://localhost:8080/health
+
+This time the `outcome` and `greetingAlive` values will be back to `UP`.
+--
+
 // end::tryLiveness[]
 
 == Add metrics support
@@ -559,22 +589,21 @@ Run this `curl` command to retrieve the collected metrics:
 curl -X GET http://localhost:8080/metrics
 ----
 
-You should see a long JSON result. Note two parts:
+You should see a long response. Note two items:
 |====
 |Output |Meaning
 
 a|[listing]
-"application":{"accessctr":4}
+ application:accessctr 4
 
 |The counter we added to the app
 
 a|[listing]
-"requests.meter":{"count":5, ...
+vendor:requests_count 7
 
-|The total HTTP requests the Helidon web server received (and several values
-reflecting the request arrival rate)
+|The total HTTP requests the Helidon web server received
 |====
-The request count is higher because the access to `/metrics` to retrieve the
+The requests count is higher because the access to `/metrics` to retrieve the
 monitoring data is _not_ handled by our app's rules and filters but by the
 metrics infrastructure.
 
