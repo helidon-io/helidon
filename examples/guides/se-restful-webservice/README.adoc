@@ -155,7 +155,7 @@ In general, your application can implement multiple services, each tied to its o
 URL path. The example includes just one service: the greeting service in
 `src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java`. 
 
-. Note these `import` statements
+. Note these `import` statements.
 +
 --
 [source,java]
@@ -436,7 +436,7 @@ is as well. You should also see our app-specific liveness check in the output
 Recall that our simple rule for liveness is that the greeting be non-null and
 non-empty. We can easily force our server to report an unhealthy state.
 
-. Set the greeting to a blank
+. Set the greeting to a blank.
 +
 --
 [source,bash]
@@ -445,7 +445,7 @@ curl -X PUT http://localhost:8080/greet/greeting/%20
 Our code to update the greeting accepts this and saves it as the new greeting.
 --
 
-. Ping the health check endpoint again with the same command as before
+. Ping the health check endpoint again with the same command as before.
 +
 --
 [source,bash]
@@ -462,14 +462,14 @@ and with the `-i` added to the `curl` command you would see status 503 "Service
 Unavailable" returned.
 --
 
-. Set the greeting back to "Hello"
+. Set the greeting back to "Hello" so the service is healthy again.
 +
 --
 [source,bash]
 curl -X PUT http://localhost:8080/greet/greeting/Hello
 --
 
-. Check the health again
+. Check the health again.
 +
 --
 [source,bash]
@@ -492,8 +492,8 @@ the `createRouting` method. As a result, the system automatically collects and
 reports a number of measurements related to CPU, threads, memory, and request traffic.
 Use `curl -X GET http://localhost:8080/metrics` to see.
 
-=== Revise `GreetService.java` to add an app-specific metric.
-. Add metrics-related imports
+=== Revise `GreetService.java` to add an app-specific metric
+. Add metrics-related imports.
 +
 --
 [source,java]
@@ -613,7 +613,7 @@ you can download it.
 
 
 . Clone the link:https://github.com/oracle/helidon[`git` workspace
-for Helidon]
+for Helidon].
 . `cd` to the `examples/guides/{artifact-id}` directory.
 . Run:
 +
