@@ -508,7 +508,7 @@ include::{greet-service}[tag=counterFilter,indent=0]
 <3> Lets the next handler process the same request.
 --
 
-. Register a filter to count requests.
+. Register the filter to count requests.
 +
 --
 To the `update` method add this line immediately before the

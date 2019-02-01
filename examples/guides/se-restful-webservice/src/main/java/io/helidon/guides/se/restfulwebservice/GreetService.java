@@ -176,7 +176,7 @@ public class GreetService implements Service {
         displayThread(); // <1>
         greetCounter.inc(); // <2>
         request.next(); // <3>
-}
+    }
     // end::counterFilter[]
 
     // tag::displayThread[]
