@@ -95,6 +95,8 @@ public final class Main {
      */
     private static Routing createRouting(Config config) {
 
+        MetricsSupport metrics = MetricsSupport.create();
+        GreetService greetService = new GreetService(config);
         HealthSupport health = HealthSupport.builder()
                 .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
                 .build();
@@ -102,8 +104,8 @@ public final class Main {
         return Routing.builder()
                 .register(JsonSupport.create())
                 .register(health)                   // Health at "/health"
-                .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/greet", new GreetService(config))
+                .register(metrics)                  // Metrics at "/metrics"
+                .register("/greet", greetService)
                 .build();
     }
 
