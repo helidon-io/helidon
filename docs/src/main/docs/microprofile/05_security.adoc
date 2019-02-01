@@ -55,3 +55,6 @@ public String adminResource(@Context io.helidon.security.SecurityContext securit
   return "you are " + securityContext.getUser();
 }
 ----
+
+Security in Helidon MicroProfile is built on top of Jersey's and can be enabled/disabled
+using the property `security.jersey.enabled=[true|false]`.
