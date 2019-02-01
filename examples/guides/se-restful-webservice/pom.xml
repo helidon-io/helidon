@@ -23,24 +23,20 @@
         <groupId>io.helidon.guides</groupId>
         <version>0.11.1-SNAPSHOT</version>
     </parent>
+    <!-- tag::coordinates[] -->
     <artifactId>se-restful-webservice</artifactId>
+    <!-- end::coordinates[] -->
     <name>Helidon Guides SE RESTful Web Service</name>
 
     <properties>
-        <!-- tag::helidonVersion[] -->
         <helidon.version>0.11.1-SNAPSHOT</helidon.version>
-        <!-- end::helidonVersion[] -->
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
         <mainClass>io.helidon.guides.se.restfulwebservice.Main</mainClass>
-        <!-- tag::javaVersions[] -->
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
-        <!-- end::javaVersions[] -->
-        <!-- tag::libsCopying[] -->
         <libs.classpath.prefix>libs</libs.classpath.prefix>
         <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
-        <!-- end::libsCopying[] -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <argLine>-Dfile.encoding=UTF-8</argLine>
@@ -158,7 +154,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- tag::depMgt[] -->
+            <!-- tag::bom[] -->
             <dependency>
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
@@ -166,7 +162,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- end::depMgt[] -->
+            <!-- end::bom[] -->
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
@@ -181,24 +177,28 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- tag::webserverBundleDependency[] -->
-        <dependency> <!--1-->
+        <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-webserver</artifactId>
         </dependency>
-        <!-- end::webserverBundleDependency[] -->
         <!-- tag::configYamlDependency[] -->
-        <dependency> <!--2-->
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <!-- end::configYamlDependency[] -->
-        <!-- tag::metricsDependency[] -->
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
-        <!-- end::metricsDependency[] -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

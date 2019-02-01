@@ -16,11 +16,8 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
-import java.util.Collections;
-
 //tag::importsStart[]
 import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.config.Config;
@@ -33,6 +30,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 // end::importsWebServer[]
 // tag::importsMPMetrics[]
 import org.eclipse.microprofile.metrics.Counter;
@@ -54,24 +53,13 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  * The message is returned as a JSON object
  */
 
+//tag::classDef[]
 public class GreetService implements Service {
-
-    /**
-     * This gets config from application.yaml on classpath
-     * and uses "app" section.
-     */
-    // tag::CONFIG[]
-    private static final Config CONFIG = Config.create().get("app"); // <1>
-    // end::CONFIG[]
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
+//end::classDef[]
     /**
      * The config value for the key {@code greeting}.
      */
-    // tag::greetingDef[]
-    private String greeting = CONFIG.get("greeting").asString().orElse("Ciao"); // <2>
-    // end::greetingDef[]
+    private String greeting;
 
     /**
      * Create metric registry.
@@ -88,24 +76,28 @@ public class GreetService implements Service {
     private final Counter greetCounter = registry.counter("accessctr"); // <2>
     // end::counterRegistration[]
 
+    //tag::ctor[]
+    GreetService(Config config) {
+        this.greeting = config.get("app.greeting").asString().orElse("Ciao"); //<1>
+    }
+    //end::ctor[]
+
     /**
-     * A service registers itself by updating the routing rules.
+     * A service registers itself by updating the routine rules.
      * @param rules the routing rules.
      */
-    // tag::updateStart[]
+    // tag::update[]
     @Override
-    public final void update(final Routing.Rules rules) { // <1>
+    public void update(Routing.Rules rules) {
         rules
-    // end::updateStart[]
     // tag::updateForCounter[]
             .any(this::counterFilter) // <1>
     // end::updateForCounter[]
-    // tag::updateGetsAndPuts[]
-            .get("/", this::getDefaultMessage) //<2>
-            .get("/{name}", this::getMessage) //<3>
-            .put("/greeting/{greeting}", this::updateGreeting); //<4>
+            .get("/", this::getDefaultMessageHandler) //<1>
+            .get("/{name}", this::getMessageHandler) //<2>
+            .put("/greeting/{greeting}", this::updateGreetingHandler); //<3>
     }
-    // end::updateGetsAndPuts[]
+    // end::update[]
 
     /**
      * Return a worldly greeting message.
@@ -113,14 +105,9 @@ public class GreetService implements Service {
      * @param response the server response
      */
     // tag::getDefaultMessage[]
-    private void getDefaultMessage(final ServerRequest request,
-                                   final ServerResponse response) {
-        String msg = String.format("%s %s!", greeting, "World"); // <1>
-
-        JsonObject returnObject = JSON.createObjectBuilder()
-                .add("message", msg) // <2>
-                .build();
-        response.send(returnObject); // <3>
+    private void getDefaultMessageHandler(ServerRequest request,
+                                   ServerResponse response) {
+        sendResponse(response, "World"); //<1>
     }
     //end::getDefaultMessage[]
 
@@ -130,17 +117,21 @@ public class GreetService implements Service {
      * @param response the server response
      */
     // tag::getMessage[]
-    private void getMessage(final ServerRequest request,
-                            final ServerResponse response) {
-        String name = request.path().param("name"); // <1>
+    private void getMessageHandler(ServerRequest request,
+                            ServerResponse response) {
+        String name = request.path().param("name"); //<1>
+        sendResponse(response, name); //<2>
+    }
+    // end::getMessage[]
+
+    private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting, name);
 
-        JsonObject returnObject = JSON.createObjectBuilder()
+        JsonObject returnObject = Json.createObjectBuilder()
                 .add("message", msg)
                 .build();
         response.send(returnObject);
     }
-    // end::getMessage[]
 
     /**
      * Set the greeting to use in future messages.
@@ -148,29 +139,30 @@ public class GreetService implements Service {
      * @param response the server response
      */
     // tag::updateGreeting[]
-    private void updateGreeting(final ServerRequest request,
-                                final ServerResponse response) {
-        greeting = request.path().param("greeting"); // <1>
+    private void updateGreetingHandler(ServerRequest request,
+                                ServerResponse response) {
+        greeting = request.path().param("greeting"); //<1>
 
-        JsonObject returnObject = JSON.createObjectBuilder() // <2>
+        JsonObject returnObject = Json.createObjectBuilder() //<2>
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);
     }
     // end::updateGreeting[]
 
-    /**
-     * Checks the health of the greeting service.
-     * @return a String reporting any problems; null if all is well
-     */
-    // tag::checkHealth[]
-    String checkHealth() {
-        if (greeting == null || greeting.trim().length() == 0) { //<1>
-           return "greeting is not set or is empty";
+    // tag::checkAlive[]
+    HealthCheckResponse checkAlive() {
+        HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
+                .name("greetingAlive"); //<1>
+        if (greeting == null || greeting.trim().length() == 0) { //<2>
+            builder.down() //<3>
+                   .withData("greeting", "not set or is empty");
+        } else {
+            builder.up(); //<4>
         }
-        return null;
+        return builder.build(); //<5>
     }
-    // end::checkHealth[]
+    // end::checkAlive[]
 
     /**
      * Increments a simple counter.
@@ -184,7 +176,7 @@ public class GreetService implements Service {
         displayThread(); // <1>
         greetCounter.inc(); // <2>
         request.next(); // <3>
-    }
+}
     // end::counterFilter[]
 
     // tag::displayThread[]
