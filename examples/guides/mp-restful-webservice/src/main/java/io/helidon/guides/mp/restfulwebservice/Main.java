@@ -15,13 +15,9 @@
  */
 package io.helidon.guides.mp.restfulwebservice;
 
-// tag::javaImports[]
 import java.io.IOException;
 import java.util.logging.LogManager;
-// end::javaImports[]
-// tag::helidonMPImports[]
 import io.helidon.microprofile.server.Server;
-// end::helidonMPImports[]
 /**
  *
  */

@@ -18,7 +18,6 @@ package io.helidon.guides.mp.restfulwebservice;
 
 import java.util.Collections;
 
-// tag::javaxImports[]
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
@@ -30,7 +29,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-// end::javaxImports[]
 
 // tag::metricsImports[]
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -62,10 +60,20 @@ public class GreetResource {
     /**
      * The greeting message provider.
      */
-    // tag::greetingMessageDecl[]
+    private final GreetingProvider greetingProvider;
+
+    /**
+     * Using constructor injection to get a configuration property.
+     * By default this gets the value from META-INF/microprofile-config
+     *
+     * @param greetingConfig the configured greeting message
+     */
+    // tag::ctor[]
     @Inject
-    private GreetingMessage greeting;
-    // end::greetingMessageDecl[]
+    public GreetResource(GreetingProvider greetingConfig) {
+        this.greetingProvider = greetingConfig;
+    }
+    // end::ctor[]
 
     /**
      * Return a wordly greeting message.
@@ -132,7 +140,7 @@ public class GreetResource {
     @PUT // <2>
     @Produces(MediaType.APPLICATION_JSON) // <3>
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
-        greeting.setMessage(newGreeting);
+        greetingProvider.setMessage(newGreeting);
 
         return JSON.createObjectBuilder()
                 .add("greeting", newGreeting)
@@ -142,7 +150,7 @@ public class GreetResource {
 
     // tag::createResponse[]
     private JsonObject createResponse(String who) { // <1>
-        String msg = String.format("%s %s!", greeting.getMessage(), who); // <2>
+        String msg = String.format("%s %s!", greetingProvider.getMessage(), who); // <2>
 
         return JSON.createObjectBuilder() // <3>
                 .add("message", msg)

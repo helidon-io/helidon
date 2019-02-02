@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,15 @@
  */
 package io.helidon.guides.mp.restfulwebservice;
 
-// tag::javaImports[]
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
-// end::javaImports[]
-// tag::helidonImports[]
 
 import io.helidon.common.CollectionsHelper;
-// end::helidonImports[]
 /**
- * JAX-RS application class.
+ * Simple Application that produces a greeting message.
  */
 // tag::greetAppBody[]
 @ApplicationScoped // <1>
@@ -39,9 +35,6 @@ public class GreetApplication extends Application { // <3>
     public Set<Class<?>> getClasses() {
         return CollectionsHelper.setOf(
                 GreetResource.class
-                // tag::healthAdditionToGetClasses[]
-                , HealthResource.class
-                // end::healthAdditionToGetClasses[]
         );
     }
     // end::getClassesMethod[]
