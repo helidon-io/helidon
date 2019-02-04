@@ -36,7 +36,7 @@
 :description: Helidon MP guide restful web service
 :keywords: helidon, guide, example, mp
 :toc: preamble
-:toclevels: 3
+:toclevels: 2
 
 Create and build a JAX-RS RESTful web service as your first Helidon MP application.
 
@@ -51,17 +51,17 @@ You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web servic
 |`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
 |===
 
-We create the app in these main steps:
+You'll create the app in three main steps:
 
 . Write a basic Helidon MP app to respond to the HTTP requests.
 
-. Add code to perform a simple app-speciric health check.
+. Add code to perform a simple app-specific health check.
 
 . Add code to record a simple app-specific metric.
 
-This guide walks you through the code and helps you understand what each part of the
-code does. But if you prefer, you can get the finished code for this example.
-See the <<downloading,downloading>> section for instructions.
+As you develop the app, this guide helps you understand what each part of the code
+does. If you prefer to download the finished code for this example, follow the
+instructions at <<downloading, Downloading the example source>>
 
 == What you need
 
