@@ -201,7 +201,7 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 ----
-These imports are necessary for JSON and config support and for the key parts of 
+These imports are necessary for JSON and config support and for the key parts of
 the web server.
 --
 . The `GreetService` class implements `io.helidon.webserver.Service`.
