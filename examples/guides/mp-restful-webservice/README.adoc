@@ -347,7 +347,7 @@ public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { //
 JAX-RS looks for an `Application` and will find `GreetApplication`.
 
 [source,java]
-// _include::0-10:{greet-application-class}[tag=greetAppBody,indent=0]
+// _include::0-8:{greet-application-class}[tag=greetAppBody,indent=0]
 ----
 @ApplicationScoped // <1>
 @ApplicationPath("/") // <2>
@@ -355,9 +355,7 @@ public class GreetApplication extends Application { // <3>
 
     @Override
     public Set<Class<?>> getClasses() {
-        return CollectionsHelper.setOf(
-                GreetResource.class // <4>
-        );
+        return CollectionsHelper.setOf(GreetResource.class); // <4>
     }
 }
 ----
@@ -512,10 +510,11 @@ active and if it is ready.
 +
 --
 [source,java]
-// _include::0-5:{health-resource-class}[tag=imports]
+// _include::0-6:{health-resource-class}[tag=imports]
 ----
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+
 import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
