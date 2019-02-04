@@ -267,7 +267,7 @@ private void getMessageHandler(ServerRequest request,
 }
 ----
 <1> Gets the name from the URL path in the request.
-<2> Uses the user's name in building the response.
+<2> Includes the user's name in building the response.
 --
 .. Updating the greeting:
 +
