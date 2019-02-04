@@ -138,7 +138,6 @@ application. Note that the MicroProfile Config specification says that
 configuration data is read, by default, from this file;
 the application does not have to do anything in code to load it.
 [source]
-.src/main/resources/META-INF/microprofile-config.properties
 // _include::0-7:{config-file}[tag=configContent]
 ----
 # Application properties. This is the default greeting
@@ -156,7 +155,6 @@ server.host=0.0.0.0
 ==== `src/main/resources/logging.properties`
 This file controls logging within the application.
 [source,java]
-.src/main/resources/logging.properties
 // _include::0-10:{logging-properties-file}[tag=loggingProps]
 ----
 # Send messages to the console
@@ -175,7 +173,6 @@ java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$
 ==== `src/main/resources/META-INF/beans.xml` -- "empty" `beans.xml`
 This "empty" `beans.xml` file makes sure JAX-RS searches for beans.
 [source,java]
-.src/main/resources/META-INF/beans.xml
 // _include::1-7:{beans-xml}[tag=beans]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
