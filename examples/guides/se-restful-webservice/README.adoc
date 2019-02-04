@@ -122,7 +122,7 @@ Also in the `<dependency-management>` section notice the dependency on the Helid
 </dependency>
 ----
 
-Lower, in the `<dependencies>` section, you will see declarations for various
+Later, in the `<dependencies>` section, you will see declarations for various
 Helidon components:
 
 * web server
@@ -130,7 +130,7 @@ Helidon components:
 * health check
 * metrics
 
-The bom adds `<dependency-management>` declarations for all the Helidon components.
+The `helidon-bom` dependency adds `<dependency-management>` declarations for all the Helidon components.
 You can add Helidon dependencies to your project without having to specify the
 version. For example, see the declaration for config YAML support:
 [source,xml]
