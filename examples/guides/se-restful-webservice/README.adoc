@@ -144,8 +144,8 @@ version. For example, see the declaration for config YAML support:
 ----
 
 ==== `src/main/resources/application.yaml`: a config resource file for the application
-Your app uses Helidon config to initialize the greeting and set up HTTP
-listening.
+Your app uses Helidon config to initialize the greeting and set up the HTTP
+listener.
 
 .`src/main/resources/application.yaml`
 [source,yaml]
@@ -201,7 +201,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 ----
-for JSON and config support and for the key parts of the web server.
+These imports are necessary for JSON and config support and for the key parts of 
+the web server.
 --
 . The `GreetService` class implements `io.helidon.webserver.Service`.
 . Its constructor accepts a `Config` object to control its behavior:
@@ -217,8 +218,8 @@ GreetService(Config config) {
 Here the code looks up the initial greeting from the configuration object
 and saves it.
 --
-. The `update` method updates the routing rules in the web server, thereby
-linking the service's methods with the corresponding URL paths:
+. The `update` method updates the routing rules in the web server to link
+the service's methods with the corresponding URL paths:
 +
 --
 [source,java]
@@ -232,13 +233,13 @@ public void update(Routing.Rules rules) {
         .put("/greeting/{greeting}", this::updateGreetingHandler); //<3>
 }
 ----
-<1> Handle `GET` requests with no extra path using `getDefaultMessage`.
-<2> Handle `GET` requests with a name using `getMessage` which personalizes the response
+<1> Handle `GET` requests that contain no extra path using `getDefaultMessage`.
+<2> Handle `GET` requests that contain a name using `getMessage`, which personalizes the response
 using the name provided as the path suffix.
 <3> Handle `PUT` requests to the `greeting` path using `updateGreeting`,
 interpreting the end of the path as the new greeting string.
 --
-. Three methods respond to the three types of request.
+. The following methods respond to the three types of request.
 .. Returning the default greeting:
 +
 --
