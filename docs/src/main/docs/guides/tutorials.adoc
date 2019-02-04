@@ -27,19 +27,16 @@ Use these step-by-step tutorials to develop microservices-based applications qui
 
 [CARD]
 .Create a RESTful Web Service Using Helidon SE
---
 Use Helidon SE to create a RESTful web service that accepts HTTP requests.
 --
 
 [CARD]
 .Create a RESTful Web Service Using Helidon MP
---
 Use Helidon MP to create a JAX-RS RESTful web service.
 --
 
 [CARD]
 .Create Docker Images
---
 Package your application and the necessary runtime dependencies as a Docker image that also contains the Java runtime.
 --
 ====
