@@ -109,7 +109,7 @@ coordinates:
     <artifactId>se-restful-webservice</artifactId>
 ----
 
-In the <dependency-management> section, note the dependency on the 'helidon-bom` 
+In the <dependency-management> section, note the dependency on the 'helidon-bom`
 POM:
 [source,xml,subs="verbatim,attributes"]
 // _include::0-6:{pom}[tag=bom,indent=0]
