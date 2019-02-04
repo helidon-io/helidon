@@ -338,8 +338,8 @@ server.start() //<1>
 // Server threads are not daemon. No need to block. Just react.
 ----
 <1> Starts the server.
-<2> When the startup completes successfully print a message and...
-<3> ...arrange to print a message when the server is shut down. The `CompletionStage` returned from `server.whenShutdown()` completes when
+<2> When the startup completes successfully, prints a message.
+<3> Prints a message when the server is shut down. The `CompletionStage` returned from `server.whenShutdown()` completes when
 some other code invokes `server.shutdown()`.
 The current example does not
 invoke that method (except from a test), so in this example server the
@@ -507,14 +507,14 @@ is _down_, in this case adding an explanation.
 --
 
 === Revise `Main.java`
-We need to slightly modify the `createRouting` method by adding our custom health check to the `HealthSupportBuilder`.
+We need to modify the `createRouting` method slightly to add our custom health check to the `HealthSupportBuilder`.
 [source,java]
 // _include::0-0:{main-class}[tag=addCustomHealthCheck,indent=0]
 ----
 .add(greetService::checkAlive)
 ----
 
-Here is what the whole revised method should look like:
+Here's the revised method after this change:
 
 [source,java]
 // _include::0-14:{main-class}[tag=createRouting,indent=0]
@@ -550,11 +550,11 @@ instead of creating one in-line.
 // tag::tryReadiness[]
 
 === Check the server's health
-Run this command
+Run this command:
 [source,bash]
 curl -i -X GET http://localhost:8080/health
 
-and you should see output like this
+You should see output as shown in this example:
 [listing,subs=+quotes]
 ----
 {"outcome":"UP","checks":[{"name":"deadlock","state":"UP"},{"name":"diskSpace","state":"UP","data":{"free":"180.64 GB","freeBytes":193955860480,"percentFree":"38.79%","total":"465.72 GB","totalBytes":500068036608}},*{"name":"greetingAlive","state":"UP"}*,{"name":"heapMemory","state":"UP","data":{"free":"230.86 MB","freeBytes":242074232,"max":"4.00 GB","maxBytes":4294967296,"percentFree":"99.39%","total":"256.00 MB","totalBytes":268435456}}]}
@@ -565,8 +565,8 @@ The JSON output conveys various health indicators because the generated code
 included `HealthChecks.healthChecks()` in the `HealthSupport.builder`.
 // end::se-HealthChecks-notes[]
 The first item is `outcome` which describes the overall health of the
-server based on all the other indicators. All indicators are `UP` so the outcome
-is as well. You should also see our app-specific liveness check in the output
+server based on all the other indicators. The state of all the indicators is UP.
+So the outcome field shows UP. You should also see our app-specific liveness check in the output
 (bolded above).
 
 === Arrange for an unhealthy report
@@ -595,8 +595,7 @@ wrong:
 {"outcome":"DOWN",...
 {"name":"greetingAlive","state":"DOWN","data":{"greeting":"not set or is empty"}}
 ----
-and with the `-i` added to the `curl` command you would see status 503 "Service
-Unavailable" returned.
+If you add `-i` to the `curl` command, the status 503 "Service Unavailable" is returned.
 --
 
 . Set the greeting back to "Hello" so the service is healthy again.
@@ -627,7 +626,7 @@ a client sends a request to the app.
 The generated `Main` class already instantiates and registers `MetricsSupport` in
 the `createRouting` method. As a result, the system automatically collects and
 reports a number of measurements related to CPU, threads, memory, and request traffic.
-Use `curl -X GET http://localhost:8080/metrics` to see.
+Use `curl -X GET http://localhost:8080/metrics` to get the metrics data.
 
 === Revise `GreetService.java` to add an app-specific metric
 . Add metrics-related imports.
@@ -755,7 +754,7 @@ a|[listing]
 a|[listing]
 vendor:requests_count 7
 
-|The total HTTP requests the Helidon web server received
+|The total number of HTTP requests that the Helidon web server received
 |====
 The requests count is higher because the access to `/metrics` to retrieve the
 monitoring data is _not_ handled by our app's rules and filters but by the
