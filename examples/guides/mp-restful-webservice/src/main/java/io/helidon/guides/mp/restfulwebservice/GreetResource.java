@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -138,6 +139,7 @@ public class GreetResource {
     @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting/{greeting}") // <1>
     @PUT // <2>
+    @Consumes(MediaType.APPLICATION_JSON) // <3>
     @Produces(MediaType.APPLICATION_JSON) // <3>
     public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
         greetingProvider.setMessage(newGreeting);

@@ -34,7 +34,7 @@ public class GreetApplication extends Application { // <3>
     @Override
     public Set<Class<?>> getClasses() {
         return CollectionsHelper.setOf(
-                GreetResource.class
+                GreetResource.class // <4>
         );
     }
     // end::getClassesMethod[]

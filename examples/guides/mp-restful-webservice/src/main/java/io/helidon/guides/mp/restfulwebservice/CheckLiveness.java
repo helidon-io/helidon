@@ -16,12 +16,8 @@
 package io.helidon.guides.mp.restfulwebservice;
 
 // tag::imports[]
-import java.util.Collections;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
 import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -37,8 +33,6 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 @Health // <2>
 public class CheckLiveness implements HealthCheck { // <3>
 // end::classDecl[]
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     // tag::greetingDecl[]
     @Inject // <1>
