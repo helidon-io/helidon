@@ -171,8 +171,6 @@ For this example add these dependencies:
 If you run your project from the IDE, the IDE typically handles the main class and places
 dependent JARs on the runtime classpath for you and your pom is now ready to go.
 
-// _include::0--1:{se-guide-adoc}[tag=runMavenOutsideIDE]
-
 === Create an MP config file
 This file contains settings for the Helidon web server and the
 application. Note that the MP Config specification says that
