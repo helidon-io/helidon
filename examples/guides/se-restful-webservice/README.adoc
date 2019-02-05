@@ -109,7 +109,7 @@ coordinates:
     <artifactId>se-restful-webservice</artifactId>
 ----
 
-In the <dependency-management> section, note the dependency on the 'helidon-bom`
+In the <dependency-management> section, note the dependency on the `helidon-bom`
 POM:
 [source,xml,subs="verbatim,attributes"]
 // _include::0-6:{pom}[tag=bom,indent=0]
@@ -537,7 +537,7 @@ private static Routing createRouting(Config config) {
 ----
 <1> The `health` instance now includes the greet service liveness check.
 <2> The returned routing refers to the previously-instantiated and saved `GreetService`
-instead of creating one in-line.
+instance.
 
 // tag::rebuildAndRerunService[]
 === Stop, rebuild and rerun your service
