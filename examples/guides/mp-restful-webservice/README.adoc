@@ -106,7 +106,6 @@ Maven project for a Helidon service.
 --
 
 === Browse the generated source
-
 ==== `pom.xml`
 The input you provided to the archetype determines the project's Maven
 coordinates:
