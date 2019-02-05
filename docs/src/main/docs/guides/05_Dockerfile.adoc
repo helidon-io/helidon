@@ -399,7 +399,7 @@ When running `mvn clean package` again, we notice the following output.
 [INFO] Container entrypoint set to [java, -server, -Djava.awt.headless=true, -XX:+UnlockExperimentalVMOptions,-XX:+UseCGroupMemoryLimitForHeap, -XX:InitialRAMFraction=2, -XX:MinRAMFraction=2, -XX:MaxRAMFraction=2, -XX:+UseG1GC,-XX:MaxGCPauseMillis=100, -XX:+UseStringDeduplication, -cp, /app/resources:/app/classes:/app/libs/*,io.helidon.examples.quickstart.se.Main]
 [INFO] Loading to Docker daemon...
 [INFO]
-[INFO] Built image to Docker daemon as jib-quickstart-se, jib-quickstart-se:1.0-SNAPSHOT, jib-quickstart-se
+[INFO] Built image to Docker daemon as jib-quickstart-se, jib-quickstart-se:1.0-SNAPSHOT, jib-quickstart-se <2>
 ---
 
 <1> By default, Jib uses https://github.com/GoogleContainerTools/distroless/tree/master/java[`distroless/java`]
