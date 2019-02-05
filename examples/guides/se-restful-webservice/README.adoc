@@ -552,21 +552,56 @@ instead of creating one in-line.
 === Check the server's health
 Run this command:
 [source,bash]
-curl -i -X GET http://localhost:8080/health
+curl -X GET http://localhost:8080/health | python -m json.tool
 
 You should see output as shown in this example:
 [listing,subs=+quotes]
 ----
-{"outcome":"UP","checks":[{"name":"deadlock","state":"UP"},{"name":"diskSpace","state":"UP","data":{"free":"180.64 GB","freeBytes":193955860480,"percentFree":"38.79%","total":"465.72 GB","totalBytes":500068036608}},*{"name":"greetingAlive","state":"UP"}*,{"name":"heapMemory","state":"UP","data":{"free":"230.86 MB","freeBytes":242074232,"max":"4.00 GB","maxBytes":4294967296,"percentFree":"99.39%","total":"256.00 MB","totalBytes":268435456}}]}
+{
+    "checks": [
+        {
+            "name": "deadlock",
+            "state": "UP"
+        },
+        {
+            "data": {
+                "free": "179.37 GB",
+                "freeBytes": 192597303296,
+                "percentFree": "38.51%",
+                "total": "465.72 GB",
+                "totalBytes": 500068036608
+            },
+            "name": "diskSpace",
+            "state": "UP"
+        },
+        *{
+            "name": "greetingAlive",
+            "state": "UP"
+        }*,
+        {
+            "data": {
+                "free": "255.99 MB",
+                "freeBytes": 268422144,
+                "max": "4.00 GB",
+                "maxBytes": 4294967296,
+                "percentFree": "98.73%",
+                "total": "308.00 MB",
+                "totalBytes": 322961408
+            },
+            "name": "heapMemory",
+            "state": "UP"
+        }
+    ],
+    "outcome": "UP"
+}
 ----
-
 // tag::se-HealthChecks-notes[]
 The JSON output conveys various health indicators because the generated code
 included `HealthChecks.healthChecks()` in the `HealthSupport.builder`.
 // end::se-HealthChecks-notes[]
-The first item is `outcome` which describes the overall health of the
+The item labeled `outcome` describes the overall health of the
 server based on all the other indicators. The state of all the indicators is UP.
-So the outcome field shows UP. You should also see our app-specific liveness check in the output
+So the `outcome` field shows UP. You should also see our app-specific liveness check in the output
 (bolded above).
 
 === Arrange for an unhealthy report
@@ -586,19 +621,38 @@ Our code to update the greeting accepts this and saves it as the new greeting.
 +
 --
 [source,bash]
-curl -i -X GET http://localhost:8080/health
+curl -X GET http://localhost:8080/health | python -m json.tool
 
 This time you should see these two parts of the output indicating that something is
 wrong:
 [listing]
 ----
-{"outcome":"DOWN",...
-{"name":"greetingAlive","state":"DOWN","data":{"greeting":"not set or is empty"}}
+        {
+            "data": {
+                "greeting": "not set or is empty"
+            },
+            "name": "greetingAlive",
+            "state": "DOWN"
+        }
+...
+    "outcome": "DOWN"
 ----
-If you add `-i` to the `curl` command, the status 503 "Service Unavailable" is returned.
+If you add `-i` to the `curl` command and remove the pipe, the output includes the status 503 "Service Unavailable" report:
+[source,bash]
+curl -i -X GET http://localhost:8080/health
+
+[listing]
+----
+HTTP/1.1 503 Service Unavailable
+Content-Type: application/json
+Date: Tue, 5 Feb 2019 08:09:22 -0600
+transfer-encoding: chunked
+connection: keep-alive
+...
+----
 --
 
-. Set the greeting back to "Hello" so the service is healthy again.
+. Set the greeting back to "Hello", so that the service is healthy again.
 +
 --
 [source,bash]
@@ -609,7 +663,7 @@ curl -X PUT http://localhost:8080/greet/greeting/Hello
 +
 --
 [source,bash]
-curl -i -X GET http://localhost:8080/health
+curl -X GET http://localhost:8080/health | python -m json.tool
 
 This time the `outcome` and `greetingAlive` values will be back to `UP`.
 --
