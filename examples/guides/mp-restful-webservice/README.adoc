@@ -218,8 +218,8 @@ public class GreetingProvider {
 ----
 <1> Makes sure the system allocates one instance of `GreetingProvider` and uses
 that instance wherever `GreetingProvider` is injected.
-<2> An `AtomicReference<String>` can handle potential concurrent attempts to update it,
-so one holds the greeting message. Your application might receive multiple concurrent HTTP requests that
+<2> An `AtomicReference<String>`, which will handle concurrent updates correctly,
+holds the greeting message. Your application might receive multiple concurrent HTTP requests that
 try to modify the message.
 <3> The constructor is annotated with `javax.inject.Inject` and
 accepts the initial message value as a `String` argument. The `ConfigProperty` annotation
@@ -232,7 +232,7 @@ MicroProfile config source: `META-INF/microprofile-config.properties`.
 ==== `GreetResource.java` - the JAX-RS root resource for the application
 This class defines the endpoints for the application.
 
-Note several points:
+Note the following:
 
 . The resource is request-scoped and declares the common path prefix that
 all endpoints in the resource share.
@@ -260,7 +260,7 @@ public GreetResource(GreetingProvider greetingConfig) {
 }
 ----
 --
-. A private method formats the messages the endpoints
+. A private method formats the messages that the endpoints
 return to the clients.
 +
 --
@@ -281,7 +281,7 @@ in it.
 <3> Prepares the response as JSON.
 --
 
-. Three methods implement the resource's three endpoints.
+. The following methods implement the resource's three endpoints.
 .. Returning the default message
 +
 --
@@ -499,12 +499,12 @@ accepting it. But omitting that validation lets us create an easy health check
 that we can use by simply setting the greeting to blank from
 a `curl` command.
 
-Helidon MicroProfile provides a built-in health framework. We can tap into that
-easily to add our app-specific liveness check.
+Helidon MicroProfile provides a built-in health framework. We can use that
+framework easily to add our app-specific liveness check.
 
 === Add a new class for the health check
-Create `CheckLiveness.java` to define the endpoints for checking if the service is
-active and if it is ready.
+Create `CheckLiveness.java` to define the endpoints for checking whether the service is
+active and whether it is ready.
 
 . Add these imports:
 +
@@ -522,7 +522,7 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 ----
 --
 
-. Declare the class this way:
+. Declare the class:
 +
 --
 [source,java]
@@ -575,13 +575,13 @@ public HealthCheckResponse call() {
 ----
 <1> Create the health check with the name `greetingAlive`.
 <2> The service is alive as long as the greeting message (trimmed) is not empty.
-<3> If not, report that this liveness check is `down` and add an explanatory
+<3> If the message is empty, then report that this liveness check is `down` and add an explanatory
 message.
-<4> If so, report that this liveness check is `up`.
-<5> Either way, build the response and return it.
+<4> If the message is non-empty, then report that this liveness check is `up`.
+<5> In either case, build the response and return it.
 --
 
-// _include::0-67:{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;!se-HealthChecks-notes]
+// _include::0-120:{se-guide-adoc}[tags=rebuildAndRerunService;tryReadiness;!se-HealthChecks-notes]
 === Stop, rebuild and rerun your service
 
 . Stop any running instance of your app.
@@ -589,19 +589,54 @@ message.
 
 
 === Check the server's health
-Run this command
+Run this command:
 [source,bash]
-curl -i -X GET http://localhost:8080/health
+curl -X GET http://localhost:8080/health | python -m json.tool
 
-and you should see output like this
+You should see output as shown in this example:
 [listing,subs=+quotes]
 ----
-{"outcome":"UP","checks":[{"name":"deadlock","state":"UP"},{"name":"diskSpace","state":"UP","data":{"free":"180.64 GB","freeBytes":193955860480,"percentFree":"38.79%","total":"465.72 GB","totalBytes":500068036608}},*{"name":"greetingAlive","state":"UP"}*,{"name":"heapMemory","state":"UP","data":{"free":"230.86 MB","freeBytes":242074232,"max":"4.00 GB","maxBytes":4294967296,"percentFree":"99.39%","total":"256.00 MB","totalBytes":268435456}}]}
+{
+    "checks": [
+        {
+            "name": "deadlock",
+            "state": "UP"
+        },
+        {
+            "data": {
+                "free": "179.37 GB",
+                "freeBytes": 192597303296,
+                "percentFree": "38.51%",
+                "total": "465.72 GB",
+                "totalBytes": 500068036608
+            },
+            "name": "diskSpace",
+            "state": "UP"
+        },
+        *{
+            "name": "greetingAlive",
+            "state": "UP"
+        }*,
+        {
+            "data": {
+                "free": "255.99 MB",
+                "freeBytes": 268422144,
+                "max": "4.00 GB",
+                "maxBytes": 4294967296,
+                "percentFree": "98.73%",
+                "total": "308.00 MB",
+                "totalBytes": 322961408
+            },
+            "name": "heapMemory",
+            "state": "UP"
+        }
+    ],
+    "outcome": "UP"
+}
 ----
-
-The first item is `outcome` which describes the overall health of the
-server based on all the other indicators. All indicators are `UP` so the outcome
-is as well. You should also see our app-specific liveness check in the output
+The item labeled `outcome` describes the overall health of the
+server based on all the other indicators. The state of all the indicators is UP.
+So the `outcome` field shows UP. You should also see our app-specific liveness check in the output
 (bolded above).
 
 === Arrange for an unhealthy report
@@ -621,20 +656,38 @@ Our code to update the greeting accepts this and saves it as the new greeting.
 +
 --
 [source,bash]
-curl -i -X GET http://localhost:8080/health
+curl -X GET http://localhost:8080/health | python -m json.tool
 
 This time you should see these two parts of the output indicating that something is
 wrong:
 [listing]
 ----
-{"outcome":"DOWN",...
-{"name":"greetingAlive","state":"DOWN","data":{"greeting":"not set or is empty"}}
+        {
+            "data": {
+                "greeting": "not set or is empty"
+            },
+            "name": "greetingAlive",
+            "state": "DOWN"
+        }
+...
+    "outcome": "DOWN"
 ----
-and with the `-i` added to the `curl` command you would see status 503 "Service
-Unavailable" returned.
+If you add `-i` to the `curl` command and remove the pipe, the output includes the status 503 "Service Unavailable" report:
+[source,bash]
+curl -i -X GET http://localhost:8080/health
+
+[listing]
+----
+HTTP/1.1 503 Service Unavailable
+Content-Type: application/json
+Date: Tue, 5 Feb 2019 08:09:22 -0600
+transfer-encoding: chunked
+connection: keep-alive
+...
+----
 --
 
-. Set the greeting back to "Hello" so the service is healthy again.
+. Set the greeting back to "Hello", so that the service is healthy again.
 +
 --
 [source,bash]
@@ -645,10 +698,11 @@ curl -X PUT http://localhost:8080/greet/greeting/Hello
 +
 --
 [source,bash]
-curl -i -X GET http://localhost:8080/health
+curl -X GET http://localhost:8080/health | python -m json.tool
 
 This time the `outcome` and `greetingAlive` values will be back to `UP`.
 --
+
 
 
 == Add metrics support
@@ -759,7 +813,8 @@ annotation.
 . As expected, the value for the counter is 4.
 
 A `curl` to `http://localhost:8080/metrics` lists not only our application-scoped
-metric but all the _base_ and _vendor_ metrics as defined in the MicroProfile metrics spec.
+metric but all the _base_ and _vendor_ metrics as defined in the MicroProfile metrics
+specification.
 For example, you will see a `vendor:requests_count`
 counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
