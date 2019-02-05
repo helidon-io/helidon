@@ -556,7 +556,7 @@ private GreetingProvider greeting; // <2>
 +
 --
 The health framework invokes `call` to retrieve the health information associated
-with this health resource.
+with this health check.
 
 [source,java]
 // _include::0-10:{health-resource-class}[tag=callMethod,indent=0]
@@ -744,7 +744,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 --
 
 .. Annotate `getDefaultMessage`, `getMessage`, and `updateGreeting` so they are
-instrumented
+instrumented.
 +
 --
 [source,java]
