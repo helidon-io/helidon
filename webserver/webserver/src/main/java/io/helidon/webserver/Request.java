@@ -397,6 +397,7 @@ abstract class Request implements ServerRequest {
     static class Path implements ServerRequest.Path {
 
         private final String path;
+        private final String rawPath;
         private final Map<String, String> params;
         private final Path absolutePath;
         private List<String> segments;
@@ -405,11 +406,13 @@ abstract class Request implements ServerRequest {
          * Creates new instance.
          *
          * @param path         actual relative URI path.
+         * @param rawPath      actual relative URI path without any decoding.
          * @param params       resolved path parameters.
          * @param absolutePath absolute path.
          */
-        Path(String path, Map<String, String> params, Path absolutePath) {
+        Path(String path, String rawPath, Map<String, String> params, Path absolutePath) {
             this.path = path;
+            this.rawPath = rawPath;
             this.params = params == null ? Collections.emptyMap() : params;
             this.absolutePath = absolutePath;
         }
@@ -439,19 +442,28 @@ abstract class Request implements ServerRequest {
         }
 
         @Override
+        public String toRawString() {
+            return rawPath;
+        }
+
+        @Override
         public Path absolute() {
             return absolutePath == null ? this : absolutePath;
         }
 
         static Path create(Path contextual, String path, Map<String, String> params) {
+            return create(contextual, path, path, params);
+        }
+
+        static Path create(Path contextual, String path, String rawPath, Map<String, String> params) {
             if (contextual == null) {
-                return new Path(path, params, null);
+                return new Path(path, rawPath, params, null);
             } else {
-                return contextual.createSubpath(path, params);
+                return contextual.createSubpath(path, rawPath, params);
             }
         }
 
-        Path createSubpath(String path, Map<String, String> params) {
+        Path createSubpath(String path, String rawPath, Map<String, String> params) {
             if (params == null) {
                 params = Collections.emptyMap();
             }
@@ -459,13 +471,13 @@ abstract class Request implements ServerRequest {
                 HashMap<String, String> map = new HashMap<>(this.params.size() + params.size());
                 map.putAll(this.params);
                 map.putAll(params);
-                return new Path(path, params, new Path(this.path, map, null));
+                return new Path(path, rawPath, params, new Path(this.path, this.rawPath, map, null));
             } else {
                 HashMap<String, String> map = new HashMap<>(this.params.size() + params.size() + absolutePath.params.size());
                 map.putAll(absolutePath.params);
                 map.putAll(this.params);
                 map.putAll(params);
-                return new Path(path, params, new Path(absolutePath.path, map, null));
+                return new Path(path, rawPath, params, new Path(absolutePath.path, absolutePath.rawPath, map, null));
             }
         }
     }

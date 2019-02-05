@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,14 @@ public interface HttpRequest {
          * @return a path
          */
         String toString();
+
+        /**
+         * Returns a path string representation with leading slash without
+         * any character decoding.
+         *
+         * @return an undecoded path
+         */
+        String toRawString();
 
         /**
          * If the instance represents a path relative to some context root then returns absolute requested path otherwise

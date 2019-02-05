@@ -123,9 +123,9 @@ public class JerseySupport implements Service {
 
     private static URI requestUri(ServerRequest req) {
         try {
-            // Creating a URI from a URL avoids re-encoding of characters like '%'
+            // Use raw string representation and URL to avoid re-encoding chars like '%'
             URI partialUri = new URL(req.isSecure() ? "https" : "http", req.localAddress(),
-                                     req.localPort(), req.path().absolute().toString()).toURI();
+                                     req.localPort(), req.path().absolute().toRawString()).toURI();
             StringBuilder sb = new StringBuilder(partialUri.toString());
             if (req.uri().toString().endsWith("/") && sb.charAt(sb.length() - 1) != '/') {
                 sb.append('/');
