@@ -90,21 +90,29 @@ class RequestRouting implements Routing {
                         span.finish();
                         return null;
                     });
-            // Process path
-            String p = bareRequest.uri().normalize().getRawPath();
-            if (p.charAt(p.length() - 1) == '/') {
-                p = p.substring(0, p.length() - 1);
-            }
-            if (p.isEmpty()) {
-                p = "/";
-            }
-            Crawler crawler = new Crawler(routes, p, bareRequest.method());
+
+            // Jersey needs the raw path (not decoded) so we get that too
+            String path = canonicalize(bareRequest.uri().normalize().getPath());
+            String rawPath = canonicalize(bareRequest.uri().normalize().getRawPath());
+
+            Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers, span);
             nextRequests.next();
         } catch (Error | RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
             throw e;
         }
+    }
+
+    private static String canonicalize(String p) {
+        String result = p;
+        if (p.charAt(p.length() - 1) == '/') {
+            result = p.substring(0, p.length() - 1);
+        }
+        if (result.isEmpty()) {
+            result = "/";
+        }
+        return result;
     }
 
     private static Tracer tracer(WebServer webServer) {
@@ -155,6 +163,7 @@ class RequestRouting implements Routing {
         private final List<Route> routes;
         private final Request.Path contextPath;
         private final String path;
+        private final String rawPath;
         private final Http.RequestMethod method;
 
         private volatile int index = -1;
@@ -166,11 +175,14 @@ class RequestRouting implements Routing {
          * @param routes      routs to crawl throw.
          * @param contextPath a path representing URI path context.
          * @param path        an URI path to route.
+         * @param rawPath     not decoded URI path to route.
          * @param method      an HTTP method to route.
          */
-        private Crawler(List<Route> routes, Request.Path contextPath, String path, Http.RequestMethod method) {
+        private Crawler(List<Route> routes, Request.Path contextPath, String path, String rawPath,
+                        Http.RequestMethod method) {
             this.routes = routes;
             this.path = path;
+            this.rawPath = rawPath;
             this.contextPath = contextPath;
             this.method = method;
         }
@@ -179,11 +191,12 @@ class RequestRouting implements Routing {
          * Creates new instance of 'the root crawler'.
          *
          * @param routes routs to crawl throw.
-         * @param path   an URI path to route.
+         * @param path   a URI path to route.
+         * @param rawPath not decoded URI path to route.
          * @param method an HTTP method to route.
          */
-        Crawler(List<Route> routes, String path, Http.RequestMethod method) {
-            this(routes, null, path, method);
+        Crawler(List<Route> routes, String path, String rawPath, Http.RequestMethod method) {
+            this(routes, null, path, rawPath, method);
         }
 
         /**
@@ -208,15 +221,17 @@ class RequestRouting implements Routing {
                             HandlerRoute hr = (HandlerRoute) route;
                             PathMatcher.Result match = hr.match(path);
                             if (match.matches()) {
-                                return new Item(hr, Request.Path.create(contextPath, path, match.params()));
+                                return new Item(hr, Request.Path.create(contextPath, path, rawPath, match.params()));
                             }
                         } else if (route instanceof RouteList) {
                             RouteList rl = (RouteList) route;
                             PathMatcher.PrefixResult prefixMatch = rl.prefixMatch(path);
+                            PathMatcher.PrefixResult rawPrefixMatch = rl.prefixMatch(rawPath);
                             if (prefixMatch.matches()) {
                                 subCrawler = new Crawler(rl,
-                                                         Request.Path.create(contextPath, path, prefixMatch.params()),
+                                                         Request.Path.create(contextPath, path, rawPath, prefixMatch.params()),
                                                          prefixMatch.remainingPart(),
+                                                         rawPrefixMatch.remainingPart(),
                                                          method);
                                 // do "continue" in order to not log the failure message bellow
                                 continue;
