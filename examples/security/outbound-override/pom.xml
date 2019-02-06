@@ -29,6 +29,10 @@
     <artifactId>helidon-examples-security-outbound-override</artifactId>
     <name>Helidon Security Examples Outbound Override</name>
 
+    <properties>
+        <mainClass>io.helidon.security.examples.outbound.OutboundOverrideExample</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
