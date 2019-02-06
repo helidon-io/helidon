@@ -30,20 +30,16 @@ Here is the code for a minimalist web application that runs on a random free por
 
 [source,java]
 ----
-    public static void main(String[] args) {
-        try {
-            WebServer webServer = WebServer
-                    .create(Routing.builder()
-                            .any((req, res) -> res.send("It works!")) // <1>
-                            .build())
-                    .start() // <2>
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS); // <3>
+    public static void main(String[] args) throws Exception {
+        WebServer webServer = WebServer
+                .create(Routing.builder()
+                        .any((req, res) -> res.send("It works!")) // <1>
+                        .build())
+                .start() // <2>
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS); // <3>
 
-            System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
-        } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-            throw new RuntimeException(ex);
-        }
+        System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
     }
 ----
 
@@ -54,14 +50,14 @@ Here is the code for a minimalist web application that runs on a random free por
 
 == Maven Coordinates
 
-Declare the following dependency in your project:
+The <<getting-started/03_managing-dependencies.adoc, Getting Started>> page describes how you
+should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
 ----
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver</artifactId> <!--1-->
-    <version>{helidon-version}</version>
 </dependency>
 ----
 
