@@ -45,18 +45,6 @@ But always see the example's `README` for details.
 
 If you edit a `README.adoc` file for an example or guide, please [see below](#for-guide-editors).
 
-# Examples
-
-|Directory                     | Description |
-|:------------------------------|:-------------|
-| config | Helidon SE config examples |
-| security | Helidon SE security examples |
-| webserver | Helidon SE webserver examples |
-| microprofile | Helidon MP examples |
-| quickstarts | Quickstart examples. These are the same examples used by the Helidon quickstart archetypes |
-| integrations | CDI extensions examples. |
-| todo-app | A more complex example consisting of front end and back end services |
-
 # For guide editors
 
 ## Special handling for `README.adoc`

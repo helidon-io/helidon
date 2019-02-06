@@ -33,7 +33,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.basics.Main</mainClass>
+        <mainClass>io.helidon.examples.health.basics.Main</mainClass>
     </properties>
 
     <dependencies>
