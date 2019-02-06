@@ -33,8 +33,8 @@ Here is the code for a minimalist web application that runs on a random free por
     public static void main(String[] args) throws Exception {
         WebServer webServer = WebServer
                 .create(Routing.builder()
-                               .any((req, res) -> res.send("It works!")) // <1>
-                               .build())
+                        .any((req, res) -> res.send("It works!")) // <1>
+                        .build())
                 .start() // <2>
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS); // <3>
@@ -50,7 +50,8 @@ Here is the code for a minimalist web application that runs on a random free por
 
 == Maven Coordinates
 
-Declare the following dependencies in your project:
+The <<getting-started/03_managing-dependencies.adoc, Getting Started>> page describes how you
+should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
 ----
@@ -61,4 +62,3 @@ Declare the following dependencies in your project:
 ----
 
 <1> Dependency on WebServer.
-<2> TCP Server implementation module, in this case, the Netty-based one.
