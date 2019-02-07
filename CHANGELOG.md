@@ -7,9 +7,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+If you are upgrading from 0.10.5 or earlier you will need to change
+your application (see Notes for 0.11.0 release). For details on API
+changes see [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0)
+
+If you are upgrading from 0.11.0 note that media support (for example JsonSupport)
+has moved to a top level `media` component. Details
+in [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0). 
+
+Thanks for your patience with API changes. Once 1.0 is released this will
+be behind us!
+
 ### Improvements
 
+- Security: Support PermitAll and DenyAll annotations [334](https://github.com/oracle/helidon/pull/334)
+- WebServer: Implement RequestPredicate [325](https://github.com/oracle/helidon/pull/325)
+- WebServer: Move media processing separated to a top level module [326](https://github.com/oracle/helidon/pull/326)
+- Documentation: Add CDI extensions documentation [324](https://github.com/oracle/helidon/pull/324)
+- Documentation: Various documentation and examples updates
+
 ### Fixes
+
+- Metrics: Prometheus default help value added [375](https://github.com/oracle/helidon/pull/375)
+- Security: Jersey client fails in MP 1.2 with no security configured [332](https://github.com/oracle/helidon/issues/332)
+- WebServer: URL encoding of characters for Webserver and Jersey [370](https://github.com/oracle/helidon/pull/370)
+- Use JsonBuilderFactory instead of Json.create [330](https://github.com/oracle/helidon/pull/330)
 
 ## [0.11.0] - 2019-01-11
 
