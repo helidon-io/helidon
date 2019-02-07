@@ -58,6 +58,7 @@ public final class JsonBindingSupport implements Service, Handler {
                             JsonBinding.reader(jsonb));
         response.registerWriter(payload -> wantsJson(request, response),
                                 JsonBinding.writer(jsonb));
+        request.next();
     }
 
     private static boolean wantsJson(final ServerRequest request, final ServerResponse response) {
