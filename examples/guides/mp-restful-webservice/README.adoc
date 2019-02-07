@@ -32,17 +32,18 @@
 :artifact-id: mp-restful-webservice
 
 
-= The MP RESTful Web Service Guide
-:description: Helidon MP guide restful web service
-:keywords: helidon, guide, example, mp
+= The MicroProfile RESTful Web Service Tutorial
+:description: Helidon MicroProfile tutorial restful web service
+:keywords: helidon, tutorial, example, mp, microprofile
 :toc: preamble
 :toclevels: 2
 
-Create and build a JAX-RS RESTful web service as your first Helidon MP application.
+Create and build a JAX-RS RESTful web service as your first Helidon MicroProfile application.
 
 == What you will learn
-You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web service that accepts these HTTP requests:
+You'll learn how to use Helidon MicroProfile quickly to create a JAX-RS RESTful web service that accepts these HTTP requests:
 
+[width=75%]
 |===
 |Method and URL | Result
 
@@ -59,12 +60,13 @@ You'll create the app in three main steps:
 
 . Add code to record a simple app-specific metric.
 
-As you develop the app, this guide helps you understand what each part of the code
+As you develop the app, this tutorial helps you understand what each part of the code
 does. If you prefer to download the finished code for this example, follow the
-instructions at <<downloading, Downloading the example source>>
+instructions at <<downloading,Download the example source>>.
 
 == What you need
 
+[width=50%]
 |===
 |About 15 minutes
 |An IDE or text editor
@@ -590,7 +592,7 @@ message.
 === Check the server's health
 Run this command:
 [source,bash]
-curl -X GET http://localhost:8080/health | python -m json.tool
+curl -X GET http://localhost:8080/health | json_pp
 
 You should see output as shown in this example:
 [listing,subs=+quotes]
@@ -819,19 +821,31 @@ counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
-== (Optional) Download the example source [[downloading]]
-Instead of building the application using the code snippets in this guide,
+[[downloading,Download the example source]]
+== (Optional) Download the example source
+// _include::0-24:{se-guide-adoc}[tag=downloading]
+Instead of generating and then enhancing the application as described in this tutorial,
 you can download it.
 
-. Clone the link:https://github.com/oracle/helidon[`git` workspace
-for Helidon]
-. `cd` to the `examples/guides/mp-restful-webservice` directory.
-. Run:
+. Clone the Helidon repository:
 +
 --
 [source,bash]
+.Using ssh
+git clone git@github.com:oracle/helidon.git
+
+or
+[source,bash]
+.Using HTTPS
+git clone https://github.com/oracle/helidon.git
+--
+. `cd` to the `helidon/examples/guides/{artifact-id}` directory.
+. Run:
++
+--
+[source,bash,subs="attributes+"]
 ----
 mvn package
-java -jar target/mp-restful-webservice.jar
+java -jar target/{artifact-id}.jar
 ----
 --
