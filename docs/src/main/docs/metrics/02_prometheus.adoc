@@ -20,20 +20,19 @@
 :description: Helidon Prometheus metrics
 :keywords: helidon, metrics, prometheus
 
-== Metrics Support
 Helidon WebServer can serve Prometheus metrics.
 
-This document only describes how to register the support with WebServer and how to customize
-the configuration. For reference on using Prometheus, please refer to Prometheus documentation.
+This document describes how to register Prometheus support with WebServer and how to customize
+the configuration. For information about using Prometheus, see the
+Prometheus documentation: https://prometheus.io/docs/introduction/overview/.
 
-Helidon has its own metrics implementation, please refer to <<metrics/01_metrics.adoc,Helidon Metrics>>
+Note that Helidon has an in-built metrics implementation. See <<metrics/01_metrics.adoc,Helidon Metrics>>.
 
-=== Prerequisites
+== Prerequisites
 
 Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
-.Prometheus Metrics Dependency
 ----
     <dependency>
         <groupId>io.helidon.metrics</groupId>
@@ -41,11 +40,10 @@ Declare the following dependency in your project:
     </dependency>
 ----
 
-=== Using Prometheus Metrics in Your Application
-To enable Prometheus Metrics, register it with the WebServer.
+== Using Prometheus metrics in your application
+To enable Prometheus metrics, register it with the web server.
 
 [source,java]
-.Configuring Prometheus Metrics in WebServer
 ----
 import io.helidon.metrics.prometheus.PrometheusSupport;
 . . .
@@ -56,7 +54,7 @@ Routing.builder()
                 .build();
 ----
 
-The example above uses the default `CollectorRegistry` and exposes an endpoint
+This example uses the default `CollectorRegistry` and exposes an endpoint
 `/metrics`. You can use fluent API builder obtained by `PrometheusSupport.builder()` to
 configure a different `CollectorRegistry` or a different path.
 
