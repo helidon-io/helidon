@@ -44,7 +44,7 @@ public class JacksonSupportTest {
     @Test
     public void pingPong() throws Exception {
         final Routing routing = Routing.builder()
-            .register(new JacksonSupport(objectMapperProvider))
+            .register(JacksonSupport.create())
             .post("/foo", Handler.create(Person.class, (req, res, person) -> res.send(person)))
             .build();
         final String personJson = "{\"name\":\"Frank\"}";

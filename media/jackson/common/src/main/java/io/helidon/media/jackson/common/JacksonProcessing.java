@@ -83,7 +83,7 @@ public final class JacksonProcessing {
                     try {
                         return objectMapper.readValue(bytes, cls);
                     } catch (final IOException wrapMe) {
-                        throw new RuntimeException(wrapMe.getMessage(), wrapMe);
+                        throw new JacksonRuntimeException(wrapMe.getMessage(), wrapMe);
                     }
                 });
     }
@@ -103,7 +103,7 @@ public final class JacksonProcessing {
             try {
                 objectMapper.writeValue(baos, payload);
             } catch (final IOException wrapMe) {
-                throw new RuntimeException(wrapMe.getMessage(), wrapMe);
+                throw new JacksonRuntimeException(wrapMe.getMessage(), wrapMe);
             }
             return ContentWriters.byteArrayWriter(false)
                 .apply(baos.toByteArray());

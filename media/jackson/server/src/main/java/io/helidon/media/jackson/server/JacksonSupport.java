@@ -47,7 +47,7 @@ public final class JacksonSupport implements Service, Handler {
      * @exception NullPointerException if {@code objectMapperProvider}
      * is {@code null}
      */
-    public JacksonSupport(final BiFunction<? super ServerRequest,
+    private JacksonSupport(final BiFunction<? super ServerRequest,
                                            ? super ServerResponse,
                                            ? extends ObjectMapper> objectMapperProvider) {
         super();
@@ -68,6 +68,29 @@ public final class JacksonSupport implements Service, Handler {
         response.registerWriter(payload -> objectMapper.canSerialize(payload.getClass()) && this.wantsJson(request, response),
                                 JacksonProcessing.writer(objectMapper));
         request.next();
+    }
+
+    /**
+     * Creates a new {@link JacksonSupport}.
+     */
+    public static JacksonSupport create() {
+        return create((req, res) -> new ObjectMapper());
+    }
+    
+    /**
+     * Creates a new {@link JacksonSupport}.
+     *
+     * @param objectMapperProvider a {@link BiFunction} that returns
+     * an {@link ObjectMapper} when given a {@link ServerRequest} and
+     * a {@link ServerResponse}; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code objectMapperProvider}
+     * is {@code null}
+     */
+    public static JacksonSupport create(final BiFunction<? super ServerRequest,
+                                                         ? super ServerResponse,
+                                                         ? extends ObjectMapper> objectMapperProvider) {
+        return new JacksonSupport(objectMapperProvider);
     }
 
     private static boolean wantsJson(final ServerRequest request, final ServerResponse response) {
