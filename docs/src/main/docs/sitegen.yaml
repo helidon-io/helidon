@@ -133,7 +133,7 @@ backend:
               items:
                 - includes:
                     - "health/*.adoc"
-            - title: "Guides"
+            - title: "Tutorials"
               pathprefix: "/guides"
               glyph:
                 type: "icon"
