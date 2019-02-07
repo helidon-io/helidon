@@ -178,7 +178,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         sb.append("# HELP ")
                 .append(nameWithUnits)
                 .append(" ")
-                .append(getDescription())
+                .append(getDescription() == null ? "" : getDescription())
                 .append('\n');
     }
 
