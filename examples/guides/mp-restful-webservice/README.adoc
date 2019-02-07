@@ -62,7 +62,7 @@ You'll create the app in three main steps:
 
 As you develop the app, this guide helps you understand what each part of the code
 does. If you prefer to download the finished code for this example, follow the
-instructions at <<downloading>>.
+instructions at <<downloading,Download the example source>>.
 
 == What you need
 
