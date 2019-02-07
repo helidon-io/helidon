@@ -15,9 +15,9 @@
  */
 
 /**
- * JSON-P support common classes.
+ * JSON-B support common classes.
  *
- * @see io.helidon.media.jsonb.common.Jsonbrocessing
+ * @see io.helidon.media.jsonb.common.JsonBinding
  */
 module io.helidon.media.jsonb.common {
 
@@ -25,7 +25,7 @@ module io.helidon.media.jsonb.common {
     requires io.helidon.common.http;
     requires io.helidon.common.reactive;
     requires io.helidon.media.common;
-    requires transitive org.glassfish.java.json;
+    requires transitive java.json.bind;
     
     exports io.helidon.media.jsonb.common;
 }

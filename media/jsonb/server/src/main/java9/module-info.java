@@ -15,9 +15,9 @@
  */
 
 /**
- * JSON-P support for Webserver.
+ * JSON-B support for Webserver.
  *
- * @see io.helidon.media.jsonb.server.JsonSupport
+ * @see io.helidon.media.jsonb.server.JsonbSupport
  */
 module io.helidon.media.jsonb.server {
     requires io.helidon.media.jsonb.common;
