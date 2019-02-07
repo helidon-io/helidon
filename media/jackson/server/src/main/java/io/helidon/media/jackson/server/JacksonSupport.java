@@ -72,17 +72,21 @@ public final class JacksonSupport implements Service, Handler {
 
     /**
      * Creates a new {@link JacksonSupport}.
+     *
+     * @return a new {@link JacksonSupport}
      */
     public static JacksonSupport create() {
         return create((req, res) -> new ObjectMapper());
     }
-    
+
     /**
      * Creates a new {@link JacksonSupport}.
      *
      * @param objectMapperProvider a {@link BiFunction} that returns
      * an {@link ObjectMapper} when given a {@link ServerRequest} and
      * a {@link ServerResponse}; must not be {@code null}
+     *
+     * @return a new {@link JacksonSupport}
      *
      * @exception NullPointerException if {@code objectMapperProvider}
      * is {@code null}

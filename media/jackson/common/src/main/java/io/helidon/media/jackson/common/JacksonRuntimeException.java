@@ -27,5 +27,5 @@ public class JacksonRuntimeException extends RuntimeException {
     JacksonRuntimeException(final String message, final Throwable cause) {
         super(message, cause);
     }
-  
+
 }
