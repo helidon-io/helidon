@@ -43,6 +43,7 @@ Create and build a JAX-RS RESTful web service as your first Helidon MP applicati
 == What you will learn
 You'll learn how to use Helidon MP quickly to create a JAX-RS RESTful web service that accepts these HTTP requests:
 
+[width=75%]
 |===
 |Method and URL | Result
 
@@ -61,10 +62,11 @@ You'll create the app in three main steps:
 
 As you develop the app, this guide helps you understand what each part of the code
 does. If you prefer to download the finished code for this example, follow the
-instructions at <<downloading, Downloading the example source>>
+instructions at <<downloading>>.
 
 == What you need
 
+[width=50%]
 |===
 |About 15 minutes
 |An IDE or text editor
@@ -819,19 +821,6 @@ counter. This will be larger than our counter because that counter also tracks
 requests to the `/metrics` path itself; our `accessctr` counter tracks only requests to
 our application endpoints.
 
-== (Optional) Download the example source [[downloading]]
-Instead of building the application using the code snippets in this guide,
-you can download it.
-
-. Clone the link:https://github.com/oracle/helidon[`git` workspace
-for Helidon]
-. `cd` to the `examples/guides/mp-restful-webservice` directory.
-. Run:
-+
---
-[source,bash]
-----
-mvn package
-java -jar target/mp-restful-webservice.jar
-----
---
+[[downloading,Download the example source]]
+== (Optional) Download the example source
+include::{se-guide-adoc}[tag=downloading]
