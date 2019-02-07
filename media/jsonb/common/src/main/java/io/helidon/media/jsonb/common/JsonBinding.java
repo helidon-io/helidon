@@ -23,12 +23,32 @@ import javax.json.bind.Jsonb;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
+import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;
-import io.helidon.common.reactive.Flow;
 
+/**
+ * Contains utility methods for working with JSON-B.
+ *
+ * @see Jsonb
+ */
 public final class JsonBinding {
 
+    private JsonBinding() {
+        super();
+    }
+
+    /**
+     * Returns a new {@link Reader} that converts a {@link Flow.Publisher Publisher} of {@link java.nio.ByteBuffer}s to
+     * a Java object.
+     *
+     * <p>This method is intended for the derivation of other, more specific readers.</p>
+     *
+     * @param jsonb the {@link Jsonb} to use; must not be {@code null}
+     * @return the byte array content reader that transforms a publisher of byte buffers to a completion stage that
+     * might end exceptionally with a {@link RuntimeException} in case of I/O error
+     * @exception NullPointerException if {@code objectMapper} is {@code null}
+     */
     public static Reader<Object> reader(final Jsonb jsonb) {
         Objects.requireNonNull(jsonb);
         return (publisher, cls) -> ContentReaders.inputStreamReader()
@@ -36,6 +56,14 @@ public final class JsonBinding {
             .thenApply(inputStream -> jsonb.fromJson(inputStream, cls));
     }
 
+    /**
+     * Returns a function (writer) converting {@link Object}s to {@link Flow.Publisher Publisher}s
+     * of {@link DataChunk}s by using the supplied {@link Jsonb}.
+     *
+     * @param jsonb the {@link Jsonb} to use; must not be {@code null}
+     * @return created function
+     * @exception NullPointerException if {@code jsonb} is {@code null}
+     */
     public static Function<Object, Flow.Publisher<DataChunk>> writer(final Jsonb jsonb) {
         Objects.requireNonNull(jsonb);
         return payload -> {
@@ -45,5 +73,5 @@ public final class JsonBinding {
                 .apply(baos.toByteArray());
         };
     }
-  
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.media.jsonb.server;
 
 import java.util.Collection;
 import java.util.Objects;
-
 import java.util.function.BiFunction;
 
 import javax.json.bind.Jsonb;
@@ -31,10 +30,14 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+/**
+ * A {@link Service} and a {@link Handler} that provides <a
+ * href="http://json-b.net/">JSON-B</a> support to Helidon.
+ */
 public final class JsonBindingSupport implements Service, Handler {
 
     private final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends Jsonb> jsonbProvider;
-    
+
     private JsonBindingSupport(final BiFunction<? super ServerRequest,
                                                 ? super ServerResponse,
                                                 ? extends Jsonb> jsonbProvider) {
@@ -92,7 +95,19 @@ public final class JsonBindingSupport implements Service, Handler {
         }
         return returnValue;
     }
-    
+
+    /**
+     * Creates a new {@link JsonBindingSupport}.
+     *
+     * @param jsonbProvider a {@link BiFunction} that returns a {@link
+     * Jsonb} when given a {@link ServerRequest} and a {@link
+     * ServerResponse}; must not be {@code null}
+     *
+     * @return a new {@link JsonBindingSupport}
+     *
+     * @exception NullPointerException if {@code jsonbProvider} is
+     * {@code null}
+     */
     public static JsonBindingSupport create(final BiFunction<? super ServerRequest,
                                                              ? super ServerResponse,
                                                              ? extends Jsonb> jsonbProvider) {
