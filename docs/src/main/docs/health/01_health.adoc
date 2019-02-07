@@ -20,14 +20,14 @@
 :description: Helidon health checks
 :keywords: helidon, health-checks, health, check
 
-== Health Check Support
-Health check support in Helidon SE provides:
+== Overview
+Helidon SE provides the following to support health checks:
 
-1. Endpoint `/health` - a configurable endpoint that exposes health checks in JSON
-    format specified by Microprofile Health Check specification
-2. Base set of health checks (additional dependency)
+1. The endpoint `/health`: A configurable endpoint that exposes health checks in JSON
+    format as described by the MicroProfile Health specification
+2. A base set of health checks (a separate library `io.helidon.health:helidon-health-checks`)
 
-Health Check Support in Helidon SE serves as a core for Helidon MP implementation of Microprofile Health Check specification.
+The Health Check component in Helidon SE is the core for the Helidon MP implementation of the MicroProfile Health specification.
 
 
 === Prerequisites
@@ -35,7 +35,6 @@ Health Check Support in Helidon SE serves as a core for Helidon MP implementatio
 Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
-.Health Check Dependency
 ----
     <dependency>
         <groupId>io.helidon.health</groupId>
@@ -43,10 +42,9 @@ Declare the following dependency in your project:
     </dependency>
 ----
 
-To enable built-in health checks, add the following dependency:
+To enable the built-in health checks, add the following dependency:
 
 [source,xml,subs="verbatim,attributes"]
-.Health Checks Dependency
 ----
     <dependency>
         <groupId>io.helidon.health</groupId>
@@ -55,11 +53,10 @@ To enable built-in health checks, add the following dependency:
 ----
 
 
-=== Using Health Checks in Your Application
-To enable Health checks, register them with the WebServer.
+=== Adding health checks to your application
+To enable health checks, register them with the web server.
 
 [source,java]
-.Configuring Health checks in WebServer
 ----
 import io.helidon.metrics.MetricsSupport;
 . . .
@@ -77,18 +74,18 @@ Routing.builder()
         .register("/hello", (req, res) -> res.send("HelloWorld"))
         .build();
 ----
-<1> Add built-in health checks (requires `helidon-health-checks` dependency)
-<2> Add a custom health check - this example just returns `UP` and current time
-<3> Register health support with web server routing (adds `/health` endpoint)
+<1> Add built-in health checks (requires the `helidon-health-checks` dependency)
+<2> Add a custom health check. This example returns `UP` and current time
+<3> Register health support with web server routing (adds the `/health` endpoint)
 
-=== Accessing Health Endpoint
+=== Accessing the health check endpoint
 
-Access health check data via the `/health` endpoint.
+You can get health-check data through the `/health` endpoint.
 
-Using the built-in and custom health checks from the example above, the response in JSON format is:
+The following is an example of the response (in JSON format) to a health-check request, based on the built-in and custom
+    health checks implemented in the example provided earlier:
 
 [source,json]
-.Health Check Response
 ----
 {
     "outcome": "UP",
