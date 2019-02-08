@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,22 @@ readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 source ${WS_DIR}/etc/scripts/wercker-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
+
+# Workaround!!
+# Wercker clones the workspace like:
+# git clone --depth=50 --quiet --progress --no-single-branch
+# The --depth option screws up git history, causing the 
+# copyright plugin to incorrectly detect when files have been
+# modified.
+# This fetch restores the history. Since we don't have ssh keys
+# when in wercker we need to convert the repo URL to http first
+readonly GIT_REMOTE=$(git config --get remote.origin.url | \
+                      sed s,'git@github.com:','https://github.com/',g)	
+
+git remote add origin-https "${GIT_REMOTE}" > /dev/null 2>&1 || \
+git remote set-url origin-https "${GIT_REMOTE}"
+
+git fetch --unshallow origin-https
 
 mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
         -f ${WS_DIR}/pom.xml \
