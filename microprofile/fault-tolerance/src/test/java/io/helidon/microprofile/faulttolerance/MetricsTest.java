@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,7 +214,6 @@ public class MetricsTest extends FaultToleranceTest {
         for (int i = 0; i < CircuitBreakerBean.REQUEST_VOLUME_THRESHOLD; i++) {
             assertThrows(RuntimeException.class, () -> bean.exerciseBreaker(false));
         }
-        Thread.sleep(1000);
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseBreaker(false));
 
         assertThat(getCounter(bean, "exerciseBreaker",
@@ -249,7 +248,6 @@ public class MetricsTest extends FaultToleranceTest {
 
         }
         assertThrows(RuntimeException.class, () -> bean.exerciseGauges(false));
-        Thread.sleep(1000);
         assertThrows(CircuitBreakerOpenException.class, () -> bean.exerciseGauges(false));
 
         assertThat(getGauge(bean, "exerciseGauges",
