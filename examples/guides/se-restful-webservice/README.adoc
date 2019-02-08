@@ -24,9 +24,9 @@
 :artifact-id: se-restful-webservice
 
 
-= The RESTful Web Service Tutorial
-:description: Helidon tutorial restful web service
-:keywords: helidon, tutorial, example
+= The RESTful Web Service Guide
+:description: Helidon guide restful web service
+:keywords: helidon, guide, example
 :toc: preamble
 :toclevels: 2
 
@@ -53,7 +53,7 @@ to the HTTP requests.
 
 . Add code to record a simple app-specific metric.
 
-As you develop the app, this tutorial helps you understand what each part of the
+As you develop the app, this guide helps you understand what each part of the
 code does. If you prefer to download the finished code for this example, follow the
 instructions at <<downloading,Download the example source>>.
 
@@ -376,7 +376,7 @@ the server.
 <2> Builds the `Routing` instance by registering the JSON, health, metrics, and the
 app's own greeting service.
 
-Later steps in this tutorial show how to add your own, app-specific health check and
+Later steps in this guide show how to add your own, app-specific health check and
 metric.
 --
 
@@ -819,7 +819,7 @@ metrics infrastructure.
 [[downloading,Download the example source]]
 == (Optional) Download the example source
 // tag::downloading[]
-Instead of generating and then enhancing the application as described in this tutorial,
+Instead of generating and then enhancing the application as described in this guide,
 you can download it.
 
 . Clone the Helidon repository:
