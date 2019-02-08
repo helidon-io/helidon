@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>0.11.1-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
@@ -56,6 +56,16 @@
             <dependency>
                 <groupId>io.helidon.media</groupId>
                 <artifactId>helidon-media-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.media.jackson</groupId>
+                <artifactId>helidon-media-jackson-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.media.jackson</groupId>
+                <artifactId>helidon-media-jackson-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

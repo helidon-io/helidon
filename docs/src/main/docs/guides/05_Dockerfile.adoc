@@ -60,11 +60,10 @@ When you run the maven build, you'll notice lines like the following:
 [listing]
 ----
 [INFO] Scanning for projects...
-. . .
+...
 [INFO]
 [INFO] --- maven-dependency-plugin:2.9:copy-dependencies (copy-dependencies) @ quickstart-se ---
 [INFO] Copying netty-transport-4.1.22.Final.jar to /tmp/quickstart-se/target/libs/netty-transport-4.1.22.Final.jar
-. . .
 ----
 
 The project uses the `maven-dependency-plugin` to copy the runtime dependencies to
@@ -78,11 +77,9 @@ unzip -p target/quickstart-se.jar META-INF/MANIFEST.MF
 ----
 [listing]
 ----
-. . .
 Class-Path: libs/helidon-bundles-webserver-0.10.4.jar libs/helidon-webser
  ver-0.10.4.jar libs/helidon-common-reactive-0.10.4.jar libs/helidon-com
  mon-http-0.10.4.jar libs/helidon-common-key-util-0.10.4.jar libs/helido
-. . .
 ----
 
 This means you can easily run the application jar:

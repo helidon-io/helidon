@@ -59,8 +59,7 @@ To enable health checks, register them with the web server.
 [source,java]
 ----
 import io.helidon.metrics.MetricsSupport;
-. . .
-
+//...
 HealthSupport health = HealthSuport.builder()
     .add(HealthChecks.healthChecks())               // <1>
     .add(() -> HealthCheckResponse.named("exampleHealthCheck")

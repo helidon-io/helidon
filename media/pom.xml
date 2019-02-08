@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>0.11.1-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.media</groupId>
@@ -30,7 +30,7 @@
     <name>Helidon Media Project</name>
 
     <modules>
-
+        <module>jackson</module>
         <module>jsonp</module>
         <module>common</module>
     </modules>
