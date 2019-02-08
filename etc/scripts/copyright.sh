@@ -44,7 +44,12 @@ source ${WS_DIR}/etc/scripts/wercker-env.sh
 die(){ echo "${1}" ; exit 1 ;}
 
 echo "=========================================="
-git log -n 1 --date=local ${WS_DIR}/wercker.yml
+set -x
+mkdir ctest
+cd ctest
+git clone https://github.com/oracle/helidon.git
+cd helidon
+git log -n 1 --date=local ./wercker.yml
 exit 1
 echo "=========================================="
 
