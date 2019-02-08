@@ -46,7 +46,7 @@ To enable Metrics, register it with the WebServer.
 [source,java]
 ----
 import io.helidon.metrics.MetricsSupport;
-. . .
+//...
 
 Routing.builder()
                 .register(MetricsSupport.create())
@@ -62,7 +62,7 @@ Then you can use metrics in your service.
 import io.helidon.metrics.RegistryFactory;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-. . .
+//...
 
 public class MyService implements Service {
 
@@ -105,7 +105,7 @@ curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/metrics/
 # TYPE base:classloader_total_loaded_class_count counter
 # HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
 base:classloader_total_loaded_class_count 3157
-. . .
+#...
 ----
 
 [source,bash]
@@ -116,7 +116,7 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics/ | js
    "base" : {
       "memory.maxHeap" : 3817865216,
       "memory.committedHeap" : 335544320,
-. . .
+#...
 ----
 
 In addition to your application metrics the reports contain other
@@ -127,4 +127,3 @@ https://github.com/eclipse/microprofile-metrics/releases[MicroProfile Metrics]
 specification.
 
 The Metrics component in Helidon SE is the core for the Helidon MP implementation of the MicroProfile Metrics specification.
-

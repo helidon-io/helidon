@@ -1,7 +1,6 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,13 +16,38 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-:example-src-url: https://github.com/oracle/helidon/tree/master/examples/guides/mp-rest-web-service/src/main/java
+= Guides Overview
+:description: Helidon guides
+:keywords: helidon, java, microservices, microprofile, guides
 
+== Basics
 
-= Helidon MP: Create a RESTful Web Service
-:description: Helidon guide restful web service MP
-:keywords: helidon, guide, rest, web, service, example, MP
+[PILLARS]
+====
 
-Create and build a RESTful web service as your first Helidon MP application.
+[CARD]
+.SE REST Web Service
+[link=guides/02_SE_REST_web-service.adoc]
+--
+Use Helidon SE to create a RESTful web service that accepts HTTP requests.
+--
 
-include::{guides-dir}/mp-restful-webservice/README.adoc[leveloffset=+1]
+[CARD]
+.MP REST Web Service
+[link=guides/03_MP_REST_web-service.adoc]
+--
+Use Helidon MP to create a JAX-RS RESTful web service.
+--
+====
+
+== More Guides
+
+[PILLARS]
+====
+[CARD]
+.Create Docker Images
+[link=guides/05_Dockerfile.adoc]
+--
+Package your application and the necessary runtime dependencies as a Docker image that also contains the Java runtime.
+--
+====
