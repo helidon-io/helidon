@@ -45,11 +45,14 @@ die(){ echo "${1}" ; exit 1 ;}
 
 echo "=========================================="
 set -x
+git log -n 1 --date=local ${WS_DIR}/wercker.yml
+git show --name-only 86a7ca
 mkdir ctest
 cd ctest
 git clone https://github.com/oracle/helidon.git
 cd helidon
 git log -n 1 --date=local ./wercker.yml
+git show --name-only 86a7ca
 exit 1
 echo "=========================================="
 
