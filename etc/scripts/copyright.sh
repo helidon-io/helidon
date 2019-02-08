@@ -43,12 +43,17 @@ source ${WS_DIR}/etc/scripts/wercker-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 
-mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+echo "=========================================="
+git log -n 1 --date=local ${WS_DIR}/wercker.yml
+exit 1
+echo "=========================================="
+
+mvnDebug  org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
         -f ${WS_DIR}/pom.xml \
         -Dcopyright.exclude=${WS_DIR}/etc/copyright-exclude.txt \
         -Dcopyright.template=${WS_DIR}/etc/copyright.txt \
         -Dcopyright.scm=git \
-        -Pexamples,integrations,docs,ossrh-releases > ${RESULT_FILE} || die "Error running the Maven command"
+        -Pexamples,integrations,docs,ossrh-releases 
 
 grep -i "copyright" ${RESULT_FILE} \
     && die "COPYRIGHT ERROR" || echo "COPYRIGHT OK"
