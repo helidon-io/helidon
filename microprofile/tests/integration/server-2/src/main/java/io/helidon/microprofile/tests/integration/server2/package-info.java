@@ -13,27 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.tests.integration.server1;
-
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.ext.Provider;
-
 /**
- * An example provider that should be picked up and used.
+ * Integration test to make sure the server picks up resource classes and provider classes annotated with a CDI bean
+ * defining annotation.
  */
-@Provider
-public class TheProvider1 implements ContainerRequestFilter  {
-    private static final AtomicLong COUNTER = new AtomicLong();
-
-    @Override
-    public void filter(ContainerRequestContext requestContext) {
-        COUNTER.incrementAndGet();
-    }
-
-    static long count() {
-        return COUNTER.get();
-    }
-}
+package io.helidon.microprofile.tests.integration.server2;
