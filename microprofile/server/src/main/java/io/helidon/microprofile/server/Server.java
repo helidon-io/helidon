@@ -240,10 +240,13 @@ public interface Server {
 
             if (applications.isEmpty()) {
                 List<Class<?>> resourceClasses = extension.getResourceClasses();
+
                 if (resourceClasses.isEmpty()) {
                     LOGGER.warning("Failed to find JAX-RS resource to use");
                 }
                 resourceConfig = configForResourceClasses(resourceClasses);
+
+                extension.getProviderClasses().forEach(resourceConfig::register);
             } else {
                 applications.forEach(this::addApplication);
             }

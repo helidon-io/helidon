@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,29 @@ package io.helidon.microprofile.server;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
 
 /**
  * Extension to gather JAX-RS application or JAX-RS resource classes
  * if no application is present.
  */
 public class ServerCdiExtension implements Extension {
+    private static final Logger LOGGER = Logger.getLogger(ServerCdiExtension.class.getName());
+
     private final List<Class<?>> resourceClasses = new LinkedList<>();
     private final List<Class<? extends Application>> applications = new LinkedList<>();
+    private final List<Class<?>> providerClasses = new LinkedList<>();
 
     /**
      * Gather Application or resource classes to start.
@@ -42,16 +49,30 @@ public class ServerCdiExtension implements Extension {
      * @param <T> any type
      */
     @SuppressWarnings("unchecked")
-    public <T> void gatherApplications(@Observes ProcessInjectionTarget<T> pit) {
+    public <T> void gatherJaxRsResources(@Observes ProcessInjectionTarget<T> pit) {
         AnnotatedType<T> at = pit.getAnnotatedType();
-        if (!at.isAnnotationPresent(ApplicationScoped.class)) {
+
+        if (!at.isAnnotationPresent(ApplicationScoped.class)
+                && !at.isAnnotationPresent(RequestScoped.class)
+                && !at.isAnnotationPresent(Dependent.class)) {
             return;
         }
 
-        // class is annotated, let's make sure it is an application
+        // class is annotated, let's see its type
         Class<?> theClass = at.getJavaClass();
+
+        if (at.isAnnotationPresent(Provider.class)) {
+            this.providerClasses.add(theClass);
+            return;
+        }
+
         if (Application.class.isAssignableFrom(theClass)) {
-            this.applications.add((Class<? extends Application>) theClass);
+            if (at.isAnnotationPresent(ApplicationScoped.class)) {
+                this.applications.add((Class<? extends Application>) theClass);
+            } else {
+                LOGGER.warning("Found an application with RequestScoped or Dependent annotation. This application is ignored: "
+                                       + theClass.getName());
+            }
         } else {
             // still may be a jax-rs resource (with no application attached)
             if (at.isAnnotationPresent(Path.class)) {
@@ -67,5 +88,9 @@ public class ServerCdiExtension implements Extension {
 
     List<Class<?>> getResourceClasses() {
         return resourceClasses;
+    }
+
+    List<Class<?>> getProviderClasses() {
+        return providerClasses;
     }
 }

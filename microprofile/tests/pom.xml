@@ -40,6 +40,7 @@
 
     <modules>
         <module>arquillian</module>
+        <module>integration</module>
     </modules>
 
     <profiles>
@@ -47,6 +48,12 @@
             <id>tck</id>
             <modules>
                 <module>tck</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>itg-tests</id>
+            <modules>
+                <module>integration</module>
             </modules>
         </profile>
     </profiles>
