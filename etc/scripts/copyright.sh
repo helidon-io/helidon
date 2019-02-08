@@ -43,20 +43,9 @@ source ${WS_DIR}/etc/scripts/wercker-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 
-echo "=========================================="
-set -x
-git log -n 1 --date=local ${WS_DIR}/wercker.yml
-git show --name-only 86a7ca
-mkdir ctest
-cd ctest
-git clone https://github.com/oracle/helidon.git
-cd helidon
-git log -n 1 --date=local ./wercker.yml
-git show --name-only 86a7ca
-exit 1
-echo "=========================================="
+git fetch --unshallow
 
-mvnDebug  org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
+mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
         -f ${WS_DIR}/pom.xml \
         -Dcopyright.exclude=${WS_DIR}/etc/copyright-exclude.txt \
         -Dcopyright.template=${WS_DIR}/etc/copyright.txt \
