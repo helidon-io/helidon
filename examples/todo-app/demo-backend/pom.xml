@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples.todos</groupId>
         <artifactId>example-todo-app-project</artifactId>
-        <version>0.11.1-SNAPSHOT</version>
+        <version>0.11.1</version>
     </parent>
     <artifactId>helidon-todos-backend</artifactId>
     <name>Helidon Examples ToDo Demo Backend</name>

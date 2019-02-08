@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.examples.config</groupId>
         <artifactId>helidon-examples-config-project</artifactId>
-        <version>0.11.1-SNAPSHOT</version>
+        <version>0.11.1</version>
     </parent>
     <artifactId>helidon-examples-config-sources</artifactId>
     <name>Helidon Config Examples Sources</name>

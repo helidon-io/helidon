@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-guides-project</artifactId>
         <groupId>io.helidon.guides</groupId>
-        <version>0.11.1-SNAPSHOT</version>
+        <version>0.11.1</version>
     </parent>
     <!-- tag::coordinates[] -->
     <artifactId>se-restful-webservice</artifactId>
@@ -29,7 +29,7 @@
     <name>Helidon Guides SE RESTful Web Service</name>
 
     <properties>
-        <helidon.version>0.11.1-SNAPSHOT</helidon.version>
+        <helidon.version>0.11.1</helidon.version>
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.se</package>
         <mainClass>io.helidon.guides.se.restfulwebservice.Main</mainClass>

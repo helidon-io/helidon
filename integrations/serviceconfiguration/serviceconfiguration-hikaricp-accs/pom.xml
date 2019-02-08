@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.serviceconfiguration</groupId>
         <artifactId>helidon-serviceconfiguration-project</artifactId>
-        <version>0.11.1-SNAPSHOT</version>
+        <version>0.11.1</version>
     </parent>
     <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
     <name>Helidon ServiceConfiguration HikariCP ACCS</name>
