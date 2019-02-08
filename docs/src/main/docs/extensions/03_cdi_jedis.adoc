@@ -23,9 +23,6 @@
 :cdi-applicationscoped-api-url: http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html
 :jedis-jedispool-api-url: https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPool.html
 :jedis-project-url: https://github.com/xetorthio/jedis
-:mp-config-javadoc-base-url: https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3
-:mp-config-api-url: {mp-config-javadoc-base-url}?overview-summary.html
-:mp-config-propnames-url: {mp-config-javadoc-base-url}/org/eclipse/microprofile/config/Config.html#getPropertyNames--
 
 This link:{cdi-extension-api-url}[CDI portable extension] provides support for
  injecting link:{jedis-project-url}[Jedis clients] in your Helidon
