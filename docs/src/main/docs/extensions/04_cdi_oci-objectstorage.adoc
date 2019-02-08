@@ -21,7 +21,7 @@
 :keywords: helidon, java, microservices, microprofile, extensions, cdi, oci, object storage
 :cdi-extension-api-url: https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi
 :oci-objstore-url: https://docs.cloud.oracle.com/iaas/Content/Object/Concepts/objectstorageoverview.htm
-:oci-javasdk-url:https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
+:oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
 
 This link:{cdi-extension-api-url}[CDI portable extension] provides support for
  injecting link:{oci-objstore-url}[Oracle Cloud Infrastructure Object Storage client]
