@@ -46,7 +46,7 @@ To enable Prometheus metrics, register it with the web server.
 [source,java]
 ----
 import io.helidon.metrics.prometheus.PrometheusSupport;
-. . .
+//...
 
 Routing.builder()
                 .register(PrometheusSupport.create())
@@ -57,4 +57,3 @@ Routing.builder()
 This example uses the default `CollectorRegistry` and exposes an endpoint
 `/metrics`. You can use fluent API builder obtained by `PrometheusSupport.builder()` to
 configure a different `CollectorRegistry` or a different path.
-
