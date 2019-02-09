@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonb.common.JsonBinding;
@@ -114,4 +115,30 @@ public final class JsonBindingSupport implements Service, Handler {
                                                              ? extends Jsonb> jsonbProvider) {
         return new JsonBindingSupport(jsonbProvider);
     }
+
+    /**
+     * Creates a new {@link JsonBindingSupport}.
+     *
+     * @param jsonb the Jsonb} to use; must not be {@code null}
+     *
+     * @return a new {@link JsonBindingSupport}
+     *
+     * @exception NullPointerException if {@code jsonb} is {@code
+     * null}
+     */
+    public static JsonBindingSupport create(final Jsonb jsonb) {
+        Objects.requireNonNull(jsonb);
+        return create((req, res) -> jsonb);
+    }
+
+    /**
+     * Creates a new {@link JsonBindingSupport}.
+     *
+     * @return a new {@link JsonBindingSupport}
+     */
+    public static JsonBindingSupport create() {
+        final Jsonb jsonb = JsonbBuilder.create();
+        return create(jsonb);
+    }
+
 }
