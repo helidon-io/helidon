@@ -124,6 +124,7 @@
         <version.lib.jersey>2.26</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
         <version.lib.jmh>1.19</version.lib.jmh>
+        <version.lib.jsonb-api>1.0</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
         <version.lib.jsr305>3.0.2</version.lib.jsr305>
@@ -156,6 +157,7 @@
         <version.lib.zipkin>2.6.0</version.lib.zipkin>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>1.1.0</version.lib.failsafe>
+        <version.lib.yasson>1.0.3</version.lib.yasson>
         <!--
         !Version statement! - end
         -->
@@ -624,6 +626,11 @@
                 <version>${version.lib.jsonp-api}</version>
             </dependency>
             <dependency>
+              <groupId>javax.json.bind</groupId>
+              <artifactId>javax.json.bind-api</artifactId>
+              <version>${version.lib.jsonb-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.glassfish</groupId>
                 <artifactId>javax.json</artifactId>
                 <version>${version.lib.jsonp-impl}</version>
@@ -658,6 +665,11 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http2</artifactId>
                 <version>${version.lib.netty}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>yasson</artifactId>
+                <version>${version.lib.yasson}</version>
             </dependency>
 
             <!-- Config related -->
