@@ -34,14 +34,14 @@ Helidon provides link:{cdi-extension-api-url}[CDI portable extensions] that you
 .HikariCP data sources
 [link=extensions/02_cdi_datasource-hikaricp.adoc]
 --
-Create and inject a data source in your application code.
+Create and inject a HikariCP data source in your application code.
 --
 
 [CARD]
 .Jedis clients
 [link=extensions/03_cdi_jedis.adoc]
 --
-Create and inject a Jedis pool named in your application code.
+Create and inject a Jedis pool in your application code.
 --
 
 [CARD]

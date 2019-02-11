@@ -65,13 +65,13 @@ The following examples show how to create a `DataSource` named `orders` in your
  }
 ----
 
-The extension implements this injection point by creating an
+The extension implements this injection point by creating a
  link:{hikaricp-datasource-api-url}[HikariDataSource] object in the
  link:{cdi-applicationscoped-api-url}[application scope].
 
 You can configure the object using
- <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example
- the data source created above can be configured as follow:
+ <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example,
+ the data source created above can be configured as follows:
 
 [source, properties]
 .META-INF/microprofile-config.properties
