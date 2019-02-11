@@ -24,7 +24,7 @@
 :oci-javasdk-url: https://docs.cloud.oracle.com/iaas/Content/API/SDKDocs/javasdk.htm
 
 This link:{cdi-extension-api-url}[CDI portable extension] provides support for
- injecting link:{oci-objstore-url}[Oracle Cloud Infrastructure Object Storage client]
+ injecting an link:{oci-objstore-url}[Oracle Cloud Infrastructure Object Storage client]
  in your Helidon MicroProfile applications.
 
 == Prerequisites
@@ -80,8 +80,8 @@ The extension implements this injection point by creating an Object Storage clie
  object in the link:{cdi-applicationscoped-api-url}[application scope].
 
 You can configure the object using
- <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example
- the data source created above can be configured as follow:
+ <<microprofile/02_server-configuration.adoc, MicroProfile config>>. For example,
+ the Object Storage client created above can be configured as follows:
 
 [source, properties]
 .META-INF/microprofile-config.properties
@@ -96,4 +96,4 @@ oci.objectstorage.namespace=
 ----
 
 These properties are described in the
- link:{oci-javasdk-url}[OCI Object Storage Java SDK documentation].
+ link:{oci-javasdk-url}[Oracle Cloud Infrastructure Object Storage Java SDK documentation].
