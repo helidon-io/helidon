@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,13 +182,10 @@ class MethodIntrospector {
         // Circuit breakers
         result.put("circuitBreaker.enabled", hasCircuitBreaker());
         if (hasCircuitBreaker()) {
-            final CircuitBreaker circuitBreaker = getCircuitBreaker();
-            result.put("circuitBreaker.requestVolumeThreshold",
-                       circuitBreaker.requestVolumeThreshold());
-            result.put("circuitBreaker.errorThresholdPercentage",
-                       (int) (circuitBreaker.failureRatio() * 100));
-            result.put("circuitBreaker.sleepWindowInMilliseconds",
-                       TimeUtil.convertToMillis(circuitBreaker.delay(), circuitBreaker.delayUnit()));
+            // We are implementing this logic internally, so set to high values
+            result.put("circuitBreaker.requestVolumeThreshold", Integer.MAX_VALUE);
+            result.put("circuitBreaker.errorThresholdPercentage", 100);
+            result.put("circuitBreaker.sleepWindowInMilliseconds", Long.MAX_VALUE);
         }
 
         // Timeouts

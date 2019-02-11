@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
-import com.netflix.hystrix.HystrixCommand;
+import com.netflix.config.ConfigurationManager;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 
 /**
@@ -31,7 +32,8 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 public class CircuitBreakerHelper {
     private static final Logger LOGGER = Logger.getLogger(CircuitBreakerHelper.class.getName());
 
-    private static final long MAX_DELAY_CIRCUIT_BREAKER_OPEN = 1000;
+    private static final String FORCE_OPEN = "hystrix.command.%s.circuitBreaker.forceOpen";
+    private static final String FORCE_CLOSED = "hystrix.command.%s.circuitBreaker.forceClosed";
 
     /**
      * Internal state of a circuit breaker. We need to track this to implement
@@ -67,6 +69,8 @@ public class CircuitBreakerHelper {
 
         private long lastNanosRead;
 
+        private ReentrantLock lock = new ReentrantLock();
+
         CommandData(int capacity) {
             results = new boolean[capacity];
             size = 0;
@@ -74,13 +78,24 @@ public class CircuitBreakerHelper {
             lastNanosRead = System.nanoTime();
         }
 
+        ReentrantLock getLock() {
+            return lock;
+        }
+
         State getState() {
             return state;
+        }
+
+        long getCurrentStateNanos() {
+            return System.nanoTime() - lastNanosRead;
         }
 
         void setState(State newState) {
             if (state != newState) {
                 updateStateNanos(state);
+                if (newState == State.HALF_OPEN_MP) {
+                    successCount = 0;
+                }
                 state = newState;
             }
         }
@@ -166,6 +181,10 @@ public class CircuitBreakerHelper {
      * initial state, we remove it from the map and re-create it later if needed.
      */
     void resetCommandData() {
+        ReentrantLock lock = getCommandData().getLock();
+        if (lock.isLocked()) {
+            lock.unlock();
+        }
         COMMAND_STATS.remove(command.getCommandKey().toString());
         LOGGER.info("Discarded command data for " + command.getCommandKey());
     }
@@ -181,12 +200,12 @@ public class CircuitBreakerHelper {
     }
 
     /**
-     * Computes success ratio over a complete window.
+     * Returns nanos since switching to current state.
      *
-     * @return Success ratio or -1 if window is not complete.
+     * @return Nanos in state.
      */
-    double getSuccessRatio() {
-        return getCommandData().getSuccessRatio();
+    long getCurrentStateNanos() {
+        return getCommandData().getCurrentStateNanos();
     }
 
     /**
@@ -209,10 +228,16 @@ public class CircuitBreakerHelper {
 
     /**
      * Changes the state of a circuit breaker.
-     * @param newState
+     *
+     * @param newState New state.
      */
     void setState(State newState) {
         getCommandData().setState(newState);
+        if (newState == State.OPEN_MP) {
+            openBreaker();
+        } else {
+            closeBreaker();
+        }
         LOGGER.info("Circuit breaker for " + command.getCommandKey() + " now in state " + getState());
     }
 
@@ -233,12 +258,17 @@ public class CircuitBreakerHelper {
     }
 
     /**
-     * Returns underlying object for sync purposes only.
-     *
-     * @return Command data as an object.
+     * Prevent concurrent access to underlying command data.
      */
-    Object getSyncObject() {
-        return getCommandData();
+    void lock() {
+        getCommandData().getLock().lock();
+    }
+
+    /**
+     * Unlock access to underlying command data.
+     */
+    void unlock() {
+        getCommandData().getLock().unlock();
     }
 
     /**
@@ -252,27 +282,24 @@ public class CircuitBreakerHelper {
     }
 
     /**
-     * Ensure that our internal state matches Hystrix when a breaker in OPEN
-     * state. For some reason Hystrix does not set the breaker in OPEN state
-     * right away, and calling {@link HystrixCommand#isCircuitBreakerOpen()}
-     * appears to fix the problem.
+     * Force Hystrix's circuit breaker into an open state.
      */
-    void ensureConsistentState() {
-        if (getState() == State.OPEN_MP) {
-            long delayTotal = 0L;
-            while (!command.isCircuitBreakerOpen() && delayTotal < MAX_DELAY_CIRCUIT_BREAKER_OPEN) {
-                long delayPeriod = MAX_DELAY_CIRCUIT_BREAKER_OPEN / 10;
-                try {
-                    LOGGER.fine("Waiting for Hystrix to open circuit breaker (" + delayPeriod + " ms)");
-                    Thread.sleep(delayPeriod);
-                } catch (InterruptedException e) {
-                    // falls through
-                }
-                delayTotal += delayPeriod;
-            }
-            if (delayTotal >= MAX_DELAY_CIRCUIT_BREAKER_OPEN) {
-                throw new InternalError("Inconsistent state for circuit breaker in " + command.getCommandKey());
-            }
+    private void openBreaker() {
+        if (!command.isCircuitBreakerOpen()) {
+            ConfigurationManager.getConfigInstance().setProperty(
+                    String.format(FORCE_OPEN, command.getCommandKey()), "true");
+        }
+    }
+
+    /**
+     * Force Hystrix's circuit breaker into a closed state.
+     */
+    private void closeBreaker() {
+        if (command.isCircuitBreakerOpen()) {
+            ConfigurationManager.getConfigInstance().setProperty(
+                    String.format(FORCE_OPEN, command.getCommandKey()), "false");
+            ConfigurationManager.getConfigInstance().setProperty(
+                    String.format(FORCE_CLOSED, command.getCommandKey()), "true");
         }
     }
 }

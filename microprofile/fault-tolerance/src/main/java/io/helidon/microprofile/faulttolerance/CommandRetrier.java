@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,14 +185,16 @@ public class CommandRetrier {
             if (cause instanceof HystrixRuntimeException) {
                 cause = cause.getCause();
             }
+
             updateMetricsAfter(cause);
+
             if (cause instanceof TimeoutException) {
                 throw new org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException(cause);
             }
             if (cause instanceof RejectedExecutionException) {
                 throw new BulkheadException(cause);
             }
-            if (command.isCircuitBreakerOpen()) {
+            if (isHystrixBreakerException(cause)) {
                 throw new CircuitBreakerOpenException(cause);
             }
             throw toException(cause);
@@ -272,5 +274,17 @@ public class CommandRetrier {
      */
     private String createCommandKey() {
         return method.getName() + Objects.hash(context.getTarget(), context.getMethod().hashCode());
+    }
+
+    /**
+     * Hystrix throws a {@code RuntimeException}, so we need to check
+     * the message to determine if it is a breaker exception.
+     *
+     * @param t Throwable to check.
+     * @return Outcome of test.
+     */
+    private static boolean isHystrixBreakerException(Throwable t) {
+        return t instanceof RuntimeException && t.getMessage().contains("Hystrix "
+                + "circuit short-circuited and is OPEN");
     }
 }
