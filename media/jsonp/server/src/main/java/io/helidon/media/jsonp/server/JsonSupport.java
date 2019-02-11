@@ -18,6 +18,7 @@ package io.helidon.media.jsonp.server;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -185,7 +186,7 @@ public final class JsonSupport implements Service, Handler {
      * Returns a charset from {@code Content-Type} header parameter or {@code null} if not defined.
      *
      * @param headers parameters representing request or response headers
-     * @return a charset or {@code null}
+     * @return a charset or {@code UTF-8} as default
      * @throws RuntimeException if charset is not supported
      */
     private Charset determineCharset(Parameters headers) {
@@ -199,7 +200,7 @@ public final class JsonSupport implements Service, Handler {
                         return null; // Do not need default charset. Can use JSON specification.
                     }
                 })
-                .orElse(null);
+                .orElse(StandardCharsets.UTF_8);
     }
 
     /**
