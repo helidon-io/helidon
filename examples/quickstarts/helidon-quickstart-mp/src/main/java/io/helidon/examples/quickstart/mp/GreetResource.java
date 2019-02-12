@@ -98,7 +98,7 @@ public class GreetResource {
      * Set the greeting to use in future messages.
      *
      * @param jsonObject JSON containing the new greeting
-     * @return {@link JsonObject}
+     * @return {@link Response}
      */
     @SuppressWarnings("checkstyle:designforextension")
     @Path("/greeting")
