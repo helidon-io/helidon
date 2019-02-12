@@ -17,7 +17,7 @@ in [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0).
 
 ### Improvements
 
-- WebServer: Add JAX-B (Yasson) support [388](https://github.com/oracle/helidon/pull/388)
+- WebServer: Add JSON-B (Yasson) support [388](https://github.com/oracle/helidon/pull/388)
 - WebServer: Add Jackson support [351](https://github.com/oracle/helidon/pull/351)
 - MicroProfile: update Hystrix to 1.5.18 [391](https://github.com/oracle/helidon/pull/391)
 
