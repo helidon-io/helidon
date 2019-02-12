@@ -16,6 +16,7 @@
 
 package io.helidon.examples.quickstart.se;
 
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.net.URL;
@@ -80,8 +81,14 @@ public class MainTest {
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
                 "hello Joe message");
 
-        conn = getURLConnection("PUT", "/greet/greeting/Hola");
+        conn = getURLConnection("PUT", "/greet/greeting");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+        OutputStream os = conn.getOutputStream();
+        os.write("{\"greeting\" : \"Hola\"}".getBytes());
+        os.close();
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response3");
+
         conn = getURLConnection("GET", "/greet/Jose");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
         jsonReader = JSON.createReader(conn.getInputStream());

@@ -41,8 +41,8 @@ curl -X GET http://localhost:8080/greet
 curl -X GET http://localhost:8080/greet/Joe
 {"message":"Hello Joe!"}
 
-curl -X PUT http://localhost:8080/greet/greeting/Hola
-{"gretting":"Hola"}
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
+{"greeting":"Hola"}
 
 curl -X GET http://localhost:8080/greet/Jose
 {"message":"Hola Jose!"}

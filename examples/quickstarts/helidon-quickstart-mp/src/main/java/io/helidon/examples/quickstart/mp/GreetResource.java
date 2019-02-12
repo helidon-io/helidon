@@ -30,6 +30,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * A simple JAX-RS resource to greet you. Examples:
@@ -41,7 +42,7 @@ import javax.ws.rs.core.MediaType;
  * curl -X GET http://localhost:8080/greet/Joe
  *
  * Change greeting
- * curl -X PUT http://localhost:8080/greet/greeting/Hola
+ * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
  *
  * The message is returned as a JSON object.
  */
@@ -96,20 +97,28 @@ public class GreetResource {
     /**
      * Set the greeting to use in future messages.
      *
-     * @param newGreeting the new greeting message
      * @return {@link JsonObject}
      */
     @SuppressWarnings("checkstyle:designforextension")
-    @Path("/greeting/{greeting}")
+    @Path("/greeting")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) {
-        greetingProvider.setMessage(newGreeting);
+    public JsonObject updateGreeting(JsonObject jsonObject) {
 
+        if (jsonObject.isNull("greeting")) {
+            Response.status(Response.Status.BAD_REQUEST);
+            return JSON.createObjectBuilder()
+                       .add("error", "No greeting provided")
+                       .build();
+        }
+
+        String newGreeting = jsonObject.getString("greeting");
+
+        greetingProvider.setMessage(newGreeting);
         return JSON.createObjectBuilder()
-                .add("greeting", newGreeting)
-                .build();
+                   .add("greeting", newGreeting)
+                   .build();
     }
 
     private JsonObject createResponse(String who) {
