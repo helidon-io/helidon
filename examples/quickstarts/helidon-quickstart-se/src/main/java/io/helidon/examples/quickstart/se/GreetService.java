@@ -102,11 +102,7 @@ public class GreetService implements Service {
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
         if (!jo.containsKey("greeting")) {
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "No greeting provided")
-                    .build();
-            response.status(Http.Status.BAD_REQUEST_400)
-                    .send(jsonErrorObject);
+            response.status(Http.Status.NO_CONTENT_204).send();
             return;
         }
 
