@@ -7,9 +7,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+If you are upgrading from 0.10.5 or earlier you will need to change
+your application (see Notes for 0.11.0 release). For details on API
+changes see [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0)
+
+If you are upgrading from 0.11.0 note that media support (for example JsonSupport)
+has moved to a top level `media` component. Details
+in [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0). 
+
 ### Improvements
 
+- WebServer: Add JAX-B (Yasson) support [388](https://github.com/oracle/helidon/pull/388)
+- WebServer: Add Jackson support [351](https://github.com/oracle/helidon/pull/351)
+- MicroProfile: update Hystrix to 1.5.18 [391](https://github.com/oracle/helidon/pull/391)
+
 ### Fixes
+
+- WebServer: Fix for NullPointer when using Json support without configured charset [393](https://github.com/oracle/helidon/pull/393)
 
 ## [0.11.1] - 2019-02-07
 
