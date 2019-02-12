@@ -125,7 +125,7 @@ public class GreetService implements Service {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response) );
+        request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
     }
 
 }
