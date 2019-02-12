@@ -141,9 +141,10 @@ public class GreetService implements Service {
         response.send(returnObject);
     }
 
+    // tag::updateGreetingFromJson[]
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
-        if (!jo.containsKey("greeting")) {
+        if (!jo.containsKey("greeting")) { // <1>
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "No greeting provided")
                     .build();
@@ -152,11 +153,12 @@ public class GreetService implements Service {
             return;
         }
 
-        greeting = jo.getString("greeting");
+        greeting = jo.getString("greeting"); // <2>
 
-        response.status(Http.Status.NO_CONTENT_204)
+        response.status(Http.Status.NO_CONTENT_204) // <3>
                 .send();
     }
+    // end::updateGreetingFromJson[]
 
     /**
      * Set the greeting to use in future messages.
