@@ -16,6 +16,7 @@
 
 package io.helidon.guides.se.restfulwebservice;
 
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.net.URL;
@@ -41,8 +42,15 @@ public class MainTest {
     @BeforeAll
     public static void startTheServer() throws Exception {
         webServer = Main.startServer();
+
+        long timeout = 2000; // 2 seconds should be enough to start the server
+        long now = System.currentTimeMillis();
+
         while (! webServer.isRunning()) {
-            Thread.sleep(1 * 1000);
+            Thread.sleep(100);
+            if ((System.currentTimeMillis() - now) > timeout) {
+                Assertions.fail("Failed to start webserver");
+            }
         }
     }
 
@@ -73,8 +81,14 @@ public class MainTest {
         Assertions.assertEquals("Hello Joe!", jsonObject.getString("message"),
                 "hello Joe message");
 
-        conn = getURLConnection("PUT", "/greet/greeting/Hola");
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response3");
+        conn = getURLConnection("PUT", "/greet/greeting");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+        OutputStream os = conn.getOutputStream();
+        os.write("{\"greeting\" : \"Hola\"}".getBytes());
+        os.close();
+        Assertions.assertEquals(204, conn.getResponseCode(), "HTTP response3");
+
         conn = getURLConnection("GET", "/greet/Jose");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
         jsonReader = JSON.createReader(conn.getInputStream());
