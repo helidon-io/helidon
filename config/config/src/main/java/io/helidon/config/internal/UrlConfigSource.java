@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
     }
 
     @Override
-    protected ConfigParser.Content content() throws ConfigException {
+    protected ConfigParser.Content<Instant> content() throws ConfigException {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod(GET_METHOD);
