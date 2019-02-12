@@ -106,7 +106,7 @@ public class GreetResource {
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject updateGreeting(JsonObject jsonObject) {
 
-        if (jsonObject.isNull("greeting")) {
+        if (!jsonObject.containsKey("greeting")) {
             Response.status(Response.Status.BAD_REQUEST);
             return JSON.createObjectBuilder()
                        .add("error", "No greeting provided")

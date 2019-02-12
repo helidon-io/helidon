@@ -101,7 +101,7 @@ public class GreetService implements Service {
 
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
-        if (jo.isNull("greeting")) {
+        if (!jo.containsKey("greeting")) {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "No greeting provided")
                     .build();
@@ -112,7 +112,7 @@ public class GreetService implements Service {
 
         greeting = jo.getString("greeting");
 
-        JsonObject returnObject = Json.createObjectBuilder()
+        JsonObject returnObject = JSON.createObjectBuilder()
                 .add("greeting", greeting)
                 .build();
         response.send(returnObject);
