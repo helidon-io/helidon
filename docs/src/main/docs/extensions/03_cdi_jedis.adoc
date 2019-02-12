@@ -132,7 +132,7 @@ Property names that start with
  link:{jedis-jedispool-api-url}[`JedisPool`], or as a primitive value
  accepted by link:{jedis-jedispool-constructor-api-url}[its
  constructor].  Because the `JedisPool` class inherits from the
- link{jedis-pool-api-url}[`Pool`] class, its writable Java Bean
+ link:{jedis-pool-api-url}[`Pool`] class, its writable Java Bean
  properties are available as well.
 
 Accordingly, the `JedisPool` properties that can be set are as
