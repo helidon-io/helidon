@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,7 +157,6 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
             implements io.helidon.common.Builder<ConfigSource> {
 
         private static final String MEDIA_TYPE_MAPPING_KEY = "media-type-mapping";
-        private final B thisBuilder;
         private Function<Config.Key, String> mediaTypeMapping;
         private Function<Config.Key, ConfigParser> parserMapping;
         private volatile ConfigSource configSource;
@@ -169,8 +168,6 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
          */
         protected Builder(Class<T> targetType) {
             super(targetType);
-
-            this.thisBuilder = (B) this;
 
             mediaTypeMapping = null;
             parserMapping = null;
@@ -216,7 +213,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
             Objects.requireNonNull(mediaTypeMapping, "mediaTypeMapping cannot be null");
 
             this.mediaTypeMapping = mediaTypeMapping;
-            return thisBuilder;
+            return thisBuilder();
         }
 
         /**
@@ -229,7 +226,7 @@ public abstract class AbstractConfigSource<S> extends AbstractSource<ObjectNode,
             Objects.requireNonNull(parserMapping, "parserMapping cannot be null");
 
             this.parserMapping = parserMapping;
-            return thisBuilder;
+            return thisBuilder();
         }
 
         /**

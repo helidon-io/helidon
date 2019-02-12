@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,6 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
      */
     public abstract static class Builder<B extends Builder<B, T>, T> extends AbstractConfigSource.Builder<B, T> {
         private static final String MEDIA_TYPE_KEY = "media-type";
-        private final B thisBuilder;
         private String mediaType;
         private ConfigParser parser;
 
@@ -141,8 +140,6 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
          */
         protected Builder(Class<T> targetType) {
             super(targetType);
-
-            thisBuilder = (B) this;
         }
 
         /**
@@ -172,7 +169,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
         public B mediaType(String mediaType) {
             this.mediaType = mediaType;
 
-            return thisBuilder;
+            return thisBuilder();
         }
 
         /**
@@ -186,7 +183,7 @@ public abstract class AbstractParsableConfigSource<S> extends AbstractConfigSour
         public B parser(ConfigParser parser) {
             this.parser = parser;
 
-            return thisBuilder;
+            return thisBuilder();
         }
 
         /**

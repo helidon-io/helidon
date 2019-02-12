@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,10 +193,10 @@ public interface Server {
             STARTUP_LOGGER.finest("Configuration obtained");
 
             if (null == cdiContainer) {
-                cdiContainer = currentContainter()
+                cdiContainer = currentContainer()
                         .orElseGet(() -> {
                             containerCreated = true;
-                            return createContainter(classLoader);
+                            return createContainer(classLoader);
                         });
             }
 
@@ -249,7 +249,7 @@ public interface Server {
             }
         }
 
-        private Optional<SeContainer> currentContainter() {
+        private Optional<SeContainer> currentContainer() {
             try {
                 CDI<Object> current = CDI.current();
                 STARTUP_LOGGER.finest("CDI.current()");
@@ -271,7 +271,7 @@ public interface Server {
             }
         }
 
-        private SeContainer createContainter(ClassLoader classLoader) {
+        private SeContainer createContainer(ClassLoader classLoader) {
             // not in CDI
             SeContainerInitializer initializer = SeContainerInitializer.newInstance();
             initializer.setClassLoader(classLoader);

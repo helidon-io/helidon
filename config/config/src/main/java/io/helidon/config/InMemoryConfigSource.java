@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,13 +59,13 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
     static final class Builder extends AbstractParsableConfigSource.Builder<InMemoryConfigSource.Builder, Void> {
 
         private String uri;
-        private ConfigParser.Content content;
+        private ConfigParser.Content<Object> content;
 
         Builder() {
             super(Void.class);
         }
 
-        Builder content(String uri, ConfigParser.Content content) {
+        Builder content(String uri, ConfigParser.Content<Object> content) {
             Objects.requireNonNull(uri, "uri cannot be null");
             Objects.requireNonNull(content, "content cannot be null");
 
@@ -86,7 +86,7 @@ class InMemoryConfigSource extends AbstractParsableConfigSource<Object> {
             return uri;
         }
 
-        private ConfigParser.Content content() {
+        private ConfigParser.Content<Object> content() {
             return content;
         }
     }

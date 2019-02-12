@@ -22,6 +22,7 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -38,7 +39,7 @@ import io.helidon.webserver.Service;
  * curl -X GET http://localhost:8080/greet/Joe
  *
  * Change greeting
- * curl -X PUT http://localhost:8080/greet/greeting/Hola
+ * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
  *
  * The message is returned as a JSON object
  */
@@ -65,7 +66,7 @@ public class GreetService implements Service {
         rules
             .get("/", this::getDefaultMessageHandler)
             .get("/{name}", this::getMessageHandler)
-            .put("/greeting/{greeting}", this::updateGreetingHandler);
+            .put("/greeting", this::updateGreetingHandler);
     }
 
     /**
@@ -98,19 +99,29 @@ public class GreetService implements Service {
         response.send(returnObject);
     }
 
+    private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
+
+        if (!jo.containsKey("greeting")) {
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                    .add("error", "No greeting provided")
+                    .build();
+            response.status(Http.Status.BAD_REQUEST_400)
+                    .send(jsonErrorObject);
+            return;
+        }
+
+        greeting = jo.getString("greeting");
+        response.status(Http.Status.NO_CONTENT_204).send();
+    }
+
     /**
      * Set the greeting to use in future messages.
      * @param request the server request
      * @param response the server response
      */
     private void updateGreetingHandler(ServerRequest request,
-                                ServerResponse response) {
-        greeting = request.path().param("greeting");
-
-        JsonObject returnObject = JSON.createObjectBuilder()
-                .add("greeting", greeting)
-                .build();
-        response.send(returnObject);
+                                       ServerResponse response) {
+        request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
     }
 
 }
