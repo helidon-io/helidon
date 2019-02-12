@@ -87,7 +87,7 @@ public class MainTest {
         OutputStream os = conn.getOutputStream();
         os.write("{\"greeting\" : \"Hola\"}".getBytes());
         os.close();
-        Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response3");
+        Assertions.assertEquals(204, conn.getResponseCode(), "HTTP response3");
 
         conn = getURLConnection("GET", "/greet/Jose");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response4");
