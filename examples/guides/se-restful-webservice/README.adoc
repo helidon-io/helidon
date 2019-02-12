@@ -191,7 +191,7 @@ URL path. The example includes just one service: the greeting service in
 +
 --
 [source,java]
-// _include::0-11:{greet-service}[tags=importsStart;importsWebServer]
+// _include::0-9:{greet-service}[tags=importsStart;importsWebServer]
 ----
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -203,8 +203,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 ----
 These imports are necessary for JSON and config support and for the key parts of
 the web server.
