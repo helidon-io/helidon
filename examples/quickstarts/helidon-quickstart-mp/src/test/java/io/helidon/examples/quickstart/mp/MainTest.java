@@ -59,10 +59,10 @@ class MainTest {
                 "hello Joe message");
 
         Response r = client
-                .target(getConnectionString("/greet/greeting/Hola"))
+                .target(getConnectionString("/greet/greeting"))
                 .request()
-                .put(Entity.entity("", MediaType.APPLICATION_JSON));
-        Assertions.assertEquals(200, r.getStatus(), "PUT status code");
+                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON));
+        Assertions.assertEquals(204, r.getStatus(), "PUT status code");
 
         jsonObject = client
                 .target(getConnectionString("/greet/Jose"))
