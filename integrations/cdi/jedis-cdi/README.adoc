@@ -54,7 +54,7 @@ public YourConstructor(@Named("orders") JedisPool pool) {
 The Helidon Jedis CDI Integration project will satisfy this injection
 point with a
 https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPool.html[`JedisPool`]
-in
+that it will create in
 http://docs.jboss.org/cdi/api/2.0/javax/enterprise/context/ApplicationScoped.html[application
 scope].
 
@@ -62,9 +62,9 @@ To create it, the Helidon Jedis CDI Integration project will use
 https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3/index.html?overview-summary.html[MicroProfile
 Config] to locate its configuration.
 https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3/org/eclipse/microprofile/config/Config.html#getPropertyNames--[Property
-names] that start with `redis.clients.jedis.JedisPool.`_dataSourceName_`.` will
+names] that start with `redis.clients.jedis.JedisPool.`_instanceName_`.` will
 be parsed, and the remaining portion of each such name will be treated
-as a Java bean property of `JedisPool`.
+as a Java Bean or constructor property of `JedisPool`.
 
 So, for example, a System property with a name like this:
 
@@ -79,8 +79,8 @@ redis.clients.jedis.JedisPool.orders.port
 ----
 
 ...together with other similarly-named properties will result
-ultimately in a `JedisPool` object injectable under the name `orders`
-with a `port` property set to `6379` like so:
+ultimately in a `JedisPool` object injectable under the instance name
+of `orders` with a `port` property set to `6379` like so:
 
 [source,java]
 ----
@@ -88,3 +88,78 @@ with a `port` property set to `6379` like so:
 @Named("orders")
 private JedisPool pool;
 ----
+
+Property names that start with
+ `redis.clients.jedis.JedisPool.instanceName.` are parsed, and the
+ remaining portion of each name is treated as a Java Bean property of
+ https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPool.html[`JedisPool`],
+ or as a primitive value accepted by
+ https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPool.html#JedisPool-org.apache.commons.pool2.impl.GenericObjectPoolConfig-java.lang.String-int-int-java.lang.String-int-boolean-javax.net.ssl.SSLSocketFactory-javax.net.ssl.SSLParameters-javax.net.ssl.HostnameVerifier-[its
+ most specific constructor].  Because the `JedisPool` class inherits
+ from the
+ https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/util/Pool.html[`Pool`]
+ class, its writable Java Bean properties are available as well.
+
+Accordingly, the `JedisPool` properties that can be set are as
+follows, where `instanceName` should be replaced with the actual name
+used in application code:
+
+* `redis.clients.jedis.JedisPool.instanceName.clientName`
+* `redis.clients.jedis.JedisPool.instanceName.connectionTimeout`
+* `redis.clients.jedis.JedisPool.instanceName.database`
+* `redis.clients.jedis.JedisPool.instanceName.host`
+* `redis.clients.jedis.JedisPool.instanceName.password`
+* `redis.clients.jedis.JedisPool.instanceName.port`
+* `redis.clients.jedis.JedisPool.instanceName.socketTimeout`
+* `redis.clients.jedis.JedisPool.instanceName.ssl`
+
+Any documentation for these properties that exists may be found in the
+javadocs for the
+https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPool.html[`JedisPool`]
+and
+https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/util/Pool.html[`Pool`]
+classes.
+
+For advanced configuration use cases, it is also possible to configure
+the
+https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPoolConfig.html[`JedisPoolConfig`]
+object used by the Helidon Jedis CDI Integration project to create
+`JedisPool` instances.  In this case,
+https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/1.3/org/eclipse/microprofile/config/Config.html#getPropertyNames--[property
+names] that start with
+`redis.clients.jedis.JedisPoolConfig.`_instanceName_`.` will be
+parsed, and the remaining portion of each such name will be treated as
+a Java Bean or constructor property of `JedisPool` (or of its
+superclasses).
+
+Accordingly, the `JedisPoolConfig` Java Bean properties that can be
+set are as follows, where `instanceName` should be replaced with the
+actual named used in application code:
+
+* `redis.clients.jedis.JedisPoolConfig.instanceName.blockWhenExhausted`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.evictionPolicyClassName`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.fairness`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.jmxEnabled`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNameBase`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNamePrefix`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.lifo`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.maxIdle`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.maxTotal`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.maxWaitMillis`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.minEvictableTimeMillis`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.minIdle`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.numTestsPerEvictionRun`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.softMinEvictableIdleTimeMillis`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.testOnBorrow`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.testOnCreate`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.testOnReturn`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.testWhileIdle`
+* `redis.clients.jedis.JedisPoolConfig.instanceName.timeBetweenEvictionRunsMillis`
+
+Any documentation for these properties that exists may be found in the
+javadocs for the
+https://static.javadoc.io/redis.clients/jedis/2.9.0/redis/clients/jedis/JedisPoolConfig.html[`JedisPoolConfig`],
+https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/GenericObjectPoolConfig.html[`GenericObjectPoolConfig`]
+and
+https://commons.apache.org/proper/commons-pool/apidocs/org/apache/commons/pool2/impl/BaseObjectPoolConfig.html[`BaseObjectPoolConfig`]
+classes.
