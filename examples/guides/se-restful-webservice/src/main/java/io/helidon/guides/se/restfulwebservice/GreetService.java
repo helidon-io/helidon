@@ -34,6 +34,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 // end::importsWebServer[]
 // tag::importsHealth[]
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -143,7 +145,6 @@ public class GreetService implements Service {
 
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
-        System.out.println("GreetService#updateGreetingFromJson");
         if (!jo.containsKey("greeting")) {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "No greeting provided")
