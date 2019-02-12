@@ -105,21 +105,22 @@ public class GreetResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject updateGreeting(JsonObject jsonObject) {
+    public Response updateGreeting(JsonObject jsonObject) {
 
         if (!jsonObject.containsKey("greeting")) {
-            Response.status(Response.Status.BAD_REQUEST);
-            return JSON.createObjectBuilder()
-                       .add("error", "No greeting provided")
-                       .build();
+            JsonObject entity = JSON.createObjectBuilder()
+                    .add("error", "No greeting provided")
+                    .build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(entity).build();
         }
 
         String newGreeting = jsonObject.getString("greeting");
 
         greetingProvider.setMessage(newGreeting);
-        return JSON.createObjectBuilder()
+        JsonObject entity = JSON.createObjectBuilder()
                    .add("greeting", newGreeting)
                    .build();
+        return Response.status(Response.Status.OK).entity(entity).build();
     }
 
     private JsonObject createResponse(String who) {
