@@ -41,7 +41,8 @@ You'll learn how to use Helidon quickly to create a RESTful web service that acc
 
 |`GET localhost:8080/greet` |Returns a generic but friendly greeting
 |`GET localhost:8080/greet/Joe` |Returns a personalized greeting for the specified person
-|`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
+|`PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}'
+localhost:8080/greet/greeting` |Changes the greeting used in subsequent responses
 |===
 
 You'll create the app in three main steps:
@@ -191,12 +192,13 @@ URL path. The example includes just one service: the greeting service in
 +
 --
 [source,java]
-// _include::0-8:{greet-service}[tags=importsStart;importsWebServer]
+// _include::0-9:{greet-service}[tags=importsStart;importsWebServer]
 ----
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -232,14 +234,14 @@ public void update(Routing.Rules rules) {
     rules
         .get("/", this::getDefaultMessageHandler) //<1>
         .get("/{name}", this::getMessageHandler) //<2>
-        .put("/greeting/{greeting}", this::updateGreetingHandler); //<3>
+        .put("/greeting", this::updateGreetingHandler); //<3>
 }
 ----
 <1> Handle `GET` requests that contain no extra path using `getDefaultMessage`.
 <2> Handle `GET` requests that contain a name using `getMessage`, which personalizes the response
 using the name provided as the path suffix.
 <3> Handle `PUT` requests to the `greeting` path using `updateGreeting`,
-interpreting the end of the path as the new greeting string.
+interpreting the `greeting` value in the JSON payload as the new greeting string.
 --
 . The following methods respond to the three types of request.
 .. Returning the default greeting:
@@ -275,20 +277,40 @@ private void getMessageHandler(ServerRequest request,
 +
 --
 [source,java]
-// _include::0-8:{greet-service}[tag=updateGreeting,indent=0]
+// _include::0-4:{greet-service}[tag=updateGreeting,indent=0]
 ----
 private void updateGreetingHandler(ServerRequest request,
-                            ServerResponse response) {
-    greeting = request.path().param("greeting"); //<1>
-
-    JsonObject returnObject = JSON.createObjectBuilder() //<2>
-            .add("greeting", greeting)
-            .build();
-    response.send(returnObject);
+                                   ServerResponse response) {
+    request.content().as(JsonObject.class) // <1>
+            .thenAccept(jo -> updateGreetingFromJson(jo, response));
 }
 ----
-<1> Save the new greeting from the URL path in the request.
-<2> Compose the JSON response to confirm the new setting for `greeting`.
+<1> Compose the JSON response to confirm the new setting for `greeting`.
+
+This method delegates to `updateGreetingFromJson`:
+[source,java]
+// _include::0-15:{greet-service}[tag=updateGreetingFromJson]
+----
+    private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
+
+        if (!jo.containsKey("greeting")) { // <1>
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                    .add("error", "No greeting provided")
+                    .build();
+            response.status(Http.Status.BAD_REQUEST_400)
+                    .send(jsonErrorObject);
+            return;
+        }
+
+        greeting = jo.getString("greeting"); // <2>
+
+        response.status(Http.Status.NO_CONTENT_204) // <3>
+                .send();
+    }
+----
+<1> Rejects the request if the JSON payload does not include the `greeting` setting.
+<2> Extracts the new greeting from the JSON object and saves it.
+<3> Sends the "no content" response, acknowledging that the new greeting has been set.
 --
 
 ==== `Main.java`
@@ -411,9 +433,9 @@ a|[listing]
 |Returns the personalized greeting
 
 a|[source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/Hola
-a|[listing]
-{"greeting":"Hola"}
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
+a|
+(no response payload)
 |Changes the greeting
 
 a|[source,bash]
@@ -484,19 +506,19 @@ The new method returns a `HealthCheckResponse`. This will make it
 very easy to add our custom health check to the built-in ones already in the code.
 
 [source,java]
-// _include::0-10:{greet-service}[tag=checkAlive,indent=0]
+// _include::0-10:{greet-service}[tag=checkAlive]
 ----
-HealthCheckResponse checkAlive() {
-    HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
-            .name("greetingAlive"); //<1>
-    if (greeting == null || greeting.trim().length() == 0) { //<2>
-        builder.down() //<3>
-               .withData("greeting", "not set or is empty");
-    } else {
-        builder.up(); //<4>
+    HealthCheckResponse checkAlive() {
+        HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
+                .name("greetingAlive"); //<1>
+        if (greeting == null || greeting.trim().length() == 0) { //<2>
+            builder.down() //<3>
+                   .withData("greeting", "not set or is empty");
+        } else {
+            builder.up(); //<4>
+        }
+        return builder.build(); //<5>
     }
-    return builder.build(); //<5>
-}
 ----
 <1> Use a builder to assemble the response, giving the health check a human-readable
 name.
@@ -511,9 +533,9 @@ is _down_, in this case adding an explanation.
 === Revise `Main.java`
 We need to modify the `createRouting` method slightly to add our custom health check to the `HealthSupportBuilder`.
 [source,java]
-// _include::0-0:{main-class}[tag=addCustomHealthCheck,indent=0]
+// _include::0-0:{main-class}[tag=addCustomHealthCheck]
 ----
-.add(greetService::checkAlive)
+                .add(greetService::checkAlive)
 ----
 
 Here's the revised method after this change:
@@ -614,7 +636,7 @@ non-empty. We can easily force our server to report an unhealthy state.
 +
 --
 [source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/%20
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : " "}' http://localhost:8080/greet/greeting
 
 Our code to update the greeting accepts this and saves it as the new greeting.
 --
@@ -658,7 +680,7 @@ connection: keep-alive
 +
 --
 [source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/Hello
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hello"}' http://localhost:8080/greet/greeting
 --
 
 . Check the health again.
@@ -701,11 +723,11 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 --
 Add these declarations as private fields:
 [source,java]
-// _include::0-2:{greet-service}[tags=metricsRegistration;counterRegistration,indent=0]
+// _include::0-2:{greet-service}[tags=metricsRegistration;counterRegistration]
 ----
-private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
-        .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
-private final Counter greetCounter = registry.counter("accessctr"); // <2>
+    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+            .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
+    private final Counter greetCounter = registry.counter("accessctr"); // <2>
 ----
 <1> Refers to the application-scoped metrics registry.
 <2> Declares a metric of type `counter` with name `accessctr`.
@@ -717,12 +739,12 @@ private final Counter greetCounter = registry.counter("accessctr"); // <2>
 Add this method:
 
 [source,java]
-// _include::0-3:{greet-service}[tag=displayThread,indent=0]
+// _include::0-3:{greet-service}[tag=displayThread]
 ----
-private void displayThread() {
-    String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
-    System.out.println("Method=" + methodName + " " + "Thread=" + Thread.currentThread().getName());
-}
+    private void displayThread() {
+        String methodName = Thread.currentThread().getStackTrace()[2].getMethodName();
+        System.out.println("Method=" + methodName + " " + "Thread=" + Thread.currentThread().getName());
+    }
 ----
 --
 
@@ -732,14 +754,14 @@ private void displayThread() {
 Add this method:
 
 [source,java]
-// _include::0-5:{greet-service}[tag=counterFilter,indent=0]
+// _include::0-5:{greet-service}[tag=counterFilter]
 ----
-private void counterFilter(final ServerRequest request,
-                           final ServerResponse response) {
-    displayThread(); // <1>
-    greetCounter.inc(); // <2>
-    request.next(); // <3>
-}
+    private void counterFilter(final ServerRequest request,
+                               final ServerResponse response) {
+        displayThread(); // <1>
+        greetCounter.inc(); // <2>
+        request.next(); // <3>
+    }
 ----
 <1> Shows which method is handling the request.
 <2> Updates the counter metric.
@@ -781,7 +803,7 @@ a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-2
 
 a|[source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/Hola
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
 a|[listing]
 Method=counterFilter Thread=nioEventLoopGroup-3-3
 

@@ -30,6 +30,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 // tag::metricsImports[]
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -46,7 +47,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
  * curl -X GET http://localhost:8080/greet/Joe
  *
  * Change greeting
- * curl -X PUT http://localhost:8080/greet/greeting/Hola
+ * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
  *
  * The message is returned as a JSON object.
  */
@@ -125,8 +126,8 @@ public class GreetResource {
     /**
      * Set the greeting to use in future messages.
      *
-     * @param newGreeting the new greeting message
-     * @return {@link JsonObject}
+     * @param jsonObject JSON containing the new greeting
+     * @return {@link Response}
      */
     @Counted(// <1>
             name = "accessctr", // <2>
@@ -137,15 +138,24 @@ public class GreetResource {
             unit = MetricUnits.NONE)
     // tag::setGreeting[]
     @SuppressWarnings("checkstyle:designforextension")
-    @Path("/greeting/{greeting}") // <1>
+    @Path("/greeting") // <1>
     @PUT // <2>
     @Consumes(MediaType.APPLICATION_JSON) // <3>
     @Produces(MediaType.APPLICATION_JSON) // <3>
-    public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
-        greetingProvider.setMessage(newGreeting);
+    public Response updateGreeting(JsonObject jsonObject) {
+        if (!jsonObject.containsKey("greeting")) {
+            JsonObject entity = JSON.createObjectBuilder()
+                    .add("error", "No greeting provided")
+                    .build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(entity)
+                    .build();
+        }
 
-        return JSON.createObjectBuilder()
-                .add("greeting", newGreeting)
+        String newGreeting = jsonObject.getString("greeting"); // <4>
+
+        greetingProvider.setMessage(newGreeting); // <5>
+        return Response.status(Response.Status.NO_CONTENT) // <6>
                 .build();
     }
     // end::setGreeting[]

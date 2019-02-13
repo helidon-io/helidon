@@ -49,7 +49,7 @@ You'll learn how to use Helidon MicroProfile quickly to create a JAX-RS RESTful 
 
 |`GET localhost:8080/greet` |Returns a generic but friendly greeting
 |`GET localhost:8080/greet/Joe` |Returns a personalized greeting for the specified person
-|`PUT localhost:8080/greet/greeting/Hola` |Changes the greeting used in subsequent responses
+|`PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' localhost:8080/greet/greeting` |Changes the greeting used in subsequent responses
 |===
 
 You'll create the app in three main steps:
@@ -323,25 +323,36 @@ the returned message.
 +
 --
 [source,java]
-// _include::0-11:{greet-resource-class}[tag=setGreeting,indent=0]
+// _include::0-20:{greet-resource-class}[tag=setGreeting,indent=0]
 ----
 @SuppressWarnings("checkstyle:designforextension")
-@Path("/greeting/{greeting}") // <1>
+@Path("/greeting") // <1>
 @PUT // <2>
 @Consumes(MediaType.APPLICATION_JSON) // <3>
 @Produces(MediaType.APPLICATION_JSON) // <3>
-public JsonObject updateGreeting(@PathParam("greeting") String newGreeting) { // <4>
-    greetingProvider.setMessage(newGreeting);
+public Response updateGreeting(JsonObject jsonObject) {
+    if (!jsonObject.containsKey("greeting")) {
+        JsonObject entity = JSON.createObjectBuilder()
+                .add("error", "No greeting provided")
+                .build();
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(entity)
+                .build();
+    }
 
-    return JSON.createObjectBuilder()
-            .add("greeting", newGreeting)
+    String newGreeting = jsonObject.getString("greeting"); // <4>
+
+    greetingProvider.setMessage(newGreeting); // <5>
+    return Response.status(Response.Status.NO_CONTENT) // <6>
             .build();
 }
 ----
-<1> Identifies the path parameter for the new greeting text.
+<1> Identifies the path for this endpoint.
 <2> It's an HTTP `PUT`.
 <3> Tells JAX-RS that this method both consumes and produces JSON.
-<4> JAX-RS injects the new greeting from the path parameter as the method argument.
+<4> Retrieve the new greeting from the JSON payload.
+<5> Save the new greeting for later use.
+<6> Prepare the response.
 --
 
 ==== `GreetApplication.java` - the `Application` class
@@ -447,9 +458,9 @@ a|[listing]
 |Returns the personalized greeting
 
 a|[source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/Hola
-a|[listing]
-{"greeting":"Hola"}
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
+a|
+(no response payload)
 |Changes the greeting
 
 a|[source,bash]
@@ -527,7 +538,7 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 +
 --
 [source,java]
-// _include::0-2:{health-resource-class}[tag=classDecl,indent=0]
+// _include::0-2:{health-resource-class}[tag=classDecl]
 ----
 @ApplicationScoped // <1>
 @Health // <2>
@@ -544,10 +555,10 @@ is the only input to the active check in our simple implementation.
 +
 --
 [source,java]
-// _include::0-1:{health-resource-class}[tag=greetingDecl,indent=0]
+// _include::0-1:{health-resource-class}[tag=greetingDecl]
 ----
-@Inject // <1>
-private GreetingProvider greeting; // <2>
+    @Inject // <1>
+    private GreetingProvider greeting; // <2>
 ----
 <1> Indicates that JAX-RS should inject the field.
 <2> JAX-RS will inject a reference to the single `GreetingProvider` instance.
@@ -560,19 +571,19 @@ The health framework invokes `call` to retrieve the health information associate
 with this health check.
 
 [source,java]
-// _include::0-10:{health-resource-class}[tag=callMethod,indent=0]
+// _include::0-10:{health-resource-class}[tag=callMethod]
 ----
-public HealthCheckResponse call() {
-    HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
-            .name("greetingAlive"); //<1>
-    if (greeting == null || greeting.getMessage().trim().length() == 0) { //<2>
-        builder.down() //<3>
-               .withData("greeting", "not set or is empty");
-    } else {
-        builder.up(); //<4>
+    public HealthCheckResponse call() {
+        HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
+                .name("greetingAlive"); //<1>
+        if (greeting == null || greeting.getMessage().trim().length() == 0) { //<2>
+            builder.down() //<3>
+                   .withData("greeting", "not set or is empty");
+        } else {
+            builder.up(); //<4>
+        }
+        return builder.build(); //<5>
     }
-    return builder.build(); //<5>
-}
 ----
 <1> Create the health check with the name `greetingAlive`.
 <2> The service is alive as long as the greeting message (trimmed) is not empty.
@@ -648,7 +659,7 @@ non-empty. We can easily force our server to report an unhealthy state.
 +
 --
 [source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/%20
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : " "}' http://localhost:8080/greet/greeting
 
 Our code to update the greeting accepts this and saves it as the new greeting.
 --
@@ -692,7 +703,7 @@ connection: keep-alive
 +
 --
 [source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/Hello
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hello"}' http://localhost:8080/greet/greeting
 --
 
 . Check the health again.
@@ -717,13 +728,13 @@ a client sends a request to the app.
 +
 --
 [source,xml]
-// _include::0-4:{pom}[tag=metricsDependency,indent=0]
+// _include::0-4:{pom}[tag=metricsDependency]
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.metrics</groupId>
-    <artifactId>helidon-microprofile-metrics</artifactId>
-    <scope>runtime</scope>
-</dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 ----
 --
 
@@ -749,15 +760,15 @@ instrumented.
 +
 --
 [source,java]
-// _include::0-6:{greet-resource-class}[tag=countedAnno,indent=0]
+// _include::0-6:{greet-resource-class}[tag=countedAnno]
 ----
-@Counted(// <1>
-        name = "accessctr", // <2>
-        reusable = true,    // <3>
-        description = "Total greetings accesses",
-        displayName = "Access Counter",
-        monotonic = true,   // <4>
-        unit = MetricUnits.NONE)
+    @Counted(// <1>
+            name = "accessctr", // <2>
+            reusable = true,    // <3>
+            description = "Total greetings accesses",
+            displayName = "Access Counter",
+            monotonic = true,   // <4>
+            unit = MetricUnits.NONE)
 ----
 <1> Marks this method as measured by a `Counter` metric.
 <2> Declares the unique name for this counter among all metrics.
@@ -782,7 +793,7 @@ curl -X GET http://localhost:8080/greet
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Joe
 a|[source,bash]
-curl -X PUT http://localhost:8080/greet/greeting/Hola
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
 a|[source,bash]
 curl -X GET http://localhost:8080/greet/Jose
 |====
