@@ -15,11 +15,15 @@
  */
 package io.helidon.media.jsonb.common;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 import java.util.function.Function;
 
 import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbException;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
@@ -51,9 +55,15 @@ public final class JsonBinding {
      */
     public static Reader<Object> reader(final Jsonb jsonb) {
         Objects.requireNonNull(jsonb);
-        return (publisher, cls) -> ContentReaders.inputStreamReader()
+        return (publisher, cls) -> ContentReaders.byteArrayReader()
             .apply(publisher)
-            .thenApply(inputStream -> jsonb.fromJson(inputStream, cls));
+            .thenApply(bytes -> {
+                    try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
+                        return jsonb.fromJson(inputStream, cls);
+                    } catch (final IOException ioException) {
+                        throw new JsonbException(ioException.getMessage(), ioException);
+                    }
+                });
     }
 
     /**
