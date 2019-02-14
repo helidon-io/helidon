@@ -45,9 +45,12 @@ public class Server
 
     private static GrpcRouting createRouting(Config config)
         {
-        GreetService greetService = new GreetService(config);
+        GreetService     greetService     = new GreetService(config);
+        GreetServiceJava greetServiceJava = new GreetServiceJava(config);
+
         return GrpcRouting.builder()
                 .register(greetService)
+                .register(greetServiceJava)
                 .build();
         }
     }
