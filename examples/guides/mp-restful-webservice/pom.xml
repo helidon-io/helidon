@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.guides</groupId>
         <artifactId>helidon-guides-project</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.1-SNAPSHOT</version>
     </parent>
     <!-- tag::coordinates[] -->
     <artifactId>mp-restful-webservice</artifactId>
@@ -30,7 +30,7 @@
     <name>Helidon Guides MP RESTful Web Service</name>
 
     <properties>
-        <helidon.version>1.0.0-SNAPSHOT</helidon.version>
+        <helidon.version>1.0.1-SNAPSHOT</helidon.version>
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.mp</package>
         <mainClass>io.helidon.guides.mp.restfulwebservice.Main</mainClass>
