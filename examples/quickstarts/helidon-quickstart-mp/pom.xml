@@ -23,12 +23,12 @@
 
     <groupId>io.helidon.examples</groupId>
     <artifactId>quickstart-mp</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
 
     <properties>
-        <helidon.version>1.0.0-SNAPSHOT</helidon.version>
+        <helidon.version>1.0.1-SNAPSHOT</helidon.version>
         <!-- Default package. Will be overriden by Maven archetype -->
         <package>io.helidon.examples.quickstart.mp</package>
         <mainClass>${package}.Main</mainClass>

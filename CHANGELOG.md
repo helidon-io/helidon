@@ -7,19 +7,37 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
-If you are upgrading from 0.10.5 or earlier you will need to change
-your application (see Notes for 0.11.0 release). For details on API
-changes see [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0)
+### Improvements
+
+### Fixes
+
+## [1.0.0] - 2019-02-12
+
+### Notes
+
+This is our 1.0 release and we have finished the API changes that we've
+been working on over the last few months. From this point on we will
+have much greater API stability. Thanks for your patience.
 
 If you are upgrading from 0.11.0 note that media support (for example JsonSupport)
-has moved to a top level `media` component. Details
-in [API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0). 
+has moved to a top level `media` component. This means you might have to change
+your dependencies and Java imports. For more details see:
+[API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0). 
+
+If you are upgrading from 0.10.5 or earlier you will need to change
+your application due to a number of API changes we made in preperation
+for 1.0. For details on API changes see:
+[API Changes](https://github.com/oracle/helidon/wiki/API-Changes-in-1.0)
+
+Helidon 1.0 supports [MicroProfile 1.2](https://github.com/eclipse/microprofile-bom/releases/download/1.2/microprofile-spec-1.2.pdf)
+with updated versions of the components.
 
 ### Improvements
 
 - WebServer: Add JSON-B (Yasson) support [388](https://github.com/oracle/helidon/pull/388)
 - WebServer: Add Jackson support [351](https://github.com/oracle/helidon/pull/351)
 - MicroProfile: update Hystrix to 1.5.18 [391](https://github.com/oracle/helidon/pull/391)
+- Examples: Change quickstart examples so that PUT uses json and not path param [399](https://github.com/oracle/helidon/pull/399)
 
 ### Fixes
 
@@ -171,7 +189,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/0.11.1...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
 [0.11.1]: https://github.com/oracle/helidon/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/oracle/helidon/compare/0.10.5...0.11.0
 [0.10.5]: https://github.com/oracle/helidon/compare/0.10.4...0.10.5
