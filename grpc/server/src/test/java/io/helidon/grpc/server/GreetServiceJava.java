@@ -2,12 +2,9 @@ package io.helidon.grpc.server;
 
 
 import io.grpc.stub.StreamObserver;
+
 import io.helidon.config.Config;
-import io.helidon.grpc.server.test.Greet;
-import io.helidon.grpc.server.test.Greet.GreetRequest;
-import io.helidon.grpc.server.test.Greet.GreetResponse;
-import io.helidon.grpc.server.test.Greet.SetGreetingRequest;
-import io.helidon.grpc.server.test.Greet.SetGreetingResponse;
+
 import java.util.Optional;
 
 
