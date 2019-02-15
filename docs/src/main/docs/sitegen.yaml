@@ -42,7 +42,7 @@ pages:
       - "**/*.adoc"
 backend:
     name: "vuetify"
-    homePage: "about/01_introduction.adoc"
+    homePage: "about/01_overview.adoc"
     releases:
         - "${project.version}"
     navigation:

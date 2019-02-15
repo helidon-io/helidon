@@ -24,7 +24,6 @@
 
 [PILLARS]
 ====
-
 [CARD]
 .SE REST Web Service
 [link=guides/02_SE_REST_web-service.adoc]
