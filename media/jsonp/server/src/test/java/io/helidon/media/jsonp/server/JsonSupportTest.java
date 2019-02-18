@@ -65,6 +65,24 @@ class JsonSupportTest {
     }
 
     @Test
+    public void pingPongNoCharset() throws Exception {
+        Routing routing = Routing.builder()
+                .register(JsonSupport.create())
+                .post("/foo", Handler.create(JsonObject.class, (req, res, json) -> res.send(json)))
+                .build();
+        JsonObject json = createJson();
+        TestResponse response = TestClient.create(routing)
+                .path("/foo")
+                .post(MediaPublisher
+                              .create(MediaType.APPLICATION_JSON, json.toString()));
+
+        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaType.APPLICATION_JSON.toString()));
+        byte[] bytes = response.asBytes().toCompletableFuture().get(10, TimeUnit.SECONDS);
+        JsonObject json2 = Json.createReader(new ByteArrayInputStream(bytes)).readObject();
+        assertThat(json2, is(json));
+    }
+
+    @Test
     public void invalidJson() throws Exception {
         Routing routing = Routing.builder()
                 .register(JsonSupport.create())
