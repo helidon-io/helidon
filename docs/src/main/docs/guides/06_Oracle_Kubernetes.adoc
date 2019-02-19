@@ -17,8 +17,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 :adoc-dir: {guides-dir}
 
-= Deploying Helidon to Oracle Container Engine for Kubernetes
-:description: Helidon Oracle Container Engine for Kubernetes Guide
+= Deploying to OKE
+:description: Helidon Oracle Container Engine for Kubernetes (OKE) Guide
 :keywords: helidon, guide, oracle, kubernetes
 
 Pushing Helidon applications to the Oracle Registry Service and deploying to Oracle Container Engine for Kubernetes.
@@ -33,13 +33,11 @@ You'll learn how to push the Docker image of your Helidon application to the Ora
 |About 10 minutes
 | <<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
 |Access to http://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-full/index.html[Oracle Container Engine for Kubernetes (OKE)]
-|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl]
-|https://docs.docker.com/install/[Docker] 
 |===
 
 == Create Your Application Using The Creating Docker Images Guide
 
-Follow the instructions on the <<getting-started/05_Dockerfile.adoc,Quickstart page>>
+Follow the instructions on the <<link=guides/05_Dockerfile.adoc>>
 to create a Docker image for your Helidon SE project. Once you have the image come back here.
 
 == Pushing the Image to OCIR
