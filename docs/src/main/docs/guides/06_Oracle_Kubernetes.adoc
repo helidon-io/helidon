@@ -58,10 +58,12 @@ Finally we push the image to the Registry:
 
 `<region-code>`
 `<region-code>` corresponds to the code for the Oracle Cloud Infrastructure Registry region you're using, as follows:
+
 * enter `fra` as the region code for Frankfurt
 * enter `iad` as the region code for Ashburn
 * enter `lhr` as the region code for London
 * enter `phx` as the region code for Phoenix
+
 `ocir.io` is the Oracle Cloud Infrastructure Registry name.
 `<tenancy-name>` is the name of the tenancy that owns the repository to which you want to push the image, for example `acme-dev`. Note that your user must have access to the tenancy.
 `<repo-name>`, if specified, is the name of a repository to which you want to push the image ,for example, `project01`. Note that specifying a repository is optional. If you don't specify a repository name, the name of the image is used as the repository name in Oracle Cloud Infrastructure Registry.
