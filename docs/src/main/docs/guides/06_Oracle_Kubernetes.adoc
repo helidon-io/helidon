@@ -46,15 +46,7 @@ to create a Docker image for your Helidon SE project. Once you have the image co
 
 You will need to log into your Oracle Cloud Infrastructure console and make sure you have a native OCI user. Currently federated users are not supported by OCIR. Your user will either need to be a part of the tenancy's Administrators group or another group with the `REPOSITORY_CREATE` permission. After confirming you have the proper permissions, generate an auth token for your user. Copy the token to a notepad as you will not be able to access it again.
 
-Navigate to the Registry (OCIR) tab and choose the region to which you would like to push the image. Log into the Registry service Docker CLI with docker login `<region-code>.ocir.io`
-`<region-code>` corresponds to the code for the Oracle Cloud Infrastructure Registry region you're using, as follows:
-
-* enter `fra` as the region code for Frankfurt
-* enter `iad` as the region code for Ashburn
-* enter `lhr` as the region code for London
-* enter `phx` as the region code for Phoenix
-
-When prompted, enter your username in the format `<tenancy_name>/<username>`. When prompted, enter the auth token copied earlier as the password.
+Navigate to the Registry (OCIR) tab and choose the region to which you would like to push the image. Log into the Registry service Docker CLI with docker login `<region-code>.ocir.io`. When prompted, enter your username in the format `<tenancy_name>/<username>`. When prompted, enter the auth token copied earlier as the password.
 
 The next step is to tag the quickstart image we are going to push to the registry:
 
@@ -64,7 +56,12 @@ Finally we push the image to the Registry:
 
 `docker push <region-code>.ocir.io/<tenancy-name>/<repo-name>/<image-name>:<tag>``
 
-`<region-code>` is one of `fra`, `iad`, `lhr`, or `phx`.
+`<region-code>`
+`<region-code>` corresponds to the code for the Oracle Cloud Infrastructure Registry region you're using, as follows:
+* enter `fra` as the region code for Frankfurt
+* enter `iad` as the region code for Ashburn
+* enter `lhr` as the region code for London
+* enter `phx` as the region code for Phoenix
 `ocir.io` is the Oracle Cloud Infrastructure Registry name.
 `<tenancy-name>` is the name of the tenancy that owns the repository to which you want to push the image, for example `acme-dev`. Note that your user must have access to the tenancy.
 `<repo-name>`, if specified, is the name of a repository to which you want to push the image ,for example, `project01`. Note that specifying a repository is optional. If you don't specify a repository name, the name of the image is used as the repository name in Oracle Cloud Infrastructure Registry.
