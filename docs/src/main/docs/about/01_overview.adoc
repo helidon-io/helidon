@@ -28,14 +28,14 @@
 .Getting Started
 [icon=assistant,link=getting-started/02_base-example.adoc]
 --
-Quickly create your first application under 2 minutes.
+Quickly create your first application, in under 2 minutes.
 --
 
 [CARD]
 .Guides
 [icon=explore,link=guides/01_overview.adoc]
 --
-Hands-on guides.
+Follow step-by-step guides to build your applications.
 --
 ====
 
@@ -66,11 +66,10 @@ A tool-chain to handle authentication, authorization and context propagation.
 --
 
 [CARD]
-.Microprofile
+.MicroProfile
 [icon=widgets,link=microprofile/01_introduction.adoc]
 --
-MicroProfile is a platform definition that is familiar to enterprise Java
- developers.
+A platform definition that is familiar to enterprise Java developers.
 --
 
 [CARD]

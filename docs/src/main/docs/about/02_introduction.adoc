@@ -24,13 +24,13 @@
 
 Helidon is a collection of Java libraries for writing microservices.
 
-There is no specific tooling or deployment model, you simply use your favorite
- tools !
+There's no need for any specific tooling or deployment model. Simply use your
+ favorite tools !
 
-NOTE: Your microservice is a plain Java application, you do not need an
+NOTE: Your microservice is a plain Java application. You do not need an
  application server.
 
-== Cloud native Java
+== Cloud-native Java
 
 Helidon libraries interoperate with popular tools from the cloud-native space:
 
@@ -53,11 +53,10 @@ NOTE: Helidon SE gives you full transparency and puts you in control. There is
 
 == Helidon MP
 
-Helidon MP is the branded name for our https://microprofile.io[MicroProfile]
- implementation.
+Helidon MP is the branded name for our MicroProfile implementation.
 
 https://microprofile.io[MicroProfile] is a platform definition that is familiar
- to enterprise Java developers, it provides a declarative programming style that
+ to enterprise Java developers. It provides a declarative programming style that
  is portable. It includes popular Java APIs such as `JAX-RS` and `CDI`.
 
-NOTE: Helidon MP is built on top the Helidon libraries.
+NOTE: Helidon MP is built on top of the Helidon libraries.
