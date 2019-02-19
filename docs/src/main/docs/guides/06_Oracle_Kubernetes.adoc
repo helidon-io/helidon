@@ -37,7 +37,7 @@ You'll learn how to push the Docker image of your Helidon application to the Ora
 
 == Create Your Application Using The Creating Docker Images Guide
 
-Follow the instructions on the link:guides/05_Dockerfile.adoc[Creating Docker Images guide] to create a Docker image for your Helidon SE project. Once you have the image come back here.
+Follow the instructions on the link:05_Dockerfile.adoc[Creating Docker Images guide] to create a Docker image for your Helidon SE project. Once you have the image come back here.
 
 == Pushing the Image to OCIR
 
