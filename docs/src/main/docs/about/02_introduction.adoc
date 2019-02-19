@@ -45,15 +45,15 @@ TIP: The <<getting-started/02_base-example.adoc,Helidon Quickstart Examples>>
 
 == Helidon SE
 
-Helidon SE is the branded name for the functional programming style provided
- by all Helidon libraries.
+Helidon SE is the functional programming style provided by all Helidon
+ libraries.
 
 NOTE: Helidon SE gives you full transparency and puts you in control. There is
  no magic!
 
 == Helidon MP
 
-Helidon MP is the branded name for our MicroProfile implementation.
+Helidon MP is our MicroProfile implementation.
 
 https://microprofile.io[MicroProfile] is a platform definition that is familiar
  to enterprise Java developers. It provides a declarative programming style that
