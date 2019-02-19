@@ -45,6 +45,7 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -61,6 +62,8 @@ class BareResponseImpl implements BareResponse {
 
     // See HttpConversionUtil.ExtensionHeaderNames
     private static final String HTTP_2_HEADER_PREFIX = "x-http2";
+    private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
+    private static final LastHttpContent LAST_HTTP_CONTENT = new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER);
 
     private final boolean keepAlive;
     private final ChannelHandlerContext ctx;
@@ -103,7 +106,7 @@ class BareResponseImpl implements BareResponse {
            .closeFuture()
            // to make this work, when programmatically closing the channel, the responseFuture must be closed beforehand!
            .addListener(channelFuture -> responseFuture
-                   .completeExceptionally(new SocketClosedException("Response channel is closed!")));
+                   .completeExceptionally(CLOSED));
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
     }
@@ -189,24 +192,24 @@ class BareResponseImpl implements BareResponse {
                     ctx.channel().read();
                 }
 
-                ctx.writeAndFlush(new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER))
-                   .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                   .addListener(preventMaskingExceptionOnFailureListener(throwable))
-                   .addListener(completeOnSuccessListener(throwable))
-                   .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
             });
         } else {
             // If keep-alive is off, close the connection once the content is fully written.
             runOnOutboundEventLoopThread(() -> {
                 LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
 
-                ctx.writeAndFlush(new DefaultLastHttpContent(Unpooled.EMPTY_BUFFER))
-                   .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                   .addListener(preventMaskingExceptionOnFailureListener(throwable))
-                   .addListener(completeOnSuccessListener(throwable))
-                   .addListener(ChannelFutureListener.CLOSE);
+                writeLastContent(throwable, ChannelFutureListener.CLOSE);
             });
         }
+    }
+
+    private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
+        ctx.writeAndFlush(LAST_HTTP_CONTENT)
+           .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+           .addListener(preventMaskingExceptionOnFailureListener(throwable))
+           .addListener(completeOnSuccessListener(throwable))
+           .addListener(closeAction);
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
