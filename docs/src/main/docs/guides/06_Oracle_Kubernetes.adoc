@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 :adoc-dir: {guides-dir}
 
-= Creating Docker Images 
+= Deploying Helidon to Oracle Container Engine for Kubernetes
 :description: Helidon Oracle Container Engine for Kubernetes Guide
 :keywords: helidon, guide, oracle, kubernetes
 
@@ -96,7 +96,7 @@ The final version will look something like this:
       - name: ocirsecret
       containers:
       - name: helidon-se
-        image: phx.ocir.io/cloudnative-devrel/example/quickstart-se:latest
+        image: phx.ocir.io/oracle-cloudnative/example/quickstart-se:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
