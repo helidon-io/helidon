@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import java.util.function.Consumer;
  * @param <T> the type of the {@code Subscriber}
  */
 public class SingleSubscriberHolder<T> {
+    private static final IllegalStateException ALREADY_CLOSED = new IllegalStateException("Publisher already closed.");
+    private static final IllegalStateException CANCELLED = new IllegalStateException("Canceled before any subscriber is "
+                                                                                     + "registered!");
 
     private final CompletableFuture<Flow.Subscriber<? super T>> subscriber = new CompletableFuture<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -77,7 +80,7 @@ public class SingleSubscriberHolder<T> {
      *                          handler (e.g. in a previous invocation of this method).
      */
     public void close(Consumer<Flow.Subscriber<? super T>> completionHandler) {
-        if (!subscriber.completeExceptionally(new IllegalStateException("Publisher already closed."))
+        if (!subscriber.completeExceptionally(ALREADY_CLOSED)
                 && closed.compareAndSet(false, true)) {
 
             try {
@@ -95,7 +98,7 @@ public class SingleSubscriberHolder<T> {
      * Hard cancel - nothing is send to the subscriber but subscription is considered as canceled.
      */
     public void cancel() {
-        subscriber.completeExceptionally(new IllegalStateException("Canceled before any subscriber is registered!"));
+        subscriber.completeExceptionally(CANCELLED);
         closed.set(true);
     }
 
