@@ -76,7 +76,7 @@ A platform definition that is familiar to enterprise Java developers.
 .Extensions
 [icon=extension,link=extensions/01_overview.adoc]
 --
-A set of add-ons for your Helidon based applications.
+A set of add-ons for your Helidon-based applications.
 --
 
 [CARD]
