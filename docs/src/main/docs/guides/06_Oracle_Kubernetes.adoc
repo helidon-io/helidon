@@ -32,9 +32,9 @@ You'll learn how to push the Docker image of your Helidon application to the Ora
 |===
 |About 10 minutes
 | <<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
-|Access to Oracle Container Engine for Kubernetes (OKE)
-|Kubectl 
-|Docker 
+|Access to http://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-full/index.html[Oracle Container Engine for Kubernetes (OKE)]
+|https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl]
+|https://docs.docker.com/install/[Docker] 
 |===
 
 == Create Your Application Using The Creating Docker Images Guide
@@ -85,7 +85,7 @@ imagePullSecrets:
         
 In the same file also under spec in the deployment section add the path listed on the Registry page to image under containers:
 
-`<region-code.ocir.io>/<tenancy-name>/<quickstart-project-name>``
+`<region-code.ocir.io>/<tenancy-name>/<quickstart-project-name>`
 
 The final version will look something like this:
 
