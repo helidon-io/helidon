@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.helidon.tests</groupId>
+        <artifactId>helidon-tests-project</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+    </parent>
+
+    <groupId>io.helidon.tests.functional</groupId>
+    <artifactId>helidon-tests-functional-project</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Functional Tests</name>
+
+    <modules>
+        <module>common</module>
+        <module>helidon-se</module>
+        <module>helidon-mp</module>
+    </modules>
+</project>
