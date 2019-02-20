@@ -53,13 +53,7 @@ Finally we push the image to the Registry:
 
 `docker push <region-code>.ocir.io/<tenancy-name>/<repo-name>/<image-name>:<tag>``
 
-`<region-code>`
-`<region-code>` corresponds to the code for the Oracle Cloud Infrastructure Registry region you're using, as follows:
-
-* enter `fra` as the region code for Frankfurt
-* enter `iad` as the region code for Ashburn
-* enter `lhr` as the region code for London
-* enter `phx` as the region code for Phoenix
+`<region-code>` is the code for the Oracle Cloud Infrastructure Registry region that you're using. For example, the region code for Phoenix is `phx`. See https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm[Regions and Availability Domains].
 
 `ocir.io` is the Oracle Cloud Infrastructure Registry name.
 `<tenancy-name>` is the name of the tenancy that owns the repository to which you want to push the image, for example `acme-dev`. Note that your user must have access to the tenancy.
