@@ -98,14 +98,16 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
             BareRequestImpl bareRequest =
-                    new BareRequestImpl((HttpRequest) msg, requestContext.publisher(), webServer, ctx, sslEngine, requestId);
+                new BareRequestImpl((HttpRequest) msg, requestContext.publisher(), webServer, ctx, sslEngine, requestId);
             BareResponseImpl bareResponse =
-                    new BareResponseImpl(ctx, request, publisherRef::isCompleted, Thread.currentThread(), requestId);
+                new BareResponseImpl(ctx, request, publisherRef::isCompleted, Thread.currentThread(), requestId);
 
             bareResponse.whenCompleted()
                         .thenRun(() -> {
                             RequestContext requestContext = this.requestContext;
-                            requestContext.responseCompleted(true);
+                            if (requestContext != null) {
+                                requestContext.responseCompleted(true);
+                            }
                             /*
                              * Cleanup for these queues is done in HttpInitializer. However,
                              * it may take a while for the event loop on the channel to
@@ -128,7 +130,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         if (msg instanceof HttpContent) {
             if (requestContext == null) {
                 throw new IllegalStateException("There is no request context associated with this http content. "
-                                                        + "This is never expected to happen!");
+                                                + "This is never expected to happen!");
             }
 
             HttpContent httpContent = (HttpContent) msg;
