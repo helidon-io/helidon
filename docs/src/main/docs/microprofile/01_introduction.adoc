@@ -39,7 +39,7 @@ Declare the following dependency in your project:
 ----
 <dependency>
   <groupId>io.helidon.microprofile.bundles</groupId>
-  <artifactId>helidon-microprofile-1.1</artifactId>
+  <artifactId>helidon-microprofile-1.2</artifactId>
 </dependency>
 ----
 
