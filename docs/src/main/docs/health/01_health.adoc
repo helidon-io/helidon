@@ -16,9 +16,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO check javadoc for health check (both helidon and microprofile)
-// TODO check microprofile spec for health check
-
 = Health Checks
 :description: Helidon health checks
 :keywords: helidon, health-checks, health, check
