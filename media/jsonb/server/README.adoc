@@ -5,7 +5,7 @@ http://json-b.net/[JSON-B] support for
 https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Handler.html[`Handler`]s.
 
 The
-https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/server/JsonbSupport.html[`JsonbSupport`]
+https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/server/JsonBindingSupport.html[`JsonBindingSupport`]
 class is the backbone of this package.  It implements
 https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Service.html[`Service`],
 so should be
