@@ -86,4 +86,4 @@ export MAVEN_OPTS="--add-modules java.xml.bind \
 == Try the Quickstart Examples
 
 Now you are ready to try the
-<<getting-started/02_base-example.adoc#Prerequisites,Quickstart Examples>>.
+ <<guides/01_overview.adoc#_getting_started,Quickstart Examples>>.

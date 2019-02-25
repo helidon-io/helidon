@@ -16,8 +16,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Quickstart Examples
-:description: Helidon Quickstart examples
+= Quickstart SE
+:description: Helidon SE Quickstart guide
 :keywords: helidon
 
 There are two quickstart samples, one for Helidon SE and one for Helidon
