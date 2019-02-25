@@ -31,7 +31,6 @@ deserialized from JSON automatically using Jackson.
 Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
-.Webserver JSON-B Dependency
 ----
 <dependency>
     <groupId>io.helidon.media.jackson</groupId>

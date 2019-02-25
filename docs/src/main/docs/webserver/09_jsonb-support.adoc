@@ -32,7 +32,6 @@ the https://jcp.org/en/jsr/detail?id=367[JSON-B specification].
 Declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
-.Webserver JSON-B Dependency
 ----
 <dependency>
     <groupId>io.helidon.media.jsonb</groupId>
