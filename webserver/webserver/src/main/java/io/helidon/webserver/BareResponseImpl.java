@@ -21,8 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
@@ -31,12 +29,10 @@ import java.util.logging.Logger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelOutboundHandler;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
@@ -46,7 +42,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -79,11 +74,11 @@ class BareResponseImpl implements BareResponse {
     private volatile Flow.Subscription subscription;
 
     /**
-     * @param ctx                    the channel handler context
-     * @param request                the request
+     * @param ctx the channel handler context
+     * @param request the request
      * @param requestContentConsumed whether the request content is consumed
-     * @param thread                 the outbound event loop thread which will be used to write the response
-     * @param requestId              the correlation ID that is added to the log statements
+     * @param thread the outbound event loop thread which will be used to write the response
+     * @param requestId the correlation ID that is added to the log statements
      */
     BareResponseImpl(ChannelHandlerContext ctx,
                      HttpRequest request,
@@ -103,10 +98,10 @@ class BareResponseImpl implements BareResponse {
         this.ctx = ctx;
         this.requestId = requestId;
         ctx.channel()
-           .closeFuture()
-           // to make this work, when programmatically closing the channel, the responseFuture must be closed beforehand!
-           .addListener(channelFuture -> responseFuture
-                   .completeExceptionally(CLOSED));
+                .closeFuture()
+                // to make this work, when programmatically closing the channel, the responseFuture must be closed beforehand!
+                .addListener(channelFuture -> responseFuture
+                        .completeExceptionally(CLOSED));
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
     }
@@ -137,18 +132,16 @@ class BareResponseImpl implements BareResponse {
             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         }
 
-        runOnOutboundEventLoopThread(() -> {
-            ctx.writeAndFlush(response)
-               .addListener(future -> {
+        ctx.writeAndFlush(response)
+                .addListener(future -> {
                     if (future.isSuccess()) {
                         headersFuture.complete(this);
                     }
                 })
-               .addListener(completeOnFailureListener("An exception occurred when writing headers."))
-               .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                .addListener(completeOnFailureListener("An exception occurred when writing headers."))
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 
-            LOGGER.finest(() -> log("Writing headers: " + status));
-        });
+        LOGGER.finest(() -> log("Writing headers: " + status));
         headersFuture.complete(this);
     }
 
@@ -180,36 +173,32 @@ class BareResponseImpl implements BareResponse {
         }
 
         if (keepAlive) {
-            runOnOutboundEventLoopThread(() -> {
-                LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
+            LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
 
-                if (!requestContentConsumed.getAsBoolean()) {
-                    // the request content wasn't read, close the connection once the content is fully written.
-                    LOGGER.finer(() -> log("Request content not fully read; trying to keep the connection; keep-alive: true"));
+            if (!requestContentConsumed.getAsBoolean()) {
+                // the request content wasn't read, close the connection once the content is fully written.
+                LOGGER.finer(() -> log("Request content not fully read; trying to keep the connection; keep-alive: true"));
 
-                    // if content is not consumed, we need to trigger next chunk read in order to not get stuck forever; the
-                    // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
-                    ctx.channel().read();
-                }
+                // if content is not consumed, we need to trigger next chunk read in order to not get stuck forever; the
+                // connection will be closed in the ForwardingHandler in case there is more than just small amount of data
+                ctx.channel().read();
+            }
 
-                writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
-            });
+            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
         } else {
-            // If keep-alive is off, close the connection once the content is fully written.
-            runOnOutboundEventLoopThread(() -> {
-                LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
 
-                writeLastContent(throwable, ChannelFutureListener.CLOSE);
-            });
+            LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
+
+            writeLastContent(throwable, ChannelFutureListener.CLOSE);
         }
     }
 
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         ctx.writeAndFlush(LAST_HTTP_CONTENT)
-           .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-           .addListener(preventMaskingExceptionOnFailureListener(throwable))
-           .addListener(completeOnSuccessListener(throwable))
-           .addListener(closeAction);
+                .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
+                .addListener(preventMaskingExceptionOnFailureListener(throwable))
+                .addListener(completeOnSuccessListener(throwable))
+                .addListener(closeAction);
     }
 
     private GenericFutureListener<Future<? super Void>> completeOnFailureListener(String message) {
@@ -254,70 +243,28 @@ class BareResponseImpl implements BareResponse {
 
             DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
 
-            runOnOutboundEventLoopThread(() -> {
-                LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
+            LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
 
-                ChannelFuture channelFuture;
-                if (data.flush()) {
-                    channelFuture = ctx.writeAndFlush(httpContent);
-                } else {
-                    channelFuture = ctx.write(httpContent);
-                }
+            ChannelFuture channelFuture;
+            if (data.flush()) {
+                channelFuture = ctx.writeAndFlush(httpContent);
+            } else {
+                channelFuture = ctx.write(httpContent);
+            }
 
-                channelFuture
-                        .addListener(future -> {
-                            data.release();
-                            LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
-                        })
-                        .addListener(completeOnFailureListener("Failure when sending a content!"))
-                        .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-            });
+            channelFuture
+                    .addListener(future -> {
+                        data.release();
+                        LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
+                    })
+                    .addListener(completeOnFailureListener("Failure when sending a content!"))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 
         }
     }
 
     private String log(String s) {
         return "(reqID: " + requestId + ") " + s;
-    }
-
-    /**
-     * Runs the given runnable on an outbound event loop {@link #thread}.
-     *
-     * @param runnable the runnable to run
-     */
-    private void runOnOutboundEventLoopThread(Runnable runnable) {
-        if (Thread.currentThread() != thread) {
-            // not executing in the originating thread
-            ChannelHandlerContext context = ctx.pipeline().context(ChannelOutboundHandler.class);
-            if (context == null) {
-                throw new ConnectionClosedException("The connection was closed.");
-            }
-            EventExecutor executor = context.executor();
-
-            CountDownLatch latch = new CountDownLatch(1);
-            executor.execute(() -> {
-                if (Thread.currentThread() != thread) {
-                    throw new IllegalStateException(String.format("Assertion error! Current thread '%s' != expected one '%s'",
-                                                                  Thread.currentThread(),
-                                                                  thread));
-                }
-                // it is safe to count down before the runnable itself as it is guarantied the
-                // runnable will be executed before anything else
-                latch.countDown();
-                runnable.run();
-            });
-
-            try {
-                if (!latch.await(30, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException("Timed out while waiting for a message to be written on the event loop.");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while waiting for the task to be executed on an event loop thread", e);
-            }
-        } else {
-            runnable.run();
-        }
     }
 
     @Override

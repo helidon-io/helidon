@@ -87,7 +87,7 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
                     throw new IOException("Output stream already closed.");
                 }
 
-                sub.onNext(ByteBuffer.wrap(buffer, offset, length));
+                sub.onNext(createBuffer(buffer, offset, length));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -113,5 +113,21 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
                 sub.onError(t);
             }
         });
+    }
+
+    /**
+     * Creates a {@link ByteBuffer} by making a copy of the underlying
+     * byte array. Jersey will reuse this array, so it needs to be
+     * copied here.
+     *
+     * @param buffer The buffer.
+     * @param offset Offset in buffer.
+     * @param length Length of buffer.
+     * @return Newly created {@link ByteBuffer}.
+     */
+    private ByteBuffer createBuffer(byte[] buffer, int offset, int length) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(length - offset);
+        byteBuffer.put(buffer, offset, length);
+        return (ByteBuffer) byteBuffer.clear();     // resets counters
     }
 }

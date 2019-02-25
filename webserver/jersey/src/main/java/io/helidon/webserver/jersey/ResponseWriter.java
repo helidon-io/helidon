@@ -16,19 +16,14 @@
 
 package io.helidon.webserver.jersey;
 
-import java.io.ByteArrayOutputStream;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-
-import javax.ws.rs.core.MediaType;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -37,7 +32,6 @@ import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.ConnectionClosedException;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
@@ -142,28 +136,9 @@ class ResponseWriter implements ContainerResponseWriter {
         // in case of SSE every response chunk needs to be flushed
         boolean doFlush = MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType());
 
-        res.send(
-                ReactiveStreamsAdapter.publisherToFlow(
-                        ReactiveStreamsAdapter.publisherFromFlow(publisher)
-                                      /*
-                                      The problem is that Jersey reuses the byte[] array it uses for writing
-                                      to the OutputStream.write() method. As such we must duplicate the array
-                                      because we need to return from the 'write()' method sooner than when
-                                      the underlying TCP server flushes the bytes.
-
-                                      Following fails when writing large amount of data to the response:
-                                      .map(byteBuffer -> new ResponseChunk(false, byteBuffer))));
-                                       */
-                                      .map(byteBuffer -> {
-                                          try {
-                                              ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                                              WritableByteChannel ch = Channels.newChannel(stream);
-                                              ch.write(byteBuffer);
-                                              return DataChunk.create(doFlush, ByteBuffer.wrap(stream.toByteArray()));
-                                          } catch (IOException e) {
-                                              throw new IllegalStateException("this never happens", e);
-                                          }
-                                      })));
+        res.send(ReactiveStreamsAdapter.publisherToFlow(
+                    ReactiveStreamsAdapter.publisherFromFlow(publisher)
+                        .map(byteBuffer -> DataChunk.create(true, byteBuffer))));
 
         return publisher;
     }
