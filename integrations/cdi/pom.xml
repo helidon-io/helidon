@@ -32,6 +32,7 @@
     <name>Helidon CDI Integrations</name>
 
     <modules>
+        <module>consul-cdi</module>
         <module>datasource-hikaricp</module>
         <module>jedis-cdi</module>
         <module>oci-objectstorage-cdi</module>

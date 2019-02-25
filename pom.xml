@@ -105,6 +105,7 @@
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.brave-opentracing>0.31.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
+        <version.lib.consul-api>1.4.2</version.lib.consul-api>
         <version.lib.checkstyle>7.4</version.lib.checkstyle>
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
@@ -562,6 +563,11 @@
                 <version>${version.lib.jackson}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.ecwid.consul</groupId>
+                <artifactId>consul-api</artifactId>
+                <version>${version.lib.consul-api}</version>
             </dependency>
             <dependency>
                 <!-- Explicitly force jackson-annotations to use proper version; bom doesn't -->
