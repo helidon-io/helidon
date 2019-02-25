@@ -19,14 +19,14 @@ is
 https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Routing.Builder.html#register-io.helidon.webserver.Service...-[registered]
 first during routing construction.
 
-The following example shows `JsonBindingSupport` being registered as the
-first `Service` during route building and being used indirectly by the
-registration of a subsequent
+The following example shows `JsonBindingSupport` being registered as
+the first `Service` during route building and being used indirectly by
+the registration of a subsequent
 https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Handler.html[`Handler`]
 that works with a hypothetical `Person` POJO (which presumably has
 been annotated with various
-https://fasterxml.github.io/jackson-databind/javadoc/2.9/[Jackson
-Databind annotations]):
+http://json-b.net/docs/api/java.json.bind/javax/json/bind/annotation/package-summary.html[JSON-B
+annotations]:
 
 [source,java]
 ----
