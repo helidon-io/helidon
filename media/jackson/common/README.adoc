@@ -1,9 +1,0 @@
-= Helidon Media https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson] Common
-
-The Helidon Media Jackson Common project provides utility classes
-related to
-https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson].
-
-See the
-https://helidon.io/docs/latest/apidocs/io/helidon/media/jackson/common/JacksonProcessing.html[`JacksonProcessing`]
-class for more details.
