@@ -28,14 +28,14 @@
 .Quickstart SE
 [link=guides/02_quickstart-se.adoc]
 --
-Quickly create your first Helidon SE application in under 2 minutes.
+Quickly create your first Helidon SE application in under 5 minutes.
 --
 
 [CARD]
 .Quickstart MP
 [link=guides/03_quickstart-mp.adoc]
 --
-Quickly create your first Helidon MP application in under 2 minutes.
+Quickly create your first Helidon MP application in under 5 minutes.
 --
 ====
 

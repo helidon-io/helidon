@@ -20,102 +20,80 @@
 :description: Helidon SE Quickstart guide
 :keywords: helidon
 
-There are two quickstart samples, one for Helidon SE and one for Helidon
-MP (MicroProfile). Generate the examples using Maven archetypes.
-The resulting Maven projects contain support for Docker and Kubernetes.
+This document describes a basic example of an Helidon SE application using
+ Docker and Kubernetes.
 
-== Prerequisites
+== What you will learn
 
-If you haven't already, make sure you have satisfied the
-<<getting-started/01_prerequisites.adoc,system prerequisites>>
+You'll learn how to use Helidon SE quickly to create a web application in three
+ mains steps:
+
+. Use the Helidon Maven archetype to create a basic Helidon SE application.
+. Build a docker image.
+. Deploy the application to Kubernetes.
+
+== What you need
+
+[width=50%,role="flex, sm7"]
+|===
+|About 5 minutes
+|<<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
+|===
 
 == Generate The Project
 
-Generate the project sources using one (or both) of the Helidon Maven archetypes.
-Both examples result in a REST service that supports the same
-REST API, but they implement it differently:
-
-1. The Helidon SE example implements the REST service using the Helidon WebServer
-   component directly. It shows the basics of configuring the WebServer
-   and implementing basic routing rules.
-2. The Helidon MP example implements the REST service using the JAX-RS
-   support provided by the Helidon MicroProfile server.
+Generate the project sources using one (or both) of the Helidon Maven
+ archetypes. The result is a simple project that shows the basics of configuring
+ the WebServer and implementing basic routing rules.
 
 [source,bash,subs="attributes+"]
-.Helidon SE Example
+.Run the Maven archetype
 ----
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=quickstart-se \
+    -DartifactId=helidon-quickstart-se \
     -Dpackage=io.helidon.examples.quickstart.se
 ----
 
-[source,bash,subs="attributes+"]
-.Helidon MP Example
-----
-mvn archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-mp \
-    -DarchetypeVersion={helidon-version} \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=quickstart-mp \
-    -Dpackage=io.helidon.examples.quickstart.mp
-----
-
 The archetype generates a Maven project in your current directory
-(for example, `quickstart-mp`). Change into this directory.
+(for example, `helidon-quickstart-se`). Change into this directory.
 
 [source,bash]
 ----
-cd quickstart-*
+cd helidon-quickstart-se
 ----
 
 TIP: If you want to use the generated project as a starter
 for your own application, then you can replace groupId, artifactId
 and package with values appropriate for your application.
 
-== Build the Application
-
-For either example:
-
 [source,bash]
+.Build the Application
 ----
 mvn package
 ----
 
-== Run the Application
-
-The project builds an application jar for the example and
-saves all runtime dependencies in the `target/libs` directory.
-This means you can easily start the application by running the
-application jar file:
+The project builds an application jar for the example and saves all runtime 
+dependencies in the `target/libs` directory. This means you can easily start the
+ application by running the application jar file:
 
 [source,bash]
-.Helidon SE Example
+.Run the application
 ----
-java -jar target/quickstart-se.jar
-----
-
-[source,bash]
-.Helidon MP Example
-----
-java -jar target/quickstart-mp.jar
+java -jar target/helidon-quickstart-se.jar
 ----
 
-== Try the Application
-
-Both examples support the same REST interface, so you exercise both examples
-the same way.
-
-The example is a very simple "Hello World" greeting service. It supports
-GET requests for generating a greeting message, and a PUT request for
-changing the greeting itself. The response is encoded using JSON.
+The example is a very simple "Hello World" greeting service. It supports GET
+ requests for generating a greeting message, and a PUT request for changing the
+ greeting itself. The response is encoded using JSON.
 For example:
 
-```
+[source,bash]
+.Try the Application
+----
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
@@ -126,7 +104,7 @@ curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http:
 
 curl -X GET http://localhost:8080/greet/Jose
 {"message":"Hola Jose!"}
-```
+----
 
 == Build a Docker Image
 
@@ -137,38 +115,23 @@ pretty simple (see `target/Dockerfile`). To build the Docker
 image, you need to have Docker installed and running on your system.
 
 [source,bash]
-.Helidon SE Example
+.Docker build
 ----
-docker build -t quickstart-se target
+docker build -t helidon-quickstart-se target
 ----
 
 [source,bash]
-.Helidon MP Example
-----
-docker build -t quickstart-mp target
-----
-
-== Run Docker Image
-
-[source,bash]
-.Helidon SE Example
+.Run Docker Image
 ----
 docker run --rm -p 8080:8080 quickstart-se:latest
 ----
 
-[source,bash]
-.Helidon MP Example
-----
-docker run --rm -p 8080:8080 quickstart-mp:latest
-----
-
 Then you can try the application as you did before.
 
-[[deploy-to-k8s]]
 == Deploy the application to Kubernetes
 
 If you don't have access to a Kubernetes cluster, you can
-<<getting-started/04_kubernetes.adoc,install one on your desktop>>.
+<<getting-started/05_kubernetes.adoc,install one on your desktop>>.
 Then deploy the example:
 
 [source,bash]
@@ -187,7 +150,8 @@ kubectl get pods                    # Wait for quickstart pod to be RUNNING
 
 == Exercise the Application on Kubernetes
 
-Start the Kubernetes proxy server so you can connect to your service via localhost:
+Start the Kubernetes proxy server so you can connect to your service via
+ localhost:
 
 [source,bash]
 .Start kubctl proxy
@@ -198,19 +162,13 @@ kubectl proxy
 Next get the service's info.
 
 [source,bash]
-.Helidon SE Example
+.Lookup the service
 ----
-kubectl get service quickstart-se
-----
-
-[source,bash]
-.Helidon MP Example
-----
-kubectl get service quickstart-mp
+kubectl get service helidon-quickstart-se
 ----
 
-Note the PORTs. You can now exercise the application as you did before
-but use the second port number (the NodePort) instead of 8080. For example:
+Note the PORTs. You can now exercise the application as you did before but use
+ the second port number (the NodePort) instead of 8080. For example:
 
 ```
 curl -X GET http://localhost:31431/greet
@@ -223,4 +181,3 @@ After you're done, cleanup.
 ----
 kubectl delete -f target/app.yaml
 ----
-
