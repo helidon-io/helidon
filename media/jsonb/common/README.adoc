@@ -1,0 +1,8 @@
+= Helidon Media http://json-b.net/[JSON-B] Common
+
+The Helidon Media JSON-B Common project provides utility classes
+related to http://json-b.net/[JSON-B].
+
+See the
+https://helidon.io/docs/latest/apidocs/io/helidon/media/jsonb/common/JsonBinding.html[`JsonBinding`]
+class for more details.
