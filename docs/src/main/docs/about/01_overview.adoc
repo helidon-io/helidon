@@ -25,13 +25,6 @@
 [PILLARS]
 ====
 [CARD]
-.Getting Started
-[icon=assistant,link=getting-started/02_base-example.adoc]
---
-Quickly create your first application, in under 2 minutes.
---
-
-[CARD]
 .Guides
 [icon=explore,link=guides/01_overview.adoc]
 --
