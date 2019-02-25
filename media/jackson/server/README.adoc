@@ -33,8 +33,8 @@ Databind annotations]):
 [source,java]
 ----
 final Routing routing = Routing.builder()
-  .register(JacksonSupport.create()) // <1>
-  .post("/foo", Handler.create(Person.class, (req, res, person) -> res.send(person))) // <2>
+  .register(JacksonSupport.create())  // <1>
+  .post("/foo", Handler.create(Person.class, (req, res, person) -> res.send(person)))  // <2>
   .build();
 ----
 <1> Registration of `JacksonSupport`
