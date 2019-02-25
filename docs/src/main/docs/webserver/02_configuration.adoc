@@ -59,7 +59,7 @@ Then, in your application code, load the configuration from that file.
 ----
 ServerConfiguration configuration = ServerConfiguration.create(
         Config.builder()
-              .source(classpath("application.conf"))
+              .sources(classpath("application.conf"))
               .build());
 
 WebServer webServer = WebServer.create(configuration, routing);
