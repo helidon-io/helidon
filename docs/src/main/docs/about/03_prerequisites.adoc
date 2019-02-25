@@ -63,26 +63,6 @@ export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
 export JAVA_HOME=/usr/lib/jvm/jdk-8
 ----
 
-/////////////////////////////////////////////////////////////////////////////
-Since we are using docker build, these don't need to be set
-== Setting MAVEN_OPTS
-
-The base example used throughout the documentation supports building docker images
-using Maven. In order for this to work with Java 9 you must set some options.
-Note that these options only work with Java 9. If you do not plan on generating a docker
-image then you can skip this section.
-
-[source,bash]
-.Setting `MAVEN_OPTS`
-----
-export MAVEN_OPTS="--add-modules java.xml.bind \
-    --add-opens java.base/java.lang=ALL-UNNAMED \
-    --add-opens java.xml.bind/javax.xml.bind=ALL-UNNAMED \
-    --add-opens java.activation/javax.activation=ALL-UNNAMED \
-    -Xmx1024M"
-----
-/////////////////////////////////////////////////////////////////////////////
-
 == Try the Quickstart Examples
 
 Now you are ready to try the
