@@ -18,4 +18,4 @@
  * CDI integration for the <em>de facto</em> standard <a
  * href="https://github.com/Ecwid/consul-api">Java Consul client</a>.
  */
-package io.helidon.integrations.datasource.hikaricp.cdi;
+package io.helidon.integrations.consul.cdi;
