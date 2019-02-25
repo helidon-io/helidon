@@ -15,215 +15,137 @@
     limitations under the License.
 
 ///////////////////////////////////////////////////////////////////////////////
-:adoc-dir: {guides-dir}
 
 = Creating Docker Images 
 :description: Helidon Docker Guide
 :keywords: helidon, guide, docker
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
+:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
+:openjdk-docker-217: https://github.com/docker-library/openjdk/issues/217
 
-Building Docker images for Helidon applications.
-
-== What You Will Learn
-
-You'll learn how to package your Helidon application and its runtime dependencies into a Docker
-image that also contains the Java runtime. We'll look at three different ways to do this:
-
-1. Using a Java 8 JRE base image
-2. Using Java 11 `jlink` to create a custom JRE
-3. Using the https://github.com/GoogleContainerTools/jib[Jib] Maven plugin
+This guide describes how to create a Docker image for your Helidon
+ application, using a Java 8 base image or a custom Java 11 JRE built with
+ `jlink`.
 
 == What You Need
 
 |===
 |About 10 minutes
-| <<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
+| <<getting-started/03_prerequisites.adoc,Helidon Prerequisites>>
 |You'll also need Java 11 if you want to create custom JRE's using `jlink`
 |===
 
-== Create Your Application Using The Helidon Quickstart
+== Java Packaging
 
-Follow the instructions on the <<getting-started/02_base-example.adoc,Quickstart page>>
-to create a Helidon SE project. Once you've run the archetype to create
-the project come back here.
+The Helidon team recommends setting-up the class-path inside the
+ `META-INF/MANIFEST.MF` file with the `Class-Path` entry pointing to dependency
+ jar files in a co-located `lib` directory. See the Maven and Gradle
+ link:{quickstart-example}[examples] for more details on how to package your
+ Helidon application.
 
-== Handling Runtime Dependencies
+This approach is a good fit for Docker images:
 
-Build the example:
+* the application code and dependencies can be separate image layers.
+* the image layer containing your dependencies is re-built only when
+ dependencies are updated.
+* the deployment environment(s) pull the images layer containing your
+ dependencies only when changed.
 
-[source,bash,subs="verbatim,attributes"]
+[NOTE]
+.Why no fat jars?
+====
+Fat Jars are jar files that contain the application and its dependencies ; they
+ are not optimal for Docker images as it results in a single image layer.
+====
+
+== Creating a Java 8 Based Docker Image
+
+This section describes the Dockerfile provided by the
+ <<getting-started/02_base-example.adoc, quickstarts>>.
+
+The Dockerfile is located at `src/main/docker/Dockerfile` and contains the
+ following:
+
+[source,yaml]
 ----
-mvn clean package
-----
-
-When you run the maven build, you'll notice lines like the following:
-
-[listing]
-----
-[INFO] Scanning for projects...
-...
-[INFO]
-[INFO] --- maven-dependency-plugin:2.9:copy-dependencies (copy-dependencies) @ quickstart-se ---
-[INFO] Copying netty-transport-4.1.22.Final.jar to /tmp/quickstart-se/target/libs/netty-transport-4.1.22.Final.jar
-----
-
-The project uses the `maven-dependency-plugin` to copy the runtime dependencies to
-`target/libs/`. Additionally the `maven-jar-plugin` adds a `Class-Path` entry to the
-application's jar file so it can find those dependencies at runtime. You can
-see that by running:
-
-[source,bash,subs="verbatim,attributes"]
-----
-unzip -p target/quickstart-se.jar META-INF/MANIFEST.MF 
-----
-[listing]
-----
-Class-Path: libs/helidon-bundles-webserver-0.10.4.jar libs/helidon-webser
- ver-0.10.4.jar libs/helidon-common-reactive-0.10.4.jar libs/helidon-com
- mon-http-0.10.4.jar libs/helidon-common-key-util-0.10.4.jar libs/helido
-----
-
-This means you can easily run the application jar:
-
-[source,bash,subs="verbatim,attributes"]
-----
-java -jar target/quickstart-se.jar
-----
-
-Now try the application with `curl`:
-
-[source,bash,subs="verbatim,attributes"]
-----
-curl -X GET http://localhost:8080/greet
-----
-
-[listing]
-----
-{"message":"Hello World!"}
-----
-
-== Creating a Docker Image Using a Java 8 Base Image
-
-Since the `target` directory has the application's runtime dependencies, the
-Dockerfile for our application is pretty simple. You can
-find the Dockerfile in the generated project at `src/main/docker/Dockerfile`.
-It should look like this:
-
-[source,yaml,subs="verbatim,attributes"]
-.src/main/docker/Dockerfile
-----
-FROM openjdk:8-jre-slim 
+FROM openjdk:8-jre-slim #<1>
 
 RUN mkdir /app
-COPY libs /app/libs 
-COPY ${project.artifactId}.jar /app
+COPY libs /app/libs #<2>
+COPY ${project.artifactId}.jar /app #<3>
 
-CMD ["java", "-jar", "/app/${project.artifactId}.jar"]
+CMD ["java", "-jar", "/app/${project.artifactId}.jar"] #<4>
+----
+<1> The base image is the Java 8 JRE image provided by the OpenJDK project.
+<2> First, the application dependencies are copied to `/app`.
+<3> Then, the application jar file is copied to `/app`.
+<4> The command to start the application.
+
+[IMPORTANT]
+.Incremental build
+====
+When rebuilding an image Docker rebuilds from the first layer that is
+ effectively changed. Copying the application jar file after the libraries
+ ensures that Docker does not rebuild the prior layers.
+====
+
+[NOTE]
+.What is ${project.artifactId}?
+====
+It's a Maven property. The file above is processed during the Maven build, a new
+ file is created under the target directory and the property value is expanded.
+====
+
+[source,bash]
+.Build the project
+----
+mvn package
 ----
 
-* We use a Java 8 JRE image provided by the OpenJDK project.
-* We then create a directory to hold our application and copy the `libs` directory
-  into it followed by the application jar. The command to start the application is
-  just like the one we used when running natively on our desktop. 
-
-What is `${project.artifactId}`? It's a Maven property. The project uses
-the `maven-resources-plugin` to filter the Dockerfile while copying it to the
-target directory. So this property gets expanded to the project artifactId
-(`quickstart-se` for example).
-
-Since the quickstart project already contains the Dockerfile you can go ahead and try it:
-
-[source,bash,subs="verbatim,attributes"]
+[source,bash]
+.Build the Docker image
 ----
 docker build -t quickstart-se target
 ----
 
-[listing]
-----
-Sending build context to Docker daemon  5.641MB
-Step 1/5 : FROM openjdk:8-jre-slim
- ---> 3e85180d5f58
-Step 2/5 : RUN mkdir /app
- ---> Using cache
- ---> d24e2f320e6b
-Step 3/5 : COPY libs /app/libs
- ---> Using cache <1>
- ---> 9772d4c5d4a0
-Step 4/5 : COPY quickstart-se.jar /app
- ---> f156df1d0338
-Step 5/5 : CMD ["java", "-jar", "/app/quickstart-se.jar"]
- ---> Running in 29838194f452
-Removing intermediate container 29838194f452
- ---> 6a634dbe3ecf
-Successfully built 6a634dbe3ecf
-Successfully tagged quickstart-se:latest
-----
-
-<1> The first time you run `docker build` you won't see `Using cache` for this
-    layer, but on subsequent builds you should. This is good. It
-    means that the image layer that contains our runtime dependencies is
-    not modified every time we build our application. Only the layer containing
-    the application jar is. That means if we're pushing our Docker image to a
-    remote registry then the layer with our runtime dependencies does not 
-    need to be pushed every time we rebuild.
-
-You can now run the docker container:
-
-[source,bash,subs="verbatim,attributes"]
+[source,bash]
+.Run the docker container
 ----
 docker run --rm -p 8080:8080 quickstart-se:latest
 ----
 
-[source,bash,subs="verbatim,attributes"]
+[source,bash]
+.Ping the application
 ----
 curl -X GET http://localhost:8080/greet
 ----
 
-=== Why no Fat Jar?
+== Creating a Docker Image with a Custom JRE
 
-Fat Jars are jar files that contain the application and all runtime
-dependencies. This is handy because it's one file that contains all
-you need to run your application.
+This section describes how to build an image with a custom Java 11 JRE using
+ `jlink`.
 
-One problem with fat jars is that they are not optimal when used in
-a Docker image. That's because the image layer that contains your
-application also contains all of its runtime dependencies, and that
-means more data to push to a docker registry every time you rebuild
-your application.
+Replace `src/main/docker/Dockerfile` with the following:
 
-But Fat Jars can be convenient if you're not running in Docker
-containers. There is nothing that prevents you from building a
-fat jar for your Helidon application. You just need to know what
-you are doing and, for example, make sure you aggregate
-`META-INF/services/` from all the individual jar files.
-
-== Creating a Docker Image with a Custom JRE Using `jlink`
-
-In the previous Dockerfile example we used Java 8 and got the
-JRE directly from the base OpenJDK Docker image. In this section
-we'll build our own custom Java 11 JRE using `jlink`. Here
-is what that Dockerfile looks like. Go ahead and replace the
-`src/main/docker/Dockerfile` in your example project with
-this one:
-
-[source,yaml,subs="verbatim,attributes"]
-.src/main/docker/Dockerfile
+[source,yaml]
 ----
-# Multistage Docker build.
-# Stage 1: Build custom Java 11 JRE and put it in /var/tmp/myjre <1>
-FROM openjdk:11-slim AS myjre   
+# Multistage Docker build. <1>
+# Stage 1: Build custom Java 11 JRE and put it in /var/tmp/myjre <2>
+FROM openjdk:11-slim AS myjre
 RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \ 
      "--add-modules", "java.base,java.logging,java.sql,java.desktop,java.management", \
-     "--output", "/var/tmp/myjre"]
+     "--output", "/var/tmp/myjre"] # <3>
 
-# Work around for https://github.com/docker-library/openjdk/issues/217 <2>
+# Work around for https://github.com/docker-library/openjdk/issues/217 <4>
 RUN [ "apt", "update"]
 RUN [ "apt-get", "install", "-y", "binutils"]
 RUN ["strip", "-p", "--strip-unneeded", "/var/tmp/myjre/lib/server/libjvm.so"]
 # End work-around
 
-# Stage 2: Build application image using JRE from Stage 1 <3>
-FROM debian:sid-slim 
-COPY --from=myjre /var/tmp/myjre /opt/jre
+# Stage 2: Build application image using JRE from Stage 1 <5>
+FROM debian:sid-slim # <6>
+COPY --from=myjre /var/tmp/myjre /opt/jre # <7>
 ENV PATH=$PATH:/opt/jre/bin
 
 RUN mkdir /app
@@ -232,55 +154,58 @@ COPY ${project.artifactId}.jar /app
 
 CMD ["java", "-jar", "/app/${project.artifactId}.jar"]
 ----
+<1> This is a multi-stage Docker build. See more info
+ link:{docker-multi-stage-url}[here]
+<2> The first stage that creates our custom JRE.
+<3> The modules listed in this example are for Helidon SE. See below for
+ Helidon MP.
+<4> This is a work-around for {openjdk-docker-217}.
+<5> The final stage that creates the image for our application.
+<6> Use `debian:sid-slim` to match the base image of `openjdk:11-slim`
+<7> Copy the JRE from the image of the first stage `myjre`
 
-This is a little bit more complicated than our first Dockerfile, in part
-because of a work-around for an OpenJDK issue. The first thing to notice
-is that this is a multi-stage Docker build. That means we're going to
-build multiple Docker images -- with later images using content from
-earlier images. 
-
-<1> For the first stage of the build we use a Java 11 base image and we name the image 
-    we are building `myjre`. We then run `jlink` to create a JRE with only the modules
-    we need. We generate that JRE in the Docker image at `/var/tmp/myjre`.
-    The modules listed in this example are for Helidon SE.
-    See below for Helidon MP.
-<2> Ack! We need to work-around an issue in the openjdk base image -- basically run
-    `strip` on `libjvm.so`. Why? Go see https://github.com/docker-library/openjdk/issues/217.
-    After doing that we have a nice shiny new JRE to use.
-<3> Now we build the image for our application. We use `debian:sid-slim` because
-    that matches the base image used by `openjdk:11-slim`, so we can be confident
-    we won't have any runtime compatibility issues with the JRE we created.
-    We copy the JRE from the first image (`myjre`) into our second image, and
-    set our `PATH` so we can find the new JRE. The rest of the file is the same
-    as before.
-
-That's it! You're Docker image will now run with a custom JRE. Let's try it:
-
-[source,bash,subs="verbatim,attributes"]
-.Rebuild project to process Dockerfile and copy to target directory
+[source,bash]
+.Process the new Dockerfile
 ----
-mvn package
+mvn process-resources
 ----
 
-[source,bash,subs="verbatim,attributes"]
+[source,bash]
+.Build the Docker image
 ----
 docker build -t java11-quickstart-se target
 ----
 
-[source,bash,subs="verbatim,attributes"]
+[source,bash]
+.Run the docker container
 ----
 docker run --rm -p 8080:8080 java11-quickstart-se:latest
 ----
 
-The first time you run `docker build` with this Dockerfile it will take a while
-as it downloads stuff and installs `binutils` for the workaround. But subsequent
-runs will be much faster, because all those layers will be cached except for
-the little layer that contains your application jar.
+[source,bash]
+.Ping the application
+----
+curl -X GET http://localhost:8080/greet
+----
+
+[source,bash]
+.Take a look at the image size
+----
+docker images java11-quickstart-se:latest
+----
+
+[source,bash]
+----
+REPOSITORY             TAG        IMAGE ID         CREATED             SIZE
+java11-quickstart-se   latest     f07a7b8bda78     About a minute ago  136MB
+----
+
+NOTE: ~140MB is less than the pre-built OpenJDK slim JRE images. Results might
+ differ a bit depending on your platform.
 
 === What about Helidon MP?
 
-The only difference for Helidon MP is that you need to add a couple more
-modules to the `jlink` command:
+For Helidon MP you need to add a couple more modules to the `jlink` command:
 
 [source,yaml,subs="verbatim,attributes"]
 ----
@@ -289,194 +214,3 @@ RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files" \
      "java.base,java.logging,java.sql,java.desktop,java.management,java.naming,jdk.unsupported", \
      "--output", "/var/tmp/myjre"]
 ----
-
-
-== Creating a Docker Image Using Jib
-
-https://github.com/GoogleContainerTools/jib[Jib] is a collection of build tools for
-constructing Docker images for Java applications. Jib allows you to build images
-straight from a Maven (or Gradle) plugin without the need for the `docker`
-command. It also uses a
-https://github.com/GoogleContainerTools/distroless[distroless] base image that
-can result in a smaller final image.
-
-We'll be using the `jib-maven-plugin` in this example. With
-`jib-maven-plugin`, you don't need a Dockerfile
-and it creates a final Docker image that follows a set
-of best-practices for packaging Java applications in a container.
-
-The `docker` command is only required if you are going to install the image locally.
-It is *not* required to build and _push the image_ to a Docker Registry,
- such as Docker Hub. This can be accomplished via `mvn jib:build` after
-https://github.com/GoogleContainerTools/jib/tree/master/jib-maven-plugin#configuration[configuring which
-Registry to connect to].
-This fits well in an environment where administrative permissions
- are unavailable on developer machines to install or run Docker.
-
-To add Jib to this example, add the following plugin to the `pom.xml`.
-This adds a goal to the Maven `package` phase that containerizes
-the application using a locally available Docker daemon.
-
-[source,xml,subs="verbatim,attributes"]
-.pom.xml
-----
-<project>
-  ...
-  <properties>
-    <jib-maven-plugin.version>0.10.1</jib-maven-plugin.version>
-  </properties>
-  ...
-  <build>
-    <plugins>
-      ...
-      <plugin>
-          <groupId>com.google.cloud.tools</groupId>
-          <artifactId>jib-maven-plugin</artifactId>
-          <version>${jib-maven-plugin.version}</version>
-          <configuration>
-              <to>
-                  <image>jib-${project.artifactId}</image>
-                  <tags>
-                      <tag>${project.version}</tag>
-                      <tag>latest</tag>
-                  </tags>
-              </to>
-              <container>
-                  <!-- good defaults intended for containers -->
-                  <jvmFlags>
-                      <jmxFlag>-server</jmxFlag>
-                      <jmxFlag>-Djava.awt.headless=true</jmxFlag>
-                      <jmxFlag>-XX:+UnlockExperimentalVMOptions</jmxFlag>
-                      <jmxFlag>-XX:+UseCGroupMemoryLimitForHeap</jmxFlag>
-                      <jmxFlag>-XX:InitialRAMFraction=2</jmxFlag>
-                      <jmxFlag>-XX:MinRAMFraction=2</jmxFlag>
-                      <jmxFlag>-XX:MaxRAMFraction=2</jmxFlag>
-                      <jmxFlag>-XX:+UseG1GC</jmxFlag>
-                  </jvmFlags>
-
-                  <mainClass>${mainClass}</mainClass>
-
-                  <ports>
-                      <port>8080</port>
-                  </ports>
-
-              </container>
-          </configuration>
-          <executions>
-              <execution>
-                  <id>dockerBuild</id>
-                  <goals>
-                      <goal>dockerBuild</goal>
-                  </goals>
-                  <phase>package</phase>
-              </execution>
-          </executions>
-      </plugin>
-      ...
-    </plugins>
-  </build>
-  ...
-</project>
-----
-
-When running `mvn clean package` again, we notice the following output.
-
-[listing]
----
-[INFO] --- jib-maven-plugin:0.10.1:dockerBuild (dockerBuild) @ quickstart-se ---
-[INFO]
-[INFO] Containerizing application to Docker daemon as quickstart-se, quickstart-se:1.0-SNAPSHOT, quickstart-se...
-[WARNING] Base image 'gcr.io/distroless/java' does not use a specific image digest - build may not be reproducible
-[INFO] Getting base image gcr.io/distroless/java...  <1>
-[INFO] Building dependencies layer...
-[INFO] Building resources layer...
-[INFO] Building classes layer...
-[INFO] Finalizing...
-[INFO]
-[INFO] Container entrypoint set to [java, -server, -Djava.awt.headless=true, -XX:+UnlockExperimentalVMOptions,-XX:+UseCGroupMemoryLimitForHeap, -XX:InitialRAMFraction=2, -XX:MinRAMFraction=2, -XX:MaxRAMFraction=2, -XX:+UseG1GC,-XX:MaxGCPauseMillis=100, -XX:+UseStringDeduplication, -cp, /app/resources:/app/classes:/app/libs/*,io.helidon.examples.quickstart.se.Main]
-[INFO] Loading to Docker daemon...
-[INFO]
-[INFO] Built image to Docker daemon as jib-quickstart-se, jib-quickstart-se:1.0-SNAPSHOT, jib-quickstart-se <2>
----
-
-<1> By default, Jib uses https://github.com/GoogleContainerTools/distroless/tree/master/java[`distroless/java`]
-    as the base image. This can be overwritten by updating the POM,
-    or simply adding
-    `-Djib.from.image=openjdk:8-jre-slim` in the `mvn` command invocation, for example.
-
-<2> What would a Dockerfile for a Jib-built project look like?
-    See the https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md#what-would-a-dockerfile-for-a-jib-built-image-look-like[Jib FAQ].
-
-https://github.com/GoogleContainerTools/jib/tree/master/jib-maven-plugin#quickstart[See here]
-for more configuration parameters using `jib-maven-plugin`.
-
-Now you can run the image:
-
-[source,bash,subs="verbatim,attributes"]
-----
-docker run --rm -p 8080:8080 jib-quickstart-se
-----
-
-
-== How Big is This Stuff?
-
-Let's take a look.
-
-.Helidon SE Quickstart Application and Runtime Dependencies
-[source,bash,subs="verbatim,attributes"]
-----
-du -sh target/quickstart-se.jar target/libs
-----
-
-[listing]
-----
- 12K	target/quickstart-se.jar
-5.4M	target/libs
-----
-
-.Java 11 JRE for Helidon SE
-[source,bash,subs="verbatim,attributes"]
-----
-docker run -it --rm java11-quickstart-se:latest  du -sh /opt/jre
-----
-
-[listing]
-----
-62M	/opt/jre
-----
-
-.Java 11 Docker Image for Helidon SE Quickstart Example
-[source,bash,subs="verbatim,attributes"]
-----
-docker images java11-quickstart-se:latest
-----
-
-[listing]
-----
-REPOSITORY             TAG        IMAGE ID         CREATED             SIZE
-java11-quickstart-se   latest     f07a7b8bda78     About a minute ago  136MB
-----
-
-So the application plus Java runtime is less than 70MB which is not
-too bad. And the complete Docker image is less than 140MB which is
-smaller than the pre-built OpenJDK slim JRE images. Note that your
-results might differ a bit depending on your platform.
-
-.Jib Docker Image for Helidon SE Quickstart Example
-[source,bash,subs="verbatim,attributes"]
-----
-docker images jib-quickstart-se:latest
-----
-
-[listing]
-----
-REPOSITORY          TAG           IMAGE ID      CREATED        SIZE
-jib-quickstart-se   latest        384aebda5594  48 years ago   124MB <1>
-----
-
-<1> Ignore the fact that it says the image was created 48 years ago. Refer to
-     https://github.com/GoogleContainerTools/jib/blob/master/docs/faq.md#why-is-my-image-created-48-years-ago[Jib FAQ] explaining why this is,
-     and how to change it.
-
-The Jib image is smaller still, because of the use of a distroless base image.
-

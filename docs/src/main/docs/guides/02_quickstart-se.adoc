@@ -20,24 +20,15 @@
 :description: Helidon SE Quickstart guide
 :keywords: helidon
 
-This document describes a basic example of an Helidon SE application using
- Docker and Kubernetes.
-
-== What you will learn
-
-You'll learn how to use Helidon SE quickly to create a web application in three
- mains steps:
-
-. Use the Helidon Maven archetype to create a basic Helidon SE application.
-. Build a docker image.
-. Deploy the application to Kubernetes.
+This guide describes a basic example of an Helidon SE application using Docker
+ and Kubernetes.
 
 == What you need
 
 [width=50%,role="flex, sm7"]
 |===
 |About 5 minutes
-|<<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
+|<<getting-started/03_prerequisites.adoc,Helidon Prerequisites>>
 |===
 
 == Generate The Project
@@ -148,18 +139,8 @@ kubectl create -f target/app.yaml
 kubectl get pods                    # Wait for quickstart pod to be RUNNING
 ----
 
-== Exercise the Application on Kubernetes
-
-Start the Kubernetes proxy server so you can connect to your service via
- localhost:
-
-[source,bash]
-.Start kubctl proxy
-----
-kubectl proxy
-----
-
-Next get the service's info.
+The step above created a service that is exposed into any node port. Lookup
+ the service to find the port.
 
 [source,bash]
 .Lookup the service
@@ -170,9 +151,8 @@ kubectl get service helidon-quickstart-se
 Note the PORTs. You can now exercise the application as you did before but use
  the second port number (the NodePort) instead of 8080. For example:
 
-```
+[source,bash]
 curl -X GET http://localhost:31431/greet
-```
 
 After you're done, cleanup.
 

@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Guides Overview
+= Overview
 :description: Helidon guides
 :keywords: helidon, java, microservices, microprofile, guides
 
@@ -45,8 +45,16 @@ Quickly create your first Helidon MP application in under 5 minutes.
 ====
 [CARD]
 .Create Docker Images
-[link=guides/05_Dockerfile.adoc]
+[link=guides/04_dockerfile.adoc]
 --
-Package your application and the necessary runtime dependencies as a Docker image that also contains the Java runtime.
+Learn how to package your application and the necessary runtime dependencies as
+ a Docker image.
+--
+
+[CARD]
+.Build Container Images with Jib
+[link=guides/05_jib.adoc]
+--
+Learn how to use Jib to create a container image without Docker.
 --
 ====
