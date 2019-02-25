@@ -47,7 +47,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 public class ConsulExtension implements Extension {
 
     private static final Pattern CONSUL_CLIENT_NAME_PATTERN =
-        Pattern.compile("^(?:com\\.ecwid\\.consul\\.ConsulClient\\.([^.]+)\\.(.*)$");
+        Pattern.compile("^com\\.ecwid\\.consul\\.v1\\.ConsulClient\\.([^.]+)\\.(.*)$");
 
     private final Map<String, Properties> masterProperties;
 
@@ -131,8 +131,6 @@ public class ConsulExtension implements Extension {
         }
         return Collections.unmodifiableSet(returnValue);
     }
-
-
 
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
         if (event != null) {
