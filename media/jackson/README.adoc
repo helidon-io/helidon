@@ -1,0 +1,15 @@
+= Helidon Media https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson]
+
+The Helidon Media Jackson project provides
+https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson]
+support for
+https://helidon.io/docs/latest/apidocs/io/helidon/webserver/Handler.html[`Handler`]s.
+
+Subprojects include:
+
+* link:common[Common]:
+  https://github.com/FasterXML/jackson#jackson-project-home-github[Jackson]-related
+  utility classes
+* link:server[Server]: Houses the
+  https://helidon.io/docs/latest/apidocs/io/helidon/media/jackson/server/JacksonSupport.html[`JacksonSupport`]
+  class.
