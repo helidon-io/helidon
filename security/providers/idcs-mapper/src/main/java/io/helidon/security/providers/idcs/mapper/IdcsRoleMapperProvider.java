@@ -153,6 +153,11 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
                 JsonObject jsonObject = groupResponse.readEntity(JsonObject.class);
                 JsonArray groups = jsonObject.getJsonArray("groups");
 
+                if (null == groups) {
+                    LOGGER.finest(() -> "No groups found for user " + subject);
+                    return Optional.empty();
+                }
+
                 List<Role> result = new LinkedList<>();
 
                 for (int i = 0; i < groups.size(); i++) {
