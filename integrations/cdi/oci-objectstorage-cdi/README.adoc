@@ -13,7 +13,7 @@ You will need to populate your local Maven repository with the OCI Java SDK
 
 ```bash
     git clone --depth 1 --branch v1.2.44 https://github.com/oracle/oci-java-sdk.git
-    mvn -B -U -f oci-java-sdk.git/pom.xml \
+    mvn -B -U -f oci-java-sdk/pom.xml \
         -Dmaven.test.skip=true \
         -Dmaven.source.skip=true \
         -Dmaven.javadoc.skip=true \

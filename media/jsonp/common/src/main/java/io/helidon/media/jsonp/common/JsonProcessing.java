@@ -17,6 +17,7 @@ package io.helidon.media.jsonp.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import javax.json.Json;
+import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonStructure;
 import javax.json.JsonWriter;
@@ -90,7 +92,7 @@ public final class JsonProcessing {
      * a {@link javax.json.JsonException}
      */
     public Reader<JsonStructure> reader() {
-        return reader(Charset.defaultCharset());
+        return reader(null);
     }
 
     /**
@@ -107,7 +109,15 @@ public final class JsonProcessing {
     public Reader<JsonStructure> reader(Charset charset) {
         return (publisher, clazz) -> ContentReaders.byteArrayReader()
                 .apply(publisher)
-                .thenApply(bytes -> jsonReaderFactory.createReader(new ByteArrayInputStream(bytes), charset).read());
+                .thenApply(bytes -> {
+                    InputStream is = new ByteArrayInputStream(bytes);
+
+                    JsonReader reader = (charset == null)
+                            ? jsonReaderFactory.createReader(is)
+                            : jsonReaderFactory.createReader(is, charset);
+
+                    return reader.read();
+                });
     }
 
     /**

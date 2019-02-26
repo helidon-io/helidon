@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -35,7 +36,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.ContextualRegistry;
@@ -71,7 +71,7 @@ abstract class Request implements ServerRequest {
     /**
      * Creates new instance.
      *
-     * @param req       bare request from HTTP SPI implementation.
+     * @param req bare request from HTTP SPI implementation.
      * @param webServer relevant server.
      */
     Request(BareRequest req, WebServer webServer) {
@@ -105,10 +105,10 @@ abstract class Request implements ServerRequest {
      */
     static Charset requestContentCharset(ServerRequest request) {
         return request.headers()
-                .contentType()
-                .flatMap(MediaType::charset)
-                .map(Charset::forName)
-                .orElse(DEFAULT_CHARSET);
+                      .contentType()
+                      .flatMap(MediaType::charset)
+                      .map(Charset::forName)
+                      .orElse(DEFAULT_CHARSET);
     }
 
     protected abstract Tracer tracer();
@@ -229,7 +229,7 @@ abstract class Request implements ServerRequest {
 
         private Content() {
             this.originalPublisher = bareRequest.bodyPublisher();
-            this.readers = new LinkedList<>();
+            this.readers = appendDefaultReaders(new LinkedList<>());
             this.filters = new ArrayList<>();
             this.readersLock = new ReentrantReadWriteLock();
             this.filtersLock = new ReentrantReadWriteLock();
@@ -237,10 +237,17 @@ abstract class Request implements ServerRequest {
 
         private Content(Content orig) {
             this.originalPublisher = orig.originalPublisher;
-            this.readers = orig.readers;
+            this.readers = appendDefaultReaders(orig.readers);
             this.filters = orig.filters;
             this.readersLock = orig.readersLock;
             this.filtersLock = orig.filtersLock;
+        }
+
+        private Deque<InternalReader<?>> appendDefaultReaders(final Deque<InternalReader<?>> readers) {
+            readers.addLast(reader(String.class, stringContentReader()));
+            readers.addLast(reader(byte[].class, ContentReaders.byteArrayReader()));
+            readers.addLast(reader(InputStream.class, ContentReaders.inputStreamReader()));
+            return readers;
         }
 
         @Override
@@ -280,19 +287,14 @@ abstract class Request implements ServerRequest {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> CompletionStage<T> as(Class<T> type) {
+        public <T> CompletionStage<T> as(final Class<T> type) {
             Span readSpan = createReadSpan(type);
             CompletionStage<T> result;
             try {
                 readersLock.readLock().lock();
-
-                result = readersWithDefaults()
-                        .filter(reader -> reader.accept(type))
-                        .findFirst()
-                        // in this context, the cast is absurd, although it's needed;
-                        // one can create a predicate matching an incompatible class
-                        .map(reader -> (CompletionStage<? extends T>) (((Reader<T>) reader).apply(chainPublishers(), type)))
-                        .orElse(failedFuture(new IllegalArgumentException("No reader found for class: " + type)));
+                result = (CompletionStage<T>) readerFor(type).apply(chainPublishers(), type);
+            } catch (IllegalArgumentException e) {
+                result = failedFuture(e);
             } catch (Exception e) {
                 result = failedFuture(new IllegalArgumentException("Transformation failed!", e));
             } finally {
@@ -300,10 +302,10 @@ abstract class Request implements ServerRequest {
             }
             // Close span
             result.thenRun(readSpan::finish)
-                    .exceptionally(t -> {
-                        finishSpanWithError(readSpan, t);
-                        return null;
-                    });
+                  .exceptionally(t -> {
+                      finishSpanWithError(readSpan, t);
+                      return null;
+                  });
             return result;
         }
 
@@ -327,16 +329,23 @@ abstract class Request implements ServerRequest {
             return spanBuilder.start();
         }
 
-        private Stream<InternalReader<?>> readersWithDefaults() {
-            return Stream.concat(readers.stream(), Stream.of(
-                    reader(String.class, stringContentReader()),
-                    reader(byte[].class, ContentReaders.byteArrayReader()),
-                    reader(InputStream.class, ContentReaders.inputStreamReader())));
+        @SuppressWarnings("unchecked")
+        private <T> Reader<T> readerFor(final Class<T> type) {
+            return (Reader<T>) readers.stream()
+                                      .filter(reader -> reader.accept(type))
+                                      .findFirst()
+                                      .orElseThrow(() -> new IllegalArgumentException("No reader found for class: " + type));
         }
 
         private Reader<String> stringContentReader() {
-            Charset charset = requestContentCharset(Request.this);
-            return ContentReaders.stringReader(charset);
+            try {
+                Charset charset = requestContentCharset(Request.this);
+                return ContentReaders.stringReader(charset);
+            } catch (final UnsupportedCharsetException e) {
+                return (publisher, clazz) -> {
+                    throw e;
+                };
+            }
         }
 
         @Override
@@ -405,9 +414,9 @@ abstract class Request implements ServerRequest {
         /**
          * Creates new instance.
          *
-         * @param path         actual relative URI path.
-         * @param rawPath      actual relative URI path without any decoding.
-         * @param params       resolved path parameters.
+         * @param path actual relative URI path.
+         * @param rawPath actual relative URI path without any decoding.
+         * @param params resolved path parameters.
          * @param absolutePath absolute path.
          */
         Path(String path, String rawPath, Map<String, String> params, Path absolutePath) {

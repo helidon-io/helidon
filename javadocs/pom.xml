@@ -52,10 +52,10 @@
                         </goals>
                         <configuration>
                             <bottom>
-                            <![CDATA[Copyright &#169; 2018,
-                                <a href="http://www.oracle.com">Oracle</a>
+                            <![CDATA[Copyright &copy; {inceptionYear}&ndash;{currentYear}
+                                <a href="https://www.oracle.com/index.html">Oracle</a>
                                 and/or its affiliates.
-                                All Rights Reserved. Use is subject to license terms.]]>
+                                All rights reserved. Use is subject to license terms.]]>
                             </bottom>
                             <dependencySourceExcludes>
                                 <dependencySourceExclude>org.osgi:*</dependencySourceExclude>
@@ -85,6 +85,10 @@
                                 <group>
                                     <title>Configuration API</title>
                                     <packages>io.helidon.config*</packages>
+                                </group>
+                                <group>
+                                    <title>Media Support APIs</title>
+                                    <packages>io.helidon.media*</packages>
                                 </group>
                                 <group>
                                     <title>Security API</title>
@@ -124,8 +128,33 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.media.jackson</groupId>
+            <artifactId>helidon-media-jackson-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media.jackson</groupId>
+            <artifactId>helidon-media-jackson-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media.jsonb</groupId>
+            <artifactId>helidon-media-jsonb-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media.jsonb</groupId>
+            <artifactId>helidon-media-jsonb-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.media.jsonp</groupId>
             <artifactId>helidon-media-jsonp-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.media.jsonp</groupId>
+            <artifactId>helidon-media-jsonp-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
