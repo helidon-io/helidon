@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,64 +21,113 @@
 :description: Helidon Oracle Container Engine for Kubernetes (OKE) Guide
 :keywords: helidon, guide, oracle, kubernetes
 
-Pushing Helidon applications to the Oracle Registry Service and deploying to Oracle Container Engine for Kubernetes.
-
-== What You Will Learn
-
-You'll learn how to push the Docker image of your Helidon application to the Oracle Registry Service (OCIR) and deploy from the Registry Service to Oracle Container Engine for Kubernetes (OKE). 
+Push a Docker image of your Helidon application to Oracle Cloud Infrastructure Registry (OCIR), and deploy the image from the registry to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE). 
 
 == What You Need
 
 |===
 |About 10 minutes
-| <<getting-started/01_prerequisites.adoc,Helidon Prerequisites>>
-|Access to http://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-full/index.html[Oracle Container Engine for Kubernetes (OKE)]
+| <<getting-started/01_prerequisites.adoc,Helidon prerequisites>>
+|An OKE cluster. See http://www.oracle.com/webfolder/technetwork/tutorials/obe/oci/oke-full/index.html[Creating a Cluster with Oracle Cloud Infrastructure Container Engine for Kubernetes].
+|A docker image of your application. See link:05_Dockerfile.adoc[Creating Docker Images].
 |===
 
-== Create Your Application Using The Creating Docker Images Guide
+== Push Your Image to OCIR
 
-Follow the instructions on the link:05_Dockerfile.adoc[Creating Docker Images guide] to create a Docker image for your Helidon SE project. Once you have the image come back here.
+1. Sign in to the Oracle Cloud Infrastructure (OCI) web console. 
 
-== Pushing the Image to OCIR
+   * You must be either a local user created by an administrator in OCI Identity and Access Management or a synchronized user created automatically by a federated identity provider. 
 
-You will need to log into your Oracle Cloud Infrastructure console and make sure you have a native OCI user. Currently federated users are not supported by OCIR. Your user will either need to be a part of the tenancy's Administrators group or another group with the `REPOSITORY_CREATE` permission. After confirming you have the proper permissions, generate an auth token for your user. Copy the token to a notepad as you will not be able to access it again.
+   * You must in the `Administrators` group or another group that has the `REPOSITORY_CREATE` permission. 
+   
+2. Generate an authentication token.
++
+See https://docs.cloud.oracle.com/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm[Getting an Auth Token].
++
+NOTE: Remember to copy the generated token. You won't be able to access it again.
 
-Navigate to the Registry (OCIR) tab and choose the region to which you would like to push the image. Log into the Registry service Docker CLI with docker login `<region-code>.ocir.io`. When prompted, enter your username in the format `<tenancy_name>/<username>`. When prompted, enter the auth token copied earlier as the password.
+3. Log in to the OCIR Docker CLI:
++
+a. In a terminal window, enter:
+   `docker login <region-code>.ocir.io`
++
+* `<region-code>` is the code for the OCI region that you're using. 
++
+For example, the region code for Phoenix is `phx`. See https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm[Regions and Availability Domains].
 
-The next step is to tag the quickstart image we are going to push to the registry:
+* `ocir.io` is the OCI registry name.
++
+b. At the `username` prompt, enter your user name in the format `<tenancy_name>/<username>`. 
++
+c. At the `password` prompt, enter the auth token that you generated earlier.
 
-`docker tag quickstart-se:latest <region-code>.ocir.io/<tenancy-name>/<repo-name>/<image-name>:<tag>``
+4. Tag the image that you want to push to the registry:
++
+```
+docker tag quickstart-se:latest <region-code>.ocir.io/<tenancy-name>/<repo-name>/<image-name>:<tag>
+```
 
-Finally we push the image to the Registry:
+5. Push the image to the Registry:
++
+```
+docker push <region-code>.ocir.io/<tenancy-name>/<repo-name>/<image-name>:<tag>
+```
++
+* `<region-code>` is the code for the OCI region that you're using. See https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm[Regions and Availability Domains].
 
-`docker push <region-code>.ocir.io/<tenancy-name>/<repo-name>/<image-name>:<tag>``
+* `ocir.io` is the OCI registry name.
 
-`<region-code>` is the code for the Oracle Cloud Infrastructure Registry region that you're using. For example, the region code for Phoenix is `phx`. See https://docs.cloud.oracle.com/iaas/Content/General/Concepts/regions.htm[Regions and Availability Domains].
+* `<tenancy-name>` is the name of the tenancy that owns the repository to which you want to push the image.
 
-`ocir.io` is the Oracle Cloud Infrastructure Registry name.
-`<tenancy-name>` is the name of the tenancy that owns the repository to which you want to push the image, for example `acme-dev`. Note that your user must have access to the tenancy.
-`<repo-name>`, if specified, is the name of a repository to which you want to push the image ,for example, `project01`. Note that specifying a repository is optional. If you don't specify a repository name, the name of the image is used as the repository name in Oracle Cloud Infrastructure Registry.
-`<image-name>` is the name you want to give the image in Oracle Cloud Infrastructure Registry, for example, helloworld.
-`<tag>` is an image tag you want to give the image in Oracle Cloud Infrastructure Registry, for example, latest.
+* `<repo-name>` is optional. It is the name of a repository to which you want to push the image (for example, `project01`). If you don't specify a repository name, the name of the image is used as the repository name in OCIR.
 
-Within the Registry UI you will see the newly created repository. By default, the repository will be set to private. If you would like to continue with a private repository, you will have to add an image pull secret which allows Kubernetes to authenticate with a container registry to pull a private image. Let's first create a namespace for this project called `helidon` with `kubectl` create namespace helidon. We will deploy our application to this namespace. Next we will create the secret with:
+* `<image-name>` is the name you want to give the image in OCIR (for example, `helloworld`).
 
-`kubectl create secret docker-registry ocirsecret --docker-server=<region-code>.ocir.io --docker-username='<tenancy-name>/<oci-username>' --docker-password='<oci-auth-token>' --docker-email='<email-address> --namespace helidon`
+* `<tag>` is an image tag you want to assign the image in OCIR (for example, `latest`).
 
-Open up your `/target/app.yaml` file created with Maven and under spec next to containers in the deployment section add the following:
+6. Get the full path of the image in OCIR:
++
+a. In the OCI web console, navigate to *Developer Services*, and select *Registry (OCIR)*.
 
+b. Select the repository and image that you created.
+
+c. Copy the value displayed in the *Full Path* field.
++
+The path is in the format `<tenancy>/<repository>/<image>:<tag>`
++
+Example: `oracle-cloudnative/example/quickstart-se:latest`
+
+6. Create a namespace (for example, `helidon`) for the project:
++
+```
+kubectl create namespace helidon
+```
+
+7. (Optional) Create an image-pull secret.
++
+NOTE: By default, the repository that you created is private. To allow Kubernetes to authenticate with the container registry and pull the private image, you must create and use an image-pull secret. If you choose to make your repository public, then skip this step.
++
+```
+kubectl create secret docker-registry ocirsecret --docker-server=<region-code>.ocir.io --docker-username='<tenancy-name>/<oci-username>' --docker-password='<oci-auth-token>' --docker-email='<email-address> --namespace helidon
+```
+
+8. In the application's `/target/app.yaml` file (created with Maven), add the following fields under `spec` in the `deployment` section:
++
+a. (Optional) Add the image-pull secret that you created in the previous step:
++
+This step is necessary only if you created an image-pull secret and want to keep the repository private.
++
 [source, yaml]
 ----
 imagePullSecrets: 
         - name: ocirsecret
 ----
-        
-In the same file also under spec in the deployment section add the path listed on the Registry page to image under containers:
-
-`<region-code.ocir.io>/<tenancy-name>/<quickstart-project-name>`
-
-The final version will look something like this:
-
+b. In the `image` field under `containers`, specify the image path that you copied earlier from the OCI console, in the following format:
++
+`<region-code>.ocir.io/<tenancy>/<repository>/<image>:<tag>`
++
+Here's an example of an updated yaml file after adding the image-pull secret and the image path:
++
 [source, yaml]
 ----
     spec:
@@ -92,11 +141,29 @@ The final version will look something like this:
         - containerPort: 8080
 ----
 
-To make your life a little easier, you can skip past the secret creation step and simply make your registry public. You will still need to add the image location to your app.yaml file, but you will not need to create a secret or add `imagePullSecrets` to the yaml file.
+=== Deploy the Image to Kubernetes
 
-=== Deploying to Kubernetes
+1. Change to the `quickstart-se directory`.
 
-Change to your quickstart-se directory and run `kubectl create -f target/app.yaml -n helidon` to deploy the application to the helidon namespace within your Kubernetes cluster.
+2. Deploy the application to the `helidon` namespace within your Kubernetes cluster:
++
+```
+kubectl create -f target/app.yaml -n helidon
+```
 
-Run `kubectl get svc -n helidon` to get the NodePort for your new pod. Run `kubectl get nodes` to get the IP address for your cluster nodes. Add the port number to the IP address of your node to get access to the deployed pod. If you browse to or cURL the same /greet endpoint you will see the same JSON output as you did when the application was deployed locally.
+3. Get the `NodePort` number for your new pod:
++
+```
+kubectl get svc -n helidon
+```
+4. Get the IP address for your cluster nodes:
++
+```
+kubectl get nodes
+```
+5. Construct the URL of the deployed pod as follows:
+```
+http://<NodeIpAddress>:<NodePort>
+```
 
+Browse to (or cURL) the `http://<NodeIpAddress>:<NodePort>/greet` endpoint. It returns the same JSON response as when the application was deployed locally.
