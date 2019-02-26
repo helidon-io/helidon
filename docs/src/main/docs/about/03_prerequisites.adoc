@@ -31,7 +31,6 @@ deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
 
 The following list shows the minimum versions.
 
-//[role="flex, sm7, md6, lg5"]
 [role="flex, sm7"]
 |=======
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}8] or http://jdk.java.net[Open{nbsp}JDK{nbsp}8] | {nbsp}
