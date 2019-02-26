@@ -110,9 +110,9 @@ TIP: Create log messages in your health check implementation when setting a
 
 == Example
 
-The example below illustrates the code for an application that implements
- health endpoints for both probes as well as a Kubernetes service and
- deployment.
+The example below illustrates the usages of the Helidon health API for an
+ application that implements health endpoints for both probes as well as a
+ Kubernetes service and deployment.
 The application code dissociates the health endpoints from the default routes
  so that they are not exposed by the service.
 
