@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.EnumMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
@@ -29,12 +30,19 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  * Note that the first registry to be created (this is expected to be the one created by
  * Web Server integration or by Microprofile integration) is the static instance to be used
  * by all CDI integrations (and by all using the static {@link #getRegistryFactory()}.
+ * <p>
+ * In Helidon SE, if you obtain the registry using {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}
+ *  the configuration is not used until the first time a registry is obtained.
+ *  Currently the {@link Type#BASE} registry is lazily instantiated.
  */
+// this class is not immutable, as we may need to update registries with configuration post creation
+// see Github issue #360
 public final class RegistryFactory {
-    private static volatile RegistryFactory staticInstance;
+    private static RegistryFactory staticInstance = null;
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
     private final EnumMap<Type, Registry> publicRegistries = new EnumMap<>(Type.class);
+    private final AtomicReference<Config> config;
 
     private RegistryFactory(Config config) {
         Registry registry = Registry.create(Type.APPLICATION);
@@ -45,9 +53,7 @@ public final class RegistryFactory {
         registries.put(Type.VENDOR, registry);
         publicRegistries.put(Type.VENDOR, FinalRegistry.create(registry));
 
-        registry = BaseRegistry.create(config);
-        registries.put(Type.BASE, registry);
-        publicRegistries.put(Type.BASE, FinalRegistry.create(registry));
+        this.config = new AtomicReference<>(config);
     }
 
     static synchronized RegistryFactory create(Config config) {
@@ -74,7 +80,15 @@ public final class RegistryFactory {
      * @return supplier of registry factory (to bind as late as possible)
      */
     public static Supplier<RegistryFactory> getRegistryFactory() {
-        return () -> staticInstance;
+        return () -> {
+            synchronized (RegistryFactory.class) {
+                if (null == staticInstance) {
+                    throw new IllegalStateException("You are using RegistryFactory before it was initialized, use one of "
+                                                            + "the getInstance methods");
+                }
+                return staticInstance;
+            }
+        };
     }
 
     /**
@@ -82,12 +96,45 @@ public final class RegistryFactory {
      *
      * @param config configuration to load the factory config from
      * @return a new registry factory to obtain application registry (and other registries)
+     * @deprecated this method is causing a race condition - it depends on order of invocations
+     *              use {@link #getInstance()} or {@link #getInstance(Config)} instead.
      */
+    @Deprecated
     public static RegistryFactory createSeFactory(Config config) {
         return create(config);
     }
 
+    /**
+     * Get a singleton instance of the registry factory for Helidon SE.
+     *
+     * @return registry factory singleton
+     */
+    public static synchronized RegistryFactory getInstance() {
+        if (null == staticInstance) {
+            create();
+        }
+        return staticInstance;
+    }
+
+    /**
+     * Get a singleton instance of the registry factory for Helidon SE and update it with provided configuration.
+     *
+     * @param config configuration of the registry factory used to update behavior of the instance returned
+     * @return registry factory singleton
+     */
+    public static synchronized RegistryFactory getInstance(Config config) {
+        if (null == staticInstance) {
+            return create(config);
+        }
+
+        staticInstance.update(config);
+        return staticInstance;
+    }
+
     Registry getARegistry(Type type) {
+        if (type == Type.BASE) {
+            ensureBase();
+        }
         return registries.get(type);
     }
 
@@ -100,6 +147,22 @@ public final class RegistryFactory {
      * @return Registry for the type defined.
      */
     public MetricRegistry getRegistry(Type type) {
+        if (type == Type.BASE) {
+            ensureBase();
+        }
         return publicRegistries.get(type);
     }
+
+    private void update(Config config) {
+        this.config.set(config);
+    }
+
+    private synchronized void ensureBase() {
+        if (null == registries.get(Type.BASE)) {
+            Registry registry = BaseRegistry.create(config.get());
+            registries.put(Type.BASE, registry);
+            publicRegistries.put(Type.BASE, FinalRegistry.create(registry));
+        }
+    }
 }
+

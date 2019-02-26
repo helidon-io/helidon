@@ -92,7 +92,7 @@ public final class MetricsSupport implements Service {
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     private MetricsSupport(Builder builder) {
-        this.rf = RegistryFactory.create(builder.config);
+        this.rf = RegistryFactory.getInstance(builder.config);
         this.base = rf.getARegistry(MetricRegistry.Type.BASE);
         this.app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
         this.vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);

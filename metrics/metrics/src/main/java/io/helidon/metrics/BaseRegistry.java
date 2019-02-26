@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ final class BaseRegistry extends Registry {
                                                                  MetricUnits.NONE);
     private final Config config;
 
-    protected BaseRegistry(Config config) {
+    private BaseRegistry(Config config) {
         super(Type.BASE);
         this.config = config;
     }
@@ -185,32 +185,32 @@ final class BaseRegistry extends Registry {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
-        register(result, config, MEMORY_USED_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getUsed());
-        register(result, config, MEMORY_COMMITTED_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getCommitted());
-        register(result, config, MEMORY_MAX_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getMax());
+        register(result, MEMORY_USED_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getUsed());
+        register(result, MEMORY_COMMITTED_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getCommitted());
+        register(result, MEMORY_MAX_HEAP, (Gauge<Long>) () -> memoryBean.getHeapMemoryUsage().getMax());
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        register(result, config, JVM_UPTIME, (Gauge<Long>) runtimeBean::getUptime);
+        register(result, JVM_UPTIME, (Gauge<Long>) runtimeBean::getUptime);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        register(result, config, THREAD_COUNT, (SimpleCounter) threadBean::getThreadCount);
-        register(result, config, THREAD_DAEMON_COUNT, (SimpleCounter) threadBean::getDaemonThreadCount);
-        register(result, config, THREAD_MAX_COUNT, (SimpleCounter) threadBean::getPeakThreadCount);
+        register(result, THREAD_COUNT, (SimpleCounter) threadBean::getThreadCount);
+        register(result, THREAD_DAEMON_COUNT, (SimpleCounter) threadBean::getDaemonThreadCount);
+        register(result, THREAD_MAX_COUNT, (SimpleCounter) threadBean::getPeakThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        register(result, config, CL_LOADED_COUNT, (SimpleCounter) clBean::getLoadedClassCount);
-        register(result, config, CL_LOADED_TOTAL, (SimpleCounter) clBean::getTotalLoadedClassCount);
-        register(result, config, CL_UNLOADED_COUNT, (SimpleCounter) clBean::getUnloadedClassCount);
+        register(result, CL_LOADED_COUNT, (SimpleCounter) clBean::getLoadedClassCount);
+        register(result, CL_LOADED_TOTAL, (SimpleCounter) clBean::getTotalLoadedClassCount);
+        register(result, CL_UNLOADED_COUNT, (SimpleCounter) clBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        register(result, config, OS_AVAILABLE_CPU, (Gauge<Integer>) osBean::getAvailableProcessors);
-        register(result, config, OS_LOAD_AVERAGE, (Gauge<Double>) osBean::getSystemLoadAverage);
+        register(result, OS_AVAILABLE_CPU, (Gauge<Integer>) osBean::getAvailableProcessors);
+        register(result, OS_LOAD_AVERAGE, (Gauge<Double>) osBean::getSystemLoadAverage);
 
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            register(result, config, gcCountMeta(poolName), (Gauge<Long>) gcBean::getCollectionCount);
-            register(result, config, gcTimeMeta(poolName), (Gauge<Long>) gcBean::getCollectionTime);
+            register(result, gcCountMeta(poolName), (Gauge<Long>) gcBean::getCollectionCount);
+            register(result, gcTimeMeta(poolName), (Gauge<Long>) gcBean::getCollectionTime);
         }
 
         return result;
@@ -239,7 +239,6 @@ final class BaseRegistry extends Registry {
     }
 
     private static void register(BaseRegistry registry,
-                                 Config config,
                                  Metadata meta,
                                  Metric metric) {
 

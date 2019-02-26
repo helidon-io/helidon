@@ -73,7 +73,7 @@ public class GreetService implements Service {
      * Create metric registry.
      */
     // tag::metricsRegistration[]
-    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+    private final MetricRegistry registry = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
     // end::metricsRegistration[]
 
