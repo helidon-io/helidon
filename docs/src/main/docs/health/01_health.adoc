@@ -35,10 +35,10 @@ Applications implement health checks to expose health status that is collected
 A typical health check combines the statuses of all the dependencies that
  impact availability and the ability to perform correctly:
 
-* Network latency
-* Storage
-* Database
-* Other services used by your application
+* network latency
+* storage
+* database
+* other services used by your application
 
 === Prerequisites
 
@@ -129,7 +129,7 @@ The HTTP response also contains a JSON payload that describes the statuses for
 .Create the health support service
 ----
 HealthSupport health = HealthSupport.builder()
-    .add(this::exampleHealthCheck)
+    .add(hc)
     .build();
 ----
 
@@ -158,8 +158,8 @@ Routing.builder()
 <3> Register health support with web server routing (adds the `/health`
  endpoint)
 
-TIP: Remember to balance the amount of collected information in order to avoid
- overloading the application and impacting users.
+TIP: Balance collecting a lot of information with the need to avoid overloading
+ the application and overwhelming users.
 
 [source,json]
 .JSON response
@@ -183,12 +183,11 @@ TIP: Remember to balance the amount of collected information in order to avoid
 A set of built-ins health checks can be optionally enabled to report various
  health check statuses that are commonly used:
 
-* Deadlock detection
-* Available disk space
-* Available heap memory
+* deadlock detection
+* available disk space
+* available heap memory
 
 [source,java]
-.Register built-in health-checks
 ----
 HealthSupport health = HealthSupport.builder()
     .add(HealthChecks.healthChecks()) // <1>

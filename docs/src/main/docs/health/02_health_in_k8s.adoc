@@ -28,16 +28,16 @@ This document describes usages of the Helidon health check API with Kubernetes.
 Probes is the term used by Kubernetes to describe health checks for containers
  (more info link:{kubernetes-probes-url}[here]).
 
-There are 2 types of probes:
+There are two types of probes:
 
 * `liveness`: Indicates whether the container is running
 * `readiness`: Indicates whether the container is ready to service requests
 
-Probes can be implemented with 3 different mechanisms:
+Probes can be implemented with three different mechanisms:
 
-. Running a command inside a container
-. Making an `HTTP` request against a container
-. Opening a `TCP` socket against a container
+. running a command inside a container
+. making an `HTTP` request against a container
+. opening a `TCP` socket against a container
 
 A microservice exposed to HTTP will typically implement both the liveness probe
  and the readiness probe using HTTP requests.
