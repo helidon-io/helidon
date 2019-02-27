@@ -69,6 +69,7 @@
 
 
     <dependencies>
+        <!-- We depend on bookstore app to make sure it is built first -->
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>
             <artifactId>bookstore-se</artifactId>

@@ -47,17 +47,17 @@ import static org.hamcrest.CoreMatchers.is;
 
 class MainTest {
 
-    private static Application application;
-    private static LocalPlatform localPlatform = LocalPlatform.get();
     private static String appJarPathSE = System.getProperty("app.jar.path.se", "please-set-app.jar.path.se");
     private static String appJarPathMP = System.getProperty("app.jar.path.mp", "please-set-app.jar.path.mp");
-    private static URL healthUrl;
 
-    // TODO: we should dynamically allocate this and configure application with the port number
-    private static int port = 8080;
+    private static Application application;
+    private static LocalPlatform localPlatform = LocalPlatform.get();
+    private static int port = localPlatform.getAvailablePorts().next();
+    private static URL  healthUrl;
 
     @BeforeAll
     static void setup() throws Exception {
+        System.out.println("Using port number" + port);
         healthUrl = new URL("http://localhost:" + port + "/health");
     }
 
@@ -76,14 +76,13 @@ class MainTest {
         }
 
         List<String> startArgs = new ArrayList<>(javaArgs);
+        startArgs.add("-Dserver.port=" + port);
         startArgs.add("-jar");
         startArgs.add(appJarPath);
 
-        //int port = localPlatform.getAvailablePorts().next();
         application = localPlatform.launch("java", Arguments.of(startArgs));
         waitForApplicationUp();
     }
-
 
     @Test
     void basicTestJsonP() throws Exception {
@@ -123,7 +122,7 @@ class MainTest {
             systemPropertyArgs = Arrays.asList("-Dapp.json-library=" + jsonLibrary);
         }
 
-        startTheApplication(editionToJar(edition), systemPropertyArgs);
+        startTheApplication(editionToJarPath(edition), systemPropertyArgs);
 
         conn = getURLConnection("GET","/books");
         assertThat("HTTP response GET books", conn.getResponseCode(), is(200));
@@ -152,7 +151,7 @@ class MainTest {
     @ValueSource(strings = {"se", "mp" })
     void metricsAndHealth(String edition) throws Exception {
 
-        startTheApplication(editionToJar(edition), Collections.emptyList());
+        startTheApplication(editionToJarPath(edition), Collections.emptyList());
 
         HttpURLConnection conn;
 
@@ -196,7 +195,8 @@ class MainTest {
     @ParameterizedTest
     @ValueSource(strings = {"se", "mp" })
     void routing(String edition) throws Exception {
-        startTheApplication(editionToJar(edition), Collections.emptyList());
+
+        startTheApplication(editionToJarPath(edition), Collections.emptyList());
         HttpURLConnection conn;
 
         conn = getURLConnection("GET","/boo%6bs");
@@ -220,7 +220,6 @@ class MainTest {
         System.out.println("Connecting: " + method + " " + url);
         return conn;
     }
-
 
     private String getBookAsJson() throws IOException {
         InputStream is = getClass().getClassLoader().getResourceAsStream("book.json");
@@ -287,7 +286,7 @@ class MainTest {
         } while ((toBeUp && responseCode != 200) || (!toBeUp && responseCode != -1 ));
     }
 
-    private static String editionToJar(String edition) {
+    private static String editionToJarPath(String edition) {
         if ("se".equals(edition)) {
             return appJarPathSE;
         } else if ("mp".equals(edition)) {
@@ -296,5 +295,4 @@ class MainTest {
             return "bad-edition-" + edition;
         }
     }
-
 }
