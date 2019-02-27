@@ -5,18 +5,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.helidon.tests</groupId>
-        <artifactId>helidon-tests-project</artifactId>
+        <groupId>io.helidon.tests.apps</groupId>
+        <artifactId>helidon-tests-apps-project</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.tests.functional</groupId>
-    <artifactId>helidon-tests-functional-project</artifactId>
+    <groupId>io.helidon.tests.apps.bookstore</groupId>
+    <artifactId>helidon-tests-apps-bookstore-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Functional Tests</name>
+    <name>Bookstore Application</name>
 
     <modules>
-        <module>bookstore</module>
+        <module>common</module>
+        <module>bookstore-se</module>
+        <module>bookstore-mp</module>
     </modules>
 </project>

@@ -10,11 +10,11 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
 
-    <groupId>io.helidon.tests.functional</groupId>
-    <artifactId>helidon-tests-functional-project</artifactId>
+    <groupId>io.helidon.tests.apps</groupId>
+    <artifactId>helidon-tests-apps-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Functional Tests</name>
+    <name>Applications for Tests</name>
 
     <modules>
         <module>bookstore</module>

@@ -40,6 +40,7 @@
     </properties>
 
     <modules>
+        <module>apps</module>
         <module>functional</module>
     </modules>
 
