@@ -44,7 +44,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
 public final class RegistryFactory {
-    private static final RegistryFactory staticInstance = create();
+    private static final RegistryFactory INSTANCE = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
     private final EnumMap<Type, Registry> publicRegistries = new EnumMap<>(Type.class);
@@ -120,10 +120,10 @@ public final class RegistryFactory {
      * @return registry factory singleton
      */
     public static synchronized RegistryFactory getInstance() {
-        if (null == staticInstance) {
+        if (null == INSTANCE) {
             create(Config.empty());
         }
-        return staticInstance;
+        return INSTANCE;
     }
 
     /**
@@ -134,12 +134,12 @@ public final class RegistryFactory {
      * @return registry factory singleton
      */
     public static synchronized RegistryFactory getInstance(Config config) {
-        if (null == staticInstance) {
+        if (null == INSTANCE) {
             return create(config);
         }
 
-        staticInstance.update(config);
-        return staticInstance;
+        INSTANCE.update(config);
+        return INSTANCE;
     }
 
     Registry getARegistry(Type type) {
