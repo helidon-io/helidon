@@ -17,8 +17,10 @@
 package io.helidon.metrics;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -80,34 +82,14 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 public final class MetricsSupport implements Service {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
-    private final Registry base;
-    private final Registry app;
-    private final Registry vendor;
     private final String context;
     private final RegistryFactory rf;
-    private final Counter totalCount;
-    private final Meter totalMeter;
 
-    private static MetricsSupport metricsSupport;
     private static final Logger LOGGER = Logger.getLogger(MetricsSupport.class.getName());
 
     private MetricsSupport(Builder builder) {
-        this.rf = RegistryFactory.getInstance(builder.config);
-        this.base = rf.getARegistry(MetricRegistry.Type.BASE);
-        this.app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
-        this.vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
+        this.rf = builder.registryFactory.get();
         this.context = builder.context;
-
-        this.totalCount = vendor.counter(new Metadata("requests.count",
-                                                      "Total number of requests",
-                                                      "Each request (regardless of HTTP method) will increase this counter",
-                                                      MetricType.COUNTER,
-                                                      MetricUnits.NONE));
-        this.totalMeter = vendor.meter(new Metadata("requests.meter",
-                                                    "Meter for overall requests",
-                                                    "Each request will mark the meter to see overall throughput",
-                                                    MetricType.METERED,
-                                                    MetricUnits.NONE));
     }
 
     /**
@@ -115,11 +97,8 @@ public final class MetricsSupport implements Service {
      *
      * @return a new instance built with default values (for context, base metrics enabled)
      */
-    public static synchronized MetricsSupport create() {
-        if (metricsSupport == null) {
-            metricsSupport = builder().build();
-        }
-        return metricsSupport;
+    public static MetricsSupport create() {
+        return MetricsSupport.builder().build();
     }
 
     /**
@@ -130,11 +109,8 @@ public final class MetricsSupport implements Service {
      *               configuration keys.
      * @return a new instance configured withe config provided
      */
-    public static synchronized MetricsSupport create(Config config) {
-        if (metricsSupport == null) {
-            metricsSupport = builder().config(config).build();
-        }
-        return metricsSupport;
+    public static MetricsSupport create(Config config) {
+        return builder().config(config).build();
     }
 
     /**
@@ -157,7 +133,7 @@ public final class MetricsSupport implements Service {
         boolean requestsJson =  mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
 
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Generating metrics for media type " + mediaType.toString()
+            LOGGER.fine("Generating metrics for media type " + mediaType
                 + ". requestsJson=" + requestsJson);
         }
         return requestsJson;
@@ -229,9 +205,8 @@ public final class MetricsSupport implements Service {
     }
 
     private static String checkMetricTypeThenRun(Metric metric, Function<HelidonMetric, String> fn) {
-        if (metric == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(metric);
+
         if (!(metric instanceof HelidonMetric)) {
             throw new IllegalArgumentException(String.format(
                 "Metric of type %s is expected to implement %s but does not",
@@ -278,6 +253,22 @@ public final class MetricsSupport implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
+        Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
+        Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
+        Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
+
+        Counter totalCount = vendor.counter(new Metadata("requests.count",
+                                                         "Total number of requests",
+                                                         "Each request (regardless of HTTP method) will increase this counter",
+                                                         MetricType.COUNTER,
+                                                         MetricUnits.NONE));
+
+        Meter totalMeter = vendor.meter(new Metadata("requests.meter",
+                                                     "Meter for overall requests",
+                                                     "Each request will mark the meter to see overall throughput",
+                                                     MetricType.METERED,
+                                                     MetricUnits.NONE));
+
         // register the metric registry and factory to be available to all
         rules.any((req, res) -> {
             req.context().register(app);
@@ -364,6 +355,7 @@ public final class MetricsSupport implements Service {
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<MetricsSupport> {
+        private Supplier<RegistryFactory> registryFactory;
         private String context = DEFAULT_CONTEXT;
         private Config config = Config.empty();
 
@@ -373,6 +365,9 @@ public final class MetricsSupport implements Service {
 
         @Override
         public MetricsSupport build() {
+            if (null == registryFactory) {
+                registryFactory = () -> RegistryFactory.getInstance(config);
+            }
             return new MetricsSupport(this);
         }
 
@@ -387,6 +382,23 @@ public final class MetricsSupport implements Service {
             this.config = config;
             config.get("helidon.metrics.context").asString().ifPresent(this::context);
 
+            return this;
+        }
+
+        /**
+         * If you want to have mutliple registry factories with different endpoints, you may
+         * create them using {@link RegistryFactory#create(io.helidon.config.Config)} or
+         * {@link RegistryFactory#create()} and create multiple {@link io.helidon.metrics.MetricsSupport} instances
+         * with different {@link #context(String) contexts}.
+         * <p>
+         * If this method is not called, {@link io.helidon.metrics.MetricsSupport} would use the shared instance as
+         * provided by {@link io.helidon.metrics.RegistryFactory#getInstance(io.helidon.config.Config)}
+         *
+         * @param factory factory to use in this metric support
+         * @return updated builder instance
+         */
+        public Builder registryFactory(RegistryFactory factory) {
+            registryFactory = () -> factory;
             return this;
         }
 

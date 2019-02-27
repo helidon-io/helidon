@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.util.function.Supplier;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
@@ -31,9 +29,8 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
  * Producer of each type of registry.
  */
 @ApplicationScoped
-public class RegistryProducer {
-
-    private static Supplier<RegistryFactory> factorySupplier = RegistryFactory.getRegistryFactory();
+public final class RegistryProducer {
+    private static final RegistryFactory REGISTRY_FACTORY = RegistryFactory.getInstance();
 
     private RegistryProducer() {
     }
@@ -46,19 +43,19 @@ public class RegistryProducer {
     @Produces
     @RegistryType(type = Type.APPLICATION)
     public static MetricRegistry getApplicationRegistry() {
-        return factorySupplier.get().getRegistry(Type.APPLICATION);
+        return REGISTRY_FACTORY.getRegistry(Type.APPLICATION);
     }
 
     @Produces
     @RegistryType(type = Type.BASE)
     public static MetricRegistry getBaseRegistry() {
-        return factorySupplier.get().getRegistry(Type.BASE);
+        return REGISTRY_FACTORY.getRegistry(Type.BASE);
     }
 
     @Produces
     @RegistryType(type = Type.VENDOR)
     public static MetricRegistry getVendorRegistry() {
-        return factorySupplier.get().getRegistry(Type.VENDOR);
+        return REGISTRY_FACTORY.getRegistry(Type.VENDOR);
     }
 
     /**

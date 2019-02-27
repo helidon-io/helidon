@@ -725,7 +725,7 @@ Add these declarations as private fields:
 [source,java]
 // _include::0-2:{greet-service}[tags=metricsRegistration;counterRegistration]
 ----
-    private final MetricRegistry registry = RegistryFactory.getRegistryFactory().get()
+    private final MetricRegistry registry = RegistryFactory.getInstance()
             .getRegistry(MetricRegistry.Type.APPLICATION); // <1>
     private final Counter greetCounter = registry.counter("accessctr"); // <2>
 ----

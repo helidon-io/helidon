@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class MetricsSupportTest {
 
     @BeforeAll
     static void initClass() {
-        RegistryFactory rf = RegistryFactory.create();
+        RegistryFactory rf = RegistryFactory.getInstance();
         base = rf.getARegistry(MetricRegistry.Type.BASE);
         vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         app = rf.getARegistry(MetricRegistry.Type.APPLICATION);

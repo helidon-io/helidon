@@ -27,18 +27,24 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 /**
  * Access point to all registries.
- * Note that the first registry to be created (this is expected to be the one created by
- * Web Server integration or by Microprofile integration) is the static instance to be used
- * by all CDI integrations (and by all using the static {@link #getRegistryFactory()}.
+ *
+ * There are two options to use the factory:
+ * <ol>
+ *     <li>A singleton instance, obtained through {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}.
+ *     This instance is lazily initialized - the latest call that provides a config instance before a
+ *     {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} registry is obtained would be used to configure
+ *     the base registry (as that is the only configurable registry in current implementation)
+ *     </li>
+ *     <li>A custom instance, obtained through {@link #create(Config)} or {@link #create()}. This would create a
+ *     new instance of a registry factory (in case multiple instances are desired), independent on the singleton instance
+ *     and on other instances provided by these methods.</li>
+ * </ol>
  * <p>
- * In Helidon SE, if you obtain the registry using {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}
- *  the configuration is not used until the first time a registry is obtained.
- *  Currently the {@link Type#BASE} registry is lazily instantiated.
  */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
 public final class RegistryFactory {
-    private static RegistryFactory staticInstance = null;
+    private static final RegistryFactory staticInstance = create();
 
     private final EnumMap<Type, Registry> registries = new EnumMap<>(Type.class);
     private final EnumMap<Type, Registry> publicRegistries = new EnumMap<>(Type.class);
@@ -56,39 +62,42 @@ public final class RegistryFactory {
         this.config = new AtomicReference<>(config);
     }
 
-    static synchronized RegistryFactory create(Config config) {
-        RegistryFactory factory = new RegistryFactory(config);
 
-        if (null == staticInstance) {
-            staticInstance = factory;
-        }
-
-        return factory;
-    }
-
-    static RegistryFactory create() {
+    /**
+     * Create a new factory with default configuration, with pre-filled
+     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#VENDOR} and
+     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} metrics.
+     *
+     * @return a new registry factory
+     */
+    public static RegistryFactory create() {
         return create(Config.empty());
     }
 
     /**
-     * Get a supplier for registry factory. The supplier will return the first
-     * instance that is created (this is assumed to be the one created by
-     * user when creating a registry factory).
-     * If you decide to use multiple registry factories, make sure that the first
-     * one created is the one to be accessed from a static context (e.g. from CDI).
+     * Create a new factory with provided configuration, with pre filled
+     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#VENDOR} and
+     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} metrics.
+     *
+     * @param config configuration to use
+     * @return a new registry factory
+     */
+    public static RegistryFactory create(Config config) {
+        return new RegistryFactory(config);
+    }
+
+
+
+    /**
+     * Get a supplier for registry factory. The supplier will return the singleton isntance
+     * that is created.
      *
      * @return supplier of registry factory (to bind as late as possible)
+     * @deprecated use {@link io.helidon.metrics.RegistryFactory#getInstance() RegistryFactory::getInstance} instead.
      */
+    @Deprecated
     public static Supplier<RegistryFactory> getRegistryFactory() {
-        return () -> {
-            synchronized (RegistryFactory.class) {
-                if (null == staticInstance) {
-                    throw new IllegalStateException("You are using RegistryFactory before it was initialized, use one of "
-                                                            + "the getInstance methods");
-                }
-                return staticInstance;
-            }
-        };
+        return RegistryFactory::getInstance;
     }
 
     /**
@@ -96,8 +105,9 @@ public final class RegistryFactory {
      *
      * @param config configuration to load the factory config from
      * @return a new registry factory to obtain application registry (and other registries)
-     * @deprecated this method is causing a race condition - it depends on order of invocations
-     *              use {@link #getInstance()} or {@link #getInstance(Config)} instead.
+     * @deprecated use {@link #create()} or {@link #create(io.helidon.config.Config)} instead when a new
+     * registry factory instance is needed. Use {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}
+     * to retrieve the shared (singleton) instance.
      */
     @Deprecated
     public static RegistryFactory createSeFactory(Config config) {
@@ -105,19 +115,20 @@ public final class RegistryFactory {
     }
 
     /**
-     * Get a singleton instance of the registry factory for Helidon SE.
+     * Get a singleton instance of the registry factory.
      *
      * @return registry factory singleton
      */
     public static synchronized RegistryFactory getInstance() {
         if (null == staticInstance) {
-            create();
+            create(Config.empty());
         }
         return staticInstance;
     }
 
     /**
-     * Get a singleton instance of the registry factory for Helidon SE and update it with provided configuration.
+     * Get a singleton instance of the registry factory for and update it with provided configuration.
+     * Note that the config is used only if nobody access the base registry.
      *
      * @param config configuration of the registry factory used to update behavior of the instance returned
      * @return registry factory singleton
