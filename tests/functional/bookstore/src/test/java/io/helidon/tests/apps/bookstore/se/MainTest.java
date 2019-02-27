@@ -264,7 +264,7 @@ class MainTest {
      * @throws Exception on a failure
      */
     private void waitForApplication(URL url, boolean toBeUp) throws Exception {
-        long timeout = 4 * 1000; // 4 seconds should be enough to start/stop the server
+        long timeout = 10 * 1000; // 10 seconds should be enough to start/stop the server
         long now = System.currentTimeMillis();
         String operation = (toBeUp ? "start" : "stop");
 
