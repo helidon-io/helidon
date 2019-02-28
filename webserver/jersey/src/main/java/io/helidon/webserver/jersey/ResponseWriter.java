@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.jersey;
 
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
@@ -25,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import javax.ws.rs.core.MediaType;
+
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.OutputStreamPublisher;
@@ -32,6 +33,7 @@ import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.webserver.ConnectionClosedException;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
+
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
@@ -138,7 +140,7 @@ class ResponseWriter implements ContainerResponseWriter {
 
         res.send(ReactiveStreamsAdapter.publisherToFlow(
                     ReactiveStreamsAdapter.publisherFromFlow(publisher)
-                        .map(byteBuffer -> DataChunk.create(true, byteBuffer))));
+                        .map(byteBuffer -> DataChunk.create(doFlush, byteBuffer))));
 
         return publisher;
     }

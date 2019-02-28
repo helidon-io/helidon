@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
+
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -100,8 +101,7 @@ class BareResponseImpl implements BareResponse {
         ctx.channel()
                 .closeFuture()
                 // to make this work, when programmatically closing the channel, the responseFuture must be closed beforehand!
-                .addListener(channelFuture -> responseFuture
-                        .completeExceptionally(CLOSED));
+                .addListener(channelFuture -> responseFuture.completeExceptionally(CLOSED));
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
     }
@@ -132,6 +132,7 @@ class BareResponseImpl implements BareResponse {
             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         }
 
+        LOGGER.finest(() -> log("Writing headers: " + status));
         ctx.writeAndFlush(response)
                 .addListener(future -> {
                     if (future.isSuccess()) {
@@ -140,9 +141,6 @@ class BareResponseImpl implements BareResponse {
                 })
                 .addListener(completeOnFailureListener("An exception occurred when writing headers."))
                 .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-
-        LOGGER.finest(() -> log("Writing headers: " + status));
-        headersFuture.complete(this);
     }
 
     /**
@@ -196,7 +194,6 @@ class BareResponseImpl implements BareResponse {
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
         ctx.writeAndFlush(LAST_HTTP_CONTENT)
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
-                .addListener(preventMaskingExceptionOnFailureListener(throwable))
                 .addListener(completeOnSuccessListener(throwable))
                 .addListener(closeAction);
     }
@@ -205,14 +202,6 @@ class BareResponseImpl implements BareResponse {
         return future -> {
             if (!future.isSuccess()) {
                 completeResponseFuture(new IllegalStateException(message, future.cause()));
-            }
-        };
-    }
-
-    private GenericFutureListener<Future<? super Void>> preventMaskingExceptionOnFailureListener(Throwable throwable) {
-        return future -> {
-            if (!future.isSuccess() && throwable != null) {
-                LOGGER.log(Level.FINE, throwable, () -> log("Response completion failed when handling an error."));
             }
         };
     }
