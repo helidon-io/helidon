@@ -119,10 +119,7 @@ public final class RegistryFactory {
      *
      * @return registry factory singleton
      */
-    public static synchronized RegistryFactory getInstance() {
-        if (null == INSTANCE) {
-            create(Config.empty());
-        }
+    public static RegistryFactory getInstance() {
         return INSTANCE;
     }
 
@@ -133,11 +130,7 @@ public final class RegistryFactory {
      * @param config configuration of the registry factory used to update behavior of the instance returned
      * @return registry factory singleton
      */
-    public static synchronized RegistryFactory getInstance(Config config) {
-        if (null == INSTANCE) {
-            return create(config);
-        }
-
+    public static RegistryFactory getInstance(Config config) {
         INSTANCE.update(config);
         return INSTANCE;
     }
