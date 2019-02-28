@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,8 +48,6 @@ import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
-
-import io.helidon.metrics.MetricsSupport;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -161,7 +159,6 @@ public class MetricsCdiExtension implements Extension {
         LOGGER.log(Level.FINE, () -> "### Before bean discovery " + discovery);
 
         // Initialize our implementation
-        MetricsSupport.create();
         RegistryProducer.clearApplicationRegistry();
 
         // Register beans manually

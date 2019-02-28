@@ -82,7 +82,7 @@ public final class TodosHandler implements Service {
      * @param bsc the {@code BackendServiceClient} to use
      */
     public TodosHandler(BackendServiceClient bsc) {
-        MetricRegistry registry = RegistryFactory.getRegistryFactory().get().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
         this.bsc = bsc;
         this.createCounter = registry.counter("created");

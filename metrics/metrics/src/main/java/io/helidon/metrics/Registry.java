@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,12 +210,12 @@ class Registry extends MetricRegistry {
         return type.getName();
     }
 
-    Type registryType() {
-        return type;
-    }
-
     public boolean empty() {
         return allMetrics.isEmpty();
+    }
+
+    Type registryType() {
+        return type;
     }
 
     private <T extends Metric> MetricImpl toImpl(Metadata metadata, T metric) {
