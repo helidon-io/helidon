@@ -36,7 +36,7 @@ class AuthorMapper {
      * Use JsonBuilderFactory (and not the Json factory) to create builders.
      * This lets us cache the builder factory and improves performance dramatically.
      */
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(null);
 
 
     /**
@@ -45,7 +45,7 @@ class AuthorMapper {
      * @return new JsonObject representing author
      */
     static JsonObject encode(Author author) {
-        JsonObject jo = jsonFactory.createObjectBuilder()
+        JsonObject jo = JSON_FACTORY.createObjectBuilder()
                 .add(FIRST, author.getFirst())
                 .add(LAST, author.getLast())
                 .build();
@@ -73,7 +73,7 @@ class AuthorMapper {
     }
 
     static JsonArray encode(List<Author> authors) {
-        JsonArrayBuilder builder = jsonFactory.createArrayBuilder();
+        JsonArrayBuilder builder = JSON_FACTORY.createArrayBuilder();
         for (Author a : authors) {
             builder.add(encode(a));
         }

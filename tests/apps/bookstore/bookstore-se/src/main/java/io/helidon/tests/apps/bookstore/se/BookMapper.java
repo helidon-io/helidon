@@ -41,7 +41,7 @@ class BookMapper {
      * Use JsonBuilderFactory (and not the Json factory) to create builders.
      * This lets us cache the builder factory and improves performance dramatically.
      */
-    private static final JsonBuilderFactory jsonFactory = Json.createBuilderFactory(null);
+    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(null);
 
     /**
      *
@@ -49,7 +49,7 @@ class BookMapper {
      * @return new JsonObject representing book
      */
     static JsonObject encodeJsonp(Book book) {
-        JsonObject jo = jsonFactory.createObjectBuilder()
+        JsonObject jo = JSON_FACTORY.createObjectBuilder()
                 .add(ISBN, book.getIsbn())
                 .add(TITLE, book.getTitle())
                 .add(DESCRIPTION, book.getDescription())
@@ -64,7 +64,7 @@ class BookMapper {
     }
 
     static JsonArray encodeJsonp(Collection<Book> books) {
-        JsonArrayBuilder builder = jsonFactory.createArrayBuilder();
+        JsonArrayBuilder builder = JSON_FACTORY.createArrayBuilder();
         for (Book b : books) {
             builder.add(encodeJsonp(b));
         }
