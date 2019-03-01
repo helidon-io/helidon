@@ -81,7 +81,6 @@ public class StringService
             };
         }
 
-
     // ---- helper methods --------------------------------------------------
 
     private StringMessage response(String text)
