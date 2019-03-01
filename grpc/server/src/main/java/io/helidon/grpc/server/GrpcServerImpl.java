@@ -232,9 +232,7 @@ public class GrpcServerImpl implements GrpcServer
 
     public int port()
         {
-        return isRunning()
-               ? server.getPort()
-               : -1;
+        return isRunning() ? server.getPort() : -1;
         }
 
     // ---- helper methods --------------------------------------------------
@@ -247,6 +245,8 @@ public class GrpcServerImpl implements GrpcServer
         EventLoopGroup boss    = null;
         EventLoopGroup workers = null;
 
+        // TODO: add back native transport support, so the check bellow makes sense
+        
         if (channelType == null)
             {
             LOGGER.log(Level.FINE, () -> "Using NIO transport");

@@ -2,6 +2,7 @@ package io.helidon.grpc.server;
 
 
 import com.google.protobuf.MessageLite;
+
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.lite.ProtoLiteUtils;
 

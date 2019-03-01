@@ -3,6 +3,7 @@ package io.helidon.grpc.server;
 
 import io.grpc.BindableService;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -28,6 +29,12 @@ public interface GrpcRouting
                 {
                 bindableServices.add(GrpcService.builder(service).build());
                 }
+            return this;
+            }
+
+        public Builder register(BindableService... services)
+            {
+            bindableServices.addAll(Arrays.asList(services));
             return this;
             }
 

@@ -10,12 +10,28 @@ import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
+import io.grpc.stub.StreamObserver;
+
+import java.util.Collection;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static io.helidon.grpc.server.GrpcServiceImpl.completeWithResult;
+import static io.helidon.grpc.server.GrpcServiceImpl.completeWithoutResult;
+import static io.helidon.grpc.server.GrpcServiceImpl.createSupplier;
 
 
 /**
  * @author Aleksandar Seovic  2019.02.11
  */
 public interface GrpcService
+        extends BindableService
     {
 
     /**
@@ -29,6 +45,124 @@ public interface GrpcService
         {
         return getClass().getSimpleName();
         }
+
+    default ServerServiceDefinition bindService()
+        {
+        return null;
+        }
+
+    // ---- convenience methods ---------------------------------------------
+
+    default <T> void complete(StreamObserver<T> observer, T value)
+        {
+        observer.onNext(value);
+        observer.onCompleted();
+        }
+
+    default <T> void complete(StreamObserver<T> observer, CompletionStage<T> future)
+        {
+        future.whenComplete(completeWithResult(observer));
+        }
+
+    default <T> void completeAsync(StreamObserver<T> observer, CompletionStage<T> future)
+        {
+        future.whenCompleteAsync(completeWithResult(observer));
+        }
+
+    default <T> void completeAsync(StreamObserver<T> observer, CompletionStage<T> future, Executor executor)
+        {
+        future.whenCompleteAsync(completeWithResult(observer), executor);
+        }
+
+    default <T> void complete(StreamObserver<T> observer, Callable<T> callable)
+        {
+        try
+            {
+            observer.onNext(callable.call());
+            observer.onCompleted();
+            }
+        catch (Throwable t)
+            {
+            observer.onError(t);
+            }
+        }
+
+    default <T> void completeAsync(StreamObserver<T> observer, Callable<T> callable)
+        {
+        completeAsync(observer, CompletableFuture.supplyAsync(createSupplier(callable)));
+        }
+
+    default <T> void completeAsync(StreamObserver<T> observer, Callable<T> callable, Executor executor)
+        {
+        completeAsync(observer, CompletableFuture.supplyAsync(createSupplier(callable), executor));
+        }
+
+    default <T> void complete(StreamObserver<T> observer, Runnable task, T result)
+        {
+        complete(observer, Executors.callable(task, result));
+        }
+
+    default <T> void completeAsync(StreamObserver<T> observer, Runnable task, T result)
+        {
+        completeAsync(observer, Executors.callable(task, result));
+        }
+
+    default <T> void completeAsync(StreamObserver<T> observer, Runnable task, T result, Executor executor)
+        {
+        completeAsync(observer, Executors.callable(task, result), executor);
+        }
+
+    default <T> void stream(StreamObserver<T> observer, Stream<? extends T> stream)
+        {
+        stream.forEach(observer::onNext);
+        observer.onCompleted();
+        }
+
+    default <T> void streamAsync(StreamObserver<T> observer, Stream<? extends T> stream, Executor executor)
+        {
+        executor.execute(() ->
+            {
+            stream.forEach(observer::onNext);
+            observer.onCompleted();
+            });
+        }
+
+    default <T> void stream(StreamObserver<T> observer, Supplier<Stream<? extends T>> streamSupplier)
+        {
+        streamSupplier.get().forEach(observer::onNext);
+        observer.onCompleted();
+        }
+
+    default <T> void streamAsync(StreamObserver<T> observer, Supplier<Stream<? extends T>> streamSupplier, Executor executor)
+        {
+        executor.execute(() ->
+            {
+            streamSupplier.get().forEach(observer::onNext);
+            observer.onCompleted();
+            });
+        }
+
+    // todo: a bit of a chicken or egg when used with Coherence streaming methods, isn't it?
+    default <T> Consumer<T> stream(StreamObserver<T> observer, CompletionStage<Void> future)
+        {
+        future.whenComplete(completeWithoutResult(observer));
+        return observer::onNext;
+        }
+
+    // todo: ensure onNext is called on the executor thread for async overloads
+    default <T> Consumer<T> streamAsync(StreamObserver<T> observer, CompletionStage<Void> future)
+        {
+        future.whenCompleteAsync(completeWithoutResult(observer));
+        return value -> CompletableFuture.runAsync(() -> observer.onNext(value));
+        }
+
+    default <T> Consumer<T> streamAsync(StreamObserver<T> observer, CompletionStage<Void> future, Executor executor)
+        {
+        future.whenCompleteAsync(completeWithoutResult(observer), executor);
+        return value -> CompletableFuture.runAsync(() -> observer.onNext(value), executor);
+        }
+
+    // ---- Builder ---------------------------------------------------------
 
     /**
      * Creates new instance of {@link Builder service builder}.
@@ -53,7 +187,7 @@ public interface GrpcService
         <ReqT, ResT> Methods bidirectional(String name, ServerCalls.BidiStreamingMethod<ReqT, ResT> method);
         }
 
-    class Builder implements Methods, io.helidon.common.Builder<BindableService>
+    class Builder implements Methods, io.helidon.common.Builder<GrpcService>
         {
         private final GrpcService service;
         private final ServerServiceDefinition.Builder ssdBuilder;
@@ -69,10 +203,10 @@ public interface GrpcService
 
         // ---- Builder implementation --------------------------------------
 
-        public BindableService build()
+        public GrpcService build()
             {
             service.update(this);
-            return new BindableServiceImpl(ssdBuilder.build());
+            return new GrpcServiceImpl(ssdBuilder.build());
             }
 
         // ---- Methods implementation --------------------------------------

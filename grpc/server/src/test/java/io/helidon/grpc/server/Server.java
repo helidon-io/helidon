@@ -51,6 +51,7 @@ public class Server
         return GrpcRouting.builder()
                 .register(greetService)
                 .register(greetServiceJava)
+                .register(new StringService())
                 .build();
         }
     }

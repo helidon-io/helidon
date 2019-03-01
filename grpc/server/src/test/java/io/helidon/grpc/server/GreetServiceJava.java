@@ -38,15 +38,13 @@ public class GreetServiceJava
         name = Optional.ofNullable(name).orElse("World");
         String msg  = String.format("%s %s!", greeting, name);
 
-        observer.onNext(msg);
-        observer.onCompleted();
+        complete(observer, msg);
         }
 
     private void setGreeting(String greeting, StreamObserver<String> observer)
         {
         this.greeting = greeting;
 
-        observer.onNext(greeting);
-        observer.onCompleted();
+        complete(observer, greeting);
         }
     }

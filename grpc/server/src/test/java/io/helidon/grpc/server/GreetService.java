@@ -44,17 +44,13 @@ public class GreetService implements GrpcService
         String name = Optional.ofNullable(request.getName()).orElse("World");
         String msg  = String.format("%s %s!", greeting, name);
 
-        GreetResponse response = GreetResponse.newBuilder().setMessage(msg).build();
-        observer.onNext(response);
-        observer.onCompleted();
+        complete(observer, GreetResponse.newBuilder().setMessage(msg).build());
         }
 
     private void setGreeting(SetGreetingRequest request, StreamObserver<SetGreetingResponse> observer)
         {
         greeting = request.getGreeting();
 
-        SetGreetingResponse response = SetGreetingResponse.newBuilder().setGreeting(greeting).build();
-        observer.onNext(response);
-        observer.onCompleted();
+        complete(observer, SetGreetingResponse.newBuilder().setGreeting(greeting).build());
         }
     }
