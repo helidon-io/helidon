@@ -57,6 +57,6 @@ public class BookGenerator implements Function<Integer, Collection<Book>> {
     }
 
     private int random(int min, int max) {
-        return ThreadLocalRandom.current().nextInt(1, 10);
+        return ThreadLocalRandom.current().nextInt(min, max);
     }
 }

@@ -29,10 +29,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collection;
-import java.util.Optional;
-
-import io.helidon.tests.apps.bookstore.mp.Book;
-import io.helidon.tests.apps.bookstore.mp.BookStore;
 
 @Path("/books")
 @RequestScoped
@@ -55,8 +51,7 @@ public class BookResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response postBook(Book book) {
-        Optional<Book> optional = bookStore.find(book.getIsbn());
-        if (optional.isPresent()) {
+        if (bookStore.contains(book.getIsbn())) {
             return Response.status(Response.Status.CONFLICT).build();
         }
         bookStore.store(book);
@@ -67,18 +62,19 @@ public class BookResource {
     @Path("{isbn}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBook(@PathParam("isbn") String isbn) {
-        Optional<Book> optional = bookStore.find(isbn);
-        return optional.isPresent() ? Response.ok(optional.get()).build()
-                : Response.status(Response.Status.NOT_FOUND).build();
-
+        Book book = bookStore.find(isbn);
+        if (book == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } else {
+            return Response.ok(book).build();
+        }
     }
 
     @PUT
     @Path("{isbn}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putBook(Book book) {
-        Optional<Book> optional = bookStore.find(book.getIsbn());
-        if (!optional.isPresent()) {
+        if (! bookStore.contains(book.getIsbn())) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         bookStore.store(book);
@@ -88,8 +84,7 @@ public class BookResource {
     @DELETE
     @Path("{isbn}")
     public Response deleteBook(@PathParam("isbn") String isbn) {
-        Optional<Book> optional = bookStore.find(isbn);
-        if (!optional.isPresent()) {
+        if (! bookStore.contains(isbn)) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         bookStore.remove(isbn);

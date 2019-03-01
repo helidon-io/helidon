@@ -18,7 +18,6 @@ package io.helidon.tests.apps.bookstore.mp;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,9 +43,7 @@ public class BookStore {
         return store.values();
     }
 
-    public Optional<Book> find(String isbn) {
-        return Optional.ofNullable(store.get(isbn));
-    }
+    public Book find(String isbn) { return store.get(isbn); }
 
     public void store(Book book) {
         store.put(book.getIsbn(), book);
@@ -55,4 +52,7 @@ public class BookStore {
     public void remove(String isbn) {
         store.remove(isbn);
     }
+
+    public boolean contains(String isbn) { return store.containsKey(isbn); }
+
 }
