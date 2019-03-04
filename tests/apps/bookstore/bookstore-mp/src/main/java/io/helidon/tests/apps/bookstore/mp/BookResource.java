@@ -74,7 +74,7 @@ public class BookResource {
     @Path("{isbn}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response putBook(Book book) {
-        if (! bookStore.contains(book.getIsbn())) {
+        if (!bookStore.contains(book.getIsbn())) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         bookStore.store(book);
@@ -84,7 +84,7 @@ public class BookResource {
     @DELETE
     @Path("{isbn}")
     public Response deleteBook(@PathParam("isbn") String isbn) {
-        if (! bookStore.contains(isbn)) {
+        if (!bookStore.contains(isbn)) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         bookStore.remove(isbn);
