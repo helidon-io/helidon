@@ -211,7 +211,7 @@ public interface AnnotationAnalyzer {
         }
 
         /**
-         * A registry that allows transfering information between analysis of different scopes (application, resource class,
+         * A registry that allows transferring information between analysis of different scopes (application, resource class,
          * method).
          *
          * @return registry to use
@@ -238,6 +238,16 @@ public interface AnnotationAnalyzer {
 
             Builder parent(AnalyzerResponse parent) {
                 this.parent = parent;
+                return this;
+            }
+
+            public Builder register(Object anInstance) {
+                registry.putInstance(anInstance);
+                return this;
+            }
+
+            public <T> Builder register(Class<? super T> theClass, T anInstance) {
+                registry.putInstance(theClass, anInstance);
                 return this;
             }
 

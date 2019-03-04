@@ -44,8 +44,8 @@ class SecurityDefinition {
      * True if authentication is needed to execute.
      */
     private boolean requiresAuthentication;
-    private boolean authorizeByDefault;
     private boolean authnOptional;
+    private boolean authorizeByDefault;
     private boolean atzExplicit;
     private String authenticator;
     private String authorizer;
@@ -207,13 +207,18 @@ class SecurityDefinition {
         switch (analyzerResponse.authenticationResponse()) {
         case REQUIRED:
             requiresAuthentication = true;
+            authnOptional = false;
             break;
         case OPTIONAL:
-            requiresAuthentication = true;
-            authnOptional = true;
+            if (!requiresAuthentication) {
+                // only update this in case authentication is not required already
+                requiresAuthentication = true;
+                authnOptional = true;
+            }
             break;
         case FORBIDDEN:
             requiresAuthentication = false;
+            authnOptional = false;
             break;
         case ABSTAIN:
         default:

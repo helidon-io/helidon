@@ -15,6 +15,11 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+
+import javax.annotation.security.RolesAllowed;
+
 import io.helidon.config.Config;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
@@ -30,6 +35,7 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     static final String LOGIN_CONFIG_METHOD = "MP-JWT";
 
     private String authenticator = PROVIDER_NAME;
+    private boolean secureByDefault;
 
     static boolean isMpJwt(LoginConfig config) {
         return LOGIN_CONFIG_METHOD.equals(config.authMethod());
@@ -50,8 +56,12 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
                         });
                     });
                 });
+        secureByDefault = config.get("jwt.secure-by-default")
+                .asBoolean()
+                .orElse(true);
     }
 
+    // application class analysis
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
         AnalyzerResponse.Builder builder = AnalyzerResponse.builder();
@@ -59,16 +69,76 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
         LoginConfig annotation = maybeAnnotated.getAnnotation(LoginConfig.class);
 
         if (null == annotation) {
+            builder.register(new RegisterMpJwt(false));
             return AnalyzerResponse.abstain();
         }
 
         if (isMpJwt(annotation)) {
-            return builder.authenticationResponse(Flag.REQUIRED)
+            // triggered!
+            builder.register(new RegisterMpJwt(true));
+
+            // now if there is a RolesAllowed on application class, automatically required, otherwise optional
+            // bugfix #455
+            // we may want to only authenticate requests that hit a @RolesAllowed annotated endpoint
+            Flag atnFlag = (secureByDefault ? Flag.REQUIRED : Flag.OPTIONAL);
+
+            if (isRolesAllowed(maybeAnnotated)) {
+                atnFlag = Flag.REQUIRED;
+            }
+
+            return builder.authenticationResponse(atnFlag)
                     .authenticator(authenticator)
                     .build();
         }
 
+        builder.register(new RegisterMpJwt(false));
         return builder.build();
     }
 
+    // resource class analysis
+    @Override
+    public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
+        if (isMpJwt(previousResponse) && isRolesAllowed(maybeAnnotated)) {
+            return AnalyzerResponse.builder(previousResponse)
+                    .authenticationResponse(Flag.REQUIRED)
+                    .build();
+        }
+
+        return previousResponse;
+    }
+
+    // resource method analysis
+    @Override
+    public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
+        if (isMpJwt(previousResponse) && isRolesAllowed(maybeAnnotated)) {
+            return AnalyzerResponse.builder(previousResponse)
+                    .authenticationResponse(Flag.REQUIRED)
+                    .build();
+        }
+        return previousResponse;
+    }
+
+    private boolean isMpJwt(AnalyzerResponse previous) {
+        return previous.registry()
+                .getInstance(RegisterMpJwt.class)
+                .map(RegisterMpJwt::isMpJwt)
+                .orElse(false);
+    }
+
+    private boolean isRolesAllowed(AnnotatedElement maybeAnnotated) {
+        RolesAllowed ra = maybeAnnotated.getAnnotation(RolesAllowed.class);
+        return null != ra;
+    }
+
+    private static final class RegisterMpJwt {
+        private final boolean isMpJwt;
+
+        private RegisterMpJwt(boolean isMpJwt) {
+            this.isMpJwt = isMpJwt;
+        }
+
+        public boolean isMpJwt() {
+            return isMpJwt;
+        }
+    }
 }
