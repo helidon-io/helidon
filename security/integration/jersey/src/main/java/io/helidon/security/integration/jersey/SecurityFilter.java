@@ -130,10 +130,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     public void postConstruct() {
         Class<?> appClass = getOriginalApplication().getClass();
 
-        this.appWideSecurity = securityForClass(appClass, null);
-
+        // we must initialize the analyzers before using them in appWideSecurity
         Config analyzersConfig = config("jersey.analyzers");
         analyzers.forEach(analyzer -> analyzer.init(analyzersConfig));
+
+        this.appWideSecurity = securityForClass(appClass, null);
     }
 
     @Override
