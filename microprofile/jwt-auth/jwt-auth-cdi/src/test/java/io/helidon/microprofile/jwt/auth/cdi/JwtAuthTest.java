@@ -136,7 +136,7 @@ class JwtAuthTest {
     }
 
     @Test
-    void testPublicEndpoit() {
+    void testPublicEndpoint() {
         WebTarget target = client.target("http://localhost:" + server.port());
 
         // public
