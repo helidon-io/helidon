@@ -133,7 +133,7 @@ Replace `src/main/docker/Dockerfile` with the following:
 # Multistage Docker build. <1>
 # Stage 1: Build custom Java 11 JRE and put it in /var/tmp/myjre <2>
 FROM openjdk:11-slim AS myjre
-RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \ 
+RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \
      "--add-modules", "java.base,java.logging,java.sql,java.desktop,java.management", \
      "--output", "/var/tmp/myjre"] # <3>
 
@@ -209,7 +209,7 @@ For Helidon MP you need to add a couple more modules to the `jlink` command:
 
 [source,yaml,subs="verbatim,attributes"]
 ----
-RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files" \
+RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \
      "--add-modules", \
      "java.base,java.logging,java.sql,java.desktop,java.management,java.naming,jdk.unsupported", \
      "--output", "/var/tmp/myjre"]
