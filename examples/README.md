@@ -42,6 +42,3 @@ mvn exec:java
 ```
 
 But always see the example's `README` for details.
-
-If you edit a `README.adoc` file for an example or guide, please
- [see below](#for-guide-editors).

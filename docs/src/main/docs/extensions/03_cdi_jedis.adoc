@@ -39,10 +39,10 @@ Declare the following dependency in your project:
 
 [source,xml]
 ----
-    <dependency>
-        <groupId>io.helidon.integrations.cdi</groupId>
-        <artifactId>helidon-integrations-cdi-jedis</artifactId>
-    </dependency>
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-jedis</artifactId>
+</dependency>
 ----
 
 == Injecting a Jedis client
@@ -98,25 +98,28 @@ Accordingly, the `JedisPoolConfig` Java Bean properties that can be
 set are as follows, where `instanceName` should be replaced with the
 actual name used in application code:
 
-* `redis.clients.jedis.JedisPoolConfig.instanceName.blockWhenExhausted`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.evictionPolicyClassName`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.fairness`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.jmxEnabled`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNameBase`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNamePrefix`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.lifo`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.maxIdle`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.maxTotal`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.maxWaitMillis`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.minEvictableTimeMillis`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.minIdle`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.numTestsPerEvictionRun`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.softMinEvictableIdleTimeMillis`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.testOnBorrow`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.testOnCreate`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.testOnReturn`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.testWhileIdle`
-* `redis.clients.jedis.JedisPoolConfig.instanceName.timeBetweenEvictionRunsMillis`
+[role="flex, md7"]
+|===
+| `redis.clients.jedis.JedisPoolConfig.instanceName.blockWhenExhausted`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.evictionPolicyClassName`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.fairness`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.jmxEnabled`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNameBase`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.jmxNamePrefix`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.lifo`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.maxIdle`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.maxTotal`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.maxWaitMillis`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.minEvictableTimeMillis`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.minIdle`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.numTestsPerEvictionRun`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.softMinEvictableIdleTimeMillis`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testOnBorrow`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testOnCreate`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testOnReturn`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.testWhileIdle`
+| `redis.clients.jedis.JedisPoolConfig.instanceName.timeBetweenEvictionRunsMillis`
+|===
 
 Any documentation for these properties that exists may be found in the
 javadocs for the
@@ -139,14 +142,17 @@ Accordingly, the `JedisPool` properties that can be set are as
 follows, where `instanceName` should be replaced with the actual named
 used in application code:
 
-* `redis.clients.jedis.JedisPool.instanceName.clientName`
-* `redis.clients.jedis.JedisPool.instanceName.connectionTimeout`
-* `redis.clients.jedis.JedisPool.instanceName.database`
-* `redis.clients.jedis.JedisPool.instanceName.host`
-* `redis.clients.jedis.JedisPool.instanceName.password`
-* `redis.clients.jedis.JedisPool.instanceName.port`
-* `redis.clients.jedis.JedisPool.instanceName.socketTimeout`
-* `redis.clients.jedis.JedisPool.instanceName.ssl`
+[role="flex, md7"]
+|===
+| `redis.clients.jedis.JedisPool.instanceName.clientName`
+| `redis.clients.jedis.JedisPool.instanceName.connectionTimeout`
+| `redis.clients.jedis.JedisPool.instanceName.database`
+| `redis.clients.jedis.JedisPool.instanceName.host`
+| `redis.clients.jedis.JedisPool.instanceName.password`
+| `redis.clients.jedis.JedisPool.instanceName.port`
+| `redis.clients.jedis.JedisPool.instanceName.socketTimeout`
+| `redis.clients.jedis.JedisPool.instanceName.ssl`
+|===
 
 Any documentation for these properties that exists may be found in the
 javadocs for the link:{jedis-jedispool-api-url}[`JedisPool`] and

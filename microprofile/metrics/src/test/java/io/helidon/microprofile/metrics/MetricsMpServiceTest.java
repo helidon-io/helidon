@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
@@ -30,8 +29,6 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -59,7 +56,7 @@ public class MetricsMpServiceTest {
                 .build();
         server.start();
 
-        registry = RegistryFactory.getRegistryFactory().get().getRegistry(MetricRegistry.Type.APPLICATION);
+        registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
         port = server.port();
         baseUri = "http://localhost:" + port;

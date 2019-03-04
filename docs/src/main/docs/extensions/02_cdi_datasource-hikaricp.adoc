@@ -35,10 +35,10 @@ Declare the following dependency in your project:
 
 [source,xml]
 ----
-    <dependency>
-        <groupId>io.helidon.integrations.cdi</groupId>
-        <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-    </dependency>
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+</dependency>
 ----
 
 == Injecting a HikariCP data source
