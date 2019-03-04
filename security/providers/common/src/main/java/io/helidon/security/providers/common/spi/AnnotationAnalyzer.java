@@ -241,6 +241,16 @@ public interface AnnotationAnalyzer {
                 return this;
             }
 
+            public Builder register(Object anInstance) {
+                registry.putInstance(anInstance);
+                return this;
+            }
+
+            public <T> Builder register(Class<? super T> theClass, T anInstance) {
+                registry.putInstance(theClass, anInstance);
+                return this;
+            }
+
             /**
              * Register an object later available through
              * {@link io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse#registry()}.
