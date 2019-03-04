@@ -78,7 +78,7 @@ included files and converting the file into the preprocessed format.
 After you run the plug-in be sure to `git add` the `README.adoc` file so it is
 part of your `git commit`. 
 
-### Pipline build verification of `README.adoc`
+### Pipeline build verification of `README.adoc`
 Each pipeline build runs `mvn sitegen:preprocess-adoc` again and compares
 that output with the content of `README.adoc` and fails if they differ. 
 This makes sure that you have preprocessed and committed `README.adoc` if you 
