@@ -1046,6 +1046,12 @@
 
     <profiles>
         <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+        <profile>
             <id>examples</id>
             <modules>
                 <module>examples</module>
