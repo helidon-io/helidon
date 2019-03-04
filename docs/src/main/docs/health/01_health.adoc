@@ -117,9 +117,9 @@ HealthCheck hc = this::exampleHealthCheck;
 [cols="1,5",role="flex, sm7"]
 .Health status codes
 |=======
-| `200` | All health checks succeeded
-| `503` | At least one health check failed
-| `500` | An error occurred while reporting the health
+| `200` | The application is healthy.
+| `503` | The application is not healthy.
+| `500` | An error occurred while reporting the health.
 |=======
 
 The HTTP response also contains a JSON payload that describes the statuses for
