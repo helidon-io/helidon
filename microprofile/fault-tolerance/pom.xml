@@ -104,6 +104,12 @@
             <artifactId>weld-se-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- To keep HK2 from complaining when run with Java9+ -->
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>javax.activation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.metrics</groupId>
             <artifactId>helidon-microprofile-metrics</artifactId>
