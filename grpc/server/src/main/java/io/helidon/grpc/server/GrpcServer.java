@@ -24,6 +24,7 @@ import java.util.Objects;
 import io.grpc.ServerInterceptor;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
+import org.eclipse.microprofile.health.HealthCheck;
 
 
 /**
@@ -70,6 +71,11 @@ public interface GrpcServer
      * @see #start()
      */
     CompletionStage<GrpcServer> shutdown();
+
+    /**
+     * Return an array of health checks for this
+     */
+    HealthCheck[] healthChecks();
 
     /**
      * Returns {@code true} if the server is currently running. Running server
@@ -287,19 +293,8 @@ public interface GrpcServer
             {
             GrpcServerImpl server = new GrpcServerImpl(configuration);
 
-            for (GrpcService.ServiceConfig cfg : routing.services())
-                {
-                List<ServerInterceptor> interceptors = new ArrayList<>();
-
-                for (ServerInterceptor interceptor : routing.interceptors())
-                    {
-                    interceptors.add(interceptor);
-                    }
-
-                interceptors.addAll(cfg.interceptors());
-
-                server.deploy(cfg.service(), interceptors);
-                }
+            routing.services()
+                    .forEach(cfg -> server.deploy(cfg, routing.interceptors()));
 
             return server;
             }

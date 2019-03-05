@@ -4,6 +4,7 @@ package io.helidon.grpc.server;
 import io.grpc.ServerInterceptor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,13 +26,13 @@ public class GrpcRoutingImpl
         }
 
     @Override
-    public Iterable<GrpcService.ServiceConfig> services()
+    public List<GrpcService.ServiceConfig> services()
         {
         return services;
         }
 
     @Override
-    public Iterable<ServerInterceptor> interceptors()
+    public List<ServerInterceptor> interceptors()
         {
         return interceptors;
         }

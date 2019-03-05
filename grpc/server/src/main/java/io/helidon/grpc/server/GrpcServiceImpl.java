@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import org.eclipse.microprofile.health.HealthCheck;
 
 
 /**
@@ -17,10 +18,12 @@ class GrpcServiceImpl
         implements GrpcService
     {
     private final ServerServiceDefinition serviceDefinition;
+    private final HealthCheck healthCheck;
 
-    GrpcServiceImpl(ServerServiceDefinition serviceDefinition)
+    GrpcServiceImpl(ServerServiceDefinition serviceDefinition, HealthCheck healthCheck)
         {
         this.serviceDefinition = serviceDefinition;
+        this.healthCheck = healthCheck;
         }
 
     public ServerServiceDefinition bindService()
@@ -33,7 +36,12 @@ class GrpcServiceImpl
         // no-op
         }
 
-    // ---- helpers ---------------------------------------------------------
+    public HealthCheck hc()
+        {
+        return healthCheck;
+        }
+
+// ---- helpers ---------------------------------------------------------
 
     static <T> Supplier<T> createSupplier(Callable<T> callable)
         {

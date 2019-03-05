@@ -7,7 +7,7 @@
   <parent>
     <groupId>io.helidon.grpc</groupId>
     <artifactId>helidon-grpc-project</artifactId>
-    <version>0.11.1-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>helidon-grpc-server</artifactId>
@@ -17,6 +17,11 @@
     <dependency>
       <groupId>io.helidon.common</groupId>
       <artifactId>helidon-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.helidon.health</groupId>
+      <artifactId>helidon-health</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -40,6 +45,10 @@
     </dependency>
     <dependency>
       <groupId>io.grpc</groupId>
+      <artifactId>grpc-services</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
       <artifactId>grpc-protobuf</artifactId>
     </dependency>
     <dependency>
@@ -51,6 +60,12 @@
     <dependency>
       <groupId>javax.annotation</groupId>
       <artifactId>javax.annotation-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.helidon.health</groupId>
+      <artifactId>helidon-health-checks</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

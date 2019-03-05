@@ -20,7 +20,7 @@ public class GreetClient
 
         GreetServiceGrpc.GreetServiceBlockingStub greetSvc = GreetServiceGrpc.newBlockingStub(channel);
         System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));
-        System.out.println(greetSvc.setGreeting(SetGreetingRequest.newBuilder().setGreeting("Zdravo").build()));
+        System.out.println(greetSvc.setGreeting(SetGreetingRequest.newBuilder().setGreeting("Ciao").build()));
         System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));
         }
     }

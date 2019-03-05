@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -45,6 +46,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.eclipse.microprofile.health.HealthCheck;
 
 import static java.lang.String.format;
 
@@ -165,12 +167,14 @@ public class GrpcServerImpl implements GrpcServer
 
             server = configureNetty(builder)
                         .directExecutor()
+                        .addService(healthService)
                         .fallbackHandlerRegistry(handlerRegistry)
                         .build()
                         .start();
 
             inProcessServer = InProcessServerBuilder
                     .forName(sName)
+                    .addService(healthService)
                     .fallbackHandlerRegistry(handlerRegistry)
                     .build()
                     .start();
@@ -237,6 +241,11 @@ public class GrpcServerImpl implements GrpcServer
         return isRunning() ? server.getPort() : -1;
         }
 
+    public HealthCheck[] healthChecks()
+        {
+        return healthService.healthChecks().toArray(new HealthCheck[0]);
+        }
+
     // ---- helper methods --------------------------------------------------
 
     private NettyServerBuilder configureNetty(NettyServerBuilder builder)
@@ -264,42 +273,35 @@ public class GrpcServerImpl implements GrpcServer
         }
 
     /**
-     * Deploy the specified {@link BindableService}s to this {@link GrpcServerImpl}.
-     *
-     * @param services the services to deploy
-     *
-     * @throws NullPointerException if {@code service} is {@code null}
-     */
-    public void deploy(List<BindableService> services, List<ServerInterceptor> interceptors)
-        {
-        services.forEach(s -> deploy(s, interceptors));
-        }
-
-    /**
      * Deploy the specified {@link BindableService} to this {@link GrpcServerImpl}.
      *
-     * @param service the service to deploy
+     * @param serviceCfg the service to deploy
      *
      * @throws NullPointerException if {@code service} is {@code null}
      */
-    public void deploy(BindableService service, List<ServerInterceptor> interceptors)
+    public void deploy(GrpcService.ServiceConfig serviceCfg, List<ServerInterceptor> globalInterceptors)
         {
-        Objects.requireNonNull(service);
+        Objects.requireNonNull(serviceCfg);
 
-        String                  sName = config.name();
-        ServerServiceDefinition ssd   = service.bindService();
+        String                  serverName  = config.name();
+        BindableService         service     = serviceCfg.service();
+        ServerServiceDefinition ssd         = service.bindService();
+        String                  serviceName = ssd.getServiceDescriptor().getName();
 
-        for (int i=interceptors.size() - 1; i >= 0; i--)
+        List<ServerInterceptor> interceptors = new ArrayList<>(globalInterceptors);
+        interceptors.addAll(serviceCfg.interceptors());
+
+        for (int i = interceptors.size() - 1; i >= 0; i--)
             {
             ssd = ServerInterceptors.intercept(ssd, interceptors.get(i));
             }
 
         handlerRegistry.addService(ssd);
         mapServices.put(service.getClass().getName(), ssd);
+        serviceCfg.healthChecks().forEach(healthCheck -> healthService.add(serviceName, healthCheck));
 
-        String serviceName = ssd.getServiceDescriptor().getName();
         LOGGER.info(() -> format("gRPC server [%s]: registered service [%s]",
-                                 sName, serviceName));
+                                 serverName, serviceName));
 
         Iterator<String> methods = ssd.getMethods()
                                       .stream()
@@ -311,13 +313,13 @@ public class GrpcServerImpl implements GrpcServer
         if (methods.hasNext())
             {
             LOGGER.info(() -> format("gRPC server [%s]:       with methods [%s]",
-                                     sName,
+                                     serverName,
                                      methods.next()));
             }
         while (methods.hasNext())
             {
             LOGGER.info(() -> format("gRPC server [%s]:                    [%s]",
-                                     sName,
+                                     serverName,
                                      methods.next()));
             }
         }
@@ -418,6 +420,11 @@ public class GrpcServerImpl implements GrpcServer
      * The in-process gRPC server.
      */
     protected Server inProcessServer;
+
+    /**
+     * The health status manager
+     */
+    protected HealthServiceImpl healthService = new HealthServiceImpl();
 
     /**
      * The {@link HandlerRegistry} to register services.

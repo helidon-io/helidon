@@ -12,6 +12,7 @@ import io.helidon.grpc.server.test.Greet.SetGreetingRequest;
 import io.helidon.grpc.server.test.Greet.SetGreetingResponse;
 
 import java.util.Optional;
+import org.eclipse.microprofile.health.HealthCheckResponse;
 
 
 /**
@@ -34,7 +35,8 @@ public class GreetService implements GrpcService
         methods
             .descriptor(Greet.getDescriptor())
             .unary("Greet", this::greet)
-            .unary("SetGreeting", this::setGreeting);
+            .unary("SetGreeting", this::setGreeting)
+            .healthCheck(this::healthCheck);
         }
 
     // ---- service methods -------------------------------------------------
@@ -52,5 +54,15 @@ public class GreetService implements GrpcService
         greeting = request.getGreeting();
 
         complete(observer, SetGreetingResponse.newBuilder().setGreeting(greeting).build());
+        }
+
+    private HealthCheckResponse healthCheck()
+        {
+        return HealthCheckResponse
+                .named(name())
+                .up()
+                .withData("time", System.currentTimeMillis())
+                .withData("greeting", greeting)
+                .build();
         }
     }

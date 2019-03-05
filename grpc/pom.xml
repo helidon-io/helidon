@@ -7,7 +7,7 @@
   <parent>
     <artifactId>helidon-project</artifactId>
     <groupId>io.helidon</groupId>
-    <version>0.11.1-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
   </parent>
 
   <groupId>io.helidon.grpc</groupId>

@@ -2,13 +2,12 @@ package io.helidon.grpc.server;
 
 
 import io.helidon.config.Config;
+import io.helidon.health.HealthSupport;
+import io.helidon.health.checks.HealthChecks;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
-
-import java.util.Arrays;
-import java.util.List;
 
 import java.util.logging.LogManager;
 
@@ -26,26 +25,6 @@ public class Server
         // load logging configuration
         LogManager.getLogManager().readConfiguration(
                 Server.class.getResourceAsStream("/logging.properties"));
-
-        Routing routing = Routing.builder()
-                .register(MetricsSupport.create())
-                .build();
-
-        ServerConfiguration webServerConfig = ServerConfiguration.create(config.get("webserver"));
-
-        WebServer.create(webServerConfig, routing)
-                .start()
-                .thenAccept(s ->
-                    {
-                    System.out.println("HTTP server is UP! http://localhost:" + s.port());
-                    s.whenShutdown().thenRun(() -> System.out.println("HTTP server is DOWN. Good bye!"));
-                    })
-                .exceptionally(t ->
-                    {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                    });
 
         // Get gRPC server config from the "grpc" section of application.yaml
         GrpcServerConfig serverConfig =
@@ -67,6 +46,34 @@ public class Server
                         t.printStackTrace(System.err);
                         return null;
                         });
+
+        // add support for standard and gRPC health checks
+        HealthSupport health = HealthSupport.builder()
+                .add(HealthChecks.healthChecks())
+                .add(grpcServer.healthChecks())
+                .build();
+
+        // start web server with metrics and health endpoints
+        Routing routing = Routing.builder()
+                .register(health)
+                .register(MetricsSupport.create())
+                .build();
+
+        ServerConfiguration webServerConfig = ServerConfiguration.create(config.get("webserver"));
+
+        WebServer.create(webServerConfig, routing)
+                .start()
+                .thenAccept(s ->
+                    {
+                    System.out.println("HTTP server is UP! http://localhost:" + s.port());
+                    s.whenShutdown().thenRun(() -> System.out.println("HTTP server is DOWN. Good bye!"));
+                    })
+                .exceptionally(t ->
+                    {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                    return null;
+                    });
         }
 
     private static GrpcRouting createRouting(Config config)

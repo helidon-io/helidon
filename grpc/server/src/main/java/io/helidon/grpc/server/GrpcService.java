@@ -25,6 +25,8 @@ import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
 
 import static io.helidon.grpc.server.GrpcServiceImpl.completeWithResult;
 import static io.helidon.grpc.server.GrpcServiceImpl.completeWithoutResult;
@@ -51,6 +53,11 @@ public interface GrpcService
         }
 
     default ServerServiceDefinition bindService()
+        {
+        return null;
+        }
+
+    default HealthCheck hc()
         {
         return null;
         }
@@ -180,23 +187,35 @@ public interface GrpcService
     final class ServiceConfig
         {
         private final BindableService service;
-
+        private final List<HealthCheck> healthChecks;
         private final List<ServerInterceptor> interceptors;
 
-        public ServiceConfig(BindableService service)
+        ServiceConfig(BindableService service)
             {
             this.service = service;
+            this.healthChecks = new ArrayList<>();
             this.interceptors = new ArrayList<>();
             }
 
-        public BindableService service()
+        BindableService service()
             {
             return service;
             }
 
-        public List<ServerInterceptor> interceptors()
+        List<HealthCheck> healthChecks()
+            {
+            return healthChecks;
+            }
+
+        List<ServerInterceptor> interceptors()
             {
             return interceptors;
+            }
+
+        public ServiceConfig healthCheck(HealthCheck healthCheck)
+            {
+            healthChecks.add(Objects.requireNonNull(healthCheck));
+            return this;
             }
 
         public ServiceConfig intercept(ServerInterceptor interceptor)
@@ -219,6 +238,8 @@ public interface GrpcService
         <ReqT, ResT> Methods serverStreaming(String name, ServerCalls.ServerStreamingMethod<ReqT, ResT> method);
         <ReqT, ResT> Methods clientStreaming(String name, ServerCalls.ClientStreamingMethod<ReqT, ResT> method);
         <ReqT, ResT> Methods bidirectional(String name, ServerCalls.BidiStreamingMethod<ReqT, ResT> method);
+
+        Methods healthCheck(HealthCheck healthCheck);
         }
 
     class Builder implements Methods, io.helidon.common.Builder<GrpcService>
@@ -228,11 +249,13 @@ public interface GrpcService
 
         private FileDescriptor descriptor;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.defaultInstance();
+        private HealthCheck healthCheck;
 
         Builder(GrpcService service)
             {
             this.service = service;
             this.ssdBuilder  = ServerServiceDefinition.builder(service.name());
+            this.healthCheck = () -> HealthCheckResponse.named(service.name()).up().build();
             }
 
         // ---- Builder implementation --------------------------------------
@@ -240,7 +263,7 @@ public interface GrpcService
         public GrpcService build()
             {
             service.update(this);
-            return new GrpcServiceImpl(ssdBuilder.build());
+            return new GrpcServiceImpl(ssdBuilder.build(), healthCheck);
             }
 
         // ---- Methods implementation --------------------------------------
@@ -283,6 +306,13 @@ public interface GrpcService
             {
             ssdBuilder.addMethod(createMethodDescriptor(name, MethodType.BIDI_STREAMING),
                                  ServerCalls.asyncBidiStreamingCall(method));
+            return this;
+            }
+
+        public Methods healthCheck(HealthCheck healthCheck)
+            {
+            this.healthCheck = healthCheck;
+            
             return this;
             }
 

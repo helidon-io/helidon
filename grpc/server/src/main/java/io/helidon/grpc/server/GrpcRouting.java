@@ -3,12 +3,14 @@ package io.helidon.grpc.server;
 
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.eclipse.microprofile.health.HealthCheck;
 
 
 /**
@@ -16,9 +18,9 @@ import java.util.Objects;
  */
 public interface GrpcRouting
     {
-    Iterable<GrpcService.ServiceConfig> services();
+    List<GrpcService.ServiceConfig> services();
 
-    Iterable<ServerInterceptor> interceptors();
+    List<ServerInterceptor> interceptors();
 
     static Builder builder()
         {
@@ -39,23 +41,34 @@ public interface GrpcRouting
 
         public Builder register(GrpcService service)
             {
-            return register(service, null);
+            service = GrpcService.builder(service).build();
+            return registerInternal(service, service.hc(), null);
             }
 
         public Builder register(GrpcService service, Consumer<GrpcService.ServiceConfig> configurer)
             {
-            BindableService bindableService = GrpcService.builder(service).build();
-            return register(bindableService, configurer);
-            }
-
-        public Builder register(BindableService service)
-            {
-            return register(service, null);
+            service = GrpcService.builder(service).build();
+            return registerInternal(service, service.hc(), configurer);
             }
 
         public Builder register(BindableService service, Consumer<GrpcService.ServiceConfig> configurer)
             {
             GrpcService.ServiceConfig config = new GrpcService.ServiceConfig(service);
+            if (configurer != null)
+                {
+                configurer.accept(config);
+                }
+            this.services.add(config);
+            return this;
+            }
+
+        private Builder registerInternal(BindableService service, HealthCheck healthCheck, Consumer<GrpcService.ServiceConfig> configurer)
+            {
+            GrpcService.ServiceConfig config = new GrpcService.ServiceConfig(service);
+            if (healthCheck != null)
+                {
+                config.healthCheck(healthCheck);
+                }
             if (configurer != null)
                 {
                 configurer.accept(config);
