@@ -16,7 +16,7 @@ public class GreetClient
     {
     public static void main(String[] args) throws Exception
         {
-        Channel channel = ManagedChannelBuilder.forAddress("localhost", 8080).usePlaintext().build();
+        Channel channel = ManagedChannelBuilder.forAddress("localhost", 1408).usePlaintext().build();
 
         GreetServiceGrpc.GreetServiceBlockingStub greetSvc = GreetServiceGrpc.newBlockingStub(channel);
         System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));

@@ -17,7 +17,11 @@
 package io.helidon.grpc.server;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+
+import io.grpc.ServerInterceptor;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
@@ -282,7 +286,21 @@ public interface GrpcServer
         public GrpcServer build()
             {
             GrpcServerImpl server = new GrpcServerImpl(configuration);
-            routing.services().forEach(server::deploy);
+
+            for (GrpcService.ServiceConfig cfg : routing.services())
+                {
+                List<ServerInterceptor> interceptors = new ArrayList<>();
+
+                for (ServerInterceptor interceptor : routing.interceptors())
+                    {
+                    interceptors.add(interceptor);
+                    }
+
+                interceptors.addAll(cfg.interceptors());
+
+                server.deploy(cfg.service(), interceptors);
+                }
+
             return server;
             }
         }

@@ -1,8 +1,11 @@
 package io.helidon.grpc.server;
 
 
-import io.grpc.BindableService;
+import io.grpc.ServerInterceptor;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -11,15 +14,25 @@ import java.util.List;
 public class GrpcRoutingImpl
         implements GrpcRouting
     {
-    private List<BindableService> bindableServices;
+    private List<GrpcService.ServiceConfig> services;
 
-    GrpcRoutingImpl(List<BindableService> bindableServices)
+    private List<ServerInterceptor> interceptors;
+
+    GrpcRoutingImpl(List<GrpcService.ServiceConfig> services, List<ServerInterceptor> interceptors)
         {
-        this.bindableServices = bindableServices;
+        this.services = new ArrayList<>(Objects.requireNonNull(services));
+        this.interceptors = new ArrayList<>(Objects.requireNonNull(interceptors));
         }
 
-    public Iterable<BindableService> services()
+    @Override
+    public Iterable<GrpcService.ServiceConfig> services()
         {
-        return bindableServices;
+        return services;
+        }
+
+    @Override
+    public Iterable<ServerInterceptor> interceptors()
+        {
+        return interceptors;
         }
     }

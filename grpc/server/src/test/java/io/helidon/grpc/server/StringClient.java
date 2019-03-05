@@ -16,7 +16,7 @@ public class StringClient
     {
     public static void main(String[] args) throws Exception
         {
-        Channel channel = ManagedChannelBuilder.forAddress("localhost", 8080).usePlaintext().build();
+        Channel channel = ManagedChannelBuilder.forAddress("localhost", 1408).usePlaintext().build();
 
         StringServiceGrpc.StringServiceStub stub = StringServiceGrpc.newStub(channel);
         stub.lower(stringMessage("Convert To Lowercase"), new PrintObserver<>());

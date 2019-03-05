@@ -10,6 +10,8 @@ import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerInterceptors;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -262,25 +264,42 @@ public class GrpcServerImpl implements GrpcServer
         }
 
     /**
+     * Deploy the specified {@link BindableService}s to this {@link GrpcServerImpl}.
+     *
+     * @param services the services to deploy
+     *
+     * @throws NullPointerException if {@code service} is {@code null}
+     */
+    public void deploy(List<BindableService> services, List<ServerInterceptor> interceptors)
+        {
+        services.forEach(s -> deploy(s, interceptors));
+        }
+
+    /**
      * Deploy the specified {@link BindableService} to this {@link GrpcServerImpl}.
      *
      * @param service the service to deploy
      *
      * @throws NullPointerException if {@code service} is {@code null}
      */
-    public void deploy(BindableService service)
+    public void deploy(BindableService service, List<ServerInterceptor> interceptors)
         {
         Objects.requireNonNull(service);
 
-        String                  sName       = config.name();
-        ServerServiceDefinition ssd         = service.bindService();
+        String                  sName = config.name();
+        ServerServiceDefinition ssd   = service.bindService();
+
+        for (int i=interceptors.size() - 1; i >= 0; i--)
+            {
+            ssd = ServerInterceptors.intercept(ssd, interceptors.get(i));
+            }
 
         handlerRegistry.addService(ssd);
         mapServices.put(service.getClass().getName(), ssd);
 
+        String serviceName = ssd.getServiceDescriptor().getName();
         LOGGER.info(() -> format("gRPC server [%s]: registered service [%s]",
-                                 sName,
-                                 ssd.getServiceDescriptor().getName()));
+                                 sName, serviceName));
 
         Iterator<String> methods = ssd.getMethods()
                                       .stream()

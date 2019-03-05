@@ -8,6 +8,7 @@ import com.google.protobuf.Descriptors.FileDescriptor;
 import io.grpc.BindableService;
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
+import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 import io.grpc.stub.StreamObserver;
@@ -20,6 +21,10 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static io.helidon.grpc.server.GrpcServiceImpl.completeWithResult;
 import static io.helidon.grpc.server.GrpcServiceImpl.completeWithoutResult;
@@ -171,6 +176,36 @@ public interface GrpcService
     static Builder builder(GrpcService service) {
         return new Builder(service);
     }
+
+    final class ServiceConfig
+        {
+        private final BindableService service;
+
+        private final List<ServerInterceptor> interceptors;
+
+        public ServiceConfig(BindableService service)
+            {
+            this.service = service;
+            this.interceptors = new ArrayList<>();
+            }
+
+        public BindableService service()
+            {
+            return service;
+            }
+
+        public List<ServerInterceptor> interceptors()
+            {
+            return interceptors;
+            }
+
+        public ServiceConfig intercept(ServerInterceptor interceptor)
+            {
+            interceptors.add(Objects.requireNonNull(interceptor));
+
+            return this;
+            }
+        }
 
     /**
      *

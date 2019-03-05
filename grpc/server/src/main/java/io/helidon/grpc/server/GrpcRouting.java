@@ -2,9 +2,13 @@ package io.helidon.grpc.server;
 
 
 import io.grpc.BindableService;
+import io.grpc.ServerInterceptor;
+import java.util.function.Consumer;
+
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -12,7 +16,9 @@ import java.util.List;
  */
 public interface GrpcRouting
     {
-    Iterable<BindableService> services();
+    Iterable<GrpcService.ServiceConfig> services();
+
+    Iterable<ServerInterceptor> interceptors();
 
     static Builder builder()
         {
@@ -21,26 +27,46 @@ public interface GrpcRouting
 
     final class Builder implements io.helidon.common.Builder<GrpcRouting>
         {
-        private List<BindableService> bindableServices = new ArrayList<>();
+        private List<GrpcService.ServiceConfig> services = new ArrayList<>();
 
-        public Builder register(GrpcService... services)
+        private List<ServerInterceptor> interceptors = new ArrayList<>();
+
+        public Builder intercept(ServerInterceptor... interceptors)
             {
-            for (GrpcService service : services)
-                {
-                bindableServices.add(GrpcService.builder(service).build());
-                }
+            Collections.addAll(this.interceptors, Objects.requireNonNull(interceptors));
             return this;
             }
 
-        public Builder register(BindableService... services)
+        public Builder register(GrpcService service)
             {
-            bindableServices.addAll(Arrays.asList(services));
+            return register(service, null);
+            }
+
+        public Builder register(GrpcService service, Consumer<GrpcService.ServiceConfig> configurer)
+            {
+            BindableService bindableService = GrpcService.builder(service).build();
+            return register(bindableService, configurer);
+            }
+
+        public Builder register(BindableService service)
+            {
+            return register(service, null);
+            }
+
+        public Builder register(BindableService service, Consumer<GrpcService.ServiceConfig> configurer)
+            {
+            GrpcService.ServiceConfig config = new GrpcService.ServiceConfig(service);
+            if (configurer != null)
+                {
+                configurer.accept(config);
+                }
+            this.services.add(config);
             return this;
             }
 
         public GrpcRouting build()
             {
-            return new GrpcRoutingImpl(bindableServices);
+            return new GrpcRoutingImpl(services, interceptors);
             }
         }
     }

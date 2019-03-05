@@ -19,4 +19,8 @@ app:
 
 grpc:
   name: "test.server"
+  port: 1408
+
+webserver:
   port: 8080
+  bind-address: "0.0.0.0"
