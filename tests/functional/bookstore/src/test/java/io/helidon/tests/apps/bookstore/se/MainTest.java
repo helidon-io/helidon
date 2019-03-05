@@ -17,8 +17,10 @@
 package io.helidon.tests.apps.bookstore.se;
 
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.stream.JsonParser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,8 +29,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -116,16 +118,23 @@ class MainTest {
     private void runJsonFunctionalTest(String edition, String jsonLibrary) throws Exception {
         HttpURLConnection conn;
         String json = getBookAsJson();
-        List<String> systemPropertyArgs = Collections.emptyList();
+        int numberOfBooks = 1000;
+        List<String> systemPropertyArgs = new LinkedList<>();
 
+        systemPropertyArgs.add("-Dbookstore.size=" + numberOfBooks);
         if (jsonLibrary != null && !jsonLibrary.isEmpty()) {
-            systemPropertyArgs = Arrays.asList("-Dapp.json-library=" + jsonLibrary);
+            systemPropertyArgs.add("-Dapp.json-library=" + jsonLibrary);
         }
 
         startTheApplication(editionToJarPath(edition), systemPropertyArgs);
 
         conn = getURLConnection("GET","/books");
         assertThat("HTTP response GET books", conn.getResponseCode(), is(200));
+
+        JsonParser parser = Json.createParser(conn.getInputStream());
+        parser.next();
+        JsonArray bookArray = parser.getArray();
+        assertThat("Number of books", bookArray.size(), is(numberOfBooks));
 
         conn = getURLConnection("POST","/books");
         writeJsonContent(conn, json);

@@ -31,10 +31,10 @@ public class BookStore {
     public BookStore() {
         String size = System.getProperty("bookstore.size");
         if (size != null) {
+            System.out.println("BookStore creating " + size +  " books");
             Collection<Book> init = new BookGenerator().apply(Integer.parseInt(size));
             init.forEach(book -> {
                 store.put(book.getIsbn(), book);
-                System.out.println("Created book " + book.getIsbn());
             });
         }
     }
