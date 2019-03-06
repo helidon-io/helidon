@@ -5,9 +5,13 @@ import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
+import io.opentracing.Tracer;
+
+import java.net.URI;
 
 import java.util.logging.LogManager;
 
@@ -26,9 +30,13 @@ public class Server
         LogManager.getLogManager().readConfiguration(
                 Server.class.getResourceAsStream("/logging.properties"));
 
+        Tracer tracer = (Tracer) TracerBuilder.create("my-application")
+                        .collectorUri(URI.create("http://localhost:9411/api/v2/spans"))
+                        .build();
+
         // Get gRPC server config from the "grpc" section of application.yaml
         GrpcServerConfiguration serverConfig =
-                GrpcServerConfiguration.create(config.get("grpc"));
+                GrpcServerConfiguration.builder(config.get("grpc")).tracer(tracer).build();
 
         GrpcServer grpcServer = GrpcServer.create(serverConfig, createRouting(config));
 
@@ -59,7 +67,7 @@ public class Server
                 .register(MetricsSupport.create())
                 .build();
 
-        ServerConfiguration webServerConfig = ServerConfiguration.create(config.get("webserver"));
+        ServerConfiguration webServerConfig = ServerConfiguration.builder(config.get("webserver")).tracer(tracer).build();
 
         WebServer.create(webServerConfig, routing)
                 .start()

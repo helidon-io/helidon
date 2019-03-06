@@ -4,6 +4,10 @@
 package io.helidon.grpc.server;
 
 import io.helidon.config.Config;
+import io.helidon.webserver.ServerConfiguration;
+import io.opentracing.Tracer;
+import io.opentracing.util.GlobalTracer;
+import java.util.function.Supplier;
 
 /**
  * @author jk  2019.03.05
@@ -74,6 +78,13 @@ public interface GrpcServerConfiguration
     String tlsCaCert();
 
     /**
+     * Returns an <a href="http://opentracing.io">opentracing.io</a> tracer. Default is {@link GlobalTracer}.
+     *
+     * @return a tracer to use - never {@code null} (defaulting to {@link GlobalTracer}
+     */
+    Tracer tracer();
+
+    /**
      * Creates new instance with defaults from external configuration source.
      *
      * @param config the externalized configuration
@@ -127,6 +138,8 @@ static GrpcServerBasicConfig defaultConfig()
 
         private String tlsCACert;
 
+        private Tracer tracer;
+
         private Builder()
             {
             }
@@ -155,10 +168,34 @@ static GrpcServerBasicConfig defaultConfig()
             return this;
             }
 
+        /**
+         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         *
+         * @param tracer a tracer to set
+         * @return an updated builder
+         */
+        public Builder tracer(Tracer tracer)
+            {
+            this.tracer = tracer;
+            return this;
+            }
+
+        /**
+         * Sets an <a href="http://opentracing.io">opentracing.io</a> tracer. (Default is {@link GlobalTracer}.)
+         *
+         * @param tracerBuilder a tracer builder to set; will be built as a first step of this method execution
+         * @return updated builder
+         */
+        public Builder tracer(Supplier<? extends Tracer> tracerBuilder)
+            {
+            this.tracer = tracerBuilder != null ? tracerBuilder.get() : null;
+            return this;
+            }
+
         @Override
         public GrpcServerConfiguration build()
             {
-            return new GrpcServerBasicConfig(name, port, useNativeTransport, useTLS, tlsCert, tlsKey, tlsCACert);
+            return new GrpcServerBasicConfig(name, port, useNativeTransport, useTLS, tlsCert, tlsKey, tlsCACert, tracer);
             }
         }
     }

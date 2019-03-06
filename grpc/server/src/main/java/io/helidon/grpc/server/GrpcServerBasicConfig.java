@@ -1,6 +1,8 @@
 package io.helidon.grpc.server;
 
 
+import io.opentracing.Tracer;
+
 import java.io.Serializable;
 
 
@@ -28,7 +30,7 @@ public class GrpcServerBasicConfig
      */
     GrpcServerBasicConfig(String name, int port)
         {
-        this(name, port, false, false, null, null, null);
+        this(name, port, false, false, null, null, null, null);
         }
 
     /**
@@ -45,7 +47,7 @@ public class GrpcServerBasicConfig
      *                        tls is enabled)
      * @param tlsCaCert       the location of the optional TLS CA cert file
      */
-    public GrpcServerBasicConfig(String name, int port, boolean nativeTransport, boolean tls, String tlsCert, String tlsKey, String tlsCaCert)
+    public GrpcServerBasicConfig(String name, int port, boolean nativeTransport, boolean tls, String tlsCert, String tlsKey, String tlsCaCert, Tracer tracer)
         {
         this.name = name;
         this.port = port;
@@ -54,6 +56,7 @@ public class GrpcServerBasicConfig
         this.tlsCert = tlsCert;
         this.tlsKey = tlsKey;
         this.tlsCaCert = tlsCaCert;
+        this.tracer = tracer;
         }
 
     // ---- accessors ---------------------------------------------------
@@ -139,6 +142,12 @@ public class GrpcServerBasicConfig
         return tlsCaCert;
         }
 
+    @Override
+    public Tracer tracer()
+        {
+        return tracer;
+        }
+
     // ---- data members ------------------------------------------------
 
     private String name;
@@ -154,4 +163,6 @@ public class GrpcServerBasicConfig
     private String tlsKey;
 
     private String tlsCaCert;
+
+    private Tracer tracer;
     }

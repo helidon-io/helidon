@@ -24,9 +24,11 @@ import java.util.Objects;
 
 import io.grpc.Context;
 import io.grpc.ServerInterceptor;
+import io.opentracing.Tracer;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.eclipse.microprofile.health.HealthCheck;
+import sun.java2d.CRenderer;
 
 
 /**
@@ -295,11 +297,24 @@ public interface GrpcServer
         public GrpcServer build()
             {
             GrpcServerImpl server = new GrpcServerImpl(configuration);
-
+            Tracer tracer = configuration.tracer();
+            GrpcTracing tracingInterceptor = null;
+            if (tracer != null)
+                {
+                tracingInterceptor = new GrpcTracing.Builder(tracer)
+                        .withVerbosity()
+                        .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES, ServerRequestAttribute.HEADERS, ServerRequestAttribute.METHOD_NAME)
+                        .build();
+                }
             for (GrpcService.ServiceConfig cfg : routing.services())
                 {
                 List<ServerInterceptor>     interceptors = new ArrayList<>();
                 Map<Context.Key<?>, Object> contextMap   = cfg.context();
+
+                if (tracingInterceptor != null)
+                    {
+                    interceptors.add(tracingInterceptor);
+                    }
 
                 if (contextMap.size() > 0)
                     {
