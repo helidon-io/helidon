@@ -6,87 +6,116 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
-import io.helidon.config.Config;
+
 import io.helidon.metrics.RegistryFactory;
+
 import java.util.concurrent.TimeUnit;
+
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 
 public class GrpcMetrics
         implements ServerInterceptor
     {
-    private final MetricRegistry registry = RegistryFactory.getRegistryFactory()
-            .get().getRegistry(MetricRegistry.Type.APPLICATION);
+    private final static MetricRegistry vendorRegistry =
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
+    private final static MetricRegistry appRegistry =
+            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
 
-    private static GrpcMetrics grpcMetrics;
+    private MetricType type;
 
-    private GrpcMetrics(Builder builder)
+    private GrpcMetrics(MetricType type)
         {
+        this.type = type;
         }
 
-    public static synchronized GrpcMetrics create()
+    public static GrpcMetrics counted()
         {
-        if (grpcMetrics == null)
-            {
-            grpcMetrics = builder().build();
-            }
-        return grpcMetrics;
+        return new GrpcMetrics(MetricType.COUNTER);
         }
 
-    public static synchronized GrpcMetrics create(Config config)
+    public static GrpcMetrics metered()
         {
-        if (grpcMetrics == null)
-            {
-            grpcMetrics = builder().config(config).build();
-            }
-        return grpcMetrics;
+        return new GrpcMetrics(MetricType.METERED);
         }
 
-    /**
-     * Create a new builder to construct an instance.
-     *
-     * @return A new builder instance
-     */
-    public static Builder builder()
+    public static GrpcMetrics histogram()
         {
-        return new Builder();
+        return new GrpcMetrics(MetricType.HISTOGRAM);
+        }
+
+    public static GrpcMetrics timed()
+        {
+        return new GrpcMetrics(MetricType.TIMER);
+        }
+
+    public static GrpcMetrics vendorOnly()
+        {
+        return new GrpcMetrics(MetricType.INVALID);
         }
 
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
             Metadata headers, ServerCallHandler<ReqT, RespT> next)
         {
-        String methodName = call.getMethodDescriptor().getFullMethodName();
-        MetricsServerCall<ReqT, RespT> serverCall = new MetricsServerCall<>(methodName, call);
+        String name = call.getMethodDescriptor().getFullMethodName().replace('/', '.');
+
+        ServerCall<ReqT, RespT> serverCall =
+                type == MetricType.COUNTER ? new CountedServerCall<>(appRegistry.counter(name), call) :
+                type == MetricType.TIMER ? new TimedServerCall<>(appRegistry.timer(name), call) :
+                type == MetricType.METERED ? new MeteredServerCall<>(appRegistry.meter(name), call) :
+                type == MetricType.HISTOGRAM ? new HistogramServerCall<>(appRegistry.histogram(name), call) :
+                call;
+
+        serverCall = new MeteredServerCall<>(vendorRegistry.meter("grpc.requests.meter"), serverCall);
+        serverCall = new CountedServerCall<>(vendorRegistry.counter("grpc.requests.count"), serverCall);
 
         return next.startCall(serverCall, headers);
         }
 
-    private class MetricsServerCall<ReqT, RespT>
+    private abstract class MetricServerCall<ReqT, RespT, MetricT>
             extends ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT>
         {
         /**
-         * The {@link Timer} to update.
+         * The metric to update.
          */
-        private final String methodName;
+        protected final MetricT metric;
 
+        /**
+         * Create a {@link TimedServerCall}.
+         *
+         * @param delegate  the call to time
+         */
+        MetricServerCall(MetricT metric, ServerCall<ReqT, RespT> delegate)
+            {
+            super(delegate);
+
+            this.metric = metric;
+            }
+        }
+
+    private class TimedServerCall<ReqT, RespT>
+            extends MetricServerCall<ReqT, RespT, Timer>
+        {
         /**
          * The method start time.
          */
         private final long startNanos;
 
         /**
-         * Create a {@link MetricsServerCall}.
+         * Create a {@link TimedServerCall}.
          *
          * @param delegate  the call to time
          */
-        public MetricsServerCall(String methodName, ServerCall<ReqT, RespT> delegate)
+        TimedServerCall(Timer timer, ServerCall<ReqT, RespT> delegate)
             {
-            super(delegate);
+            super(timer, delegate);
 
             this.startNanos = System.nanoTime();
-            this.methodName = methodName;
             }
 
         @Override
@@ -95,43 +124,73 @@ public class GrpcMetrics
             super.close(status, responseHeaders);
 
             long time = System.nanoTime() - startNanos;
-            Timer timer = registry.timer(methodName + "_timer");
-            Counter counter = registry.counter(methodName + "_count");
-
-            timer.update(time, TimeUnit.NANOSECONDS);
-            counter.inc();
+            metric.update(time, TimeUnit.NANOSECONDS);
             }
         }
 
-    /**
-     * A fluent API builder to build instances of {@link GrpcMetrics}.
-     */
-    public static final class Builder implements io.helidon.common.Builder<GrpcMetrics>
+    private class CountedServerCall<ReqT, RespT>
+            extends MetricServerCall<ReqT, RespT, Counter>
         {
-        private Config config = Config.empty();
-
-        private Builder()
+        /**
+         * Create a {@link CountedServerCall}.
+         *
+         * @param delegate  the call to time
+         */
+        CountedServerCall(Counter counter, ServerCall<ReqT, RespT> delegate)
             {
+            super(counter, delegate);
             }
 
         @Override
-        public GrpcMetrics build()
+        public void close(Status status, Metadata responseHeaders)
             {
-            return new GrpcMetrics(this);
+            super.close(status, responseHeaders);
+
+            metric.inc();
+            }
+        }
+
+    private class MeteredServerCall<ReqT, RespT>
+            extends MetricServerCall<ReqT, RespT, Meter>
+        {
+        /**
+         * Create a {@link MeteredServerCall}.
+         *
+         * @param delegate  the call to time
+         */
+        MeteredServerCall(Meter meter, ServerCall<ReqT, RespT> delegate)
+            {
+            super(meter, delegate);
             }
 
-        /**
-         * Override default configuration.
-         *
-         * @param config configuration instance
-         * @return updated builder instance
-         * @see GrpcMetrics for details about configuration keys
-         */
-        public Builder config(Config config)
+        @Override
+        public void close(Status status, Metadata responseHeaders)
             {
-            this.config = config;
+            super.close(status, responseHeaders);
 
-            return this;
+            metric.mark();
+            }
+        }
+
+    private class HistogramServerCall<ReqT, RespT>
+            extends MetricServerCall<ReqT, RespT, Histogram>
+        {
+        /**
+         * Create a {@link HistogramServerCall}.
+         *
+         * @param delegate  the call to time
+         */
+        public HistogramServerCall(Histogram histogram, ServerCall<ReqT, RespT> delegate)
+            {
+            super(histogram, delegate);
+            }
+
+        @Override
+        public void close(Status status, Metadata responseHeaders)
+            {
+            super.close(status, responseHeaders);
+
+            metric.update(1);
             }
         }
     }

@@ -417,7 +417,7 @@ public interface GrpcService
                 outerClass = getOuterClassFromFileName(descriptor.getName());
                 }
 
-            // append $ in order to create a proper binary name for the nested message class
+            // append $ in order to timed a proper binary name for the nested message class
             return outerClass + "$";
             }
 

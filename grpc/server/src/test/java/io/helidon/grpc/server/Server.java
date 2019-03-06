@@ -90,8 +90,8 @@ public class Server
         GreetServiceJava greetServiceJava = new GreetServiceJava(config);
 
         return GrpcRouting.builder()
-                .intercept(GrpcMetrics.create())
-                .register(greetService, cfg -> cfg.intercept(LoggingServerInterceptor.create("foo")))
+                .intercept(GrpcMetrics.timed())
+                .register(greetService)
                 .register(greetServiceJava)
                 .register(new StringService())
                 .build();

@@ -241,7 +241,7 @@ public interface GrpcServer
         }
 
     /**
-     * GrpcServer builder class provides a convenient way to create a
+     * GrpcServer builder class provides a convenient way to timed a
      * GrpcServer instance.
      */
     final class Builder
