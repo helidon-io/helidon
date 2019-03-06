@@ -44,8 +44,8 @@ class SecurityDefinition {
      * True if authentication is needed to execute.
      */
     private boolean requiresAuthentication;
-    private boolean authorizeByDefault;
     private boolean authnOptional;
+    private boolean authorizeByDefault;
     private boolean atzExplicit;
     private String authenticator;
     private String authorizer;
@@ -204,16 +204,21 @@ class SecurityDefinition {
 
     public void analyzerResponse(AnnotationAnalyzer analyzer, AnnotationAnalyzer.AnalyzerResponse analyzerResponse) {
         analyzerResponses.put(analyzer, analyzerResponse);
+        // JWT auth returns required for parent (@RolesAllow)
+        // generic analyzer returns optional (@PermitAll)
         switch (analyzerResponse.authenticationResponse()) {
         case REQUIRED:
             requiresAuthentication = true;
+            authnOptional = false;
             break;
         case OPTIONAL:
+            // only update this in case authentication is not required already
             requiresAuthentication = true;
             authnOptional = true;
             break;
         case FORBIDDEN:
             requiresAuthentication = false;
+            authnOptional = false;
             break;
         case ABSTAIN:
         default:
