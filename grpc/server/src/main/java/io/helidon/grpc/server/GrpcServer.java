@@ -19,8 +19,10 @@ package io.helidon.grpc.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import io.grpc.Context;
 import io.grpc.ServerInterceptor;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -33,8 +35,8 @@ import org.eclipse.microprofile.health.HealthCheck;
  * Provides basic lifecycle and monitoring API.
  * <p>
  * Instance can be created from {@link GrpcRouting} and optionally from {@link
- * GrpcServerConfig} using {@link #create(GrpcRouting)}, {@link
- * #create(GrpcServerConfig, GrpcRouting)} or {@link #builder(GrpcRouting)}methods
+ * GrpcServerConfiguration} using {@link #create(GrpcRouting)}, {@link
+ * #create(GrpcServerConfiguration, GrpcRouting)} or {@link #builder(GrpcRouting)}methods
  * and their builder enabled overloads.
  */
 public interface GrpcServer
@@ -44,7 +46,7 @@ public interface GrpcServer
      *
      * @return Server configuration
      */
-    GrpcServerConfig configuration();
+    GrpcServerConfiguration configuration();
 
     /**
      * Starts the server. Has no effect if server is running.
@@ -109,7 +111,7 @@ public interface GrpcServer
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'GrpcRouting' parameter is {@code null}
      */
-    static GrpcServer create(Supplier<? extends GrpcServerConfig> configurationBuilder, GrpcRouting routing)
+    static GrpcServer create(Supplier<? extends GrpcServerConfiguration> configurationBuilder, GrpcRouting routing)
         {
         return create(configurationBuilder != null
                       ? configurationBuilder.get()
@@ -131,7 +133,7 @@ public interface GrpcServer
      * @throws NullPointerException  if 'routingBuilder' parameter is {@code
      *                               null}
      */
-    static GrpcServer create(Supplier<? extends GrpcServerConfig> configurationBuilder,
+    static GrpcServer create(Supplier<? extends GrpcServerConfiguration> configurationBuilder,
                              Supplier<? extends GrpcRouting> routingBuilder)
         {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
@@ -153,8 +155,9 @@ public interface GrpcServer
      * @throws NullPointerException  if 'routingBuilder' parameter is {@code
      *                               null}
      */
-    static GrpcServer create(GrpcServerConfig configuration,
-                             Supplier<? extends GrpcRouting> routingBuilder)
+    static GrpcServer create(
+            GrpcServerConfiguration configuration,
+            Supplier<? extends GrpcRouting> routingBuilder)
         {
         Objects.requireNonNull(routingBuilder, "Parameter 'routingBuilder' must not be null!");
         return create(configuration, routingBuilder.get());
@@ -172,7 +175,7 @@ public interface GrpcServer
      */
     static GrpcServer create(GrpcRouting routing)
         {
-        return create((GrpcServerConfig) null, routing);
+        return create((GrpcServerConfiguration) null, routing);
         }
 
     /**
@@ -186,7 +189,7 @@ public interface GrpcServer
      * @throws IllegalStateException if none SPI implementation found
      * @throws NullPointerException  if 'GrpcRouting' parameter is {@code null}
      */
-    static GrpcServer create(GrpcServerConfig configuration, GrpcRouting routing)
+    static GrpcServer create(GrpcServerConfiguration configuration, GrpcRouting routing)
         {
         Objects.requireNonNull(routing, "Parameter 'GrpcRouting' is null!");
 
@@ -245,7 +248,7 @@ public interface GrpcServer
         {
         private final GrpcRouting routing;
 
-        private GrpcServerConfig configuration;
+        private GrpcServerConfiguration configuration;
 
         private Builder(GrpcRouting routing)
             {
@@ -261,7 +264,7 @@ public interface GrpcServer
          *
          * @return an updated builder
          */
-        public Builder config(GrpcServerConfig configuration)
+        public Builder config(GrpcServerConfiguration configuration)
             {
             this.configuration = configuration;
             return this;
@@ -274,7 +277,7 @@ public interface GrpcServer
          *
          * @return an updated builder
          */
-        public Builder config(Supplier<GrpcServerConfig> configurationBuilder)
+        public Builder config(Supplier<GrpcServerConfiguration> configurationBuilder)
             {
             this.configuration = configurationBuilder != null
                                  ? configurationBuilder.get()
@@ -293,8 +296,25 @@ public interface GrpcServer
             {
             GrpcServerImpl server = new GrpcServerImpl(configuration);
 
-            routing.services()
-                    .forEach(cfg -> server.deploy(cfg, routing.interceptors()));
+            for (GrpcService.ServiceConfig cfg : routing.services())
+                {
+                List<ServerInterceptor>     interceptors = new ArrayList<>();
+                Map<Context.Key<?>, Object> contextMap   = cfg.context();
+
+                if (contextMap.size() > 0)
+                    {
+                    interceptors.add(new ContextSettingIServerInterceptor(contextMap));
+                    }
+
+                for (ServerInterceptor interceptor : routing.interceptors())
+                    {
+                    interceptors.add(interceptor);
+                    }
+
+                interceptors.addAll(cfg.interceptors());
+
+                server.deploy(cfg, interceptors);
+                }
 
             return server;
             }

@@ -27,8 +27,8 @@ public class Server
                 Server.class.getResourceAsStream("/logging.properties"));
 
         // Get gRPC server config from the "grpc" section of application.yaml
-        GrpcServerConfig serverConfig =
-                GrpcServerConfig.create(config.get("grpc"));
+        GrpcServerConfiguration serverConfig =
+                GrpcServerConfiguration.create(config.get("grpc"));
 
         GrpcServer grpcServer = GrpcServer.create(serverConfig, createRouting(config));
 

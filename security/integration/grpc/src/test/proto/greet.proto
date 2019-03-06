@@ -1,0 +1,23 @@
+syntax = "proto3";
+option java_package = "io.helidon.security.integration.grpc.test";
+
+service GreetService {
+  rpc Greet (GreetRequest) returns (GreetResponse) {}
+  rpc SetGreeting (SetGreetingRequest) returns (SetGreetingResponse) {}
+}
+
+message GreetRequest {
+  string name = 1;
+}
+
+message GreetResponse {
+  string message = 1;
+}
+
+message SetGreetingRequest {
+  string greeting = 1;
+}
+
+message SetGreetingResponse {
+  string greeting = 1;
+}

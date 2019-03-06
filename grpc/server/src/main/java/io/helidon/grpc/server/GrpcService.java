@@ -6,6 +6,7 @@ import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.FileDescriptor;
 
 import io.grpc.BindableService;
+import io.grpc.Context;
 import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServerInterceptor;
@@ -13,6 +14,9 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 import io.grpc.stub.StreamObserver;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -184,17 +188,20 @@ public interface GrpcService
         return new Builder(service);
     }
 
+
     final class ServiceConfig
         {
         private final BindableService service;
         private final List<HealthCheck> healthChecks;
         private final List<ServerInterceptor> interceptors;
+        private final Map<Context.Key<?>, Object> contextValues;
 
         ServiceConfig(BindableService service)
             {
             this.service = service;
             this.healthChecks = new ArrayList<>();
             this.interceptors = new ArrayList<>();
+            this.contextValues = new HashMap<>();
             }
 
         BindableService service()
@@ -209,7 +216,18 @@ public interface GrpcService
 
         List<ServerInterceptor> interceptors()
             {
-            return interceptors;
+            return Collections.unmodifiableList(interceptors);
+            }
+
+        public Map<Context.Key<?>, Object> context()
+            {
+            return Collections.unmodifiableMap(contextValues);
+            }
+
+        public ServiceConfig configure(Consumer<ServiceConfig> configurer)
+            {
+            configurer.accept(this);
+            return this;
             }
 
         public ServiceConfig healthCheck(HealthCheck healthCheck)
@@ -221,7 +239,12 @@ public interface GrpcService
         public ServiceConfig intercept(ServerInterceptor interceptor)
             {
             interceptors.add(Objects.requireNonNull(interceptor));
+            return this;
+            }
 
+        public <V> ServiceConfig addContextValue(Context.Key<V> key, V value)
+            {
+            contextValues.put(key, value);
             return this;
             }
         }
@@ -312,7 +335,7 @@ public interface GrpcService
         public Methods healthCheck(HealthCheck healthCheck)
             {
             this.healthCheck = healthCheck;
-            
+
             return this;
             }
 

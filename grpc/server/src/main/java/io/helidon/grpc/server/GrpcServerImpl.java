@@ -68,10 +68,10 @@ public class GrpcServerImpl implements GrpcServer
      */
     GrpcServerImpl()
         {
-        this(GrpcServerConfig.defaultConfig());
+        this(GrpcServerConfiguration.defaultConfig());
         }
 
-    GrpcServerImpl(GrpcServerConfig config)
+    GrpcServerImpl(GrpcServerConfiguration config)
         {
         this.config = config;
         }
@@ -221,7 +221,7 @@ public class GrpcServerImpl implements GrpcServer
         return shutdownFuture;
         }
 
-    public GrpcServerConfig configuration()
+    public GrpcServerConfiguration configuration()
         {
         return config;
         }
@@ -409,7 +409,7 @@ public class GrpcServerImpl implements GrpcServer
     /**
      * Configuration values.
      */
-    protected GrpcServerConfig config;
+    protected GrpcServerConfiguration config;
 
     /**
      * The TCP-based gRPC server.

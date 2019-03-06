@@ -1,38 +1,38 @@
 package io.helidon.grpc.server;
 
 
-import io.helidon.config.Config;
 import java.io.Serializable;
 
 
 /**
  * Configuration class for the {@link GrpcServer} implementations.
  */
-public class GrpcServerConfig
-        implements Serializable
+public class GrpcServerBasicConfig
+        implements GrpcServerConfiguration, Serializable
     {
     // ---- constructors ------------------------------------------------
 
     /**
      * Default constructor for serialization.
      */
-    public GrpcServerConfig()
+    // ToDo: (JK) Does this class need to be serializable, the Web Server config is not?
+    public GrpcServerBasicConfig()
         {
         }
 
     /**
-     * Construct {@link GrpcServerConfig} instance with native transport and TLS disabled.
+     * Construct {@link GrpcServerBasicConfig} instance with native transport and TLS disabled.
      *
      * @param name  the server name
      * @param port  the port to listen on
      */
-    GrpcServerConfig(String name, int port)
+    GrpcServerBasicConfig(String name, int port)
         {
         this(name, port, false, false, null, null, null);
         }
 
     /**
-     * Construct {@link GrpcServerConfig} instance.
+     * Construct {@link GrpcServerBasicConfig} instance.
      *
      * @param name            the server name
      * @param port            the port to listen on
@@ -45,7 +45,7 @@ public class GrpcServerConfig
      *                        tls is enabled)
      * @param tlsCaCert       the location of the optional TLS CA cert file
      */
-    public GrpcServerConfig(String name, int port, boolean nativeTransport, boolean tls, String tlsCert, String tlsKey, String tlsCaCert)
+    public GrpcServerBasicConfig(String name, int port, boolean nativeTransport, boolean tls, String tlsCert, String tlsKey, String tlsCaCert)
         {
         this.name = name;
         this.port = port;
@@ -56,24 +56,6 @@ public class GrpcServerConfig
         this.tlsCaCert = tlsCaCert;
         }
 
-    static GrpcServerConfig defaultConfig()
-        {
-        return new GrpcServerConfig(DEFAULT_NAME, DEFAULT_PORT);
-        }
-
-    /**
-     * Creates new instance with defaults from external configuration source.
-     *
-     * @param config the externalized configuration
-     * @return a new instance
-     */
-    static GrpcServerConfig create(Config config) {
-        String name = config.get("name").asString().orElse(DEFAULT_NAME);
-        int    port = config.get("port").asInt().orElse(DEFAULT_PORT);
-
-        return new GrpcServerConfig(name, port);
-    }
-
     // ---- accessors ---------------------------------------------------
 
     /**
@@ -81,6 +63,7 @@ public class GrpcServerConfig
      *
      * @return the server name
      */
+    @Override
     public String name()
         {
         return name;
@@ -91,6 +74,7 @@ public class GrpcServerConfig
      *
      * @return the server port
      */
+    @Override
     public int port()
         {
         return port;
@@ -105,6 +89,7 @@ public class GrpcServerConfig
      *
      * @return {@code true} if native transport should be used
      */
+    @Override
     public boolean useNativeTransport()
         {
         return nativeTransport;
@@ -115,6 +100,7 @@ public class GrpcServerConfig
      *
      * @return {@code true} if TLS is enabled
      */
+    @Override
     public boolean isTLS()
         {
         return tls;
@@ -125,6 +111,7 @@ public class GrpcServerConfig
      *
      * @return the location of the TLS certs file to use
      */
+    @Override
     public String tlsCert()
         {
         return tlsCert;
@@ -135,6 +122,7 @@ public class GrpcServerConfig
      *
      * @return the location of the TLS key file to use
      */
+    @Override
     public String tlsKey()
         {
         return tlsKey;
@@ -145,22 +133,11 @@ public class GrpcServerConfig
      *
      * @return the location of the TLS CA certs file to use
      */
+    @Override
     public String tlsCaCert()
         {
         return tlsCaCert;
         }
-
-    // ---- constants -------------------------------------------------------
-
-    /**
-     * The default server name.
-     */
-    public static final String DEFAULT_NAME = "grpc.server";
-
-    /**
-     * The default grpc port.
-     */
-    public static final int DEFAULT_PORT = 1408;
 
     // ---- data members ------------------------------------------------
 
