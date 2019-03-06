@@ -30,7 +30,7 @@ public class Server
         LogManager.getLogManager().readConfiguration(
                 Server.class.getResourceAsStream("/logging.properties"));
 
-        Tracer tracer = (Tracer) TracerBuilder.create("my-application")
+        Tracer tracer = (Tracer) TracerBuilder.create("Server")
                         .collectorUri(URI.create("http://localhost:9411/api/v2/spans"))
                         .build();
 

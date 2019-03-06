@@ -21,7 +21,7 @@ public class GreetClient
     {
     public static void main(String[] args) throws Exception
         {
-        Tracer tracer = (Tracer) TracerBuilder.create("my-application")
+        Tracer tracer = (Tracer) TracerBuilder.create("Client")
                 .collectorUri(URI.create("http://localhost:9411/api/v2/spans"))
                 .build();
 
@@ -34,6 +34,7 @@ public class GreetClient
         System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));
         System.out.println(greetSvc.setGreeting(SetGreetingRequest.newBuilder().setGreeting("Ciao").build()));
         System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));
+
 
         Thread.sleep(5000);
         }
