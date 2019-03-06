@@ -28,7 +28,6 @@ import io.opentracing.Tracer;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.eclipse.microprofile.health.HealthCheck;
-import sun.java2d.CRenderer;
 
 
 /**
