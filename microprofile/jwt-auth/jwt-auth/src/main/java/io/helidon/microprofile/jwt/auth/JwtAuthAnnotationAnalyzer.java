@@ -98,23 +98,22 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     // resource class analysis
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        if (isMpJwt(previousResponse) && isRolesAllowed(maybeAnnotated)) {
-            return AnalyzerResponse.builder(previousResponse)
-                    .authenticationResponse(Flag.REQUIRED)
-                    .build();
-        }
-
-        return previousResponse;
+        return performAnalysis(maybeAnnotated, previousResponse);
     }
 
     // resource method analysis
     @Override
     public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
+        return performAnalysis(maybeAnnotated, previousResponse);
+    }
+
+    private AnalyzerResponse performAnalysis(AnnotatedElement maybeAnnotated, AnalyzerResponse previousResponse) {
         if (isMpJwt(previousResponse) && isRolesAllowed(maybeAnnotated)) {
             return AnalyzerResponse.builder(previousResponse)
                     .authenticationResponse(Flag.REQUIRED)
                     .build();
         }
+
         return previousResponse;
     }
 
