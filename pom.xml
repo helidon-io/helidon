@@ -235,6 +235,9 @@
                     <configuration>
                         <links>
                             <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                            <link>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</link>
+                            <link>https://fasterxml.github.io/jackson-core/javadoc/2.9/</link>
+                            <link>https://fasterxml.github.io/jackson-databind/javadoc/2.9/</link>
                             <link>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</link>
                             <link>https://jax-rs.github.io/apidocs/${version.lib.jaxrs-api}</link>
                             <link>https://jersey.github.io/apidocs/${version.lib.jersey}/jersey</link>
@@ -244,6 +247,7 @@
                             <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
                             <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
                             <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
+                            <link>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/${version.lib.jsonb-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
