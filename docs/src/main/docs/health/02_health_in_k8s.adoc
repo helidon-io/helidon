@@ -48,17 +48,19 @@ You can configure several parameters for probes. The following are the most
 [cols="2,5",role="flex, sm7"]
 |=======
 | `initialDelaySeconds`
-| Number of seconds before probes are initiated
+| Number of seconds after the container has started before liveness or readiness
+ probes are initiated.
 
 | `periodSeconds`
-| Probe interval. Default to 10 seconds. Minimum value is 1
+| Probe interval. Default to 10 seconds. Minimum value is 1.
 
 | `timeoutSeconds`
 | Number of seconds after which the probe times out. Defaults to 1 second.
  Minimum value is 1
 
 | `failureThreshold`
-| Number of failed probes before giving up. Defaults to 3. Minimum value is 1.
+| Number of consecutive failures after which the probe should stop. Default: 3.
+ Minimum: 1.
 |=======
 
 === Liveness probe
@@ -67,7 +69,10 @@ The liveness probe is used to verify the container has become unresponsive.
  For example, it can be used to detect deadlocks or analyze heap usage. When
  Kubernetes gives up on a liveness probe, the corresponding pod is restarted.
 
-NOTE: A bad liveness probe can result in repeated restarts.
+NOTE: The liveness probe can result in repeated restarts in certain cases.
+ For example, if the probe is implemented to check all the dependencies
+ strictly, then it can fail repeatedly for temporary issues. Repeated restarts
+ can also occur if `timeoutSeconds` or `periodSeconds` is too low.
 
 We recommend the following:
 
@@ -81,14 +86,16 @@ The readiness probe is used to avoid routing requests to the pod until it is
  ready to accept traffic. When Kubernetes gives up on a readiness probe, the
  pod is not restarted, traffic is not routed to the pod anymore.
 
-NOTE: A bad readiness probe can result in a cascading effect where all pods are
- removed from the service routing.
+NOTE: In certain cases, the readiness probe can cause all the pods to be removed
+ from service routing. For example, if the probe is implemented to check all the
+ dependencies strictly, then it can fail repeatedly for temporary issues. This
+ issue can also occur if `timeoutSeconds` or `periodSeconds` is too low.
 
 We recommend the following:
 
 * Be conservative when checking shared dependencies.
 * Be aggressive when checking local dependencies.
-* Set `failureThreshold` according to `periodSeconds` in order to accomodate
+* Set `failureThreshold` according to `periodSeconds` in order to accommodate
  temporary errors.
 
 == Troubleshooting probes
