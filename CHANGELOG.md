@@ -9,7 +9,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Improvements
 
+- Security: add JWT-Auth configuration to control secure by default
+  [465](https://github.com/oracle/helidon/pull/465)
+- Assorted documentation updates
+  [418](https://github.com/oracle/helidon/pull/418) 
+  [440](https://github.com/oracle/helidon/pull/440) 
+  [424](https://github.com/oracle/helidon/pull/424) 
+
 ### Fixes
+
+- WebServer: MetricSupport and RegistryFactory can be accessed in any order now
+  [457](https://github.com/oracle/helidon/issues/457)
+- WebServer: cleanup and optimizations when writing data from Jersey
+  [463](https://github.com/oracle/helidon/pull/463)
+- WebServer: NPE in ForwardingHandler
+  [430](https://github.com/oracle/helidon/issues/430)
+- Performance improvements
+  [423](https://github.com/oracle/helidon/pull/423) 
+- Security: NPE when IDCS returns no groups
+  [454](https://github.com/oracle/helidon/pull/454)
+- Json processing support now uses default encoding of JSON-P
+  [421](https://github.com/oracle/helidon/pull/421)
 
 ## [1.0.0] - 2019-02-12
 
