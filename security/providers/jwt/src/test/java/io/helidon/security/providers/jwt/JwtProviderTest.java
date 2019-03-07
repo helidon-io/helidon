@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
@@ -56,13 +57,38 @@ import static org.mockito.Mockito.when;
  * Unit test for {@link JwtProvider}.
  */
 public class JwtProviderTest {
+    private static final String WRONG_TOKEN =
+            "yJ4NXQjUzI1NiI6IlZjeXl1TVdxSGp4UjRVNmYzOTV3YmhUZXNZRmFaWXFSbDdBbUxjZE5sNXciLCJ4NXQiOiJTdEZFTlFaM2NMNndQaHFxODZnVmJTTG54TkUiLCJraWQiOiJTSUdOSU5HX0tFWSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJIU01BcHAtY2xpZW50X0FQUElEIiwidXNlci50ZW5hbnQubmFtZSI6ImlkY3MtNzNmYTNlZDY5ZTgxNDFhN2I5MDFmYWY3Zjg3M2U3OGUiLCJzdWJfbWFwcGluZ2F0dHIiOiJ1c2VyTmFtZSIsImlzcyI6Imh0dHBzOlwvXC9pZGVudGl0eS5vcmFjbGVjbG91ZC5jb21cLyIsInRva190eXBlIjoiQVQiLCJjbGllbnRfaWQiOiJIU01BcHAtY2xpZW50X0FQUElEIiwiYXVkIjoiaHR0cDpcL1wvc2NhMDBjangudXMub3JhY2xlLmNvbTo3Nzc3Iiwic3ViX3R5cGUiOiJjbGllbnQiLCJzY29wZSI6InVybjpvcGM6cmVzb3VyY2U6Y29uc3VtZXI6OmFsbCIsImNsaWVudF90ZW5hbnRuYW1lIjoiaWRjcy03M2ZhM2VkNjllODE0MWE3YjkwMWZhZjdmODczZTc4ZSIsImV4cCI6MTU1MDU5NTk0MiwiaWF0IjoxNTUwNTA5NTQyLCJ0ZW5hbnRfaXNzIjoiaHR0cHM6XC9cL2lkY3MtNzNmYTNlZDY5ZTgxNDFhN2I5MDFmYWY3Zjg3M2U3OGUuaWRlbnRpdHkuYzlkZXYxLm9jOXFhZGV2LmNvbSIsImNsaWVudF9ndWlkIjoiN2JmZDM3MjM1ZGY3NDVjNDg5ZjYxZDM1ZTYzZGQ4ZmUiLCJjbGllbnRfbmFtZSI6IkhTTUFwcC1jbGllbnQiLCJ0ZW5hbnQiOiJpZGNzLTczZmEzZWQ2OWU4MTQxYTdiOTAxZmFmN2Y4NzNlNzhlIiwianRpIjoiYzRkNjlhZjUtOGQ4OC00N2Q2LTkzMDctN2RjMmI3NWY4MDQyIn0.ZsngUzzso_sW6rMg3jB-lueiC2sknIDRlgvjumMjp5rRSdLux2X4XZIm2Oa15JbcrnC6I4sgqB0xU1Wte-TW4hbBDLFhaJKYKiNaHBE0L7J73ZK7ITg7dORKkyjLrofGt0m8Rse1OlE9AWevz-l27gtQMO_mctGfHri2BxiMbSN1HwOjWW3kGoqPgCJZJfh2TiFlocEpsXDH4qB1qwhuIoT91gw3kIJlQov0_a9uGEepMU_RWMRjVZCIvuV2hPq_mdeWy2IhkHPxq422CLZ9MDOfbv8F6dY6DralCH4mmKbGM3dbqpZokWQxXG7LG9vWX1PFWw0N9clYHJ4QqBJ4pA";
+
     private static JwkKeys verifyKeys;
+    private static Config providersConfig;
 
     @BeforeAll
     public static void initClass() {
         verifyKeys = JwkKeys.builder()
                 .resource(Resource.create("verify-jwk.json"))
                 .build();
+
+        providersConfig = Config.create().get("security.providers");
+    }
+
+    @Test
+    public void testWrongToken() {
+        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
+
+        //now we need to use the same token to invoke authentication
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + WRONG_TOKEN)
+                .build();
+
+        when(atnRequest.env()).thenReturn(se);
+
+        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
     }
 
     @Test
@@ -88,7 +114,7 @@ public class JwtProviderTest {
 
         Subject subject = Subject.create(principal);
 
-        JwtProvider provider = JwtProvider.create(Config.create().get("security.providers.0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.user()).thenReturn(Optional.of(subject));
@@ -163,7 +189,7 @@ public class JwtProviderTest {
         Principal tp = Principal.create(userId);
         Subject subject = Subject.create(tp);
 
-        JwtProvider provider = JwtProvider.create(Config.create().get("security.providers.0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.user()).thenReturn(Optional.of(subject));
@@ -255,7 +281,7 @@ public class JwtProviderTest {
 
         Subject subject = Subject.create(principal);
 
-        JwtProvider provider = JwtProvider.create(Config.create().get("security.providers.0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.user()).thenReturn(Optional.of(subject));

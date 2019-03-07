@@ -166,8 +166,8 @@ public final class SignedJwt {
 
             String signedContent = headerBase64 + '.' + payloadBase64;
 
-            JsonObject headerJson = parseJson(headerJsonString, collector, "JWT header");
-            JsonObject contentJson = parseJson(payloadJsonString, collector, "JWT payload");
+            JsonObject headerJson = parseJson(headerJsonString, collector, headerBase64, "JWT header");
+            JsonObject contentJson = parseJson(payloadJsonString, collector, payloadBase64, "JWT payload");
 
             collector.collect().checkValid();
 
@@ -182,11 +182,11 @@ public final class SignedJwt {
         }
     }
 
-    private static JsonObject parseJson(String jsonString, Errors.Collector collector, String description) {
+    private static JsonObject parseJson(String jsonString, Errors.Collector collector, String base64, String description) {
         try {
             return JSON.createReader(new StringReader(jsonString)).readObject();
         } catch (Exception e) {
-            collector.fatal(jsonString, description + " is not a valid JSON object");
+            collector.fatal(base64, description + " is not a valid JSON object (value is base64 encoded)");
             return null;
         }
     }

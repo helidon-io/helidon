@@ -190,7 +190,13 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
         return atnTokenHandler.extractToken(providerRequest.env().headers())
                 .map(token -> {
-                    SignedJwt signedJwt = SignedJwt.parseToken(token);
+                    SignedJwt signedJwt;
+                    try {
+                        signedJwt = SignedJwt.parseToken(token);
+                    } catch (Exception e) {
+                        //invalid token
+                        return AuthenticationResponse.failed("Invalid token", e);
+                    }
                     Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
                     if (errors.isValid()) {
                         Jwt jwt = signedJwt.getJwt();

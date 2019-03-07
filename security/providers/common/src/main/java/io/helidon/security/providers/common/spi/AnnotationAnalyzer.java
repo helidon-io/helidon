@@ -267,31 +267,6 @@ public interface AnnotationAnalyzer {
             }
 
             /**
-             * Register an object later available through
-             * {@link io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse#registry()}.
-             *
-             * @param anInstance instance to register by its class
-             * @return updated builder instance
-             */
-            public Builder register(Object anInstance) {
-                registry.putInstance(anInstance);
-                return this;
-            }
-
-            /**
-             * Register an object later available through
-             * {@link io.helidon.security.providers.common.spi.AnnotationAnalyzer.AnalyzerResponse#registry()}.
-             *
-             * @param theClass class to register the instance by
-             * @param anInstance instance to register
-             * @return updated builder instance
-             */
-            public <T> Builder register(Class<? super T> theClass, T anInstance) {
-                registry.putInstance(theClass, anInstance);
-                return this;
-            }
-
-            /**
              * Authentication response.
              *
              * @param atnResponse response for authentication
