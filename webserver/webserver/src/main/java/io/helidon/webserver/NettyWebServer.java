@@ -230,9 +230,9 @@ class NettyWebServer implements WebServer {
                     if (t != null) {
                         LOGGER.log(Level.WARNING, "Netty Thread Groups were unable to shutdown.", t);
                     }
+                    shutdownFuture.complete(this);
                     startFuture.completeExceptionally(new IllegalStateException("WebServer was unable to start.",
                                                                                 throwable));
-                    shutdownFuture.complete(this);
                 });
         return null;
     }
