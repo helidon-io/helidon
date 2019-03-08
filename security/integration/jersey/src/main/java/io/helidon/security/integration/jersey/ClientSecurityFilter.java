@@ -94,6 +94,11 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                     .headers(HttpUtil.toSimpleMap(requestContext.getStringHeaders()));
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
+
+            for (String name : requestContext.getConfiguration().getPropertyNames()) {
+                outboundEp.addAtribute(name, requestContext.getConfiguration().getProperty(name));
+            }
+
             for (String name : requestContext.getPropertyNames()) {
                 outboundEp.addAtribute(name, requestContext.getProperty(name));
             }
