@@ -19,9 +19,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Optional;
 
 import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -37,6 +39,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -61,6 +64,10 @@ public class BasicAuthOutboundOverrideTest {
 
         ClientRequestContext requestContext = mock(ClientRequestContext.class);
 
+        Configuration configuration = mock(Configuration.class);
+        when(configuration.getPropertyNames()).thenReturn(Collections.emptyList());
+
+        when(requestContext.getConfiguration()).thenReturn(configuration);
         when(requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT)).thenReturn(context);
         when(requestContext.getProperty(ClientSecurityFeature.PROPERTY_PROVIDER)).thenReturn("http-basic-auth");
         when(requestContext.getProperty(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER)).thenReturn(user);
