@@ -71,7 +71,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         // from there
 
         // first try to find the context on request configuration
-        SecurityContext context = (SecurityContext) requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
+        SecurityContext context = resolveProperty(requestContext, ClientSecurityFeature.PROPERTY_CONTEXT);
 
         if (null == context) {
             LOGGER.finest("Security not propagated, as the property \""
@@ -146,5 +146,14 @@ public class ClientSecurityFilter implements ClientRequestFilter {
 
             throw e;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T resolveProperty(ClientRequestContext requestContext, final String property) {
+        Object value = requestContext.getProperty(property);
+        if (null == value) {
+            value = requestContext.getConfiguration().getProperty(property);
+        }
+        return (T) value;
     }
 }
