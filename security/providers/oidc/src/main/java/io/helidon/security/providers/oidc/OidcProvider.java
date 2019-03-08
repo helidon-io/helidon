@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -313,11 +313,17 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private AuthenticationResponse validateToken(ProviderRequest providerRequest, String token) {
-        SignedJwt signed = SignedJwt.parseToken(token);
+        SignedJwt signedJwt;
+        try {
+            signedJwt = SignedJwt.parseToken(token);
+        } catch (Exception e) {
+            //invalid token
+            return AuthenticationResponse.failed("Invalid token", e);
+        }
 
-        Jwt jwt = signed.getJwt();
+        Jwt jwt = signedJwt.getJwt();
         Errors.Collector collector = Errors.collector();
-        jwtValidator.accept(signed, collector);
+        jwtValidator.accept(signedJwt, collector);
 
         Errors errors = collector.collect();
         Errors validationErrors = jwt.validate(oidcConfig.issuer(), oidcConfig.audience());
@@ -325,7 +331,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         if (errors.isValid() && validationErrors.isValid()) {
 
             errors.log(LOGGER);
-            Subject subject = buildSubject(jwt, signed);
+            Subject subject = buildSubject(jwt, signedJwt);
 
             Set<String> scopes = subject.grantsByType("scope")
                     .stream()

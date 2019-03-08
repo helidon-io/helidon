@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,13 @@ public class JwtProvider extends SynchronousProvider implements AuthenticationPr
 
         return atnTokenHandler.extractToken(providerRequest.env().headers())
                 .map(token -> {
-                    SignedJwt signedJwt = SignedJwt.parseToken(token);
+                    SignedJwt signedJwt;
+                    try {
+                        signedJwt = SignedJwt.parseToken(token);
+                    } catch (Exception e) {
+                        //invalid token
+                        return AuthenticationResponse.failed("Invalid token", e);
+                    }
                     Errors errors = signedJwt.verifySignature(verifyKeys);
                     if (errors.isValid()) {
                         Jwt jwt = signedJwt.getJwt();

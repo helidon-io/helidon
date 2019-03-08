@@ -204,15 +204,13 @@ class SecurityDefinition {
 
     public void analyzerResponse(AnnotationAnalyzer analyzer, AnnotationAnalyzer.AnalyzerResponse analyzerResponse) {
         analyzerResponses.put(analyzer, analyzerResponse);
-        // JWT auth returns required for parent (@RolesAllow)
-        // generic analyzer returns optional (@PermitAll)
+
         switch (analyzerResponse.authenticationResponse()) {
         case REQUIRED:
             requiresAuthentication = true;
             authnOptional = false;
             break;
         case OPTIONAL:
-            // only update this in case authentication is not required already
             requiresAuthentication = true;
             authnOptional = true;
             break;
