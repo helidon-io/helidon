@@ -390,7 +390,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     }
 
     /**
-     * 	The reporter's maximum queue size.
+     * The reporter's maximum queue size.
      *
      * @param maxQueueSize maximal size of the queue
      * @return updated builder instance
@@ -620,7 +620,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
         }
 
         static SamplerType create(String value) {
-            for(SamplerType sampler : SamplerType.values()) {
+            for (SamplerType sampler : SamplerType.values()) {
                 if (sampler.config().equals(value)) {
                     return sampler;
                 }
