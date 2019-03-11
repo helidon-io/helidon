@@ -25,6 +25,8 @@ import io.netty.util.internal.logging.JdkLoggerFactory;
 /**
  * Substitutions for GraalVM native image generation.
  */
+// supressing checkstyle issues, as this class cannot follow usual naming rules
+@SuppressWarnings({"StaticVariableName", "VisibilityModifier"})
 public final class NettySubstitutions {
     @TargetClass(className = "io.netty.util.internal.PlatformDependent0")
     static final class PlatformDependent0SvmExtension {
