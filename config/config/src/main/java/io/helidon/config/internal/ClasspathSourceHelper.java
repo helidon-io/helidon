@@ -16,6 +16,7 @@
 
 package io.helidon.config.internal;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -59,7 +60,14 @@ class ClasspathSourceHelper {
     static Path resourcePath(String resourceName) throws URISyntaxException {
         URL resourceUrl = Thread.currentThread().getContextClassLoader().getResource(resourceName);
         if (resourceUrl != null) {
-            return Paths.get(resourceUrl.toURI());
+            // this can only work if we are using a file based classloader (which may not be always the case)
+            // we may load classes from http, or from specific loaders, such as in Graal native image
+            URI uri = resourceUrl.toURI();
+            if ("file".equals(uri.getScheme())) {
+                return Paths.get(resourceUrl.toURI());
+            } else {
+                return null;
+            }
         } else {
             return null;
         }
