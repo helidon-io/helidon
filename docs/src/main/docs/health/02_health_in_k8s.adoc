@@ -104,7 +104,7 @@ Failed probes are recorded as events associated with their corresponding pods.
  The event message contains only the status code.
 
 [source,bash]
-.Get the events of a single pod.
+.Get the events of a single pod:
 ----
 POD_NAME=$(kubectl get pod -l app=acme -o jsonpath='{.items[0].metadata.name}') # <1>
 kubectl get event --field-selector involvedObject.name=${POD_NAME} # <2>
@@ -117,14 +117,14 @@ TIP: Create log messages in your health check implementation when setting a
 
 == Example
 
-The example show the usage of the Helidon health API for an application that
- implements health endpoints for the liveness and readiness probes as well as a
- Kubernetes service and deployment.
-The application code dissociates the health endpoints from the default routes
- so that the health endpoints are not exposed by the service.
+This example shows the usage of the Helidon health API in an application that
+ implements health endpoints for the liveness and readiness probes. Note that
+ the application code dissociates the health endpoints from the default routes,
+ so that the health endpoints are not exposed by the service. An example YAML
+ specification is also provided for the Kubernetes service and deployment.
 
 [source,java]
-.Application code.
+.Application code:
 ----
 Routing healthRouting = Routing.builder()
         .register(JsonSupport.create())
@@ -164,7 +164,7 @@ server.start();
 <8> Route the health services exclusively on the `health` socket.
 
 [source,yaml]
-.Kubernetes descriptor.
+.Kubernetes descriptor:
 ----
 kind: Service
 apiVersion: v1

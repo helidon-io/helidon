@@ -53,7 +53,7 @@ Declare the following dependency in your project:
 ----
 
 [source,xml]
-.Optional dependency to use built-in health checks.
+.Optional dependency to use built-in health checks:
 ----
 <dependency>
     <groupId>io.helidon.health</groupId>
@@ -89,7 +89,7 @@ A health check is a Java functional interface that returns a
  colon operator `::`.
 
 [source,java]
-.Health check with a lambda expression.
+.Health check with a lambda expression:
 ----
 HealthCheck hc = () -> HealthCheckResponse
         .named("exampleHealthCheck")
@@ -98,7 +98,7 @@ HealthCheck hc = () -> HealthCheckResponse
 ----
 
 [source,java]
-.Health check with method reference.
+.Health check with method reference:
 ----
 HealthCheckResponse exampleHealthCheck(){
     return HealthCheckResponse
@@ -126,7 +126,7 @@ The HTTP response also contains a JSON payload that describes the statuses for
  all health checks.
 
 [source,java]
-.Create the health support service.
+.Create the health support service:
 ----
 HealthSupport health = HealthSupport.builder()
     .add(hc)
@@ -139,7 +139,7 @@ NOTE: Health check requires the `JSON-P` support to be enabled. See the example
 === Example
 
 [source,java]
-.Register a custom health check.
+.Register a custom health check:
 ----
 HealthSupport health = HealthSupport.builder()
     .add(() -> HealthCheckResponse.named("exampleHealthCheck")
@@ -162,7 +162,7 @@ TIP: Balance collecting a lot of information with the need to avoid overloading
  the application and overwhelming users.
 
 [source,json]
-.JSON response.
+.JSON response:
 ----
 {
     "outcome": "UP",
@@ -180,7 +180,7 @@ TIP: Balance collecting a lot of information with the need to avoid overloading
 
 === Built-in health-checks
 
-A set of built-ins health checks can be optionally enabled to report various
+A set of built-in health checks can be optionally enabled to report various
  health check statuses that are commonly used:
 
 * deadlock detection
