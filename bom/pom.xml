@@ -399,7 +399,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
-                <artifactId>native-image-extension</artifactId>
+                <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

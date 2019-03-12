@@ -25,7 +25,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>native-image-extension</artifactId>
+    <artifactId>helidon-graal-native-image-extension</artifactId>
     <name>Helidon Integratoins Graal Native Image Extension</name>
 
     <dependencies>
