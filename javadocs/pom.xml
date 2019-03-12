@@ -366,6 +366,16 @@
                     <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-jta-narayana</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>

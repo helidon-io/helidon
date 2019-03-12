@@ -19,6 +19,7 @@ nbactions.xml
 nb-configuration.xml
 node_modules/
 node/
+ObjectStore/
 *.swp
 .gradle/
 build/
