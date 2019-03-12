@@ -110,7 +110,7 @@
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
         <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
-        <version.lib.graalvm>1.0.0-rc12</version.lib.graalvm>
+        <version.lib.graalvm>1.0.0-rc13</version.lib.graalvm>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.grpc>1.16.1</version.lib.grpc>
         <version.lib.guava>25.0-jre</version.lib.guava>
