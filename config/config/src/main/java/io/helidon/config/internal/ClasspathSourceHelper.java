@@ -64,7 +64,7 @@ class ClasspathSourceHelper {
             // we may load classes from http, or from specific loaders, such as in Graal native image
             URI uri = resourceUrl.toURI();
             if ("file".equals(uri.getScheme())) {
-                return Paths.get(resourceUrl.toURI());
+                return Paths.get(uri);
             } else {
                 return null;
             }
