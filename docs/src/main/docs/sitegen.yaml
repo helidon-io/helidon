@@ -57,18 +57,10 @@ backend:
               pathprefix: "/about"
               glyph:
                 type: "icon"
-                value: "weekend"
-              items:
-                - includes:
-                    - "about/*.adoc"
-            - title: "Getting Started"
-              pathprefix: "/getting-started"
-              glyph:
-                type: "icon"
                 value: "assistant"
               items:
                 - includes:
-                    - "getting-started/*.adoc"
+                    - "about/*.adoc"
             - title: "Reactive webserver"
               pathprefix: "/webserver"
               glyph:

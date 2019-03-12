@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,12 +23,13 @@
 Helidon provides a "`Bill Of Materials`" (BOM) to manage dependencies.
 This is a special Maven pom file that provides dependency management.
 
-Using the Helidon BOM allows you to use Helidon component dependencies with a single
- version: the Helidon version.
+Using the Helidon BOM allows you to use Helidon component dependencies with a
+ single version: the Helidon version.
 
 == The Helidon BOM POM
 
-Add the following snippet to your pom.xml file in order to import the Helidon BOM.
+Add the following snippet to your pom.xml file in order to import the Helidon
+ BOM.
 
 [source,xml,subs="attributes+"]
 .Import the Helidon BOM
@@ -48,8 +49,8 @@ Add the following snippet to your pom.xml file in order to import the Helidon BO
 
 == Using Helidon Component Dependencies
 
-Once you have imported the BOM, you can declare dependencies on Helidon components
- without specifying a version.
+Once you have imported the BOM, you can declare dependencies on Helidon
+ components without specifying a version.
 
 [source,xml]
 .Component dependency

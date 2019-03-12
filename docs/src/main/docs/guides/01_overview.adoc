@@ -16,26 +16,26 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Guides Overview
+= Overview
 :description: Helidon guides
 :keywords: helidon, java, microservices, microprofile, guides
 
-== Basics
+== Getting Started
 
 [PILLARS]
 ====
 [CARD]
-.SE REST Web Service
-[link=guides/02_SE_REST_web-service.adoc]
+.Quickstart SE
+[link=guides/02_quickstart-se.adoc]
 --
-Use Helidon SE to create a RESTful web service that accepts HTTP requests.
+Quickly create your first Helidon SE application in under 5 minutes.
 --
 
 [CARD]
-.MP REST Web Service
-[link=guides/03_MP_REST_web-service.adoc]
+.Quickstart MP
+[link=guides/03_quickstart-mp.adoc]
 --
-Use Helidon MP to create a JAX-RS RESTful web service.
+Quickly create your first Helidon MP application in under 5 minutes.
 --
 ====
 
@@ -45,8 +45,16 @@ Use Helidon MP to create a JAX-RS RESTful web service.
 ====
 [CARD]
 .Create Docker Images
-[link=guides/05_Dockerfile.adoc]
+[link=guides/04_dockerfile.adoc]
 --
-Package your application and the necessary runtime dependencies as a Docker image that also contains the Java runtime.
+Learn how to package your application and the necessary runtime dependencies as
+ a Docker image.
+--
+
+[CARD]
+.Build Container Images with Jib
+[link=guides/05_jib.adoc]
+--
+Learn how to use Jib to create a container image without Docker.
 --
 ====

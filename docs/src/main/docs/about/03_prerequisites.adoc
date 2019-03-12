@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can
 
 The following list shows the minimum versions.
 
-//[role="flex, sm7, md6, lg5"]
 [role="flex, sm7"]
 |=======
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}8] or http://jdk.java.net[Open{nbsp}JDK{nbsp}8] | {nbsp}
@@ -63,27 +62,7 @@ export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
 export JAVA_HOME=/usr/lib/jvm/jdk-8
 ----
 
-/////////////////////////////////////////////////////////////////////////////
-Since we are using docker build, these don't need to be set
-== Setting MAVEN_OPTS
-
-The base example used throughout the documentation supports building docker images
-using Maven. In order for this to work with Java 9 you must set some options.
-Note that these options only work with Java 9. If you do not plan on generating a docker
-image then you can skip this section.
-
-[source,bash]
-.Setting `MAVEN_OPTS`
-----
-export MAVEN_OPTS="--add-modules java.xml.bind \
-    --add-opens java.base/java.lang=ALL-UNNAMED \
-    --add-opens java.xml.bind/javax.xml.bind=ALL-UNNAMED \
-    --add-opens java.activation/javax.activation=ALL-UNNAMED \
-    -Xmx1024M"
-----
-/////////////////////////////////////////////////////////////////////////////
-
 == Try the Quickstart Examples
 
 Now you are ready to try the
-<<getting-started/02_base-example.adoc#Prerequisites,Quickstart Examples>>.
+ <<guides/01_overview.adoc#_getting_started,Quickstart Examples>>.

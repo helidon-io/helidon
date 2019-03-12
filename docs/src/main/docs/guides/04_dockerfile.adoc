@@ -1,0 +1,216 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Creating Docker Images 
+:description: Helidon Docker Guide
+:keywords: helidon, guide, docker
+:helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
+:quickstart-example: {helidon-tag}/examples/quickstarts/helidon-quickstart-se
+:docker-multi-stage-url: https://docs.docker.com/develop/develop-images/multistage-build/
+:openjdk-docker-217: https://github.com/docker-library/openjdk/issues/217
+
+This guide describes how to create a Docker image for your Helidon
+ application, using a Java 8 base image or a custom Java 11 JRE built with
+ `jlink`.
+
+== What You Need
+
+|===
+|About 10 minutes
+| <<getting-started/03_prerequisites.adoc,Helidon Prerequisites>>
+|You'll also need Java 11 if you want to create custom JRE's using `jlink`
+|===
+
+== Java Packaging
+
+The Helidon team recommends setting-up the class-path inside the
+ `META-INF/MANIFEST.MF` file with the `Class-Path` entry pointing to dependency
+ jar files in a co-located `lib` directory. See the Maven and Gradle
+ link:{quickstart-example}[examples] for more details on how to package your
+ Helidon application.
+
+This approach is a good fit for Docker images:
+
+* the application code and dependencies can be separate image layers.
+* the image layer containing your dependencies is re-built only when
+ dependencies are updated.
+* the deployment environment(s) pull the images layer containing your
+ dependencies only when changed.
+
+[NOTE]
+.Why no fat jars?
+====
+Fat Jars are jar files that contain the application and its dependencies ; they
+ are not optimal for Docker images as it results in a single image layer.
+====
+
+== Creating a Java 8 Based Docker Image
+
+This section describes the Dockerfile provided by the
+ <<getting-started/02_base-example.adoc, quickstarts>>.
+
+The Dockerfile is located at `src/main/docker/Dockerfile` and contains the
+ following:
+
+[source,yaml]
+----
+FROM openjdk:8-jre-slim #<1>
+
+RUN mkdir /app
+COPY libs /app/libs #<2>
+COPY ${project.artifactId}.jar /app #<3>
+
+CMD ["java", "-jar", "/app/${project.artifactId}.jar"] #<4>
+----
+<1> The base image is the Java 8 JRE image provided by the OpenJDK project.
+<2> First, the application dependencies are copied to `/app`.
+<3> Then, the application jar file is copied to `/app`.
+<4> The command to start the application.
+
+[IMPORTANT]
+.Incremental build
+====
+When rebuilding an image Docker rebuilds from the first layer that is
+ effectively changed. Copying the application jar file after the libraries
+ ensures that Docker does not rebuild the prior layers.
+====
+
+[NOTE]
+.What is ${project.artifactId}?
+====
+It's a Maven property. The file above is processed during the Maven build, a new
+ file is created under the target directory and the property value is expanded.
+====
+
+[source,bash]
+.Build the project
+----
+mvn package
+----
+
+[source,bash]
+.Build the Docker image
+----
+docker build -t quickstart-se target
+----
+
+[source,bash]
+.Run the docker container
+----
+docker run --rm -p 8080:8080 quickstart-se:latest
+----
+
+[source,bash]
+.Ping the application
+----
+curl -X GET http://localhost:8080/greet
+----
+
+== Creating a Docker Image with a Custom JRE
+
+This section describes how to build an image with a custom Java 11 JRE using
+ `jlink`.
+
+Replace `src/main/docker/Dockerfile` with the following:
+
+[source,yaml]
+----
+# Multistage Docker build. <1>
+# Stage 1: Build custom Java 11 JRE and put it in /var/tmp/myjre <2>
+FROM openjdk:11-slim AS myjre
+RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \
+     "--add-modules", "java.base,java.logging,java.sql,java.desktop,java.management", \
+     "--output", "/var/tmp/myjre"] # <3>
+
+# Work around for https://github.com/docker-library/openjdk/issues/217 <4>
+RUN [ "apt", "update"]
+RUN [ "apt-get", "install", "-y", "binutils"]
+RUN ["strip", "-p", "--strip-unneeded", "/var/tmp/myjre/lib/server/libjvm.so"]
+# End work-around
+
+# Stage 2: Build application image using JRE from Stage 1 <5>
+FROM debian:sid-slim # <6>
+COPY --from=myjre /var/tmp/myjre /opt/jre # <7>
+ENV PATH=$PATH:/opt/jre/bin
+
+RUN mkdir /app
+COPY libs /app/libs
+COPY ${project.artifactId}.jar /app
+
+CMD ["java", "-jar", "/app/${project.artifactId}.jar"]
+----
+<1> This is a multi-stage Docker build. See more info
+ link:{docker-multi-stage-url}[here]
+<2> The first stage that creates our custom JRE.
+<3> The modules listed in this example are for Helidon SE. See below for
+ Helidon MP.
+<4> This is a work-around for {openjdk-docker-217}.
+<5> The final stage that creates the image for our application.
+<6> Use `debian:sid-slim` to match the base image of `openjdk:11-slim`
+<7> Copy the JRE from the image of the first stage `myjre`
+
+[source,bash]
+.Process the new Dockerfile
+----
+mvn process-resources
+----
+
+[source,bash]
+.Build the Docker image
+----
+docker build -t java11-quickstart-se target
+----
+
+[source,bash]
+.Run the docker container
+----
+docker run --rm -p 8080:8080 java11-quickstart-se:latest
+----
+
+[source,bash]
+.Ping the application
+----
+curl -X GET http://localhost:8080/greet
+----
+
+[source,bash]
+.Take a look at the image size
+----
+docker images java11-quickstart-se:latest
+----
+
+[source,bash]
+----
+REPOSITORY             TAG        IMAGE ID         CREATED             SIZE
+java11-quickstart-se   latest     f07a7b8bda78     About a minute ago  136MB
+----
+
+NOTE: ~140MB is less than the pre-built OpenJDK slim JRE images. Results might
+ differ a bit depending on your platform.
+
+=== What about Helidon MP?
+
+For Helidon MP you need to add a couple more modules to the `jlink` command:
+
+[source,yaml,subs="verbatim,attributes"]
+----
+RUN ["jlink", "--compress=2", "--strip-debug", "--no-header-files", \
+     "--add-modules", \
+     "java.base,java.logging,java.sql,java.desktop,java.management,java.naming,jdk.unsupported", \
+     "--output", "/var/tmp/myjre"]
+----

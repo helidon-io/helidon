@@ -44,7 +44,6 @@
         <module>microprofile</module>
         <module>todo-app</module>
         <module>quickstarts</module>
-        <module>guides</module>
         <module>health</module>
     </modules>
 
@@ -61,39 +60,4 @@
             </plugins>
         </pluginManagement>
     </build>
-
-    <profiles>
-        <profile>
-            <id>integrations</id>
-            <modules>
-                <module>integrations</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>adoc-check</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>sitegen-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>check-adoc</id>
-                                <configuration>
-                                    <includes>
-                                        <include>README.adoc</include>
-                                    </includes>
-                                    <outputDirectory>${project.build.directory}/tmp/adoc</outputDirectory>
-                                    <check>true</check>
-                                </configuration>
-                                <goals>
-                                    <goal>preprocess-adoc</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

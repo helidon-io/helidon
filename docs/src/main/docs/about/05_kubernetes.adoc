@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ For development it's often convenient to run Kubernetes on your desktop.
 Two popular ways to do this are with
 https://kubernetes.io/docs/getting-started-guides/minikube/[Kubernetes Minikube]
 or
-https://docs.docker.com/docker-for-mac/kubernetes/[Kubernetes support in Docker for Desktop].
+https://docs.docker.com/docker-for-mac/kubernetes/[Kubernetes support in Docker
+ for Desktop].
 
 In this guide we'll use Docker for Desktop.
 
@@ -41,7 +42,8 @@ To use the Kubernetes support you'll want to get the Edge Channel installer.
 Enable
 https://docs.docker.com/docker-for-mac/#kubernetes[Kubernetes Support for Mac]
 or
-https://docs.docker.com/docker-for-windows/#kubernetes[Kubernetes Support for Windows].
+https://docs.docker.com/docker-for-windows/#kubernetes[Kubernetes Support for
+ Windows].
 
 Once Kubernetes installation is complete, make sure you have your context
 set correctly to use docker-for-desktop.
@@ -55,5 +57,3 @@ kubectl cluster-info
 kubectl version --short
 kubectl get nodes
 ----
-
-== Continue with <<getting-started/02_base-example.adoc#deploy-to-k8s,the quickstart example>>
