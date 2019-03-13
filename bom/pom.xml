@@ -397,6 +397,11 @@
                 <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.graal</groupId>
+                <artifactId>helidon-graal-native-image-extension</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
