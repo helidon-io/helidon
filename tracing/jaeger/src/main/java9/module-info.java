@@ -15,7 +15,7 @@
  */
 
 /**
- * Zipkin tracing support.
+ * Jaeger tracing support.
  */
 module io.helidon.tracing.jaeger {
     requires io.helidon.common;

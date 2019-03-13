@@ -16,31 +16,31 @@
 
 # see https://github.com/jaegertracing/jaeger-client-java/blob/master/jaeger-core/README.md
 tracing:
+  jaeger-very-bad:
   jaeger-defaults:
     service: "helidon-service"
-  jager-disabled:
-    enabled: false
+  jaeger-disabled:
     service: "helidon-service"
-  jaeger-very-bad:
-  jaeger-full-udp:
+    enabled: false
+  jaeger-udp:
     service: "udp-service" # JAEGER_SERVICE_NAME - ignored by Helidon
     protocol: "udp"        # if udp, AGENT is used
     host: "192.168.1.2"    # JAEGER_AGENT_HOST
     port: 14268            # JAEGER_AGENT_PORT
   jaeger-full-http:
-    service: "helidon-service"
-    protocol: "http"      # JAEGER_ENDPOINT (if not udp, http is expected and endpoint is filled)
-    host: "localhost"     # JAEGER_ENDPOINT
-    port: 14268           # JAEGER_ENDPOINT
-    path: "/api/traces"   # JAEGER_ENDPOINT
+    service: "helidon-full-http"
+    protocol: "https"     # JAEGER_ENDPOINT (if not udp, http is expected and endpoint is filled)
+    host: "192.168.1.3"   # JAEGER_ENDPOINT
+    port: 14240           # JAEGER_ENDPOINT
+    path: "/api/traces/mine"   # JAEGER_ENDPOINT
     token: "token"        # JAEGER_AUTH_TOKEN
-    username:  "user"         # JAEGER_USER
+    username:  "user"     # JAEGER_USER
     password: "pass"      # JAEGER_PASSWORD
     propagation: "jaeger" # JAEGER_PROPAGATION either "jaeger" or "b3"
-    log-spans: true       # JAEGER_REPORTER_LOG_SPANS
-    max-queue-size: 1024  # JAEGER_REPORTER_MAX_QUEUE_SIZE
-    flush-interval-ms: 10000 # JAEGER_REPORTER_FLUSH_INTERVAL
-    sampler-type: "probabilistic"      # JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
+    log-spans: false      # JAEGER_REPORTER_LOG_SPANS
+    max-queue-size: 42    # JAEGER_REPORTER_MAX_QUEUE_SIZE
+    flush-interval-ms: 10001 # JAEGER_REPORTER_FLUSH_INTERVAL
+    sampler-type: "remote"# JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
     sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
     sampler-manager: "localhost:47877" # JAEGER_SAMPLER_MANAGER_HOST_PORT
     tags:
@@ -52,4 +52,6 @@ tracing:
     int-tags:
       tag5: 145           # JAEGER_TAGS
       tag6: 741           # JAEGER_TAGS
-
+  jaeger-propagations:
+    service: "helidon-propagations"
+    propagation: ["jaeger", "b3"]

@@ -66,6 +66,14 @@ class TracerBuilderTest {
         assertThat(tracer, instanceOf(NoopTracer.class));
     }
 
+    @Test
+    void testCorrectReturnType() {
+        Tracer tracer = TracerBuilder.create(Config.empty())
+                .build();
+
+        assertThat(tracer, instanceOf(NoopTracer.class));
+    }
+
 
     @Test
     void testDefaultMethods() {

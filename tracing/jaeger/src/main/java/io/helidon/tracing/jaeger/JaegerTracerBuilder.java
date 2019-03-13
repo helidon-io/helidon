@@ -178,10 +178,10 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     }
 
     /**
-     * Get a Zipkin {@link io.opentracing.Tracer} builder for processing tracing data of a service with a given name.
+     * Get a Jaeger {@link io.opentracing.Tracer} builder for processing tracing data of a service with a given name.
      *
      * @param serviceName name of the service that will be using the tracer.
-     * @return {@code Tracer} builder for Zipkin.
+     * @return {@code Tracer} builder for Jaeger.
      */
     public static JaegerTracerBuilder forService(String serviceName) {
         return create()
@@ -297,6 +297,10 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     @Override
     public JaegerTracerBuilder config(Config config) {
         config.get("service").asString().ifPresent(this::serviceName);
+        if (null == serviceName) {
+            throw new IllegalArgumentException("Configuration must at least contain the 'service' key");
+        }
+
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
         config.get("host").asString().ifPresent(this::collectorHost);
         config.get("port").asInt().ifPresent(this::collectorPort);
@@ -423,7 +427,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     }
 
     /**
-     * Builds the {@link io.opentracing.Tracer} for Zipkin based on the configured parameters.
+     * Builds the {@link io.opentracing.Tracer} for Jaeger based on the configured parameters.
      *
      * @return the tracer
      */
@@ -434,10 +438,14 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
                                        + "configuration using key \"service\"");
 
         if (!enabled) {
-            LOGGER.info("Zipkin Tracer is explicitly disabled.");
+            LOGGER.info("Jaeger Tracer is explicitly disabled.");
             return NoopTracerFactory.create();
         }
 
+        return jaegerConfig().getTracer();
+    }
+
+    Configuration jaegerConfig() {
         /*
          * Preload from environment, then override configured values
          */
@@ -460,6 +468,9 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
             }
             if (null == path) {
                 path = DEFAULT_HTTP_PATH;
+            }
+            if (null == protocol) {
+                protocol = "http";
             }
             sender.withEndpoint(protocol + "://" + host + ":" + port + path);
         } else if ("udp".equals(protocol)) {
@@ -521,7 +532,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
             config.withCodec(codec);
         }
 
-        return config.getTracer();
+        return config;
     }
 
     Map<String, String> tags() {
@@ -588,7 +599,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
         return samplerManager;
     }
 
-    boolean isenabled() {
+    boolean isEnabled() {
         return enabled;
     }
 
@@ -604,7 +615,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
         this.reporterFlushIntervalMillis = aLong;
     }
 
-    private enum SamplerType {
+    enum SamplerType {
         CONSTANT("constant"),
         PROBABILISTIC("probabilistic"),
         RATE_LIMITING("ratelimiting"),
