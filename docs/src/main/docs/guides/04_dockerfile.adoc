@@ -32,7 +32,7 @@ This guide describes how to create a Docker image for your Helidon
 
 |===
 |About 10 minutes
-| <<getting-started/03_prerequisites.adoc,Helidon Prerequisites>>
+| <<about/03_prerequisites.adoc,Helidon Prerequisites>>
 |You'll also need Java 11 if you want to create custom JRE's using `jlink`
 |===
 

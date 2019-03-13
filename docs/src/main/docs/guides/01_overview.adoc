@@ -57,4 +57,12 @@ Learn how to package your application and the necessary runtime dependencies as
 --
 Learn how to use Jib to create a container image without Docker.
 --
+
+[CARD]
+.Deploying to OKE
+[link=guides/06_Oracle_Kubernetes.adoc]
+--
+Learn how to deploy your application to Oracle Cloud Infrastructure Container
+ Engine for Kubernetes (OKE).
+--
 ====
