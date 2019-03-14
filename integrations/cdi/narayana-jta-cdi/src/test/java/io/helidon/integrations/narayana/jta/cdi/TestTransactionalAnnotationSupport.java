@@ -68,12 +68,13 @@ public class TestTransactionalAnnotationSupport {
       this.cdiContainer.close();
     }
   }
-
-  private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
-                         final TestTransactionalAnnotationSupport self)
+  
+  private static void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
+                                final TestTransactionalAnnotationSupport self)
     throws SystemException {
+    assertNotNull(event);
     assertNotNull(self);
-    self.frobnicate();
+    self.doSomethingTransactional();
   }
 
   private void onBeginningOfTransactionScope(@Observes @Initialized(TransactionScoped.class) final Object event) {
@@ -81,16 +82,17 @@ public class TestTransactionalAnnotationSupport {
     this.transactionScopeStarted = true;
   }
 
-  @Transactional
-  public void frobnicate() throws SystemException {
+  @Transactional(Transactional.TxType.REQUIRED)
+  void doSomethingTransactional() throws SystemException {
     assertTrue(this.transactionScopeStarted);
-    assertNotNull(this.transaction);
     assertNotNull(this.userTransaction);
+    assertEquals(Status.STATUS_ACTIVE, this.userTransaction.getStatus());
+    assertNotNull(this.transaction);
     assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
   }
 
   @Test
-  void testSpike() {
+  void testTransactionalAnnotationSupport() {
 
   }
   
