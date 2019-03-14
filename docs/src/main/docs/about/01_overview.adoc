@@ -30,6 +30,13 @@
 --
 Follow step-by-step guides to build your applications.
 --
+
+[CARD]
+.Javadocs
+[icon=library_books,link=apidocs/index.html?overview-summary.html,link-type=url]
+--
+Browse the Helidon Javadocs.
+--
 ====
 
 == Components
