@@ -60,4 +60,14 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>integrations</id>
+            <modules>
+                <module>integrations</module>
+            </modules>
+        </profile>
+    </profiles>
+
 </project>
