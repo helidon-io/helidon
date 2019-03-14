@@ -15,7 +15,7 @@ these examples we recommend checking out from a released tag. For example:
 ```
 git clone git@github.com:oracle/helidon.git
 cd helidon
-git checkout tags/0.10.5
+git checkout tags/1.0.0
 ```
 
 Our examples are Maven projects and can be built and run with
