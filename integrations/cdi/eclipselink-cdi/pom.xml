@@ -26,16 +26,10 @@
         <artifactId>helidon-integrations-cdi-project</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
-    <name>Helidon CDI Integrations Narayana JTA Weld</name>
-
-    <properties>
-        <!-- maven-javadoc-plugin property -->
-        <show>package</show>
-    </properties>
+    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <name>Helidon CDI Integrations Eclipselink</name>
 
     <dependencies>
-
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -48,11 +42,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.weld.se</groupId>
-            <artifactId>weld-se-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
@@ -60,45 +49,47 @@
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-jta-narayana</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <!--
-            The Weld module that provides transactional event
-            notification and the CDI-mandated UserTransaction
-            bean.
-        -->
-        <dependency>
-            <groupId>org.jboss.weld.module</groupId>
-            <artifactId>weld-jta</artifactId>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
             <scope>runtime</scope>
         </dependency>
 
         <!-- Provided-scoped dependencies. -->
-        <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <!-- Compile-scoped dependencies. -->
         <dependency>
-            <groupId>org.jboss.narayana.jta</groupId>
-            <artifactId>cdi</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld</groupId>
-            <artifactId>weld-spi</artifactId>
-            <scope>compile</scope>
+            <groupId>javax.transaction</groupId>
+            <artifactId>javax.transaction-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>org.eclipse.persistence.jpa</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jboss.jandex</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                        <goals>
+                            <goal>jandex</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

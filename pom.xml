@@ -62,7 +62,7 @@
             <organization>Oracle Corporation</organization>
         </developer>
         <developer>
-            <name>Laird Jarrett Nelson</name>
+            <name>Laird Nelson</name>
             <email>laird.nelson@oracle.com</email>
             <organization>Oracle Corporation</organization>
         </developer>
@@ -81,6 +81,7 @@
     </scm>
 
     <properties>
+        <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -106,6 +107,7 @@
         <version.lib.brave-opentracing>0.31.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
         <version.lib.checkstyle>7.4</version.lib.checkstyle>
+        <version.lib.eclipselink>2.7.4</version.lib.eclipselink>
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
@@ -119,6 +121,8 @@
         <version.lib.jackson>2.9.4</version.lib.jackson>
         <version.lib.jandex>2.0.4.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
+        <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
+        <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
         <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>2.9.0</version.lib.jedis>
@@ -143,6 +147,7 @@
         <version.lib.oci-java-sdk-objectstorage>1.2.44</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>12.2.0.1</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
+        <version.lib.persistence-api>2.2</version.lib.persistence-api>
         <version.lib.prometheus>0.4.0</version.lib.prometheus>
         <version.lib.protobuf.java>3.5.1</version.lib.protobuf.java>
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
@@ -182,6 +187,7 @@
         <version.plugin.jandex>1.0.5</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.0.0</version.plugin.javadoc>
+        <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -238,6 +244,7 @@
                     <configuration>
                         <links>
                             <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                            <link>http://javax-inject.github.io/javax-inject/api/</link>
                             <link>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</link>
                             <link>https://fasterxml.github.io/jackson-core/javadoc/2.9/</link>
                             <link>https://fasterxml.github.io/jackson-databind/javadoc/2.9/</link>
@@ -251,13 +258,14 @@
                             <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
                             <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
                             <link>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/${version.lib.jsonb-api}</link>
+                            <link>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</link>
+                            <link>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
                             <link>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</link>
-                            <link>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}/</link>
+                            <link>https://www.eclipse.org/eclipselink/api/2.7/</link>
                         </links>
-                        <doclint>all</doclint>
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
@@ -553,6 +561,11 @@
                 <artifactId>sitegen-maven-plugin</artifactId>
                 <extensions>true</extensions>
             </plugin>
+            <plugin>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <version>${version.plugin.jaxb}</version>
+            </plugin>
         </plugins>
     </build>
 
@@ -608,6 +621,16 @@
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${version.lib.jaxb-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>${version.lib.jaxb-core}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${version.lib.jaxb-impl}</version>
             </dependency>
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -977,6 +1000,16 @@
 
             <!-- Integrations related -->
             <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${version.lib.persistence-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.persistence</groupId>
+                <artifactId>javax.persistence-api</artifactId>
+                <version>${version.lib.persistence-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.transaction</groupId>
                 <artifactId>javax.transaction-api</artifactId>
                 <version>${version.lib.transaction-api}</version>
@@ -1016,10 +1049,14 @@
                 <version>${version.lib.jedis}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.persistence</groupId>
+                <artifactId>org.eclipse.persistence.jpa</artifactId>
+                <version>${version.lib.eclipselink}</version>              
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>cdi</artifactId>
                 <version>${version.lib.narayana}</version>
-                <type>jar</type>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.spec.javax.resource</groupId>

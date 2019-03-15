@@ -26,16 +26,14 @@
         <artifactId>helidon-integrations-cdi-project</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
-    <name>Helidon CDI Integrations Narayana JTA Weld</name>
+    <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
+    <name>Helidon CDI Integrations JPA Weld</name>
 
     <properties>
-        <!-- maven-javadoc-plugin property -->
-        <show>package</show>
+      <show>package</show>
     </properties>
 
     <dependencies>
-
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -57,29 +55,53 @@
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-jta-narayana</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-jpa</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
-        <!--
-            The Weld module that provides transactional event
-            notification and the CDI-mandated UserTransaction
-            bean.
-        -->
         <dependency>
-            <groupId>org.jboss.weld.module</groupId>
-            <artifactId>weld-jta</artifactId>
+            <groupId>org.jboss</groupId>
+            <artifactId>jandex</artifactId>
             <scope>runtime</scope>
         </dependency>
 
         <!-- Provided-scoped dependencies. -->
         <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -87,18 +109,41 @@
             <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.transaction</groupId>
+            <artifactId>javax.transaction-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Compile-scoped dependencies. -->
-        <dependency>
-            <groupId>org.jboss.narayana.jta</groupId>
-            <artifactId>cdi</artifactId>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-spi</artifactId>
             <scope>compile</scope>
         </dependency>
-
     </dependencies>
+
+    <build>
+      <plugins>
+            <plugin>
+                <groupId>org.jboss.jandex</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                        <goals>
+                            <goal>jandex</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

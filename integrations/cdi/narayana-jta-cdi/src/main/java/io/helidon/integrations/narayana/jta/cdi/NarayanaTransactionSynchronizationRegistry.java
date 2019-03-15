@@ -34,37 +34,39 @@ import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 @ApplicationScoped
 class NarayanaTransactionSynchronizationRegistry extends DelegatingTransactionSynchronizationRegistry {
 
-  /**
-   * Creates a new, <strong>nonfunctional</strong> {@link
-   * NarayanaTransactionSynchronizationRegistry}.
-   *
-   * <p>This constructor exists only to conform with section 3.15 of
-   * the CDI specification.</p>
-   *
-   * @deprecated This constructor exists only to conform with section
-   * 3.15 of the CDI specification; please use the {@link
-   * #NarayanaTransactionSynchronizationRegistry(JTAEnvironmentBean)}
-   * constructor instead.
-   *
-   * @see #NarayanaTransactionSynchronizationRegistry(JTAEnvironmentBean)
-   *
-   * @see <a
-   * href="http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#unproxyable">Section
-   * 3.15 of the CDI 2.0 specification</a>
-   */
-  @Deprecated
-  NarayanaTransactionSynchronizationRegistry() {
-    this(null);
-  }
+    /**
+     * Creates a new, <strong>nonfunctional</strong> {@link
+     * NarayanaTransactionSynchronizationRegistry}.
+     *
+     * <p>This constructor exists only to conform with section 3.15 of
+     * the CDI specification.</p>
+     *
+     * @deprecated This constructor exists only to conform with
+     * section 3.15 of the CDI specification; please use the {@link
+     * #NarayanaTransactionSynchronizationRegistry(JTAEnvironmentBean)}
+     * constructor instead.
+     *
+     * @see
+     * #NarayanaTransactionSynchronizationRegistry(JTAEnvironmentBean)
+     *
+     * @see <a
+     * href="http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#unproxyable">Section
+     * 3.15 of the CDI 2.0 specification</a>
+     */
+    @Deprecated
+    NarayanaTransactionSynchronizationRegistry() {
+        this(null);
+    }
 
-  /**
-   * Creates a new {@link NarayanaTransactionSynchronizationRegistry}.
-   *
-   * @see JTAEnvironmentBean#getTransactionSynchronizationRegistry()
-   */
-  @Inject
-  private NarayanaTransactionSynchronizationRegistry(final JTAEnvironmentBean jtaEnvironmentBean) {
-    super(jtaEnvironmentBean == null ? null : jtaEnvironmentBean.getTransactionSynchronizationRegistry());
-  }
+    /**
+     * Creates a new {@link
+     * NarayanaTransactionSynchronizationRegistry}.
+     *
+     * @see JTAEnvironmentBean#getTransactionSynchronizationRegistry()
+     */
+    @Inject
+    private NarayanaTransactionSynchronizationRegistry(final JTAEnvironmentBean jtaEnvironmentBean) {
+        super(jtaEnvironmentBean == null ? null : jtaEnvironmentBean.getTransactionSynchronizationRegistry());
+    }
 
 }

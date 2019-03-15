@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,15 @@
  */
 
 /**
- * CDI integration for the <a
- * href="https://github.com/brettwooldridge/HikariCP/blob/HikariCP-2.7.8/README.md#-hikaricpits-fasterhikari-hikal%C4%93-origin-japanese-light-ray"
- * target="_parent">Hikari connection pool</a>.
+ * Provides classes and interfaces that help to integrate <a
+ * href="https://javaee.github.io/javaee-spec/javadocs/javax/persistence/package-summary.html"
+ * target="_parent">JPA</a> into <a
+ * href="http://weld.cdi-spec.org/">Weld</a>-based CDI 2.0 SE
+ * environments.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
+ * @author <a href="https://about.me/lairdnelson"
+ * target="_parent">Laird Nelson</a>
  *
- * @see
- * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
+ * @see io.helidon.integrations.cdi.jpa.weld.JpaInjectionServices
  */
-package io.helidon.integrations.datasource.hikaricp.cdi;
+package io.helidon.integrations.cdi.jpa.weld;
