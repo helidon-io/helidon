@@ -389,12 +389,22 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jedis</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+                <artifactId>helidon-integrations-cdi-jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -405,6 +415,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
