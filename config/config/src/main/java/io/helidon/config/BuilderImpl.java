@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ import static io.helidon.config.ConfigSources.classpath;
 class BuilderImpl implements Config.Builder {
 
     static final Executor DEFAULT_CHANGES_EXECUTOR = Executors.newCachedThreadPool(new ConfigThreadFactory("config"));
+    private static final List<String> DEFAULT_FILE_EXTENSIONS = Arrays.asList("yaml", "conf", "json", "properties");
 
     private List<ConfigSource> sources;
     private final MapperProviders mapperProviders;
@@ -342,21 +344,36 @@ class BuilderImpl implements Config.Builder {
     // utils
     //
 
-    static ConfigSource defaultConfigSource() {
-        return ConfigSources.create(
-                new UseFirstAvailableConfigSource(
-                        ConfigSources.load(
-                                new UseFirstAvailableConfigSource(
-                                        classpath("meta-config.yaml").optional().build(),
-                                        classpath("meta-config.conf").optional().build(),
-                                        classpath("meta-config.json").optional().build(),
-                                        classpath("meta-config.properties").optional().build()
-                                )).build(),
-                        classpath("application.yaml").optional().build(),
-                        classpath("application.conf").optional().build(),
-                        classpath("application.json").optional().build(),
-                        classpath("application.properties").optional().build()
-                )).build();
+    private static ConfigSource defaultConfigSource() {
+        final List<ConfigSource> sources = new ArrayList<>();
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        final List<ConfigSource> meta = defaultConfigSources(classLoader, "meta-config");
+        if (!meta.isEmpty()) {
+            sources.add(ConfigSources.load(toDefaultConfigSource(meta)).build());
+        }
+        sources.addAll(defaultConfigSources(classLoader, "application"));
+        return ConfigSources.create(toDefaultConfigSource(sources)).build();
+    }
+
+    private static List<ConfigSource> defaultConfigSources(final ClassLoader classLoader, final String baseResourceName) {
+        final List<ConfigSource> sources = new ArrayList<>();
+        for (final String extension : DEFAULT_FILE_EXTENSIONS) {
+            final String resource = baseResourceName + "." + extension;
+            if (classLoader.getResource(resource) != null) {
+                sources.add(classpath(resource).optional().build());
+            }
+        }
+        return sources;
+    }
+
+    private static ConfigSource toDefaultConfigSource(final List<ConfigSource> sources) {
+        if (sources.isEmpty()) {
+            return ConfigSources.empty();
+        } else if (sources.size() == 1) {
+            return sources.get(0);
+        } else {
+            return new UseFirstAvailableConfigSource(sources);
+        }
     }
 
     static List<ConfigParser> buildParsers(boolean servicesEnabled, List<ConfigParser> userDefinedParsers) {
