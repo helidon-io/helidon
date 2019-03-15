@@ -25,17 +25,17 @@
 [PILLARS]
 ====
 [CARD]
-.Getting Started
-[icon=assistant,link=getting-started/02_base-example.adoc]
---
-Quickly create your first application, in under 2 minutes.
---
-
-[CARD]
 .Guides
 [icon=explore,link=guides/01_overview.adoc]
 --
 Follow step-by-step guides to build your applications.
+--
+
+[CARD]
+.Javadocs
+[icon=library_books,link=apidocs/index.html?overview-summary.html,link-type=url]
+--
+Browse the Helidon Javadocs.
 --
 ====
 

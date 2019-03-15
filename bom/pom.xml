@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
@@ -405,6 +405,10 @@
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+                <groupId>io.helidon.integrations.graal</groupId>
+                <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

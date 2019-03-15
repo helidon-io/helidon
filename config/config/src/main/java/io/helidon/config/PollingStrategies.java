@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public final class PollingStrategies {
          * @param modifiers the modifiers to add
          * @return a modified builder instance
          */
-        public FilesystemWatchBuilder modifiers(Modifier ... modifiers){
+        public FilesystemWatchBuilder modifiers(Modifier... modifiers){
             this.modifiers = modifiers;
             return this;
         }

@@ -9,12 +9,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Improvements
 
+### Fixes
+
+## [1.0.1] - 2019-03-13
+
+### Notes
+
+This release brings you GraalVM support in Helidon SE and a variety of
+bug fixes and documentation improvements.
+
+### Improvements
+
+- Add support for GraalVM in Helidon SE
+  [499](https://github.com/oracle/helidon/pull/499)
 - Security: add JWT-Auth configuration to control secure by default
   [465](https://github.com/oracle/helidon/pull/465)
 - Assorted documentation updates
   [418](https://github.com/oracle/helidon/pull/418) 
-  [440](https://github.com/oracle/helidon/pull/440) 
   [424](https://github.com/oracle/helidon/pull/424) 
+  [435](https://github.com/oracle/helidon/pull/435) 
+  [440](https://github.com/oracle/helidon/pull/440) 
+  [448](https://github.com/oracle/helidon/pull/448) 
 
 ### Fixes
 
@@ -209,7 +224,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/1.0.1...HEAD
+[1.0.1]: https://github.com/oracle/helidon/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
 [0.11.1]: https://github.com/oracle/helidon/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/oracle/helidon/compare/0.10.5...0.11.0

@@ -33,7 +33,6 @@ import org.apache.commons.configuration.AbstractConfiguration;
 import org.eclipse.microprofile.metrics.Histogram;
 
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
-
 import static io.helidon.microprofile.faulttolerance.CircuitBreakerHelper.State;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
