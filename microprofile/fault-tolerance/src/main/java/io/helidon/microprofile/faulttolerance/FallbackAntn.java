@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
@@ -58,7 +59,8 @@ public class FallbackAntn extends MethodAntn implements Fallback {
                 final Method fallbackMethod = method.getDeclaringClass().getMethod(methodName,
                         method().getParameterTypes());
                 if (!fallbackMethod.getReturnType().isAssignableFrom(method.getReturnType())
-                        && !method.getReturnType().isAssignableFrom(Future.class)) {        // async
+                        && !method.getReturnType().isAssignableFrom(Future.class)
+                        && !method.getReturnType().isAssignableFrom(CompletionStage.class)) {        // async
                     throw new FaultToleranceDefinitionException("Fallback method return type "
                             + "is invalid: " + fallbackMethod.getReturnType());
                 }

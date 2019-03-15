@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.Dependent;
 
@@ -31,10 +31,10 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 @Dependent
 public class AsynchronousBean {
 
-    private AtomicBoolean called = new AtomicBoolean(false);
+    private boolean called;
 
-    public boolean getCalled() {
-        return called.get();
+    public boolean wasCalled() {
+        return called;
     }
 
     /**
@@ -44,15 +44,20 @@ public class AsynchronousBean {
      */
     @Asynchronous
     public Future<String> async() {
-        called.set(true);
+        called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::async", "success");
         return CompletableFuture.completedFuture("success");
     }
 
+    /**
+     * Async call with fallback.
+     *
+     * @return A future.
+     */
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
     public Future<String> asyncWithFallback() {
-        called.set(true);
+        called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::asyncWithFallback", "failure");
         throw new RuntimeException("Oops");
     }
@@ -68,7 +73,7 @@ public class AsynchronousBean {
      * @return A future.
      */
     public Future<String> notAsync() {
-        called.set(true);
+        called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::notAsync", "success");
         return CompletableFuture.completedFuture("success");
     }
@@ -81,8 +86,45 @@ public class AsynchronousBean {
      */
     @Asynchronous
     public String asyncError() {
-        called.set(true);
+        called = true;
         FaultToleranceTest.printStatus("AsynchronousBean::async", "failure");
         return "failure";
+    }
+
+    /**
+     * Normal asynchronous call using {@link java.util.concurrent.CompletionStage}.
+     *
+     * @return A completion stage.
+     */
+    @Asynchronous
+    public CompletionStage<String> asyncCompletionStage() {
+        called = true;
+        FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletionStage", "success");
+        return CompletableFuture.completedFuture("success");
+    }
+
+    /**
+     * Async call with fallback.
+     *
+     * @return A completion stage.
+     */
+    @Asynchronous
+    @Fallback(fallbackMethod = "onFailure")
+    public CompletionStage<String> asyncCompletionStageWithFallback() {
+        called = true;
+        FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletionStageWithFallback", "failure");
+        throw new RuntimeException("Oops");
+    }
+
+    /**
+     * Normal asynchronous call using {@link java.util.concurrent.CompletableFuture}.
+     *
+     * @return A completable future.
+     */
+    @Asynchronous
+    public CompletableFuture<String> asyncCompletableFuture() {
+        called = true;
+        FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFuture", "success");
+        return CompletableFuture.completedFuture("success");
     }
 }

@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
@@ -90,11 +91,21 @@ class MethodIntrospector {
     private void validate() {
         if (isAsynchronous()) {
             final Class<?> returnType = method.getReturnType();
-            if (!Future.class.isAssignableFrom(returnType)) {
+            if (!Future.class.isAssignableFrom(returnType) && !CompletionStage.class.isAssignableFrom(returnType)) {
                 throw new FaultToleranceDefinitionException("Asynchronous method '" + method.getName()
-                                                            + "' must return Future");
+                                                            + "' must return Future or CompletionStage");
             }
         }
+    }
+
+    /**
+     * Checks if {@code clazz} is assignable from the method's return type.
+     *
+     * @param clazz The class.
+     * @return Outcome of test.
+     */
+    boolean isReturnType(Class<?> clazz) {
+        return clazz.isAssignableFrom(method.getReturnType());
     }
 
     /**

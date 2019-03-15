@@ -18,6 +18,8 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -147,10 +149,26 @@ public class CommandRetrier {
             if (isAsynchronous) {
                 Scheduler scheduler = CommandScheduler.create();
                 AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
-                FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
-                        ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                        : failsafe.get(this::retryExecute));
-                return new FailsafeChainedFuture<>(chainedFuture);
+
+                // Check CompletionStage first to process CompletableFuture here
+                if (introspector.isReturnType(CompletionStage.class)) {
+                    CompletionStage<?> completionStage = (introspector.hasFallback()
+                            ? failsafe.withFallback(fallbackFunction)
+                            .future(() -> (CompletionStage<?>) retryExecute())
+                            : failsafe.future(() -> (CompletionStage<?>) retryExecute()));
+                    return completionStage;
+                }
+
+                // If not, it must be a subtype of Future
+                if (introspector.isReturnType(Future.class)) {
+                    FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
+                            ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                            : failsafe.get(this::retryExecute));
+                    return new FailsafeChainedFuture<>(chainedFuture);
+                }
+
+                // Oops, something went wrong during validation
+                throw new InternalError("Validation failed, return type must be Future or CompletionStage");
             } else {
                 SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
                 return introspector.hasFallback()
