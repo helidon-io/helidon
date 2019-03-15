@@ -17,6 +17,7 @@
 package io.helidon.config.examples.sources;
 
 import io.helidon.config.Config;
+
 import static io.helidon.config.ConfigSources.directory;
 
 /**

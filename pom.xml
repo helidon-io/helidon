@@ -105,7 +105,7 @@
         <version.lib.asciidoctor.diagram>1.5.4.1</version.lib.asciidoctor.diagram>
         <version.lib.brave-opentracing>0.31.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
-        <version.lib.checkstyle>7.4</version.lib.checkstyle>
+        <version.lib.checkstyle>8.18</version.lib.checkstyle>
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.16.0</version.lib.etcd4j>

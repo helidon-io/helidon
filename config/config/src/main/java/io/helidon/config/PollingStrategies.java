@@ -173,7 +173,7 @@ public final class PollingStrategies {
          * @param modifiers the modifiers to add
          * @return a modified builder instance
          */
-        public FilesystemWatchBuilder modifiers(Modifier ... modifiers){
+        public FilesystemWatchBuilder modifiers(Modifier... modifiers){
             this.modifiers = modifiers;
             return this;
         }
