@@ -407,6 +407,7 @@
                 <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${project.version}</version>
