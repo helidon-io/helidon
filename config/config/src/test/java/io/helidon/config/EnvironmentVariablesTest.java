@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.config.internal;
+package io.helidon.config;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import io.helidon.config.EnvironmentVariables;
+
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.internal.EnvironmentVariables.shouldMap;
+import static io.helidon.config.EnvironmentVariables.shouldMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -69,6 +71,44 @@ public class EnvironmentVariablesTest {
     }
 
     @Test
+    public void testShouldNotMap() {
+        assertThat(shouldMap(""), is(false));
+        assertThat(shouldMap("_"), is(false));
+        assertThat(shouldMap("__"), is(false));
+        assertThat(shouldMap("x__y"), is(false));
+        assertThat(shouldMap("_xy"), is(false));
+        assertThat(shouldMap("xy_"), is(false));
+        assertThat(shouldMap("xyz"), is(false));
+    }
+
+    @Test
+    public void testNotMapped() {
+        Map<String, String> env = toMap("", "v",
+                                        "_", "v",
+                                        "__", "v",
+                                        "x__y", "v",
+                                        "_xy", "v",
+                                        "xy_", "v",
+                                        "xyz", "v");
+        Map<String, String> mapped = EnvironmentVariables.expand(env);
+        assertThat(mapped, is(not(nullValue())));
+        assertThat(mapped.size(), is(7));
+        assertThat(mapped, hasEntry("", "v"));
+        assertThat(mapped, hasEntry("_", "v"));
+        assertThat(mapped, hasEntry("__", "v"));
+        assertThat(mapped, hasEntry("x__y", "v"));
+        assertThat(mapped, hasEntry("_xy", "v"));
+        assertThat(mapped, hasEntry("xy_", "v"));
+        assertThat(mapped, hasEntry("xyz", "v"));
+    }
+
+    @Test
+    public void testShouldMap() {
+        assertThat(shouldMap("x_y"), is(true));
+        assertThat(shouldMap("x_dash_y"), is(true));
+    }
+
+    @Test
     public void testCurrentEnvMappings() {
         Map<String, String> env = env();
         int expectedSize = expectedMappedSize(env);
@@ -95,16 +135,5 @@ public class EnvironmentVariablesTest {
         assertThat(mapped, hasEntry("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "16"));
         assertThat(mapped, hasEntry("SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE", "16"));
         assertThat(mapped, hasEntry("server.executor-service.max-pool-size", "16"));
-    }
-
-    @Test
-    public void testNotMapped() {
-        Map<String, String> env = toMap("k", "v", "_k", "_v", "", "");
-        Map<String, String> mapped = EnvironmentVariables.expand(env);
-        assertThat(mapped, is(not(nullValue())));
-        assertThat(mapped.size(), is(3));
-        assertThat(mapped, hasEntry("k", "v"));
-        assertThat(mapped, hasEntry("_k", "_v"));
-        assertThat(mapped, hasEntry("", ""));
     }
 }

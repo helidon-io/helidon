@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.config.internal.EnvironmentVariables;
+import io.helidon.config.EnvironmentVariables;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 

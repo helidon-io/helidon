@@ -38,7 +38,6 @@ import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ClasspathConfigSource;
 import io.helidon.config.internal.ConfigUtils;
 import io.helidon.config.internal.DirectoryConfigSource;
-import io.helidon.config.internal.EnvironmentVariables;
 import io.helidon.config.internal.FileConfigSource;
 import io.helidon.config.internal.MapConfigSource;
 import io.helidon.config.internal.PrefixedConfigSource;
