@@ -20,7 +20,6 @@ import java.util.Map;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.CollectionsHelper.mapOf;
@@ -30,31 +29,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Unit test for {@link MpcSourceEnvironmentVariables}.
  */
 public class MpcSourceEnvironmentVariablesTest {
-    private static ConfigSource APP_SOURCE;
-
-    @BeforeAll
-    static void initClass() {
-        final Map<String, String> appValues = mapOf("app.key", "app-value",
-                                                    "com.acme.size", "app-value",
-                                                    "server.executor-service.max-pool-size", "app-value");
-
-        final ConfigSource appSource = new ConfigSource() {
-            @Override
-            public Map<String, String> getProperties() {
-                return appValues;
-            }
-
-            @Override
-            public String getValue(String propertyName) {
-                return appValues.get(propertyName);
-            }
-
-            @Override
-            public String getName() {
-                return "helidon:unit-test";
-            }
-        };
-    }
 
     @Test
     public void testEnvironmentVariablesSourceMappings() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ class MpConfigTest {
     @BeforeAll
     static void initClass() {
         Map<String, String> properties = CollectionsHelper.mapOf(
-            "boolean", "true",
-            "array", "a,b,c,d",
-            "int", "14"
+                "boolean", "true",
+                "array", "a,b,c,d",
+                "int", "14"
         );
 
         ConfigSource myConfigSource = new ConfigSource() {
@@ -65,15 +65,15 @@ class MpConfigTest {
         };
 
         mpConfig = (MpConfig) new MpConfigBuilder()
-                                  .addDefaultSources()
-                                  .withSources(myConfigSource)
-                                  .build();
+                .addDefaultSources()
+                .withSources(myConfigSource)
+                .build();
     }
 
     @Test
     void testBooleans() {
         MpConfig mpConfig = (MpConfig) new MpConfigBuilder()
-                                           .build();
+                .build();
 
         assertAll("Boolean conversions",
                   () -> assertThat("true", mpConfig.convert(Boolean.class, "true"), is(true)),
