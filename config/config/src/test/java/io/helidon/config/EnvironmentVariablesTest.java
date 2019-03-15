@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import io.helidon.config.EnvironmentVariables;
-
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.EnvironmentVariables.shouldMap;
