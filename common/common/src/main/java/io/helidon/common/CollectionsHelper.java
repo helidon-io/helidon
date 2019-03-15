@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public abstract class CollectionsHelper {
      *
      */
     @SafeVarargs
-    public static <T> List<T> listOf(T ... elts){
+    public static <T> List<T> listOf(T... elts){
         List<T> list = new ArrayList<>();
         list.addAll(Arrays.asList(elts));
         return Collections.unmodifiableList(list);
@@ -76,7 +76,7 @@ public abstract class CollectionsHelper {
      * @return a {@code Set} containing the specified elements
      */
     @SafeVarargs
-    public static <T> Set<T> setOf(T ... elts){
+    public static <T> Set<T> setOf(T... elts){
         Set<T> set = new HashSet<>();
         set.addAll(Arrays.asList(elts));
         return Collections.unmodifiableSet(set);
