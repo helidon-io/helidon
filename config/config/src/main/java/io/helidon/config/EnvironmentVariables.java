@@ -74,11 +74,11 @@ public class EnvironmentVariables {
      */
     public static boolean shouldMap(final String name) {
         final int length = name.length();
-        return length > 2 &&
-               name.charAt(0) != UNDERSCORE_CHAR &&
-               name.charAt(length - 1) != UNDERSCORE_CHAR &&
-               name.contains(UNDERSCORE) &&
-               !name.contains(DOUBLE_UNDERSCORE);
+        return length > 2
+               && name.charAt(0) != UNDERSCORE_CHAR
+               && name.charAt(length - 1) != UNDERSCORE_CHAR
+               && name.contains(UNDERSCORE)
+               && !name.contains(DOUBLE_UNDERSCORE);
     }
 
     /**
