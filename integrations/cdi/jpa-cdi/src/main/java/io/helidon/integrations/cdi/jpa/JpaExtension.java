@@ -131,6 +131,17 @@ public class JpaExtension implements Extension {
      */
 
 
+    /**
+     * Observes the {@link ProcessAnnotatedType} event to look for
+     * types that have {@link DataSourceDefinition} annotations on
+     * them.
+     *
+     * @param event the {@link ProcessAnnotatedType} event; may be
+     * {@code null} in which case no action will be taken
+     *
+     * @param beanManager the current {@link BeanManager}; may be
+     * {@code null} in which case no action will be taken
+     */
     private void discoverDataSourceDefinitions(@Observes
                                                @WithAnnotations({
                                                    DataSourceDefinition.class
