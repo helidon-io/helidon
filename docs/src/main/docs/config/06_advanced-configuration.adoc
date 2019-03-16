@@ -41,17 +41,17 @@ environment variable names, the lowercase mapping means that `"foo_bar"` and
 `"foo_bar_dash_baz"` are equally valid.)
 
 
-One use case for this mapping is containers, where passing environment variables
-at launch is common and config overrides are desirable. Scripts (as entry points
-or standalone) that solve the mapping problem via explicit conversion of variables
-to system properties can also be simplified.
+One use case for this mapping is config overrides in containers, where passing
+environment variables directly or via Kubernetes Secrets/ConfigMaps is common.
+Scripts that solve the mapping problem via explicit conversion of variables to
+system properties can also be simplified.
 
 Variants are produced for any environment variable name that matches _all_ of
 the following:
 
-<1> does not begin or end with a `"_"`
+<1> does not begin or end with a `'_'` character
 <2> does not contain `"__"`
-<3> contains one or more `"_"` characters
+<3> contains one or more `'_'` characters
 
 For each such name, two variants are added with the names mapped as follows:
 
@@ -59,15 +59,15 @@ For each such name, two variants are added with the names mapped as follows:
 `"SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE"` becomes
 `"SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"`.
 
-<2> Replace `"_"` with `"."` and add as a variant, e.g. `"com_ACME_size"` is
+<2> Replace `'_'` with `'.'` and add as a variant, e.g. `"com_ACME_size"` is
 added as `"com.ACME.size"` and `"SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"` is
 added as `"SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"`.
 
 <3> Convert the result of step 2 to lowercase and add as a variant, e.g.
 `"com.ACME.size"` is added as `"com.acme.size"` and
 `"SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"` is added as
-`"server.executor-service.max-pool-size"`. (Note that if the name is already
-lowercase, only 1 variant remains.)
+`"server.executor-service.max-pool-size"`. (Note that only 1 variant remains
+if the name is already lowercase.)
 
 === Directory Config Source
 
