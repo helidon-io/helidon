@@ -39,62 +39,62 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ApplicationScoped
 @DataSourceDefinition(
-  name = "test",
-  className = "org.h2.jdbcx.JdbcDataSource",
-  url = "jdbc:h2:mem:test",
-  serverName = "",
-  properties = {
-    "user=sa"
-  }
+    name = "test",
+    className = "org.h2.jdbcx.JdbcDataSource",
+    url = "jdbc:h2:mem:test",
+    serverName = "",
+    properties = {
+        "user=sa"
+    }
 )
 public class TestIntegration {
 
-  private SeContainer cdiContainer;
+    private SeContainer cdiContainer;
 
-  @Inject
-  private Transaction transaction;
+    @Inject
+    private Transaction transaction;
 
-  @PersistenceContext
-  private EntityManager entityManager;
+    @PersistenceContext
+    private EntityManager entityManager;
   
-  TestIntegration() {
-    super();
-  }
-
-  @BeforeEach
-  void startCdiContainer() {
-    final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
-      .addBeanClasses(TestIntegration.class);
-    assertNotNull(initializer);
-    this.cdiContainer = initializer.initialize();
-  }
-  
-  @AfterEach
-  void shutDownCdiContainer() {
-    if (this.cdiContainer != null) {
-      this.cdiContainer.close();
+    TestIntegration() {
+        super();
     }
-  }
 
-  private static void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
-                                final TestIntegration self)
-    throws SystemException {
-    assertNotNull(event);
-    assertNotNull(self);
-    self.doSomethingTransactional();
-  }
+    @BeforeEach
+    void startCdiContainer() {
+        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+            .addBeanClasses(TestIntegration.class);
+        assertNotNull(initializer);
+        this.cdiContainer = initializer.initialize();
+    }
+  
+    @AfterEach
+    void shutDownCdiContainer() {
+        if (this.cdiContainer != null) {
+            this.cdiContainer.close();
+        }
+    }
 
-  @Transactional(Transactional.TxType.REQUIRED)
-  void doSomethingTransactional() throws SystemException {
-    assertNotNull(this.transaction);
-    assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
-    assertNotNull(this.entityManager);
-    assertTrue(this.entityManager.isJoinedToTransaction());
-  }
+    private static void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
+                                  final TestIntegration self)
+        throws SystemException {
+        assertNotNull(event);
+        assertNotNull(self);
+        self.doSomethingTransactional();
+    }
 
-  @Test
-  void testIntegration() {
+    @Transactional(Transactional.TxType.REQUIRED)
+    void doSomethingTransactional() throws SystemException {
+        assertNotNull(this.transaction);
+        assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
+        assertNotNull(this.entityManager);
+        assertTrue(this.entityManager.isJoinedToTransaction());
+    }
 
-  }
+    @Test
+    void testIntegration() {
+
+    }
 
 }
