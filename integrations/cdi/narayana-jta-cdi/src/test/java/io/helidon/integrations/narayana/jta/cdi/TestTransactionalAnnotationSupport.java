@@ -40,60 +40,60 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ApplicationScoped
 public class TestTransactionalAnnotationSupport {
 
-  private SeContainer cdiContainer;
+    private SeContainer cdiContainer;
 
-  private boolean transactionScopeStarted;
+    private boolean transactionScopeStarted;
 
-  @Inject
-  private Transaction transaction;
+    @Inject
+    private Transaction transaction;
 
-  @Inject
-  private UserTransaction userTransaction;
+    @Inject
+    private UserTransaction userTransaction;
 
-  TestTransactionalAnnotationSupport() {
-    super();
-  }
-
-  @BeforeEach
-  void startCdiContainer() {
-    final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
-      .addBeanClasses(TestTransactionalAnnotationSupport.class);
-    assertNotNull(initializer);
-    this.cdiContainer = initializer.initialize();
-  }
-  
-  @AfterEach
-  void shutDownCdiContainer() {
-    if (this.cdiContainer != null) {
-      this.cdiContainer.close();
+    TestTransactionalAnnotationSupport() {
+        super();
     }
-  }
+
+    @BeforeEach
+    void startCdiContainer() {
+        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+            .addBeanClasses(TestTransactionalAnnotationSupport.class);
+        assertNotNull(initializer);
+        this.cdiContainer = initializer.initialize();
+    }
   
-  private static void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
-                                final TestTransactionalAnnotationSupport self)
-    throws SystemException {
-    assertNotNull(event);
-    assertNotNull(self);
-    self.doSomethingTransactional();
-  }
+    @AfterEach
+    void shutDownCdiContainer() {
+        if (this.cdiContainer != null) {
+            this.cdiContainer.close();
+        }
+    }
+  
+    private static void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
+                                  final TestTransactionalAnnotationSupport self)
+        throws SystemException {
+        assertNotNull(event);
+        assertNotNull(self);
+        self.doSomethingTransactional();
+    }
 
-  private void onBeginningOfTransactionScope(@Observes @Initialized(TransactionScoped.class) final Object event) {
-    assertTrue(event instanceof Transaction);
-    this.transactionScopeStarted = true;
-  }
+    private void onBeginningOfTransactionScope(@Observes @Initialized(TransactionScoped.class) final Object event) {
+        assertTrue(event instanceof Transaction);
+        this.transactionScopeStarted = true;
+    }
 
-  @Transactional(Transactional.TxType.REQUIRED)
-  void doSomethingTransactional() throws SystemException {
-    assertTrue(this.transactionScopeStarted);
-    assertNotNull(this.userTransaction);
-    assertEquals(Status.STATUS_ACTIVE, this.userTransaction.getStatus());
-    assertNotNull(this.transaction);
-    assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
-  }
+    @Transactional(Transactional.TxType.REQUIRED)
+    void doSomethingTransactional() throws SystemException {
+        assertTrue(this.transactionScopeStarted);
+        assertNotNull(this.userTransaction);
+        assertEquals(Status.STATUS_ACTIVE, this.userTransaction.getStatus());
+        assertNotNull(this.transaction);
+        assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
+    }
 
-  @Test
-  void testTransactionalAnnotationSupport() {
+    @Test
+    void testTransactionalAnnotationSupport() {
 
-  }
+    }
   
 }

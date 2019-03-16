@@ -40,48 +40,48 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @ApplicationScoped
 public class TestAutomaticUserTransactionInjection {
 
-  private SeContainer cdiContainer;
+    private SeContainer cdiContainer;
 
-  TestAutomaticUserTransactionInjection() {
-    super();
-  }
-
-  @BeforeEach
-  @SuppressWarnings("unchecked")
-  void startCdiContainer() {
-    final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
-      .disableDiscovery()
-      .addBeanClasses(TestAutomaticUserTransactionInjection.class)
-      .addExtensions(NarayanaExtension.class);
-    assertNotNull(initializer);
-    this.cdiContainer = initializer.initialize();
-  }
-  
-  @AfterEach
-  void shutDownCdiContainer() {
-    if (this.cdiContainer != null) {
-      this.cdiContainer.close();
+    TestAutomaticUserTransactionInjection() {
+        super();
     }
-  }
 
-  private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
-                         final UserTransaction userTransaction)
-    throws NotSupportedException, SystemException {
-    assertNotNull(userTransaction);
-    assertEquals("Transaction: unknown", userTransaction.toString());
-    assertEquals(Status.STATUS_NO_TRANSACTION, userTransaction.getStatus());
-    try {
-      userTransaction.begin();
-      assertEquals(Status.STATUS_ACTIVE, userTransaction.getStatus());
-    } finally {
-      userTransaction.rollback();
-      assertEquals(Status.STATUS_NO_TRANSACTION, userTransaction.getStatus());
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void startCdiContainer() {
+        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+            .disableDiscovery()
+            .addBeanClasses(TestAutomaticUserTransactionInjection.class)
+            .addExtensions(NarayanaExtension.class);
+        assertNotNull(initializer);
+        this.cdiContainer = initializer.initialize();
     }
-  }
 
-  @Test
-  void testSpike() {
+    @AfterEach
+    void shutDownCdiContainer() {
+        if (this.cdiContainer != null) {
+            this.cdiContainer.close();
+        }
+    }
 
-  }
-  
+    private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
+                           final UserTransaction userTransaction)
+        throws NotSupportedException, SystemException {
+        assertNotNull(userTransaction);
+        assertEquals("Transaction: unknown", userTransaction.toString());
+        assertEquals(Status.STATUS_NO_TRANSACTION, userTransaction.getStatus());
+        try {
+            userTransaction.begin();
+            assertEquals(Status.STATUS_ACTIVE, userTransaction.getStatus());
+        } finally {
+            userTransaction.rollback();
+            assertEquals(Status.STATUS_NO_TRANSACTION, userTransaction.getStatus());
+        }
+    }
+
+    @Test
+    void testSpike() {
+
+    }
+
 }
