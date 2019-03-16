@@ -48,6 +48,7 @@ import javax.persistence.SynchronizationType;
 import javax.persistence.spi.PersistenceProvider;
 import javax.persistence.spi.PersistenceUnitInfo;
 
+import org.jboss.weld.injection.spi.JpaInjectionServices;
 import org.jboss.weld.injection.spi.ResourceReference;
 import org.jboss.weld.injection.spi.ResourceReferenceFactory;
 import org.jboss.weld.manager.api.ExecutorServices;
@@ -56,15 +57,14 @@ import org.jboss.weld.manager.api.WeldManager;
 import static javax.persistence.spi.PersistenceUnitTransactionType.RESOURCE_LOCAL;
 
 /**
- * A {@link org.jboss.weld.injection.spi.JpaInjectionServices}
- * implementation that integrates JPA functionality into Weld-based
- * CDI environments.
+ * A {@link JpaInjectionServices} implementation that integrates JPA
+ * functionality into Weld-based CDI environments.
  *
  * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
- * @see org.jboss.weld.injection.spi.JpaInjectionServices
+ * @see JpaInjectionServices
  */
-final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInjectionServices {
+final class NarayanaJpaInjectionServices implements JpaInjectionServices {
 
 
     /*
@@ -96,7 +96,7 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
      *
      * @see #getInstance()
      */
-    private static volatile JpaInjectionServices instance;
+    private static volatile NarayanaJpaInjectionServices instance;
 
     /**
      * Whether a "business" method of this class has been invoked or
@@ -144,16 +144,16 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
 
 
     /**
-     * Creates a new {@link JpaInjectionServices}.
+     * Creates a new {@link NarayanaJpaInjectionServices}.
      *
      * <p>Oddly, the fact that this constructor is {@code private}
      * does not prevent Weld from loading it as a service.  This is an
      * unexpected bonus as nothing about this class should be {@code
      * public}.</p>
      */
-    private JpaInjectionServices() {
+    private NarayanaJpaInjectionServices() {
         super();
-        synchronized (JpaInjectionServices.class) {
+        synchronized (NarayanaJpaInjectionServices.class) {
             // See https://issues.jboss.org/browse/WELD-2563.  Make sure
             // only the first instance is "kept" as it's the one tracked by
             // WeldManager's ServiceRegistry.  The others are discarded.
@@ -182,13 +182,13 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
      *
      * <p>This method never returns {@code null}.</p>
      *
-     * @return the same non-{@code null} {@link JpaInjectionServices}
+     * @return the same non-{@code null} {@link NarayanaJpaInjectionServices}
      * when invoked
      *
      * @see <a href="https://issues.jboss.org/browse/WELD-2563"
      * target="_parent">WELD-2563</a>
      */
-    static synchronized JpaInjectionServices getInstance() {
+    static synchronized NarayanaJpaInjectionServices getInstance() {
         return instance;
     }
 
@@ -364,7 +364,7 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
         }
         assert this.containerManagedEntityManagers.isEmpty();
         assert this.emfs == null || this.emfs.isEmpty();
-        synchronized (JpaInjectionServices.class) {
+        synchronized (NarayanaJpaInjectionServices.class) {
             underway = false;
             instance = null;
         }
@@ -386,7 +386,7 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
      * @see #registerPersistenceContextInjectionPoint(InjectionPoint)
      *
      * @deprecated See the documentation for the {@link
-     * org.jboss.weld.injection.spi.JpaInjectionServices#resolvePersistenceContext(InjectionPoint)}
+     * JpaInjectionServices#resolvePersistenceContext(InjectionPoint)}
      * method.
      */
     @Deprecated
@@ -411,7 +411,7 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
      * @see #registerPersistenceUnitInjectionPoint(InjectionPoint)
      *
      * @deprecated See the documentation for the {@link
-     * org.jboss.weld.injection.spi.JpaInjectionServices#resolvePersistenceUnit(InjectionPoint)}
+     * JpaInjectionServices#resolvePersistenceUnit(InjectionPoint)}
      * method.
      */
     @Deprecated
@@ -460,30 +460,29 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
                     beans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
                 }
                 if (beans == null || beans.isEmpty()) {
-                    // Let CDI blow up appropriately
-                    returnValue = cdi.select(PersistenceUnitInfo.class, named).get();
-                    assert false : "This should never happen!";
-                } else {
-                    Bean<?> bean = null;
-                    final int size = beans.size();
-                    assert size > 0;
-                    switch (size) {
-                    case 1:
-                        // We were asked for the persistence unit explicitly named
-                        // "fred".  There was no such persistence unit.  But there
-                        // is exactly one persistence unit.  Regardless of what
-                        // its name is, return it.
-                        bean = beans.iterator().next();
-                        break;
-                    default:
-                        // There are many persistence units.
-                        bean = beanManager.resolve(beans);
-                        break;
-                    }
-                    returnValue = (PersistenceUnitInfo) beanManager.getReference(bean,
-                                                                                 PersistenceUnitInfo.class,
-                                                                                 beanManager.createCreationalContext(bean));
+                  // Let CDI blow up in whatever way it does here.
+                  cdi.select(PersistenceUnitInfo.class, named).get();
+                  throw new AssertionError();
                 }
+                Bean<?> bean = null;
+                final int size = beans.size();
+                assert size > 0;
+                switch (size) {
+                case 1:
+                  // We were asked for the persistence unit explicitly
+                  // named "fred".  There was no such persistence
+                  // unit.  But there is exactly one persistence unit.
+                  // Regardless of what its name is, return it.
+                  bean = beans.iterator().next();
+                  break;
+                default:
+                  // There are many persistence units.
+                  bean = beanManager.resolve(beans);
+                  break;
+                }
+                returnValue = (PersistenceUnitInfo) beanManager.getReference(bean,
+                                                                             PersistenceUnitInfo.class,
+                                                                             beanManager.createCreationalContext(bean));
             }
         }
         return returnValue;
@@ -659,7 +658,7 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
                 this.emSupplier = () -> {
                     try {
                         final EntityManager em = emfFuture.get().createEntityManager(this.synchronizationType);
-                        JpaInjectionServices.this.containerManagedEntityManagers.add(em);
+                        NarayanaJpaInjectionServices.this.containerManagedEntityManagers.add(em);
                         return em;
                     } catch (final ExecutionException executionException) {
                         throw new RuntimeException(executionException.getMessage(), executionException);
@@ -701,7 +700,7 @@ final class JpaInjectionServices implements org.jboss.weld.injection.spi.JpaInje
                     // isResourceLocal() check here.
                     em.close();
                 }
-                JpaInjectionServices.this.containerManagedEntityManagers.remove(em);
+                NarayanaJpaInjectionServices.this.containerManagedEntityManagers.remove(em);
             }
             if (!this.emfFuture.isDone()) {
                 this.emfFuture.cancel(true);

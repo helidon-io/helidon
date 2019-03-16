@@ -24,6 +24,7 @@
  * @author <a href="https://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
  *
- * @see io.helidon.integrations.cdi.jpa.weld.JpaInjectionServices
+ * @see
+ * io.helidon.integrations.cdi.jpa.weld.NarayanaJpaInjectionServices
  */
 package io.helidon.integrations.cdi.jpa.weld;

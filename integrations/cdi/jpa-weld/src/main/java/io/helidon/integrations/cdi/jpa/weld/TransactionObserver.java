@@ -22,11 +22,12 @@ import javax.transaction.TransactionScoped;
 
 /**
  * A bean housing an observer method that alerts a {@link
- * JpaInjectionServices} instance when a JTA transaction is available.
+ * NarayanaJpaInjectionServices} instance when a JTA transaction is
+ * available.
  *
  * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
- * @see JpaInjectionServices
+ * @see NarayanaJpaInjectionServices
  *
  * @see Initialized
  *
@@ -57,18 +58,19 @@ final class TransactionObserver {
     /**
      * Observes the {@linkplain Initialized initialization} of the
      * {@link TransactionScoped} scope and calls the {@link
-     * JpaInjectionServices#jtaTransactionBegun()} method on the
-     * supplied {@link JpaInjectionServices} instance.
+     * NarayanaJpaInjectionServices#jtaTransactionBegun()} method on
+     * the supplied {@link NarayanaJpaInjectionServices} instance.
      *
      * @param event the opaque event that represents the
      * initialization of the {@link TransactionScoped} scope; may be
      * {@code null}; ignored
      *
-     * @param services the {@link JpaInjectionServices} to notify; may
-     * be {@code null} in which case no action will be taken
+     * @param services the {@link NarayanaJpaInjectionServices} to
+     * notify; may be {@code null} in which case no action will be
+     * taken
      */
     private static void jtaTransactionBegun(@Observes @Initialized(TransactionScoped.class) final Object event,
-                                            final JpaInjectionServices services) {
+                                            final NarayanaJpaInjectionServices services) {
         if (services != null) {
             services.jtaTransactionBegun();
         }
