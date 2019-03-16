@@ -29,18 +29,29 @@ This section discusses several advanced topics related to Helidon configuration.
 == Advanced Config Sources and Config Parsers
 === Environment Variables Config Source
 
-The config system supports using environment variables as a config source. Since
-environment variable names are normally restricted to alphanumeric characters and
-underscore, this config source produces _additional_ variants to enable setting or
-overriding config entries with dotted and/or hyphenated keys.
+The config system supports using environment variables as a config source, and is
+enabled by default. Since environment variable names are normally restricted to
+alphanumeric characters and underscore, this config source _adds_ variants that
+enable setting or overriding config entries with dotted and/or hyphenated keys.
 
-Variants are produced for any environment variable name that matches _all_ of the
-following:
+The mapping makes it possible to set or override a config entry with a key of
+`"foo.bar"` using an environment variable named `"FOO_BAR"` and `"foo.bar-baz"`
+using `"FOO_BAR_dash_BAZ"`. (Though it is conventional to use all uppercase for
+environment variable names, the lowercase mapping means that `"foo_bar"` and
+`"foo_bar_dash_baz"` are equally valid.)
 
-<1> length > 2 (`"X_Y"` to `"x.y"` is the shortest meaningful mapping)
-<2> does not begin or end with a `"_"`
-<3> does not contain `"__"`
-<4> contains one or more `"_"` characters
+
+One use case for this mapping is containers, where passing environment variables
+at launch is common and config overrides are desirable. Scripts (as entry points
+or standalone) that solve the mapping problem via explicit conversion of variables
+to system properties can also be simplified.
+
+Variants are produced for any environment variable name that matches _all_ of
+the following:
+
+<1> does not begin or end with a `"_"`
+<2> does not contain `"__"`
+<3> contains one or more `"_"` characters
 
 For each such name, two variants are added with the names mapped as follows:
 
@@ -49,13 +60,14 @@ For each such name, two variants are added with the names mapped as follows:
 `"SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"`.
 
 <2> Replace `"_"` with `"."` and add as a variant, e.g. `"com_ACME_size"` is
-added as `"com.ACME.size"` and `"SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"` is added
-as `"SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"`.
+added as `"com.ACME.size"` and `"SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"` is
+added as `"SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"`.
 
 <3> Convert the result of step 2 to lowercase and add as a variant, e.g.
 `"com.ACME.size"` is added as `"com.acme.size"` and
 `"SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"` is added as
-`"server.executor-service.max-pool-size"`.
+`"server.executor-service.max-pool-size"`. (Note that if the name is already
+lowercase, only 1 variant remains.)
 
 === Directory Config Source
 
