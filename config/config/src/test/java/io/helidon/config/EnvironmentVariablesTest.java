@@ -134,4 +134,15 @@ public class EnvironmentVariablesTest {
         assertThat(mapped, hasEntry("SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE", "16"));
         assertThat(mapped, hasEntry("server.executor-service.max-pool-size", "16"));
     }
+
+    @Test
+    public void testCamelCaseMapping() {
+        Map<String, String> env = toMap("app_someKey", "v");
+        Map<String, String> mapped = EnvironmentVariables.expand(env);
+        assertThat(mapped, is(not(nullValue())));
+        assertThat(mapped.size(), is(3));
+        assertThat(mapped, hasEntry("app_someKey", "v"));
+        assertThat(mapped, hasEntry("app.someKey", "v"));
+        assertThat(mapped, hasEntry("app.somekey", "v"));
+    }
 }

@@ -63,8 +63,7 @@ public class EnvironmentVariables {
      * <p>
      * To provide a meaningful mapping, the name must meet <em>all</em> of the following criteria:
      * <ol>
-     * <li>length &gt; 2 ({@code "X_Y"} to {@code "x.y"} is the shortest meaningful mapping)</li>
-     * <li>does not begin or end with a {@code '_'}</li>
+     * <li>does not begin or end with a {@code '_'} character</li>
      * <li>does not contain {@code "__"}</li>
      * <li>contains one or more {@code '_'} characters</li>
      * </ol>
@@ -90,7 +89,8 @@ public class EnvironmentVariables {
      * <li>Replace {@code "_dash_"} by {@code '-'}, e.g. {@code "SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE"} becomes
      * {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"}.</li>
      * <li>Replace {@code '_'} by {@code '.'} and add as a variant, e.g. {@code "com_ACME_size"} becomes {@code "com.ACME.size"}
-     * and {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"} becomes {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"}.</li>
+     * and {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"} becomes {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"}. This mapping
+     * is added primarily to support mixed case config keys such as {@code "app.someCamelCaseKey"}.</li>
      * <li>Convert the result of step 2 to lowercase and add as a variant, e.g. {@code "com.ACME.size"} becomes
      * {@code "com.acme.size"} and {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"} becomes
      * {@code "server.executor-service.max-pool-size"}.
@@ -112,7 +112,8 @@ public class EnvironmentVariables {
      * <li>Replace {@code "_dash_"} by {@code '-'}, e.g. {@code "SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE"} becomes
      * {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"}.</li>
      * <li>Replace {@code '_'} by {@code '.'} and add as a variant, e.g. {@code "com_ACME_size"} becomes {@code "com.ACME.size"}
-     * and {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"} becomes {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"}.</li>
+     * and {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"} becomes {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"}. This mapping
+     * is added primarily to support mixed case config keys such as {@code "app.someCamelCaseKey"}.</li>
      * <li>Convert the result of step 2 to lowercase and add as a variant, e.g. {@code "com.ACME.size"} becomes
      * {@code "com.acme.size"} and {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"} becomes
      * {@code "server.executor-service.max-pool-size"}.
