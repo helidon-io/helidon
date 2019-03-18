@@ -195,6 +195,13 @@ public class JerseySupportTest {
         doAssert(response, "", Response.Status.NOT_FOUND);
     }
 
+    @Test
+    public void notFoundResponse() throws Exception {
+        Response response = delete("jersey/first/notfound");
+
+        doAssert(response, "Not Found", Response.Status.NOT_FOUND);
+    }
+
     /**
      * In this test, we need to properly end the connection because the request data won't be fully consumed.
      */
@@ -305,6 +312,12 @@ public class JerseySupportTest {
         return webTarget.path(path)
                         .request()
                         .post(Entity.entity("my-entity", MediaType.TEXT_PLAIN_TYPE));
+    }
+
+    private Response delete(String path) {
+        return webTarget.path(path)
+                        .request()
+                        .delete();
     }
 
     private void doAssert(Response response, String expected) {

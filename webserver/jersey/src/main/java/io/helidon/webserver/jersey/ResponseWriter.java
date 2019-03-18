@@ -109,7 +109,7 @@ class ResponseWriter implements ContainerResponseWriter {
         //
         // TODO also check that nothing was written an nothing was read
         //
-        if (context.getStatus() == 404) {
+        if (context.getStatus() == 404 && contentLength == 0) {
             whenHandleFinishes.thenRun(() -> {
                 LOGGER.finer("Skipping the handling and forwarding to downstream WebServer filters.");
 
