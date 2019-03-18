@@ -61,7 +61,16 @@ public final class NarayanaExtension implements Extension {
      */
 
 
-    private JTAEnvironmentBean defaultJtaEnvironmentBean;
+    /**
+     * The default {@link JTAEnvironmentBean} used throughout the
+     * Narayana transaction engine as configured via the <a
+     * href="https://github.com/jbosstm/narayana/blob/ff309b6d8239f18607de98a8e5a2aec08fb3e6c2/common/classes/com/arjuna/common/internal/util/propertyservice/BeanPopulator.java#L105-L175">{@code
+     * BeanPopulator} mechanism</a>.
+     *
+     * <p>This field is never {@code null}.</p>
+     */
+    private static final JTAEnvironmentBean DEFAULT_JTA_ENVIRONMENT_BEAN =
+        BeanPopulator.getDefaultInstance(JTAEnvironmentBean.class);
 
 
     /*
@@ -132,27 +141,48 @@ public final class NarayanaExtension implements Extension {
 
             beans = beanManager.getBeans(JTAEnvironmentBean.class);
             if (beans == null || beans.isEmpty()) {
-                this.defaultJtaEnvironmentBean = BeanPopulator.getDefaultInstance(JTAEnvironmentBean.class);
-                final JTAEnvironmentBean jtaEnvironmentBean = this.defaultJtaEnvironmentBean;
                 event.addBean()
                     .addTransitiveTypeClosure(JTAEnvironmentBean.class)
                     // OpenWebBeans does not add these qualifiers;
                     // Weld does automatically:
                     .addQualifiers(Any.Literal.INSTANCE, Default.Literal.INSTANCE)
                     .scope(Singleton.class)
-                    .createWith(cc -> jtaEnvironmentBean);
+                    .createWith(cc -> DEFAULT_JTA_ENVIRONMENT_BEAN);
             }
 
         }
     }
 
-    private void onStartup(@Observes
-                           @Initialized(ApplicationScoped.class)
-                           @Priority(LIBRARY_BEFORE)
-                           final Object event,
-                           final Event<JTAEnvironmentBean> broadcaster) {
-        if (broadcaster != null && this.defaultJtaEnvironmentBean != null) {
-            broadcaster.fire(this.defaultJtaEnvironmentBean);
+    /**
+     * Observes the startup of the CDI container (by observing the
+     * {@linkplain Initialized initialization} of the {@linkplain
+     * ApplicationScoped application scope}) and reacts by {@linkplain
+     * Event#fire(Object) firing an event} consisting of the {@link
+     * JTAEnvironmentBean} singleton initialized by the Narayana
+     * transaction engine and preconfigured through its <a
+     * href="https://github.com/jbosstm/narayana/blob/ff309b6d8239f18607de98a8e5a2aec08fb3e6c2/common/classes/com/arjuna/common/internal/util/propertyservice/BeanPopulator.java#L105-L175">{@code
+     * BeanPopulator} proprietary mechanism</a>.
+     *
+     * <p>This allows other portable extensions to further configure
+     * the default {@link JTAEnvironmentBean} in whatever manner they
+     * see fit.</p>
+     *
+     * @param event the event representing the {@linkplain
+     * ApplicationScoped application scope} {@linkplain Initialized
+     * initialization}; may be {@code null}; ignored
+     *
+     * @param broadcaster an {@link Event} capable of {@linkplain
+     * Event#fire(Object) firing} a {@link JTAEnvironmentBean}
+     *
+     * @see JTAEnvironmentBean
+     */
+    private static void onStartup(@Observes
+                                  @Initialized(ApplicationScoped.class)
+                                  @Priority(LIBRARY_BEFORE)
+                                  final Object event,
+                                  final Event<JTAEnvironmentBean> broadcaster) {
+        if (broadcaster != null) {
+            broadcaster.fire(DEFAULT_JTA_ENVIRONMENT_BEAN);
         }
     }
 
