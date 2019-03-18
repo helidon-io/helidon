@@ -75,15 +75,15 @@ public class ConfigSourcesTest {
 
         ConfigSource originConfigSource = ConfigSources.create(source).build();
         Config originConfig = Config.builder(originConfigSource)
-                                    .disableEnvironmentVariablesSource()
-                                    .disableSystemPropertiesSource()
-                                    .build();
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
 
         ConfigSource configSource = ConfigSources.create(originConfig);
         Config copy = Config.builder(configSource)
-                            .disableEnvironmentVariablesSource()
-                            .disableSystemPropertiesSource()
-                            .build();
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
 
         assertThat(ConfigDiff.from(originConfig, copy).isEmpty(), is(true));
     }
@@ -91,8 +91,8 @@ public class ConfigSourcesTest {
     @Test
     public void testPrefix() {
         assertThat(Config.create(prefixed("security", ConfigSources.create(mapOf("credentials.username", "libor"))))
-                         .get("security.credentials.username")
-                         .asString(),
+                           .get("security.credentials.username")
+                           .asString(),
                    is(ConfigValues.simpleValue("libor")));
 
     }
@@ -132,13 +132,13 @@ public class ConfigSourcesTest {
         System.setProperty(TEST_SYS_PROP_NAME, TEST_SYS_PROP_VALUE);
 
         ConfigSource meta1 = ConfigSources.create(
-            ObjectNode.builder()
-                      .addList("sources", ListNode.builder()
-                                                  .addObject(ObjectNode.builder()
-                                                                       .addValue("type", "system-properties")
-                                                                       .build())
-                                                  .build())
-                      .build());
+                ObjectNode.builder()
+                        .addList("sources", ListNode.builder()
+                                .addObject(ObjectNode.builder()
+                                                   .addValue("type", "system-properties")
+                                                   .build())
+                                .build())
+                        .build());
 
         ConfigSource source = ConfigSources.load(meta1).build();
         source.init(mock(ConfigContext.class));
@@ -152,26 +152,26 @@ public class ConfigSourcesTest {
 
         //meta1's `sources` property is used
         ConfigSource meta1 = ConfigSources.create(
-            ObjectNode.builder()
-                      .addList("sources", ListNode.builder()
-                                                  .addObject(ObjectNode.builder()
-                                                                       .addValue("type", "classpath")
-                                                                       .addObject("properties", ObjectNode.builder()
-                                                                                                          .addValue("resource", "io/helidon/config/application.properties")
-                                                                                                          .build())
-                                                                       .build())
-                                                  .build())
-                      .build());
+                ObjectNode.builder()
+                        .addList("sources", ListNode.builder()
+                                .addObject(ObjectNode.builder()
+                                                   .addValue("type", "classpath")
+                                                   .addObject("properties", ObjectNode.builder()
+                                                           .addValue("resource", "io/helidon/config/application.properties")
+                                                           .build())
+                                                   .build())
+                                .build())
+                        .build());
 
         //meta2's `sources` property is ignored
         ConfigSource meta2 = ConfigSources.create(
-            ObjectNode.builder()
-                      .addList("sources", ListNode.builder()
-                                                  .addObject(ObjectNode.builder()
-                                                                       .addValue("type", "system-properties")
-                                                                       .build())
-                                                  .build())
-                      .build());
+                ObjectNode.builder()
+                        .addList("sources", ListNode.builder()
+                                .addObject(ObjectNode.builder()
+                                                   .addValue("type", "system-properties")
+                                                   .build())
+                                .build())
+                        .build());
 
         //meta1 has precedence over meta2
         ConfigSource source = ConfigSources.load(meta1, meta2).build();

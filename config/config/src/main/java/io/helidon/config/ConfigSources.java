@@ -45,10 +45,9 @@ import io.helidon.config.internal.UrlConfigSource;
 import io.helidon.config.spi.AbstractConfigSource;
 import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigNode;
-import io.helidon.config.spi.ConfigParser.Content;
+import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
-import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -70,7 +69,6 @@ public final class ConfigSources {
 
     /**
      * Provides an empty config source.
-     *
      * @return empty config source
      */
     public static ConfigSource empty() {
@@ -94,7 +92,7 @@ public final class ConfigSources {
      * and returns it when {@link ConfigSource#load()} is invoked.
      *
      * @param objectNode hierarchical configuration representation that will be
-     * returned by {@link ConfigSource#load()}
+     *                   returned by {@link ConfigSource#load()}
      * @return new instance of {@link ConfigSource}
      * @see ConfigNode.ObjectNode
      * @see ConfigNode.ListNode
@@ -120,26 +118,26 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from the provided {@link Readable readable content} and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link Content#stamp() content timestamp}.
+     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
-     * @param readable a {@code Readable} providing the configuration content
+     * @param readable  a {@code Readable} providing the configuration content
      * @param mediaType a configuration media type
      * @return a config source
      */
     public static ConfigSource create(Readable readable, String mediaType) {
         return InMemoryConfigSource.builder()
-                                   .mediaType(mediaType)
-                                   .changesExecutor(Runnable::run)
-                                   .changesMaxBuffer(1)
-                                   .content("Readable", Content.create(readable, mediaType, Optional.of(now())))
-                                   .build();
+                .mediaType(mediaType)
+                .changesExecutor(Runnable::run)
+                .changesMaxBuffer(1)
+                .content("Readable", ConfigParser.Content.create(readable, mediaType, Optional.of(Instant.now())))
+                .build();
     }
 
     /**
      * Provides a {@link ConfigSource} from the provided {@code String} content and
      * with the specified {@code mediaType}.
      * <p>
-     * {@link Instant#now()} is the {@link Content#stamp() content timestamp}.
+     * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
      * @param content a configuration content
      * @param mediaType a configuration media type
@@ -147,11 +145,11 @@ public final class ConfigSources {
      */
     public static ConfigSource create(String content, String mediaType) {
         return InMemoryConfigSource.builder()
-                                   .mediaType(mediaType)
-                                   .changesExecutor(Runnable::run)
-                                   .changesMaxBuffer(1)
-                                   .content("String", Content.create(new StringReader(content), mediaType, Optional.of(now())))
-                                   .build();
+                .mediaType(mediaType)
+                .changesExecutor(Runnable::run)
+                .changesMaxBuffer(1)
+                .content("String", ConfigParser.Content.create(new StringReader(content), mediaType, Optional.of(Instant.now())))
+                .build();
     }
 
     /**
@@ -208,7 +206,7 @@ public final class ConfigSources {
      * Provides a {@link ConfigSource} from a {@link Supplier sourceSupplier}, adding the
      * specified {@code prefix} to the keys in the source.
      *
-     * @param key key prefix to be added to all keys
+     * @param key            key prefix to be added to all keys
      * @param sourceSupplier a config source supplier
      * @return new @{code ConfigSource} for the newly-prefixed content
      */
@@ -249,7 +247,7 @@ public final class ConfigSources {
      * @return builder for a {@code ConfigSource} for the classpath-based resource
      */
     public static AbstractParsableConfigSource.Builder
-                      <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> classpath(String resource) {
+            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> classpath(String resource) {
         return new ClasspathConfigSource.ClasspathBuilder(resource);
     }
 
@@ -261,7 +259,7 @@ public final class ConfigSources {
      * @return builder for the file-based {@code ConfigSource}
      */
     public static AbstractParsableConfigSource.Builder
-                      <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(String path) {
+            <? extends AbstractParsableConfigSource.Builder<?, Path>, Path> file(String path) {
         return new FileConfigSource.FileBuilder(Paths.get(path));
     }
 
@@ -273,7 +271,7 @@ public final class ConfigSources {
      * @return new Builder instance
      */
     public static AbstractConfigSource.Builder
-                      <? extends AbstractConfigSource.Builder<?, Path>, Path> directory(String path) {
+            <? extends AbstractConfigSource.Builder<?, Path>, Path> directory(String path) {
         return new DirectoryConfigSource.DirectoryBuilder(Paths.get(path));
     }
 
@@ -286,7 +284,7 @@ public final class ConfigSources {
      * @see #url(URL)
      */
     public static AbstractParsableConfigSource.Builder
-                      <? extends AbstractParsableConfigSource.Builder<?, URL>, URL> url(URL url) {
+            <? extends AbstractParsableConfigSource.Builder<?, URL>, URL> url(URL url) {
         return new UrlConfigSource.UrlBuilder(url);
     }
 
@@ -373,9 +371,9 @@ public final class ConfigSources {
     @SafeVarargs
     public static CompositeBuilder load(Supplier<ConfigSource>... metaSources) {
         return load(Config.builder(metaSources)
-                          .disableEnvironmentVariablesSource()
-                          .disableSystemPropertiesSource()
-                          .build());
+                            .disableEnvironmentVariablesSource()
+                            .disableSystemPropertiesSource()
+                            .build());
     }
 
     /**
@@ -407,12 +405,12 @@ public final class ConfigSources {
      */
     public static CompositeBuilder load(Config metaConfig) {
         List<Supplier<ConfigSource>> sources = metaConfig.get(SOURCES_KEY)
-                                                         .asNodeList()
-                                                         .orElse(CollectionsHelper.listOf())
-                                                         .stream()
-                                                         .map(node -> node.as(ConfigSource::create))
-                                                         .map(ConfigValue::get)
-                                                         .collect(Collectors.toList());
+                .asNodeList()
+                .orElse(CollectionsHelper.listOf())
+                .stream()
+                .map(node -> node.as(ConfigSource::create))
+                .map(ConfigValue::get)
+                .collect(Collectors.toList());
 
         return ConfigSources.create(sources);
     }
@@ -673,8 +671,8 @@ public final class ConfigSources {
             finalConfigSources.addAll(configSources);
 
             final MergingStrategy finalMergingStrategy = mergingStrategy != null
-                                                         ? mergingStrategy
-                                                         : new FallbackMergingStrategy();
+                    ? mergingStrategy
+                    : new FallbackMergingStrategy();
 
             return createCompositeConfigSource(finalConfigSources, finalMergingStrategy, changesExecutor, debounceTimeout,
                                                changesMaxBuffer);
