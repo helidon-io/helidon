@@ -27,6 +27,8 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
+import com.arjuna.ats.jta.common.JTAEnvironmentBean;
+
 import io.helidon.integrations.narayana.jta.cdi.NarayanaExtension;
 
 import org.junit.jupiter.api.AfterEach;
@@ -64,6 +66,10 @@ public class TestAutomaticUserTransactionInjection {
         }
     }
 
+    private void onJtaEnvironmentBeanLoad(@Observes final JTAEnvironmentBean instance) {
+        assertNotNull(instance);
+    }
+    
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
                            final UserTransaction userTransaction)
         throws NotSupportedException, SystemException {
@@ -82,6 +88,6 @@ public class TestAutomaticUserTransactionInjection {
     @Test
     void testSpike() {
 
-    }
+    }    
 
 }

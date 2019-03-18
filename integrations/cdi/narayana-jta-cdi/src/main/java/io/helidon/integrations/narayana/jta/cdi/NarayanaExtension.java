@@ -17,7 +17,11 @@ package io.helidon.integrations.narayana.jta.cdi;
 
 import java.util.Collection;
 
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
@@ -37,6 +41,8 @@ import javax.transaction.UserTransaction;
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+
 /**
  * A <a
  * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi">CDI 2.0
@@ -48,6 +54,14 @@ import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
  * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  */
 public final class NarayanaExtension implements Extension {
+
+
+    /*
+     * Static fields.
+     */
+
+
+    private JTAEnvironmentBean defaultJtaEnvironmentBean;
 
 
     /*
@@ -118,15 +132,27 @@ public final class NarayanaExtension implements Extension {
 
             beans = beanManager.getBeans(JTAEnvironmentBean.class);
             if (beans == null || beans.isEmpty()) {
+                this.defaultJtaEnvironmentBean = BeanPopulator.getDefaultInstance(JTAEnvironmentBean.class);
+                final JTAEnvironmentBean jtaEnvironmentBean = this.defaultJtaEnvironmentBean;
                 event.addBean()
                     .addTransitiveTypeClosure(JTAEnvironmentBean.class)
                     // OpenWebBeans does not add these qualifiers;
                     // Weld does automatically:
                     .addQualifiers(Any.Literal.INSTANCE, Default.Literal.INSTANCE)
                     .scope(Singleton.class)
-                    .createWith(cc -> BeanPopulator.getDefaultInstance(JTAEnvironmentBean.class));
+                    .createWith(cc -> jtaEnvironmentBean);
             }
 
+        }
+    }
+
+    private void onStartup(@Observes
+                           @Initialized(ApplicationScoped.class)
+                           @Priority(LIBRARY_BEFORE)
+                           final Object event,
+                           final Event<JTAEnvironmentBean> broadcaster) {
+        if (broadcaster != null && this.defaultJtaEnvironmentBean != null) {
+            broadcaster.fire(this.defaultJtaEnvironmentBean);
         }
     }
 
