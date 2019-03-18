@@ -60,6 +60,11 @@
 
         <!-- Provided-scoped dependencies. -->
         <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
             <scope>provided</scope>
@@ -73,13 +78,6 @@
             <groupId>javax.transaction</groupId>
             <artifactId>javax.transaction-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- Compile-scoped dependencies. -->
-        <dependency>
-            <groupId>org.eclipse.persistence</groupId>
-            <artifactId>org.eclipse.persistence.jpa</artifactId>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -100,8 +98,8 @@
                             <schemas>
                                 <schema>
                                     <dependencyResource>
-  			                                <groupId>org.eclipse.persistence</groupId>
-			                                  <artifactId>jakarta.persistence</artifactId>
+  			                                <groupId>jakarta.persistence</groupId>
+			                                  <artifactId>jakarta.persistence-api</artifactId>
 			                                  <resource>javax/persistence/persistence_2_2.xsd</resource>
 		                                </dependencyResource>
 	                              </schema>

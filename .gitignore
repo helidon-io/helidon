@@ -20,6 +20,7 @@ nb-configuration.xml
 node_modules/
 node/
 ObjectStore/
+PutObjectStoreDirHere/
 *.swp
 .gradle/
 build/
