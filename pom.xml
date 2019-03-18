@@ -121,6 +121,7 @@
         <version.lib.hibernate-core>5.4.1</version.lib.hibernate-core>
         <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
         <version.lib.jackson>2.9.4</version.lib.jackson>
+        <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.0.4.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
@@ -149,7 +150,7 @@
         <version.lib.oci-java-sdk-objectstorage>1.2.44</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>12.2.0.1</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
-        <version.lib.persistence-api>2.2.2</version.lib.persistence-api>
+        <version.lib.persistence-api>2.2</version.lib.persistence-api>
         <version.lib.prometheus>0.4.0</version.lib.prometheus>
         <version.lib.protobuf.java>3.5.1</version.lib.protobuf.java>
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
@@ -1005,7 +1006,7 @@
             <dependency>
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
-                <version>${version.lib.persistence-api}</version>
+                <version>${version.lib.jakarta-persistence-api}</version>
             </dependency>
             <dependency>
                 <groupId>javax.persistence</groupId>

@@ -60,7 +60,6 @@
             <artifactId>cdi-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>javax.transaction</groupId>
             <artifactId>javax.transaction-api</artifactId>
