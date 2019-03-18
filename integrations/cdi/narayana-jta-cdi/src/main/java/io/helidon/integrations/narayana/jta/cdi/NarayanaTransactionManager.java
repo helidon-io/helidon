@@ -45,9 +45,35 @@ import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 @ApplicationScoped
 class NarayanaTransactionManager extends DelegatingTransactionManager {
 
+
+    /*
+     * Instance fields.
+     */
+
+
+    /**
+     * An {@link Event} capable of {@linkplain Event#fire(Object)
+     * firing} a {@link Transaction} when {@linkplain
+     * TransactionScoped transaction scope} has begun.
+     *
+     * <p>This field may be {@code null}.</p>
+     */
     private final Event<Transaction> transactionScopeInitializedBroadcaster;
 
+    /**
+     * An {@link Event} capable of {@linkplain Event#fire(Object)
+     * firing} an {@link Object} when {@linkplain TransactionScoped
+     * transaction scope} has ended.
+     *
+     * <p>This field may be {@code null}.</p>
+     */
     private final Event<Object> transactionScopeDestroyedBroadcaster;
+
+
+    /*
+     * Constructors.
+     */
+
 
     /**
      * Creates a new, <strong>nonfunctional</strong> {@link
@@ -102,6 +128,12 @@ class NarayanaTransactionManager extends DelegatingTransactionManager {
         this.transactionScopeInitializedBroadcaster = transactionScopeInitializedBroadcaster;
         this.transactionScopeDestroyedBroadcaster = transactionScopeDestroyedBroadcaster;
     }
+
+
+    /*
+     * Instance methods.
+     */
+
 
     /**
      * Overrides {@link DelegatingTransactionManager#begin()} to
