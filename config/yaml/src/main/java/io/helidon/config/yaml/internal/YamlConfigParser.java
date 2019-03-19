@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,14 @@ public class YamlConfigParser implements ConfigParser {
     public static final int PRIORITY = ConfigParser.PRIORITY + 100;
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES = CollectionsHelper.setOf(MEDIA_TYPE_APPLICATION_YAML);
+
+    public YamlConfigParser() {
+        // fix for NPE in Yaml parser when running in Graal
+        // cannot be in static block, as that gets ignored
+        if (System.getProperty("java.runtime.name") == null) {
+            System.setProperty("java.runtime.name", "unknown");
+        }
+    }
 
     @Override
     public Set<String> supportedMediaTypes() {
