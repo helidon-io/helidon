@@ -64,7 +64,7 @@ import static javax.persistence.spi.PersistenceUnitTransactionType.RESOURCE_LOCA
  *
  * @see JpaInjectionServices
  */
-final class NarayanaJpaInjectionServices implements JpaInjectionServices {
+final class WeldJpaInjectionServices implements JpaInjectionServices {
 
 
     /*
@@ -96,7 +96,7 @@ final class NarayanaJpaInjectionServices implements JpaInjectionServices {
      *
      * @see #getInstance()
      */
-    private static volatile NarayanaJpaInjectionServices instance;
+    private static volatile WeldJpaInjectionServices instance;
 
     /**
      * Whether a "business" method of this class has been invoked or
@@ -144,16 +144,16 @@ final class NarayanaJpaInjectionServices implements JpaInjectionServices {
 
 
     /**
-     * Creates a new {@link NarayanaJpaInjectionServices}.
+     * Creates a new {@link WeldJpaInjectionServices}.
      *
      * <p>Oddly, the fact that this constructor is {@code private}
      * does not prevent Weld from loading it as a service.  This is an
      * unexpected bonus as nothing about this class should be {@code
      * public}.</p>
      */
-    private NarayanaJpaInjectionServices() {
+    private WeldJpaInjectionServices() {
         super();
-        synchronized (NarayanaJpaInjectionServices.class) {
+        synchronized (WeldJpaInjectionServices.class) {
             // See https://issues.jboss.org/browse/WELD-2563.  Make sure
             // only the first instance is "kept" as it's the one tracked by
             // WeldManager's ServiceRegistry.  The others are discarded.
@@ -182,13 +182,13 @@ final class NarayanaJpaInjectionServices implements JpaInjectionServices {
      *
      * <p>This method never returns {@code null}.</p>
      *
-     * @return the same non-{@code null} {@link NarayanaJpaInjectionServices}
+     * @return the same non-{@code null} {@link WeldJpaInjectionServices}
      * when invoked
      *
      * @see <a href="https://issues.jboss.org/browse/WELD-2563"
      * target="_parent">WELD-2563</a>
      */
-    static synchronized NarayanaJpaInjectionServices getInstance() {
+    static synchronized WeldJpaInjectionServices getInstance() {
         return instance;
     }
 
@@ -364,7 +364,7 @@ final class NarayanaJpaInjectionServices implements JpaInjectionServices {
         }
         assert this.containerManagedEntityManagers.isEmpty();
         assert this.emfs == null || this.emfs.isEmpty();
-        synchronized (NarayanaJpaInjectionServices.class) {
+        synchronized (WeldJpaInjectionServices.class) {
             underway = false;
             instance = null;
         }
@@ -658,7 +658,7 @@ final class NarayanaJpaInjectionServices implements JpaInjectionServices {
                 this.emSupplier = () -> {
                     try {
                         final EntityManager em = emfFuture.get().createEntityManager(this.synchronizationType);
-                        NarayanaJpaInjectionServices.this.containerManagedEntityManagers.add(em);
+                        WeldJpaInjectionServices.this.containerManagedEntityManagers.add(em);
                         return em;
                     } catch (final ExecutionException executionException) {
                         throw new RuntimeException(executionException.getMessage(), executionException);
@@ -700,7 +700,7 @@ final class NarayanaJpaInjectionServices implements JpaInjectionServices {
                     // isResourceLocal() check here.
                     em.close();
                 }
-                NarayanaJpaInjectionServices.this.containerManagedEntityManagers.remove(em);
+                WeldJpaInjectionServices.this.containerManagedEntityManagers.remove(em);
             }
             if (!this.emfFuture.isDone()) {
                 this.emfFuture.cancel(true);

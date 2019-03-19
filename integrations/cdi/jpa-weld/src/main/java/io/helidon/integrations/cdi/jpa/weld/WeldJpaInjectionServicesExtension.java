@@ -22,17 +22,17 @@ import javax.inject.Singleton;
 
 /**
  * An {@link Extension} that exists solely to make the {@link
- * NarayanaJpaInjectionServices} class become a bean in {@link Singleton}
+ * WeldJpaInjectionServices} class become a bean in {@link Singleton}
  * scope.
  *
  * @author <a href="https://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
  *
- * @see NarayanaJpaInjectionServices
+ * @see WeldJpaInjectionServices
  *
  * @see TransactionObserver
  */
-final class NarayanaJpaInjectionServicesExtension implements Extension {
+final class WeldJpaInjectionServicesExtension implements Extension {
 
 
     /*
@@ -41,14 +41,14 @@ final class NarayanaJpaInjectionServicesExtension implements Extension {
 
 
     /**
-     * Creates a new {@link NarayanaJpaInjectionServicesExtension}.
+     * Creates a new {@link WeldJpaInjectionServicesExtension}.
      *
      * <p>Oddly, the fact that this constructor is {@code private}
      * does not prevent Weld from loading it as a service.  This is an
      * unexpected bonus as nothing about this class should be {@code
      * public}.</p>
      */
-    private NarayanaJpaInjectionServicesExtension() {
+    private WeldJpaInjectionServicesExtension() {
         super();
     }
 
@@ -60,10 +60,10 @@ final class NarayanaJpaInjectionServicesExtension implements Extension {
 
     /**
      * Creates a bean deliberately in {@link Singleton} scope to
-     * represent the {@link NarayanaJpaInjectionServices} class.
+     * represent the {@link WeldJpaInjectionServices} class.
      *
      * <p>Weld often creates multiple copies of {@link
-     * NarayanaJpaInjectionServices} by virtue of the way it loads its
+     * WeldJpaInjectionServices} by virtue of the way it loads its
      * bootstrap services.  We want to ensure there's just one that
      * can be injected into observer methods.  See the {@link
      * TransactionSynchronizationRegistryObserver} class, which houses
@@ -72,17 +72,17 @@ final class NarayanaJpaInjectionServicesExtension implements Extension {
      * @param event the {@link AfterBeanDiscovery} event; may be
      * {@code null} in which case no action will be taken
      *
-     * @see NarayanaJpaInjectionServices
+     * @see WeldJpaInjectionServices
      *
      * @see TransactionObserver
      */
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
         if (event != null) {
             event.addBean()
-                 .addTransitiveTypeClosure(NarayanaJpaInjectionServices.class)
+                 .addTransitiveTypeClosure(WeldJpaInjectionServices.class)
                  .scope(Singleton.class)
                  .createWith(ignored -> {
-                     return NarayanaJpaInjectionServices.getInstance();
+                     return WeldJpaInjectionServices.getInstance();
                   });
         }
     }

@@ -17,14 +17,12 @@
 /**
  * Provides classes and interfaces that help to integrate <a
  * href="https://javaee.github.io/javaee-spec/javadocs/javax/persistence/package-summary.html"
- * target="_parent">JPA</a> into <a
- * href="http://weld.cdi-spec.org/">Weld</a>-based CDI 2.0 SE
- * environments.
+ * target="_parent">JPA</a> into <a href="http://weld.cdi-spec.org/"
+ * target="_parent">Weld</a>-based CDI 2.0 SE environments.
  *
- * @author <a href="https://about.me/lairdnelson"
- * target="_parent">Laird Nelson</a>
+ * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
  * @see
- * io.helidon.integrations.cdi.jpa.weld.NarayanaJpaInjectionServices
+ * io.helidon.integrations.cdi.jpa.weld.WeldJpaInjectionServices
  */
 package io.helidon.integrations.cdi.jpa.weld;
