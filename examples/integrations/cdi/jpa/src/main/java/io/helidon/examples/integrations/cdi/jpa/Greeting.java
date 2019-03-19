@@ -22,11 +22,8 @@ import javax.persistence.AccessType;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 /**
  * A contrived representation for example purposes only of a two-part
@@ -36,24 +33,11 @@ import javax.persistence.UniqueConstraint;
  */
 @Access(AccessType.FIELD)
 @Entity(name = "Greeting")
-@NamedQuery(name = "findByFirstPart",
-            query = "SELECT g FROM Greeting g WHERE g.firstPart = :firstPart")
-@Table(name = "GREETING",
-       uniqueConstraints = {
-           @UniqueConstraint(columnNames = {
-               "FIRSTPART", "SECONDPART"
-           },
-           name = "UNQ_GREETING")
-       })
+@Table(name = "GREETING")
 public class Greeting {
 
     @Id
-    @Column(name = "ID", insertable = true, nullable = false, updatable = false)
-    @GeneratedValue
-    private Long id;
-
-    @Basic(optional = false)
-    @Column(name = "FIRSTPART", insertable = true, nullable = false, updatable = true)
+    @Column(name = "FIRSTPART", insertable = true, nullable = false, updatable = false)
     private String firstPart;
 
     @Basic(optional = false)
@@ -64,10 +48,10 @@ public class Greeting {
      * Creates a new {@link Greeting}; required by the JPA
      * specification and for no other purpose.
      *
-     * @deprecated Please use the {@link #Greeting(Long, String,
+     * @deprecated Please use the {@link #Greeting(String,
      * String)} constructor instead.
      *
-     * @see #Greeting(Long, String, String)
+     * @see #Greeting(String, String)
      */
     @Deprecated
     protected Greeting() {
@@ -76,8 +60,6 @@ public class Greeting {
 
     /**
      * Creates a new {@link Greeting}.
-     *
-     * @param id the identifier; may be {@code null}
      *
      * @param firstPart the first part of the greeting; must not be
      * {@code null}
@@ -88,22 +70,23 @@ public class Greeting {
      * @exception NullPointerException if {@code firstPart} or {@code
      * secondPart} is {@code null}
      */
-    public Greeting(final Long id, final String firstPart, final String secondPart) {
+    public Greeting(final String firstPart, final String secondPart) {
         super();
-        this.id = id;
         this.firstPart = Objects.requireNonNull(firstPart);
         this.secondPart = Objects.requireNonNull(secondPart);
     }
 
     /**
-     * Returns the identifier of this {@link Greeting}.
+     * Sets the second part of this greeting.
      *
-     * <p>This method may return {@code null}.</p>
+     * @param secondPart the second part of this greeting; must not be
+     * {@code null}
      *
-     * @return the identifier of this {@link Greeting} or {@code null}
+     * @exception NullPointerException if {@code secondPart} is {@code
+     * null}
      */
-    public Long getId() {
-        return this.id;
+    public void setSecondPart(final String secondPart) {
+        this.secondPart = Objects.requireNonNull(secondPart);
     }
 
     /**

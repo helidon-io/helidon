@@ -15,14 +15,15 @@
  */
 package io.helidon.examples.integrations.cdi.jpa;
 
+import java.net.URI;
 import java.util.Objects;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException; // for javadoc only
-import javax.persistence.TypedQuery;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
@@ -111,10 +112,7 @@ public class HelloWorldResource {
     public String get(@PathParam("firstPart") final String firstPart) {
         Objects.requireNonNull(firstPart);
         assert this.entityManager != null;
-        final TypedQuery<Greeting> query = this.entityManager.createNamedQuery("findByFirstPart", Greeting.class);
-        assert query != null;
-        query.setParameter("firstPart", firstPart);
-        final Greeting greeting = query.getSingleResult();
+        final Greeting greeting = this.entityManager.find(Greeting.class, firstPart);
         assert greeting != null;
         return greeting.toString();
     }
@@ -147,8 +145,8 @@ public class HelloWorldResource {
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
     @Transactional(TxType.REQUIRED)
-    public String post(@PathParam("firstPart") final String firstPart,
-                       final String secondPart)
+    public Response post(@PathParam("firstPart") final String firstPart,
+                         final String secondPart)
         throws SystemException {
         Objects.requireNonNull(firstPart);
         Objects.requireNonNull(secondPart);
@@ -156,9 +154,25 @@ public class HelloWorldResource {
         assert this.transaction.getStatus() == Status.STATUS_ACTIVE;
         assert this.entityManager != null;
         assert this.entityManager.isJoinedToTransaction();
-        Greeting greeting = new Greeting(null, firstPart, secondPart);
-        greeting = this.entityManager.merge(greeting);
-        return String.valueOf(greeting.getId());
+        Greeting greeting = null;
+        // See https://tools.ietf.org/html/rfc7231#section-4.3.3; we
+        // track whether JPA does an insert or an update.
+        boolean created = false;
+        try {
+            greeting = this.entityManager.getReference(Greeting.class, firstPart);
+            assert greeting != null;
+            greeting.setSecondPart(secondPart);
+        } catch (final EntityNotFoundException entityNotFoundException) {
+            greeting = new Greeting(firstPart, secondPart);
+            this.entityManager.persist(greeting);
+            created = true;
+        }
+        assert this.entityManager.contains(greeting);
+        if (created) {
+            return Response.created(URI.create(firstPart)).build();
+        } else {
+            return Response.ok(firstPart).build();
+        }
     }
 
 }
