@@ -83,17 +83,17 @@ public class JpaExtension implements Extension {
 
 
     /*
-     * Static fields.
-     */
-
-
-    private static final String JAXB_GENERATED_PACKAGE_NAME = "io.helidon.integrations.cdi.jpa.jaxb";
-
-
-    /*
      * Instance fields.
      */
 
+
+    /**
+     * A {@link Set} of {@link PersistenceUnitInfoBean} instances that
+     * were synthesized out of {@link DataSourceDefinition}
+     * annotations.
+     *
+     * <p>This field is never {@code null} but often empty.</p>
+     */
     private final Set<PersistenceUnitInfoBean> potentialPersistenceUnitInfoBeans;
 
     /**
@@ -183,11 +183,39 @@ public class JpaExtension implements Extension {
         }
     }
 
+    /**
+     * Tracks {@linkplain Converter converters}, {@linkplain Entity
+     * entities}, {@linkplain Embeddable embeddables} and {@linkplain
+     * MappedSuperclass mapped superclasses} that were auto-discovered
+     * by CDI bean discovery, and makes sure that they are not
+     * actually CDI beans, since according to the JPA specification
+     * they cannot be.
+     *
+     * <p>This method also keeps track of these classes as potential
+     * "unlisted classes" to be used by a {@linkplain
+     * PersistenceUnitInfo persistence unit} if its {@linkplain
+     * PersistenceUnitInfo#excludeUnlistedClasses()} method returns
+     * {@code false}.</p>
+     *
+     * @param event the event describing the {@link AnnotatedType}
+     * being processed; may be {@code null} in which case no action
+     * will be taken
+     *
+     * @see Converter
+     *
+     * @see Embeddable
+     *
+     * @see Entity
+     *
+     * @see MappedSuperclass
+     *
+     * @see PersistenceUnitInfo#excludeUnlistedClasses()
+     */
     private void discoverManagedClasses(@Observes
                                         @WithAnnotations({
                                             Converter.class,
-                                            Entity.class,
                                             Embeddable.class,
+                                            Entity.class,
                                             MappedSuperclass.class
                                         })
                                         final ProcessAnnotatedType<?> event) {
@@ -226,6 +254,38 @@ public class JpaExtension implements Extension {
         }
     }
 
+    /**
+     * Converts {@code META-INF/persistence.xml} resources into {@link
+     * PersistenceUnitInfo} objects and takes into account any other
+     * {@link PersistenceUnitInfo} objects that already exist and
+     * ensures that all of them are registered as CDI beans.
+     *
+     * <p>This allows other CDI-provider-specific mechanisms to use
+     * these {@link PersistenceUnitInfo} beans as inputs for creating
+     * {@link EntityManager} instances.</p>
+     *
+     * @param event the {@link AfterBeanDiscovery} event describing
+     * the fact that bean discovery has been performed; may be {@code
+     * null} in which case no action will be taken
+     *
+     * @param beanManager the {@link BeanManager} currently in effect;
+     * may be {@code null} in which case no action will be taken
+     *
+     * @exception IOException if an input or output error occurs,
+     * typically because a {@code META-INF/persistence.xml} resource
+     * was found but could not be loaded for some reason
+     *
+     * @exception JAXBException if there was a problem {@linkplain
+     * Unmarshaller#unmarshal(Reader) unmarshalling} a {@code
+     * META-INF/persistence.xml} resource
+     *
+     * @exception ReflectiveOperationException if reflection failed
+     *
+     * @exception XMLStreamException if there was a problem setting up
+     * JAXB
+     *
+     * @see PersistenceUnitInfo
+     */
     private void afterBeanDiscovery(@Observes @Priority(LIBRARY_AFTER)
                                     final AfterBeanDiscovery event,
                                     final BeanManager beanManager)
@@ -311,7 +371,8 @@ public class JpaExtension implements Extension {
                 @SuppressWarnings("deprecation")
                 final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
                 assert xmlInputFactory != null;
-                final Unmarshaller unmarshaller = JAXBContext.newInstance(JAXB_GENERATED_PACKAGE_NAME).createUnmarshaller();
+                final Unmarshaller unmarshaller =
+                    JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
                 assert unmarshaller != null;
                 // Normally we'd let CDI instantiate this guy but we
                 // are forbidden from getting references at this stage
@@ -378,6 +439,32 @@ public class JpaExtension implements Extension {
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
     }
 
+    /**
+     * Given a {@link PersistenceUnitInfo} and a {@link Collection} of
+     * {@link PersistenceProvider} instances representing already
+     * "beanified" {@link PersistenceProvider}s, adds a CDI bean for
+     * the {@linkplain
+     * PersistenceUnitInfo#getPersistenceProviderClassName()
+     * persistence provider referenced by the supplied
+     * <code>PersistenceUnitInfo</code>} if appropriate.
+     *
+     * @param event the {@link AfterBeanDiscovery} event that will do
+     * the actual bean addition; must not be {@code null}
+     *
+     * @param persistenceUnitInfo the {@link PersistenceUnitInfo}
+     * whose {@linkplain
+     * PersistenceUnitInfo#getPersistenceProviderClassName()
+     * associated persistence provider} will be beanified; must not be
+     * {@code null}
+     *
+     * @param providers a {@link Collection} of {@link
+     * PersistenceProvider} instances that represent {@link
+     * PersistenceProvider}s that have already had beans added for
+     * them; may be {@code null}
+     *
+     * @exception NullPointerException if {@code event} or {@code
+     * persistenceUnitInfo} is {@code null}
+     */
     private static void maybeAddPersistenceProviderBean(final AfterBeanDiscovery event,
                                                         final PersistenceUnitInfo persistenceUnitInfo,
                                                         final Collection<? extends PersistenceProvider> providers)

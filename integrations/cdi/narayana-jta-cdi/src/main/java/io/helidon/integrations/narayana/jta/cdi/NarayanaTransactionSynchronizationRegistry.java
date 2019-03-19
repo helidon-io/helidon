@@ -62,6 +62,10 @@ class NarayanaTransactionSynchronizationRegistry extends DelegatingTransactionSy
      * Creates a new {@link
      * NarayanaTransactionSynchronizationRegistry}.
      *
+     * @param jtaEnvironmentBean the {@link JTAEnvironmentBean}
+     * describing the environment in which transaction processing will
+     * take place
+     *
      * @see JTAEnvironmentBean#getTransactionSynchronizationRegistry()
      */
     @Inject

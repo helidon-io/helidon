@@ -260,14 +260,17 @@
                             <link>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</link>
                             <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
                             <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
+                            <link>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.jakarta-persistence-api}</link>
                             <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
                             <link>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/${version.lib.jsonb-api}</link>
                             <link>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</link>
                             <link>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</link>
+                            <link>https://static.javadoc.io/javax.xml.bind/jaxb-api/${version.lib.jaxb-api}/</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
                             <link>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</link>
+                            <link>http://narayana.io/docs/api/</link>
                             <link>https://www.eclipse.org/eclipselink/api/2.7/</link>
                             <link>https://docs.jboss.org/hibernate/orm/5.4/javadocs/</link>
                         </links>

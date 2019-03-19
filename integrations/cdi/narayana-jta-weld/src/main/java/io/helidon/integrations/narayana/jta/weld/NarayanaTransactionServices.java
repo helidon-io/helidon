@@ -30,7 +30,7 @@ import org.jboss.weld.transaction.spi.TransactionServices;
 
 /**
  * A {@link TransactionServices} implementation that uses the <a
- * href="https://narayana.io/" target="_parent">Narayana transaction
+ * href="http://narayana.io/" target="_parent">Narayana transaction
  * engine</a> and does not use JNDI.
  *
  * <p>{@link TransactionServices} implementations are used by <a

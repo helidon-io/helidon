@@ -57,6 +57,7 @@ class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.Dat
      * Constructors.
      */
 
+
     /**
      * Creates a new <strong>nonfunctional</strong> {@link
      * BeanManagerBackedDataSourceProvider}.

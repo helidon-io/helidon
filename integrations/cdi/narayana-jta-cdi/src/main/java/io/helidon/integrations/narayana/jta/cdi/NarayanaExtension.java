@@ -98,9 +98,12 @@ public final class NarayanaExtension implements Extension {
      * @param event the {@link AfterBeanDiscovery} event fired by the
      * CDI container; may be {@code null} in which case no action will
      * be taken
+     *
+     * @param beanManager the {@link BeanManager} in effect; may be
+     * {@code null} in which case no action will be taken
      */
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event, final BeanManager beanManager) {
-        if (event != null) {
+        if (event != null && beanManager != null) {
 
             // Weld registers a UserTransaction bean well before this
             // observer method fires.  OpenWebBeans does not.  We need

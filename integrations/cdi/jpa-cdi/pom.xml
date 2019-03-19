@@ -136,7 +136,6 @@
                 <dependency>
                     <groupId>javax.xml.bind</groupId>
                     <artifactId>jaxb-api</artifactId>
-                    <version>${version.lib.jaxb-api}</version>
                     <scope>compile</scope>
                 </dependency>
                 <dependency>
