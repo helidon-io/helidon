@@ -60,6 +60,9 @@ public class YamlConfigParser implements ConfigParser {
 
     private static final Set<String> SUPPORTED_MEDIA_TYPES = CollectionsHelper.setOf(MEDIA_TYPE_APPLICATION_YAML);
 
+    /**
+     * Default constructor needed by Java Service loader.
+     */
     public YamlConfigParser() {
         // fix for NPE in Yaml parser when running in Graal
         // cannot be in static block, as that gets ignored
