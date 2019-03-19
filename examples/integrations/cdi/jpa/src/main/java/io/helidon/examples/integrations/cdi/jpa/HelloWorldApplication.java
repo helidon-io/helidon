@@ -16,6 +16,7 @@
 package io.helidon.examples.integrations.cdi.jpa;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -30,11 +31,17 @@ import javax.ws.rs.core.Application;
 @ApplicationScoped
 public class HelloWorldApplication extends Application {
 
+    private final Set<Class<?>> classes;
+
     /**
      * Creates a new {@link HelloWorldApplication}.
      */
     public HelloWorldApplication() {
         super();
+        final Set<Class<?>> classes = new HashSet<>();
+        classes.add(HelloWorldResource.class);
+        classes.add(JPAExceptionMapper.class);
+        this.classes = Collections.unmodifiableSet(classes);
     }
 
     /**
@@ -48,7 +55,7 @@ public class HelloWorldApplication extends Application {
      */
     @Override
     public Set<Class<?>> getClasses() {
-        return Collections.singleton(HelloWorldResource.class);
+        return this.classes;
     }
 
 }

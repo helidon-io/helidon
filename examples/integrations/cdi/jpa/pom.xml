@@ -14,7 +14,7 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-    
+
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -32,7 +32,7 @@
     <properties>
         <dependenciesDirectory>libs</dependenciesDirectory>
     </properties>
-    
+
     <build>
         <resources>
             <resource>
@@ -208,24 +208,23 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!--
+        <!-- Provided-scoped dependencies. -->
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
-            <scope>runtime</scope>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>provided</scope>
         </dependency>
-        -->
+        <dependency>
+            <groupId>javax.transaction</groupId>
+            <artifactId>javax.transaction-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Compile-scoped dependencies. -->
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.enterprise</groupId>
@@ -236,11 +235,6 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>javax.transaction-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>

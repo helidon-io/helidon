@@ -35,6 +35,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * A JAX-RS root resource class that manipulates greetings in a
@@ -74,7 +75,18 @@ public class HelloWorldResource {
      */
     public HelloWorldResource() {
         super();
-        System.out.println("*** constructed");
+    }
+
+    /**
+     * Returns a {@link Response} with a status of {@code 404} when
+     * invoked.
+     *
+     * @return a non-{@code null} {@link Response}
+     */
+    @GET
+    @Path("favicon.ico")
+    public Response getFavicon() {
+        return Response.status(404).build();
     }
 
     /**
@@ -98,21 +110,11 @@ public class HelloWorldResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String get(@PathParam("firstPart") final String firstPart) {
         Objects.requireNonNull(firstPart);
-        System.out.println("*** get invoked; stack trace:");
-        Thread.dumpStack();
         assert this.entityManager != null;
         final TypedQuery<Greeting> query = this.entityManager.createNamedQuery("findByFirstPart", Greeting.class);
         assert query != null;
         query.setParameter("firstPart", firstPart);
-        Greeting greeting = null;
-        try {
-            greeting = query.getSingleResult();
-        } catch (final RuntimeException e) {
-            System.out.println("*** caught RuntimeException: " + e);
-            System.out.println("*** rethrowing");
-            throw e;
-        }
-        System.out.println("*** successfully ran query.getSingleResult()");
+        final Greeting greeting = query.getSingleResult();
         assert greeting != null;
         return greeting.toString();
     }

@@ -306,8 +306,8 @@ public class CDISEPlatform extends JMXServerPlatformBase {
      * annotate an implementation of {@link MBeanServer} for use by
      * the {@link CDISEPlatform#getMBeanServer()} method.</p>
      *
-     * @author <a href="https://about.me/lairdnelson"
-     * target="_parent">Laird Nelson</a>
+     * @author <a href="mailto:laird.nelson@oracle.com">Laird
+     * Nelson</a>
      *
      * @see CDISEPlatform#launchContainerRunnable(Runnable)
      *
