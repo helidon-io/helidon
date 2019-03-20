@@ -79,19 +79,6 @@ public class AsynchronousBean {
     }
 
     /**
-     * Asynchronmous method must return {@code Future}. Calling this method should result in
-     * {@link org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException}.
-     *
-     * @return String value.
-     */
-    @Asynchronous
-    public String asyncError() {
-        called = true;
-        FaultToleranceTest.printStatus("AsynchronousBean::async", "failure");
-        return "failure";
-    }
-
-    /**
      * Normal asynchronous call using {@link java.util.concurrent.CompletionStage}.
      *
      * @return A completion stage.

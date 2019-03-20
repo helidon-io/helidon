@@ -72,14 +72,6 @@ public class AsynchronousTest extends FaultToleranceTest {
     }
 
     @Test
-    public void testAsyncError() {
-        assertThrows(FaultToleranceDefinitionException.class, () -> {
-            AsynchronousBean bean = newBean(AsynchronousBean.class);
-            bean.asyncError();
-        });
-    }
-
-    @Test
     public void testAsyncCompletionStage() throws Exception {
         AsynchronousBean bean = newBean(AsynchronousBean.class);
         assertThat(bean.wasCalled(), is(false));
