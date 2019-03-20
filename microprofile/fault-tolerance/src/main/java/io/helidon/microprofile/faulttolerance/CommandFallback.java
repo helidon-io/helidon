@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,9 @@ class CommandFallback {
         } else if (!fallback.fallbackMethod().isEmpty()) {
             Object instance = context.getTarget();
             try {
-                fallbackMethod = instance.getClass().getMethod(introspector.getFallback().fallbackMethod(),
-                        context.getMethod().getParameterTypes());
+                fallbackMethod = JavaMethodFinder.findMethod(instance.getClass(),
+                        introspector.getFallback().fallbackMethod(),
+                        context.getMethod().getGenericParameterTypes());
             } catch (NoSuchMethodException e) {
                 throw new InternalError(e);     // should have been validated
             }
