@@ -19,10 +19,14 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedConstructor;
@@ -32,7 +36,9 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessManagedBean;
+import javax.enterprise.util.AnnotationLiteral;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -50,6 +56,7 @@ public class FaultToleranceExtension implements Extension {
 
     static final String MP_FT_NON_FALLBACK_ENABLED = "MP_Fault_Tolerance_NonFallback_Enabled";
     static final String MP_FT_METRICS_ENABLED = "MP_Fault_Tolerance_Metrics_Enabled";
+    static final String MP_FT_INTERCEPTOR_PRIORITY = "mp.fault.tolerance.interceptor.priority";
 
     private static boolean isFaultToleranceEnabled = true;
 
@@ -57,6 +64,9 @@ public class FaultToleranceExtension implements Extension {
 
     private Set<BeanMethod> registeredMethods;
 
+    /**
+     * A bean method class that pairs a class and a method.
+     */
     private static class BeanMethod {
 
         private final Class<?> beanClass;
@@ -73,6 +83,24 @@ public class FaultToleranceExtension implements Extension {
 
         Method method() {
             return method;
+        }
+    }
+
+    /**
+     * Class to mimic a {@link Priority} annotation for the purpuse of changing
+     * its value dynamically.
+     */
+    private static class LiteralPriority extends AnnotationLiteral<Priority> implements Priority {
+
+        private final int value;
+
+        LiteralPriority(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public int value() {
+            return value;
         }
     }
 
@@ -108,14 +136,40 @@ public class FaultToleranceExtension implements Extension {
         isFaultToleranceMetricsEnabled = config.getOptionalValue(MP_FT_METRICS_ENABLED, Boolean.class)
                 .orElse(true);      // default is enabled
 
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Retry.class)));
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(CircuitBreaker.class)));
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Timeout.class)));
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Asynchronous.class)));
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Bulkhead.class)));
-        discovery.addInterceptorBinding(new InterceptorBindingAnnotatedType<>(bm.createAnnotatedType(Fallback.class)));
+        discovery.addInterceptorBinding(
+                new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Retry.class),
+                        LiteralCommandBinding.getInstance()));
+        discovery.addInterceptorBinding(
+                new AnnotatedTypeWrapper<>(bm.createAnnotatedType(CircuitBreaker.class),
+                        LiteralCommandBinding.getInstance()));
+        discovery.addInterceptorBinding(
+                new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Timeout.class),
+                        LiteralCommandBinding.getInstance()));
+        discovery.addInterceptorBinding(
+                new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Asynchronous.class),
+                        LiteralCommandBinding.getInstance()));
+        discovery.addInterceptorBinding(
+                new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Bulkhead.class),
+                        LiteralCommandBinding.getInstance()));
+        discovery.addInterceptorBinding(
+                new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Fallback.class),
+                        LiteralCommandBinding.getInstance()));
 
-        discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class), CommandInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
+                CommandInterceptor.class.getName());
+    }
+
+    /**
+     * Update priority of FT interceptor if set in config.
+     *
+     * @param event Process annotated event.
+     */
+    void updatePriorityMaybe(@Observes final ProcessAnnotatedType<CommandInterceptor> event) {
+        final Config config = ConfigProvider.getConfig();
+        Optional<Integer> priority = config.getOptionalValue(MP_FT_INTERCEPTOR_PRIORITY, Integer.class);
+        priority.ifPresent(v -> event.configureAnnotatedType()
+                .remove(a -> a instanceof Priority)
+                .add(new LiteralPriority(v)));
     }
 
     /**
@@ -146,7 +200,7 @@ public class FaultToleranceExtension implements Extension {
                 // Counters for all methods
                 FaultToleranceMetrics.registerMetrics(method);
 
-                // Metrics depending on the annotations present
+                // Metrics depending on the annotationSet present
                 if (MethodAntn.isAnnotationPresent(beanClass, method, Retry.class)) {
                     FaultToleranceMetrics.registerRetryMetrics(method);
                     new RetryAntn(beanClass, method).validate();
@@ -201,7 +255,7 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Determines if a method has any fault tolerance annotations. Only {@code @Fallback}
+     * Determines if a method has any fault tolerance annotationSet. Only {@code @Fallback}
      * is considered if fault tolerance is disabled.
      *
      * @param beanClass The bean.
@@ -218,25 +272,40 @@ public class FaultToleranceExtension implements Extension {
     }
 
     /**
-     * Annotated type for annotation.
+     * Wraps an annotated type for the purpose of adding and/or overriding
+     * some annotations.
      *
-     * @param <T> Annotation type.
+     * @param <T> Underlying type.
      */
-    public static class InterceptorBindingAnnotatedType<T extends Annotation> implements AnnotatedType<T> {
+    public static class AnnotatedTypeWrapper<T> implements AnnotatedType<T> {
 
         private final AnnotatedType<T> delegate;
 
-        private final Set<Annotation> annotations;
+        private final Set<Annotation> annotationSet;
 
         /**
          * Constructor.
          *
-         * @param delegate Type delegate.
+         * @param delegate Wrapped annotated type.
+         * @param annotations New set of annotations possibly overriding existing ones.
          */
-        public InterceptorBindingAnnotatedType(AnnotatedType<T> delegate) {
+        public AnnotatedTypeWrapper(AnnotatedType<T> delegate, Annotation... annotations) {
             this.delegate = delegate;
-            annotations = new HashSet<>(delegate.getAnnotations());
-            annotations.add(LiteralCommandBinding.getInstance());
+            this.annotationSet = new HashSet<>(Arrays.asList(annotations));
+
+            // Include only those annotations not overridden
+            for (Annotation da : delegate.getAnnotations()) {
+                boolean overridden = false;
+                for (Annotation na : annotationSet) {
+                    if (da.annotationType().isAssignableFrom(na.annotationType())) {
+                        overridden = true;
+                        break;
+                    }
+                }
+                if (!overridden) {
+                    this.annotationSet.add(da);
+                }
+            }
         }
 
         public Class<T> getJavaClass() {
@@ -263,33 +332,31 @@ public class FaultToleranceExtension implements Extension {
             return delegate.getFields();
         }
 
-        /**
-         * Gets the annotation.
-         *
-         * @param annotationType Annotation type.
-         * @param <R> Annotation type param.
-         * @return Annotation instance.
-         */
+        @Override
         @SuppressWarnings("unchecked")
         public <R extends Annotation> R getAnnotation(Class<R> annotationType) {
-            if (CommandBinding.class.equals(annotationType)) {
-                return (R) LiteralCommandBinding.getInstance();
-            }
-            return delegate.getAnnotation(annotationType);
+            Optional<Annotation> optional = annotationSet.stream()
+                    .filter(a -> annotationType.isAssignableFrom(a.annotationType())).findFirst();
+            return optional.isPresent() ? (R) optional.get() : null;
         }
 
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T extends Annotation> Set<T> getAnnotations(Class<T> annotationType) {
+            return (Set<T>) annotationSet.stream()
+                    .filter(a -> annotationType.isAssignableFrom(a.annotationType()))
+                    .collect(Collectors.toSet());
+        }
+
+        @Override
         public Set<Annotation> getAnnotations() {
-            return annotations;
+            return annotationSet;
         }
 
-        /**
-         * Determines if annotation is present.
-         *
-         * @param annotationType Annotation type.
-         * @return Outcome of test.
-         */
+        @Override
         public boolean isAnnotationPresent(Class<? extends Annotation> annotationType) {
-            return CommandBinding.class.equals(annotationType) || delegate.isAnnotationPresent(annotationType);
+            Annotation annotation = getAnnotation(annotationType);
+            return annotation != null;
         }
     }
 }
