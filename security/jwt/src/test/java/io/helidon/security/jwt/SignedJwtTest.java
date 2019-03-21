@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
+import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -109,11 +110,13 @@ public class SignedJwtTest {
                 .issuer("unit-test")
                 .build();
 
+        Jwk defaultJwk = Jwk.NONE_JWK;
+
         SignedJwt signed = SignedJwt.sign(jwt, customKeys);
         assertThat(signed, notNullValue());
         assertThat(signed.getSignature(), notNullValue());
         assertThat(signed.getSignature(), is(new byte[0]));
-        Errors errors = signed.verifySignature(customKeys);
+        Errors errors = signed.verifySignature(customKeys, defaultJwk);
         assertThat(errors, notNullValue());
         errors.log(LOGGER);
         errors.checkValid();
@@ -122,12 +125,13 @@ public class SignedJwtTest {
     @Test
     public void testSingatureNoAlgNoKid() {
         Jwt jwt = Jwt.builder().build();
+        Jwk defaultJwk = Jwk.NONE_JWK;
 
         SignedJwt signed = SignedJwt.sign(jwt, customKeys);
         assertThat(signed, notNullValue());
         assertThat(signed.getSignature(), notNullValue());
         assertThat(signed.getSignature(), is(new byte[0]));
-        Errors errors = signed.verifySignature(customKeys);
+        Errors errors = signed.verifySignature(customKeys, defaultJwk);
         assertThat(errors, notNullValue());
         errors.log(LOGGER);
         errors.checkValid();
