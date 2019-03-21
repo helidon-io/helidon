@@ -369,7 +369,11 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
             this.properties = properties;
         }
 
-        this.jtaDataSourceName = jtaDataSourceName;
+        if (jtaDataSourceName == null || jtaDataSourceName.isEmpty()) {
+            this.jtaDataSourceName = null;
+        } else {
+            this.jtaDataSourceName = jtaDataSourceName;
+        }
         this.nonJtaDataSourceName = nonJtaDataSourceName;
         this.dataSourceProvider = dataSourceProvider;
 

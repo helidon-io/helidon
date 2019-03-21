@@ -22,34 +22,26 @@
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
                                  http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
   <persistence-unit name="test" transaction-type="JTA">
-    <jta-data-source>test</jta-data-source>
-    <!--
-        <class>io.github.ljnelson.helidon.mp.jpa.Greeting</class>
-    -->
-    <properties>
-      <!--
-      <property name="eclipselink.create-ddl-jdbc-file-name" value="createDDL_ddlGeneration.jdbc"/>
-      <property name="eclipselink.ddl-generation" value="create-tables"/>
-      <property name="eclipselink.ddl-generation.output-mode" value="sql-script"/>
-      -->
-      <property name="eclipselink.deploy-on-startup" value="true"/>
-      <property name="eclipselink.jdbc.native-sql" value="true"/>
-      <property name="eclipselink.logging.logger" value="JavaLogger"/>
-      <property name="eclipselink.logging.parameters" value="true"/>
-      <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+      <jta-data-source>test</jta-data-source>
+      <properties>
+          <property name="eclipselink.deploy-on-startup" value="true"/>
+          <property name="eclipselink.jdbc.native-sql" value="true"/>
+          <property name="eclipselink.logging.logger" value="JavaLogger"/>
+          <property name="eclipselink.logging.parameters" value="true"/>
+          <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+          
+          <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
+          <!--
+              Hibernate doesn't need a property here; the presence of a
+              JTAPlatform CDI bean will be enough.
+          -->
 
-      <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
-      <!--
-          Hibernate doesn't need a property here; the presence of a
-          JTAPlatform CDI bean will be enough.
-      -->
-
-      <property name="eclipselink.weaving" value="false"/>
-      <!--
-          Hibernate weaving is disabled by default so there is no
-          property to set here; see
-          https://github.com/hibernate/hibernate-orm/blob/5.3.7/documentation/src/main/asciidoc/userguide/chapters/pc/BytecodeEnhancement.adoc#runtime-enhancement
-      -->
+          <property name="eclipselink.weaving" value="false"/>
+          <!--
+              Hibernate weaving is disabled by default so there is no
+              property to set here; see
+              https://github.com/hibernate/hibernate-orm/blob/5.3.7/documentation/src/main/asciidoc/userguide/chapters/pc/BytecodeEnhancement.adoc#runtime-enhancement
+          -->
 
     </properties>
   </persistence-unit>

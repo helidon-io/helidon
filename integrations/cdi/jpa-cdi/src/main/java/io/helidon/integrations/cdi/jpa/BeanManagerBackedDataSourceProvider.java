@@ -103,7 +103,8 @@ class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.Dat
      * {@code null}.</p>
      *
      * @param jta if {@code true}, the {@link DataSource} that is
-     * returned may be enrolled in JTA-compliant transactions
+     * returned may be enrolled in JTA-compliant transactions; this
+     * implementation ignores this parameter
      *
      * @param useDefaultJta if {@code true}, and if the {@code jta}
      * parameter value is {@code true}, the supplied {@code

@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -27,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -48,6 +51,8 @@ import javax.persistence.Converter;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceProperty;
 import javax.persistence.PersistenceUnit;
 import javax.persistence.spi.PersistenceProvider;
 import javax.persistence.spi.PersistenceProviderResolver;
@@ -83,6 +88,7 @@ public class JpaExtension implements Extension {
      * Instance fields.
      */
 
+    private final Map<String, PersistenceUnitInfoBean> implicitPersistenceUnits;
 
     /**
      * A {@link Map} of {@link Set}s of {@link Class}es whose keys are
@@ -110,6 +116,7 @@ public class JpaExtension implements Extension {
     public JpaExtension() {
         super();
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
+        this.implicitPersistenceUnits = new HashMap<>();
     }
 
 
@@ -117,6 +124,76 @@ public class JpaExtension implements Extension {
      * Instance methods.
      */
 
+
+    private void gatherImplicitPersistenceUnits(@Observes
+                                                @WithAnnotations({
+                                                    PersistenceContext.class // yes, PersistenceContext, not PersistenceUnit
+                                                })
+                                                final ProcessAnnotatedType<?> event,
+                                                final BeanManager beanManager) {
+        if (event != null && beanManager != null) {
+            final AnnotatedType<?> annotatedType = event.getAnnotatedType();
+            if (annotatedType != null
+                && !annotatedType.isAnnotationPresent(Vetoed.class)) {
+                final Set<? extends PersistenceContext> persistenceContexts =
+                    annotatedType.getAnnotations(PersistenceContext.class);
+                if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
+                    for (final PersistenceContext persistenceContext : persistenceContexts) {
+                        assert persistenceContext != null;
+                        final PersistenceProperty[] persistenceProperties = persistenceContext.properties();
+                        if (persistenceProperties != null && persistenceProperties.length > 0) {
+                            final String persistenceUnitName = persistenceContext.unitName();
+                            assert persistenceUnitName != null;
+                            PersistenceUnitInfoBean persistenceUnit = this.implicitPersistenceUnits.get(persistenceUnitName);
+                            if (persistenceUnit == null) {
+                                final String jtaDataSourceName;
+                                if (persistenceUnitName.isEmpty()) {
+                                    jtaDataSourceName = null;
+                                } else {
+                                    jtaDataSourceName = persistenceUnitName;
+                                }
+                                final Class<?> javaClass = annotatedType.getJavaClass();
+                                assert javaClass != null;
+                                URL persistenceUnitRoot = null;
+                                final ProtectionDomain pd = javaClass.getProtectionDomain();
+                                if (pd != null) {
+                                    final CodeSource cs = pd.getCodeSource();
+                                    if (cs != null) {
+                                        persistenceUnitRoot = cs.getLocation();
+                                    }
+                                }
+                                final Properties properties = new Properties();
+                                for (final PersistenceProperty persistenceProperty : persistenceProperties) {
+                                    assert persistenceProperty != null;
+                                    final String persistencePropertyName = persistenceProperty.name();
+                                    assert persistencePropertyName != null;
+                                    if (!persistencePropertyName.isEmpty()) {
+                                        properties.setProperty(persistencePropertyName, persistenceProperty.value());
+                                    }
+                                }
+                                persistenceUnit =
+                                    new PersistenceUnitInfoBean(persistenceUnitName,
+                                                                persistenceUnitRoot,
+                                                                null,
+                                                                new BeanManagerBackedDataSourceProvider(beanManager),
+                                                                properties);
+                                this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
+                            } else {
+                                // Skip processing this annotation, or
+                                // actually probably register an
+                                // error
+                            }
+                        } else {
+                            // Skip processing this annotation; there
+                            // aren't any @PersistenceProperties on it
+                            // so it may be a simple declaration of a
+                            // dependency on this persistence unit
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Tracks {@linkplain Converter converters}, {@linkplain Entity
@@ -157,34 +234,61 @@ public class JpaExtension implements Extension {
         if (event != null) {
             final AnnotatedType<?> annotatedType = event.getAnnotatedType();
             if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
-                final Class<?> managedClass = annotatedType.getJavaClass();
-                assert managedClass != null;
-                final Set<PersistenceUnit> persistenceUnits =
-                    annotatedType.getAnnotations(PersistenceUnit.class);
-                if (persistenceUnits == null || persistenceUnits.isEmpty()) {
-                    Set<Class<?>> unlistedManagedClasses =
-                        this.unlistedManagedClassesByPersistenceUnitNames.get("");
-                    if (unlistedManagedClasses == null) {
-                        unlistedManagedClasses = new HashSet<>();
-                        this.unlistedManagedClassesByPersistenceUnitNames.put("", unlistedManagedClasses);
-                    }
-                    unlistedManagedClasses.add(managedClass);
-                } else {
-                    for (final PersistenceUnit persistenceUnit : persistenceUnits) {
-                        String name = "";
-                        if (persistenceUnit != null) {
-                            name = persistenceUnit.unitName();
-                            assert name != null;
+                munge(annotatedType.getAnnotations(PersistenceContext.class),
+                      annotatedType.getAnnotations(PersistenceUnit.class),
+                      annotatedType.getJavaClass());
+                event.veto(); // managed classes can't be beans
+            }
+        }
+    }
+
+    private void munge(final Set<? extends PersistenceContext> persistenceContexts,
+                       final Set<? extends PersistenceUnit> persistenceUnits,
+                       final Class<?> c) {
+        if (c != null) {
+            boolean processed = false;
+            if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
+                for (final PersistenceContext persistenceContext : persistenceContexts) {
+                    if (persistenceContext != null) {
+                        final String name = persistenceContext.unitName(); // yes, unitName
+                        assert name != null;
+                        if (!name.isEmpty()) {
+                            processed = true;
+                            addUnlistedManagedClass(name, c);
                         }
-                        Set<Class<?>> unlistedManagedClasses = this.unlistedManagedClassesByPersistenceUnitNames.get(name);
-                        if (unlistedManagedClasses == null) {
-                            unlistedManagedClasses = new HashSet<>();
-                            this.unlistedManagedClassesByPersistenceUnitNames.put(name, unlistedManagedClasses);
-                        }
-                        unlistedManagedClasses.add(managedClass);
                     }
                 }
-                event.veto(); // managed classes can't be beans
+            }
+            if (persistenceUnits != null && !persistenceUnits.isEmpty()) {
+                for (final PersistenceUnit persistenceUnit : persistenceUnits) {
+                    if (persistenceUnit != null) {
+                        final String name = persistenceUnit.unitName(); // yes, unitName
+                        assert name != null;
+                        if (!name.isEmpty()) {
+                            processed = true;
+                            addUnlistedManagedClass(name, c);
+                        }
+                    }
+                }
+            }
+            if (!processed) {
+                addUnlistedManagedClass("", c);
+            }
+        }
+    }
+
+    private void addUnlistedManagedClass(String name, final Class<?> managedClass) {
+        if (managedClass != null) {
+            if (name == null) {
+                name = "";
+            }
+            if (!name.isEmpty()) {
+                Set<Class<?>> unlistedManagedClasses = this.unlistedManagedClassesByPersistenceUnitNames.get(name);
+                if (unlistedManagedClasses == null) {
+                    unlistedManagedClasses = new HashSet<>();
+                    this.unlistedManagedClassesByPersistenceUnitNames.put(name, unlistedManagedClasses);
+                }
+                unlistedManagedClasses.add(managedClass);
             }
         }
     }
@@ -244,12 +348,16 @@ public class JpaExtension implements Extension {
                     .scope(Singleton.class)
                     .createWith(cc -> provider);
             }
+            // Should we consider type-level @PersistenceContext
+            // definitions of persistence units?
+            boolean processImplicits = true;
             // Collect all pre-existing PersistenceUnitInfo beans and
             // make sure their associated PersistenceProviders are
             // beanified.  (Many times this Set will be empty.)
             final Set<Bean<?>> preexistingPersistenceUnitInfoBeans =
                 beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
             if (preexistingPersistenceUnitInfoBeans != null && !preexistingPersistenceUnitInfoBeans.isEmpty()) {
+                processImplicits = false;
                 for (final Bean<?> preexistingPersistenceUnitInfoBean : preexistingPersistenceUnitInfoBeans) {
                     if (preexistingPersistenceUnitInfoBean != null) {
                         // We use the Bean directly to create a
@@ -275,6 +383,7 @@ public class JpaExtension implements Extension {
             assert classLoader != null;
             final Enumeration<URL> urls = classLoader.getResources("META-INF/persistence.xml");
             if (urls != null && urls.hasMoreElements()) {
+                processImplicits = false;
                 final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
                 if (classLoader instanceof URLClassLoader) {
                     tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
@@ -288,16 +397,20 @@ public class JpaExtension implements Extension {
                 // well.
                 //
                 // Note that XMLInputFactory is NOT deprecated in JDK 8
-                // (https://docs.oracle.com/javase/8/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory--),
+                // ( https://docs.oracle.com/javase/8/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory-- ),
                 // IS deprecated in JDK 9
-                // (https://docs.oracle.com/javase/9/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory--)
+                // ( https://docs.oracle.com/javase/9/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory-- )
                 // with a claim that it was deprecated since JDK 1.7, but in
                 // JDK 7 it actually was _not_ deprecated
-                // (https://docs.oracle.com/javase/7/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory() )
+                // ( https://docs.oracle.com/javase/7/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory() )
                 // and now in JDK 10 it is NO LONGER deprecated
-                // (https://docs.oracle.com/javase/10/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory() ),
+                // ( https://docs.oracle.com/javase/10/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory() ),
                 // nor in JDK 11
-                // (https://docs.oracle.com/en/java/javase/11/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ).
+                // ( https://docs.oracle.com/en/java/javase/11/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ),
+                // nor in JDK 12
+                // ( https://docs.oracle.com/en/java/javase/12/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ).
+                // Suppress deprecation warnings since the JDK can't
+                // even figure it out!
                 @SuppressWarnings("deprecation")
                 final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
                 assert xmlInputFactory != null;
@@ -305,9 +418,10 @@ public class JpaExtension implements Extension {
                     JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
                 assert unmarshaller != null;
                 // Normally we'd let CDI instantiate this guy but we
-                // are forbidden from getting references at this stage
-                // in the lifecycle.  Instantiating this provider by
-                // hand is fine as there is no state retained.
+                // are forbidden from getting CDI bean references at
+                // this stage in the lifecycle.  Instantiating this
+                // provider by hand is fine since it retains no state
+                // internally.
                 final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
                 while (urls.hasMoreElements()) {
                     final URL url = urls.nextElement();
@@ -338,8 +452,31 @@ public class JpaExtension implements Extension {
                     }
                 }
             }
+            if (processImplicits) {
+                for (final PersistenceUnitInfoBean persistenceUnitInfoBean : this.implicitPersistenceUnits.values()) {
+                    assert persistenceUnitInfoBean != null;
+                    final String persistenceUnitName = persistenceUnitInfoBean.getPersistenceUnitName();
+                    if (!persistenceUnitInfoBean.excludeUnlistedClasses()) {
+                        final Collection<? extends Class<?>> unlistedManagedClasses =
+                            this.unlistedManagedClassesByPersistenceUnitNames.get(persistenceUnitName);
+                        if (unlistedManagedClasses != null && !unlistedManagedClasses.isEmpty()) {
+                            for (final Class<?> unlistedManagedClass : unlistedManagedClasses) {
+                                assert unlistedManagedClass != null;
+                                persistenceUnitInfoBean.addManagedClassName(unlistedManagedClass.getName());
+                            }
+                        }
+                    }
+                    event.addBean()
+                        .types(Collections.singleton(PersistenceUnitInfo.class))
+                        .scope(Singleton.class)
+                        .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
+                        .createWith(cc -> persistenceUnitInfoBean);
+                    maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
+                }
+            }
         }
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
+        this.implicitPersistenceUnits.clear();
     }
 
     /**
