@@ -65,8 +65,8 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      * WeldJpaInjectionServices} by virtue of the way it loads its
      * bootstrap services.  We want to ensure there's just one that
      * can be injected into observer methods.  See the {@link
-     * TransactionSynchronizationRegistryObserver} class, which houses
-     * one such observer method.</p>
+     * TransactionObserver} class, which houses one such observer
+     * method.</p>
      *
      * @param event the {@link AfterBeanDiscovery} event; may be
      * {@code null} in which case no action will be taken

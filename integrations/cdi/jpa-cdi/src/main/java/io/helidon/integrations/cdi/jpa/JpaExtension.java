@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -29,15 +27,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.Priority;
-import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
+import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AnnotatedType;
@@ -88,15 +85,6 @@ public class JpaExtension implements Extension {
 
 
     /**
-     * A {@link Set} of {@link PersistenceUnitInfoBean} instances that
-     * were synthesized out of {@link DataSourceDefinition}
-     * annotations.
-     *
-     * <p>This field is never {@code null} but often empty.</p>
-     */
-    private final Set<PersistenceUnitInfoBean> potentialPersistenceUnitInfoBeans;
-
-    /**
      * A {@link Map} of {@link Set}s of {@link Class}es whose keys are
      * persistence unit names and whose values are {@link Set}s of
      * {@link Class}es discovered by CDI (and hence consist of
@@ -121,7 +109,6 @@ public class JpaExtension implements Extension {
      */
     public JpaExtension() {
         super();
-        this.potentialPersistenceUnitInfoBeans = new HashSet<>();
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
     }
 
@@ -130,58 +117,6 @@ public class JpaExtension implements Extension {
      * Instance methods.
      */
 
-
-    /**
-     * Observes the {@link ProcessAnnotatedType} event to look for
-     * types that have {@link DataSourceDefinition} annotations on
-     * them.
-     *
-     * @param event the {@link ProcessAnnotatedType} event; may be
-     * {@code null} in which case no action will be taken
-     *
-     * @param beanManager the current {@link BeanManager}; may be
-     * {@code null} in which case no action will be taken
-     */
-    private void discoverDataSourceDefinitions(@Observes
-                                               @WithAnnotations({
-                                                   DataSourceDefinition.class
-                                               })
-                                               final ProcessAnnotatedType<?> event,
-                                               final BeanManager beanManager) {
-        if (event != null && beanManager != null) {
-            final AnnotatedType<?> annotatedType = event.getAnnotatedType();
-            if (annotatedType != null) {
-                final DataSourceDefinition dsd = annotatedType.getAnnotation(DataSourceDefinition.class);
-                assert dsd != null;
-                final String name = dsd.name();
-                if (name != null) {
-                    final Class<?> javaClass = annotatedType.getJavaClass();
-                    assert javaClass != null;
-                    // Get its URL
-                    URL url = null;
-                    final ProtectionDomain pd = javaClass.getProtectionDomain();
-                    if (pd != null) {
-                        final CodeSource cs = pd.getCodeSource();
-                        if (cs != null) {
-                            url = cs.getLocation();
-                        }
-                    }
-                    if (url != null) {
-                        // Revisit: need to populate these somehow
-                        final Properties properties = new Properties();
-                        final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
-                        final PersistenceUnitInfoBean puInfo =
-                            new PersistenceUnitInfoBean(name,
-                                                        url,
-                                                        null,
-                                                        dataSourceProvider,
-                                                        properties);
-                        this.potentialPersistenceUnitInfoBeans.add(puInfo);
-                    }
-                }
-            }
-        }
-    }
 
     /**
      * Tracks {@linkplain Converter converters}, {@linkplain Entity
@@ -221,7 +156,7 @@ public class JpaExtension implements Extension {
                                         final ProcessAnnotatedType<?> event) {
         if (event != null) {
             final AnnotatedType<?> annotatedType = event.getAnnotatedType();
-            if (annotatedType != null) {
+            if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
                 final Class<?> managedClass = annotatedType.getJavaClass();
                 assert managedClass != null;
                 final Set<PersistenceUnit> persistenceUnits =
@@ -249,8 +184,8 @@ public class JpaExtension implements Extension {
                         unlistedManagedClasses.add(managedClass);
                     }
                 }
+                event.veto(); // managed classes can't be beans
             }
-            event.veto(); // managed classes can't be beans
         }
     }
 
@@ -309,16 +244,12 @@ public class JpaExtension implements Extension {
                     .scope(Singleton.class)
                     .createWith(cc -> provider);
             }
-            boolean maybeAddDataSourceDefinitionBasedPersistenceUnits;
             // Collect all pre-existing PersistenceUnitInfo beans and
             // make sure their associated PersistenceProviders are
             // beanified.  (Many times this Set will be empty.)
             final Set<Bean<?>> preexistingPersistenceUnitInfoBeans =
                 beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
-            if (preexistingPersistenceUnitInfoBeans == null || preexistingPersistenceUnitInfoBeans.isEmpty()) {
-                maybeAddDataSourceDefinitionBasedPersistenceUnits = !this.potentialPersistenceUnitInfoBeans.isEmpty();
-            } else {
-                maybeAddDataSourceDefinitionBasedPersistenceUnits = false;
+            if (preexistingPersistenceUnitInfoBeans != null && !preexistingPersistenceUnitInfoBeans.isEmpty()) {
                 for (final Bean<?> preexistingPersistenceUnitInfoBean : preexistingPersistenceUnitInfoBeans) {
                     if (preexistingPersistenceUnitInfoBean != null) {
                         // We use the Bean directly to create a
@@ -344,7 +275,6 @@ public class JpaExtension implements Extension {
             assert classLoader != null;
             final Enumeration<URL> urls = classLoader.getResources("META-INF/persistence.xml");
             if (urls != null && urls.hasMoreElements()) {
-                maybeAddDataSourceDefinitionBasedPersistenceUnits = false;
                 final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
                 if (classLoader instanceof URLClassLoader) {
                     tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
@@ -408,34 +338,7 @@ public class JpaExtension implements Extension {
                     }
                 }
             }
-            // If we didn't have any explicit PersistenceUnitInfo
-            // beans, and we didn't have any META-INF/persistence.xml
-            // resources, but we DID discover DataSourceDefinitions,
-            // then we built up some PersistenceUnitInfo POJOs
-            // earlier.  Beanify them.
-            if (maybeAddDataSourceDefinitionBasedPersistenceUnits) {
-                assert !this.potentialPersistenceUnitInfoBeans.isEmpty();
-                for (final PersistenceUnitInfoBean persistenceUnitInfo : this.potentialPersistenceUnitInfoBeans) {
-                    assert persistenceUnitInfo != null;
-                    final String name = persistenceUnitInfo.getPersistenceUnitName();
-                    assert name != null;
-                    final Collection<? extends Class<?>> classes = this.unlistedManagedClassesByPersistenceUnitNames.get(name);
-                    if (classes != null && !classes.isEmpty()) {
-                        for (final Class<?> c : classes) {
-                            assert c != null;
-                            persistenceUnitInfo.addManagedClassName(c.getName());
-                        }
-                    }
-                    event.addBean()
-                        .types(Collections.singleton(PersistenceUnitInfo.class))
-                        .scope(Singleton.class)
-                        .addQualifiers(NamedLiteral.of(name))
-                        .createWith(cc -> persistenceUnitInfo);
-                    maybeAddPersistenceProviderBean(event, persistenceUnitInfo, providers);
-                }
-            }
         }
-        this.potentialPersistenceUnitInfoBeans.clear();
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
     }
 
