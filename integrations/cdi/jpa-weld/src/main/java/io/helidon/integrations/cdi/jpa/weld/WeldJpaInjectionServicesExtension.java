@@ -53,11 +53,10 @@ final class WeldJpaInjectionServicesExtension implements Extension {
     private WeldJpaInjectionServicesExtension() {
         super();
         final String cn = this.getClass().getName();
-        final String mn = "<init>";
         final Logger logger = Logger.getLogger(cn);
         if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn);
-            logger.exiting(cn, mn);
+            logger.entering(cn, "<init>");
+            logger.exiting(cn, "<init>");
         }
     }
 
@@ -93,6 +92,7 @@ final class WeldJpaInjectionServicesExtension implements Extension {
         if (logger.isLoggable(Level.FINER)) {
             logger.entering(cn, mn, event);
         }
+
         if (event != null) {
             event.addBean()
                  .addTransitiveTypeClosure(WeldJpaInjectionServices.class)
@@ -101,6 +101,7 @@ final class WeldJpaInjectionServicesExtension implements Extension {
                      return WeldJpaInjectionServices.getInstance();
                   });
         }
+
         if (logger.isLoggable(Level.FINER)) {
             logger.exiting(cn, mn);
         }

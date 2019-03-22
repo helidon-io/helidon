@@ -17,6 +17,7 @@ package io.helidon.integrations.cdi.jpa.weld;
 
 import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.ContextNotActiveException;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
@@ -35,7 +36,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ApplicationScoped
 @DataSourceDefinition(
@@ -63,6 +66,7 @@ public class TestIntegration {
 
     @BeforeEach
     void startCdiContainer() {
+        shutDownCdiContainer();
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(TestIntegration.class);
         assertNotNull(initializer);
@@ -73,6 +77,7 @@ public class TestIntegration {
     void shutDownCdiContainer() {
         if (this.cdiContainer != null) {
             this.cdiContainer.close();
+            this.cdiContainer = null;
         }
     }
 
@@ -82,6 +87,7 @@ public class TestIntegration {
         assertNotNull(event);
         assertNotNull(self);
         self.doSomethingTransactional();
+        self.doSomethingNonTransactional();
     }
 
     @Transactional(Transactional.TxType.REQUIRED)
@@ -89,12 +95,25 @@ public class TestIntegration {
         assertNotNull(this.transaction);
         assertEquals(Status.STATUS_ACTIVE, this.transaction.getStatus());
         assertNotNull(this.entityManager);
-        assertTrue(this.entityManager.isJoinedToTransaction());
+        assertTrue(this.entityManager.isOpen());
+        assertTrue(this.entityManager.isJoinedToTransaction());        
+    }
+
+    void doSomethingNonTransactional() {
+        assertNotNull(this.transaction); // ...but the scope won't be active
+        try {
+            this.transaction.toString();
+            fail("The TransactionScoped scope was active when it should not have been");
+        } catch (final ContextNotActiveException expected) {
+
+        }
+        assertNotNull(this.entityManager);
+        assertTrue(this.entityManager.isOpen());
+        
     }
 
     @Test
     void testIntegration() {
-
     }
 
 }
