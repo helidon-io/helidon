@@ -88,6 +88,24 @@ public class JpaExtension implements Extension {
      * Instance fields.
      */
 
+
+    /**
+     * A {@link Map} of {@link PersistenceUnitInfoBean} instances that
+     * were created by the {@link
+     * #gatherImplicitPersistenceUnits(ProcessAnnotatedType,
+     * BeanManager)} observer method, indexed by the names of
+     * persistence units.
+     *
+     * <p>This field is never {@code null}.</p>
+     *
+     * <p>The contents of this field are used only when no explicit
+     * {@link PersistenceUnitInfo} beans are otherwise available in
+     * the container.</p>
+     *
+     * @see #gatherImplicitPersistenceUnits(ProcessAnnotatedType, BeanManager)
+     *
+     * @see #afterBeanDiscovery(AfterBeanDiscovery, BeanManager)
+     */
     private final Map<String, PersistenceUnitInfoBean> implicitPersistenceUnits;
 
     /**
@@ -125,6 +143,26 @@ public class JpaExtension implements Extension {
      */
 
 
+    /**
+     * Looks for type-level {@link PersistenceContext} annotations
+     * that have at least one {@link PersistenceProperty} annotation
+     * {@linkplain PersistenceContext#properties() associated with}
+     * them and uses them to define persistence units, potentially
+     * preventing the need for {@code META-INF/persistence.xml}
+     * processing.
+     *
+     * @param event the {@link ProcessAnnotatedType} event occurring;
+     * may be {@code null} in which case no action will be taken
+     *
+     * @param beanManager the {@link BeanManager} in effect; may be
+     * {@code null} in which case no action will be taken
+     *
+     * @see PersistenceContext
+     *
+     * @see PersistenceProperty
+     *
+     * @see PersistenceUnitInfoBean
+     */
     private void gatherImplicitPersistenceUnits(@Observes
                                                 @WithAnnotations({
                                                     PersistenceContext.class // yes, PersistenceContext, not PersistenceUnit
@@ -234,17 +272,40 @@ public class JpaExtension implements Extension {
         if (event != null) {
             final AnnotatedType<?> annotatedType = event.getAnnotatedType();
             if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
-                munge(annotatedType.getAnnotations(PersistenceContext.class),
-                      annotatedType.getAnnotations(PersistenceUnit.class),
-                      annotatedType.getJavaClass());
+                this.assignManagedClassToPersistenceUnit(annotatedType.getAnnotations(PersistenceContext.class),
+                                                         annotatedType.getAnnotations(PersistenceUnit.class),
+                                                         annotatedType.getJavaClass());
                 event.veto(); // managed classes can't be beans
             }
         }
     }
 
-    private void munge(final Set<? extends PersistenceContext> persistenceContexts,
-                       final Set<? extends PersistenceUnit> persistenceUnits,
-                       final Class<?> c) {
+    /**
+     * Given {@link Set}s of {@link PersistenceContext} and {@link
+     * PersistenceUnit} annotations that will be used for their {@code
+     * unitName} elements only, associates the supplied {@link Class}
+     * with the persistence units implied by the annotations.
+     *
+     * @param persistenceContexts a {@link Set} of {@link
+     * PersistenceContext}s whose {@link PersistenceContext#unitName()
+     * unitName} elements identify persistence units; may be {@code
+     * null} or {@linkplain Collection#isEmpty() empty}
+     *
+     * @param persistenceUnits a {@link Set} of {@link
+     * PersistenceUnit}s whose {@link PersistenceUnit#unitName()
+     * unitName} elements identify persistence units; may be {@code
+     * null} or {@linkplain Collection#isEmpty() empty}
+     *
+     * @param c the {@link Class} to associate; may be {@code null} in
+     * which case no action will be taken
+     *
+     * @see PersistenceContext
+     *
+     * @see PersistenceUnit
+     */
+    private void assignManagedClassToPersistenceUnit(final Set<? extends PersistenceContext> persistenceContexts,
+                                                     final Set<? extends PersistenceUnit> persistenceUnits,
+                                                     final Class<?> c) {
         if (c != null) {
             boolean processed = false;
             if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
@@ -277,6 +338,20 @@ public class JpaExtension implements Extension {
         }
     }
 
+    /**
+     * Given a {@link Class} and a name of a persistence unit,
+     * associates the {@link Class} with that persistence unit as a
+     * member of its list of governed classes.
+     *
+     * @param name the name of the persistence unit in question; may
+     * be {@code null} in which case the empty string ({@code ""})
+     * will be used instead
+     *
+     * @param managedClass the {@link Class} to associate; may be
+     * {@code null} in which case no action will be taken
+     *
+     * @see PersistenceUnitInfo#getManagedClassNames()
+     */
     private void addUnlistedManagedClass(String name, final Class<?> managedClass) {
         if (managedClass != null) {
             if (name == null) {
@@ -504,6 +579,9 @@ public class JpaExtension implements Extension {
      *
      * @exception NullPointerException if {@code event} or {@code
      * persistenceUnitInfo} is {@code null}
+     *
+     * @exception ReflectiveOperationException if an error occurs
+     * during reflection
      */
     private static void maybeAddPersistenceProviderBean(final AfterBeanDiscovery event,
                                                         final PersistenceUnitInfo persistenceUnitInfo,
