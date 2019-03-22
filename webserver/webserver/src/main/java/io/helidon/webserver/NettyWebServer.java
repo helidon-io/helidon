@@ -86,7 +86,7 @@ class NettyWebServer implements WebServer {
                    Map<String, Routing> namedRoutings) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
-        LOGGER.info(() -> Version.PRODUCT + " Version: " + Version.VERSION + " " + Version.BUILD_TIMESTAMP);
+        LOGGER.info(() -> "Version: " + Version.VERSION);
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
 
