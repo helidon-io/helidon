@@ -71,6 +71,7 @@ final class TransactionObserver {
      */
     private static void jtaTransactionBegun(@Observes @Initialized(TransactionScoped.class) final Object event,
                                             final WeldJpaInjectionServices services) {
+
         if (services != null) {
             services.jtaTransactionBegun();
         }

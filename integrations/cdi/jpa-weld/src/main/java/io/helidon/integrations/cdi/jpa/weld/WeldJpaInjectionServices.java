@@ -27,6 +27,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.Any;
@@ -73,15 +75,15 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
 
     /*
-     * Weld instantiates this class three times during normal
-     * execution (see https://issues.jboss.org/browse/WELD-2563 for
-     * details).  Only one of those instances (the first) is actually
-     * used to produce EntityManagers and EntityManagerFactories; the
-     * other two are discarded.  The static instance and underway
-     * fields ensure that truly only one instance processes all
-     * incoming calls, and that it is the one that is actually tracked
-     * and stored by Weld itself in the return value of the
-     * WeldManager#getServices() method.
+     * Weld instantiates this class exactly three (!) times during
+     * normal execution (see https://issues.jboss.org/browse/WELD-2563
+     * for details).  Only one of those instances (the first) is
+     * actually used to produce EntityManagers and
+     * EntityManagerFactories; the other two are discarded.  The
+     * static instance and underway fields ensure that truly only one
+     * instance processes all incoming calls, and that it is the one
+     * that is actually tracked and stored by Weld itself in the
+     * return value of the WeldManager#getServices() method.
      *
      * See the underway() method as well.
      */
@@ -112,6 +114,13 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      * Instance fields.
      */
 
+
+    /**
+     * A {@link Logger} for use by this {@link WeldJpaInjectionServices}.
+     *
+     * <p>This field is never {@code null}.</p>
+     */
+    private final Logger logger;
 
     /**
      * A {@link Set} of {@link EntityManager}s that have been created
@@ -153,6 +162,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
     private WeldJpaInjectionServices() {
         super();
+        this.logger = Logger.getLogger(this.getClass().getName());
         synchronized (WeldJpaInjectionServices.class) {
             // See https://issues.jboss.org/browse/WELD-2563.  Make sure
             // only the first instance is "kept" as it's the one tracked by
@@ -207,8 +217,24 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      * supplied object is non-{@code null}.</p>
      */
     void jtaTransactionBegun() {
+        final String cn = this.getClass().getName();
+        final String mn = "jtaTransactionBegun";
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn);
+        }
+
         assert this == instance;
-        this.containerManagedEntityManagers.forEach(em -> em.joinTransaction());
+        for (final EntityManager containerManagedEntityManager : this.containerManagedEntityManagers) {
+            assert containerManagedEntityManager != null;
+            if (logger.isLoggable(Level.FINE)) {
+                logger.logp(Level.FINE, cn, mn, "{0} joining transaction", containerManagedEntityManager);
+            }
+            containerManagedEntityManager.joinTransaction();
+        }
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
+        }
     }
 
     /**
@@ -232,6 +258,11 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
     @Override
     public ResourceReferenceFactory<EntityManager> registerPersistenceContextInjectionPoint(final InjectionPoint injectionPoint) {
+        final String cn = this.getClass().getName();
+        final String mn = "registerPersistenceContextInjectionPoint";
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, injectionPoint);
+        }
         underway();
         assert this == instance;
         final ResourceReferenceFactory<EntityManager> returnValue;
@@ -261,6 +292,9 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             }
         }
         returnValue = () -> new EntityManagerResourceReference(name, synchronizationType);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn, returnValue);
+        }
         return returnValue;
     }
 
@@ -286,6 +320,11 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     @Override
     public ResourceReferenceFactory<EntityManagerFactory>
         registerPersistenceUnitInjectionPoint(final InjectionPoint injectionPoint) {
+        final String cn = this.getClass().getName();
+        final String mn = "registerPersistenceUnitInjectionPoint";
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, injectionPoint);
+        }
         underway();
         assert this == instance;
         final ResourceReferenceFactory<EntityManagerFactory> returnValue;
@@ -313,6 +352,9 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             }
         }
         returnValue = () -> new EntityManagerFactoryResourceReference(this.emfs, name);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn, returnValue);
+        }
         return returnValue;
     }
 
@@ -447,6 +489,13 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     }
 
     private static PersistenceUnitInfo getPersistenceUnitInfo(final String name) {
+        final String cn = WeldJpaInjectionServices.class.getName();
+        final String mn = "getPersistenceUnitInfo";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, name);
+        }
+
         Objects.requireNonNull(name);
         PersistenceUnitInfo returnValue = null;
         final CDI<Object> cdi = CDI.current();
@@ -485,55 +534,72 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                                                                              beanManager.createCreationalContext(bean));
             }
         }
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn, returnValue);
+        }
         return returnValue;
     }
 
     private static EntityManagerFactory getOrCreateEntityManagerFactory(final Map<String, EntityManagerFactory> emfs,
                                                                         final PersistenceUnitInfo persistenceUnitInfo,
                                                                         final String name) {
+        final String cn = WeldJpaInjectionServices.class.getName();
+        final String mn = "getOrCreateEntityManagerFactory";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {emfs, persistenceUnitInfo, name});
+        }
+
         Objects.requireNonNull(emfs);
         Objects.requireNonNull(name);
         final EntityManagerFactory returnValue;
-        if (persistenceUnitInfo == null) {
-            returnValue =
-                emfs.computeIfAbsent(name, n -> {
-                        return Persistence.createEntityManagerFactory(n);
-                    });
+        if (persistenceUnitInfo == null || RESOURCE_LOCAL.equals(persistenceUnitInfo.getTransactionType())) {
+            returnValue = emfs.computeIfAbsent(name, n -> Persistence.createEntityManagerFactory(n));
         } else {
-            final PersistenceProvider persistenceProvider = getPersistenceProvider(persistenceUnitInfo);
-            assert persistenceProvider != null;
-            returnValue =
-                emfs.computeIfAbsent(name,
-                                     n -> {
-                                         final CDI<Object> cdi = CDI.current();
-                                         assert cdi != null;
-                                         final BeanManager beanManager = cdi.getBeanManager();
-                                         assert beanManager != null;
-                                         final Map<String, Object> properties = new HashMap<>();
-                                         properties.put("javax.persistence.bean.manager",
-                                                        beanManager);
-                                         Class<?> validatorFactoryClass = null;
-                                         try {
-                                             validatorFactoryClass = Class.forName("javax.validation.ValidatorFactory");
-                                         } catch (final ClassNotFoundException classNotFoundException) {
+            returnValue = emfs.computeIfAbsent(name, n -> createContainerManagedEntityManagerFactory(persistenceUnitInfo));
+        }
 
-                                         }
-                                         if (validatorFactoryClass != null) {
-                                             final Bean<?> vfb =
-                                                 getValidatorFactoryBean(beanManager,
-                                                                         validatorFactoryClass);
-                                             if (vfb != null) {
-                                                 final CreationalContext<?> cc = beanManager.createCreationalContext(vfb);
-                                                 properties.put("javax.validation.ValidatorFactory",
-                                                                beanManager.getReference(vfb,
-                                                                                         validatorFactoryClass,
-                                                                                         cc));
-                                             }
-                                         }
-                                         return
-                                         persistenceProvider.createContainerEntityManagerFactory(persistenceUnitInfo,
-                                                                                                 properties);
-                                     });
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn, returnValue);
+        }
+        return returnValue;
+    }
+
+    private static EntityManagerFactory createContainerManagedEntityManagerFactory(final PersistenceUnitInfo info) {
+        final String cn = WeldJpaInjectionServices.class.getName();
+        final String mn = "createContainerManagedEntityManagerFactory";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, info);
+        }
+
+        Objects.requireNonNull(info);
+        final PersistenceProvider persistenceProvider = getPersistenceProvider(info);
+        assert persistenceProvider != null;
+        final CDI<Object> cdi = CDI.current();
+        assert cdi != null;
+        final BeanManager beanManager = cdi.getBeanManager();
+        assert beanManager != null;
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("javax.persistence.bean.manager", beanManager);
+        Class<?> validatorFactoryClass = null;
+        try {
+            validatorFactoryClass = Class.forName("javax.validation.ValidatorFactory");
+        } catch (final ClassNotFoundException classNotFoundException) {
+
+        }
+        if (validatorFactoryClass != null) {
+            final Bean<?> vfb = getValidatorFactoryBean(beanManager, validatorFactoryClass);
+            if (vfb != null) {
+                final CreationalContext<?> cc = beanManager.createCreationalContext(vfb);
+                properties.put("javax.validation.ValidatorFactory", beanManager.getReference(vfb, validatorFactoryClass, cc));
+            }
+        }
+        final EntityManagerFactory returnValue = persistenceProvider.createContainerEntityManagerFactory(info, properties);
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -569,6 +635,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
     private static final class EntityManagerFactoryResourceReference implements ResourceReference<EntityManagerFactory> {
 
+        private final Logger logger;
+
         private final Map<String, EntityManagerFactory> emfs;
 
         private final String name;
@@ -578,33 +646,73 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         private EntityManagerFactoryResourceReference(final Map<String, EntityManagerFactory> emfs,
                                                       final String name) {
             super();
+            final String cn = this.getClass().getName();
+            final String mn = "<init>";
+            this.logger = Logger.getLogger(cn);
+            if (logger.isLoggable(Level.FINER)) {
+                logger.entering(cn, mn, new Object[] {emfs, name});
+            }
+
             this.emfs = Objects.requireNonNull(emfs);
             this.name = Objects.requireNonNull(name);
             this.persistenceUnitInfo = getPersistenceUnitInfo(name);
-            assert this.persistenceUnitInfo != null;
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.exiting(cn, mn);
+            }
         }
 
         @Override
         public EntityManagerFactory getInstance() {
+            final String cn = this.getClass().getName();
+            final String mn = "getInstance";
+            if (logger.isLoggable(Level.FINER)) {
+                logger.entering(cn, mn);
+            }
+
+            // See https://developer.jboss.org/message/984489#984489;
+            // there is no contract governing whether, for example, an
+            // EntityManagerFactory should be created from within
+            // ResourceReference#getInstance() or from within
+            // ResourceReferenceFactory#createResource().  The
+            // maintainers of Weld and CDI suggest following what
+            // Wildfly does, as it is most likely (!) to be correct.
+            // So that's what we do.
             final EntityManagerFactory returnValue;
-            if (RESOURCE_LOCAL.equals(persistenceUnitInfo.getTransactionType())) {
+            if (this.persistenceUnitInfo == null || RESOURCE_LOCAL.equals(this.persistenceUnitInfo.getTransactionType())) {
                 returnValue = getOrCreateEntityManagerFactory(emfs, null, this.name);
             } else {
                 returnValue = getOrCreateEntityManagerFactory(emfs, this.persistenceUnitInfo, this.name);
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.exiting(cn, mn, returnValue);
             }
             return returnValue;
         }
 
         @Override
         public void release() {
+            final String cn = this.getClass().getName();
+            final String mn = "release";
+            if (logger.isLoggable(Level.FINER)) {
+                logger.entering(cn, mn);
+            }
+
             final EntityManagerFactory emf = this.emfs.remove(this.name);
             if (emf != null && emf.isOpen()) {
                 emf.close();
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.exiting(cn, mn);
             }
         }
     }
 
     private final class EntityManagerResourceReference implements ResourceReference<EntityManager> {
+
+        private final Logger logger;
 
         private final String name;
 
@@ -622,21 +730,26 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         private EntityManagerResourceReference(final String name,
                                                final SynchronizationType synchronizationType) {
             super();
+            final String cn = this.getClass().getName();
+            final String mn = "<init>";
+            this.logger = Logger.getLogger(cn);
+            if (logger.isLoggable(Level.FINER)) {
+                logger.entering(cn, mn, new Object[] {name, synchronizationType});
+            }
+
             this.name = Objects.requireNonNull(name);
             this.synchronizationType = Objects.requireNonNull(synchronizationType);
             this.persistenceUnitInfo = getPersistenceUnitInfo(name);
-            assert this.persistenceUnitInfo != null;
             final ExecutorService taskExecutorService =
                 ((WeldManager) CDI.current().getBeanManager()).getServices().get(ExecutorServices.class).getTaskExecutor();
             assert taskExecutorService != null;
+            // Kick off the lengthy process of setting up an
+            // EntityManagerFactory in the background with the
+            // optimistic assumption, possibly incorrect, that someone
+            // will call getInstance() at some point.
+            this.emfFuture =
+                taskExecutorService.submit(() -> getOrCreateEntityManagerFactory(emfs, this.persistenceUnitInfo, this.name));
             if (this.isResourceLocal()) {
-                // Kick off the lengthy process of setting up an
-                // EntityManagerFactory in the background with the
-                // optimistic assumption, possibly incorrect, that
-                // someone will call getInstance() at some point.
-                this.emfFuture = taskExecutorService.submit(() -> {
-                        return getOrCreateEntityManagerFactory(emfs, null, this.name);
-                    });
                 this.emSupplier = () -> {
                     try {
                         return emfFuture.get().createEntityManager();
@@ -648,13 +761,6 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                     }
                 };
             } else {
-                // Kick off the lengthy process of setting up an
-                // EntityManagerFactory in the background with the
-                // optimistic assumption, possibly incorrect, that
-                // someone will call getInstance() at some point.
-                this.emfFuture = taskExecutorService.submit(() -> {
-                        return getOrCreateEntityManagerFactory(emfs, this.persistenceUnitInfo, this.name);
-                    });
                 this.emSupplier = () -> {
                     try {
                         final EntityManager em = emfFuture.get().createEntityManager(this.synchronizationType);
@@ -669,29 +775,62 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                 };
             }
 
-
+            if (logger.isLoggable(Level.FINER)) {
+                logger.exiting(cn, mn);
+            }
         }
 
         private boolean isResourceLocal() {
-            return RESOURCE_LOCAL.equals(this.persistenceUnitInfo.getTransactionType());
+            return this.persistenceUnitInfo == null || RESOURCE_LOCAL.equals(this.persistenceUnitInfo.getTransactionType());
         }
 
         @Override
-        public synchronized EntityManager getInstance() {
-            if (this.em == null) {
-                this.em = this.emSupplier.get();
+        public EntityManager getInstance() {
+            final String cn = this.getClass().getName();
+            final String mn = "getInstance";
+            if (logger.isLoggable(Level.FINER)) {
+                logger.entering(cn, mn);
             }
-            return this.em;
+
+            final EntityManager em;
+            synchronized (this) {
+                // See
+                // https://developer.jboss.org/message/984489#984489;
+                // there is no contract governing whether, for
+                // example, an EntityManager should be created from
+                // within ResourceReference#getInstance() or from
+                // within ResourceReferenceFactory#createResource().
+                // The maintainers of Weld and CDI suggest following
+                // what Wildfly does, as it is most likely (!) to be
+                // correct.  So that's what we do.
+                if (this.em == null) {
+                    this.em = this.emSupplier.get();
+                }
+                em = this.em;
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.exiting(cn, mn, em);
+            }
+            return em;
         }
 
         @Override
         public void release() {
+            final String cn = this.getClass().getName();
+            final String mn = "release";
+            if (logger.isLoggable(Level.FINER)) {
+                logger.entering(cn, mn);
+            }
+
             final EntityManager em;
             synchronized (this) {
                 em = this.em;
                 this.em = null;
             }
+
             if (em != null) {
+                WeldJpaInjectionServices.this.containerManagedEntityManagers.remove(em);
                 if (em.isOpen() && this.isResourceLocal()) {
                     // Note that according to the javadocs on
                     // EntityManager#close(), you're never supposed to
@@ -700,10 +839,13 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                     // isResourceLocal() check here.
                     em.close();
                 }
-                WeldJpaInjectionServices.this.containerManagedEntityManagers.remove(em);
             }
             if (!this.emfFuture.isDone()) {
                 this.emfFuture.cancel(true);
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.exiting(cn, mn);
             }
         }
 

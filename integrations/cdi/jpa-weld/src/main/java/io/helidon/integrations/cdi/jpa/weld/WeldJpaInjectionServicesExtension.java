@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.cdi.jpa.weld;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
@@ -49,6 +52,13 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      */
     private WeldJpaInjectionServicesExtension() {
         super();
+        final String cn = this.getClass().getName();
+        final String mn = "<init>";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn);
+            logger.exiting(cn, mn);
+        }
     }
 
 
@@ -63,10 +73,11 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      *
      * <p>Weld often creates multiple copies of {@link
      * WeldJpaInjectionServices} by virtue of the way it loads its
-     * bootstrap services.  We want to ensure there's just one that
-     * can be injected into observer methods.  See the {@link
-     * TransactionObserver} class, which houses one such observer
-     * method.</p>
+     * bootstrap services (see
+     * https://issues.jboss.org/browse/WELD-2563 for details).  We
+     * want to ensure there's just one that can be injected into
+     * observer methods.  See the {@link TransactionObserver} class,
+     * which houses one such observer method.</p>
      *
      * @param event the {@link AfterBeanDiscovery} event; may be
      * {@code null} in which case no action will be taken
@@ -76,6 +87,12 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      * @see TransactionObserver
      */
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
+        final String cn = this.getClass().getName();
+        final String mn = "afterBeanDiscovery";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, event);
+        }
         if (event != null) {
             event.addBean()
                  .addTransitiveTypeClosure(WeldJpaInjectionServices.class)
@@ -83,6 +100,9 @@ final class WeldJpaInjectionServicesExtension implements Extension {
                  .createWith(ignored -> {
                      return WeldJpaInjectionServices.getInstance();
                   });
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
         }
     }
 
