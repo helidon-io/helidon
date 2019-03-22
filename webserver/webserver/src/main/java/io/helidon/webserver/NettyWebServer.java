@@ -44,7 +44,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.util.concurrent.Future;
 
@@ -99,7 +101,10 @@ class NettyWebServer implements WebServer {
             if (soConfig.ssl() != null) {
                 // TODO configuration support for CLIENT AUTH (btw, ClientAuth.REQUIRE doesn't seem to work with curl nor with
                 // Chrome)
-                sslContext = new JdkSslContext(soConfig.ssl(), false, ClientAuth.NONE);
+                sslContext = new JdkSslContext(
+                        soConfig.ssl(), false, null,
+                        IdentityCipherSuiteFilter.INSTANCE, null,
+                        ClientAuth.NONE, soConfig.enabledSslProtocols(), false);
             }
 
             if (soConfig.backlog() > 0) {

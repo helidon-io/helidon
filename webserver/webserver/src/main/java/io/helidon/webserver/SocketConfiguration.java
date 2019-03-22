@@ -87,6 +87,13 @@ public interface SocketConfiguration {
     SSLContext ssl();
 
     /**
+     * Returns the SSL protocols to enable, or {@code null} to enable the default
+     * protocols.
+     * @return the SSL protocols to enable
+     */
+    String[] enabledSslProtocols();
+
+    /**
      * Creates a builder of {@link SocketConfiguration} class.
      *
      * @return a builder
@@ -101,6 +108,7 @@ public interface SocketConfiguration {
         private int port = 0;
         private InetAddress bindAddress = null;
         private SSLContext sslContext = null;
+        private String[] enabledSslProtocols = null;
         private int backlog = 0;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;
@@ -195,9 +203,22 @@ public interface SocketConfiguration {
             return ssl(sslContextBuilder != null ? sslContextBuilder.get() : null);
         }
 
+        /**
+         * Configures the SSL protocols to enable with the server socket.
+         * @param protocols protocols to enable, if {@code null} enables the
+         * default protocols
+         * @return this builder
+         */
+        public Builder enabledSSlProtocols(String... protocols){
+            this.enabledSslProtocols = protocols;
+            return this;
+        }
+
         @Override
         public SocketConfiguration build() {
-            return new ServerBasicConfig.SocketConfig(port, bindAddress, sslContext, backlog, timeoutMillis, receiveBufferSize);
+            return new ServerBasicConfig.SocketConfig(port, bindAddress,
+                    sslContext, enabledSslProtocols, backlog, timeoutMillis,
+                    receiveBufferSize);
         }
     }
 }

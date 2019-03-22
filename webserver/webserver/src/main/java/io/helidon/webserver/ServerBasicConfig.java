@@ -71,6 +71,11 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    public String[] enabledSslProtocols() {
+        return socketConfig.enabledSslProtocols();
+    }
+
+    @Override
     public int workersCount() {
         return workers;
     }
@@ -123,6 +128,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int timeoutMillis;
         private final int receiveBufferSize;
         private final SSLContext sslContext;
+        private final String[] enabledSslProtocols;
 
         /**
          * Creates new instance.
@@ -137,6 +143,7 @@ class ServerBasicConfig implements ServerConfiguration {
         SocketConfig(int port,
                      InetAddress bindAddress,
                      SSLContext sslContext,
+                     String[] sslProtocols,
                      int backlog,
                      int timeoutMillis,
                      int receiveBufferSize) {
@@ -146,13 +153,14 @@ class ServerBasicConfig implements ServerConfiguration {
             this.timeoutMillis = timeoutMillis <= 0 ? 0 : timeoutMillis;
             this.receiveBufferSize = receiveBufferSize <= 0 ? 0 : receiveBufferSize;
             this.sslContext = sslContext;
+            this.enabledSslProtocols = sslProtocols;
         }
 
         /**
          * Creates default values instance.
          */
         SocketConfig() {
-            this(0, null, null, 0, 0, 0);
+            this(0, null, null, null, 0, 0, 0);
         }
 
         @Override
@@ -183,6 +191,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public SSLContext ssl() {
             return sslContext;
+        }
+
+        @Override
+        public String[] enabledSslProtocols() {
+            return enabledSslProtocols;
         }
     }
 }
