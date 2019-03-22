@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.Version;
 import io.helidon.common.http.ContextualRegistry;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -85,6 +86,7 @@ class NettyWebServer implements WebServer {
                    Map<String, Routing> namedRoutings) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
+        LOGGER.info(() -> Version.PRODUCT + " Version: " + Version.VERSION + " " + Version.BUILD_TIMESTAMP);
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
 

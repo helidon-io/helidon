@@ -28,6 +28,20 @@
     <artifactId>helidon-common</artifactId>
     <name>Helidon Common</name>
 
+    <properties>
+        <!-- Workaround https://issues.apache.org/jira/browse/MRESOURCES-99 -->
+        <timestamp>${maven.build.timestamp}</timestamp>
+    </properties>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
