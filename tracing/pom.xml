@@ -35,5 +35,6 @@
         <module>jersey</module>
         <module>zipkin</module>
         <module>tests</module>
+        <module>jaeger</module>
     </modules>
 </project>
