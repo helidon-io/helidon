@@ -32,9 +32,10 @@ public class Version {
     private static Properties versionProperties = new Properties();
 
     static {
-        InputStream resourceStream = Version.class.getResourceAsStream(VERSION_PROPERTIES_FILE);
-        try {
-            versionProperties.load(resourceStream);
+        try (InputStream resourceStream = Version.class.getResourceAsStream(VERSION_PROPERTIES_FILE)) {
+            if (resourceStream != null) {
+                versionProperties.load(resourceStream);
+            }
         } catch (IOException ex) {
             Logger logger = Logger.getLogger(Version.class.getName());
             logger.log(Level.WARNING, "Could not load resource " + VERSION_PROPERTIES_FILE + " " + ex.getMessage());
