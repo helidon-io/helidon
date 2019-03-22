@@ -32,6 +32,8 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.enterprise.event.Observes;
@@ -122,6 +124,15 @@ public class JpaExtension implements Extension {
      */
     private final Map<String, Set<Class<?>>> unlistedManagedClassesByPersistenceUnitNames;
 
+    /**
+     * The {@link Logger} for use by this {@link JpaExtension}.
+     *
+     * <p>This field is never {@code null}.</p>
+     *
+     * @see #createLogger()
+     */
+    private final Logger logger;
+
 
     /*
      * Constructors.
@@ -130,9 +141,14 @@ public class JpaExtension implements Extension {
 
     /**
      * Creates a new {@link JpaExtension}.
+     *
+     * @exception NullPointerException if an override of the {@link
+     * #createLogger()} method returns {@code null}, violating its
+     * contract
      */
     public JpaExtension() {
         super();
+        this.logger = Objects.requireNonNull(this.createLogger());
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
     }
@@ -142,6 +158,38 @@ public class JpaExtension implements Extension {
      * Instance methods.
      */
 
+
+    /**
+     * Returns a {@link Logger} for use by this {@link JpaExtension}.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>Overrides of this method must not return {@code null}.</p>
+     *
+     * <p>This method is called during {@linkplain #JpaExtension()
+     * construction}.</p>
+     *
+     * @return a non-{@code null} {@link Logger}
+     *
+     * @see #getLogger()
+     */
+    protected Logger createLogger() {
+        return Logger.getLogger(this.getClass().getName());
+    }
+
+    /**
+     * Returns the non-{@code null} {@link Logger} created by the
+     * {@link #createLogger()} method.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return a non-{@code null} {@link Logger}
+     *
+     * @see #createLogger()
+     */
+    protected final Logger getLogger() {
+        return this.logger;
+    }
 
     /**
      * Looks for type-level {@link PersistenceContext} annotations
@@ -169,6 +217,13 @@ public class JpaExtension implements Extension {
                                                 })
                                                 final ProcessAnnotatedType<?> event,
                                                 final BeanManager beanManager) {
+        final String cn = this.getClass().getName();
+        final String mn = "gatherImplicitPersistenceUnits";
+        final Logger logger = this.getLogger();
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {event, beanManager});
+        }
+
         if (event != null && beanManager != null) {
             final AnnotatedType<?> annotatedType = event.getAnnotatedType();
             if (annotatedType != null
@@ -231,6 +286,10 @@ public class JpaExtension implements Extension {
                 }
             }
         }
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
+        }
     }
 
     /**
@@ -269,6 +328,13 @@ public class JpaExtension implements Extension {
                                             MappedSuperclass.class
                                         })
                                         final ProcessAnnotatedType<?> event) {
+        final String cn = this.getClass().getName();
+        final String mn = "discoverManagedClasses";
+        final Logger logger = this.getLogger();
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, event);
+        }
+
         if (event != null) {
             final AnnotatedType<?> annotatedType = event.getAnnotatedType();
             if (annotatedType != null && !annotatedType.isAnnotationPresent(Vetoed.class)) {
@@ -277,6 +343,10 @@ public class JpaExtension implements Extension {
                                                          annotatedType.getJavaClass());
                 event.veto(); // managed classes can't be beans
             }
+        }
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
         }
     }
 
@@ -306,6 +376,13 @@ public class JpaExtension implements Extension {
     private void assignManagedClassToPersistenceUnit(final Set<? extends PersistenceContext> persistenceContexts,
                                                      final Set<? extends PersistenceUnit> persistenceUnits,
                                                      final Class<?> c) {
+        final String cn = this.getClass().getName();
+        final String mn = "assignManagedClassToPersistenceUnit";
+        final Logger logger = this.getLogger();
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {persistenceContexts, persistenceUnits, c});
+        }
+
         if (c != null) {
             boolean processed = false;
             if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
@@ -336,6 +413,10 @@ public class JpaExtension implements Extension {
                 addUnlistedManagedClass("", c);
             }
         }
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
+        }
     }
 
     /**
@@ -353,6 +434,13 @@ public class JpaExtension implements Extension {
      * @see PersistenceUnitInfo#getManagedClassNames()
      */
     private void addUnlistedManagedClass(String name, final Class<?> managedClass) {
+        final String cn = this.getClass().getName();
+        final String mn = "addUnlistedManagedClass";
+        final Logger logger = this.getLogger();
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {name, managedClass});
+        }
+
         if (managedClass != null) {
             if (name == null) {
                 name = "";
@@ -365,6 +453,9 @@ public class JpaExtension implements Extension {
                 }
                 unlistedManagedClasses.add(managedClass);
             }
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
         }
     }
 
@@ -404,18 +495,19 @@ public class JpaExtension implements Extension {
                                     final AfterBeanDiscovery event,
                                     final BeanManager beanManager)
         throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
+        final String cn = this.getClass().getName();
+        final String mn = "afterBeanDiscovery";
+        final Logger logger = this.getLogger();
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {event, beanManager});
+        }
+
         if (event != null && beanManager != null) {
-            // Add a bean for PersistenceProviderResolver.
             final PersistenceProviderResolver resolver = PersistenceProviderResolverHolder.getPersistenceProviderResolver();
             event.addBean()
                 .types(PersistenceProviderResolver.class)
                 .scope(Singleton.class)
                 .createWith(cc -> resolver);
-            // Add a bean for each "generic" PersistenceProvider
-            // reachable from the resolver.  (Any PersistenceUnitInfo
-            // may also specify the class name of a
-            // PersistenceProvider whose class may not be among those
-            // loaded by the resolver; we deal with those later.)
             final Collection<? extends PersistenceProvider> providers = resolver.getPersistenceProviders();
             for (final PersistenceProvider provider : providers) {
                 event.addBean()
@@ -436,11 +528,8 @@ public class JpaExtension implements Extension {
                 for (final Bean<?> preexistingPersistenceUnitInfoBean : preexistingPersistenceUnitInfoBeans) {
                     if (preexistingPersistenceUnitInfoBean != null) {
                         // We use the Bean directly to create a
-                        // PersistenceUnitInfo instance.  This
-                        // instance is by definition unmanaged by CDI,
-                        // which is fine in this narrow case: we throw
-                        // it away immediately.  We need it only for
-                        // the return values of
+                        // PersistenceUnitInfo instance.  We need it
+                        // only for the return values of
                         // getPersistenceProviderClassName() and
                         // getClassLoader().
                         final Object pui = preexistingPersistenceUnitInfoBean.create(null);
@@ -450,10 +539,10 @@ public class JpaExtension implements Extension {
                     }
                 }
             }
-            // Discover all META-INF/persistence.xml resources, load
-            // them using JAXB, and turn them into PersistenceUnitInfo
-            // instances, and add beans for all of them as well as
-            // their associated PersistenceProviders (if applicable).
+            // Load all META-INF/persistence.xml resources with JAXB,
+            // and turn them into PersistenceUnitInfo instances, and
+            // add beans for all of them as well as their associated
+            // PersistenceProviders (if applicable).
             final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             assert classLoader != null;
             final Enumeration<URL> urls = classLoader.getResources("META-INF/persistence.xml");
@@ -492,11 +581,6 @@ public class JpaExtension implements Extension {
                 final Unmarshaller unmarshaller =
                     JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
                 assert unmarshaller != null;
-                // Normally we'd let CDI instantiate this guy but we
-                // are forbidden from getting CDI bean references at
-                // this stage in the lifecycle.  Instantiating this
-                // provider by hand is fine since it retains no state
-                // internally.
                 final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
                 while (urls.hasMoreElements()) {
                     final URL url = urls.nextElement();
@@ -552,6 +636,10 @@ public class JpaExtension implements Extension {
         }
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
         this.implicitPersistenceUnits.clear();
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
+        }
     }
 
     /**
@@ -587,6 +675,13 @@ public class JpaExtension implements Extension {
                                                         final PersistenceUnitInfo persistenceUnitInfo,
                                                         final Collection<? extends PersistenceProvider> providers)
         throws ReflectiveOperationException {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "maybeAddPersistenceProviderBean";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {event, persistenceUnitInfo, providers});
+        }
+
         Objects.requireNonNull(event);
         Objects.requireNonNull(persistenceUnitInfo);
         final String providerClassName = persistenceUnitInfo.getPersistenceProviderClassName();
@@ -627,7 +722,10 @@ public class JpaExtension implements Extension {
                             }
                         });
             }
+        }
 
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
         }
     }
 

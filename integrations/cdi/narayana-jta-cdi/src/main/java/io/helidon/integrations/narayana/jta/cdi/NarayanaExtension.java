@@ -16,6 +16,9 @@
 package io.helidon.integrations.narayana.jta.cdi;
 
 import java.util.Collection;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -74,15 +77,37 @@ public final class NarayanaExtension implements Extension {
 
 
     /*
+     * Instance fields.
+     */
+
+
+    /**
+     * The {@link Logger} for use by this {@link NarayanaExtension}.
+     *
+     * <p>This field is never {@code null}.</p>
+     *
+     * @see #createLogger()
+     */
+    private final Logger logger;
+
+
+    /*
      * Constructors.
      */
 
 
     /**
      * Creates a new {@link NarayanaExtension}.
+     *
+     * @exception NullPointerException if an override of the {@link
+     * #createLogger()} method returns {@code null}, violating its
+     * contract
+     *
+     * @see #createLogger()
      */
     public NarayanaExtension() {
         super();
+        this.logger = Objects.requireNonNull(this.createLogger());
     }
 
 
@@ -90,6 +115,37 @@ public final class NarayanaExtension implements Extension {
      * Instance methods.
      */
 
+    /**
+     * Returns a {@link Logger} for use by this {@link
+     * NarayanaExtension}.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>Overrides of this method must not return {@code null}.</p>
+     *
+     * <p>This method is invoked during {@linkplain
+     * #NarayanaExtension() construction}.</p>
+     *
+     * @return a non-{@code null} {@link Logger}
+     */
+    protected Logger createLogger() {
+        return Logger.getLogger(this.getClass().getName());
+    }
+
+    /**
+     * Returns the {@link Logger} instance created by the {@link
+     * #createLogger()} method.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return the non-{@code null} {@link Logger} created by the
+     * {@link #createLogger()} method
+     *
+     * @see #createLogger()
+     */
+    protected Logger getLogger() {
+        return this.logger;
+    }
 
     /**
      * Adds a synthetic bean that creates a {@link Transaction} in
@@ -103,6 +159,13 @@ public final class NarayanaExtension implements Extension {
      * {@code null} in which case no action will be taken
      */
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event, final BeanManager beanManager) {
+        final String cn = this.getClass().getName();
+        final String mn = "afterBeanDiscovery";
+        final Logger logger = this.getLogger();
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {event, beanManager});
+        }
+
         if (event != null && beanManager != null) {
 
             // Weld registers a UserTransaction bean well before this
@@ -126,6 +189,9 @@ public final class NarayanaExtension implements Extension {
                     // seems reasonable and widely expected.
                     .scope(Dependent.class)
                     .createWith(cc -> com.arjuna.ats.jta.UserTransaction.userTransaction());
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.logp(Level.FINE, cn, mn, "Added UserTransaction bean");
+                }
             }
 
             event.addBean()
@@ -140,7 +206,9 @@ public final class NarayanaExtension implements Extension {
                             throw new CreationException(systemException.getMessage(), systemException);
                         }
                     });
-
+            if (logger.isLoggable(Level.FINE)) {
+                logger.logp(Level.FINE, cn, mn, "Added Transaction bean");
+            }
 
             beans = beanManager.getBeans(JTAEnvironmentBean.class);
             if (beans == null || beans.isEmpty()) {
@@ -151,8 +219,15 @@ public final class NarayanaExtension implements Extension {
                     .addQualifiers(Any.Literal.INSTANCE, Default.Literal.INSTANCE)
                     .scope(Singleton.class)
                     .createWith(cc -> DEFAULT_JTA_ENVIRONMENT_BEAN);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.logp(Level.FINE, cn, mn, "Added JTAEnvironmentBean bean");
+                }
             }
 
+        }
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
         }
     }
 
@@ -184,8 +259,20 @@ public final class NarayanaExtension implements Extension {
                                   @Priority(LIBRARY_BEFORE)
                                   final Object event,
                                   final Event<JTAEnvironmentBean> broadcaster) {
+        final String cn = NarayanaExtension.class.getName();
+        final String mn = "onStartup";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {event, broadcaster});
+        }
         if (broadcaster != null) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.logp(Level.FINE, cn, mn, "Firing {0}", DEFAULT_JTA_ENVIRONMENT_BEAN);
+            }
             broadcaster.fire(DEFAULT_JTA_ENVIRONMENT_BEAN);
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn);
         }
     }
 
