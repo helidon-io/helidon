@@ -331,35 +331,35 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      *
      * <p>This method never returns {@code null}.</p>
      *
-     * @param injectionPoint the {@link InjectionPoint} annotated with
-     * {@link PersistenceUnit}; must not be {@code null}
+     * @param ip the {@link InjectionPoint} annotated with {@link
+     * PersistenceUnit}; must not be {@code null}
      *
      * @return a non-{@code null} {@link ResourceReferenceFactory}
      * whose {@link ResourceReferenceFactory#createResource()} method
      * will create {@link EntityManagerFactory} instances
      *
-     * @exception NullPointerException if {@code injectionPoint} is
+     * @exception NullPointerException if {@code ip} is
      * {@code null}
      *
      * @see ResourceReferenceFactory#createResource()
      */
     @Override
-    public ResourceReferenceFactory<EntityManagerFactory>
-        registerPersistenceUnitInjectionPoint(final InjectionPoint injectionPoint) {
+    public ResourceReferenceFactory<EntityManagerFactory> registerPersistenceUnitInjectionPoint(final InjectionPoint ip) {
         final String cn = this.getClass().getName();
         final String mn = "registerPersistenceUnitInjectionPoint";
         if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, injectionPoint);
+            logger.entering(cn, mn, ip);
         }
+
         underway();
         assert this == instance;
         final ResourceReferenceFactory<EntityManagerFactory> returnValue;
-        Objects.requireNonNull(injectionPoint);
-        final Annotated annotatedMember = injectionPoint.getAnnotated();
+        Objects.requireNonNull(ip);
+        final Annotated annotatedMember = ip.getAnnotated();
         assert annotatedMember != null;
         final PersistenceUnit persistenceUnitAnnotation = annotatedMember.getAnnotation(PersistenceUnit.class);
         if (persistenceUnitAnnotation == null) {
-            throw new IllegalArgumentException("injectionPoint.getAnnotated().getAnnotation(PersistenceUnit.class) == null");
+            throw new IllegalArgumentException("ip.getAnnotated().getAnnotation(PersistenceUnit.class) == null");
         }
         final String name;
         final String n = persistenceUnitAnnotation.unitName();
@@ -378,6 +378,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             }
         }
         returnValue = () -> new EntityManagerFactoryResourceReference(this.emfs, name);
+
         if (logger.isLoggable(Level.FINER)) {
             logger.exiting(cn, mn, returnValue);
         }
@@ -515,6 +516,39 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         return persistenceProvider;
     }
 
+    /**
+     * Given the name of a persistence unit, uses a {@link
+     * BeanManager} internally to locate a {@link PersistenceUnitInfo}
+     * qualified with a {@link Named} annotation that {@linkplain
+     * Named#value() has the same name} as the supplied {@code name},
+     * and returns it.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>If there is only one {@link PersistenceUnitInfo} present in
+     * the CDI container, then it will be returned by this method when
+     * it is invoked, regardless of the value of the {@code name}
+     * parameter.</p>
+     *
+     * @param name the name of the {@link PersistenceUnitInfo} to
+     * return; may be effectively ignored in some cases; must not be
+     * {@code null}
+     *
+     * @return a non-{@code null} {@link PersistenceUnitInfo}, which
+     * may not have the same name as that which was requested if it
+     * was the only such {@link PersistenceUnitInfo} in the CDI
+     * container
+     *
+     * @exception NullPointerException if {@code name} is {@code null}
+     *
+     * @exception javax.enterprise.inject.AmbiguousResolutionException
+     * if there somehow was more than one {@link PersistenceUnitInfo}
+     * available
+     *
+     * @exception
+     * javax.enterprise.inject.UnsatisfiedResolutionException if there
+     * were no {@link PersistenceUnitInfo} instances available
+     */
     private static PersistenceUnitInfo getPersistenceUnitInfo(final String name) {
         final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "getPersistenceUnitInfo";
@@ -526,40 +560,46 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         Objects.requireNonNull(name);
         PersistenceUnitInfo returnValue = null;
         final CDI<Object> cdi = CDI.current();
-        if (cdi != null) {
-            final BeanManager beanManager = cdi.getBeanManager();
-            if (beanManager != null) {
-                final Named named = NamedLiteral.of(name);
-                assert named != null;
-                Set<Bean<?>> beans = beanManager.getBeans(PersistenceUnitInfo.class, named);
-                if (beans == null || beans.isEmpty()) {
-                    beans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
-                }
-                if (beans == null || beans.isEmpty()) {
-                  // Let CDI blow up in whatever way it does here.
-                  cdi.select(PersistenceUnitInfo.class, named).get();
-                  throw new AssertionError();
-                }
-                Bean<?> bean = null;
-                final int size = beans.size();
-                assert size > 0;
-                switch (size) {
-                case 1:
-                  // We were asked for the persistence unit explicitly
-                  // named "fred".  There was no such persistence
-                  // unit.  But there is exactly one persistence unit.
-                  // Regardless of what its name is, return it.
-                  bean = beans.iterator().next();
-                  break;
-                default:
-                  // There are many persistence units.
-                  bean = beanManager.resolve(beans);
-                  break;
-                }
-                returnValue = (PersistenceUnitInfo) beanManager.getReference(bean,
-                                                                             PersistenceUnitInfo.class,
-                                                                             beanManager.createCreationalContext(bean));
-            }
+        assert cdi != null;
+        final BeanManager beanManager = cdi.getBeanManager();
+        assert beanManager != null;
+        final Named named = NamedLiteral.of(name);
+        assert named != null;
+        Set<Bean<?>> beans = beanManager.getBeans(PersistenceUnitInfo.class, named);
+        final boolean warn;
+        if (beans == null || beans.isEmpty()) {
+            beans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
+            warn = beans != null && !beans.isEmpty();
+        } else {
+            warn = false;
+        }
+        if (beans == null || beans.isEmpty()) {
+            // Let CDI blow up in whatever way it does here.
+            cdi.select(PersistenceUnitInfo.class, named).get();
+            throw new AssertionError();
+        }
+        Bean<?> bean = null;
+        final int size = beans.size();
+        assert size > 0;
+        switch (size) {
+        case 1:
+            // We either got the explicit one we asked for
+            // (e.g. "dev"), or the only one there was (we asked for
+            // "dev"; the only one that was there was "test"). We may
+            // need to revisit this; this may be *too* convenient.
+            bean = beans.iterator().next();
+            break;
+        default:
+            bean = beanManager.resolve(beans);
+            break;
+        }
+        returnValue = (PersistenceUnitInfo) beanManager.getReference(bean,
+                                                                     PersistenceUnitInfo.class,
+                                                                     beanManager.createCreationalContext(bean));
+        if (warn && logger.isLoggable(Level.WARNING)) {
+            logger.logp(Level.WARNING, cn, mn,
+                        "The sole {0} with name \"{1}\" will be used for the persistence unit name \"{2}\"",
+                        new Object[] {returnValue, returnValue.getPersistenceUnitName(), name});
         }
 
         if (logger.isLoggable(Level.FINER)) {
