@@ -15,7 +15,6 @@
  */
 package io.helidon.integrations.cdi.jpa.weld;
 
-import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -496,7 +495,33 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
 
 
-    private static PersistenceProvider getPersistenceProvider(final PersistenceUnitInfo persistenceUnitInfo) {
+    /**
+     * Returns a {@link PersistenceProvider} for the supplied {@link
+     * PersistenceUnitInfo}.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @param persistenceUnitInfo the {@link PersistenceUnitInfo} in
+     * question; must not be {@code null}
+     *
+     * @return a non-{@code null} {@link PersistenceProvider}
+     *
+     * @exception NullPointerException if {@code persistenceUnitInfo}
+     * was {@code null}
+     *
+     * @exception
+     * javax.enterprise.inject.UnsatisfiedResolutionException if no
+     * {@link PersistenceProvider} could be found
+     *
+     * @exception javax.enterprise.inject.AmbiguousResolutionException
+     * if there were many possible {@link PersistenceProvider}s that
+     * could be returned
+     *
+     * @exception ReflectiveOperationException if there was a
+     * reflection-related error
+     */
+    private static PersistenceProvider getPersistenceProvider(final PersistenceUnitInfo persistenceUnitInfo)
+        throws ReflectiveOperationException {
         final String providerClassName = Objects.requireNonNull(persistenceUnitInfo).getPersistenceProviderClassName();
         final PersistenceProvider persistenceProvider;
         final CDI<Object> cdi = CDI.current();
@@ -504,14 +529,10 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         if (providerClassName == null) {
             persistenceProvider = cdi.select(PersistenceProvider.class).get();
         } else {
-            try {
-                persistenceProvider =
-                    (PersistenceProvider) cdi.select(Class.forName(providerClassName,
-                                                                   true,
-                                                                   Thread.currentThread().getContextClassLoader())).get();
-            } catch (final ReflectiveOperationException exception) {
-                throw new PersistenceException(exception.getMessage(), exception);
-            }
+            persistenceProvider =
+                (PersistenceProvider) cdi.select(Class.forName(providerClassName,
+                                                               true,
+                                                               Thread.currentThread().getContextClassLoader())).get();
         }
         return persistenceProvider;
     }
@@ -558,7 +579,6 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         }
 
         Objects.requireNonNull(name);
-        PersistenceUnitInfo returnValue = null;
         final CDI<Object> cdi = CDI.current();
         assert cdi != null;
         final BeanManager beanManager = cdi.getBeanManager();
@@ -569,7 +589,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         final boolean warn;
         if (beans == null || beans.isEmpty()) {
             beans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
-            warn = beans != null && !beans.isEmpty();
+            warn = logger.isLoggable(Level.WARNING) && beans != null && !beans.isEmpty();
         } else {
             warn = false;
         }
@@ -593,10 +613,11 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             bean = beanManager.resolve(beans);
             break;
         }
-        returnValue = (PersistenceUnitInfo) beanManager.getReference(bean,
-                                                                     PersistenceUnitInfo.class,
-                                                                     beanManager.createCreationalContext(bean));
-        if (warn && logger.isLoggable(Level.WARNING)) {
+        final PersistenceUnitInfo returnValue =
+            (PersistenceUnitInfo) beanManager.getReference(bean,
+                                                           PersistenceUnitInfo.class,
+                                                           beanManager.createCreationalContext(bean));
+        if (warn) {
             logger.logp(Level.WARNING, cn, mn,
                         "The sole {0} with name \"{1}\" will be used for the persistence unit name \"{2}\"",
                         new Object[] {returnValue, returnValue.getPersistenceUnitName(), name});
@@ -608,23 +629,137 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         return returnValue;
     }
 
-    private static EntityManagerFactory getOrCreateEntityManagerFactory(final Map<String, EntityManagerFactory> emfs,
-                                                                        final PersistenceUnitInfo persistenceUnitInfo,
-                                                                        final String name) {
+    /**
+     * Given a {@link Map} of {@link EntityManagerFactory} instances
+     * indexed by their persistence unit names, an optional {@link
+     * PersistenceUnitInfo} and the name of a persistence unit,
+     * returns a suitable {@link EntityManagerFactory} for the implied
+     * persistence unit, creating it if necessary.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>The contents of the supplied {@link Map} may be altered by
+     * this method.</p>
+     *
+     * @param emfs a {@link Map} of {@link EntityManagerFactory}
+     * instances indexed by their persistence unit names; must not be
+     * {@code null} but may be {@linkplain Map#isEmpty() empty}
+     *
+     * @param info a {@link PersistenceUnitInfo}; may be {@code null}
+     * in which case the supplied {@code name} must not be {@code
+     * null}
+     *
+     * @param name the name of the persistence unit; must not be
+     * {@code null}; if the supplied {@link PersistenceUnitInfo} is
+     * not {@code null} then {@linkplain
+     * PersistenceUnitInfo#getPersistenceUnitName() its name} should
+     * be equal to this value, but is not required to be
+     *
+     * @return a non-{@code null} {@link EntityManagerFactory}
+     *
+     * @exception NullPointerException if either {@code emfs} or
+     * {@code name} is {@code null}
+     *
+     * @see #computeEntityManagerFactory(PersistenceUnitInfo, String,
+     * EntityManagerFactory)
+     */
+    private static EntityManagerFactory computeEntityManagerFactory(final Map<String, EntityManagerFactory> emfs,
+                                                                    final PersistenceUnitInfo info,
+                                                                    final String name) {
         final String cn = WeldJpaInjectionServices.class.getName();
-        final String mn = "getOrCreateEntityManagerFactory";
+        final String mn = "computeEntityManagerFactory";
         final Logger logger = Logger.getLogger(cn);
         if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {emfs, persistenceUnitInfo, name});
+            logger.entering(cn, mn, new Object[] {emfs, info, name});
         }
 
         Objects.requireNonNull(emfs);
         Objects.requireNonNull(name);
+
+        final EntityManagerFactory returnValue = emfs.compute(name, (n, emf) -> computeEntityManagerFactory(info, n, emf));
+
+        if (logger.isLoggable(Level.FINER)) {
+            logger.exiting(cn, mn, returnValue);
+        }
+        return returnValue;
+    }
+
+    /**
+     * Returns the supplied {@link EntityManagerFactory}, if it is
+     * non-{@code null} and {@linkplain EntityManagerFactory#isOpen()
+     * open}, or creates a new one and returns it.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>If creation is called for, then the supplied {@link
+     * PersistenceUnitInfo}'s {@linkplain
+     * PersistenceUnitInfo#getTransactionType() affiliated
+     * <code>PersistenceUnitTransactionType</code>} is checked to see
+     * if it is {@link
+     * javax.persistence.spi.PersistenceUnitTransactionType#RESOURCE_LOCAL
+     * RESOURCE_LOCAL}.  If it is, then creation occurs by an
+     * invocation of the {@link
+     * Persistence#createEntityManagerFactory(String)} method.
+     * Otherwise, it occurs by an invocation of the {@link
+     * #createContainerManagedEntityManagerFactory(PersistenceUnitInfo)}
+     * method.</p>
+     *
+     * @param info a {@link PersistenceUnitInfo} describing a
+     * persistence unit; may be {@code null}
+     *
+     * @param name the name of the persistence unit; must not be
+     * {@code null}
+     *
+     * @param existing an {@link EntityManagerFactory} that was
+     * already associated with the supplied {@code name}; may be
+     * {@code null}
+     *
+     * @return the supplied {@link EntityManagerFactory} if it is
+     * non-{@code null}, or a new one; never {@code null}
+     *
+     * @exception NullPointerException if {@code name} is {@code null}
+     *
+     * @exception PersistenceException if a persistence-related error
+     * occurs
+     *
+     * @see #createContainerManagedEntityManagerFactory(PersistenceUnitInfo)
+     */
+    private static EntityManagerFactory computeEntityManagerFactory(final PersistenceUnitInfo info,
+                                                                    final String name,
+                                                                    final EntityManagerFactory existing) {
+        final String cn = WeldJpaInjectionServices.class.getName();
+        final String mn = "computeEntityManagerFactory";
+        final Logger logger = Logger.getLogger(cn);
+        if (logger.isLoggable(Level.FINER)) {
+            logger.entering(cn, mn, new Object[] {info, name, existing});
+        }
+
         final EntityManagerFactory returnValue;
-        if (persistenceUnitInfo == null || RESOURCE_LOCAL.equals(persistenceUnitInfo.getTransactionType())) {
-            returnValue = emfs.computeIfAbsent(name, n -> Persistence.createEntityManagerFactory(n));
+        if (existing == null) {
+            if (isResourceLocal(info)) {
+                returnValue = Persistence.createEntityManagerFactory(name);
+            } else {
+                EntityManagerFactory temp = null;
+                try {
+                    temp = createContainerManagedEntityManagerFactory(info);
+                } catch (final ReflectiveOperationException reflectiveOperationException) {
+                    throw new PersistenceException(reflectiveOperationException.getMessage(), reflectiveOperationException);
+                } finally {
+                    returnValue = temp;
+                }
+            }
         } else {
-            returnValue = emfs.computeIfAbsent(name, n -> createContainerManagedEntityManagerFactory(persistenceUnitInfo));
+            returnValue = existing;
+            if (logger.isLoggable(Level.WARNING) && !isResourceLocal(info)) {
+                final Map<String, Object> properties = existing.getProperties();
+                if (properties == null
+                    || !Boolean.TRUE.equals(properties.get("io.helidon.integrations.cdi.jpa.weld.containerManaged"))) {
+                    logger.logp(Level.WARNING, cn, mn,
+                                "A resource-local EntityManagerFactory was requested for the persistence unit named {0}, "
+                                + "but a JTA EntityManagerFactory, {1}, was previously associated with the persistence unit",
+                                new Object[] {name, returnValue});
+                }
+            }
         }
 
         if (logger.isLoggable(Level.FINER)) {
@@ -633,7 +768,39 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         return returnValue;
     }
 
-    private static EntityManagerFactory createContainerManagedEntityManagerFactory(final PersistenceUnitInfo info) {
+    /**
+     * Creates an {@link EntityManagerFactory} suitable for the
+     * supplied {@link PersistenceUnitInfo}, {@linkplain
+     * PersistenceProvider#createContainerEntityManagerFactory(PersistenceUnitInfo,
+     * Map) following the JPA 2.2 specification}.
+     *
+     * <p>This method returns a new {@link EntityManagerFactory} each
+     * time it is invoked.</p>
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @param info the {@link PersistenceUnitInfo} describing the
+     * persistence unit; must not be {@code null}; should have an
+     * {@linkplain PersistenceUnitInfo#getTransactionType() affiliated
+     * <code>PersistenceUnitTransactionType</code>} equal to {@link
+     * javax.persistence.spi.PersistenceUnitTransactionType#JTA JTA}
+     *
+     * @return a new {@link EntityManagerFactory}; never {@code null}
+     *
+     * @exception NullPointerException if {@code info} is {@code null}
+     *
+     * @exception PersistenceException if a persistence-related error
+     * occurs
+     *
+     * @exception ReflectiveOperationException if a reflection-related
+     * error occurs
+     *
+     * @see
+     * PersistenceProvider#createContainerEntityManagerFactory(PersistenceUnitInfo,
+     * Map)
+     */
+    private static EntityManagerFactory createContainerManagedEntityManagerFactory(final PersistenceUnitInfo info)
+        throws ReflectiveOperationException {
         final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "createContainerManagedEntityManagerFactory";
         final Logger logger = Logger.getLogger(cn);
@@ -649,6 +816,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         final BeanManager beanManager = cdi.getBeanManager();
         assert beanManager != null;
         final Map<String, Object> properties = new HashMap<>();
+        properties.put("io.helidon.integrations.cdi.jpa.weld.containerManaged", Boolean.TRUE);
         properties.put("javax.persistence.bean.manager", beanManager);
         Class<?> validatorFactoryClass = null;
         try {
@@ -671,22 +839,33 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         return returnValue;
     }
 
+    /**
+     * Returns a {@link Bean} that can {@linkplain
+     * Bean#create(CreationalContext) create} a {@link
+     * javax.validation.ValidatorFactory}, or {@code null} if no such
+     * {@link Bean} is available.
+     *
+     * <p>This method may return {@code null}.</p>
+     *
+     * @param beanManager the {@link BeanManager} in effect; may be
+     * {@code null} in which case {@code null} will be returned
+     *
+     * @param validatorFactoryClass a {@link Class}; may be {@code
+     * null}; if not {@linkplain Class#getName() named} {@code
+     * javax.validation.ValidatorFactory} then {@code null} will be
+     * returned
+     *
+     * @return a {@link Bean} that can {@linkplain
+     * Bean#create(CreationalContext) create} a {@link
+     * javax.validation.ValidatorFactory}, or {@code null}
+     */
     private static Bean<?> getValidatorFactoryBean(final BeanManager beanManager,
                                                    final Class<?> validatorFactoryClass) {
-        return getValidatorFactoryBean(beanManager, validatorFactoryClass, null);
-    }
-
-    private static Bean<?> getValidatorFactoryBean(final BeanManager beanManager,
-                                                   final Class<?> validatorFactoryClass,
-                                                   final Set<Annotation> qualifiers) {
         Bean<?> returnValue = null;
-        if (beanManager != null && validatorFactoryClass != null) {
-            final Set<Bean<?>> beans;
-            if (qualifiers == null) {
-                beans = beanManager.getBeans(validatorFactoryClass);
-            } else {
-                beans = beanManager.getBeans(validatorFactoryClass, qualifiers.toArray(new Annotation[qualifiers.size()]));
-            }
+        if (beanManager != null
+            && validatorFactoryClass != null
+            && "javax.validation.ValidatorFactory".equals(validatorFactoryClass.getName())) {
+            final Set<Bean<?>> beans = beanManager.getBeans(validatorFactoryClass);
             if (beans != null && !beans.isEmpty()) {
                 returnValue = beanManager.resolve(beans);
             }
@@ -694,6 +873,25 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         return returnValue;
     }
 
+    /**
+     * Returns {@code true} if and only if the supplied {@link
+     * PersistenceUnitInfo} is {@code null} or has an {@linkplain
+     * PersistenceUnitInfo#getTransactionType() affiliated
+     * <code>PersistenceUnitTransactionType</code>} equal to {@link
+     * javax.persistence.spi.PersistenceUnitTransactionType#RESOURCE_LOCAL
+     * RESOURCE_LOCAL}.
+     *
+     * @param persistenceUnitInfo the {@link PersistenceUnitInfo} to
+     * test; may be {@code null} in which case {@code true} will be
+     * returned
+     *
+     * @return {@code true} if and only if the supplied {@link
+     * PersistenceUnitInfo} is {@code null} or has an {@linkplain
+     * PersistenceUnitInfo#getTransactionType() affiliated
+     * <code>PersistenceUnitTransactionType</code>} equal to {@link
+     * javax.persistence.spi.PersistenceUnitTransactionType#RESOURCE_LOCAL
+     * RESOURCE_LOCAL}
+     */
     private static boolean isResourceLocal(final PersistenceUnitInfo persistenceUnitInfo) {
         return persistenceUnitInfo == null || RESOURCE_LOCAL.equals(persistenceUnitInfo.getTransactionType());
     }
@@ -749,7 +947,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             // maintainers of Weld and CDI suggest following what
             // Wildfly does, as it is most likely (!) to be correct.
             // So that's what we do.
-            final EntityManagerFactory returnValue = getOrCreateEntityManagerFactory(emfs, this.persistenceUnitInfo, this.name);
+            final EntityManagerFactory returnValue = computeEntityManagerFactory(emfs, this.persistenceUnitInfo, this.name);
 
             if (logger.isLoggable(Level.FINER)) {
                 logger.exiting(cn, mn, returnValue);
@@ -800,16 +998,17 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             Objects.requireNonNull(name);
             Objects.requireNonNull(synchronizationType);
 
-            final PersistenceUnitInfo persistenceUnitInfo = getPersistenceUnitInfo(name);
-            final ExecutorService taskExecutorService =
-                ((WeldManager) CDI.current().getBeanManager()).getServices().get(ExecutorServices.class).getTaskExecutor();
-            assert taskExecutorService != null;
             // Kick off the lengthy process of setting up an
             // EntityManagerFactory in the background with the
             // optimistic assumption, possibly incorrect, that someone
             // will call getInstance() at some point.
+            final ExecutorService taskExecutorService =
+                ((WeldManager) CDI.current().getBeanManager()).getServices().get(ExecutorServices.class).getTaskExecutor();
+            assert taskExecutorService != null;
+            final PersistenceUnitInfo persistenceUnitInfo = getPersistenceUnitInfo(name);
             this.emfFuture =
-                taskExecutorService.submit(() -> getOrCreateEntityManagerFactory(emfs, persistenceUnitInfo, name));
+                taskExecutorService.submit(() -> computeEntityManagerFactory(emfs, persistenceUnitInfo, name));
+
             if (isResourceLocal(persistenceUnitInfo)) {
                 this.emSupplier = () -> {
                     try {

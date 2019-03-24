@@ -119,6 +119,11 @@
             <artifactId>javax.transaction-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Compile-scoped dependencies. -->
         <dependency>
