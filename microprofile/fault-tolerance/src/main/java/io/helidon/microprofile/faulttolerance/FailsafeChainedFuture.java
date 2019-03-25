@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -54,21 +55,36 @@ class FailsafeChainedFuture<T> implements Future<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T get() throws InterruptedException, ExecutionException {
-        final T result = delegate.get();
-        if (result instanceof Future) {
-            return ((Future<T>) result).get();
+    public T get() throws CancellationException, InterruptedException, ExecutionException {
+        try {
+            final T result = delegate.get();
+            if (result instanceof Future) {
+                return ((Future<T>) result).get();
+            }
+            return result;
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof CancellationException) {
+                throw (CancellationException) e.getCause();
+            }
+            throw e;
         }
-        return result;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final T result = delegate.get();
-        if (result instanceof Future) {
-            return ((Future<T>) result).get(timeout, unit);
+    public T get(long timeout, TimeUnit unit) throws CancellationException, InterruptedException,
+            ExecutionException, TimeoutException {
+        try {
+            final T result = delegate.get(timeout, unit);
+            if (result instanceof Future) {
+                return ((Future<T>) result).get(timeout, unit);
+            }
+            return result;
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof CancellationException) {
+                throw (CancellationException) e.getCause();
+            }
+            throw e;
         }
-        return result;
     }
 }

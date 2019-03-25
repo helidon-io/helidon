@@ -138,7 +138,7 @@ public class CommandRetrier {
      */
     @SuppressWarnings("unchecked")
     public Object execute() throws Exception {
-        LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
+        LOGGER.fine(() -> "Executing command with isAsynchronous = " + isAsynchronous);
 
         CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
             final CommandFallback fallback = new CommandFallback(context, introspector, t);
@@ -147,7 +147,7 @@ public class CommandRetrier {
 
         try {
             if (isAsynchronous) {
-                Scheduler scheduler = CommandScheduler.create();
+                Scheduler scheduler = CommandScheduler.instance();
                 AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
 
                 // Check CompletionStage first to process CompletableFuture here
@@ -193,7 +193,10 @@ public class CommandRetrier {
 
         Object result;
         try {
-            LOGGER.info("About to execute command with key " + command.getCommandKey());
+            LOGGER.info(() -> "About to execute command with key "
+                    + command.getCommandKey()
+                    + " on thread " + Thread.currentThread().getName());
+
             invocationCount++;
             updateMetricsBefore();
             result = command.execute();

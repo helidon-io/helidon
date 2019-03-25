@@ -18,6 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
@@ -100,7 +101,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 .andCommandPropertiesDefaults(
                         HystrixCommandProperties.Setter()
                                 .withFallbackEnabled(false)
-                                .withExecutionIsolationStrategy(THREAD))
+                                .withExecutionIsolationStrategy(THREAD)
+                                .withExecutionIsolationThreadInterruptOnFutureCancel(true))
                 .andThreadPoolKey(
                         introspector.hasBulkhead()
                                 ? HystrixThreadPoolKey.Factory.asKey(commandKey)
@@ -264,12 +266,17 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
             // Execute command
             Object result = null;
+            Future<Object> future = null;
             Throwable throwable = null;
             long startNanos = System.nanoTime();
             try {
-                result = super.execute();
-            } catch (Throwable t) {
-                throwable = t;
+                future = super.queue();
+                result = future.get();
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    future.cancel(true);
+                }
+                throwable = decomposeException(e);
             }
 
             executionTime = System.nanoTime() - startNanos;
