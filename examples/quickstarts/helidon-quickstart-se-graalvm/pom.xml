@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.helidon.examples</groupId>
+    <artifactId>helidon-graalvm-native-image</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <name>Helidon GraalVM Native Image Example</name>
+
+    <properties>
+        <version.helidon>1.0.1</version.helidon>
+        <version.graalvm>1.0.0-rc13</version.graalvm>
+        <version.plugin.dockerfile>1.4.10</version.plugin.dockerfile>
+        <copied.libs.dir>${project.build.directory}/dependency</copied.libs.dir>
+
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+
+        <!--
+        Native image configuration
+        -->
+        <!-- TODO path to the native-image -->
+        <native.image>${user.home}/graal/graalvm-ce-1.0.0-rc13/Contents/Home/bin/native-image</native.image>
+
+        <!--
+        Application specific configuration
+        -->
+        <!-- Resources to include in the image -->
+        <native.resources>application.yaml|logging.properties</native.resources>
+        <!-- Main class (entry point) -->
+        <main.class>io.helidon.examples.graalvm.GraalVMNativeImageMain</main.class>
+        <!-- Port of the application, to expose it from docker, also used
+            to filter the configuration file -->
+        <main.port>8099</main.port>
+
+        <!--
+        Name of the native executable
+        Only used when building local native image
+        -->
+        <native.name>helidon-example-native-image</native.name>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${version.helidon}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.graalvm.sdk</groupId>
+                <artifactId>graal-sdk</artifactId>
+                <version>${version.graalvm}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.substratevm</groupId>
+                <artifactId>svm</artifactId>
+                <version>${version.graalvm}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <!-- Webserver - supports string entities -->
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for JSON-P entities -->
+            <groupId>io.helidon.media.jsonp</groupId>
+            <artifactId>helidon-media-jsonp-server</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for JSON-B entities -->
+            <groupId>io.helidon.media.jsonb</groupId>
+            <artifactId>helidon-media-jsonb-server</artifactId>
+        </dependency>
+        <dependency>
+            <!--
+            Support for YAML configuration files
+            Without this library, only .properties are supported
+            -->
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for metrics (endpoint /metrics) -->
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for health checks -->
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support for tracing - integration with Zipkin -->
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-zipkin</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- Pre-built health checks (only memory works in native image) -->
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Security integration with web server -->
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <!-- ABAC security provider (used for role based access) -->
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-abac</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Basic authentication security provider -->
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-http-auth</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Helidon extension for native image - required -->
+            <groupId>io.helidon.integrations.graal</groupId>
+            <artifactId>helidon-graal-native-image-extension</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>build-native-image</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${native.image}</executable>
+                            <arguments>
+                                <argument>-H:Name=${basedir}/target/${native.name}</argument>
+                                <argument>-H:IncludeResources=${native.resources}</argument>
+                                <!--                                <argument>&#45;&#45;debug-attach</argument>-->
+                                <argument>-H:+ReportExceptionStackTraces</argument>
+                                <!-- this is a workaround for issue with server, when a new library with a Java service
+                                is added, the server cannot find its implementation class-->
+                                <argument>--no-server</argument>
+                                <argument>-classpath</argument>
+                                <classpath/>
+                                <argument>${main.class}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-native-image</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/target/${native.name}</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>java</executable>
+                    <arguments>
+                        <argument>-classpath</argument>
+                        <classpath/>
+                        <argument>${main.class}</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>native-image-docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-dependencies</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${copied.libs.dir}</outputDirectory>
+                                    <overWriteReleases>false</overWriteReleases>
+                                    <overWriteSnapshots>false</overWriteSnapshots>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <includeScope>runtime</includeScope>
+                                    <excludeScope>test</excludeScope>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>dockerfile-maven-plugin</artifactId>
+                        <version>${version.plugin.dockerfile}</version>
+                        <executions>
+                            <execution>
+                                <id>default</id>
+                                <goals>
+                                    <goal>build</goal>
+                                    <!-- binds push goal to maven deploy -->
+                                    <!-- <goal>push</goal>-->
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <repository>helidon/example-graal</repository>
+                            <tag>${project.version}</tag>
+                            <buildArgs>
+                                <NATIVE_ENTRY_POINT>${main.class}</NATIVE_ENTRY_POINT>
+                                <NATIVE_RESOURCES>${native.resources}</NATIVE_RESOURCES>
+                                <PORT>${main.port}</PORT>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

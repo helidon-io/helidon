@@ -1,0 +1,4 @@
+# Overrides for local environment
+tracing:
+  service: "java-example"
+  host: "localhost"

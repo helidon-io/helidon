@@ -1,0 +1,7 @@
+[
+    {
+        "name": "io.helidon.examples.graalvm.JsonBHello",
+        "allPublicConstructors": true,
+        "allPublicMethods": true
+    }
+]
