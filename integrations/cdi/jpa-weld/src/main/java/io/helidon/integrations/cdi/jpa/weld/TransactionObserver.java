@@ -54,7 +54,7 @@ final class TransactionObserver {
     /*
      * Static fields.
      */
-    private static final Logger LOGGER = Logger.getLogger(TransactionObserver.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TransactionObserver.class.getName(), "messages");
 
 
     /*
@@ -67,7 +67,7 @@ final class TransactionObserver {
      */
     private TransactionObserver() {
         super();
-        final String cn = this.getClass().getName();
+        final String cn = TransactionObserver.class.getName();
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, "<init>");
             LOGGER.exiting(cn, "<init>");

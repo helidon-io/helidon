@@ -113,7 +113,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(WeldJpaInjectionServices.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WeldJpaInjectionServices.class.getName(), "messages");
 
 
     /*
@@ -215,7 +215,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      * supplied object is non-{@code null}.</p>
      */
     void jtaTransactionBegun() {
-        final String cn = this.getClass().getName();
+        final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "jtaTransactionBegun";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn);
@@ -248,7 +248,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      * made.</p>
      */
     void jtaTransactionEnded() {
-        final String cn = this.getClass().getName();
+        final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "jtaTransactionEnded";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn);
@@ -282,7 +282,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
     @Override
     public ResourceReferenceFactory<EntityManager> registerPersistenceContextInjectionPoint(final InjectionPoint injectionPoint) {
-        final String cn = this.getClass().getName();
+        final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "registerPersistenceContextInjectionPoint";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, injectionPoint);
@@ -343,7 +343,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
     @Override
     public ResourceReferenceFactory<EntityManagerFactory> registerPersistenceUnitInjectionPoint(final InjectionPoint ip) {
-        final String cn = this.getClass().getName();
+        final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "registerPersistenceUnitInjectionPoint";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, ip);
@@ -617,7 +617,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                                                            beanManager.createCreationalContext(bean));
         if (warn) {
             LOGGER.logp(Level.WARNING, cn, mn,
-                        "The sole {0} with name \"{1}\" will be used for the persistence unit name \"{2}\"",
+                        "persistenceUnitNameMismatch",
                         new Object[] {returnValue, returnValue.getPersistenceUnitName(), name});
         }
 
@@ -751,8 +751,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                 if (properties == null
                     || !Boolean.TRUE.equals(properties.get("io.helidon.integrations.cdi.jpa.weld.containerManaged"))) {
                     LOGGER.logp(Level.WARNING, cn, mn,
-                                "A resource-local EntityManagerFactory was requested for the persistence unit named {0}, "
-                                + "but a JTA EntityManagerFactory, {1}, was previously associated with the persistence unit",
+                                "transactionTypeMismatch",
                                 new Object[] {name, returnValue});
                 }
             }
@@ -908,7 +907,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         private EntityManagerFactoryResourceReference(final Map<String, EntityManagerFactory> emfs,
                                                       final String name) {
             super();
-            final String cn = this.getClass().getName();
+            final String cn = EntityManagerFactoryResourceReference.class.getName();
             final String mn = "<init>";
             if (LOGGER.isLoggable(Level.FINER)) {
                 LOGGER.entering(cn, mn, new Object[] {emfs, name});
@@ -925,7 +924,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
         @Override
         public EntityManagerFactory getInstance() {
-            final String cn = this.getClass().getName();
+            final String cn = EntityManagerFactoryResourceReference.class.getName();
             final String mn = "getInstance";
             if (LOGGER.isLoggable(Level.FINER)) {
                 LOGGER.entering(cn, mn);
@@ -949,7 +948,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
         @Override
         public void release() {
-            final String cn = this.getClass().getName();
+            final String cn = EntityManagerFactoryResourceReference.class.getName();
             final String mn = "release";
             if (LOGGER.isLoggable(Level.FINER)) {
                 LOGGER.entering(cn, mn);
@@ -978,7 +977,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         private EntityManagerResourceReference(final String name,
                                                final SynchronizationType synchronizationType) {
             super();
-            final String cn = this.getClass().getName();
+            final String cn = EntityManagerResourceReference.class.getName();
             final String mn = "<init>";
             if (LOGGER.isLoggable(Level.FINER)) {
                 LOGGER.entering(cn, mn, new Object[] {name, synchronizationType});
@@ -1035,7 +1034,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
         @Override
         public EntityManager getInstance() {
-            final String cn = this.getClass().getName();
+            final String cn = EntityManagerResourceReference.class.getName();
             final String mn = "getInstance";
             if (LOGGER.isLoggable(Level.FINER)) {
                 LOGGER.entering(cn, mn);
@@ -1073,7 +1072,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
         @Override
         public void release() {
-            final String cn = this.getClass().getName();
+            final String cn = EntityManagerResourceReference.class.getName();
             final String mn = "release";
             if (LOGGER.isLoggable(Level.FINER)) {
                 LOGGER.entering(cn, mn);

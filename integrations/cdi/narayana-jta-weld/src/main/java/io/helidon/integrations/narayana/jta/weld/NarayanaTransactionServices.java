@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.narayana.jta.weld;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.transaction.RollbackException;
@@ -50,6 +53,19 @@ final class NarayanaTransactionServices implements TransactionServices {
 
 
     /*
+     * Static fields.
+     */
+
+
+    /**
+     * The {@link Logger} used by all instances of this class.
+     *
+     * <p>This field is never {@code null}.</p>
+     */
+    private static final Logger LOGGER = Logger.getLogger(NarayanaTransactionServices.class.getName(), "messages");
+
+
+    /*
      * Constructors.
      */
 
@@ -59,6 +75,11 @@ final class NarayanaTransactionServices implements TransactionServices {
      */
     private NarayanaTransactionServices() {
         super();
+        final String cn = NarayanaTransactionServices.class.getName();
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, "<init>");
+            LOGGER.exiting(cn, "<init>");
+        }
     }
 
 
@@ -95,6 +116,12 @@ final class NarayanaTransactionServices implements TransactionServices {
         // UserTransaction.  Weld uses the return value of this method
         // to create such a bean and we obviously need to avoid the
         // infinite loop.
+        final String cn = NarayanaTransactionServices.class.getName();
+        final String mn = "getUserTransaction";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
+        }
+
         final Instance<JTAEnvironmentBean> jtaEnvironmentBeans = CDI.current().select(JTAEnvironmentBean.class);
         assert jtaEnvironmentBeans != null;
         final JTAEnvironmentBean jtaEnvironmentBean;
@@ -104,7 +131,12 @@ final class NarayanaTransactionServices implements TransactionServices {
             jtaEnvironmentBean = jtaEnvironmentBeans.get();
         }
         assert jtaEnvironmentBean != null;
-        return jtaEnvironmentBean.getUserTransaction();
+        final UserTransaction returnValue = jtaEnvironmentBean.getUserTransaction();
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
+        }
+        return returnValue;
     }
 
     /**
@@ -144,6 +176,12 @@ final class NarayanaTransactionServices implements TransactionServices {
      */
     @Override
     public boolean isTransactionActive() {
+        final String cn = NarayanaTransactionServices.class.getName();
+        final String mn = "isTransactionActive";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
+        }
+
         final boolean returnValue;
         final Instance<Transaction> transactions = CDI.current().select(Transaction.class);
         assert transactions != null;
@@ -168,6 +206,10 @@ final class NarayanaTransactionServices implements TransactionServices {
         } else {
             returnValue = false;
         }
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, Boolean.valueOf(returnValue));
+        }
         return returnValue;
     }
 
@@ -186,6 +228,12 @@ final class NarayanaTransactionServices implements TransactionServices {
      */
     @Override
     public void registerSynchronization(final Synchronization synchronization) {
+        final String cn = NarayanaTransactionServices.class.getName();
+        final String mn = "registerSynchronization";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, synchronization);
+        }
+
         final CDI<Object> cdi = CDI.current();
         final Instance<Transaction> transactionInstance = cdi.select(Transaction.class);
         Transaction transaction = null;
@@ -215,6 +263,10 @@ final class NarayanaTransactionServices implements TransactionServices {
                 throw new RuntimeException(e.getMessage(), e);
             }
         }
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
     }
 
     /**
@@ -223,8 +275,12 @@ final class NarayanaTransactionServices implements TransactionServices {
      */
     @Override
     public synchronized void cleanup() {
-
+        final String cn = NarayanaTransactionServices.class.getName();
+        final String mn = "cleanup";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
+            LOGGER.exiting(cn, mn);
+        }
     }
-
 
 }

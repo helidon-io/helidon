@@ -96,7 +96,7 @@ public class JpaExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(JpaExtension.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JpaExtension.class.getName(), "messages");
 
 
     /*
@@ -184,7 +184,7 @@ public class JpaExtension implements Extension {
                                                 })
                                                 final ProcessAnnotatedType<?> event,
                                                 final BeanManager beanManager) {
-        final String cn = this.getClass().getName();
+        final String cn = JpaExtension.class.getName();
         final String mn = "gatherImplicitPersistenceUnits";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
@@ -294,7 +294,7 @@ public class JpaExtension implements Extension {
                                             MappedSuperclass.class
                                         })
                                         final ProcessAnnotatedType<?> event) {
-        final String cn = this.getClass().getName();
+        final String cn = JpaExtension.class.getName();
         final String mn = "discoverManagedClasses";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
@@ -341,7 +341,7 @@ public class JpaExtension implements Extension {
     private void assignManagedClassToPersistenceUnit(final Set<? extends PersistenceContext> persistenceContexts,
                                                      final Set<? extends PersistenceUnit> persistenceUnits,
                                                      final Class<?> c) {
-        final String cn = this.getClass().getName();
+        final String cn = JpaExtension.class.getName();
         final String mn = "assignManagedClassToPersistenceUnit";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {persistenceContexts, persistenceUnits, c});
@@ -398,7 +398,7 @@ public class JpaExtension implements Extension {
      * @see PersistenceUnitInfo#getManagedClassNames()
      */
     private void addUnlistedManagedClass(String name, final Class<?> managedClass) {
-        final String cn = this.getClass().getName();
+        final String cn = JpaExtension.class.getName();
         final String mn = "addUnlistedManagedClass";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {name, managedClass});
@@ -458,7 +458,7 @@ public class JpaExtension implements Extension {
                                     final AfterBeanDiscovery event,
                                     final BeanManager beanManager)
         throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
-        final String cn = this.getClass().getName();
+        final String cn = JpaExtension.class.getName();
         final String mn = "afterBeanDiscovery";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});

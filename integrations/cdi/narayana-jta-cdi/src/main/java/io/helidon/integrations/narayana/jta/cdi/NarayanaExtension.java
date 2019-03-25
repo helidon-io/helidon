@@ -69,7 +69,7 @@ public final class NarayanaExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(NarayanaExtension.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(NarayanaExtension.class.getName(), "messages");
 
     /**
      * The default {@link JTAEnvironmentBean} used throughout the
@@ -118,7 +118,7 @@ public final class NarayanaExtension implements Extension {
      * {@code null} in which case no action will be taken
      */
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event, final BeanManager beanManager) {
-        final String cn = this.getClass().getName();
+        final String cn = NarayanaExtension.class.getName();
         final String mn = "afterBeanDiscovery";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
@@ -148,7 +148,7 @@ public final class NarayanaExtension implements Extension {
                     .scope(Dependent.class)
                     .createWith(cc -> com.arjuna.ats.jta.UserTransaction.userTransaction());
                 if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.logp(Level.FINE, cn, mn, "Added UserTransaction bean");
+                    LOGGER.logp(Level.FINE, cn, mn, "addedUserTransactionBean");
                 }
             }
 
@@ -165,7 +165,7 @@ public final class NarayanaExtension implements Extension {
                         }
                     });
             if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.logp(Level.FINE, cn, mn, "Added Transaction bean");
+                LOGGER.logp(Level.FINE, cn, mn, "addedTransactionBean");
             }
 
             beans = beanManager.getBeans(JTAEnvironmentBean.class);
@@ -178,7 +178,7 @@ public final class NarayanaExtension implements Extension {
                     .scope(Singleton.class)
                     .createWith(cc -> DEFAULT_JTA_ENVIRONMENT_BEAN);
                 if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.logp(Level.FINE, cn, mn, "Added JTAEnvironmentBean bean");
+                    LOGGER.logp(Level.FINE, cn, mn, "addedJtaEnvironmentBeanBean");
                 }
             }
 
@@ -224,7 +224,7 @@ public final class NarayanaExtension implements Extension {
         }
         if (broadcaster != null) {
             if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.logp(Level.FINE, cn, mn, "Firing {0}", DEFAULT_JTA_ENVIRONMENT_BEAN);
+                LOGGER.logp(Level.FINE, cn, mn, "firingJtaEnvironmentBean", DEFAULT_JTA_ENVIRONMENT_BEAN);
             }
             broadcaster.fire(DEFAULT_JTA_ENVIRONMENT_BEAN);
         }

@@ -47,7 +47,7 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(WeldJpaInjectionServicesExtension.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(WeldJpaInjectionServicesExtension.class.getName(), "messages");
 
 
     /*
@@ -65,7 +65,7 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      */
     private WeldJpaInjectionServicesExtension() {
         super();
-        final String cn = this.getClass().getName();
+        final String cn = WeldJpaInjectionServicesExtension.class.getName();
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, "<init>");
             LOGGER.exiting(cn, "<init>");
@@ -98,7 +98,7 @@ final class WeldJpaInjectionServicesExtension implements Extension {
      * @see TransactionObserver
      */
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
-        final String cn = this.getClass().getName();
+        final String cn = WeldJpaInjectionServicesExtension.class.getName();
         final String mn = "afterBeanDiscovery";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
