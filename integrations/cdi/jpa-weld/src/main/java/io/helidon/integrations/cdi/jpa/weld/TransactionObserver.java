@@ -52,6 +52,12 @@ final class TransactionObserver {
 
 
     /*
+     * Static fields.
+     */
+    private static final Logger LOGGER = Logger.getLogger(TransactionObserver.class.getName());
+
+
+    /*
      * Constructors.
      */
 
@@ -62,10 +68,9 @@ final class TransactionObserver {
     private TransactionObserver() {
         super();
         final String cn = this.getClass().getName();
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, "<init>");
-            logger.exiting(cn, "<init>");
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, "<init>");
+            LOGGER.exiting(cn, "<init>");
         }
     }
 
@@ -93,17 +98,16 @@ final class TransactionObserver {
                                             final WeldJpaInjectionServices services) {
         final String cn = TransactionObserver.class.getName();
         final String mn = "jtaTransactionBegun";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {event, services});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, services});
         }
 
         if (services != null) {
             services.jtaTransactionBegun();
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -125,17 +129,16 @@ final class TransactionObserver {
                                             final WeldJpaInjectionServices services) {
         final String cn = TransactionObserver.class.getName();
         final String mn = "jtaTransactionEnded";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {event, services});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, services});
         }
 
         if (services != null) {
             services.jtaTransactionEnded();
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 

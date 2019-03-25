@@ -87,6 +87,19 @@ public class JpaExtension implements Extension {
 
 
     /*
+     * Static fields.
+     */
+
+
+    /**
+     * The {@link Logger} for use by all instances of this class.
+     *
+     * <p>This field is never {@code null}.</p>
+     */
+    private static final Logger LOGGER = Logger.getLogger(JpaExtension.class.getName());
+
+
+    /*
      * Instance fields.
      */
 
@@ -124,15 +137,6 @@ public class JpaExtension implements Extension {
      */
     private final Map<String, Set<Class<?>>> unlistedManagedClassesByPersistenceUnitNames;
 
-    /**
-     * The {@link Logger} for use by this {@link JpaExtension}.
-     *
-     * <p>This field is never {@code null}.</p>
-     *
-     * @see #createLogger()
-     */
-    private final Logger logger;
-
 
     /*
      * Constructors.
@@ -141,14 +145,9 @@ public class JpaExtension implements Extension {
 
     /**
      * Creates a new {@link JpaExtension}.
-     *
-     * @exception NullPointerException if an override of the {@link
-     * #createLogger()} method returns {@code null}, violating its
-     * contract
      */
     public JpaExtension() {
         super();
-        this.logger = Objects.requireNonNull(this.createLogger());
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
     }
@@ -158,38 +157,6 @@ public class JpaExtension implements Extension {
      * Instance methods.
      */
 
-
-    /**
-     * Returns a {@link Logger} for use by this {@link JpaExtension}.
-     *
-     * <p>This method never returns {@code null}.</p>
-     *
-     * <p>Overrides of this method must not return {@code null}.</p>
-     *
-     * <p>This method is called during {@linkplain #JpaExtension()
-     * construction}.</p>
-     *
-     * @return a non-{@code null} {@link Logger}
-     *
-     * @see #getLogger()
-     */
-    protected Logger createLogger() {
-        return Logger.getLogger(this.getClass().getName());
-    }
-
-    /**
-     * Returns the non-{@code null} {@link Logger} created by the
-     * {@link #createLogger()} method.
-     *
-     * <p>This method never returns {@code null}.</p>
-     *
-     * @return a non-{@code null} {@link Logger}
-     *
-     * @see #createLogger()
-     */
-    protected final Logger getLogger() {
-        return this.logger;
-    }
 
     /**
      * Looks for type-level {@link PersistenceContext} annotations
@@ -219,9 +186,8 @@ public class JpaExtension implements Extension {
                                                 final BeanManager beanManager) {
         final String cn = this.getClass().getName();
         final String mn = "gatherImplicitPersistenceUnits";
-        final Logger logger = this.getLogger();
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {event, beanManager});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
 
         if (event != null && beanManager != null) {
@@ -287,8 +253,8 @@ public class JpaExtension implements Extension {
             }
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -330,9 +296,8 @@ public class JpaExtension implements Extension {
                                         final ProcessAnnotatedType<?> event) {
         final String cn = this.getClass().getName();
         final String mn = "discoverManagedClasses";
-        final Logger logger = this.getLogger();
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, event);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
         }
 
         if (event != null) {
@@ -345,8 +310,8 @@ public class JpaExtension implements Extension {
             }
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -378,9 +343,8 @@ public class JpaExtension implements Extension {
                                                      final Class<?> c) {
         final String cn = this.getClass().getName();
         final String mn = "assignManagedClassToPersistenceUnit";
-        final Logger logger = this.getLogger();
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {persistenceContexts, persistenceUnits, c});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {persistenceContexts, persistenceUnits, c});
         }
 
         if (c != null) {
@@ -414,8 +378,8 @@ public class JpaExtension implements Extension {
             }
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -436,9 +400,8 @@ public class JpaExtension implements Extension {
     private void addUnlistedManagedClass(String name, final Class<?> managedClass) {
         final String cn = this.getClass().getName();
         final String mn = "addUnlistedManagedClass";
-        final Logger logger = this.getLogger();
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {name, managedClass});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {name, managedClass});
         }
 
         if (managedClass != null) {
@@ -454,8 +417,8 @@ public class JpaExtension implements Extension {
                 unlistedManagedClasses.add(managedClass);
             }
         }
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -497,9 +460,8 @@ public class JpaExtension implements Extension {
         throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
         final String cn = this.getClass().getName();
         final String mn = "afterBeanDiscovery";
-        final Logger logger = this.getLogger();
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {event, beanManager});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
 
         if (event != null && beanManager != null) {
@@ -637,8 +599,8 @@ public class JpaExtension implements Extension {
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
         this.implicitPersistenceUnits.clear();
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -677,9 +639,8 @@ public class JpaExtension implements Extension {
         throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "maybeAddPersistenceProviderBean";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {event, persistenceUnitInfo, providers});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, persistenceUnitInfo, providers});
         }
 
         Objects.requireNonNull(event);
@@ -724,8 +685,8 @@ public class JpaExtension implements Extension {
             }
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 

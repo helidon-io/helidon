@@ -38,6 +38,19 @@ final class WeldJpaInjectionServicesExtension implements Extension {
 
 
     /*
+     * Static fields.
+     */
+
+
+    /**
+     * The {@link Logger} for use by all instances of this class.
+     *
+     * <p>This field is never {@code null}.</p>
+     */
+    private static final Logger LOGGER = Logger.getLogger(WeldJpaInjectionServicesExtension.class.getName());
+
+
+    /*
      * Constructors.
      */
 
@@ -53,10 +66,9 @@ final class WeldJpaInjectionServicesExtension implements Extension {
     private WeldJpaInjectionServicesExtension() {
         super();
         final String cn = this.getClass().getName();
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, "<init>");
-            logger.exiting(cn, "<init>");
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, "<init>");
+            LOGGER.exiting(cn, "<init>");
         }
     }
 
@@ -88,9 +100,8 @@ final class WeldJpaInjectionServicesExtension implements Extension {
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
         final String cn = this.getClass().getName();
         final String mn = "afterBeanDiscovery";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, event);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
         }
 
         if (event != null) {
@@ -102,8 +113,8 @@ final class WeldJpaInjectionServicesExtension implements Extension {
                   });
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 

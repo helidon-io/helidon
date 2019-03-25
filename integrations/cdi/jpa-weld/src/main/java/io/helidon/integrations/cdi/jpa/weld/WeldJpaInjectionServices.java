@@ -108,18 +108,18 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
     private static volatile boolean underway;
 
+    /**
+     * The {@link Logger} for use by all instances of this class.
+     *
+     * <p>This field is never {@code null}.</p>
+     */
+    private static final Logger LOGGER = Logger.getLogger(WeldJpaInjectionServices.class.getName());
+
 
     /*
      * Instance fields.
      */
 
-
-    /**
-     * A {@link Logger} for use by this {@link WeldJpaInjectionServices}.
-     *
-     * <p>This field is never {@code null}.</p>
-     */
-    private final Logger logger;
 
     /**
      * A {@link Set} of {@link EntityManager}s that have been created
@@ -161,7 +161,6 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      */
     private WeldJpaInjectionServices() {
         super();
-        this.logger = Logger.getLogger(this.getClass().getName());
         synchronized (WeldJpaInjectionServices.class) {
             // See https://issues.jboss.org/browse/WELD-2563.  Make sure
             // only the first instance is "kept" as it's the one tracked by
@@ -218,21 +217,21 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     void jtaTransactionBegun() {
         final String cn = this.getClass().getName();
         final String mn = "jtaTransactionBegun";
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
         }
 
         assert this == instance;
         for (final EntityManager containerManagedEntityManager : this.containerManagedEntityManagers) {
             assert containerManagedEntityManager != null;
-            if (logger.isLoggable(Level.FINE)) {
-                logger.logp(Level.FINE, cn, mn, "{0} joining transaction", containerManagedEntityManager);
+            if (LOGGER.isLoggable(Level.FINE)) {
+                LOGGER.logp(Level.FINE, cn, mn, "{0} joining transaction", containerManagedEntityManager);
             }
             containerManagedEntityManager.joinTransaction();
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -251,14 +250,14 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     void jtaTransactionEnded() {
         final String cn = this.getClass().getName();
         final String mn = "jtaTransactionEnded";
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
         }
 
         // This method is reserved for future use.
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
@@ -285,8 +284,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     public ResourceReferenceFactory<EntityManager> registerPersistenceContextInjectionPoint(final InjectionPoint injectionPoint) {
         final String cn = this.getClass().getName();
         final String mn = "registerPersistenceContextInjectionPoint";
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, injectionPoint);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, injectionPoint);
         }
         underway();
         assert this == instance;
@@ -317,8 +316,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             }
         }
         returnValue = () -> new EntityManagerResourceReference(name, synchronizationType);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn, returnValue);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -346,8 +345,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     public ResourceReferenceFactory<EntityManagerFactory> registerPersistenceUnitInjectionPoint(final InjectionPoint ip) {
         final String cn = this.getClass().getName();
         final String mn = "registerPersistenceUnitInjectionPoint";
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, ip);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, ip);
         }
 
         underway();
@@ -378,8 +377,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         }
         returnValue = () -> new EntityManagerFactoryResourceReference(this.emfs, name);
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn, returnValue);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -573,9 +572,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
     private static PersistenceUnitInfo getPersistenceUnitInfo(final String name) {
         final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "getPersistenceUnitInfo";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, name);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, name);
         }
 
         Objects.requireNonNull(name);
@@ -589,7 +587,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         final boolean warn;
         if (beans == null || beans.isEmpty()) {
             beans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
-            warn = logger.isLoggable(Level.WARNING) && beans != null && !beans.isEmpty();
+            warn = LOGGER.isLoggable(Level.WARNING) && beans != null && !beans.isEmpty();
         } else {
             warn = false;
         }
@@ -618,13 +616,13 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                                                            PersistenceUnitInfo.class,
                                                            beanManager.createCreationalContext(bean));
         if (warn) {
-            logger.logp(Level.WARNING, cn, mn,
+            LOGGER.logp(Level.WARNING, cn, mn,
                         "The sole {0} with name \"{1}\" will be used for the persistence unit name \"{2}\"",
                         new Object[] {returnValue, returnValue.getPersistenceUnitName(), name});
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn, returnValue);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -668,9 +666,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                                                                     final String name) {
         final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "computeEntityManagerFactory";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {emfs, info, name});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {emfs, info, name});
         }
 
         Objects.requireNonNull(emfs);
@@ -678,8 +675,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
         final EntityManagerFactory returnValue = emfs.compute(name, (n, emf) -> computeEntityManagerFactory(info, n, emf));
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn, returnValue);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -729,9 +726,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                                                                     final EntityManagerFactory existing) {
         final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "computeEntityManagerFactory";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, new Object[] {info, name, existing});
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {info, name, existing});
         }
 
         final EntityManagerFactory returnValue;
@@ -750,11 +746,11 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             }
         } else {
             returnValue = existing;
-            if (logger.isLoggable(Level.WARNING) && !isResourceLocal(info)) {
+            if (LOGGER.isLoggable(Level.WARNING) && !isResourceLocal(info)) {
                 final Map<String, Object> properties = existing.getProperties();
                 if (properties == null
                     || !Boolean.TRUE.equals(properties.get("io.helidon.integrations.cdi.jpa.weld.containerManaged"))) {
-                    logger.logp(Level.WARNING, cn, mn,
+                    LOGGER.logp(Level.WARNING, cn, mn,
                                 "A resource-local EntityManagerFactory was requested for the persistence unit named {0}, "
                                 + "but a JTA EntityManagerFactory, {1}, was previously associated with the persistence unit",
                                 new Object[] {name, returnValue});
@@ -762,8 +758,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             }
         }
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn, returnValue);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -803,9 +799,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         throws ReflectiveOperationException {
         final String cn = WeldJpaInjectionServices.class.getName();
         final String mn = "createContainerManagedEntityManagerFactory";
-        final Logger logger = Logger.getLogger(cn);
-        if (logger.isLoggable(Level.FINER)) {
-            logger.entering(cn, mn, info);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, info);
         }
 
         Objects.requireNonNull(info);
@@ -833,8 +828,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         }
         final EntityManagerFactory returnValue = persistenceProvider.createContainerEntityManagerFactory(info, properties);
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.exiting(cn, mn, returnValue);
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
     }
@@ -904,8 +899,6 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
 
     private static final class EntityManagerFactoryResourceReference implements ResourceReference<EntityManagerFactory> {
 
-        private final Logger logger;
-
         private final Map<String, EntityManagerFactory> emfs;
 
         private final String name;
@@ -917,17 +910,16 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             super();
             final String cn = this.getClass().getName();
             final String mn = "<init>";
-            this.logger = Logger.getLogger(cn);
-            if (logger.isLoggable(Level.FINER)) {
-                logger.entering(cn, mn, new Object[] {emfs, name});
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.entering(cn, mn, new Object[] {emfs, name});
             }
 
             this.emfs = Objects.requireNonNull(emfs);
             this.name = Objects.requireNonNull(name);
             this.persistenceUnitInfo = getPersistenceUnitInfo(name);
 
-            if (logger.isLoggable(Level.FINER)) {
-                logger.exiting(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.exiting(cn, mn);
             }
         }
 
@@ -935,8 +927,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         public EntityManagerFactory getInstance() {
             final String cn = this.getClass().getName();
             final String mn = "getInstance";
-            if (logger.isLoggable(Level.FINER)) {
-                logger.entering(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.entering(cn, mn);
             }
 
             // See https://developer.jboss.org/message/984489#984489;
@@ -949,8 +941,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             // So that's what we do.
             final EntityManagerFactory returnValue = computeEntityManagerFactory(emfs, this.persistenceUnitInfo, this.name);
 
-            if (logger.isLoggable(Level.FINER)) {
-                logger.exiting(cn, mn, returnValue);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.exiting(cn, mn, returnValue);
             }
             return returnValue;
         }
@@ -959,8 +951,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         public void release() {
             final String cn = this.getClass().getName();
             final String mn = "release";
-            if (logger.isLoggable(Level.FINER)) {
-                logger.entering(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.entering(cn, mn);
             }
 
             final EntityManagerFactory emf = this.emfs.remove(this.name);
@@ -968,15 +960,13 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                 emf.close();
             }
 
-            if (logger.isLoggable(Level.FINER)) {
-                logger.exiting(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.exiting(cn, mn);
             }
         }
     }
 
     private final class EntityManagerResourceReference implements ResourceReference<EntityManager> {
-
-        private final Logger logger;
 
         // @GuardedBy("this")
         private EntityManager em;
@@ -990,9 +980,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             super();
             final String cn = this.getClass().getName();
             final String mn = "<init>";
-            this.logger = Logger.getLogger(cn);
-            if (logger.isLoggable(Level.FINER)) {
-                logger.entering(cn, mn, new Object[] {name, synchronizationType});
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.entering(cn, mn, new Object[] {name, synchronizationType});
             }
 
             Objects.requireNonNull(name);
@@ -1039,8 +1028,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                 };
             }
 
-            if (logger.isLoggable(Level.FINER)) {
-                logger.exiting(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.exiting(cn, mn);
             }
         }
 
@@ -1048,8 +1037,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         public EntityManager getInstance() {
             final String cn = this.getClass().getName();
             final String mn = "getInstance";
-            if (logger.isLoggable(Level.FINER)) {
-                logger.entering(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.entering(cn, mn);
             }
 
             final EntityManager em;
@@ -1076,8 +1065,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             assert em != null;
             assert em.isOpen();
 
-            if (logger.isLoggable(Level.FINER)) {
-                logger.exiting(cn, mn, em);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.exiting(cn, mn, em);
             }
             return em;
         }
@@ -1086,8 +1075,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         public void release() {
             final String cn = this.getClass().getName();
             final String mn = "release";
-            if (logger.isLoggable(Level.FINER)) {
-                logger.entering(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.entering(cn, mn);
             }
 
             final EntityManager em;
@@ -1106,8 +1095,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                 this.emfFuture.cancel(true);
             }
 
-            if (logger.isLoggable(Level.FINER)) {
-                logger.exiting(cn, mn);
+            if (LOGGER.isLoggable(Level.FINER)) {
+                LOGGER.exiting(cn, mn);
             }
         }
 
