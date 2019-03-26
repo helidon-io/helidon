@@ -26,12 +26,14 @@
     <name>${project.artifactId}</name>
 
     <properties>
+        <!-- Graal VM home directory -->
+        <grallvm.home>/Library/Java/JavaVirtualMachines/graalvm-ce-${graalvm.version}/Contents/Home</grallvm.home>
+        <!-- Default package. Will be overriden by Maven archetype -->
+        <package>io.helidon.examples.quickstart.graalvm</package>
         <helidon.version>1.0.2</helidon.version>
         <graalvm.version>1.0.0-rc14</graalvm.version>
         <dockerfile.plugin.version>1.4.10</dockerfile.plugin.version>
-        <!-- Default package. Will be overriden by Maven archetype -->
-        <package>io.helidon.examples.quickstart.graalvm</package>
-        <main.class>io.helidon.examples.quickstart.graalvm.Main</main.class>
+        <main.class>${package}.Main</main.class>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>
@@ -39,9 +41,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <argLine>-Dfile.encoding=UTF-8</argLine>
-        <grallvm.home>/Library/Java/JavaVirtualMachines/graalvm-ce-${graalvm.version}/Contents/Home</grallvm.home>
         <native.resources>application.yaml|logging.properties</native.resources>
-        <main.port>8099</main.port>
+        <main.port>8080</main.port>
     </properties>
 
     <dependencyManagement>
@@ -245,9 +246,6 @@
                             <tag>${project.version}</tag>
                             <buildArgs>
                                 <GRAALVM_HOME>${grallvm.home}</GRAALVM_HOME>
-                                <NATIVE_ENTRY_POINT>${main.class}</NATIVE_ENTRY_POINT>
-                                <NATIVE_RESOURCES>${native.resources}</NATIVE_RESOURCES>
-                                <PORT>${main.port}</PORT>
                             </buildArgs>
                         </configuration>
                     </plugin>
