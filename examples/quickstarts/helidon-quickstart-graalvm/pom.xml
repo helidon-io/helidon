@@ -28,12 +28,10 @@
     <properties>
         <!-- Graal VM home directory -->
         <grallvm.home>/Library/Java/JavaVirtualMachines/graalvm-ce-${graalvm.version}/Contents/Home</grallvm.home>
-        <!-- Default package. Will be overriden by Maven archetype -->
-        <package>io.helidon.examples.quickstart.graalvm</package>
         <helidon.version>1.0.2</helidon.version>
         <graalvm.version>1.0.0-rc14</graalvm.version>
         <dockerfile.plugin.version>1.4.10</dockerfile.plugin.version>
-        <main.class>${package}.Main</main.class>
+        <main.class>io.helidon.examples.quickstart.graalvm.Main</main.class>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>

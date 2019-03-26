@@ -20,16 +20,27 @@ minikube version
 kubectl version --short
 ```
 
-## Build
+## Configure `pom.xml`
 
+- `graalvm.home`: Graal VM home directory. This directory shall contain `bin/native-image` executable.
+
+## Build and run
+
+### Build application JAR
 ```
 mvn package
 ```
-
-## Start the application
-
+### Start the application using Graal VM
 ```
-java -jar target/quickstart-se.jar
+mvn exec:exec
+```
+### Build Docker Image
+```
+mvn package -Pnative-image-docker
+```
+### Start Docker container with the application using Graal VM
+```
+docker run -d --rm --name helidon-native -p 8080:8080 helidon/example-graal:1.0-SNAPSHOT
 ```
 
 ## Exercise the application
@@ -64,27 +75,4 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 {"base":...
 . . .
 
-```
-
-## Build the Docker Image
-
-```
-docker build -t quickstart-se target
-```
-
-## Start the application with Docker
-
-```
-docker run --rm -p 8080:8080 quickstart-se:latest
-```
-
-Exercise the application as described above
-
-## Deploy the application to Kubernetes
-
-```
-kubectl cluster-info                # Verify which cluster
-kubectl get pods                    # Verify connectivity to cluster
-kubectl create -f target/app.yaml   # Deply application
-kubectl get service quickstart-se  # Get service info
 ```
