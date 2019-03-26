@@ -1,5 +1,5 @@
 
-# Helidon Example: quickstart-se
+# Helidon Example: quickstart-graalvm
 
 This example implements a simple Hello World REST service.
 
