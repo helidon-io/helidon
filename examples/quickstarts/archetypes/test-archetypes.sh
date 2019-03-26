@@ -69,17 +69,17 @@ mvn archetype:generate -DinteractiveMode=false \
 # build the generated project
 mvn -f ${PWD}/quickstart-mp/pom.xml install
 
-# invoke the quickstart-mp archetype
+# invoke the quickstart-graalvm archetype
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se-graalvm \
+    -DarchetypeArtifactId=helidon-quickstart-graalvm \
     -DarchetypeVersion=${MVN_VERSION} \
     -DgroupId=io.helidon.examples \
-    -DartifactId=quickstart-se-graalvm \
-    -Dpackage=io.helidon.examples.quickstart.mp
+    -DartifactId=quickstart-graalvm \
+    -Dpackage=io.helidon.examples.quickstart.graalvm
 
 # build the generated project
-mvn -f ${PWD}/quickstart-se-graalvm/pom.xml install
+mvn -f ${PWD}/quickstart-graalvm/pom.xml install
 
 # Paranoia. Don't want to delete /!
 if [ ! -z "${TARGET_DIR}" ]; then

@@ -32,7 +32,7 @@ EXAMPLE_DIR="${MY_DIR}/.."
 EXAMPLES=" \
   helidon-quickstart-se \
   helidon-quickstart-mp \
-  helidon-quickstart-se-graalvm \
+  helidon-quickstart-graalvm \
 "
 
 # Create archetypes from example projects

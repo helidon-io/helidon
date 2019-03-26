@@ -41,7 +41,7 @@ EXAMPLE_DIR="${MY_DIR}/.."
 EXAMPLES=" \
   helidon-quickstart-se \
   helidon-quickstart-mp \
-  helidon-quickstart-se-graalvm \
+  helidon-quickstart-graalvm \
 "
 
 TEMP_FILE=$(mktemp -t pom.xml.XXXXXX)

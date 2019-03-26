@@ -5,9 +5,9 @@ ARG PORT
 
 WORKDIR /helidon
 
-# Expects maven package to run before this step
-ADD target/*.jar target/
-ADD target/dependency/*.jar target/
+
+ADD *.jar target/
+ADD libs/*.jar target/
 RUN echo "$GRAALVM_HOME/bin/native-image -H:Name=helidon-native -H:IncludeResources=$NATIVE_RESOURCES -H:+ReportExceptionStackTraces -classpath target/* $NATIVE_ENTRY_POINT"
 RUN $GRAALVM_HOME/bin/native-image \
         --static \
