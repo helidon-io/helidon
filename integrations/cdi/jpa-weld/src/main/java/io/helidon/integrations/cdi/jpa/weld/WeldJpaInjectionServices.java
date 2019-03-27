@@ -224,10 +224,19 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
         assert this == instance;
         for (final EntityManager containerManagedEntityManager : this.containerManagedEntityManagers) {
             assert containerManagedEntityManager != null;
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.logp(Level.FINE, cn, mn, "{0} joining transaction", containerManagedEntityManager);
+            final Map<String, Object> properties = containerManagedEntityManager.getProperties();
+            final Object synchronizationType;
+            if (properties == null) {
+                synchronizationType = null;
+            } else {
+                synchronizationType = properties.get(SynchronizationType.class.getName());
             }
-            containerManagedEntityManager.joinTransaction();
+            if (SynchronizationType.SYNCHRONIZED.equals(synchronizationType)) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, cn, mn, "{0} joining transaction", containerManagedEntityManager);
+                }
+                containerManagedEntityManager.joinTransaction();
+            }
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1014,6 +1023,8 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                 this.emSupplier = () -> {
                     try {
                         final EntityManager em = emfFuture.get().createEntityManager(synchronizationType);
+                        assert em != null;
+                        em.setProperty(SynchronizationType.class.getName(), synchronizationType);
                         WeldJpaInjectionServices.this.containerManagedEntityManagers.add(em);
                         return em;
                     } catch (final ExecutionException executionException) {

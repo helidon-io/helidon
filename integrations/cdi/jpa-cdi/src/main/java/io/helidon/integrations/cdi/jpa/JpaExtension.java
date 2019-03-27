@@ -237,16 +237,7 @@ public class JpaExtension implements Extension {
                                                                 new BeanManagerBackedDataSourceProvider(beanManager),
                                                                 properties);
                                 this.implicitPersistenceUnits.put(persistenceUnitName, persistenceUnit);
-                            } else {
-                                // Skip processing this annotation, or
-                                // actually probably register an
-                                // error
                             }
-                        } else {
-                            // Skip processing this annotation; there
-                            // aren't any @PersistenceProperties on it
-                            // so it may be a simple declaration of a
-                            // dependency on this persistence unit
                         }
                     }
                 }
@@ -477,9 +468,11 @@ public class JpaExtension implements Extension {
                     .scope(Singleton.class)
                     .createWith(cc -> provider);
             }
+
             // Should we consider type-level @PersistenceContext
             // definitions of persistence units?
             boolean processImplicits = true;
+
             // Collect all pre-existing PersistenceUnitInfo beans and
             // make sure their associated PersistenceProviders are
             // beanified.  (Many times this Set will be empty.)
@@ -501,6 +494,7 @@ public class JpaExtension implements Extension {
                     }
                 }
             }
+
             // Load all META-INF/persistence.xml resources with JAXB,
             // and turn them into PersistenceUnitInfo instances, and
             // add beans for all of them as well as their associated
@@ -535,8 +529,8 @@ public class JpaExtension implements Extension {
                 // ( https://docs.oracle.com/en/java/javase/11/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ),
                 // nor in JDK 12
                 // ( https://docs.oracle.com/en/java/javase/12/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ).
-                // Suppress deprecation warnings since the JDK can't
-                // even figure it out!
+                // So we suppress deprecation warnings since the JDK
+                // can't even figure it out!
                 @SuppressWarnings("deprecation")
                 final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
                 assert xmlInputFactory != null;
@@ -561,7 +555,6 @@ public class JpaExtension implements Extension {
                     }
                     if (persistenceUnitInfos != null && !persistenceUnitInfos.isEmpty()) {
                         for (final PersistenceUnitInfo persistenceUnitInfo : persistenceUnitInfos) {
-                            assert persistenceUnitInfo != null;
                             final String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
                             event.addBean()
                                 .types(Collections.singleton(PersistenceUnitInfo.class))
@@ -573,6 +566,7 @@ public class JpaExtension implements Extension {
                     }
                 }
             }
+
             if (processImplicits) {
                 for (final PersistenceUnitInfoBean persistenceUnitInfoBean : this.implicitPersistenceUnits.values()) {
                     assert persistenceUnitInfoBean != null;
@@ -595,6 +589,7 @@ public class JpaExtension implements Extension {
                     maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
                 }
             }
+
         }
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
         this.implicitPersistenceUnits.clear();
