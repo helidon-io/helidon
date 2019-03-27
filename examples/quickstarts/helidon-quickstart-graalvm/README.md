@@ -6,7 +6,7 @@ This example implements a simple Hello World REST service.
 ## Prerequisites
 
 1. Maven 3.5 or newer
-2. Java SE 8 or newer
+2. Graal VM 1.0.0-rc14 or newer as JAVA_HOME, ''$JAVA_HOME/bin/native-image' must exist 
 3. Docker 17 or newer to build and run docker images
 4. Kubernetes minikube v0.24 or newer to deploy to Kubernetes (or access to a K8s 1.7.4 or newer cluster)
 5. Kubectl 1.7.4 or newer to deploy to Kubernetes

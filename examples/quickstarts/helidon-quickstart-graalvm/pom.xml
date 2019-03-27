@@ -21,13 +21,13 @@
 
     <groupId>io.helidon.examples</groupId>
     <artifactId>quickstart-graalvm</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
 
     <properties>
-        <!-- Graal VM home directory -->
-        <grallvm.home>/Library/Java/JavaVirtualMachines/graalvm-ce-${graalvm.version}/Contents/Home</grallvm.home>
+        <!-- Graal VM is expected as current JDK -->
+        <native.image>${java.home}/bin/native-image</native.image>
         <helidon.version>1.0.2</helidon.version>
         <graalvm.version>1.0.0-rc14</graalvm.version>
         <dockerfile.plugin.version>1.4.10</dockerfile.plugin.version>
@@ -39,7 +39,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <argLine>-Dfile.encoding=UTF-8</argLine>
-        <native.resources>application.yaml|logging.properties</native.resources>
         <main.port>8080</main.port>
     </properties>
 
@@ -130,11 +129,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.19.1</version>
@@ -148,60 +142,121 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>build-native-image</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${grallvm.home}/bin/native-image</executable>
-                            <arguments>
-                                <argument>-H:Name=${basedir}/target/${native.name}</argument>
-                                <argument>-H:IncludeResources=${native.resources}</argument>
-                                <!--                                <argument>&#45;&#45;debug-attach</argument>-->
-                                <argument>-H:+ReportExceptionStackTraces</argument>
-                                <!-- this is a workaround for issue with server, when a new library with a Java service
-                                is added, the server cannot find its implementation class-->
-                                <argument>--no-server</argument>
-                                <argument>-classpath</argument>
-                                <classpath/>
-                                <argument>${main.class}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>run-native-image</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${basedir}/target/${native.name}</executable>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>java</executable>
-                    <arguments>
-                        <argument>-classpath</argument>
-                        <classpath />
-                        <argument>${main.class}</argument>
-                    </arguments>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 
     <profiles>
+
+        <profile>
+            <id>native-image-exec</id>
+            <activation>
+                <file>
+                    <exists>${native.image}</exists>
+                </file>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>exec-maven-plugin</artifactId>
+                            <version>1.6.0</version>
+                            <configuration>
+                                <executable>java</executable>
+                                <arguments>
+                                    <argument>-classpath</argument>
+                                    <classpath />
+                                    <argument>${main.class}</argument>
+                                </arguments>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-native-image</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${native.image}</executable>
+                                    <arguments>
+                                        <argument>-H:Name=${basedir}/target/${native.name}</argument>
+                                        <argument>-H:IncludeResources=${native.resources}</argument>
+                                        <!--                                <argument>&#45;&#45;debug-attach</argument>-->
+                                        <argument>-H:+ReportExceptionStackTraces</argument>
+                                        <!-- this is a workaround for issue with server, when a new library with a Java service
+                                        is added, the server cannot find its implementation class-->
+                                        <argument>--no-server</argument>
+                                        <argument>-classpath</argument>
+                                        <classpath/>
+                                        <argument>${main.class}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>run-native-image</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${basedir}/target/${native.name}</executable>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>native-image-docker</id>
             <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <version>3.0.0-M2</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <version>3.1.1</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>com.spotify</groupId>
+                            <artifactId>dockerfile-maven-plugin</artifactId>
+                            <version>${dockerfile.plugin.version}</version>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>native-image-exist</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireFilesExist>
+                                            <files>
+                                                <file>${native.image}</file>
+                                            </files>
+                                        </requireFilesExist>
+                                    </rules>
+                                    <fail>true</fail>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
@@ -227,7 +282,6 @@
                     <plugin>
                         <groupId>com.spotify</groupId>
                         <artifactId>dockerfile-maven-plugin</artifactId>
-                        <version>${dockerfile.plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>default</id>
@@ -243,13 +297,14 @@
                             <repository>helidon/example-graal</repository>
                             <tag>${project.version}</tag>
                             <buildArgs>
-                                <GRAALVM_HOME>${grallvm.home}</GRAALVM_HOME>
+                                <GRAALVM_HOME>${graalvm.home}</GRAALVM_HOME>
                             </buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+
     </profiles>
 
 </project>

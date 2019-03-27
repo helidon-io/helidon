@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,16 +70,16 @@ mvn archetype:generate -DinteractiveMode=false \
 mvn -f ${PWD}/quickstart-mp/pom.xml install
 
 # invoke the quickstart-graalvm archetype
-mvn archetype:generate -DinteractiveMode=false \
-    -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-graalvm \
-    -DarchetypeVersion=${MVN_VERSION} \
-    -DgroupId=io.helidon.examples \
-    -DartifactId=quickstart-graalvm \
-    -Dpackage=io.helidon.examples.quickstart.graalvm
+#mvn archetype:generate -DinteractiveMode=false \
+#    -DarchetypeGroupId=io.helidon.archetypes \
+#    -DarchetypeArtifactId=helidon-quickstart-graalvm \
+#    -DarchetypeVersion=${MVN_VERSION} \
+#    -DgroupId=io.helidon.examples \
+#    -DartifactId=quickstart-graalvm \
+#    -Dpackage=io.helidon.examples.quickstart.graalvm
 
 # build the generated project
-mvn -f ${PWD}/quickstart-graalvm/pom.xml install
+#mvn -f ${PWD}/quickstart-graalvm/pom.xml install
 
 # Paranoia. Don't want to delete /!
 if [ ! -z "${TARGET_DIR}" ]; then
