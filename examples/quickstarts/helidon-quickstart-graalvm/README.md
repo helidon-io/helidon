@@ -20,10 +20,6 @@ minikube version
 kubectl version --short
 ```
 
-## Configure `pom.xml`
-
-- `graalvm.home`: Graal VM home directory. This directory shall contain `bin/native-image` executable.
-
 ## Build and run
 
 ### Build application JAR
