@@ -37,4 +37,4 @@ COPY --from=build-native-image /helidon/helidon-native helidon-native
 
 ENTRYPOINT ["./helidon-native"]
 
-EXPOSE ${main.port}
+EXPOSE 8080

@@ -40,7 +40,7 @@ mvn package -Pnative-image-docker
 ```
 ### Start Docker container with the application using Graal VM
 ```
-docker run -d --rm --name helidon-native -p 8080:8080 helidon/example-graal:1.0-SNAPSHOT
+docker run -d --rm --name helidon-native -p 8080:8080 helidon/example-graal:1.0.3-SNAPSHOT
 ```
 
 ## Exercise the application
