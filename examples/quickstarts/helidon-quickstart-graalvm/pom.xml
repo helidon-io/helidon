@@ -154,11 +154,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0-M2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>3.1.1</version>
                 </plugin>
@@ -228,28 +223,6 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>native-image-exist</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireFilesExist>
-                                            <files>
-                                                <file>${native.image}</file>
-                                            </files>
-                                        </requireFilesExist>
-                                    </rules>
-                                    <fail>true</fail>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
@@ -287,9 +260,6 @@
                             <contextDirectory>${project.build.directory}</contextDirectory>
                             <repository>helidon/example-graal</repository>
                             <tag>${project.version}</tag>
-                            <buildArgs>
-                                <GRAALVM_HOME>${graalvm.home}</GRAALVM_HOME>
-                            </buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>
