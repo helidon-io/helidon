@@ -16,32 +16,40 @@
 
 package io.helidon.microprofile.config;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.config.EnvironmentVariables;
+import io.helidon.config.EnvironmentVariableAliases;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import static java.lang.System.getenv;
 
 /**
  * Environment variables config source.
  */
 class MpcSourceEnvironmentVariables implements ConfigSource {
-    private final Map<String, String> envVariables;
 
     MpcSourceEnvironmentVariables() {
-        envVariables = EnvironmentVariables.expand();
     }
 
     @Override
     public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(envVariables);
+        return getenv();
     }
 
     @Override
-    public String getValue(String propertyName) {
-        return envVariables.get(propertyName);
+    public String getValue(final String propertyName) {
+        String result = getenv(propertyName);
+        if (result == null) {
+            for (final String alias : EnvironmentVariableAliases.aliasesOf(propertyName)) {
+                result = getenv(alias);
+                if (result != null) {
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -56,6 +64,6 @@ class MpcSourceEnvironmentVariables implements ConfigSource {
 
     @Override
     public Set<String> getPropertyNames() {
-        return Collections.unmodifiableSet(envVariables.keySet());
+        return getProperties().keySet();
     }
 }

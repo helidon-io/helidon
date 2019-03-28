@@ -667,8 +667,7 @@ public final class ConfigSources {
          */
         @Override
         public ConfigSource build() {
-            final List<ConfigSource> finalConfigSources = new LinkedList<>();
-            finalConfigSources.addAll(configSources);
+            final List<ConfigSource> finalConfigSources = new LinkedList<>(configSources);
 
             final MergingStrategy finalMergingStrategy = mergingStrategy != null
                     ? mergingStrategy

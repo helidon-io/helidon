@@ -47,6 +47,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 
+import static io.helidon.config.ConfigSources.ENV_VARS_NAME;
 import static io.helidon.config.ConfigSources.classpath;
 
 /**
@@ -71,6 +72,7 @@ class BuilderImpl implements Config.Builder {
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
     private OverrideSource overrideSource;
+    private boolean envVarAliasGeneratorEnabled;
 
     BuilderImpl() {
         sources = null;
@@ -87,12 +89,18 @@ class BuilderImpl implements Config.Builder {
         keyResolving = true;
         systemPropertiesSourceEnabled = true;
         environmentVariablesSourceEnabled = true;
+        envVarAliasGeneratorEnabled = false;
     }
 
     @Override
     public Config.Builder sources(List<Supplier<ConfigSource>> sourceSuppliers) {
         sources = new ArrayList<>(sourceSuppliers.size());
-        sourceSuppliers.stream().map(Supplier::get).forEach(sources::add);
+        sourceSuppliers.stream().map(Supplier::get).forEach(source -> {
+            sources.add(source);
+            if (source.description().contains(ENV_VARS_NAME)) {
+                envVarAliasGeneratorEnabled = true;
+            }
+        });
         return this;
     }
 
@@ -286,6 +294,10 @@ class BuilderImpl implements Config.Builder {
             addAutoLoadedFilters();
         }
 
+        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled ?
+                                                        EnvironmentVariableAliases::aliasesOf :
+                                                        null;
+
         //config provider
         return createProvider(configMapperManager,
                               targetConfigSource,
@@ -294,13 +306,15 @@ class BuilderImpl implements Config.Builder {
                               cachingEnabled,
                               changesExecutor,
                               changesMaxBuffer,
-                              keyResolving);
+                              keyResolving,
+                              aliasGenerator);
     }
 
     private ConfigSource targetConfigSource(ConfigContext context) {
         List<ConfigSource> targetSources = new LinkedList<>();
         if (environmentVariablesSourceEnabled) {
             targetSources.add(ConfigSources.environmentVariables());
+            envVarAliasGeneratorEnabled = true;
         }
         if (systemPropertiesSourceEnabled) {
             targetSources.add(ConfigSources.systemProperties());
@@ -329,7 +343,8 @@ class BuilderImpl implements Config.Builder {
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
                                 int changesMaxBuffer,
-                                boolean keyResolving) {
+                                boolean keyResolving,
+                                Function<String, List<String>> aliasGenerator) {
         return new ProviderImpl(configMapperManager,
                                 targetConfigSource,
                                 overrideSource,
@@ -337,7 +352,8 @@ class BuilderImpl implements Config.Builder {
                                 cachingEnabled,
                                 changesExecutor,
                                 changesMaxBuffer,
-                                keyResolving);
+                                keyResolving,
+                                aliasGenerator);
     }
 
     //
