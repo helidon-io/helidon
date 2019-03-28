@@ -20,12 +20,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Class AsynchronousTest.

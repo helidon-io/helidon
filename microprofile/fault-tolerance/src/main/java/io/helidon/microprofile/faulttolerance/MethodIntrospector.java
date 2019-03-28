@@ -23,7 +23,6 @@ import java.util.Map;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
 
-import com.netflix.hystrix.HystrixCommandProperties;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
@@ -168,8 +167,10 @@ class MethodIntrospector {
     Map<String, Object> getHystrixProperties() {
         final HashMap<String, Object> result = new HashMap<>();
 
-        // Isolation strategy
-        result.put("execution.isolation.strategy", HystrixCommandProperties.ExecutionIsolationStrategy.THREAD);
+        // Use semaphores for async and bulkhead
+        if (!isAsynchronous() && hasBulkhead()) {
+            result.put("execution.isolation.semaphore.maxConcurrentRequests", bulkhead.value());
+        }
 
         // Circuit breakers
         result.put("circuitBreaker.enabled", hasCircuitBreaker());

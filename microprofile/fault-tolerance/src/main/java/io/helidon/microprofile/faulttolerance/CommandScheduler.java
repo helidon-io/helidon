@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
+
 import net.jodah.failsafe.util.concurrent.Scheduler;
 
 /**
@@ -29,7 +30,8 @@ import net.jodah.failsafe.util.concurrent.Scheduler;
  */
 public class CommandScheduler implements Scheduler {
 
-    private final static String THREAD_NAME_PREFIX = "helidon-ft-async-";
+    private static final int CORE_POOL_SIZE = 32;
+    private static final String THREAD_NAME_PREFIX = "helidon-ft-async-";
 
     private static CommandScheduler instance;
 
@@ -51,7 +53,10 @@ public class CommandScheduler implements Scheduler {
             instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
                     .daemon(false)
                     .threadNamePrefix(THREAD_NAME_PREFIX)
-                    .config(config).build());
+                    .corePoolSize(CORE_POOL_SIZE)
+                    .prestart(false)
+                    .config(config)
+                    .build());
         }
         return instance;
     }
@@ -67,6 +72,8 @@ public class CommandScheduler implements Scheduler {
             instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
                     .daemon(false)
                     .threadNamePrefix(THREAD_NAME_PREFIX)
+                    .corePoolSize(CORE_POOL_SIZE)
+                    .prestart(false)
                     .build());
         }
         return instance;

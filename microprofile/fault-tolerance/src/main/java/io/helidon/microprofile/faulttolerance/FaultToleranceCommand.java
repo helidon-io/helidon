@@ -33,6 +33,7 @@ import com.netflix.hystrix.HystrixThreadPoolProperties;
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.eclipse.microprofile.metrics.Histogram;
 
+import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE;
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
 
 import static io.helidon.microprofile.faulttolerance.CircuitBreakerHelper.State;
@@ -101,7 +102,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 .andCommandPropertiesDefaults(
                         HystrixCommandProperties.Setter()
                                 .withFallbackEnabled(false)
-                                .withExecutionIsolationStrategy(THREAD)
+                                .withExecutionIsolationStrategy(introspector.hasBulkhead()
+                                        && !introspector.isAsynchronous() ? SEMAPHORE : THREAD)
                                 .withExecutionIsolationThreadInterruptOnFutureCancel(true))
                 .andThreadPoolKey(
                         introspector.hasBulkhead()

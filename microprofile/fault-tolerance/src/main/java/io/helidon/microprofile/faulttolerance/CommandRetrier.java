@@ -212,7 +212,7 @@ public class CommandRetrier {
             if (cause instanceof TimeoutException) {
                 throw new org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException(cause);
             }
-            if (cause instanceof RejectedExecutionException) {
+            if (cause instanceof RejectedExecutionException || isHystrixSemaphoreException(cause)) {
                 throw new BulkheadException(cause);
             }
             if (isHystrixBreakerException(cause)) {
@@ -307,5 +307,17 @@ public class CommandRetrier {
     private static boolean isHystrixBreakerException(Throwable t) {
         return t instanceof RuntimeException && t.getMessage().contains("Hystrix "
                 + "circuit short-circuited and is OPEN");
+    }
+
+    /**
+     * Hystrix throws a {@code RuntimeException}, so we need to check
+     * the message to determine if it is a semaphore exception.
+     *
+     * @param t Throwable to check.
+     * @return Outcome of test.
+     */
+    private static boolean isHystrixSemaphoreException(Throwable t) {
+        return t instanceof RuntimeException && t.getMessage().contains("could "
+                + "not acquire a semaphore for execution");
     }
 }
