@@ -62,7 +62,6 @@ public class EnvironmentVariableAliases {
      * <li>"app_qualifiedName"</li>
      * <li>"APP_QUALIFIEDNAME"</li>
      * </ol>
-     * <ol>
      * If the key <em>does</em> contain any {@code '-'} (dash) characters, they are replaced by {@code "_dash_"} and by the
      * uppercase variant so that, e.g., {@code "app.page-size"} results in three aliases:
      * <ol>
