@@ -294,9 +294,9 @@ class BuilderImpl implements Config.Builder {
             addAutoLoadedFilters();
         }
 
-        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled ?
-                                                        EnvironmentVariableAliases::aliasesOf :
-                                                        null;
+        Function<String, List<String>> aliasGenerator = envVarAliasGeneratorEnabled
+                                                        ? EnvironmentVariableAliases::aliasesOf
+                                                        : null;
 
         //config provider
         return createProvider(configMapperManager,
