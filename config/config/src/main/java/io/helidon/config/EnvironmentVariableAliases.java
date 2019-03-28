@@ -55,14 +55,14 @@ public class EnvironmentVariableAliases {
     /**
      * Returns a list of aliases for the given config key.
      * <p>
-     * If the key does <em>not</em> contain any {@code '-'} (dash) characters, all disallowed characters are
+     * If the key does not contain any {@code '-'} (dash) characters, all disallowed characters are
      * replaced by {@code '_'} (underscore) and this plus the uppercase variant are returned. For example,
      * {@code "app.qualifiedName"} and {@code "app/qualifiedName"} both result in the same two aliases:
      * <ol>
      * <li>"app_qualifiedName"</li>
      * <li>"APP_QUALIFIEDNAME"</li>
      * </ol>
-     * If the key <em>does</em> contain any {@code '-'} (dash) characters, they are replaced by {@code "_dash_"} and by the
+     * If the key does contain any {@code '-'} (dash) characters, they are replaced by {@code "_dash_"} and by the
      * uppercase variant so that, e.g., {@code "app.page-size"} results in three aliases:
      * <ol>
      * <li>"app_page_dash_size"</li>
