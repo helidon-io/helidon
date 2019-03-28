@@ -20,8 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static java.util.Collections.unmodifiableMap;
+
 /**
- * Provides environment variables that include mapped variants enabling setting or overriding configuration with keys that are
+ * Provides environment variables that include aliases enabling setting or overriding configuration with keys that are
  * unlikely to be legal as environment variables.
  * <p>
  * The <a href="https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc">
@@ -41,17 +43,17 @@ import java.util.regex.Pattern;
  * </pre>
  * <p>
  * The spec assumes the mapping takes place during search, where the desired key is known, but Helidon merges
- * {@code ConfigSource}s instead; therefore this implementation produces <em>additional</em> KV pairs with variant keys
- * for any variable that can meaningfully be mapped. See {@link #shouldMap(String)} for the mapping criteria.
+ * {@code ConfigSource}s instead; therefore this implementation produces <em>additional</em> KV pairs with aliases
+ * for any variable that can meaningfully be mapped. See {@link #shouldAlias(String)} for the mapping criteria.
  * <p>
  * Since Helidon supports many configuration keys that contain {@code '-'} (e.g. {@code "server.executor-service.max-pool-size"}),
- * an additional mapping is required to produce a matching variant. Given that it must map from legal environment variable names
- * and reduce the chances of inadvertent mappings, a verbose mapping is used: {@code "_dash_"} substrings (lowercase only) are
- * first replaced by {@code '-'}. See {@link #expand()} for the variants produced.
+ * an additional mapping is required to produce a matching alias. Given that it must map from legal environment variable names
+ * and reduce the chances of inadvertent mappings, a verbose mapping is used: {@code "_dash_"} substrings (upper and lower case)
+ * are first replaced by {@code '-'}. See {@link #expand()} for the aliases produced.
  * <p>
  */
 public class EnvironmentVariables {
-    private static final Pattern DASH_PATTERN = Pattern.compile("_dash_", Pattern.LITERAL);
+    private static final Pattern DASH_PATTERN = Pattern.compile("_dash_|_DASH_");
     private static final String UNDERSCORE = "_";
     private static final String DOUBLE_UNDERSCORE = "__";
     private static final String DASH = "-";
@@ -59,9 +61,9 @@ public class EnvironmentVariables {
     private static final char DOT_CHAR = '.';
 
     /**
-     * Tests whether mappings should be created for the given environment variable name.
+     * Tests whether aliases should be created for the given environment variable name.
      * <p>
-     * To provide a meaningful mapping, the name must meet <em>all</em> of the following criteria:
+     * To provide a meaningful alias, the name must meet <em>all</em> of the following criteria:
      * <ol>
      * <li>does not begin or end with a {@code '_'} character</li>
      * <li>does not contain {@code "__"}</li>
@@ -69,9 +71,9 @@ public class EnvironmentVariables {
      * </ol>
      *
      * @param name The environment variable name.
-     * @return {@code true} if mappings should be created.
+     * @return {@code true} if aliases should be created.
      */
-    public static boolean shouldMap(final String name) {
+    public static boolean shouldAlias(final String name) {
         final int length = name.length();
         return length > 2
                && name.charAt(0) != UNDERSCORE_CHAR
@@ -81,61 +83,61 @@ public class EnvironmentVariables {
     }
 
     /**
-     * Returns the environment variables and their mapped variants.
+     * Returns the environment variables and their aliases.
      * <p>
-     * The following mappings are applied to any environment variable name for which {@link #shouldMap(String)} returns
+     * The following mappings are applied to any environment variable name for which {@link #shouldAlias(String)} returns
      * {@code true}:
      * <ol>
      * <li>Replace {@code "_dash_"} by {@code '-'}, e.g. {@code "SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE"} becomes
      * {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"}.</li>
-     * <li>Replace {@code '_'} by {@code '.'} and add as a variant, e.g. {@code "com_ACME_size"} becomes {@code "com.ACME.size"}
+     * <li>Replace {@code '_'} by {@code '.'} and add as a alias, e.g. {@code "com_ACME_size"} becomes {@code "com.ACME.size"}
      * and {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"} becomes {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"}. This mapping
      * is added primarily to support mixed case config keys such as {@code "app.someCamelCaseKey"}.</li>
-     * <li>Convert the result of step 2 to lowercase and add as a variant, e.g. {@code "com.ACME.size"} becomes
+     * <li>Convert the result of step 2 to lowercase and add as a alias, e.g. {@code "com.ACME.size"} becomes
      * {@code "com.acme.size"} and {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"} becomes
      * {@code "server.executor-service.max-pool-size"}.
      * </li>
      * </ol>
      *
-     * @return The map.
+     * @return An unmodifiable copy of {@link System#getenv()} including aliases.
      */
     public static Map<String, String> expand() {
         return expand(System.getenv());
     }
 
     /**
-     * Returns the environment variables and their mapped variants.
+     * Returns the environment variables and their aliases.
      * <p>
-     * The following mappings are applied to any environment variable name for which {@link #shouldMap(String)} returns
+     * The following mappings are applied to any environment variable name for which {@link #shouldAlias(String)} returns
      * {@code true}:
      * <ol>
      * <li>Replace {@code "_dash_"} by {@code '-'}, e.g. {@code "SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE"} becomes
      * {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"}.</li>
-     * <li>Replace {@code '_'} by {@code '.'} and add as a variant, e.g. {@code "com_ACME_size"} becomes {@code "com.ACME.size"}
+     * <li>Replace {@code '_'} by {@code '.'} and add as an alias, e.g. {@code "com_ACME_size"} becomes {@code "com.ACME.size"}
      * and {@code "SERVER_EXECUTOR-SERVICE_MAX-POOL-SIZE"} becomes {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"}. This mapping
      * is added primarily to support mixed case config keys such as {@code "app.someCamelCaseKey"}.</li>
-     * <li>Convert the result of step 2 to lowercase and add as a variant, e.g. {@code "com.ACME.size"} becomes
+     * <li>Convert the result of step 2 to lowercase and add as an alias, e.g. {@code "com.ACME.size"} becomes
      * {@code "com.acme.size"} and {@code "SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE"} becomes
      * {@code "server.executor-service.max-pool-size"}.
      * </li>
      * </ol>
      *
      * @param env The environment variables.
-     * @return A copy of {@code env} with variants added.
+     * @return An unmodifiable copy of {@code env} with aliases added.
      */
     public static Map<String, String> expand(final Map<String, String> env) {
         final Map<String, String> result = new HashMap<>(env.size());
         env.forEach((name, value) -> {
             result.put(name, value);
-            if (shouldMap(name)) {
-                String alternateName = DASH_PATTERN.matcher(name).replaceAll(DASH);
-                alternateName = alternateName.replace(UNDERSCORE_CHAR, DOT_CHAR);
-                result.put(alternateName, value);
-                result.put(alternateName.toLowerCase(), value);
+            if (shouldAlias(name)) {
+                String alias = DASH_PATTERN.matcher(name).replaceAll(DASH);
+                alias = alias.replace(UNDERSCORE_CHAR, DOT_CHAR);
+                result.put(alias, value);
+                result.put(alias.toLowerCase(), value);
             }
         });
 
-        return result;
+        return unmodifiableMap(result);
     }
 
     private EnvironmentVariables() {
