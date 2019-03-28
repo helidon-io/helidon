@@ -212,7 +212,7 @@ public class CommandRetrier {
             if (cause instanceof TimeoutException) {
                 throw new org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException(cause);
             }
-            if (cause instanceof RejectedExecutionException || isHystrixSemaphoreException(cause)) {
+            if (isBulkheadRejection(cause)) {
                 throw new BulkheadException(cause);
             }
             if (isHystrixBreakerException(cause)) {
@@ -278,7 +278,7 @@ public class CommandRetrier {
 
         // Bulkhead
         if (introspector.hasBulkhead()) {
-            boolean bulkheadRejection = (cause instanceof RejectedExecutionException);
+            boolean bulkheadRejection = isBulkheadRejection(cause);
             if (!bulkheadRejection) {
                 getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(command.getExecutionTime());
             }
@@ -310,14 +310,16 @@ public class CommandRetrier {
     }
 
     /**
-     * Hystrix throws a {@code RuntimeException}, so we need to check
-     * the message to determine if it is a semaphore exception.
+     * Checks if the parameter is a bulkhead exception. Note that Hystrix with semaphore
+     * isolation may throw a {@code RuntimeException}, so we need to check the message
+     * to determine if it is a semaphore exception.
      *
      * @param t Throwable to check.
      * @return Outcome of test.
      */
-    private static boolean isHystrixSemaphoreException(Throwable t) {
-        return t instanceof RuntimeException && t.getMessage().contains("could "
+    private static boolean isBulkheadRejection(Throwable t) {
+        return t instanceof RejectedExecutionException
+                || t instanceof RuntimeException && t.getMessage().contains("could "
                 + "not acquire a semaphore for execution");
     }
 }
