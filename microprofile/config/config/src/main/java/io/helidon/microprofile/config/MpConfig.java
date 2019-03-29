@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -47,12 +46,6 @@ import org.eclipse.microprofile.config.spi.Converter;
  */
 public final class MpConfig implements org.eclipse.microprofile.config.Config {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("(?<!\\\\),");
-    private static final Map<Class<?>, Class<?>> TYPE_REPLACEMENTS = new HashMap<>();
-
-    static {
-        // all primitive types for which I use a built-in converter in MpConfigBuilder should be placed here
-        TYPE_REPLACEMENTS.put(boolean.class, Boolean.class);
-    }
 
     private final Supplier<Config> config;
     private final List<ConfigSource> mpConfigSources;
@@ -156,15 +149,17 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
             return config.get().get(propertyName).asList(typeArg).get();
         }
         return findInMpSources(propertyName)
-                .map(value -> {
-                    String[] valueArray = toArray(value);
-                    List<T> result = new LinkedList<>();
-                    for (String element : valueArray) {
-                        result.add(convert(typeArg, element));
-                    }
-                    return result;
-                })
+                .map(value -> toList(value, typeArg))
                 .orElseGet(() -> config.get().get(propertyName).asList(typeArg).get());
+    }
+
+    private <T> List<T> toList(final String value, final Class<T> elementType) {
+        final String[] valueArray = toArray(value);
+        final List<T> result = new ArrayList<>();
+        for (final String element : valueArray) {
+            result.add(convert(elementType, element));
+        }
+        return result;
     }
 
     private <T> T findValue(String propertyName, Class<T> propertyType) {
@@ -292,29 +287,32 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
         }
 
         // now check if we have local added converter for this class
-        Converter<?> maybeConverter = converters.get(mapType(type));
+        Converter<?> converter = converters.get(type);
 
-        if (null == maybeConverter) {
-            // ask helidon config to do appropriate transformation (built-in, implicit and classpath mappers)
-            Config c = Config.builder()
-                    .disableSystemPropertiesSource()
-                    .disableFilterServices()
-                    .disableEnvironmentVariablesSource()
-                    .sources(ConfigSources.create(CollectionsHelper.mapOf("key", value)))
-                    .build();
+        if (null == converter) {
+            // If the request is for a String, we're done
+            if (type == String.class) {
+                return (T) value;
+            } else if (type.isArray()) {
+                return (T) asArray(value, type.getComponentType());
+            } else {
+                // ask helidon config to do appropriate transformation (built-in, implicit and classpath mappers)
+                Config c = Config.builder()
+                                 .disableSystemPropertiesSource()
+                                 .disableFilterServices()
+                                 .disableEnvironmentVariablesSource()
+                                 .sources(ConfigSources.create(CollectionsHelper.mapOf("key", value)))
+                                 .build();
 
-            try {
-                return c.get("key").as(type).get();
-            } catch (ConfigMappingException e) {
-                throw new IllegalArgumentException("Failed to convert " + value + " to " + type.getName(), e);
+                try {
+                    return c.get("key").as(type).get();
+                } catch (ConfigMappingException e) {
+                    throw new IllegalArgumentException("Failed to convert " + value + " to " + type.getName(), e);
+                }
             }
         } else {
-            return (T) maybeConverter.convert(value);
+            return (T) converter.convert(value);
         }
-    }
-
-    private Class<?> mapType(Class<?> type) {
-        return TYPE_REPLACEMENTS.getOrDefault(type, type);
     }
 
     /**

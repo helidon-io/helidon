@@ -81,8 +81,10 @@ class MpConfigTest {
                   () -> assertThat("true, primitive", mpConfig.convert(boolean.class, "true"), is(true)),
                   () -> assertThat("false, primitive", mpConfig.convert(boolean.class, "false"), is(false)),
                   () -> assertThat("on", mpConfig.convert(boolean.class, "on"), is(true)),
-                  () -> assertThat("1", mpConfig.convert(boolean.class, "1"), is(true))
-        );
+                  () -> assertThat("1", mpConfig.convert(boolean.class, "1"), is(true)),
+                  () -> assertThat("true, array", mpConfig.convert(Boolean[].class, "true, false"),
+                                   arrayContaining(true, false))
+                  );
     }
 
     @Test
@@ -94,6 +96,9 @@ class MpConfigTest {
                   () -> assertThat("As string array",
                                    mpConfig.getValue("array", String[].class),
                                    arrayContaining("a", "b", "c", "d")),
+                  () -> assertThat("As string array",
+                                   mpConfig.convert(String[].class, "a,b\\,,c,d"),
+                                   arrayContaining("a", "b,", "c", "d")),
                   () -> assertThat("As set",
                                    mpConfig.asSet("array", String.class),
                                    hasItems("a", "b", "c", "d")),
