@@ -18,6 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
@@ -60,6 +61,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.regis
 public class FaultToleranceCommand extends HystrixCommand<Object> {
     private static final Logger LOGGER = Logger.getLogger(FaultToleranceCommand.class.getName());
 
+    static final int MAX_THREAD_WAITING_PERIOD = 2000;      // milliseconds
     static final String HELIDON_MICROPROFILE_FAULTTOLERANCE = "io.helidon.microprofile.faulttolerance";
 
     private final String commandKey;
@@ -75,6 +77,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     private BulkheadHelper bulkheadHelper;
 
     private long queuedNanos = -1L;
+
+    private Thread runThread;
 
     /**
      * Default thread pool size for a command or a command group.
@@ -104,7 +108,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                 .withFallbackEnabled(false)
                                 .withExecutionIsolationStrategy(introspector.hasBulkhead()
                                         && !introspector.isAsynchronous() ? SEMAPHORE : THREAD)
-                                .withExecutionIsolationThreadInterruptOnFutureCancel(true))
+                                .withExecutionIsolationThreadInterruptOnFutureCancel(true)
+                                .withExecutionIsolationThreadInterruptOnTimeout(true))
                 .andThreadPoolKey(
                         introspector.hasBulkhead()
                                 ? HystrixThreadPoolKey.Factory.asKey(commandKey)
@@ -219,6 +224,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
         // Finally, invoke the user method
         try {
+            runThread = Thread.currentThread();
             return context.proceed();
         } finally {
             if (introspector.hasBulkhead()) {
@@ -226,6 +232,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             }
         }
     }
+
 
     /**
      * Executes this command returning a result or throwing an exception.
@@ -275,6 +282,9 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 future = super.queue();
                 result = future.get();
             } catch (Exception e) {
+                if (e instanceof ExecutionException) {
+                    waitForThreadToComplete();
+                }
                 if (e instanceof InterruptedException) {
                     future.cancel(true);
                 }
@@ -415,5 +425,36 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                     + breakerHelper.getState() + " (Hystrix: " + hystrixState
                     + " Thread:" + Thread.currentThread().getName() + ")");
         }
+    }
+
+    /**
+     * <p>After a timeout expires, Hystrix can report an {@link ExecutionException}
+     * while a thread is still running and cannot be interrupted (e.g. busy
+     * loop). Hystrix makes this possible by using another thread to monitor
+     * the command's thread.</p>
+     *
+     * <p>According to the FT spec, the thread may continue to run, so here
+     * we give it a chance to do that before completing the execution of the
+     * command. For more information see TCK test {@code
+     * TimeoutUninterruptableTest::timeoutTest}.</p>
+     *
+     * @return A {@code true} value if the thread is no longer in runnable
+     *         state, and {@code false} otherwise.
+     */
+    private boolean waitForThreadToComplete() {
+        if (!introspector.isAsynchronous() && runThread != null) {
+            try {
+                int waitTime = 250;
+                while (runThread.getState() == Thread.State.RUNNABLE && waitTime <= MAX_THREAD_WAITING_PERIOD) {
+                    LOGGER.info(() -> "Waiting for completion of thread " + runThread);
+                    Thread.sleep(waitTime);
+                    waitTime += 250;
+                }
+            } catch (InterruptedException e) {
+                // Falls through
+            }
+            return runThread.getState() != Thread.State.RUNNABLE;
+        }
+        return true;
     }
 }
