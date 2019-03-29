@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
-import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -68,6 +67,7 @@ import javax.annotation.Priority;
 
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.ConfigException;
+import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
@@ -84,6 +84,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 public class MpConfigBuilder implements ConfigBuilder {
     private static final Logger LOGGER = Logger.getLogger(MpConfigBuilder.class.getName());
     private static final int DEFAULT_ORDINAL = 100;
+    private static final int BUILT_IN_ORDINAL = 1;
     private static final List<OrdinalConverter<?>> BUILT_IN_CONVERTERS = initBuiltInConverters();
 
     private final List<ConfigSource> mpConfigSources = new LinkedList<>();
@@ -103,28 +104,48 @@ public class MpConfigBuilder implements ConfigBuilder {
     private static List<OrdinalConverter<?>> initBuiltInConverters() {
         List<OrdinalConverter<?>> result = new LinkedList<>();
 
-        result.add(new OrdinalConverter<>(Boolean.class,
-                                          value -> {
-                                              String lower = value.toLowerCase();
-                                              // according to microprofile config specification (section Built-in Converters)
-                                              switch (lower) {
-                                              case "true":
-                                              case "1":
-                                              case "yes":
-                                              case "y":
-                                              case "on":
-                                                  return true;
-                                              default:
-                                                  return false;
-                                              }
-                                          },
-                                          DEFAULT_ORDINAL));
+        result.add(new OrdinalConverter<>(boolean.class, MpConfigBuilder::toBoolean, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Boolean.class, MpConfigBuilder::toBoolean, BUILT_IN_ORDINAL));
 
-        result.add(new OrdinalConverter<>(YearMonth.class,
-                                          YearMonth::parse,
-                                          DEFAULT_ORDINAL));
+        result.add(new OrdinalConverter<>(byte.class, Byte::parseByte, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Byte.class, Byte::parseByte, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(short.class, Short::parseShort, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Short.class, Short::parseShort, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(int.class, Integer::parseInt, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Integer.class, Integer::parseInt, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(long.class, Long::parseLong, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Long.class, Long::parseLong, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(float.class, Float::parseFloat, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Float.class, Float::parseFloat, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(double.class, Double::parseDouble, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Double.class, Double::parseDouble, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(char.class, ConfigMappers::toChar, BUILT_IN_ORDINAL));
+        result.add(new OrdinalConverter<>(Character.class, ConfigMappers::toChar, BUILT_IN_ORDINAL));
+
+        result.add(new OrdinalConverter<>(Class.class, ConfigMappers::toClass, BUILT_IN_ORDINAL));
 
         return result;
+    }
+
+    private static boolean toBoolean(final String value) {
+        final String lower = value.toLowerCase();
+        // according to microprofile config specification (section Built-in Converters)
+        switch (lower) {
+            case "true":
+            case "1":
+            case "yes":
+            case "y":
+            case "on":
+                return true;
+            default:
+                return false;
+        }
     }
 
     @Override
@@ -282,10 +303,10 @@ public class MpConfigBuilder implements ConfigBuilder {
         converterClasses.add(SimpleTimeZone.class);
 
         converters.forEach(oc -> {
-            Class<?> c = oc.type;
+            final Class<?> type = oc.type;
             Function<io.helidon.config.Config, ?> mapper = config -> oc.converter.convert(config.asString().get());
-            configMappers.put(c, mapper);
-            converterClasses.add(c);
+            configMappers.put(type, mapper);
+            converterClasses.add(type);
         });
 
         if (null == helidonConfig) {
@@ -305,10 +326,12 @@ public class MpConfigBuilder implements ConfigBuilder {
     }
 
     private void orderLists() {
-        mpConfigSources.sort(Comparator.comparingInt(ConfigSource::getOrdinal));
-        converters.sort(Comparator.comparingInt(OrdinalConverter::getOrdinal));
 
-        // correctly order from highest to lowest
+        // Order lowest to highest so higher takes precedence when map is built
+        mpConfigSources.sort(Comparator.comparingInt(ConfigSource::getOrdinal));
+
+        // Order highest to lowest
+        converters.sort(Comparator.comparingInt(OrdinalConverter::getOrdinal));
         Collections.reverse(mpConfigSources);
     }
 
