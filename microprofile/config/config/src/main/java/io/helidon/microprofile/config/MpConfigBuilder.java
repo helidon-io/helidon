@@ -16,51 +16,24 @@
 
 package io.helidon.microprofile.config;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.URI;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.Period;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.SimpleTimeZone;
-import java.util.TimeZone;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
@@ -253,60 +226,10 @@ public class MpConfigBuilder implements ConfigBuilder {
 
         Map<Class<?>, Function<io.helidon.config.Config, ?>> configMappers = new IdentityHashMap<>();
 
-        Set<Class<?>> converterClasses = new HashSet<>();
-
-        // add built-in converters of Helidon config
-        converterClasses.add(String.class);
-        converterClasses.add(Byte.class);
-        converterClasses.add(byte.class);
-        converterClasses.add(Short.class);
-        converterClasses.add(short.class);
-        converterClasses.add(Integer.class);
-        converterClasses.add(int.class);
-        converterClasses.add(Long.class);
-        converterClasses.add(long.class);
-        converterClasses.add(Float.class);
-        converterClasses.add(float.class);
-        converterClasses.add(Double.class);
-        converterClasses.add(double.class);
-        converterClasses.add(Boolean.class);
-        converterClasses.add(boolean.class);
-        converterClasses.add(Character.class);
-        converterClasses.add(char.class);
-        converterClasses.add(Class.class);
-        converterClasses.add(BigDecimal.class);
-        converterClasses.add(BigInteger.class);
-        converterClasses.add(Duration.class);
-        converterClasses.add(Period.class);
-        converterClasses.add(LocalDate.class);
-        converterClasses.add(LocalDateTime.class);
-        converterClasses.add(LocalTime.class);
-        converterClasses.add(ZonedDateTime.class);
-        converterClasses.add(ZoneId.class);
-        converterClasses.add(ZoneOffset.class);
-        converterClasses.add(Instant.class);
-        converterClasses.add(OffsetTime.class);
-        converterClasses.add(OffsetDateTime.class);
-        converterClasses.add(File.class);
-        converterClasses.add(Path.class);
-        converterClasses.add(Charset.class);
-        converterClasses.add(URI.class);
-        converterClasses.add(URL.class);
-        converterClasses.add(Pattern.class);
-        converterClasses.add(UUID.class);
-        converterClasses.add(Map.class);
-        converterClasses.add(Properties.class);
-        converterClasses.add(Date.class);
-        converterClasses.add(Calendar.class);
-        converterClasses.add(GregorianCalendar.class);
-        converterClasses.add(TimeZone.class);
-        converterClasses.add(SimpleTimeZone.class);
-
         converters.forEach(oc -> {
             final Class<?> type = oc.type;
             Function<io.helidon.config.Config, ?> mapper = config -> oc.converter.convert(config.asString().get());
             configMappers.put(type, mapper);
-            converterClasses.add(type);
         });
 
         if (null == helidonConfig) {
@@ -322,7 +245,7 @@ public class MpConfigBuilder implements ConfigBuilder {
             converterMap.put(converter.type, converter.converter);
         }
 
-        return new MpConfig(helidonConfig, mpConfigSources, converterClasses, converterMap);
+        return new MpConfig(helidonConfig, mpConfigSources, converterMap);
     }
 
     private void orderLists() {

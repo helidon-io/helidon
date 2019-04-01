@@ -96,7 +96,7 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
                 // constructor(param, params...)
                 .or(() -> findConstructorWithParamsMapper(type))
                 // generic mapping support
-                .or(() -> findGenericMapper(type))
+                .or(() -> findGenericMapper(type))  // TODO: Remove this?? Supports default ctor, so config value is ignored.
                 // we could not find anything, let config decide what to do
                 .asOptional();
     }

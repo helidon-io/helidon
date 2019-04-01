@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,11 +190,6 @@ public class ConfigCdiExtension implements Extension {
 
         qualifiers.forEach(q -> {
             try {
-                Class<?> propertyClass = getPropertyClass(q.qualifier);
-                if (!mpConfig.hasConverter(propertyClass)) {
-                    throw new DeploymentException("Config mapper for " + propertyClass.getName() + " does not exist");
-                }
-
                 Object configValue;
                 if (q.qualifier.rawType().isArray()) {
                     ConfigQualifier qualifier = q.qualifier;
