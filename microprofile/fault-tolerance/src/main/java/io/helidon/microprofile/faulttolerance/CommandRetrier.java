@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
 
+import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
@@ -36,6 +37,7 @@ import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.SyncFailsafe;
 import net.jodah.failsafe.function.CheckedFunction;
 import net.jodah.failsafe.util.concurrent.Scheduler;
+import org.apache.commons.configuration.AbstractConfiguration;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -191,6 +193,11 @@ public class CommandRetrier {
         final String commandKey = createCommandKey();
         command = new FaultToleranceCommand(commandKey, introspector, context);
 
+        // Configure command before execution
+        introspector.getHystrixProperties()
+                .entrySet()
+                .forEach(entry -> setProperty(commandKey, entry.getKey(), entry.getValue()));
+
         Object result;
         try {
             LOGGER.info(() -> "About to execute command with key "
@@ -295,6 +302,23 @@ public class CommandRetrier {
      */
     private String createCommandKey() {
         return method.getName() + Objects.hash(context.getTarget(), context.getMethod().hashCode());
+    }
+
+    /**
+     * Sets a Hystrix property on a command.
+     *
+     * @param commandKey Command key.
+     * @param key Property key.
+     * @param value Property value.
+     */
+    private void setProperty(String commandKey, String key, Object value) {
+        final String actualKey = String.format("hystrix.command.%s.%s", commandKey, key);
+        synchronized (ConfigurationManager.getConfigInstance()) {
+            final AbstractConfiguration configManager = ConfigurationManager.getConfigInstance();
+            if (configManager.getProperty(actualKey) == null) {
+                configManager.setProperty(actualKey, value);
+            }
+        }
     }
 
     /**

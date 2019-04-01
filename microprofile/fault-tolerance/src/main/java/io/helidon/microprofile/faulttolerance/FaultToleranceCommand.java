@@ -24,14 +24,12 @@ import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
 
-import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
-import org.apache.commons.configuration.AbstractConfiguration;
 import org.eclipse.microprofile.metrics.Histogram;
 
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE;
@@ -83,7 +81,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     /**
      * Default thread pool size for a command or a command group.
      */
-    private static final int MAX_THREAD_POOL_SIZE = 10;
+    private static final int MAX_THREAD_POOL_SIZE = 32;
 
     /**
      * Default max thread pool queue size.
@@ -109,7 +107,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                 .withExecutionIsolationStrategy(introspector.hasBulkhead()
                                         && !introspector.isAsynchronous() ? SEMAPHORE : THREAD)
                                 .withExecutionIsolationThreadInterruptOnFutureCancel(true)
-                                .withExecutionIsolationThreadInterruptOnTimeout(true))
+                                .withExecutionIsolationThreadInterruptOnTimeout(true)
+                                .withExecutionTimeoutEnabled(false))
                 .andThreadPoolKey(
                         introspector.hasBulkhead()
                                 ? HystrixThreadPoolKey.Factory.asKey(commandKey)
@@ -233,7 +232,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         }
     }
 
-
     /**
      * Executes this command returning a result or throwing an exception.
      *
@@ -245,11 +243,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         boolean lockRemoved = false;
 
         try {
-            // Configure command before execution
-            introspector.getHystrixProperties()
-                    .entrySet()
-                    .forEach(entry -> setProperty(entry.getKey(), entry.getValue()));
-
             // Get lock and check breaker delay
             if (introspector.hasCircuitBreaker()) {
                 breakerHelper.lock();       // acquire exclusive access to command data
@@ -403,17 +396,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     }
 
     /**
-     * Sets a Hystrix property on a command.
-     *
-     * @param key Property key.
-     * @param value Property value.
-     */
-    private void setProperty(String key, Object value) {
-        final AbstractConfiguration configManager = ConfigurationManager.getConfigInstance();
-        configManager.setProperty(String.format("hystrix.command.%s.%s", commandKey, key), value);
-    }
-
-    /**
      * Logs circuit breaker state, if one is present.
      *
      * @param preamble Message preamble.
@@ -437,11 +419,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * we give it a chance to do that before completing the execution of the
      * command. For more information see TCK test {@code
      * TimeoutUninterruptableTest::timeoutTest}.</p>
-     *
-     * @return A {@code true} value if the thread is no longer in runnable
-     *         state, and {@code false} otherwise.
      */
-    private boolean waitForThreadToComplete() {
+    private void waitForThreadToComplete() {
         if (!introspector.isAsynchronous() && runThread != null) {
             try {
                 int waitTime = 250;
@@ -453,8 +432,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             } catch (InterruptedException e) {
                 // Falls through
             }
-            return runThread.getState() != Thread.State.RUNNABLE;
         }
-        return true;
     }
 }
