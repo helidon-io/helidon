@@ -44,12 +44,12 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
                 if (currentBuffer != null && currentBuffer.remaining() > 0) {
                     // if there is anything to read, then read one byte...
                     return currentBuffer.get();
-                } else if (!closed.get()) {
+                } else if (!isClosed()) {
                     // reinitialize the processed buffer future and request more data
                     processed = new CompletableFuture<>();
                     subscription.request(1);
                 } else {
-                    // else we have read all the data already and the data inflow has completed
+                    // we have read all the data already and the data inflow has completed
                     return -1;
                 }
             }
@@ -74,7 +74,7 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
 
     @Override
     public void onError(Throwable throwable) {
-        closed.set(true);
+        setClosed();
         if (!processed.completeExceptionally(throwable)) { // best effort exception propagation
             CompletableFuture<ByteBuffer> cf = new CompletableFuture<>();
             cf.completeExceptionally(throwable);
@@ -84,8 +84,19 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
 
     @Override
     public void onComplete() {
-        closed.set(true);
+        setClosed();
         processed.complete(null); // if not already completed, then complete
     }
 
+    private boolean isClosed() {
+        synchronized (closed) {
+            return closed.get();
+        }
+    }
+
+    private void setClosed() {
+        synchronized (closed) {
+            closed.set(true);
+        }
+    }
 }
