@@ -50,21 +50,17 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
     private final Supplier<Config> config;
     private final List<ConfigSource> mpConfigSources;
     private final Iterable<String> propertyNames;
-    private final Set<Class<?>> converterClasses;
     private final Map<Class<?>, Converter<?>> converters;
 
     /**
      * Create a new instance.
-     *
-     * @param config           configuration
+     *  @param config           configuration
      * @param mpConfigSources  config sources
-     * @param converterClasses classes of converters
      * @param converters       class to converter mapping
      */
     MpConfig(Config config,
-                    List<ConfigSource> mpConfigSources,
-                    Set<Class<?>> converterClasses,
-                    Map<Class<?>, Converter<?>> converters) {
+             List<ConfigSource> mpConfigSources,
+             Map<Class<?>, Converter<?>> converters) {
 
         final AtomicReference<Config> ref = new AtomicReference<>(config);
         config.onChange(newConfig -> {
@@ -84,7 +80,6 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
                                       .map(Config.Key::toString))
                         .collect(Collectors.toSet());
 
-        this.converterClasses = new HashSet<>(converterClasses);
         this.converters = converters;
     }
 
@@ -259,16 +254,6 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
     @Override
     public Iterable<ConfigSource> getConfigSources() {
         return mpConfigSources;
-    }
-
-    /**
-     * Check whether a converter exists for a specific class.
-     *
-     * @param clazz class to convert to
-     * @return {@code true} if a converter exists for the specified class
-     */
-    public boolean hasConverter(Class<?> clazz) {
-        return converterClasses.contains(clazz);
     }
 
     /**

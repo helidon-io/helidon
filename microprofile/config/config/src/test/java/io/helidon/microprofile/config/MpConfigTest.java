@@ -16,10 +16,15 @@
 
 package io.helidon.microprofile.config;
 
+import java.time.YearMonth;
 import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.microprofile.config.Converters.Ctor;
+import io.helidon.microprofile.config.Converters.Of;
+import io.helidon.microprofile.config.Converters.Parse;
+import io.helidon.microprofile.config.Converters.ValueOf;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +41,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * Unit test for {@link MpConfig}.
  */
-class MpConfigTest {
+public class MpConfigTest {
     private static MpConfig mpConfig;
 
     @BeforeAll
@@ -106,7 +111,6 @@ class MpConfigTest {
                                    mpConfig.getValue("array", String.class),
                                    is("a,b,c,d"))
         );
-
     }
 
     @Test
@@ -118,4 +122,18 @@ class MpConfigTest {
         assertThat("Environment variables", ((Set<String>) propertyNames).contains("PATH"));
     }
 
+
+    @Test
+    public void testImplicitConversion() {
+        MpConfig mpConfig = (MpConfig) new MpConfigBuilder()
+            .build();
+
+        assertAll("Implicit conversions",
+                  () -> assertThat("of", mpConfig.convert(Of.class, "foo"), is(Of.of("foo"))),
+                  () -> assertThat("valueOf", mpConfig.convert(ValueOf.class, "foo"), is(ValueOf.valueOf("foo"))),
+                  () -> assertThat("parse", mpConfig.convert(Parse.class, "foo"), is(Parse.parse("foo"))),
+                  () -> assertThat("ctor", mpConfig.convert(Ctor.class, "foo"), is(new Ctor("foo"))),
+                  () -> assertThat("year month", mpConfig.convert(YearMonth.class, "2019-03"), is(YearMonth.parse("2019-03")))
+        );
+    }
 }
