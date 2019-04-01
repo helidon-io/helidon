@@ -126,7 +126,7 @@
         <version.lib.jersey>2.26</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
         <version.lib.jmh>1.19</version.lib.jmh>
-        <version.lib.jsonb-api>1.0</version.lib.jsonb-api>
+        <version.lib.jsonb-api>1.0.1</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.2</version.lib.jsonp-api>
         <version.lib.jsonp-impl>1.1.2</version.lib.jsonp-impl>
         <version.lib.jsr305>3.0.2</version.lib.jsr305>
@@ -249,7 +249,7 @@
                             <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
                             <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
                             <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
-                            <link>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/${version.lib.jsonb-api}</link>
+                            <link>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
@@ -639,9 +639,9 @@
                 <version>${version.lib.jsonp-api}</version>
             </dependency>
             <dependency>
-              <groupId>javax.json.bind</groupId>
-              <artifactId>javax.json.bind-api</artifactId>
-              <version>${version.lib.jsonb-api}</version>
+                <groupId>jakarta.json.bind</groupId>
+                <artifactId>jakarta.json.bind-api</artifactId>
+                <version>${version.lib.jsonb-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
