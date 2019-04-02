@@ -268,21 +268,23 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
      */
     @SuppressWarnings("unchecked")
     public <T> T convert(Class<T> type, String value) {
-        if (null == value) {
+        if (value == null) {
             return null;
         }
 
-        // now check if we have local added converter for this class
-        Converter<?> converter = converters.get(type);
-
-        if (null == converter) {
+        // Use a local converter for this class if we have one
+        final Converter<?> converter = converters.get(type);
+        if (null != converter) {
+            return (T) converter.convert(value);
+        } else {
             // If the request is for a String, we're done
             if (type == String.class) {
                 return (T) value;
             } else if (type.isArray()) {
+                // Recurse
                 return (T) asArray(value, type.getComponentType());
             } else {
-                // ask helidon config to do appropriate conversion (built-in, implicit and classpath mappers)
+                // Ask helidon config to do appropriate conversion (built-in, implicit and classpath mappers)
                 final Config c = helidonConverter();
                 try {
                     return c.convert(type, value);
@@ -290,8 +292,6 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
                     throw new IllegalArgumentException("Failed to convert " + value + " to " + type.getName(), e);
                 }
             }
-        } else {
-            return (T) converter.convert(value);
         }
     }
 
