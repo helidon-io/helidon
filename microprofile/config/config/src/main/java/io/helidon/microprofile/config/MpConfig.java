@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
@@ -51,6 +50,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
     private final List<ConfigSource> mpConfigSources;
     private final Iterable<String> propertyNames;
     private final Map<Class<?>, Converter<?>> converters;
+    private final AtomicReference<Config> helidonConverter;
 
     /**
      * Create a new instance.
@@ -81,6 +81,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
                         .collect(Collectors.toSet());
 
         this.converters = converters;
+        this.helidonConverter = new AtomicReference<>();
     }
 
     /**
@@ -281,16 +282,10 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
             } else if (type.isArray()) {
                 return (T) asArray(value, type.getComponentType());
             } else {
-                // ask helidon config to do appropriate transformation (built-in, implicit and classpath mappers)
-                Config c = Config.builder()
-                                 .disableSystemPropertiesSource()
-                                 .disableFilterServices()
-                                 .disableEnvironmentVariablesSource()
-                                 .sources(ConfigSources.create(CollectionsHelper.mapOf("key", value)))
-                                 .build();
-
+                // ask helidon config to do appropriate conversion (built-in, implicit and classpath mappers)
+                final Config c = helidonConverter();
                 try {
-                    return c.get("key").as(type).get();
+                    return c.convert(type, value);
                 } catch (ConfigMappingException e) {
                     throw new IllegalArgumentException("Failed to convert " + value + " to " + type.getName(), e);
                 }
@@ -298,6 +293,20 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
         } else {
             return (T) converter.convert(value);
         }
+    }
+
+    private Config helidonConverter() {
+        Config converter = helidonConverter.get();
+        if (converter == null) {
+            converter = Config.builder()
+                             .disableSystemPropertiesSource()
+                             .disableFilterServices()
+                             .disableEnvironmentVariablesSource()
+                             .sources(ConfigSources.empty())
+                             .build();
+            helidonConverter.set(converter);
+        }
+        return converter;
     }
 
     /**
