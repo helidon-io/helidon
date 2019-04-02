@@ -32,14 +32,14 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
 
     private volatile Flow.Subscription subscription;
 
-    // Operations that depend on both the closed flag and the future must be handled under a lock to avoid race conditions
-    // where they can interleave, e.g.
+    // Operations that depend on both the future and the closed flag below must be handled under a lock to avoid race
+    // conditions where they may interleave, e.g.
     //
     //  1. read() thread sees closed == false
     //  2. onComplete() thread changes closed to true
     //  3. onComplete() calls processed.complete(null)
-    //  4. read() thread replaces processed with new instance that will never complete
-    //  5. read() thread loops and blocks forever on processed.get()
+    //  4. read() thread replaces processed with new instance
+    //  5. read() thread loops and blocks forever on processed.get() since the new instance in step 4 will never complete
 
     private volatile CompletableFuture<ByteBuffer> processed = new CompletableFuture<>();
     private boolean closed = false;
@@ -54,17 +54,17 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
                         // There's at least one more byte, return it
                         return currentBuffer.get();
                     } else {
-                        // We've finished with the current buffer. Reinitialize the future if we're not
-                        // closed and request more data
+                        // We've finished with the current buffer; if we're still open, reinitialize the future
+                        // and request more data
                         if (reinitializeFuture()) {
                             subscription.request(1);
                         } else {
-                            // We're closed.
+                            // We're closed
                             return -1;
                         }
                     }
                 } else {
-                    // We've completed
+                    // We're closed
                     return -1;
                 }
             }
@@ -72,7 +72,6 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
             Thread.currentThread().interrupt();
             throw new IOException(e);
         } catch (ExecutionException e) {
-            processed = null;
             throw new IOException(e.getCause());
         }
     }
@@ -103,15 +102,14 @@ class SubscriberInputStream extends InputStream implements Flow.Subscriber<ByteB
     @Override
     public synchronized void onComplete() {
         closed = true;
-        processed.complete(null); // if not already completed, then complete
+        processed.complete(null); // complete if not already done
     }
 
     private synchronized boolean reinitializeFuture() {
-        if (closed) {
-            return false;
-        } else {
+        final boolean open = !closed;
+        if (open) {
             processed = new CompletableFuture<>();
-            return true;
         }
+        return open;
     }
 }
