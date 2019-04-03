@@ -57,6 +57,7 @@ import javax.inject.Qualifier;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.MissingValueException;
 import io.helidon.microprofile.config.MpConfig;
 
@@ -194,8 +195,8 @@ public class ConfigCdiExtension implements Extension {
                 if (q.qualifier.rawType().isArray()) {
                     ConfigQualifier qualifier = q.qualifier;
                     String configKey = qualifier.key().isEmpty()
-                            ? qualifier.fullPath().replace('$', '.')
-                            : qualifier.key();
+                                       ? qualifier.fullPath().replace('$', '.')
+                                       : qualifier.key();
                     // default values!!!
                     configValue = mpConfig.getValue(configKey, q.qualifier.rawType());
                 } else {
@@ -204,10 +205,10 @@ public class ConfigCdiExtension implements Extension {
 
                 if (null == configValue) {
                     throw new DeploymentException("Config value for " + q.qualifier.key() + "(" + q.qualifier
-                            .fullPath() + ") is not defined");
+                        .fullPath() + ") is not defined");
                 }
                 VALUE_LOGGER.finest(() -> "Config value for " + q.qualifier.key() + " (" + q.qualifier
-                        .fullPath() + "), is " + configValue);
+                    .fullPath() + "), is " + configValue);
 
             } catch (Exception e) {
                 add.addDeploymentProblem(e);
@@ -363,20 +364,28 @@ public class ConfigCdiExtension implements Extension {
         }
 
         static Object getConfigValue(MpConfig config, ConfigQualifier q) {
-            String configKey = q.key().isEmpty() ? q.fullPath().replace('$', '.') : q.key();
-            String defaultValue = ConfigProperty.UNCONFIGURED_VALUE.equals(q.defaultValue()) ? null : q.defaultValue();
+            try {
+                String configKey = q.key().isEmpty() ? q.fullPath().replace('$', '.') : q.key();
+                String defaultValue = ConfigProperty.UNCONFIGURED_VALUE.equals(q.defaultValue()) ? null : q.defaultValue();
 
-            if (q.rawType() == q.typeArg()) {
-                // not a generic
-                return config.valueWithDefault(configKey, q.rawType(), defaultValue);
+                if (q.rawType() == q.typeArg()) {
+                    // not a generic
+                    return config.valueWithDefault(configKey, q.rawType(), defaultValue);
+                }
+                // generic declaration
+                return getParametrizedConfigValue(config,
+                                                  configKey,
+                                                  defaultValue,
+                                                  q.rawType(),
+                                                  q.typeArg(),
+                                                  q.typeArg2());
+            } catch(IllegalArgumentException e) {
+                if (e.getCause() instanceof ConfigException) {
+                    throw new DeploymentException("Config value for " + q.key() + "(" + q.fullPath() + ") is not defined");
+                } else {
+                    throw e;
+                }
             }
-            // generic declaration
-            return getParametrizedConfigValue(config,
-                                              configKey,
-                                              defaultValue,
-                                              q.rawType(),
-                                              q.typeArg(),
-                                              q.typeArg2());
         }
 
         @SuppressWarnings("unchecked")

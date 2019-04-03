@@ -96,7 +96,7 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
                 // constructor(param, params...)
                 .or(() -> findConstructorWithParamsMapper(type))
                 // generic mapping support
-                .or(() -> findGenericMapper(type)) // ==> Remove this?? Supports default ctor (ignores config value) & breaks TCK
+                .or(() -> findGenericMapper(type))
                 // we could not find anything, let config decide what to do
                 .asOptional();
     }
@@ -158,7 +158,11 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     }
 
     private static <T> Optional<Function<Config, T>> findGenericMapper(Class<T> type) {
-        return findConstructor(type)
+        try {
+            return findConstructor(type)
                 .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 }

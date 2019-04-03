@@ -49,17 +49,6 @@ public class EnvironmentVariablesTest {
         return map;
     }
 
-    static int countKeysToAlias(final Map<String, String> env) {
-        return (int) env.keySet()
-                        .stream()
-                        .filter(EnvironmentVariables::shouldAlias)
-                        .count();
-    }
-
-    static int expectedExpandedSize(final Map<String, String> env) {
-        return env.size() + (countKeysToAlias(env) * 2);
-    }
-
     static String variant(final String key) {
         return key.replace("_dash_", "-").replace("_", ".");
     }
@@ -109,11 +98,8 @@ public class EnvironmentVariablesTest {
     @Test
     public void testCurrentEnvExpansion() {
         Map<String, String> env = env();
-        int expectedSize = expectedExpandedSize(env);
-
         Map<String, String> mapped = EnvironmentVariables.expand(env);
         assertThat(mapped, is(not(nullValue())));
-        assertThat(mapped.size(), is(expectedSize));
 
         env.forEach((k, v) -> {
             if (shouldAlias(k)) {
