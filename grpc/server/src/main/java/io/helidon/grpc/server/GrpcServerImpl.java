@@ -116,7 +116,7 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * Create a {@link GrpcServerImpl}.
      *
-     * @param config  the configuration for this server
+     * @param config the configuration for this server
      */
     GrpcServerImpl(GrpcServerConfiguration config) {
         this.config = config;
@@ -256,9 +256,8 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * Deploy the specified {@link ServiceDescriptor service} to this {@link GrpcServer}.
      *
-     * @param serviceDescriptor the service to deploy
+     * @param serviceDescriptor  the service to deploy
      * @param globalInterceptors the global {@link io.grpc.ServerInterceptor}s to wrap all services with
-     *
      * @throws NullPointerException if {@code serviceDescriptor} is {@code null}
      */
     public void deploy(ServiceDescriptor serviceDescriptor, List<ServerInterceptor> globalInterceptors) {
@@ -339,7 +338,7 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * Return an instance of SslContextBuilder from the specified SslConfig.
      *
-     * @param  sslConfig the ssl configuration
+     * @param sslConfig the ssl configuration
      * @return an instance of SslContextBuilder
      */
     protected SslContextBuilder sslContextBuilder(SslConfiguration sslConfig) {
@@ -379,12 +378,7 @@ public class GrpcServerImpl implements GrpcServer {
 
             try {
                 aX509Certificates = loadX509Cert(fileClientCerts);
-<<<<<<< HEAD
-            }
-            catch (Exception e) {
-=======
             } catch (Exception e) {
->>>>>>> grpc
                 throw new IllegalStateException("gRPC server is configured to use TLS but failed to load trusted CA files");
             }
 
@@ -403,7 +397,6 @@ public class GrpcServerImpl implements GrpcServer {
 
         return GrpcSslContexts.configure(sslContextBuilder, SslProvider.OPENSSL);
     }
-
 
     private static X509Certificate[] loadX509Cert(File... aFile)
             throws CertificateException, IOException {
