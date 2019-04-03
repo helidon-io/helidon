@@ -53,6 +53,11 @@
              <artifactId>helidon-bundles-config</artifactId>
             <version>${project.version}</version>
         </dependency>
+         <dependency>
+             <groupId>io.helidon.security.abac</groupId>
+             <artifactId>helidon-security-abac-policy-el</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-security</artifactId>

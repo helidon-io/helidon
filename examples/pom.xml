@@ -45,6 +45,7 @@
         <module>todo-app</module>
         <module>quickstarts</module>
         <module>health</module>
+        <module>grpc</module>
     </modules>
 
     <build>
