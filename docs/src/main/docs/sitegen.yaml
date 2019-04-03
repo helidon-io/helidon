@@ -70,6 +70,14 @@ backend:
               items:
                 -  includes:
                      - "webserver/*.adoc"
+            - title: "gRPC server"
+              pathprefix: "/grpc"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                -  includes:
+                     - "grpc/*.adoc"
             - title: "Config"
               pathprefix: "/config"
               glyph:

@@ -35,5 +35,6 @@
     <modules>
         <module>jersey</module>
         <module>webserver</module>
+        <module>grpc</module>
     </modules>
 </project>
