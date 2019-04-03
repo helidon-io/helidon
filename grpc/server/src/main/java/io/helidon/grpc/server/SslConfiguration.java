@@ -21,28 +21,6 @@ import java.nio.file.Paths;
 
 import io.helidon.config.Config;
 
-<<<<<<< HEAD
-public class SslConfiguration {
-
-    /**
-     * True if use jdk ssl implementation
-     */
-    private boolean jdkSSL;
-
-    /**
-     * The TLS certs file.
-     */
-    private String tlsCert;
-
-    /**
-     * The TLS key file.
-     */
-    private String tlsKey;
-
-    /**
-     * The TLS CA file.
-     */
-=======
 /**
  * SSL configuration details.
  *
@@ -52,15 +30,10 @@ public class SslConfiguration {
     private boolean jdkSSL;
     private String tlsCert;
     private String tlsKey;
->>>>>>> grpc
     private String tlsCaCert;
 
     /**
      * Create a new instance.
-<<<<<<< HEAD
-     */
-    public SslConfiguration(boolean jdkSSL, String tlsCert, String tlsKey, String tlsCaCert){
-=======
      *
      * @param jdkSSL    flag specifying whether to use JDK SSL implementation
      * @param tlsCert   the TLS certificate file
@@ -68,7 +41,6 @@ public class SslConfiguration {
      * @param tlsCaCert the TLS CA file
      */
     private SslConfiguration(boolean jdkSSL, String tlsCert, String tlsKey, String tlsCaCert) {
->>>>>>> grpc
         this.jdkSSL = jdkSSL;
         this.tlsCert = tlsCert;
         this.tlsKey = tlsKey;
@@ -76,18 +48,12 @@ public class SslConfiguration {
     }
 
     /**
-<<<<<<< HEAD
-     * Return true if use jdk ssl implementation
-     */
-    public boolean isJdkSSL(){
-=======
      * Return true if JDK SSL implementation should be used.
      *
      * @return {@code true} if JDK SSL implementation should be used;
      *         {@code false} otherwise
      */
     public boolean isJdkSSL() {
->>>>>>> grpc
         return jdkSSL;
     }
 
@@ -121,11 +87,7 @@ public class SslConfiguration {
     /**
      * Return an instance of builder.
      *
-<<<<<<< HEAD
-     * @return  an instance of builder
-=======
      * @return an instance of builder
->>>>>>> grpc
      */
     public static Builder builder() {
         return new Builder();
@@ -160,38 +122,14 @@ public class SslConfiguration {
         private String tlsKey = null;
         private String tlsCaCert = null;
 
-<<<<<<< HEAD
-        private Builder() {};
-=======
         private Builder() {
         }
->>>>>>> grpc
 
         private Builder(Config config) {
             if (config == null) {
                 return;
             }
 
-<<<<<<< HEAD
-        Path path = Paths.get(config.get("path").asString().orElse(""));
-
-        String tlsCert = config.get("tlsCert").asString().orElse(null);
-        if (tlsCert != null) {
-            this.tlsCert = path.resolve(tlsCert).toAbsolutePath().toString();
-        }
-
-        String tlsKey = config.get("tlsKey").asString().orElse(null);
-        if (tlsKey != null) {
-            this.tlsKey = path.resolve(tlsKey).toAbsolutePath().toString();
-        }
-
-        String tlsCaCert = config.get("tlsCaCert").asString().orElse(null);
-        if (tlsCaCert != null) {
-            this.tlsCaCert = path.resolve(tlsCaCert).toAbsolutePath().toString();
-        }
-
-        this.jdkSSL = config.get("jdkSSL").asBoolean().orElse(false);
-=======
             Path path = Paths.get(config.get("path").asString().orElse(""));
 
             String tlsCert = config.get("tlsCert").asString().orElse(null);
@@ -210,7 +148,6 @@ public class SslConfiguration {
             }
 
             this.jdkSSL = config.get("jdkSSL").asBoolean().orElse(false);
->>>>>>> grpc
         }
 
         /**
