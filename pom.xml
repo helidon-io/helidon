@@ -482,6 +482,13 @@
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>${version.plugin.nexus-staging}</version>
+                    <configuration>
+                        <serverId>ossrh</serverId>
+                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
+                        <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -533,18 +540,6 @@
                 <configuration>
                     <configLocation>/etc/checkstyle.xml</configLocation>
                     <suppressionsLocation>/etc/checkstyle-suppressions.xml</suppressionsLocation>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                    <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
-                    <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
             <plugin>
@@ -1426,6 +1421,11 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <extensions>true</extensions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
                         <executions>
@@ -1520,11 +1520,11 @@
             </build>
         </profile>
         <profile>
-            <id>ossrh-releases</id>
+            <id>staging</id>
             <repositories>
                 <repository>
-                    <id>ossrh-releases</id>
-                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
+                    <id>ossrh-staging</id>
+                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
                     <snapshots>
                         <enabled>false</enabled>
                     </snapshots>
@@ -1532,8 +1532,8 @@
             </repositories>
             <pluginRepositories>
                 <pluginRepository>
-                    <id>ossrh-releases</id>
-                    <url>https://oss.sonatype.org/content/repositories/releases/</url>
+                    <id>ossrh-staging</id>
+                    <url>https://oss.sonatype.org/content/repositories/staging/</url>
                     <snapshots>
                         <enabled>false</enabled>
                     </snapshots>
