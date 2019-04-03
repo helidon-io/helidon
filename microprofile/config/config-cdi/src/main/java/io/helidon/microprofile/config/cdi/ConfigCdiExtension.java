@@ -379,7 +379,7 @@ public class ConfigCdiExtension implements Extension {
                                                   q.rawType(),
                                                   q.typeArg(),
                                                   q.typeArg2());
-            } catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 if (e.getCause() instanceof ConfigException) {
                     throw new DeploymentException("Config value for " + q.key() + "(" + q.fullPath() + ") is not defined");
                 } else {
