@@ -195,7 +195,7 @@
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
-        <version.plugin.protobuf>0.5.0</version.plugin.protobuf>
+        <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.site>3.7.1</version.plugin.site>
@@ -472,6 +472,13 @@
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
                     <version>${version.plugin.protobuf}</version>
+                    <configuration>
+                        <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+                        <pluginId>grpc-java</pluginId>
+                        <pluginArtifact>
+                            io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}
+                        </pluginArtifact>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
