@@ -27,7 +27,7 @@
 
     <groupId>io.helidon.examples.grpc</groupId>
     <artifactId>helidon-examples-grpc-project</artifactId>
-    <name>Helidon gRPC Examples Parent</name>
+    <name>Helidon gRPC Examples</name>
     <packaging>pom</packaging>
 
     <modules>
