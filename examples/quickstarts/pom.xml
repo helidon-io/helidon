@@ -40,7 +40,6 @@
     <modules>
         <module>helidon-quickstart-se</module>
         <module>helidon-quickstart-mp</module>
-        <module>helidon-quickstart-graalvm</module>
     </modules>
 
 </project>

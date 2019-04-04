@@ -88,3 +88,41 @@ kubectl get pods                    # Verify connectivity to cluster
 kubectl create -f target/app.yaml   # Deply application
 kubectl get service quickstart-se  # Get service info
 ```
+
+## Native image with GraalVM
+
+GraalVM allows you to compile your programs ahead-of-time into a native
+ executable. See https://www.graalvm.org/docs/reference-manual/aot-compilation/
+ for more information.
+
+You can build a native executable in 2 different ways:
+* With a local installation of GraalVM
+* Using a multi-stage Docker build
+
+### Local build
+
+Download Graal VM at https://github.com/oracle/graal/releases, the version
+ currently supported for Helidon SE is `1.0.0-rc13`.
+
+```
+# Setup the environment
+export GRAALVM_HOME=/path
+# build the native executable
+mvn package -Pnative-image
+```
+
+You can also put the Graal VM `bin` directory in your PATH, or pass
+ `-DgraalVMHome=/path` to the Maven command.
+
+See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin
+ for more information.
+
+### Multi-stage Docker build
+
+We publish a Docker image that contains GraalVM to Docker hub:
+ `helidon/java-native`.
+
+```
+mvn package -Pnative-image -Dnative.image.skip
+docker build -t quickstart-se-native -f target/Dockerfile.native target
+```

@@ -20,21 +20,21 @@ WORKDIR /helidon
 ADD *.jar target/
 ADD ${libs.classpath.prefix}/*.jar target/
 
-RUN echo "$GRAALVM_HOME/bin/native-image -H:Name=helidon-native -H:IncludeResources='application.yaml|logging.properties' -H:+ReportExceptionStackTraces -classpath target/* ${main.class}"
-RUN $GRAALVM_HOME/bin/native-image \
+RUN echo "${GRAALVM_HOME}/bin/native-image -H:Name=${project.artifactId}-native -H:IncludeResources='application.yaml|logging.properties' -H:+ReportExceptionStackTraces -classpath target/* ${mainClass}"
+RUN ${GRAALVM_HOME}/bin/native-image \
         --static \
-        -H:Name=helidon-native \
+        -H:Name=${project.artifactId}-native \
         -H:IncludeResources='application.yaml|logging.properties' \
         --no-server \
         -H:+ReportExceptionStackTraces \
         -classpath "target/*" \
-        ${main.class}
+        ${mainClass}
 
 # Now we should have a native image built, let us create the image
 FROM scratch
 WORKDIR /helidon
-COPY --from=build-native-image /helidon/helidon-native helidon-native
+COPY --from=build-native-image /helidon/${project.artifactId}-native ${project.artifactId}-native
 
-ENTRYPOINT ["./helidon-native"]
+ENTRYPOINT ["./${project.artifactId}-native"]
 
 EXPOSE 8080
