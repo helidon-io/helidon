@@ -114,7 +114,7 @@ docker build -t helidon-quickstart-se target
 [source,bash]
 .Run Docker Image
 ----
-docker run --rm -p 8080:8080 quickstart-se:latest
+docker run --rm -p 8080:8080 helidon-quickstart-se:latest
 ----
 
 Then you can try the application as you did before.
