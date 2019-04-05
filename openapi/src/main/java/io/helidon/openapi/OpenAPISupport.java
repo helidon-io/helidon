@@ -16,21 +16,24 @@
  */
 package io.helidon.openapi;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.config.Config;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -43,9 +46,6 @@ import io.smallrye.openapi.runtime.OpenApiProcessor;
 import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -99,6 +99,9 @@ import java.util.Objects;
  */
 public class OpenAPISupport implements Service {
 
+    /**
+     * Default path for serving the OpenAPI document.
+     */
     public static final String DEFAULT_WEB_CONTEXT = "/openapi";
 
     private static final Logger LOGGER = Logger.getLogger(OpenAPISupport.class.getName());
@@ -111,7 +114,7 @@ public class OpenAPISupport implements Service {
     private final Optional<String> staticFilePath;
     private final OpenApiConfig openAPIConfig;
 
-    private final Map<MediaType,String> cachedDocuments = new HashMap<>();
+    private final Map<MediaType, String> cachedDocuments = new HashMap<>();
 
     private OpenAPISupport(final Builder builder) {
         webContext = builder.webContext;
@@ -171,17 +174,22 @@ public class OpenAPISupport implements Service {
         final OpenAPIMediaTypes specifiedMediaType = OpenAPIMediaTypes.byFileType(specifiedFileType);
 
         if (specifiedMediaType == null) {
-            throw new IllegalArgumentException("OpenAPI file path " +
-                    path.toAbsolutePath().toString() + " is not one of recognized types: " +
-                    OpenAPIMediaTypes.recognizedFileTypes());
+            throw new IllegalArgumentException("OpenAPI file path "
+                    + path.toAbsolutePath().toString()
+                    + " is not one of recognized types: "
+                    + OpenAPIMediaTypes.recognizedFileTypes());
         }
         InputStream is = getClass().getResourceAsStream(path.toString());
         if (is == null) {
-            throw new IllegalArgumentException("OpenAPI file " +
-                    path.toAbsolutePath().toString() + " was specified but was not found");
+            throw new IllegalArgumentException("OpenAPI file "
+                    + path.toAbsolutePath().toString()
+                    + " was specified but was not found");
         }
 
-        LOGGER.log(Level.FINE, () ->  String.format(OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT, path.toAbsolutePath().toString()));
+        LOGGER.log(Level.FINE,
+                   () ->  String.format(
+                           OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,
+                           path.toAbsolutePath().toString()));
         return new OpenApiStaticFile(is, specifiedMediaType.format());
     }
 
@@ -238,7 +246,7 @@ public class OpenAPISupport implements Service {
      * from its underlying data
      */
     String prepareDocument(MediaType resultMediaType) throws IOException {
-        if (! OpenApiDocument.INSTANCE.isSet()) {
+        if (!OpenApiDocument.INSTANCE.isSet()) {
             throw new IllegalStateException("OpenApiDocument used but has not been initialized");
         }
         synchronized (cachedDocuments) {
@@ -290,7 +298,7 @@ public class OpenAPISupport implements Service {
         private final List<String> fileTypes;
         private final MediaType mediaType;
 
-        private OpenAPIMediaTypes(Format format, MediaType mediaType, String... fileTypes) {
+        OpenAPIMediaTypes(Format format, MediaType mediaType, String... fileTypes) {
             this.format = format;
             this.mediaType = mediaType;
             this.fileTypes = new ArrayList<>(Arrays.asList(fileTypes));
@@ -487,7 +495,7 @@ public class OpenAPISupport implements Service {
          *
          * @param path path to which the server corresponds
          * @param pathServer name of the server to add for this path
-         * @return
+         * @return updated builder instance
          */
         public Builder addPathServer(String path, String pathServer) {
             Objects.requireNonNull(path, "path must be non-null");

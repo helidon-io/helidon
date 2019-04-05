@@ -16,8 +16,6 @@
  */
 package io.helidon.openapi;
 
-import io.helidon.config.Config;
-import io.smallrye.openapi.api.OpenApiConfig;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +26,10 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import io.helidon.config.Config;
+
+import io.smallrye.openapi.api.OpenApiConfig;
+
 /**
  * Helidon-specific implementation of the smallrye OpenApiConfig interface,
  * loadable from a Helidon {@link Config} object as well as individual items
@@ -37,7 +39,7 @@ import java.util.function.Function;
  * a way to set the scanning-related values. We just initialize them
  * appropriately.
  */
-public class OpenAPIConfigImpl implements OpenApiConfig {
+class OpenAPIConfigImpl implements OpenApiConfig {
 
     private final String modelReader;
     private final String filter;
@@ -156,16 +158,16 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
      */
     public static final class Builder implements io.helidon.common.Builder<OpenApiConfig> {
 
-        private final static String CONFIG_PREFIX = "openapi.";
+        private static final String CONFIG_PREFIX = "openapi.";
 
         // Key names are inspired by the MP OpenAPI config key names
-        final static String MODEL_READER = CONFIG_PREFIX + "model.reader";
-        final static String FILTER = CONFIG_PREFIX + "filter";
-        final static String SERVERS = CONFIG_PREFIX + "servers";
-        final static String SERVERS_PATH = CONFIG_PREFIX + "servers.path";
-        final static String SERVERS_OPERATION = CONFIG_PREFIX + "servers.operation";
+        static final String MODEL_READER = CONFIG_PREFIX + "model.reader";
+        static final String FILTER = CONFIG_PREFIX + "filter";
+        static final String SERVERS = CONFIG_PREFIX + "servers";
+        static final String SERVERS_PATH = CONFIG_PREFIX + "servers.path";
+        static final String SERVERS_OPERATION = CONFIG_PREFIX + "servers.operation";
 
-        final static List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
+        static final List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
 
         private String modelReader;
         private String filter;
@@ -225,7 +227,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          * @param operationID operation ID
          * @param operationServers comma-separated list of servers for the given
          * operation
-         * @return
+         * @return updated builder
          */
         public Builder operationServers(String operationID, String operationServers) {
             this.operationServers.clear();
@@ -250,7 +252,7 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          *
          * @param path path for the servers being set
          * @param pathServers comma-list of servers for the given path
-         * @return
+         * @return updated builder
          */
         public Builder pathServers(String path, String pathServers) {
             setEntry(this.pathServers, path, pathServers);
