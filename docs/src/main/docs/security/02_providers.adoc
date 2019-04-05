@@ -82,6 +82,8 @@ All configuration options:
 |propagate |true |Whether to attempt identity propagation/JWT creation
 |principal-type |USER |Whether we authenticate a user or a service (other option is SERVICE)
 |atn-token | |A group for configuring authentication of the request
+|atn-token.verify-signature |true |Whether to verify signature in incoming JWT. If disabled, _ANY_ JWT will be accepted
+|atn-token.jwt-audience| |Expected audience of the JWT. If not defined, any audience is accepted (and we may accept JWT not inteded for us)
 |atn-token/jwk-* | |Configuration of the JWK to obtain key(s) to validate signatures of inbound token. The JWK should contain public keys. This may be: jwk-path, jwk-resource-path, jwk-url, jwk-content-plain (actual JSON string), jwk-content (base64)
 |atn-token/handler |Authorization bearer |A handler configuration for inbound token - e.g. how to extract it
 |atn-token/handler/header |Authorization |Name of a header the token is expected in
@@ -111,6 +113,7 @@ Example configuration with authentication and outbound security:
 - jwt:
     atn-token:
         jwk-path: "/config/securiy/verify-jwk.json"
+        jwt-audience: "my.service"
     sign-token:
         jwk-path: "/config/security/sign-jwk.json"
         jwt-issuer: "http://www.example.org/myservice"
