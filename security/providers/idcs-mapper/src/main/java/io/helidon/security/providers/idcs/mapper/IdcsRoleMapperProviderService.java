@@ -35,6 +35,9 @@ public class IdcsRoleMapperProviderService implements SecurityProviderService {
 
     @Override
     public SecurityProvider providerInstance(Config config) {
+        if (config.get("multitenant").asBoolean().orElse(true)) {
+            return IdcsMtRoleMapperProvider.create(config);
+        }
         return IdcsRoleMapperProvider.create(config);
     }
 }

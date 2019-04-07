@@ -24,6 +24,7 @@ module io.helidon.security.providers.idcs.mapper {
     requires transitive io.helidon.security.providers.common;
     requires transitive io.helidon.security.jwt;
     requires transitive io.helidon.security.providers.oidc.common;
+    requires io.helidon.security.util;
     requires java.logging;
 
     exports io.helidon.security.providers.idcs.mapper;

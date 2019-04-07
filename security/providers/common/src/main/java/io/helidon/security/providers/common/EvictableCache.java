@@ -238,7 +238,7 @@ public interface EvictableCache<K, V> {
         }
 
         /**
-         * Configure evictor to check if a records is still valid.
+         * Configure evictor to check if a record is still valid.
          * This should be a fast way to check, as it is happening in a {@link ConcurrentHashMap#forEachKey(long, Consumer)}.
          * This is also called during all get and remove operations to only return valid records.
          *
