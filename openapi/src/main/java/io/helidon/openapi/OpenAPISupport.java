@@ -151,11 +151,22 @@ public class OpenAPISupport implements Service {
         try (OpenApiStaticFile staticFile = buildOpenAPIStaticFile()) {
             OpenApiDocument.INSTANCE.reset();
             OpenApiDocument.INSTANCE.config(config);
-            OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
             OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
+            OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
+            extendModelUsingAnnotations();
             OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
             OpenApiDocument.INSTANCE.initialize();
         }
+    }
+
+    /**
+     * Adds to the OpenAPI model using annotations in the application.
+     * <p>
+     * Note that Helidon SE support for OpenAPI does not include annotation
+     * scanning. This is primarily an extension point for Helidon MP support to
+     * override.
+     */
+    void extendModelUsingAnnotations() {
     }
 
     private static ClassLoader getContextClassLoader() {

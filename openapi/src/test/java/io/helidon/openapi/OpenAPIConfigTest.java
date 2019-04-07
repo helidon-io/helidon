@@ -17,17 +17,17 @@ package io.helidon.openapi;
  *
  */
 
+import java.nio.file.Paths;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.openapi.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
-import java.nio.file.Paths;
-import static org.hamcrest.MatcherAssert.assertThat;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import org.junit.jupiter.api.Disabled;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 public class OpenAPIConfigTest {
 
     private final static String TEST_CONFIG_DIR = "src/test/resources";
+
     public OpenAPIConfigTest() {
     }
 
