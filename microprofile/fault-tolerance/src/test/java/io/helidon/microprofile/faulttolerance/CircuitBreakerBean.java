@@ -18,6 +18,13 @@ package io.helidon.microprofile.faulttolerance;
 
 import javax.enterprise.context.Dependent;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+
+import org.eclipse.microprofile.faulttolerance.Asynchronous;
+import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
@@ -79,5 +86,37 @@ public class CircuitBreakerBean {
         counter++;
         FaultToleranceTest.printStatus("CircuitBreakerBean::openOnTimeouts", "failure");
         Thread.sleep(1000);     // forces timeout
+    }
+
+    @Asynchronous
+    @Bulkhead(value = 1, waitingTaskQueue = 1)
+    /*
+    @CircuitBreaker(
+            requestVolumeThreshold = 3,
+            failureRatio = 1.0,
+            delay = 50000,
+            failOn = UnitTestException.class)
+            */
+    public Future<?> withBulkhead(CountDownLatch started) throws InterruptedException {
+        started.countDown();
+        FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkhead", "success");
+        Thread.sleep(3 * DELAY);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Asynchronous
+    @Bulkhead(value = 1, waitingTaskQueue = 1)
+    /*
+    @CircuitBreaker(
+            requestVolumeThreshold = 3,
+            failureRatio = 1.0,
+            delay = 50000,
+            failOn = UnitTestException.class)
+            */
+    public CompletionStage<?> withBulkheadStage(CountDownLatch started) throws InterruptedException {
+        started.countDown();
+        FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkheadStage", "success");
+        Thread.sleep(3 * DELAY);
+        return CompletableFuture.completedFuture(null);
     }
 }
