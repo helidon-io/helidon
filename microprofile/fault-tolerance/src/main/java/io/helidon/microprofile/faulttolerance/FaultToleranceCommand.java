@@ -34,7 +34,6 @@ import org.eclipse.microprofile.metrics.Histogram;
 
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE;
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
-
 import static io.helidon.microprofile.faulttolerance.CircuitBreakerHelper.State;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BREAKER_CALLS_FAILED_TOTAL;
@@ -242,11 +241,10 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     public Object execute() {
         boolean lockRemoved = false;
 
-        try {
-            // Get lock and check breaker delay
-            if (introspector.hasCircuitBreaker()) {
-                breakerHelper.lock();       // acquire exclusive access to command data
-
+        // Get lock and check breaker delay
+        if (introspector.hasCircuitBreaker()) {
+            try {
+                breakerHelper.lock();
                 // OPEN_MP -> HALF_OPEN_MP
                 if (breakerHelper.getState() == State.OPEN_MP) {
                     long delayNanos = TimeUtil.convertToNanos(introspector.getCircuitBreaker().delay(),
@@ -255,39 +253,46 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                         breakerHelper.setState(State.HALF_OPEN_MP);
                     }
                 }
-                logCircuitBreakerState("Enter");
+            } finally {
+                breakerHelper.unlock();
             }
 
-            // Record state of breaker
-            boolean wasBreakerOpen = isCircuitBreakerOpen();
+            logCircuitBreakerState("Enter");
+        }
 
-            // Track invocation in a bulkhead
-            if (introspector.hasBulkhead()) {
-                bulkheadHelper.trackInvocation(this);
+        // Record state of breaker
+        boolean wasBreakerOpen = isCircuitBreakerOpen();
+
+        // Track invocation in a bulkhead
+        if (introspector.hasBulkhead()) {
+            bulkheadHelper.trackInvocation(this);
+        }
+
+        // Execute command
+        Object result = null;
+        Future<Object> future = null;
+        Throwable throwable = null;
+        long startNanos = System.nanoTime();
+        try {
+            future = super.queue();
+            result = future.get();
+        } catch (Exception e) {
+            if (e instanceof ExecutionException) {
+                waitForThreadToComplete();
             }
+            if (e instanceof InterruptedException) {
+                future.cancel(true);
+            }
+            throwable = decomposeException(e);
+        }
 
-            // Execute command
-            Object result = null;
-            Future<Object> future = null;
-            Throwable throwable = null;
-            long startNanos = System.nanoTime();
+        executionTime = System.nanoTime() - startNanos;
+        boolean hasFailed = (throwable != null);
+
+        if (introspector.hasCircuitBreaker()) {
             try {
-                future = super.queue();
-                result = future.get();
-            } catch (Exception e) {
-                if (e instanceof ExecutionException) {
-                    waitForThreadToComplete();
-                }
-                if (e instanceof InterruptedException) {
-                    future.cancel(true);
-                }
-                throwable = decomposeException(e);
-            }
+                breakerHelper.lock();
 
-            executionTime = System.nanoTime() - startNanos;
-            boolean hasFailed = (throwable != null);
-
-            if (introspector.hasCircuitBreaker()) {
                 // Keep track of failure ratios
                 breakerHelper.pushResult(throwable == null);
 
@@ -345,27 +350,26 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 }
 
                 updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerOpening);
+            } finally {
+                if (!lockRemoved) {
+                    breakerHelper.unlock();
+                }
             }
+        }
 
-            // Untrack invocation in a bulkhead
-            if (introspector.hasBulkhead()) {
-                bulkheadHelper.untrackInvocation(this);
-            }
+        // Untrack invocation in a bulkhead
+        if (introspector.hasBulkhead()) {
+            bulkheadHelper.untrackInvocation(this);
+        }
 
-            // Display circuit breaker state at exit
-            logCircuitBreakerState("Exit 3");
+        // Display circuit breaker state at exit
+        logCircuitBreakerState("Exit 3");
 
-            // Outcome of execution
-            if (throwable != null) {
-                throw ExceptionUtil.toWrappedException(throwable);
-            } else {
-                return result;
-            }
-        } finally {
-            // Free lock unless command data was reset
-            if (introspector.hasCircuitBreaker() && !lockRemoved) {
-                breakerHelper.unlock();
-            }
+        // Outcome of execution
+        if (throwable != null) {
+            throw ExceptionUtil.toWrappedException(throwable);
+        } else {
+            return result;
         }
     }
 

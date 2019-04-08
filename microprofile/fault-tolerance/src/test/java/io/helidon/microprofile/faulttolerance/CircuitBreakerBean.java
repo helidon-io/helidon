@@ -90,13 +90,11 @@ public class CircuitBreakerBean {
 
     @Asynchronous
     @Bulkhead(value = 1, waitingTaskQueue = 1)
-    /*
     @CircuitBreaker(
             requestVolumeThreshold = 3,
             failureRatio = 1.0,
             delay = 50000,
             failOn = UnitTestException.class)
-            */
     public Future<?> withBulkhead(CountDownLatch started) throws InterruptedException {
         started.countDown();
         FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkhead", "success");
@@ -106,13 +104,11 @@ public class CircuitBreakerBean {
 
     @Asynchronous
     @Bulkhead(value = 1, waitingTaskQueue = 1)
-    /*
     @CircuitBreaker(
             requestVolumeThreshold = 3,
             failureRatio = 1.0,
             delay = 50000,
             failOn = UnitTestException.class)
-            */
     public CompletionStage<?> withBulkheadStage(CountDownLatch started) throws InterruptedException {
         started.countDown();
         FaultToleranceTest.printStatus("CircuitBreakerBean::withBulkheadStage", "success");
