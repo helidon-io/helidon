@@ -77,6 +77,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
     private Thread runThread;
 
+    private ClassLoader contextClassLoader;
+
     /**
      * Default thread pool size for a command or a command group.
      */
@@ -96,7 +98,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * @param introspector The method introspector.
      * @param context CDI invocation context.
      */
-    public FaultToleranceCommand(String commandKey, MethodIntrospector introspector, InvocationContext context) {
+    public FaultToleranceCommand(String commandKey, MethodIntrospector introspector,
+                                 InvocationContext context, ClassLoader contextClassLoader) {
         super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(HELIDON_MICROPROFILE_FAULTTOLERANCE))
                 .andCommandKey(
                         HystrixCommandKey.Factory.asKey(commandKey))
@@ -133,6 +136,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         this.commandKey = commandKey;
         this.introspector = introspector;
         this.context = context;
+        this.contextClassLoader = contextClassLoader;
 
         // Special initialization for methods with breakers
         if (introspector.hasCircuitBreaker()) {
@@ -198,6 +202,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      */
     @Override
     public Object run() throws Exception {
+        // Config requires use of appropriate context class loader
+        if (contextClassLoader != null) {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+
         if (introspector.hasBulkhead()) {
             bulkheadHelper.markAsRunning(this);
 

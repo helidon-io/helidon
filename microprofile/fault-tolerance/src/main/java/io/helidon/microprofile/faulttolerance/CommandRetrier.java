@@ -79,6 +79,8 @@ public class CommandRetrier {
 
     private FaultToleranceCommand command;
 
+    private ClassLoader contextClassLoader;
+
     /**
      * Constructor.
      *
@@ -152,6 +154,9 @@ public class CommandRetrier {
                 Scheduler scheduler = CommandScheduler.instance();
                 AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
 
+                // Store context class loader to access config
+                contextClassLoader = Thread.currentThread().getContextClassLoader();
+
                 // Check CompletionStage first to process CompletableFuture here
                 if (introspector.isReturnType(CompletionStage.class)) {
                     CompletionStage<?> completionStage = (introspector.hasFallback()
@@ -185,13 +190,19 @@ public class CommandRetrier {
     /**
      * Creates a new command for each retry since Hystrix commands can only be
      * executed once. Fallback method is not overridden here to ensure all
-     * retries are executed.
+     * retries are executed. If running in async mode, this method will execute
+     * on a different thread.
      *
      * @return Object returned by command.
      */
     private Object retryExecute() throws Exception {
+        // Config requires use of appropriate context class loader
+        if (contextClassLoader != null) {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+
         final String commandKey = createCommandKey();
-        command = new FaultToleranceCommand(commandKey, introspector, context);
+        command = new FaultToleranceCommand(commandKey, introspector, context, contextClassLoader);
 
         // Configure command before execution
         introspector.getHystrixProperties()
