@@ -212,7 +212,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
     public static class Builder<B extends Builder<B>> {
 
         private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
-        private String defaultIdcsSubjectType;
+        private String defaultIdcsSubjectType = IDCS_SUBJECT_TYPE_USER;
 
         private OidcConfig oidcConfig;
 
