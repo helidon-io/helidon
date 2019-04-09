@@ -34,5 +34,15 @@
             files="examples/guides/se-restful-webservice/src/main/java/io/helidon/guides/se/restfulwebservice/GreetService.java"/>
         <suppress checks="NoWhitespaceBefore|SeparatorWrap"
             files="examples/guides/mp-restful-webservice/src/main/java/io/helidon/guides/mp/restfulwebservice/GreetApplication.java"/>
+        <!--
+         The following files are work taken over from other projects,
+            where we want to keep the author tag untouched
+        -->
+        <!-- Common HTTP project -->
+        <suppress id="Javadoc.javadocNoAuthor"
+            files="common/http/Preconditions\.java|common/http/Ascii\.java|common/http/CharMatcher\.java"/>
+        <!-- Webserver project -->
+        <suppress id="Javadoc.javadocNoAuthor"
+            files="webserver/UriComponent\.java"/>
 </suppressions>
 
