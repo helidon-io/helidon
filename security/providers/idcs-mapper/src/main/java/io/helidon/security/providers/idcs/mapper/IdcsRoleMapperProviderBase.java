@@ -50,6 +50,19 @@ import io.helidon.security.spi.SubjectMappingProvider;
  * Common functionality for IDCS role mapping.
  */
 public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvider {
+    /**
+     * User subject type used when requesting roles from IDCS.
+     * An attempt is made to obtain it from JWT claim {@code sub_type}. If not defined,
+     * default is used as configured in {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase.Builder}.
+     */
+    public static final String IDCS_SUBJECT_TYPE_USER = "user";
+    /**
+     * Client subject type used when requesting roles from IDCS.
+     * An attempt is made to obtain it from JWT claim {@code sub_type}. If not defined,
+     * default is used as configured in {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase.Builder}.
+     */
+    public static final String IDCS_SUBJECT_TYPE_CLIENT = "client";
+
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProviderBase.class.getName());
 
     protected static final String ROLE_GROUP = "groups";
@@ -58,9 +71,11 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
+    private final String defaultIdcsSubjectType;
 
     protected IdcsRoleMapperProviderBase(Builder<?> builder) {
         this.oidcConfig = builder.oidcConfig;
+        this.defaultIdcsSubjectType = builder.defaultIdcsSubjectType;
         if (builder.supportedTypes.isEmpty()) {
             this.supportedTypes.add(SubjectType.USER);
         } else {
@@ -187,14 +202,19 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return oidcConfig;
     }
 
+    protected String defaultIdcsSubjectType() {
+        return defaultIdcsSubjectType;
+    }
+
     /**
      * Fluent API builder for {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase}.
      */
-    public static class Builder<B extends Builder<B>>  {
+    public static class Builder<B extends Builder<B>> {
+
         private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
+        private String defaultIdcsSubjectType;
 
         private OidcConfig oidcConfig;
-
 
         @SuppressWarnings("unchecked")
         private B me = (B) this;
@@ -209,6 +229,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * <li>oidc-config to load an instance of {@link io.helidon.security.providers.oidc.common.OidcConfig}</li>
          * <li>cache-config (optional) to load instances of {@link io.helidon.security.providers.common.EvictableCache} for
          * caching</li>
+         * <li>default-idcs-subject-type to use when not defined in a JWT, either {@value #IDCS_SUBJECT_TYPE_USER} or
+         *      {@link #IDCS_SUBJECT_TYPE_CLIENT}, defaults to {@value #IDCS_SUBJECT_TYPE_USER}</li>
          * </ul>
          *
          * @param config current node must have "oidc-config" as one of its children
@@ -217,6 +239,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         public B config(Config config) {
             config.get("oidc-config").as(OidcConfig.class).ifPresent(this::oidcConfig);
             config.get("subject-types").asList(SubjectType.class).ifPresent(list -> list.forEach(this::addSubjectType));
+            config.get("default-idcs-subject-type").asString().ifPresent(this::defaultIdcsSubjectType);
             return me;
         }
 
@@ -236,8 +259,6 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             return oidcConfig;
         }
 
-
-
         /**
          * Configure supported subject types.
          * By default {@link io.helidon.security.SubjectType#USER} is used if none configured.
@@ -248,6 +269,19 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         public B subjectTypes(SubjectType... types) {
             this.supportedTypes.clear();
             this.supportedTypes.addAll(Arrays.asList(types));
+            return me;
+        }
+
+        /**
+         * Configure subject type to use when requesting roles from IDCS.
+         * Can be either {@link #IDCS_SUBJECT_TYPE_USER} or {@link #IDCS_SUBJECT_TYPE_CLIENT}.
+         * Defaults to {@link #IDCS_SUBJECT_TYPE_USER}.
+         *
+         * @param subjectType type of subject to use when requesting roles from IDCS
+         * @return udpated builder instance
+         */
+        public B defaultIdcsSubjectType(String subjectType) {
+            this.defaultIdcsSubjectType = subjectType;
             return me;
         }
 

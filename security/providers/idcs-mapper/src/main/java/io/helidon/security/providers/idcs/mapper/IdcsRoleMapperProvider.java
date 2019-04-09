@@ -123,7 +123,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
 
     protected Optional<List<? extends Grant>> getGrantsFromServer(Subject subject) {
         String subjectName = subject.principal().getName();
-        String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse("client");
+        String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
         return appToken.getToken().flatMap(appToken -> {
             JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()

@@ -120,22 +120,22 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         MtCacheKey cacheKey = new MtCacheKey(idcsTenantId, idcsAppName, name);
 
         // double cache
-        List<Grant> grants = cache.computeValue(cacheKey, () -> computeGrants(idcsTenantId, idcsAppName, subject))
-                .orElse(CollectionsHelper.listOf());
+        List<Grant> serverGrants = cache.computeValue(cacheKey, () -> computeGrants(idcsTenantId, idcsAppName, subject))
+                .orElseGet(CollectionsHelper::listOf);
+
+        List<Grant> grants = new LinkedList<>(serverGrants);
+
+        // additional grants may not be cached (leave this decision to overriding class)
+        addAdditionalGrants(idcsTenantId, idcsAppName, subject)
+                .map(grants::addAll);
 
         return buildSubject(subject, grants);
     }
 
     private Optional<List<Grant>> computeGrants(String idcsTenantId, String idcsAppName, Subject subject) {
-        List<Grant> result = new LinkedList<>();
+        return getGrantsFromServer(idcsTenantId, idcsAppName, subject)
+                .map(grants -> Collections.unmodifiableList(new LinkedList<>(grants)));
 
-        getGrantsFromServer(idcsTenantId, idcsAppName, subject)
-                .map(result::addAll);
-
-        addAdditionalGrants(idcsTenantId, idcsAppName, subject)
-                .map(result::addAll);
-
-        return (result.isEmpty() ? Optional.empty() : Optional.of(result));
     }
 
     /**
@@ -152,7 +152,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
     protected Optional<List<? extends Grant>> getGrantsFromServer(String idcsTenantId, String idcsAppName, Subject subject) {
         String subjectName = subject.principal().getName();
-        String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse("client");
+        String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
         return getAppToken(idcsTenantId).flatMap(appToken -> {
             JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
