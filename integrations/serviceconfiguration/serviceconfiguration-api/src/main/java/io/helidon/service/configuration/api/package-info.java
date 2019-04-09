@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 /**
  * Provides classes and interfaces for automatically discovering
  * service configuration information.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
  * @see io.helidon.service.configuration.api.ServiceConfiguration
  *
