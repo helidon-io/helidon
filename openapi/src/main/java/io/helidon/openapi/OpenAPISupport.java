@@ -46,6 +46,7 @@ import io.smallrye.openapi.runtime.OpenApiProcessor;
 import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
+import org.jboss.jandex.IndexReader;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -67,6 +68,10 @@ import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
  * <td>{@link Builder#staticFile}</td>
  * <td>sets the static OpenAPI document file (defaults in order to {@code openapi.yaml},
  * {@code openapi.yml}, or {@code openapi.json})</td>
+ * </tr>
+ * <tr>
+ * <td>{@link Builder#enableAnnotationProcessing}</td>
+ * <td>sets whether OpenAPI annotations should be processed</td>
  * </tr>
  * <tr>
  * <td>{@link Builder#webContext}</td>
@@ -110,15 +115,20 @@ public class OpenAPISupport implements Service {
     private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
 
+    private static final String JANDEX_INDEX_PATH = "/META-INF/jandex.idx";
+
     private final Optional<String> webContext;
     private final Optional<String> staticFilePath;
     private final OpenApiConfig openAPIConfig;
+
+    private boolean isAnnotationProcessingEnabled = false;
 
     private final Map<MediaType, String> cachedDocuments = new HashMap<>();
 
     private OpenAPISupport(final Builder builder) {
         webContext = builder.webContext;
         staticFilePath = builder.staticFilePath;
+        this.isAnnotationProcessingEnabled = builder.isAnnotationProcessingEnabled;
         this.openAPIConfig = builder.apiConfigBuilder.build();
     }
 
@@ -153,20 +163,28 @@ public class OpenAPISupport implements Service {
             OpenApiDocument.INSTANCE.config(config);
             OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
             OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
-            extendModelUsingAnnotations();
+            if (isAnnotationProcessingEnabled) {
+                    expandModelUsingAnnotations(config);
+            } else {
+                LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+            }
             OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
             OpenApiDocument.INSTANCE.initialize();
         }
     }
 
-    /**
-     * Adds to the OpenAPI model using annotations in the application.
-     * <p>
-     * Note that Helidon SE support for OpenAPI does not include annotation
-     * scanning. This is primarily an extension point for Helidon MP support to
-     * override.
-     */
-    void extendModelUsingAnnotations() {
+    private void expandModelUsingAnnotations(final OpenApiConfig config) throws IOException {
+        try (InputStream jandexIS = getClass().getResourceAsStream(JANDEX_INDEX_PATH)) {
+            if (jandexIS == null) {
+                LOGGER.log(Level.FINE,
+                        "OpenAPI Annotation processing enabled but jandex index {0} not found; "
+                        + "continuing", JANDEX_INDEX_PATH);
+                return;
+            }
+        LOGGER.log(Level.FINE, "Using Jandex index at {0}", JANDEX_INDEX_PATH);
+        IndexReader ir = new IndexReader(jandexIS);
+        OpenApiDocument.INSTANCE.modelFromAnnotations(OpenApiProcessor.modelFromAnnotations(config, ir.read()));
+        }
     }
 
     private static ClassLoader getContextClassLoader() {
@@ -399,6 +417,7 @@ public class OpenAPISupport implements Service {
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
         private Optional<Config> config = Optional.empty();
+        private boolean isAnnotationProcessingEnabled = false;
 
         private Builder() {
         }
@@ -512,6 +531,18 @@ public class OpenAPISupport implements Service {
             Objects.requireNonNull(path, "path must be non-null");
             Objects.requireNonNull(pathServer, "pathServer must be non-null");
             apiConfigBuilder.addPathServer(path, pathServer);
+            return this;
+        }
+
+        /**
+         * Sets whether annotation processing for OpenAPI annotations should
+         * be enabled.
+         *
+         * @param isEnabled whether annotation processing should be turned on
+         * @return updated builder instance
+         */
+        public Builder enableAnnotationProcessing(boolean isEnabled) {
+            isAnnotationProcessingEnabled = isEnabled;
             return this;
         }
     }

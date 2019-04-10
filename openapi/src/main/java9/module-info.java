@@ -24,6 +24,8 @@ module io.helidon.openapi {
     requires io.helidon.media.jsonp.server;
     requires io.helidon.webserver;
 
+    requires jandex;
+
     requires smallrye.open.api;
 
     exports io.helidon.openapi;
