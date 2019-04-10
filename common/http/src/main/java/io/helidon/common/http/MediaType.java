@@ -93,11 +93,11 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      * <p>
      * See https://github.com/opengeospatial/WFS_FES/issues/117#issuecomment-402188280
      */
-    public static final MediaType APPLICATION_OPENAPI_YAML = createMediaType("application","vnd.oai.openapi");
+    public static final MediaType APPLICATION_OPENAPI_YAML = createMediaType("application", "vnd.oai.openapi");
     /**
      * A {@link MediaType} constant representing OpenAPI json.
      */
-    public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application","vnd.oai.openapi+json");
+    public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application", "vnd.oai.openapi+json");
 
     private static final MediaType APPLICATION_JAVASCRIPT = createMediaType("application", "javascript");
 
