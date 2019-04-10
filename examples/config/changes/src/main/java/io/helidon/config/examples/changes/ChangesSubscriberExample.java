@@ -21,10 +21,10 @@ import java.util.logging.Logger;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
+
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.config.PollingStrategies.regular;
-
 import static java.time.Duration.ofSeconds;
 
 /**

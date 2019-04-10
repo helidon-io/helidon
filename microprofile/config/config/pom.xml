@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.config</groupId>
         <artifactId>helidon-microprofile-config-project</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-config</artifactId>
     <name>Helidon Microprofile Config</name>
@@ -55,4 +55,21 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <simple>unmapped-env-value</simple>
+                        <_unmapped>unmapped-env-value</_unmapped>
+                        <com_ACME_size>mapped-env-value</com_ACME_size>
+                        <SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE>mapped-env-value
+                        </SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

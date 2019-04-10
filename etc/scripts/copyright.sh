@@ -43,21 +43,23 @@ source ${WS_DIR}/etc/scripts/wercker-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 
-# Workaround!!
-# Wercker clones the workspace like:
-# git clone --depth=50 --quiet --progress --no-single-branch
-# The --depth option screws up git history, causing the 
-# copyright plugin to incorrectly detect when files have been
-# modified.
-# This fetch restores the history. Since we don't have ssh keys
-# when in wercker we need to convert the repo URL to http first
-readonly GIT_REMOTE=$(git config --get remote.origin.url | \
-                      sed s,'git@github.com:','https://github.com/',g)	
+if [ "${WERCKER}" = "true" ] ; then
+    # Workaround!!
+    # Wercker clones the workspace like:
+    # git clone --depth=50 --quiet --progress --no-single-branch
+    # The --depth option screws up git history, causing the
+    # copyright plugin to incorrectly detect when files have been
+    # modified.
+    # This fetch restores the history. Since we don't have ssh keys
+    # when in wercker we need to convert the repo URL to http first
+    readonly GIT_REMOTE=$(git config --get remote.origin.url | \
+                          sed s,'git@github.com:','https://github.com/',g)
 
-git remote add origin-https "${GIT_REMOTE}" > /dev/null 2>&1 || \
-git remote set-url origin-https "${GIT_REMOTE}"
+    git remote add origin-https "${GIT_REMOTE}" > /dev/null 2>&1 || \
+    git remote set-url origin-https "${GIT_REMOTE}"
 
-git fetch --unshallow origin-https
+    git fetch --unshallow origin-https
+fi
 
 mvn -q org.glassfish.copyright:glassfish-copyright-maven-plugin:copyright \
         -f ${WS_DIR}/pom.xml \

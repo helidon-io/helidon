@@ -34,8 +34,6 @@ import org.junit.jupiter.api.BeforeAll;
 
 /**
  * Class MetricsMpServiceTest.
- *
- * @author Santiago Pericas-Geertsen
  */
 public class MetricsMpServiceTest {
     protected static Server server;

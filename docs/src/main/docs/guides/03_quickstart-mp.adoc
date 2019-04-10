@@ -42,11 +42,11 @@ Generate the project sources using one (or both) of the Helidon Maven
 ----
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-se \
+    -DarchetypeArtifactId=helidon-quickstart-mp \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.examples \
     -DartifactId=helidon-quickstart-mp \
-    -Dpackage=io.helidon.examples.quickstart.se
+    -Dpackage=io.helidon.examples.quickstart.mp
 ----
 
 The archetype generates a Maven project in your current directory

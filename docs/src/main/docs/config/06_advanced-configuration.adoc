@@ -27,10 +27,48 @@
 This section discusses several advanced topics related to Helidon configuration.
 
 == Advanced Config Sources and Config Parsers
+=== Environment Variables Config Source
+
+The config system supports using environment variables as a config source, and is
+enabled by default. Since environment variable names are normally restricted to
+alphanumeric characters and underscore, this config source _adds_ variants that
+enable setting or overriding config entries with dotted and/or hyphenated keys.
+
+The mapping makes it possible to set or override a config entry with a key of
+`"foo.bar"` using an environment variable named `"FOO_BAR"` and `"foo.bar-baz"`
+using `"FOO_BAR_dash_BAZ"`.
+
+
+One use case for this mapping is config overrides in containers, where passing
+environment variables directly or via Kubernetes Secrets/ConfigMaps is common.
+Scripts that solve the mapping problem by explicitly converting variables to
+system properties can also be simplified.
+
+Variants are produced for any environment variable name that matches _all_ of
+the following:
+
+<1> does not begin or end with a `'_'` character
+<2> does not contain `"__"`
+<3> contains one or more `'_'` characters
+
+For each such name, two variants are added with the names mapped as follows:
+
+<1> Replace any `"\_dash_"` substrings with `"-"`, e.g. `"APP_PAGE_dash_SIZE"`
+becomes `"APP_PAGE-SIZE"`.
+
+<2> Replace `'_'` with `'.'` and add as a variant, e.g. `"APP_GREETING"` is
+added as `"APP.GREETING"` and `"APP_PAGE-SIZE"` is added as `"APP.PAGE-SIZE"`.
+This mapping is added primarily to support mixed case config keys such as
+`"app.someCamelCaseKey"`.
+
+<3> Convert the result of step 2 to lowercase and add as a variant, e.g.
+`"APP.GREETING"` is added as `"app.greeting"` and `"APP.PAGE-SIZE"` is added
+as `"app.page-size"`.
+
 === Directory Config Source
 
 The config system supports using a file system directory as a config source.
-Each _non-directory_ file in the directory becomes a config entry: the file name 
+Each _non-directory_ file in the directory becomes a config entry: the file name
 is the key and the contents of that file
 are used as the corresponding config `String` value.
 
@@ -80,7 +118,7 @@ assert secrets.get("password")                   // <4>
 
 Remember that your application can process the contents of a given file
 as configuration. See the <<config/02_config-sources.adoc,config sources>> section
-and the link:{javadoc-base-url-api}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`] 
+and the link:{javadoc-base-url-api}/ConfigSources.html#file-java.lang.String-[`ConfigSources.file`]
 JavaDoc.
 
 === In-memory Config Sources
@@ -132,22 +170,22 @@ Config config = Config.create(
 <1> `ConfigSources.create` variants for `Properties` or `Map` arguments return a
  `ConfigSources.MapBuilder` instance.
 <2> A similar `create` variant accepts a `Readable` instead of a `String`.
-<3> `MapBuilder` by default throws an exception if a key appears more than once 
+<3> `MapBuilder` by default throws an exception if a key appears more than once
 in the map. The `lax()` method relaxes this; the config system logs a warning instead.
 
 === Multi-Source ``Config``s and Composite Config Sources
 Although the examples above use a single source, you can build a single `Config`
-from multiple sources. 
+from multiple sources.
 
 ==== Handling Key Collisions
 ===== Prefixed Config Sources
 Sometimes you might want to create a single config tree from
 multiple sources but in a way that keeps the config from different sources
-in different subtrees. 
+in different subtrees.
 
-The config system lets you assign a prefix to all keys 
-from a given source using the 
-link:{javadoc-base-url-api}/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method. 
+The config system lets you assign a prefix to all keys
+from a given source using the
+link:{javadoc-base-url-api}/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-[`ConfigSources.prefixed`] method.
 The following example shows two YAML files as config sources
 and the code to load each with a different prefix into a single `Config` tree:
 
@@ -201,7 +239,7 @@ assert config.get("data.providers.0.name")               // <6>
  `app.conf` loaded from the current `classpath`.
 <3> Specifies the prefix `data` for the associated source.
 <4> Supplier<ConfigSource> for the file `app.conf` loaded from the current `classpath`.
-<5> Key `app.greeting` combines the `app` prefix and the original key `greeting` 
+<5> Key `app.greeting` combines the `app` prefix and the original key `greeting`
 from the `app.conf` source.
 <6> Key `data.providers.0.name` combines the `data` prefix and
  the original key `providers.0.name` property from `data.conf` source.
@@ -219,10 +257,10 @@ that if the same key appears in two or more sources the source earlier in the
 list prevails.
 
 Each ``CompositeConfigSource``'s _merging strategy_ actually controls this behavior.
-The config system provides the 
+The config system provides the
 `FallbackMergingStrategy`
 which implements the default, "first wins" algorithm. You can write your own
-implementation of 
+implementation of
 link:{javadoc-base-url-api}/ConfigSources.MergingStrategy.html[`ConfigSources.MergingStrategy`]
 and use it instead to provide a different algorithm.
 
@@ -249,7 +287,7 @@ Config config = Config.create(                                               // 
 === How Config Chooses Parsers [[Config-Advanced-Sources-SuitableParser]]
 As the link:config/02_config-sources.html[config sources and parsers] section describes,
 these two work together to read and translate configuration data from some
-external form into the corresponding in-memory config tree. 
+external form into the corresponding in-memory config tree.
 
 Although most applications are
 explicit about the config sources they use in building a `Config`, the config system often
@@ -262,13 +300,13 @@ has to figure out what parser to use. It does so by:
 
 ===== By Inference
 Most applications let the config system try to infer the media type of the
-config source. 
+config source.
 
 By default config source implementations use the Java Service
 `java.nio.file.spi.FileTypeDetector` API to infer the source media type from
-the source, typically (but not always) based on the file type portion of the file path. 
+the source, typically (but not always) based on the file type portion of the file path.
 The config system registers implementations of
-the `java.nio.file.spi.FileTypeDetector` SPI that recognize 
+the `java.nio.file.spi.FileTypeDetector` SPI that recognize
 the supported formats: `.properties`, `.yaml`, `.json` and `.conf`. To handle
 other formats you can implement and register your own `FileTypeDetector`
 implementations. (Typically you would also write and register a config parser
@@ -288,7 +326,7 @@ Config config = Config.create(classpath("props")                             // 
 ----
 
 <1> The config system cannot infer the media type because there is no file
-type in the path `props`. 
+type in the path `props`.
 <2> The developer knows the file is in Java Properties format so specifies the
 media type explicitly.
 
@@ -301,10 +339,10 @@ path.
 ===== By Inference from `media-type`
 Each config parser reports which media types it handles. Once the config system
 has determined a source's media type, it searches the config parsers associated
-with the config builder for one that recognizes that media type. It then uses 
+with the config builder for one that recognizes that media type. It then uses
 that parser to translate the config in the source into the in-memory config tree.
 
-The application can add one or more parsers to a `Config.Builder` 
+The application can add one or more parsers to a `Config.Builder`
 using the `addParser` method. This makes the parser available for use by the
 config sources associated with that builder, but does not directly tie a given
 parser to a given source. The builder uses media-type matching to select one of
@@ -314,7 +352,7 @@ If the config system cannot locate a parser that matches the media type of a sou
 a `ConfigException` when trying to prepare the configuration.
 
 ===== By Application Directive
-Your application can specify which parser to use for a config source. The 
+Your application can specify which parser to use for a config source. The
 `AbstractParsableConfigSource.Builder` class exposes the `parser` method, which
 accepts the `ConfigParser` to be used for that source. Several methods
 on `ConfigSources` such as `classpath`, `directory`, and `file` return this
@@ -323,7 +361,7 @@ builder class.
 Generally try to rely on media-type matching rather than specifying a given parser
 for a given source in the application. This keeps your application more flexible,
 both by insulating it from implementation classes and by letting it easily take
-advantage of improvements in or alternatives to the parsers available for a given 
+advantage of improvements in or alternatives to the parsers available for a given
 media type.
 
 [source,java]
@@ -334,7 +372,7 @@ Config config = Config.create(classpath("props")                            // <
 ----
 
 <1> The config system cannot infer the media type because there is no file
-type in the path `props`. 
+type in the path `props`.
 <2> The developer knows the file is in Java Properties format so specifies the
 properties parser explicitly.
 
@@ -342,7 +380,7 @@ properties parser explicitly.
 A config value node might contain an entire config document in `String` form, but in
 a format different from the containing document. Your application can tell the
 config system to parse such a node as config in a different format and replace
-the `String` value node in the original tree with the config tree that results 
+the `String` value node in the original tree with the config tree that results
 from parsing that `String`.
 
 In this example, a YAML document contains a JSON document as a leaf.
@@ -393,7 +431,7 @@ assert config.get("app.basic-range.1")                      // <3>
         .asInt().get() == 20;
 ----
 
-<1> The source builder's `mediaTypeMapping` method accepts a function 
+<1> The source builder's `mediaTypeMapping` method accepts a function
 which returns the appropriate media types (if any) for config keys.
 <2> The function says to treat the `app` property value as a JSON document and
 leave other nodes unchanged.
@@ -426,13 +464,13 @@ Config config = Config.create(
 <2> Tells the config system to use the HOCON parser for translating the `String`
 value of the `app` key. (HCON is a superset of JSON.)
 
-As before, the config system replaces the value node in the 
+As before, the config system replaces the value node in the
 containing config tree with the config tree resulting from the additional parse.
 
 === Loading Config using Meta-configuration [[Config-Advanced-metaconfig]]
 Instead of including code in your application to construct config trees from
 builders, sources, etc., you can instead prepare _meta-configuration_ in a file
-that declares the sources to load and their attributes. 
+that declares the sources to load and their attributes.
 
 You can either specify the meta-config file in your application or
 allow the config system to search for and load meta-config from a preset
@@ -482,8 +520,8 @@ only if the classpath includes the corresponding parsers. The introduction secti
 section describes this further.
 
 ==== Meta-configuration File Format
-Each meta-configuration file must contain the top-level `sources` property that is an 
-array (ordered list) of config sources. The meta-config file can contain other 
+Each meta-configuration file must contain the top-level `sources` property that is an
+array (ordered list) of config sources. The meta-config file can contain other
 top-level keys as well but the config system ignores them when it interprets the contents as
 meta-configuration.
 
@@ -495,7 +533,7 @@ Each `sources` property must contain exactly one of following top level properti
 
 |`type` a|Either: +
 
-* a predefined type (see <<MetaConfig-built-in-types,below>>), or 
+* a predefined type (see <<MetaConfig-built-in-types,below>>), or
 * a custom config source ID
 |`class` a|Fully-qualified class name of either: +
 
@@ -514,7 +552,7 @@ The config system supports these built-in types:
 
 .Built-in Meta-configuration Types
 |===
-|Type |Use |Related `ConfigSources` Method |Required Properties 
+|Type |Use |Related `ConfigSources` Method |Required Properties
 
 |`system-properties` |System properties are a config source |`ConfigSources.systemProperties()` | n/a
 |`environment-variables` |Environment variables are a config source |`ConfigSources.environmentVariables()` | n/a
@@ -533,7 +571,7 @@ corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
 link:{javadoc-base-url-api}/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
 
-Here is example meta-configuration in HOCON format. Note how the `properties` sections 
+Here is example meta-configuration in HOCON format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
 
 [source,hocon]
@@ -609,7 +647,7 @@ strategies and retry policies for config sources.
 
 ==== Meta-config for Custom Source Types
 You can use meta-config to set up custom config source types as well as the
-built-in ones described above. Meta-config supports this in two ways: 
+built-in ones described above. Meta-config supports this in two ways:
 
 * by class name
 * by custom type name
@@ -617,7 +655,7 @@ built-in ones described above. Meta-config supports this in two ways:
 ===== Custom Source Types using `class`
 Use the `class` property in one of your `sources` entries and as its value
 give the fully-qualified class name of your custom source type. The config
-system will use that class as the `ConfigSource` (or as a builder for one) 
+system will use that class as the `ConfigSource` (or as a builder for one)
 for that source.
 
 [source,hocon]
@@ -638,7 +676,7 @@ In this file each property name is a custom config source type name and its
 value is the fully-qualified class name for a custom `ConfigSource` implementation
 or a builder for it.
 
-For example, the Helidon module `helidon-config-git` provides this 
+For example, the Helidon module `helidon-config-git` provides this
 `META-INF/resources/meta-config-sources.properties` file:
 
 [source]
@@ -663,7 +701,7 @@ follows:
 
 You can define and use your own custom config source type names similarly.
 
-Note that it is the `AbstractSource` SPI class that provides support for 
+Note that it is the `AbstractSource` SPI class that provides support for
 polling strategies and retry policies. If you create custom config sources that
 should also offer this support be
 sure they extend `AbstractSource` or one of its subclasses to inherit this behavior.
@@ -682,7 +720,7 @@ Config config = Config.create(sourceFromMetaConfig);       // <3>
 ----
 <1> The `ConfigSources.load` method creates a config source for the eventual config
 from the config source argument which specifies the meta-config.
-<2> This example uses meta-config from a resource on the classpath but you can 
+<2> This example uses meta-config from a resource on the classpath but you can
 use meta-config from any valid config source.
 <3> The `load` method populates the `sourceFromMetaConfig` `ConfigSource` from
 all the actual sources declared in the meta-configuration. The returned `ConfigSource`
@@ -693,18 +731,18 @@ is ready for use in creating a `Config` instance.
 Your meta-config can include the set-up for polling strategies and retry
 policies if the config source supports them. Declare them in a way similar to
 how you declare the config sources themselves: by `type` or `class` and with
-accompanying `properties`. 
+accompanying `properties`.
 
 .Meta-config Support for Built-in Polling Strategies
 |===
 |Strategy Type |Usage |Properties
 
-|`regular` 
-| Periodic polling - See link:{javadoc-base-url-api}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method 
+|`regular`
+| Periodic polling - See link:{javadoc-base-url-api}/PollingStrategies.html#regular-java.time.Duration-[`PollingStrategies.regular`] method
 |`interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds
 
-|`watch` 
-| Filesystem monitoring - See link:{javadoc-base-url-api}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method 
+|`watch`
+| Filesystem monitoring - See link:{javadoc-base-url-api}/PollingStrategies.html#watch-java.nio.file.Path-[`PollingStrategies.watch`] method
 | `path` - file system path to the `classpath`, `file`, or `directory` to monitor
 
 |===
@@ -713,14 +751,14 @@ accompanying `properties`.
 |===
 |Policy Type |Usage |Properties
 
-|`repeat` 
+|`repeat`
 |Regularly-scheduled - see link:{javadoc-base-url-api}RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
 a|`retries` (`int`) - number of retries to perform +
 
 Optional:
 
 * `delay` (`Duration`) - initial delay between retries
-* `delay-factor` (`double`) - `delay` is repeatedly multiplied by this each retry to compute 
+* `delay-factor` (`double`) - `delay` is repeatedly multiplied by this each retry to compute
 the delay for each successive retry
 * `call-timeout` (`Duration`) - timeout for a single invocation to load the source
 * `overall-timeout` (`Duration`) - total timeout for all retry calls and delays
@@ -732,10 +770,10 @@ If your custom class needs parameters to control its behavior the config system
 uses `io.helidon.config.ConfigMapper` to initialize the class instance.
 See link:{javadoc-base-url-api}/spi/RetryPolicy.html[`RetryPolicy`] and
 link:{javadoc-base-url-api}/spi/PollingStrategy.html[`PollingStrategy`] JavaDoc
-sections. 
+sections.
 
 == Configuration Key
-As described in the <<config/03_hierarchical-features.adoc#accessByKey,hierarchical features 
+As described in the <<config/03_hierarchical-features.adoc#accessByKey,hierarchical features
 section>> each config node (except the root) has a non-null key. Here is the formal
 definition of what keys can be:
 [source,abnf]
@@ -799,7 +837,7 @@ As always you can use the fully-qualified key `oracle.com` or chain `get(key)`
 <3> ... and has the name `com` (the last token in its key).
 <4> The second object has name `oracle.com`. The code must escape the
 dot in the node's name using `oracle~1com`.
-<5> Or, use the utility method `Config.Key.escapeName(name)` to escape dots or tildes 
+<5> Or, use the utility method `Config.Key.escapeName(name)` to escape dots or tildes
 that might be in the node's name, in this example in `oracle.com`.
 <6> The config node `"oracle.com"` has type `OBJECT`...
 <7> ...and name `"oracle.com"`.
@@ -809,8 +847,8 @@ that might be in the node's name, in this example in `oracle.com`.
 When your application retrieves a config value, the config system can transform it
 before returning the value, according to _filters_, _overrides_, and
 _tokens_. The config system provides some built-in instances of these
-you can use, and you can add your own as described in the 
-sections which describe 
+you can use, and you can add your own as described in the
+sections which describe
 <<config/07_extensions.adoc#Config-SPI-ConfigFilter,filters>> and
 <<config/07_extensions.adoc#Config-SPI-OverrideSource,overrides>>.
 
@@ -826,7 +864,7 @@ the value to be used. The filter can leave the value unchanged or
 alter it, as it sees fit.
 
 The built-in link:{javadoc-base-url-api}/ConfigFilters.html#valueResolving--[value-resolving]
-filter enables the token substitution described below. 
+filter enables the token substitution described below.
 
 See the link:{javadoc-base-url-api}/spi/ConfigFilter.html[`ConfigFilter`] JavaDoc
 for more information.
@@ -834,13 +872,13 @@ for more information.
 === Overrides
 The overrides feature allows you to create an external document containing key/value
 pairs which replace the value otherwise returned for the name, and then add that
-document as an override source to a config builder. 
+document as an override source to a config builder.
 
 There are some key differences between overrides and filters.
 
 * Because overrides are loaded
 from sources those sources can change while your application runs and so the
-overrides they that prescribe can change. 
+overrides they that prescribe can change.
 * The override document can use wildcards in key expressions.
 * Overrides can affect only keys that already exist in the original source; filters
 can supply values even if the key is absent from the config source.
@@ -850,7 +888,7 @@ expression (which can use wildcards) to match config keys read from the current
 config sources, and the override value is the new value for any key matching the
 key expression from that entry. Order is important. The
 config system tests every key expression/value pair one by one in the order they appear
-in the overrides sources. Once the config system finds an override entry in which 
+in the overrides sources. Once the config system finds an override entry in which
 the key expression matches the configuration key, the system returns that entry's
 value for the key being processed.
 
@@ -865,7 +903,7 @@ A token reference is a key token starting with `$`, optionally enclosed between
 As an example use case, you can use token references to declare the default values (see
 `resolving-tokens.yaml` below), while the references may be resolved in another
 config source, which identifies a current environment (see `env.yaml` examples
-below). You can then use the same overrides for different environments, say `test` and `prod`. 
+below). You can then use the same overrides for different environments, say `test` and `prod`.
 The configuration in each environment is then overridden with a different values
 using wildcards (see `overrides.properties` below).
 
@@ -888,7 +926,7 @@ using the environment-specific override.
 Various parts of the config system work asychronously:
 
 * polling strategies to detect changes to config sources,
-* publishers to notify your application when such changes occur, 
+* publishers to notify your application when such changes occur,
 * `Config` instances which subscribe to and respond to change notifications for
 their underlying sources, and
 * retry policies (which might wait between retries).
@@ -899,7 +937,7 @@ executors, but your application can specify different ones if necessary.
 === Executors for Polling Strategy
 The two methods `PollingStrategies.regular(Duration)` and
 `PollingStrategies.watch(Path)` return builders for their respective strategies.
-Both builders expose the `executor` method which your application can invoke, passing a 
+Both builders expose the `executor` method which your application can invoke, passing a
 `java.util.concurrent.ScheduledExecutorService` instance it wants used for the
 polling work. By default each polling strategy instance uses a separate thread
 pool executor.
@@ -925,20 +963,20 @@ Config config = Config.create(
 <1> Prepares a thread pool executor with core pool size set `2` to be shared by
  all polling strategies.
 <2> Selects the built-in periodic polling strategy.
-<3> Tells the config system to use the specific executor to poll the 
+<3> Tells the config system to use the specific executor to poll the
 `dev.properties` config source.
 <4> Uses the Java filesystem `WatchService` to monitor the specified path.
 <5> Tells the config system to use the same executor to monitor the path.
 
 === Publishers for Source Change Events
-Recall that when a polling strategy detects a change in a source, it informs 
+Recall that when a polling strategy detects a change in a source, it informs
 interested parties of the changes. By default each `Config.Builder` arranges
 for the resulting `Config` tree to use a shared executor that reuses available threads
 from a pool, creating new threads as needed. The same executor is used for actually
 reloading the source.
 
-Your application can invoke the polling strategy builder's `changesExecutor` method to 
-tell the builder 
+Your application can invoke the polling strategy builder's `changesExecutor` method to
+tell the builder
 to use a different `Executor`. (As an aside, your application can also control
 the size of the buffer used for holding source change events by invoking the
 builder's `changesMaxBuffer` method. The default is 256.)
@@ -973,21 +1011,21 @@ the override source above.
 === Composite Config Source Executor
 When your application supplies multiple sources to a config builder, as with
 `Config.create(Supplier<ConfigSource>...)` and `Config.create(List<Supplier<ConfigSource>>)`,
-the config system 
+the config system
 automatically uses a _composite config source_ which aggregates the separate
 sources but also listens for changes to any of the individual sources so it can
 delegate the change notification. For this change detection and notification the
-config system, by default, uses an executor with a dedicated thread pool that is 
+config system, by default, uses an executor with a dedicated thread pool that is
 shared across all `Config` instances.
 
 Your application can invoke the builder's `changesExecutor` method to use a
 different `ScheduledExecutorService` instance.
-The builder returned by the `from` methods mentioned above is a 
+The builder returned by the `from` methods mentioned above is a
 link:{javadoc-base-url-api}/ConfigSources.CompositeBuilder.html[CompositeBuilder]
 which extends `Config.Builder`.
 
 Because a composite source might yield more numerous change events -- because of the
-multiple underlying sources -- your application can specify a _debounce timeout_ 
+multiple underlying sources -- your application can specify a _debounce timeout_
 for the composite source by invoking the `CompositeBuilder.changesDebounce(Duration)`
 method. The composite source aggregates multiple change events within this period
 into a single event and broadcasts that one instead and reloads the sources at
@@ -1013,16 +1051,16 @@ Config config = Config.create(
 <2> `ConfigSources.create(Supplier<ConfigSource>...)` creates and returns a
 `CompositeBuilder` based on the two sources.
 <3> Specifies a particular executor for monitoring and change event notification.
-<4> Sets the subscriber's buffer size to 4 events. The composite source discards 
-any events not consumed by a subscriber if it needs to create room for more 
-recent events. 
+<4> Sets the subscriber's buffer size to 4 events. The composite source discards
+any events not consumed by a subscriber if it needs to create room for more
+recent events.
 <5> Change events will not fire more frequently than once per a second.
 
 === Config Custom Executor
-A loaded config tree subscribes to change events publishes by its source(s). 
-By default, each `Config` uses an executor which manages a dedicated thread pool 
-reusing previously-created threads when they are available and creating new threads 
-as needed. 
+A loaded config tree subscribes to change events publishes by its source(s).
+By default, each `Config` uses an executor which manages a dedicated thread pool
+reusing previously-created threads when they are available and creating new threads
+as needed.
 All `Config` instances share the dedicated thread pool.
 
 Your application
@@ -1054,8 +1092,8 @@ You can control which executor a retry policy should use for its work.
 The `RetryPolicies.repeat(int retries)` method returns
 a link:{javadoc-base-url-api}/RetryPolicies.Builder.html[RetryPolicies.Builder].
 Your application can invoke the retry policy builder's `executor` method to
-specify which `ScheduledExecutorService` instance it should use to schedule and 
-execute delayed retries. By default the config system uses a separate thread 
+specify which `ScheduledExecutorService` instance it should use to schedule and
+execute delayed retries. By default the config system uses a separate thread
 pool executor for each retry policy instance.
 
 [source,java]
@@ -1073,7 +1111,7 @@ Config config = Config.create(
 <1> Prepares a thread pool executor with core pool size set to `2` and a custom
  `java.util.concurrent.ThreadFactory`.
 <2> When the source is flagged as `optional()`, the loading attempt will be
- repeated as the retry policy defines, but an overall failure will _not_ lead to 
+ repeated as the retry policy defines, but an overall failure will _not_ lead to
 failing the initial load or preventing the source from being polled if so configured.
 <3> Uses the built-in _repeating_ implementation of `RetryPolicy` that can be used with any
  config source, but typically for ones that might suffer brief, intermittent outages.

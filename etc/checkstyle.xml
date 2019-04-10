@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -59,6 +59,21 @@
         <property name="eachLine" value="true"/>
     </module>
 
+    <!--
+     Making sure we do not have @author tags in javadocs
+     There is a list of developers in pom.xml that is sufficient for our needs.
+     See https://github.com/checkstyle/checkstyle/issues/5339
+    -->
+    <module name="RegexpSingleline">
+        <!-- The '.' in id is needed, otherwise ArrayIndexOutOfBounds happens -->
+        <property name="id" value="Javadoc.javadocNoAuthor"/>
+        <property name="format" value="^\s*\*\s*@author"/>
+        <property name="minimum" value="0"/>
+        <property name="maximum" value="0"/>
+        <property name="message" value="Javadoc has illegal ''author'' tag."/>
+        <property name="fileExtensions" value="java"/>
+    </module>
+
     <!-- Checks whether files end with a new line.                        -->
     <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
     <module name="NewlineAtEndOfFile">
@@ -71,15 +86,15 @@
 
     <module name="FileLength"/>
 
-    <module name="SuppressionCommentFilter">
-        <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
-        <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
-        <property name="checkFormat" value="$1"/>
-    </module>
     <module name="SuppressWarningsFilter" />
     <module name="TreeWalker">
         <property name="cacheFile" value="${checkstyle.cache.file}"/>
 
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
+            <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
+            <property name="checkFormat" value="$1"/>
+        </module>
         <module name="SuppressWarningsHolder" />
 
         <!-- Checks for Javadoc comments.                     -->
@@ -133,9 +148,7 @@
         <module name="NeedBraces">
             <property name="allowSingleLineStatement" value="true"/>
         </module>
-        <module name="LeftCurly">
-            <property name="maxLineLength" value="130"/>
-        </module>
+        <module name="LeftCurly"/>
         <module name="RightCurly"/>
         <module name="RightCurly">
             <property name="option" value="alone"/>

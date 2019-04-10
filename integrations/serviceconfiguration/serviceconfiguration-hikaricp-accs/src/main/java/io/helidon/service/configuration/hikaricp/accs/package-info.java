@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@
  * connection pool</a> componentry when running on the <a
  * href="https://docs.oracle.com/en/cloud/paas/app-container-cloud/csjse/exploring-application-deployments-page.html#GUID-843F7013-B6FA-45E0-A9D3-29A0EFD53E11">Oracle
  * Application Cloud Container Service</a> system.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
  * @see
  * io.helidon.service.configuration.hikaricp.accs.HikariCPServiceConfigurationACCSProvider

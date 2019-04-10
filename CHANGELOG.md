@@ -11,6 +11,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixes
 
+## [1.0.2] - 2019-03-21
+
+### Fixes
+
+- Config: SE config should map env vars the same way that MP does [446](https://github.com/oracle/helidon/issues/446)
+- Config: Refactor usage of exceptions in optional sources [477](https://github.com/oracle/helidon/issues/477)
+- WebServer: 404 Response without body [390](https://github.com/oracle/helidon/issues/390)
+
 ## [1.0.1] - 2019-03-13
 
 ### Notes
@@ -225,6 +233,7 @@ for details.
 - Initial source drop on Github
 
 [Unreleased]: https://github.com/oracle/helidon/compare/1.0.1...HEAD
+[1.0.2]: https://github.com/oracle/helidon/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/oracle/helidon/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
 [0.11.1]: https://github.com/oracle/helidon/compare/0.11.0...0.11.1
