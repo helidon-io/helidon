@@ -97,6 +97,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * @param commandKey The command key.
      * @param introspector The method introspector.
      * @param context CDI invocation context.
+     * @param contextClassLoader Context class loader or {@code null} if not available.
      */
     public FaultToleranceCommand(String commandKey, MethodIntrospector introspector,
                                  InvocationContext context, ClassLoader contextClassLoader) {

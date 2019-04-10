@@ -17,12 +17,14 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
@@ -65,6 +67,8 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHi
 public class CommandRetrier {
     private static final Logger LOGGER = Logger.getLogger(CommandRetrier.class.getName());
 
+    private static final int DELAY_CORRECTION = 250;
+
     private final InvocationContext context;
 
     private final RetryPolicy retryPolicy;
@@ -98,7 +102,8 @@ public class CommandRetrier {
             // Initial setting for retry policy
             this.retryPolicy = new RetryPolicy()
                                    .withMaxRetries(retry.maxRetries())
-                                   .withMaxDuration(retry.maxDuration(), TimeUtil.chronoUnitToTimeUnit(retry.durationUnit()))
+                                   .withMaxDuration(retry.maxDuration(),
+                                                    TimeUtil.chronoUnitToTimeUnit(retry.durationUnit()))
                                    .retryOn(retry.retryOn());
 
             // Set abortOn if defined
@@ -106,16 +111,24 @@ public class CommandRetrier {
                 this.retryPolicy.abortOn(retry.abortOn());
             }
 
+            // Get delay and convert to nanos
+            long delay = TimeUtil.convertToNanos(retry.delay(), retry.delayUnit());
+
+            /*
+             * Apply delay correction to account for time spent in our code. This
+             * correction is necessary if user code measures intervals between
+             * calls that include time spent in Helidon. See TCK test {@link
+             * RetryTest#testRetryWithNoDelayAndJitter}. Failures may still occur
+             * on heavily loaded systems.
+             */
+            Function<Long, Long> correction =
+                    d -> Math.abs(d - TimeUtil.convertToNanos(DELAY_CORRECTION, ChronoUnit.MILLIS));
+
             // Processing for jitter and delay
             if (retry.jitter() > 0) {
-                long delay = TimeUtil.convertToNanos(retry.delay(), retry.delayUnit());
                 long jitter = TimeUtil.convertToNanos(retry.jitter(), retry.jitterDelayUnit());
 
-                /*
-                 * We need jitter <= delay so we compute factor for Failsafe so we split
-                 * the difference, essentially making jitter and delay equal, and then set
-                 * the factor to 1.0.
-                 */
+                // Need to compute a factory and adjust delay for Failsafe
                 double factor;
                 if (jitter > delay) {
                     final long diff = jitter - delay;
@@ -124,10 +137,10 @@ public class CommandRetrier {
                 } else {
                     factor = ((double) jitter) / delay;
                 }
-                this.retryPolicy.withDelay(delay, TimeUnit.NANOSECONDS);
+                this.retryPolicy.withDelay(correction.apply(delay), TimeUnit.NANOSECONDS);
                 this.retryPolicy.withJitter(factor);
             } else if (retry.delay() > 0) {
-                this.retryPolicy.withDelay(retry.delay(), TimeUtil.chronoUnitToTimeUnit(retry.delayUnit()));
+                this.retryPolicy.withDelay(correction.apply(delay), TimeUnit.NANOSECONDS);
             }
         } else {
             this.retryPolicy = new RetryPolicy().withMaxRetries(0);     // no retries
