@@ -198,8 +198,7 @@ public class OpenAPISupport implements Service {
 
     private OpenApiStaticFile getExplicitStaticFile() {
         Path path = Paths.get(staticFilePath.get());
-        final String pathText = path.getFileName().toString();
-        final String specifiedFileType = pathText.substring(pathText.lastIndexOf(".") + 1);
+        final String specifiedFileType = typeFromPath(path);
         final OpenAPIMediaTypes specifiedMediaType = OpenAPIMediaTypes.byFileType(specifiedFileType);
 
         if (specifiedMediaType == null) {
@@ -208,18 +207,41 @@ public class OpenAPISupport implements Service {
                     + " is not one of recognized types: "
                     + OpenAPIMediaTypes.recognizedFileTypes());
         }
-        InputStream is = getClass().getResourceAsStream(path.toString());
+        final InputStream is = getClass().getResourceAsStream(path.toString());
         if (is == null) {
             throw new IllegalArgumentException("OpenAPI file "
                     + path.toAbsolutePath().toString()
                     + " was specified but was not found");
         }
 
-        LOGGER.log(Level.FINE,
-                   () ->  String.format(
-                           OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,
-                           path.toAbsolutePath().toString()));
-        return new OpenApiStaticFile(is, specifiedMediaType.format());
+        try {
+            LOGGER.log(Level.FINE,
+               () ->  String.format(
+                       OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,
+                       path.toAbsolutePath().toString()));
+            return new OpenApiStaticFile(is, specifiedMediaType.format());
+        } catch (Throwable th) {
+            try {
+                is.close();
+            } catch (IOException ex) {
+                LOGGER.log(Level.FINE,
+                        "Encountered an error closing an input stream "
+                        + "after catching an unrelated error", ex);
+            }
+            throw th;
+        }
+    }
+
+    private String typeFromPath(Path path) {
+        final Path staticFileNamePath = path.getFileName();
+        if (staticFileNamePath == null) {
+            throw new IllegalArgumentException("File path "
+                    + path.toAbsolutePath().toString()
+                    + " does not seem to have a file name value but one is expected");
+        }
+        final String pathText = staticFileNamePath.toString();
+        final String specifiedFileType = pathText.substring(pathText.lastIndexOf(".") + 1);
+        return specifiedFileType;
     }
 
     private OpenApiStaticFile getDefaultStaticFile() {
@@ -227,16 +249,30 @@ public class OpenAPISupport implements Service {
         for (OpenAPIMediaTypes candidate : OpenAPIMediaTypes.values()) {
             for (String type : candidate.matchingTypes()) {
                 String candidatePath = DEFAULT_STATIC_FILE_PATH_PREFIX + type;
-                InputStream is = getClass().getResourceAsStream(candidatePath);
-                if (is != null) {
-                    Path path = Paths.get(candidatePath);
-                    LOGGER.log(Level.FINE, () -> String.format(
-                            OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT,
-                            path.toAbsolutePath().toString()));
-                    return new OpenApiStaticFile(is, candidate.format());
-                }
-                if (candidatePaths != null) {
-                    candidatePaths.add(candidatePath);
+                InputStream is = null;
+                try {
+                    is = getClass().getResourceAsStream(candidatePath);
+                    if (is != null) {
+                        Path path = Paths.get(candidatePath);
+                        LOGGER.log(Level.FINE, () -> String.format(
+                                OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT,
+                                path.toAbsolutePath().toString()));
+                        return new OpenApiStaticFile(is, candidate.format());
+                    }
+                    if (candidatePaths != null) {
+                        candidatePaths.add(candidatePath);
+                    }
+                } catch (Throwable th) {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException ex) {
+                            LOGGER.log(Level.FINE,
+                                    "Encountered an error closing an input stream "
+                                    + "after catching an unrelated error", ex);
+                        }
+                    }
+                    throw th;
                 }
             }
         }
@@ -416,7 +452,6 @@ public class OpenAPISupport implements Service {
 
         private Optional<String> webContext = Optional.empty();
         private Optional<String> staticFilePath = Optional.empty();
-        private Optional<Config> config = Optional.empty();
         private boolean isAnnotationProcessingEnabled = false;
 
         private Builder() {
@@ -438,7 +473,6 @@ public class OpenAPISupport implements Service {
          * @return updated builder instance
          */
         public Builder config(Config config) {
-            this.config = Optional.of(config);
             config.get(CONFIG_PREFIX + ".web-context").asString().ifPresent(this::webContext);
             config.get(CONFIG_PREFIX + ".static-file").asString().ifPresent(this::staticFile);
 
