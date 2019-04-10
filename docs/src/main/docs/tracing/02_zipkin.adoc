@@ -71,8 +71,8 @@ tracing:
     host: "192.168.1.1"
     port: 9987
     api-version: 1
-    # this is the default path for API version 1
-    path: "/api/v1/spans"
+    # this is the default path for API version 2
+    path: "/api/v2/spans"
     tags:
       tag1: "tag1-value"
       tag2: "tag2-value"

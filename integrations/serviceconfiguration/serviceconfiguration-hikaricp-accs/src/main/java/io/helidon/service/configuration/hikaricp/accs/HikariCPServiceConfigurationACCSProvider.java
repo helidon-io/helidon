@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import io.helidon.service.configuration.hikaricp.HikariCPServiceConfigurationPro
  * HikariCPServiceConfiguration} instances when running on the <a
  * href="https://docs.oracle.com/en/cloud/paas/app-container-cloud/index.html">Oracle
  * Application Container Cloud Service</a> {@linkplain System system}.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
  * @see HikariCPServiceConfiguration
  *

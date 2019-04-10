@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -258,6 +258,16 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
      * @return updated builder instance
      */
     T enabled(boolean enabled);
+
+    /**
+     * Build a tracer instance from this builder.
+     *
+     * @return tracer
+     */
+    // this method is declared here due to problems with generics
+    // declaration on io.helidon.common.Builder
+    // this class returned an Object instead of Tracer
+    Tracer build();
 
     /**
      * Build and register as a global tracer.

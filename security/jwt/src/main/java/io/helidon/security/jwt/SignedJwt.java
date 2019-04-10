@@ -292,13 +292,18 @@ public final class SignedJwt {
         String alg = JwtUtil.getString(headerJson, "alg").orElse(null);
         String kid = JwtUtil.getString(headerJson, "kid").orElse(null);
 
-        Jwk jwk;
+        Jwk jwk = null;
+        boolean jwtWithoutKidAndNoneAlg = false;
 
         // TODO support multiple JWK unders same kid if different alg (see if spec allows this)
         if (null == alg) {
             if (null == kid) {
-                collector.warn("Neither alg nor kid are specified in JWT, assuming none algorithm");
-                jwk = (defaultJwk == null) ? Jwk.NONE_JWK : defaultJwk;
+                if (defaultJwk == null) {
+                    jwtWithoutKidAndNoneAlg = true;
+                    jwk = Jwk.NONE_JWK;
+                } else {
+                    jwk = defaultJwk;
+                }
                 alg = jwk.algorithm();
             } else {
                 //null alg, non-null kid - will use alg of jwk
@@ -318,7 +323,16 @@ public final class SignedJwt {
             //alg not null
             if (null == kid) {
                 if (Jwk.ALG_NONE.equals(alg)) {
-                    jwk = Jwk.NONE_JWK;
+                    if (null != defaultJwk) {
+                        if (defaultJwk.algorithm().equals(alg)) {
+                            // yes, we expect none algorithm
+                        } else {
+                            collector.fatal("Algorithm is " + alg + ", default jwk requires " + defaultJwk.algorithm());
+                        }
+                    } else {
+                        jwk = Jwk.NONE_JWK;
+                        jwtWithoutKidAndNoneAlg = true;
+                    }
                 } else {
                     jwk = defaultJwk;
                     if (null == jwk) {
@@ -343,10 +357,12 @@ public final class SignedJwt {
             return collector.collect();
         }
 
+        if (jwtWithoutKidAndNoneAlg) {
+            collector.fatal(jwk, "None algorithm not allowed, unless specified as the default JWK");
+        }
+
         // now if jwk algorithm is none, alg may be
-
         if (jwk.algorithm().equals(alg)) {
-
             if (!jwk.verifySignature(signedBytes, signature)) {
                 collector.fatal(jwk, "Signature of JWT token is not valid, based on alg: " + alg + ", kid: " + kid);
             }

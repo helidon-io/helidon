@@ -109,11 +109,9 @@ public class EnvironmentVariablesTest {
     @Test
     public void testCurrentEnvMappings() {
         Map<String, String> env = env();
-        int expectedSize = expectedMappedSize(env);
 
         Map<String, String> mapped = EnvironmentVariables.expand(env);
         assertThat(mapped, is(not(nullValue())));
-        assertThat(mapped.size(), is(expectedSize));
 
         env.forEach((k, v) -> {
             if (shouldMap(k)) {
