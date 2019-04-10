@@ -268,7 +268,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
      */
     @SuppressWarnings("unchecked")
     public <T> T convert(Class<T> type, String value) {
-        if (value == null) {
+        if (null == value) {
             return null;
         }
 

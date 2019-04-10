@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * Unit test for {@link MpConfig}.
  */
-public class MpConfigTest {
+class MpConfigTest {
     private static MpConfig mpConfig;
 
     @BeforeAll
