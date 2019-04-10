@@ -21,12 +21,11 @@
     <!--
       - We run these manually as some tests can easily fail on a loaded
       - system like those in our CI/CD pipeline.
-      -
+      -->
     <test name="microprofile-fault-tolerance 2.0 TCK">
         <packages>
-            <package name="org.eclipse.microprofile.fault.tolerance.tck.*">
-            </package>
+            <!-- package name="org.eclipse.microprofile.fault.tolerance.tck.*">
+            </package -->
         </packages>
     </test>
-    -->
 </suite>
