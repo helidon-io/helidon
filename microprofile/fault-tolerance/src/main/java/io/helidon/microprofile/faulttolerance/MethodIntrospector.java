@@ -20,18 +20,15 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
 
-import com.netflix.hystrix.HystrixCommandProperties;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Timeout;
-import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
 import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.getParameter;
 import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
@@ -71,7 +68,6 @@ class MethodIntrospector {
                     ? new CircuitBreakerAntn(beanClass, method) : null;
             this.timeout = isAnnotationEnabled(Timeout.class) ? new TimeoutAntn(beanClass, method) : null;
             this.bulkhead = isAnnotationEnabled(Bulkhead.class) ? new BulkheadAntn(beanClass, method) : null;
-            validate();
         }
 
         // Fallback is always enabled
@@ -83,18 +79,13 @@ class MethodIntrospector {
     }
 
     /**
-     * Validates that use of annotations matches specification.
+     * Checks if {@code clazz} is assignable from the method's return type.
      *
-     * @throws FaultToleranceDefinitionException If validation fails.
+     * @param clazz The class.
+     * @return Outcome of test.
      */
-    private void validate() {
-        if (isAsynchronous()) {
-            final Class<?> returnType = method.getReturnType();
-            if (!Future.class.isAssignableFrom(returnType)) {
-                throw new FaultToleranceDefinitionException("Asynchronous method '" + method.getName()
-                                                            + "' must return Future");
-            }
-        }
+    boolean isReturnType(Class<?> clazz) {
+        return clazz.isAssignableFrom(method.getReturnType());
     }
 
     /**
@@ -176,8 +167,10 @@ class MethodIntrospector {
     Map<String, Object> getHystrixProperties() {
         final HashMap<String, Object> result = new HashMap<>();
 
-        // Isolation strategy
-        result.put("execution.isolation.strategy", HystrixCommandProperties.ExecutionIsolationStrategy.THREAD);
+        // Use semaphores for async and bulkhead
+        if (!isAsynchronous() && hasBulkhead()) {
+            result.put("execution.isolation.semaphore.maxConcurrentRequests", bulkhead.value());
+        }
 
         // Circuit breakers
         result.put("circuitBreaker.enabled", hasCircuitBreaker());

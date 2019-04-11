@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,29 @@ public class BulkheadBean {
 
     public String onFailure(long sleepMillis) {
         FaultToleranceTest.printStatus("BulkheadBean::onFailure()", "success");
+        return Thread.currentThread().getName();
+    }
+
+    @Asynchronous
+    @Bulkhead(value = 1, waitingTaskQueue = 1)
+    public Future<String> executeCancelInQueue(long sleepMillis) {
+        FaultToleranceTest.printStatus("BulkheadBean::executeCancelInQueue " + sleepMillis, "success");
+        try {
+            Thread.sleep(sleepMillis);
+        } catch (InterruptedException e) {
+            // falls through
+        }
+        return CompletableFuture.completedFuture(Thread.currentThread().getName());
+    }
+
+    @Bulkhead(value = 1)
+    public String executeSynchronous(long sleepMillis) {
+        FaultToleranceTest.printStatus("BulkheadBean::executeSynchronous " + sleepMillis, "success");
+        try {
+            Thread.sleep(sleepMillis);
+        } catch (InterruptedException e) {
+            // falls through
+        }
         return Thread.currentThread().getName();
     }
 }
