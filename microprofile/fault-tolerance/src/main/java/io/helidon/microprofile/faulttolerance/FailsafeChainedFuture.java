@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import net.jodah.failsafe.FailsafeFuture;
+import net.jodah.failsafe.internal.util.Assert;
 
 /**
  * A future whose delegate is a {@code FailsafeFuture} whose delegate, in
@@ -54,30 +55,29 @@ class FailsafeChainedFuture<T> implements Future<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T get() throws CancellationException, InterruptedException, ExecutionException {
         try {
-            final T result = delegate.get();
-            if (result instanceof Future) {
-                return ((Future<T>) result).get();
-            }
-            return result;
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof CancellationException) {
-                throw (CancellationException) e.getCause();
-            }
-            throw e;
+            return getResult(-1L, null);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);      // should never be thrown
         }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public T get(long timeout, TimeUnit unit) throws CancellationException, InterruptedException,
             ExecutionException, TimeoutException {
+        Assert.isTrue(timeout >= 0, "Timeout must not be negative");
+        return getResult(timeout, unit);
+    }
+
+    @SuppressWarnings("unchecked")
+    private T getResult(long timeout, TimeUnit unit) throws CancellationException, InterruptedException,
+            ExecutionException, TimeoutException {
         try {
-            final T result = delegate.get(timeout, unit);
+            final T result = timeout < 0 ? delegate.get() : delegate.get(timeout, unit);
             if (result instanceof Future) {
-                return ((Future<T>) result).get(timeout, unit);
+                final Future<T> future = ((Future<T>) result);
+                return timeout < 0 ? future.get() : future.get(timeout, unit);
             }
             return result;
         } catch (ExecutionException e) {

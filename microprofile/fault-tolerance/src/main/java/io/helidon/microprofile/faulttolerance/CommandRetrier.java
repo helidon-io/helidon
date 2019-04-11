@@ -128,7 +128,7 @@ public class CommandRetrier {
             if (retry.jitter() > 0) {
                 long jitter = TimeUtil.convertToNanos(retry.jitter(), retry.jitterDelayUnit());
 
-                // Need to compute a factory and adjust delay for Failsafe
+                // Need to compute a factor and adjust delay for Failsafe
                 double factor;
                 if (jitter > delay) {
                     final long diff = jitter - delay;

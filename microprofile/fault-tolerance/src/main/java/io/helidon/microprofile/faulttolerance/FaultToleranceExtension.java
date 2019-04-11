@@ -336,7 +336,8 @@ public class FaultToleranceExtension implements Extension {
         @SuppressWarnings("unchecked")
         public <R extends Annotation> R getAnnotation(Class<R> annotationType) {
             Optional<Annotation> optional = annotationSet.stream()
-                    .filter(a -> annotationType.isAssignableFrom(a.annotationType())).findFirst();
+                    .filter(a -> annotationType.isAssignableFrom(a.annotationType()))
+                    .findFirst();
             return optional.isPresent() ? (R) optional.get() : null;
         }
 
