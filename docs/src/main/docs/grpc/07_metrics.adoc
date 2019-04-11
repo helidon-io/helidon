@@ -22,3 +22,91 @@
 
 = Service Metrics
 
+Helidon gRPC Server has built-in support for metrics capture, which allows
+service developers to easily enable application-level metrics for their services.
+
+== Enabling Metrics Capture
+
+By default, gRPC Server only captures two vendor-level metrics: `grpc.request.count`
+and `grpc.request.meter`. These metrics provide aggregate view of requests across
+all services, and serve as an indication of the overall server load.
+
+However, users can enable more fine grained metrics by simply configuring a built-in
+`GrpcMetrics` interceptor within the routing:
+
+[source,java]
+----
+    private static GrpcRouting createRouting(Config config) {
+        return GrpcRouting.builder()
+                .intercept(GrpcMetrics.timed())       // <1>
+                .register(new GreetService(config))
+                .register(new EchoService())
+                .build();
+    }
+----
+
+<1> Capture metrics for all methods of all services as a `timer`
+
+In the example above we have chosen to create and keep a `timer` metric type for
+each method of each service. Alternatively, we could've chosen to use a
+`counter`, `meter` or a `histogram` instead.
+
+== Overriding Metrics Capture
+
+While global metrics capture is certainly useful, it is not always sufficient.
+Keeping a separate `timer` for each gRPC method may be an overkill, so the user
+could decide to use a lighter-weight metric type, such as `counter` or a `meter`.
+
+However, she may still want to enable `histogram` or a `timer` for some services,
+or even only some methods of some services.
+
+This can be easily accomplished by overriding the type of the captured metric at
+either service or the method level:
+
+[source,java]
+----
+    private static GrpcRouting createRouting(Config config) {
+        return GrpcRouting.builder()
+                .intercept(GrpcMetrics.counted())   // <1>
+                .register(new MyService())
+                .build();
+    }
+
+    public static class MyService implements GrpcService {
+
+        @Override
+        public void update(ServiceDescriptor.Config config) {
+            config
+                .metered()                                              // <2>
+                .unary("MyMethod", this::myMethod, cfg -> cfg.timed())  // <3>
+        }
+
+        private <ReqT, ResT> void myMethod(ReqT request, StreamObserver<ResT> observer) {
+            // do something
+        }
+    }
+----
+
+<1> Use `counter` for all methods of all services, unless overridden
+<2> Use `meter` for all methods of `MyService`
+<3> Use `timer` for `MyService::MyMethod`
+
+== Exposing Metrics Externally
+
+Collected metrics are stored in the standard Helidon Metric Registries, such as vendor and
+application registry, and can be exposed via standard `/metrics` REST API.
+
+[source,java]
+----
+        Routing routing = Routing.builder()
+                .register(MetricsSupport.create())    // <1>
+                .build();
+
+        WebServer.create(webServerConfig(), routing)  // <2>
+                 .start()
+----
+
+<1> Add `MetricsSupport` instance to web server routing
+<2> Create and start Helidon web server
+
+See <<metrics/01_metrics.adoc, Helidon Metrics>> documentation for more details.
