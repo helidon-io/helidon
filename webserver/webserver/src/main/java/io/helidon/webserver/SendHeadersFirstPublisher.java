@@ -19,7 +19,6 @@ package io.helidon.webserver;
 import java.util.Objects;
 
 import io.helidon.common.reactive.Flow;
-
 import io.opentracing.Span;
 
 /**
@@ -128,11 +127,15 @@ class SendHeadersFirstPublisher<T> implements Flow.Publisher<T> {
         public void onComplete() {
             try {
                 sendHeadersIfNeeded();
-            } finally {
                 if (span != null) {
                     span.finish();
                 }
                 delegate.onComplete();
+            } catch (Exception e) {
+                if (span != null) {
+                    span.finish();      // no-op if called more than once
+                }
+                throw e;
             }
         }
     }
