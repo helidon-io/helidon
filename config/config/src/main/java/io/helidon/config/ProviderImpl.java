@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ class ProviderImpl implements Config.Context {
     private final SubmissionPublisher<ConfigDiff> changesSubmitter;
     private final Flow.Publisher<ConfigDiff> changesPublisher;
     private final boolean keyResolving;
+    private final Function<String, List<String>> aliasGenerator;
     private ConfigSourceChangeEventSubscriber configSourceChangeEventSubscriber;
 
     private ConfigDiff lastConfigsDiff;
@@ -78,7 +79,8 @@ class ProviderImpl implements Config.Context {
                  boolean cachingEnabled,
                  Executor changesExecutor,
                  int changesMaxBuffer,
-                 boolean keyResolving) {
+                 boolean keyResolving,
+                 Function<String, List<String>> aliasGenerator) {
         this.configMapperManager = configMapperManager;
         this.configSource = configSource;
         this.overrideSource = overrideSource;
@@ -90,6 +92,7 @@ class ProviderImpl implements Config.Context {
         this.lastConfig = Config.empty();
 
         this.keyResolving = keyResolving;
+        this.aliasGenerator = aliasGenerator;
 
         changesSubmitter = new RepeatLastEventPublisher<>(changesExecutor, changesMaxBuffer);
         changesPublisher = ConfigHelper.suspendablePublisher(changesSubmitter,
@@ -136,7 +139,8 @@ class ProviderImpl implements Config.Context {
         ConfigFactory factory = new ConfigFactory(configMapperManager,
                                                   rootNode.orElseGet(ObjectNode::empty),
                                                   targetFilter,
-                                                  this);
+                                                  this,
+                                                  aliasGenerator);
         Config config = factory.config();
         // initialize filters
         initializeFilters(config, targetFilter);

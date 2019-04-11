@@ -206,32 +206,58 @@ public class ConfigSourcesTest {
     }
 
     @Test
-    public void testEnvironmentVariablesSourceMappings() {
+    public void testEnvironmentVariableAliases() {
         Config config = Config.builder()
                               .disableSystemPropertiesSource()
                               .build();
 
         assertValue("simple", "unmapped-env-value", config);
 
-        assertValue("_unmapped", "unmapped-env-value", config);
-        assertThat(config.get(".unmapped").exists(), is(false));
+        assertValue("_underscore", "mapped-env-value", config);
+        assertValue("/underscore", "mapped-env-value", config);
+
+        assertValue("FOO_BAR", "mapped-env-value", config);
+        assertValue("foo.bar", "mapped-env-value", config);
+        assertValue("foo/bar", "mapped-env-value", config);
+        assertValue("foo#bar", "mapped-env-value", config);
 
         assertValue("com_ACME_size", "mapped-env-value", config);
         assertValue("com.ACME.size", "mapped-env-value", config);
-        assertValue("com.acme.size", "mapped-env-value", config);
+        assertValue("com!ACME@size", "mapped-env-value", config);
+        assertValue("com#ACME$size", "mapped-env-value", config);
+        assertValue("com/ACME/size", "mapped-env-value", config);
 
         assertValue("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "mapped-env-value", config);
         assertValue("SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE", "mapped-env-value", config);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", config);
+        assertValue("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "mapped-env-value", config);
     }
 
     @Test
-    public void testEnvironmentVariableOverrides() {
+    public void testPrecedence() {
+
+        // NOTE: This code should be kept in sync with MpcSourceEnvironmentVariablesTest.testPrecedence(), as we want
+        //       SE and MP to be as symmetrical as possible. There are two differences:
+        //
+        //       1. Env var and sys prop precedence is reversed in SE compared to MP (issue #507). This can be fixed
+        //          easily, but is a breaking change so should probably be addressed in the next major release.
+        //
+        //       2. An upper-to-lower case mapping is performed in SE but is not in MP (correctly, per spec). This is a
+        //          consequence of the static mapping (see EnvironmentVariables.expand()) required in SE to preserve
+        //          precedence of aliased env vars during the merge step (see MergingStrategy.merge()). Fixing this
+        //          is much harder but probably not very important.
+        //
+        //       The assertions below that differ are marked with a "DIFFERENCE" N comment.
+
+        System.setProperty("com.ACME.size", "sys-prop-value");
         Map<String, String> appValues = mapOf("app.key", "app-value",
-                                              "com.acme.size", "app-value",
+                                              "com.ACME.size", "app-value",
                                               "server.executor-service.max-pool-size", "app-value");
 
         ConfigSource appSource = ConfigSources.create(appValues).build();
+
+        // Application source only.
+        // Key mapping should NOT occur.
 
         Config appOnly = Config.builder(appSource)
                                .disableEnvironmentVariablesSource()
@@ -239,18 +265,70 @@ public class ConfigSourcesTest {
                                .build();
 
         assertValue("app.key", "app-value", appOnly);
-        assertValue("com.acme.size", "app-value", appOnly);
+        assertValue("com.ACME.size", "app-value", appOnly);
         assertValue("server.executor-service.max-pool-size", "app-value", appOnly);
 
-        Config merged = Config.builder(appSource)
+        assertNoValue("com.acme.size", appOnly);
+        assertNoValue("com/ACME/size", appOnly);
+        assertNoValue("server/executor-service/max-pool-size", appOnly);
+
+
+        // Application and system property sources.
+        // System properties should take precedence over application values.
+        // Key mapping should NOT occur.
+
+        Config appAndSys = Config.builder(appSource)
+                              .disableEnvironmentVariablesSource()
                               .build();
 
-        assertValue("app.key", "app-value", merged);
-        assertValue("com.acme.size", "mapped-env-value", merged);
-        assertValue("server.executor-service.max-pool-size", "mapped-env-value", merged);
+        assertValue("app.key", "app-value", appAndSys);
+        assertValue("com.ACME.size", "sys-prop-value", appAndSys);
+        assertValue("server.executor-service.max-pool-size", "app-value", appAndSys);
+
+        assertNoValue("com.acme.size", appOnly);
+        assertNoValue("com/ACME/size", appAndSys);
+        assertNoValue("server/executor-service/max-pool-size", appAndSys);
+
+
+        // Application and environment variable sources.
+        // Environment variables should take precedence over application values.
+        // Key mapping SHOULD occur.
+
+        Config appAndEnv = Config.builder(appSource)
+                                 .disableSystemPropertiesSource()
+                                 .build();
+
+        assertValue("app.key", "app-value", appAndEnv);
+        assertValue("com.ACME.size", "mapped-env-value", appAndEnv);
+        assertValue("server.executor-service.max-pool-size", "mapped-env-value", appAndEnv);
+
+        assertValue("com.acme.size","mapped-env-value", appAndEnv);  // DIFFERENCE 2: should not exist
+        assertValue("com/ACME/size", "mapped-env-value", appAndEnv);
+        assertValue("server/executor-service/max-pool-size", "mapped-env-value", appAndEnv);
+
+
+        // Application, system property and environment variable sources.
+        // System properties should take precedence over environment variables.
+        // Environment variables should take precedence over application values.
+        // Key mapping SHOULD occur.
+
+        Config appSysAndEnv = Config.builder(appSource)
+                                    .build();
+
+        assertValue("app.key", "app-value", appSysAndEnv);
+        assertValue("com.ACME.size", "mapped-env-value", appSysAndEnv); // DIFFERENCE 1: should be sys-prop-value
+        assertValue("server.executor-service.max-pool-size", "mapped-env-value", appSysAndEnv);
+
+        assertValue("com.acme.size","mapped-env-value", appAndEnv);  // DIFFERENCE 2: should not exist
+        assertValue("com/ACME/size", "mapped-env-value", appSysAndEnv);
+        assertValue("server/executor-service/max-pool-size", "mapped-env-value", appSysAndEnv);
     }
 
     static void assertValue(final String key, final String expectedValue, final Config config) {
         assertThat(config.get(key).asString().get(), is(expectedValue));
+    }
+
+    static void assertNoValue(final String key, final Config config) {
+        assertThat(config.get(key).exists(), is(false));
     }
 }

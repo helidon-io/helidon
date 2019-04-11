@@ -31,7 +31,7 @@ This section discusses several advanced topics related to Helidon configuration.
 
 The config system supports using environment variables as a config source, and is
 enabled by default. Since environment variable names are normally restricted to
-alphanumeric characters and underscore, this config source _adds_ variants that
+alphanumeric characters and underscore, this config source _adds_ aliases that
 enable setting or overriding config entries with dotted and/or hyphenated keys.
 
 The mapping makes it possible to set or override a config entry with a key of
@@ -44,24 +44,24 @@ environment variables directly or via Kubernetes Secrets/ConfigMaps is common.
 Scripts that solve the mapping problem by explicitly converting variables to
 system properties can also be simplified.
 
-Variants are produced for any environment variable name that matches _all_ of
+Aliases are produced for any environment variable name that matches _all_ of
 the following:
 
 <1> does not begin or end with a `'_'` character
 <2> does not contain `"__"`
 <3> contains one or more `'_'` characters
 
-For each such name, two variants are added with the names mapped as follows:
+For each such name, two aliases are added with the names mapped as follows:
 
-<1> Replace any `"\_dash_"` substrings with `"-"`, e.g. `"APP_PAGE_dash_SIZE"`
+<1> Replace any `"\_dash_"` or `"\_DASH_"` substrings with `"-"`, e.g. `"APP_PAGE_dash_SIZE"`
 becomes `"APP_PAGE-SIZE"`.
 
-<2> Replace `'_'` with `'.'` and add as a variant, e.g. `"APP_GREETING"` is
+<2> Replace `'_'` with `'.'` and add as an alias, e.g. `"APP_GREETING"` is
 added as `"APP.GREETING"` and `"APP_PAGE-SIZE"` is added as `"APP.PAGE-SIZE"`.
 This mapping is added primarily to support mixed case config keys such as
 `"app.someCamelCaseKey"`.
 
-<3> Convert the result of step 2 to lowercase and add as a variant, e.g.
+<3> Convert the result of step 2 to lowercase and add as an alias, e.g.
 `"APP.GREETING"` is added as `"app.greeting"` and `"APP.PAGE-SIZE"` is added
 as `"app.page-size"`.
 
