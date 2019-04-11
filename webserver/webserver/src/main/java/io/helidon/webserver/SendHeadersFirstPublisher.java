@@ -128,11 +128,11 @@ class SendHeadersFirstPublisher<T> implements Flow.Publisher<T> {
         public void onComplete() {
             try {
                 sendHeadersIfNeeded();
-                delegate.onComplete();
             } finally {
                 if (span != null) {
                     span.finish();
                 }
+                delegate.onComplete();
             }
         }
     }
