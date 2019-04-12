@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ import net.jodah.failsafe.util.concurrent.Scheduler;
  */
 public class CommandScheduler implements Scheduler {
 
+    private static final int CORE_POOL_SIZE = 32;
+    private static final String THREAD_NAME_PREFIX = "helidon-ft-async-";
+
     private static CommandScheduler instance;
 
     private final ScheduledThreadPoolSupplier poolSupplier;
@@ -39,27 +42,39 @@ public class CommandScheduler implements Scheduler {
     }
 
     /**
-     * If no command scheduler exists, creates one using a config.
+     * If no command scheduler exists, creates one using a config. Disables
+     * daemon threads.
      *
      * @param config Config to use.
      * @return Existing scheduler or newly created one.
      */
     public static synchronized CommandScheduler create(Config config) {
         if (instance == null) {
-            instance = new CommandScheduler(
-                    ScheduledThreadPoolSupplier.create(config));
+            instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
+                    .daemon(false)
+                    .threadNamePrefix(THREAD_NAME_PREFIX)
+                    .corePoolSize(CORE_POOL_SIZE)
+                    .prestart(false)
+                    .config(config)
+                    .build());
         }
         return instance;
     }
 
     /**
      * If no command scheduler exists, creates one using default values.
+     * Disables daemon threads.
      *
      * @return Existing scheduler or newly created one.
      */
     public static synchronized CommandScheduler create() {
         if (instance == null) {
-            instance = new CommandScheduler(ScheduledThreadPoolSupplier.create());
+            instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
+                    .daemon(false)
+                    .threadNamePrefix(THREAD_NAME_PREFIX)
+                    .corePoolSize(CORE_POOL_SIZE)
+                    .prestart(false)
+                    .build());
         }
         return instance;
     }
@@ -91,7 +106,10 @@ public class CommandScheduler implements Scheduler {
      *
      * @return The instance.
      */
-    static CommandScheduler instance() {
+    static synchronized CommandScheduler instance() {
+        if (instance == null) {
+            create();
+        }
         return instance;
     }
 }

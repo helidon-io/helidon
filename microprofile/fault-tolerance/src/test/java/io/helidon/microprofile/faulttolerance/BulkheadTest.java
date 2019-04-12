@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
@@ -24,7 +28,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class BulkheadTest.
@@ -39,7 +45,6 @@ public class BulkheadTest extends FaultToleranceTest {
         assertThat(getThreadNames(calls).size(), is(BulkheadBean.CONCURRENT_CALLS));
     }
 
-
     @Test
     public void testBulkheadPlusOne() {
         BulkheadBean bean = newBean(BulkheadBean.class);
@@ -53,7 +58,6 @@ public class BulkheadTest extends FaultToleranceTest {
         BulkheadBean bean = newBean(BulkheadBean.class);
         Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueue(2000), 10);
-
         RuntimeException e = assertThrows(RuntimeException.class, () -> getThreadNames(calls));
         assertThat(e.getCause().getCause(), instanceOf(BulkheadException.class));
     }
@@ -64,5 +68,63 @@ public class BulkheadTest extends FaultToleranceTest {
         Future<String>[] calls = getAsyncConcurrentCalls(
             () -> bean.executeNoQueueWithFallback(2000), 10);
         getThreadNames(calls);
+    }
+
+    @Test
+    public void testBulkheadExecuteCancelInQueue() throws Exception {
+        BulkheadBean bean = newBean(BulkheadBean.class);
+        Future<String> f1 = bean.executeCancelInQueue(1000);
+        Future<String> f2 = bean.executeCancelInQueue(2000);    // should never run
+        boolean b = f2.cancel(true);
+        assertTrue(b);
+        assertTrue(f2.isCancelled());
+        assertThrows(CancellationException.class, f2::get);
+        assertNotNull(f1.get());
+        // assertThat(bean.getMillis().size(), is(1));
+        // assertThat(bean.getMillis().iterator().next(), is(1000L));
+    }
+
+    @Test
+    public void testSynchronous() {
+        BulkheadBean bean = newBean(BulkheadBean.class);
+
+        // Run 10 threads that attempt to enter bulkhead
+        CompletableFuture<Integer>[] calls = FaultToleranceTest.getConcurrentCalls(
+                () -> {
+                    try {
+                        bean.executeSynchronous(2000);
+                    } catch (BulkheadException e) {
+                        return 0;   // not entered
+                    }
+                    return 1;       // entered
+                },
+                10);
+
+        // Check that only one thread entered the bulkhead
+        int sum = Arrays.asList(calls).stream().map(c -> {
+            try {
+                return c.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).reduce(0, Integer::sum);
+        assertThat(sum, is(1));
+    }
+
+    @Test
+    public void testSynchronousWithAsyncCaller() throws Exception {
+        BulkheadBean bean = newBean(BulkheadBean.class);
+        AsynchronousCallerBean callerBean = newBean(AsynchronousCallerBean.class);
+        Callable<Integer> callable = () -> {
+            try {
+                bean.executeSynchronous(1000);
+                return 1;
+            } catch (BulkheadException e) {
+                return 0;
+            }
+        };
+        Future<Integer> f1 = callerBean.submit(callable);
+        Future<Integer> f2 = callerBean.submit(callable);
+        assertThat(f1.get() + f2.get(), is(1));
     }
 }

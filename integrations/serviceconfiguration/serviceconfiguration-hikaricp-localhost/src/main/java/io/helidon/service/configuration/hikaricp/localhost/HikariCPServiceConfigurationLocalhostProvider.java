@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import io.helidon.service.configuration.localhost.LocalhostSystem;
  * String) automatically creates} <a
  * href="http://www.h2database.com/html/features.html#in_memory_databases">in-memory
  * H2 databases</a> as needed.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
  * @see #installDataSourceProperties(Properties, System, Properties, String)
  *

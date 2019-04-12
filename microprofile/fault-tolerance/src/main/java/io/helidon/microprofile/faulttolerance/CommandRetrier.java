@@ -17,14 +17,19 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
 
+import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import net.jodah.failsafe.AsyncFailsafe;
 import net.jodah.failsafe.Failsafe;
@@ -34,6 +39,7 @@ import net.jodah.failsafe.RetryPolicy;
 import net.jodah.failsafe.SyncFailsafe;
 import net.jodah.failsafe.function.CheckedFunction;
 import net.jodah.failsafe.util.concurrent.Scheduler;
+import org.apache.commons.configuration.AbstractConfiguration;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -61,6 +67,8 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHi
 public class CommandRetrier {
     private static final Logger LOGGER = Logger.getLogger(CommandRetrier.class.getName());
 
+    private static final int DELAY_CORRECTION = 250;
+
     private final InvocationContext context;
 
     private final RetryPolicy retryPolicy;
@@ -74,6 +82,8 @@ public class CommandRetrier {
     private int invocationCount = 0;
 
     private FaultToleranceCommand command;
+
+    private ClassLoader contextClassLoader;
 
     /**
      * Constructor.
@@ -92,7 +102,8 @@ public class CommandRetrier {
             // Initial setting for retry policy
             this.retryPolicy = new RetryPolicy()
                                    .withMaxRetries(retry.maxRetries())
-                                   .withMaxDuration(retry.maxDuration(), TimeUtil.chronoUnitToTimeUnit(retry.durationUnit()))
+                                   .withMaxDuration(retry.maxDuration(),
+                                                    TimeUtil.chronoUnitToTimeUnit(retry.durationUnit()))
                                    .retryOn(retry.retryOn());
 
             // Set abortOn if defined
@@ -100,16 +111,24 @@ public class CommandRetrier {
                 this.retryPolicy.abortOn(retry.abortOn());
             }
 
+            // Get delay and convert to nanos
+            long delay = TimeUtil.convertToNanos(retry.delay(), retry.delayUnit());
+
+            /*
+             * Apply delay correction to account for time spent in our code. This
+             * correction is necessary if user code measures intervals between
+             * calls that include time spent in Helidon. See TCK test {@link
+             * RetryTest#testRetryWithNoDelayAndJitter}. Failures may still occur
+             * on heavily loaded systems.
+             */
+            Function<Long, Long> correction =
+                    d -> Math.abs(d - TimeUtil.convertToNanos(DELAY_CORRECTION, ChronoUnit.MILLIS));
+
             // Processing for jitter and delay
             if (retry.jitter() > 0) {
-                long delay = TimeUtil.convertToNanos(retry.delay(), retry.delayUnit());
                 long jitter = TimeUtil.convertToNanos(retry.jitter(), retry.jitterDelayUnit());
 
-                /*
-                 * We need jitter <= delay so we compute factor for Failsafe so we split
-                 * the difference, essentially making jitter and delay equal, and then set
-                 * the factor to 1.0.
-                 */
+                // Need to compute a factor and adjust delay for Failsafe
                 double factor;
                 if (jitter > delay) {
                     final long diff = jitter - delay;
@@ -118,10 +137,10 @@ public class CommandRetrier {
                 } else {
                     factor = ((double) jitter) / delay;
                 }
-                this.retryPolicy.withDelay(delay, TimeUnit.NANOSECONDS);
+                this.retryPolicy.withDelay(correction.apply(delay), TimeUnit.NANOSECONDS);
                 this.retryPolicy.withJitter(factor);
             } else if (retry.delay() > 0) {
-                this.retryPolicy.withDelay(retry.delay(), TimeUtil.chronoUnitToTimeUnit(retry.delayUnit()));
+                this.retryPolicy.withDelay(correction.apply(delay), TimeUnit.NANOSECONDS);
             }
         } else {
             this.retryPolicy = new RetryPolicy().withMaxRetries(0);     // no retries
@@ -136,7 +155,7 @@ public class CommandRetrier {
      */
     @SuppressWarnings("unchecked")
     public Object execute() throws Exception {
-        LOGGER.fine("Executing command with isAsynchronous = " + isAsynchronous);
+        LOGGER.fine(() -> "Executing command with isAsynchronous = " + isAsynchronous);
 
         CheckedFunction<? extends Throwable, ?> fallbackFunction = t -> {
             final CommandFallback fallback = new CommandFallback(context, introspector, t);
@@ -145,12 +164,31 @@ public class CommandRetrier {
 
         try {
             if (isAsynchronous) {
-                Scheduler scheduler = CommandScheduler.create();
+                Scheduler scheduler = CommandScheduler.instance();
                 AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
-                FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
-                        ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                        : failsafe.get(this::retryExecute));
-                return new FailsafeChainedFuture<>(chainedFuture);
+
+                // Store context class loader to access config
+                contextClassLoader = Thread.currentThread().getContextClassLoader();
+
+                // Check CompletionStage first to process CompletableFuture here
+                if (introspector.isReturnType(CompletionStage.class)) {
+                    CompletionStage<?> completionStage = (introspector.hasFallback()
+                            ? failsafe.withFallback(fallbackFunction)
+                            .future(() -> (CompletionStage<?>) retryExecute())
+                            : failsafe.future(() -> (CompletionStage<?>) retryExecute()));
+                    return completionStage;
+                }
+
+                // If not, it must be a subtype of Future
+                if (introspector.isReturnType(Future.class)) {
+                    FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
+                            ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
+                            : failsafe.get(this::retryExecute));
+                    return new FailsafeChainedFuture<>(chainedFuture);
+                }
+
+                // Oops, something went wrong during validation
+                throw new InternalError("Validation failed, return type must be Future or CompletionStage");
             } else {
                 SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
                 return introspector.hasFallback()
@@ -165,17 +203,31 @@ public class CommandRetrier {
     /**
      * Creates a new command for each retry since Hystrix commands can only be
      * executed once. Fallback method is not overridden here to ensure all
-     * retries are executed.
+     * retries are executed. If running in async mode, this method will execute
+     * on a different thread.
      *
      * @return Object returned by command.
      */
     private Object retryExecute() throws Exception {
+        // Config requires use of appropriate context class loader
+        if (contextClassLoader != null) {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+
         final String commandKey = createCommandKey();
-        command = new FaultToleranceCommand(commandKey, introspector, context);
+        command = new FaultToleranceCommand(commandKey, introspector, context, contextClassLoader);
+
+        // Configure command before execution
+        introspector.getHystrixProperties()
+                .entrySet()
+                .forEach(entry -> setProperty(commandKey, entry.getKey(), entry.getValue()));
 
         Object result;
         try {
-            LOGGER.info("About to execute command with key " + command.getCommandKey());
+            LOGGER.info(() -> "About to execute command with key "
+                    + command.getCommandKey()
+                    + " on thread " + Thread.currentThread().getName());
+
             invocationCount++;
             updateMetricsBefore();
             result = command.execute();
@@ -191,7 +243,7 @@ public class CommandRetrier {
             if (cause instanceof TimeoutException) {
                 throw new org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException(cause);
             }
-            if (cause instanceof RejectedExecutionException) {
+            if (isBulkheadRejection(cause)) {
                 throw new BulkheadException(cause);
             }
             if (isHystrixBreakerException(cause)) {
@@ -257,7 +309,7 @@ public class CommandRetrier {
 
         // Bulkhead
         if (introspector.hasBulkhead()) {
-            boolean bulkheadRejection = (cause instanceof RejectedExecutionException);
+            boolean bulkheadRejection = isBulkheadRejection(cause);
             if (!bulkheadRejection) {
                 getHistogram(method, BULKHEAD_EXECUTION_DURATION).update(command.getExecutionTime());
             }
@@ -277,6 +329,23 @@ public class CommandRetrier {
     }
 
     /**
+     * Sets a Hystrix property on a command.
+     *
+     * @param commandKey Command key.
+     * @param key Property key.
+     * @param value Property value.
+     */
+    private void setProperty(String commandKey, String key, Object value) {
+        final String actualKey = String.format("hystrix.command.%s.%s", commandKey, key);
+        synchronized (ConfigurationManager.getConfigInstance()) {
+            final AbstractConfiguration configManager = ConfigurationManager.getConfigInstance();
+            if (configManager.getProperty(actualKey) == null) {
+                configManager.setProperty(actualKey, value);
+            }
+        }
+    }
+
+    /**
      * Hystrix throws a {@code RuntimeException}, so we need to check
      * the message to determine if it is a breaker exception.
      *
@@ -286,5 +355,19 @@ public class CommandRetrier {
     private static boolean isHystrixBreakerException(Throwable t) {
         return t instanceof RuntimeException && t.getMessage().contains("Hystrix "
                 + "circuit short-circuited and is OPEN");
+    }
+
+    /**
+     * Checks if the parameter is a bulkhead exception. Note that Hystrix with semaphore
+     * isolation may throw a {@code RuntimeException}, so we need to check the message
+     * to determine if it is a semaphore exception.
+     *
+     * @param t Throwable to check.
+     * @return Outcome of test.
+     */
+    private static boolean isBulkheadRejection(Throwable t) {
+        return t instanceof RejectedExecutionException
+                || t instanceof RuntimeException && t.getMessage().contains("could "
+                + "not acquire a semaphore for execution");
     }
 }

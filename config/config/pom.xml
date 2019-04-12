@@ -98,7 +98,8 @@
                 <configuration>
                     <environmentVariables>
                         <simple>unmapped-env-value</simple>
-                        <_unmapped>unmapped-env-value</_unmapped>
+                        <FOO_BAR>mapped-env-value</FOO_BAR>
+                        <_underscore>mapped-env-value</_underscore>
                         <com_ACME_size>mapped-env-value</com_ACME_size>
                         <SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE>mapped-env-value
                         </SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE>
