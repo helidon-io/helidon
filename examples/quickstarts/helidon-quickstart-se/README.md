@@ -1,7 +1,7 @@
 
-# Helidon Example: quickstart-se
+# Helidon Quickstart SE Example
 
-This example implements a simple Hello World REST service.
+This project implements a simple Hello World REST service using Helidon SE.
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ mvn package
 ## Start the application
 
 ```
-java -jar target/quickstart-se.jar
+java -jar target/helidon-quickstart-se.jar
 ```
 
 ## Exercise the application
@@ -69,13 +69,13 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ## Build the Docker Image
 
 ```
-docker build -t quickstart-se target
+docker build -t helidon-quickstart-se .
 ```
 
 ## Start the application with Docker
 
 ```
-docker run --rm -p 8080:8080 quickstart-se:latest
+docker run --rm -p 8080:8080 helidon-quickstart-se:latest
 ```
 
 Exercise the application as described above
@@ -86,7 +86,7 @@ Exercise the application as described above
 kubectl cluster-info                # Verify which cluster
 kubectl get pods                    # Verify connectivity to cluster
 kubectl create -f target/app.yaml   # Deply application
-kubectl get service quickstart-se  # Get service info
+kubectl get service helidon-quickstart-se  # Get service info
 ```
 
 ## Native image with GraalVM
@@ -97,12 +97,12 @@ GraalVM allows you to compile your programs ahead-of-time into a native
 
 You can build a native executable in 2 different ways:
 * With a local installation of GraalVM
-* Using a multi-stage Docker build
+* Using Docker
 
 ### Local build
 
 Download Graal VM at https://github.com/oracle/graal/releases, the version
- currently supported for Helidon SE is `1.0.0-rc13`.
+ currently supported for Helidon is `1.0.0-rc13`.
 
 ```
 # Setup the environment
@@ -119,10 +119,6 @@ See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plug
 
 ### Multi-stage Docker build
 
-We publish a Docker image that contains GraalVM to Docker hub:
- `helidon/java-native`.
-
 ```
-mvn package -Pnative-image -Dnative.image.skip
-docker build -t quickstart-se-native -f target/Dockerfile.native target
+docker build -t helidon-quickstart-se-native -f Dockerfile.native .
 ```

@@ -20,7 +20,7 @@ apply plugin: 'maven'
 group = 'io.helidon.examples'
 version = '1.0-SNAPSHOT'
 
-description = """quickstart-mp"""
+description = """helidon-quickstart-mp"""
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

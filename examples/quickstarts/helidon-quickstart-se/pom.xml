@@ -22,17 +22,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.helidon.examples</groupId>
-    <artifactId>quickstart-se</artifactId>
+    <artifactId>helidon-quickstart-se</artifactId>
     <version>1.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>${project.artifactId}</name>
+    <name>Helidon Quickstart SE Example</name>
 
     <properties>
         <helidon.version>1.0.3-SNAPSHOT</helidon.version>
         <helidon.plugin.version>1.0.10</helidon.plugin.version>
-        <!-- Default package. Will be overriden by Maven archetype -->
-        <package>io.helidon.examples.quickstart.se</package>
-        <mainClass>${package}.Main</mainClass>
+        <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>
@@ -114,38 +112,6 @@
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <includeScope>runtime</includeScope>
                             <excludeScope>test</excludeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dockerfile</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <filtering>true</filtering>
-                                    <directory>src/main/docker</directory>
-                                    <includes>
-                                        <include>Dockerfile*</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <filtering>true</filtering>
-                                    <directory>src/main/k8s</directory>
-                                    <includes>
-                                        <include>app.yaml</include>
-                                    </includes>
-                                </resource>
-                            </resources>
                         </configuration>
                     </execution>
                 </executions>

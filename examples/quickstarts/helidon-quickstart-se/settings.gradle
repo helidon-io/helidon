@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-rootProject.name = 'quickstart-se'
+rootProject.name = 'helidon-quickstart-se'
 enableFeaturePreview("IMPROVED_POM_SUPPORT")
