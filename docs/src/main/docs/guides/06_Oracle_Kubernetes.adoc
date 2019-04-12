@@ -116,8 +116,8 @@ kubectl create secret docker-registry \
 
 First, change to the `helidon-quickstart-se` directory.
 
-Then edit `src/main/k8s/app.yaml` and add the following under `spec` in the
- `deployment` section:
+Then edit `app.yaml` and add the following under `spec` in the `deployment`
+ section:
 
 [source, yaml]
 ----
@@ -134,14 +134,10 @@ spec:
 <1> The config secret name
 <2> The image path
 
-NOTE: The file at `src/main/k8s/app.yaml` is configured as a Maven resource to
- allow for substituting Maven properties, the Maven build generates a substituted
- file at `target/app.yaml`.
-
 [source,bash]
 .Deploy the application:
 ----
-kubectl create -f target/app.yaml -n helidon
+kubectl create -f app.yaml -n helidon
 ----
 
 [source,bash]

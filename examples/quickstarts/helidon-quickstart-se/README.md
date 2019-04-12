@@ -85,7 +85,7 @@ Exercise the application as described above
 ```
 kubectl cluster-info                # Verify which cluster
 kubectl get pods                    # Verify connectivity to cluster
-kubectl create -f target/app.yaml   # Deply application
+kubectl create -f app.yaml   # Deply application
 kubectl get service helidon-quickstart-se  # Get service info
 ```
 
