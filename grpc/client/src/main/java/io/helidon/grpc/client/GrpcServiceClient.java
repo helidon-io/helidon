@@ -31,29 +31,44 @@ import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
 
 /**
- * A base class for gRPC Clients.
+ * A gRPC Client for a specific gRPC service.
  *
  * @author Mahesh Kannan
  */
 @ThreadSafe
 public class GrpcServiceClient {
 
-    private HashMap<String, GrpcMethodStub> methodStubs;
+    private final HashMap<String, GrpcMethodStub> methodStubs;
 
-    private ClientServiceDescriptor clientServiceDescriptor;
+    private final ClientServiceDescriptor clientServiceDescriptor;
 
     /**
-     * Creates a new {@link GrpcServiceClient.Builder}.
-     * @return A new instance of {@link GrpcServiceClient.Builder}.
+     * Creates a {@link GrpcServiceClient.Builder}.
+     *
+     * @param channel the {@link Channel} to use to connect to the server
+     * @param descriptor the {@link ClientServiceDescriptor} describing the gRPC service
+     *
+     * @return a new instance of {@link GrpcServiceClient.Builder}
      */
-    public static GrpcServiceClient.Builder builder() {
-        return new GrpcServiceClient.Builder();
+    public static GrpcServiceClient.Builder builder(Channel channel, ClientServiceDescriptor descriptor) {
+        return new GrpcServiceClient.Builder(channel, descriptor);
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Creates a {@link GrpcServiceClient}.
+     *
+     * @param channel the {@link Channel} to use to connect to the server
+     * @param descriptor the {@link ClientServiceDescriptor} describing the gRPC service
+     *
+     * @return a new instance of {@link GrpcServiceClient.Builder}
+     */
+    public static GrpcServiceClient create(Channel channel, ClientServiceDescriptor descriptor) {
+        return builder(channel, descriptor).build();
+    }
+
     private GrpcServiceClient(Channel channel,
-                             CallOptions callOptions,
-                             ClientServiceDescriptor clientServiceDescriptor) {
+                              CallOptions callOptions,
+                              ClientServiceDescriptor clientServiceDescriptor) {
         this.clientServiceDescriptor = clientServiceDescriptor;
         this.methodStubs = new HashMap<>();
 
@@ -79,40 +94,43 @@ public class GrpcServiceClient {
 
     /**
      * Obtain the service name.
-     * @return The name of the service.
+     *
+     * @return The name of the service
      */
     public String serviceName() {
-        return clientServiceDescriptor.serviceName();
+        return clientServiceDescriptor.name();
     }
 
     /**
-     * Invoke the specified Unary method with the specified request object.
+     * Invoke the specified unary method with the specified request object.
      *
-     * @param methodName The unary method name to be invoked.
-     * @param request    The request parameter.
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return The result of this invocation.
+     * @param methodName the method name to be invoked
+     * @param request    the request parameter
+     * @param <ReqT>     the request type
+     * @param <RespT>     the response type
+     *
+     * @return The result of this invocation
      */
-    public <ReqT, ResT> ResT blockingUnary(String methodName, ReqT request) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.UNARY);
+    public <ReqT, RespT> RespT blockingUnary(String methodName, ReqT request) {
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.UNARY);
         return ClientCalls.blockingUnaryCall(
                 stub.getChannel(), stub.descriptor().descriptor(), stub.getCallOptions(), request);
     }
 
     /**
-     * Invoke the specified Unary method with the specified request object adn the response observer.
+     * Asynchronously invoke the specified unary method.
      *
-     * @param methodName The unary method name to be invoked.
-     * @param request    The request parameter.
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return A {@link java.util.concurrent.CompletableFuture} to obtain the result.
+     * @param methodName the method name to be invoked
+     * @param request    the request parameter
+     * @param <ReqT>     the request type
+     * @param <RespT>     the response type
+     *
+     * @return A {@link CompletableFuture} that will complete with the result of the unary method call
      */
-    public <ReqT, ResT> CompletableFuture<ResT> unary(String methodName, ReqT request) {
-        SingleValueStreamObserver<ResT> observer = new SingleValueStreamObserver<>();
+    public <ReqT, RespT> CompletableFuture<RespT> unary(String methodName, ReqT request) {
+        SingleValueStreamObserver<RespT> observer = new SingleValueStreamObserver<>();
 
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.UNARY);
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.UNARY);
         ClientCalls.asyncUnaryCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
                 request,
@@ -122,67 +140,68 @@ public class GrpcServiceClient {
     }
 
     /**
-     * Invoke the specified Unary method with the specified request object adn the response observer.
+     * Invoke the specified unary method.
      *
-     * @param methodName   The unary method name to be invoked.
-     * @param request      The request parameter.
-     * @param respObserver A {@link StreamObserver} to receive the result.
-     * @param <ReqT>       The request type.
-     * @param <ResT>       The response type.
+     * @param methodName the method name to be invoked
+     * @param request    the request parameter
+     * @param observer   a {@link StreamObserver} to receive the result
+     * @param <ReqT>     the request type
+     * @param <RespT>     the response type
      */
-    public <ReqT, ResT> void unary(String methodName, ReqT request, StreamObserver<ResT> respObserver) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.UNARY);
+    public <ReqT, RespT> void unary(String methodName, ReqT request, StreamObserver<RespT> observer) {
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.UNARY);
         ClientCalls.asyncUnaryCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
                 request,
-                respObserver);
+                observer);
     }
 
     /**
-     * Invoke the specified server streaming method with the specified request object.
+     * Invoke the specified server streaming method.
      *
-     * @param methodName The unary method name to be invoked.
-     * @param request    The request parameter.
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return An {@link java.util.Iterator} to obtain results.
+     * @param methodName the method name to be invoked
+     * @param request    the request parameter
+     * @param <ReqT>     the request type
+     * @param <RespT>    the response type
+     *
+     * @return an {@link Iterator} to obtain the streamed results
      */
-    public <ReqT, ResT> Iterator<ResT> blockingServerStreaming(String methodName, ReqT request) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.SERVER_STREAMING);
+    public <ReqT, RespT> Iterator<RespT> blockingServerStreaming(String methodName, ReqT request) {
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.SERVER_STREAMING);
         return ClientCalls.blockingServerStreamingCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
                 request);
     }
 
     /**
-     * Invoke the specified server streaming method with the specified request object and response Observer.
+     * Invoke the specified server streaming method.
      *
-     * @param methodName   The unary method name to be invoked.
-     * @param request      The request parameter.
-     * @param respObserver A {@link StreamObserver} to receive the result.
-     * @param <ReqT>       The request type.
-     * @param <ResT>       The response type.
+     * @param methodName the method name to be invoked
+     * @param request    the request parameter
+     * @param observer   a {@link StreamObserver} to receive the results
+     * @param <ReqT>     the request type
+     * @param <RespT>    the response type
      */
-    public <ReqT, ResT> void serverStreaming(String methodName, ReqT request, StreamObserver<ResT> respObserver) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.SERVER_STREAMING);
+    public <ReqT, RespT> void serverStreaming(String methodName, ReqT request, StreamObserver<RespT> observer) {
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.SERVER_STREAMING);
         ClientCalls.asyncServerStreamingCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
                 request,
-                respObserver);
+                observer);
     }
 
     /**
-     * Invoke the specified client streaming method with the specified response Observer.
+     * Invoke the specified client streaming method.
      *
-     * @param methodName The unary method name to be invoked.
-     * @param items      The Collection of items (of type ReqT) to be streamed.
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return A {@link io.grpc.stub.StreamObserver} to retrieve results.
+     * @param methodName the method name to be invoked
+     * @param items      an {@link Iterable} of items to be streamed to the server
+     * @param <ReqT>     the request type
+     * @param <RespT>    the response type
+     * @return A {@link StreamObserver} to retrieve the method call result
      */
-    public <ReqT, ResT> CompletableFuture<ResT> clientStreaming(String methodName, Iterable<ReqT> items) {
-        SingleValueStreamObserver<ResT> obsv = new SingleValueStreamObserver<>();
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.CLIENT_STREAMING);
+    public <ReqT, RespT> CompletableFuture<RespT> clientStreaming(String methodName, Iterable<ReqT> items) {
+        SingleValueStreamObserver<RespT> obsv = new SingleValueStreamObserver<>();
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.CLIENT_STREAMING);
         StreamObserver<ReqT> reqStream = ClientCalls.asyncClientStreamingCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
                 obsv);
@@ -196,67 +215,44 @@ public class GrpcServiceClient {
     }
 
     /**
-     * Invoke the specified client streaming method with the specified response Observer.
+     * Invoke the specified client streaming method.
      *
-     * @param methodName   The unary method name to be invoked.
-     * @param respObserver A {@link StreamObserver} to receive the result.
-     * @param <ReqT>       The request type.
-     * @param <ResT>       The response type.
-     * @return A {@link io.grpc.stub.StreamObserver} to retrieve results.
+     * @param methodName the method name to be invoked
+     * @param observer   a {@link StreamObserver} to receive the result
+     * @param <ReqT>     the request type
+     * @param <RespT>    the response type
+     * @return a {@link StreamObserver} to use to stream requests to the server
      */
-    public <ReqT, ResT> StreamObserver<ReqT> clientStreaming(String methodName, StreamObserver<ResT> respObserver) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.CLIENT_STREAMING);
+    public <ReqT, RespT> StreamObserver<ReqT> clientStreaming(String methodName, StreamObserver<RespT> observer) {
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.CLIENT_STREAMING);
         return ClientCalls.asyncClientStreamingCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
-                respObserver);
+                observer);
     }
 
     /**
-     * Invoke the specified client streaming method with the specified response Observer.
+     * Invoke the specified bidirectional streaming method.
      *
-     * @param methodName   The unary method name to be invoked.
-     * @param items        The Collection of items (of type ReqT) to be streamed.
-     * @param respObserver A {@link StreamObserver} to receive the result.
-     * @param <ReqT>       The request type.
-     * @param <ResT>       The response type.
+     * @param methodName the method name to be invoked.
+     * @param observer   a {@link StreamObserver} to receive the result
+     * @param <ReqT>     the request type
+     * @param <RespT>     the response type
+     * @return A {@link StreamObserver} to use to stream requests to the server
      */
-    public <ReqT, ResT> void bidiStreaming(String methodName,
-                                           Iterable<ReqT> items,
-                                           StreamObserver<ResT> respObserver) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.BIDI_STREAMING);
-        StreamObserver<ReqT> reqStream = ClientCalls.asyncBidiStreamingCall(
-                stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
-                respObserver);
-
-        for (ReqT item : items) {
-            reqStream.onNext(item);
-        }
-        reqStream.onCompleted();
-    }
-
-    /**
-     * Invoke the specified Bidi streaming method with the specified response Observer.
-     *
-     * @param methodName   The unary method name to be invoked.
-     * @param respObserver A {@link StreamObserver} to receive the result.
-     * @param <ReqT>       The request type.
-     * @param <ResT>       The response type.
-     * @return A {@link io.grpc.stub.StreamObserver} to retrieve results.
-     */
-    public <ReqT, ResT> StreamObserver<ReqT> bidiStreaming(String methodName, StreamObserver<ResT> respObserver) {
-        GrpcMethodStub<ReqT, ResT> stub = ensureMethod(methodName, MethodType.BIDI_STREAMING);
+    public <ReqT, RespT> StreamObserver<ReqT> bidiStreaming(String methodName, StreamObserver<RespT> observer) {
+        GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.BIDI_STREAMING);
         return ClientCalls.asyncBidiStreamingCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
-                respObserver);
+                observer);
     }
 
     @SuppressWarnings("unchecked")
-    private <ReqT, ResT> GrpcMethodStub<ReqT, ResT> ensureMethod(String methodName, MethodType methodType) {
-        GrpcMethodStub<ReqT, ResT> stub = methodStubs.get(methodName);
+    private <ReqT, RespT> GrpcMethodStub<ReqT, RespT> ensureMethod(String methodName, MethodType methodType) {
+        GrpcMethodStub<ReqT, RespT> stub = methodStubs.get(methodName);
         if (stub == null) {
             throw new IllegalArgumentException("No method named " + methodName + " registered with this service");
         }
-        ClientMethodDescriptor<ReqT, ResT> cmd = stub.descriptor();
+        ClientMethodDescriptor cmd = stub.descriptor();
         if (cmd.descriptor().getType() != methodType) {
             throw new IllegalArgumentException("Method (" + methodName + ") already registered with a different method type.");
         }
@@ -267,22 +263,22 @@ public class GrpcServiceClient {
     /**
      * GrpcMethodStub can be used to configure method specific Interceptors, Metrics, Tracing, Deadlines, etc.
      */
-    private static class GrpcMethodStub<ReqT, ResT>
-        extends AbstractStub<GrpcMethodStub<ReqT, ResT>> {
+    private static class GrpcMethodStub<ReqT, RespT>
+        extends AbstractStub<GrpcMethodStub<ReqT, RespT>> {
 
-        private ClientMethodDescriptor<ReqT, ResT> cmd;
+        private ClientMethodDescriptor cmd;
 
-        GrpcMethodStub(Channel channel, CallOptions callOptions, ClientMethodDescriptor<ReqT, ResT> cmd) {
+        GrpcMethodStub(Channel channel, CallOptions callOptions, ClientMethodDescriptor cmd) {
             super(channel, callOptions);
             this.cmd = cmd;
         }
 
         @Override
-        protected GrpcMethodStub<ReqT, ResT> build(Channel channel, CallOptions callOptions) {
+        protected GrpcMethodStub<ReqT, RespT> build(Channel channel, CallOptions callOptions) {
             return new GrpcMethodStub<>(channel, callOptions, cmd);
         }
 
-        public ClientMethodDescriptor<ReqT, ResT> descriptor() {
+        public ClientMethodDescriptor descriptor() {
             return cmd;
         }
     }
@@ -294,26 +290,20 @@ public class GrpcServiceClient {
 
         private Channel channel;
 
-        private CallOptions callOptions;
+        private CallOptions callOptions = CallOptions.DEFAULT;
 
         private ClientServiceDescriptor clientServiceDescriptor;
 
-        /**
-         * Create a new instance that can be used to invoke methods on the service.
-         *
-         * @param channel                 the {@link Channel} to connect to the server
-         * @return This {@link }GrpcServiceClient.Builder} for fluent API.
-         */
-        public Builder channel(Channel channel) {
+        private Builder(Channel channel, ClientServiceDescriptor descriptor) {
             this.channel = channel;
-            return this;
+            this.clientServiceDescriptor = descriptor;
         }
 
         /**
-         * Create a new instance that can be used to invoke methods on the service.
+         * Set the {@link io.grpc.CallOptions} to use.
          *
-         * @param callOptions             the {@link CallOptions}
-         * @return This {@link }GrpcServiceClient.Builder} for fluent API.
+         * @param callOptions the {@link CallOptions} to use
+         * @return This {@link Builder} for fluent method chaining
          */
         public Builder callOptions(CallOptions callOptions) {
             this.callOptions = callOptions;
@@ -321,19 +311,9 @@ public class GrpcServiceClient {
         }
 
         /**
-         * Create a new instance that can be used to invoke methods on the service.
+         * Build an instance of {@link GrpcServiceClient}.
          *
-         * @param clientServiceDescriptor The {@link io.helidon.grpc.client.ClientServiceDescriptor} that describes the service.
-         * @return This {@link }GrpcServiceClient.Builder} for fluent API.
-         */
-        public Builder clientServiceDescriptor(ClientServiceDescriptor clientServiceDescriptor) {
-            this.clientServiceDescriptor = clientServiceDescriptor;
-            return this;
-        }
-
-        /**
-         * Build an instance of {@link io.helidon.grpc.client.GrpcServiceClient}.
-         * @return an instance of {@link io.helidon.grpc.client.GrpcServiceClient}.
+         * @return an new instance of a {@link GrpcServiceClient}
          */
         public GrpcServiceClient build() {
             return new GrpcServiceClient(channel, callOptions, clientServiceDescriptor);
@@ -341,11 +321,15 @@ public class GrpcServiceClient {
     }
 
     /**
-     * A simple {@link io.grpc.stub.StreamObserver} adapter class. Used internally and by test code. This
-     * object simply accumulates the only value received through the {@code onNext()}.
-     *
-     * Callers can use the {@code waitForCompletion} to block till the only value
-     * is received (and till the {@code onCompleted} is called).
+     * A simple {@link io.grpc.stub.StreamObserver} adapter class that completes
+     * a {@link CompletableFuture} when the observer is completed.
+     * <p>
+     * This observer uses the value passed to its {@link #onNext(Object)} method to complete
+     * the {@link CompletableFuture}.
+     * <p>
+     * This observer should only be used in cases where a single result is expected. If more
+     * that one call is made to {@link #onNext(Object)} then future will be completed with
+     * an exception.
      *
      * @param <T> The type of objects received in this stream.
      *
@@ -367,8 +351,10 @@ public class GrpcServiceClient {
         }
 
         /**
-         * Gte the CompletableFuture.
-         * @return The CompletableFuture.
+         * Obtain the {@link CompletableFuture} that will be completed
+         * when the {@link io.grpc.stub.StreamObserver} completes.
+         *
+         * @return The CompletableFuture
          */
         public CompletableFuture<T> getFuture() {
             return resultFuture;
@@ -392,6 +378,5 @@ public class GrpcServiceClient {
         public void onCompleted() {
             resultFuture.complete(result);
         }
-
     }
 }

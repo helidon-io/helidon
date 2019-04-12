@@ -16,277 +16,336 @@
 
 package io.helidon.grpc.client;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Consumer;
+import java.util.Collection;
 
-import io.helidon.grpc.core.JavaMarshaller;
-import io.helidon.grpc.core.MarshallerSupplier;
+import io.helidon.grpc.client.test.StringServiceGrpc;
 
+import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
-import io.grpc.MethodDescriptor.MethodType;
+import io.grpc.ServerMethodDefinition;
+import io.grpc.ServiceDescriptor;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Test;
 import services.TreeMapService;
 
-import static io.helidon.grpc.client.GrpcClientTestUtil.getMetricConfigurer;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static services.TreeMapService.Person;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
 
 public class ClientServiceDescriptorTest {
 
-    static ClientServiceDescriptor.Builder createEmptyTreeMapServiceBuilder() {
-        return ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class);
+    @Test
+    public void shouldCreateDescriptorFromGrpcServiceDescriptor() {
+        ServiceDescriptor grpcDescriptor = StringServiceGrpc.getServiceDescriptor();
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.create(grpcDescriptor);
+        String serviceName = "StringService";
+        assertThat(descriptor.name(), is(serviceName));
+        assertThat(descriptor.interceptors(), is(emptyIterable()));
+        assertThat(descriptor.metricType(), is(nullValue()));
+
+        Collection<MethodDescriptor<?, ?>> expectedMethods = grpcDescriptor.getMethods();
+        Collection<ClientMethodDescriptor> actualMethods = descriptor.methods();
+        assertThat(actualMethods.size(), is(expectedMethods.size()));
+
+        for (MethodDescriptor<?, ?> methodDescriptor : expectedMethods) {
+            String name = methodDescriptor.getFullMethodName().substring(serviceName.length() + 1);
+            ClientMethodDescriptor method = descriptor.method(name);
+            assertThat(method.name(), is(name));
+            assertThat(method.interceptors(), is(emptyIterable()));
+            assertThat(method.metricType(), is(nullValue()));
+            MethodDescriptor<Object, Object> actualDescriptor = method.descriptor();
+            assertThat(actualDescriptor.getType(), is(methodDescriptor.getType()));
+        }
     }
 
-    // Custom built ClientServiceDescriptor
+    @Test
+    public void shouldCreateDescriptorFromBindableService() {
+        StringServiceBindableService bindableService = new StringServiceBindableService();
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.create(bindableService);
+        String serviceName = "StringService";
+        assertThat(descriptor.name(), is(serviceName));
+        assertThat(descriptor.interceptors(), is(emptyIterable()));
+        assertThat(descriptor.metricType(), is(nullValue()));
+
+        Collection<ServerMethodDefinition<?, ?>> expectedMethods = bindableService.bindService().getMethods();
+        Collection<ClientMethodDescriptor> actualMethods = descriptor.methods();
+        assertThat(actualMethods.size(), is(expectedMethods.size()));
+
+        for (ServerMethodDefinition<?, ?> expectedMethod : expectedMethods) {
+            MethodDescriptor<?, ?> methodDescriptor = expectedMethod.getMethodDescriptor();
+            String name = methodDescriptor.getFullMethodName().substring(serviceName.length() + 1);
+            ClientMethodDescriptor method = descriptor.method(name);
+            assertThat(method.name(), is(name));
+            assertThat(method.interceptors(), is(emptyIterable()));
+            assertThat(method.metricType(), is(nullValue()));
+            MethodDescriptor<Object, Object> actualDescriptor = method.descriptor();
+            assertThat(actualDescriptor.getType(), is(methodDescriptor.getType()));
+        }
+    }
 
     @Test
     public void testServiceName() {
-        ClientServiceDescriptor svcDesc = createEmptyTreeMapServiceBuilder().build();
-        assertThat(svcDesc.serviceName(), equalTo("TreeMapService"));
+        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder("TreeMapService",
+                                                                                  TreeMapService.class);
+        assertThat(builder.name(), is("TreeMapService"));
+
+        ClientServiceDescriptor descriptor = builder.build();
+        assertThat(descriptor.name(), is("TreeMapService"));
     }
 
     @Test
     public void testDefaultMethodCount() {
-        ClientServiceDescriptor svcDesc = createEmptyTreeMapServiceBuilder().build();
+        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
         assertThat(svcDesc.methods().size(), equalTo(0));
     }
 
     @Test
     public void testDefaultMetricType() {
-        ClientServiceDescriptor svcDesc = createEmptyTreeMapServiceBuilder().build();
+        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
         assertThat(svcDesc.metricType(), nullValue());
     }
 
     @Test
-    public void testDefaultContextSize() {
-        ClientServiceDescriptor svcDesc = createEmptyTreeMapServiceBuilder().build();
-        assertThat(svcDesc.context().size(), equalTo(0));
-    }
-
-    @Test
     public void testDefaultInterceptorCount() {
-        ClientServiceDescriptor svcDesc = createEmptyTreeMapServiceBuilder().build();
+        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
         assertThat(svcDesc.interceptors().size(), equalTo(0));
     }
 
     @Test
-    public void testDefaultMetricTypes() {
-        ClientServiceDescriptor.Builder bldr = createEmptyTreeMapServiceBuilder();
-        System.out.println(bldr.build().metricType());
-        assertThat(bldr.build().metricType(), nullValue());
-    }
-
-    @Test
-    public void testMetricTypes() {
-        for (MetricType metricType : MetricType.values()) {
-            ClientServiceDescriptor.Builder bldr = createEmptyTreeMapServiceBuilder();
-            switch (metricType) {
-            case COUNTER:
-                bldr.counted();
-                assertThat(bldr.build().metricType(), equalTo(MetricType.COUNTER));
-                break;
-            case GAUGE:
-                bldr.gauged();
-                assertThat(bldr.build().metricType(), equalTo(MetricType.GAUGE));
-                break;
-            case HISTOGRAM:
-                bldr.histogram();
-                assertThat(bldr.build().metricType(), equalTo(MetricType.HISTOGRAM));
-                break;
-            case METERED:
-                bldr.metered();
-                assertThat(bldr.build().metricType(), equalTo(MetricType.METERED));
-                break;
-            case TIMER:
-                bldr.timed();
-                assertThat(bldr.build().metricType(), equalTo(MetricType.TIMER));
-                break;
-            default:
-                bldr.disableMetrics();
-                assertThat(bldr.build().metricType(), equalTo(MetricType.INVALID));
-                break;
-            }
-        }
-    }
-
-    @Test
-    public void testIfMarshallerSupplierCanBeSet() {
-        CustomMarshallerSupplier customMarshaller = new CustomMarshallerSupplier();
-        ClientServiceDescriptor svcDesc = createEmptyTreeMapServiceBuilder()
-                .marshallerSupplier(customMarshaller)
-                .unary("get", Double.class, Date.class)
+    public void shouldHaveCounterMetricType() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .counted()
                 .build();
 
-        Set<String> classNames = customMarshaller.getClassNames();
-        assertThat(classNames.size() == 2
-                           && classNames.contains("java.lang.Double")
-                           && classNames.contains("java.util.Date"), is(true));
+        assertThat(descriptor.metricType(), is(MetricType.COUNTER));
     }
 
     @Test
-    public void testCreateUnaryMethod() {
-
-        for (MetricType mt : MetricType.values()) {
-            Consumer<ClientMethodDescriptor.Config<Object, Object>> metricConfigurer = getMetricConfigurer(mt);
-            String methodName = "get" + (mt == MetricType.INVALID ? "" : mt.toString());
-            ClientServiceDescriptor csd = createEmptyTreeMapServiceBuilder()
-                    .unary(methodName, metricConfigurer)
-                    .build();
-
-            ClientMethodDescriptor cmd = csd.method(methodName);
-            assertThat(cmd, notNullValue());
-            assertThat(cmd.descriptor().getFullMethodName(), equalTo("TreeMapService/" + methodName));
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getType(), equalTo(MethodType.UNARY));
-            assertThat(cmd.metricType(), equalTo(mt));
-
-            // Check Marshallers
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        }
-    }
-
-    @Test
-    public void testCreateClientStreamingMethod() {
-
-        for (MetricType mt : MetricType.values()) {
-            Consumer<ClientMethodDescriptor.Config<Object, Object>> metricConfigurer = getMetricConfigurer(mt);
-            String methodName = "get" + (mt == MetricType.INVALID ? "" : mt.toString());
-            ClientServiceDescriptor csd = createEmptyTreeMapServiceBuilder()
-                    .clientStreaming(methodName, metricConfigurer)
-                    .build();
-
-            ClientMethodDescriptor cmd = csd.method(methodName);
-            assertThat(cmd, notNullValue());
-            assertThat(cmd.descriptor().getFullMethodName(), equalTo("TreeMapService/" + methodName));
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getType(), equalTo(MethodType.CLIENT_STREAMING));
-            assertThat(cmd.metricType(), equalTo(mt));
-
-            // Check Marshallers
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        }
-    }
-
-    @Test
-    public void testCreateServerStreamingMethod() {
-
-        for (MetricType mt : MetricType.values()) {
-            Consumer<ClientMethodDescriptor.Config<Object, Object>> metricConfigurer = getMetricConfigurer(mt);
-            String methodName = "get" + (mt == MetricType.INVALID ? "" : mt.toString());
-            ClientServiceDescriptor csd = createEmptyTreeMapServiceBuilder()
-                    .serverStreaming(methodName, metricConfigurer)
-                    .build();
-
-            ClientMethodDescriptor cmd = csd.method(methodName);
-            assertThat(cmd, notNullValue());
-            assertThat(cmd.descriptor().getFullMethodName(), equalTo("TreeMapService/" + methodName));
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getType(), equalTo(MethodType.SERVER_STREAMING));
-            assertThat(cmd.metricType(), equalTo(mt));
-
-            // Check Marshallers
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        }
-    }
-
-    @Test
-    public void testCreateBidiStreaming() {
-
-        for (MetricType mt : MetricType.values()) {
-            Consumer<ClientMethodDescriptor.Config<Object, Object>> metricConfigurer = getMetricConfigurer(mt);
-            String methodName = "get" + (mt == MetricType.INVALID ? "" : mt.toString());
-            ClientServiceDescriptor csd = createEmptyTreeMapServiceBuilder()
-                    .bidirectional(methodName, metricConfigurer)
-                    .build();
-
-            ClientMethodDescriptor cmd = csd.method(methodName);
-            assertThat(cmd, notNullValue());
-            assertThat(cmd.descriptor().getFullMethodName(), equalTo("TreeMapService/" + methodName));
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getType(), equalTo(MethodType.BIDI_STREAMING));
-            assertThat(cmd.metricType(), equalTo(mt));
-
-            // Check Marshallers
-            assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-            assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        }
-    }
-
-    @Test
-    public void testRegisterUnaryMethod() {
-
-        String methodName = "get";
-        ClientMethodDescriptor<Integer, Person> cmd =
-                ClientMethodDescriptor.unary("TreeMapService/" + methodName, Integer.class, Person.class);
-        cmd = cmd.toBuilder().metered().build();
-        ClientServiceDescriptor csd = createEmptyTreeMapServiceBuilder()
-                .registerMethod(cmd)
+    public void shouldHaveHistogramMetricType() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .histogram()
                 .build();
 
-        cmd = csd.method(methodName);
-        assertThat(cmd, notNullValue());
-        assertThat(cmd.descriptor().getFullMethodName(), equalTo("TreeMapService/" + methodName));
-        assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getType(), equalTo(MethodType.UNARY));
-        assertThat(cmd.metricType(), equalTo(MetricType.METERED));
-
-        // Check Marshallers
-        assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
+        assertThat(descriptor.metricType(), is(MetricType.HISTOGRAM));
     }
 
     @Test
-    public void testRegisterClientStreamingMethod() {
-
-        String methodName = "get";
-        ClientMethodDescriptor<Integer, Person> cmd =
-                ClientMethodDescriptor.clientStreaming("Foo/Bar/" + methodName, Integer.class, Person.class);
-        cmd = cmd.toBuilder().metered().build();
-        ClientServiceDescriptor csd = createEmptyTreeMapServiceBuilder()
-                .registerMethod(cmd)
+    public void shouldHaveMeterMetricType() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .metered()
                 .build();
 
-        cmd = csd.method(methodName);
-        assertThat(cmd, notNullValue());
-        assertThat(cmd.descriptor().getFullMethodName(), equalTo("TreeMapService/" + methodName));
-        assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getType(), equalTo(MethodType.CLIENT_STREAMING));
-        assertThat(cmd.metricType(), equalTo(MetricType.METERED));
-
-        // Check Marshallers
-        assertThat(cmd.descriptor().getRequestMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
-        assertThat(cmd.descriptor().getResponseMarshaller().getClass().getName(), equalTo(JavaMarshaller.class.getName()));
+        assertThat(descriptor.metricType(), is(MetricType.METERED));
     }
 
-    private static class CustomMarshallerSupplier
-            extends MarshallerSupplier.DefaultMarshallerSupplier {
+    @Test
+    public void shouldHaveDisabledMetricType() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .disableMetrics()
+                .build();
 
-        HashSet<String> classNames = new HashSet<>();
-
-        public HashSet<String> getClassNames() {
-            return classNames;
-        }
-
-        @Override
-        public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
-            classNames.add(clazz.getName());
-            return super.get(clazz);
-        }
+        assertThat(descriptor.metricType(), is(MetricType.INVALID));
     }
+
+    @Test
+    public void shouldHaveTimerMetricType() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .timed()
+                .build();
+
+        assertThat(descriptor.metricType(), is(MetricType.TIMER));
+    }
+
+    @Test
+    public void shouldNotAllowNullName() {
+        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+
+        assertThrows(NullPointerException.class, () -> builder.name(null));
+    }
+
+    @Test
+    public void shouldNotAllowEmptyStringName() {
+        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+
+        assertThrows(IllegalArgumentException.class, () -> builder.name(""));
+    }
+
+    @Test
+    public void shouldNotAllowBlankName() {
+        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+
+        assertThrows(IllegalArgumentException.class, () -> builder.name("  \t  "));
+    }
+
+    @Test
+    public void shouldAddBidirectionalMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .bidirectional("foo")
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.BIDI_STREAMING));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddBidirectionalMethodWithConfigurer() {
+        ClientInterceptor interceptor = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .bidirectional("foo", cfg -> cfg.intercept(interceptor))
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        assertThat(method.interceptors(), contains(interceptor));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.BIDI_STREAMING));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddClientStreamingMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .clientStreaming("foo")
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.CLIENT_STREAMING));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddClientStreamingMethodWithConfigurer() {
+        ClientInterceptor interceptor = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .clientStreaming("foo", cfg -> cfg.intercept(interceptor))
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        assertThat(method.interceptors(), contains(interceptor));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.CLIENT_STREAMING));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddServerStreamingMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .serverStreaming("foo")
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.SERVER_STREAMING));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddServerStreamingMethodWithConfigurer() {
+        ClientInterceptor interceptor = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .serverStreaming("foo", cfg -> cfg.intercept(interceptor))
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        assertThat(method.interceptors(), contains(interceptor));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.SERVER_STREAMING));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddUnaryMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .unary("foo")
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.UNARY));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddUnaryMethodWithConfigurer() {
+        ClientInterceptor interceptor = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .unary("foo", cfg -> cfg.intercept(interceptor))
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        assertThat(method.interceptors(), contains(interceptor));
+        MethodDescriptor<Object, Object> methodDescriptor = method.descriptor();
+        assertThat(methodDescriptor.getType(), is(MethodDescriptor.MethodType.UNARY));
+        assertThat(methodDescriptor.getFullMethodName(), is("TreeMapService/foo"));
+    }
+
+    @Test
+    public void shouldAddInterceptor() {
+        ClientInterceptor interceptor = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .intercept(interceptor)
+                .build();
+
+        assertThat(descriptor.interceptors(), contains(interceptor));
+    }
+
+    @Test
+    public void shouldAddInterceptors() {
+        ClientInterceptor interceptorOne = mock(ClientInterceptor.class);
+        ClientInterceptor interceptorTwo = mock(ClientInterceptor.class);
+        ClientInterceptor interceptorThree = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .intercept(interceptorOne)
+                .intercept(interceptorTwo, interceptorThree)
+                .build();
+
+        assertThat(descriptor.interceptors(), containsInAnyOrder(interceptorOne, interceptorTwo, interceptorThree));
+    }
+
+    @Test
+    public void shouldAddInterceptorToMethod() {
+        ClientInterceptor interceptor = mock(ClientInterceptor.class);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
+                .unary("foo")
+                .intercept("foo", interceptor)
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("foo");
+        assertThat(method, is(notNullValue()));
+        assertThat(method.interceptors(), contains(interceptor));
+    }
+
+    @Test
+    public void shouldSetNameOnMethods() {
+        ClientServiceDescriptor.Builder builder = ClientServiceDescriptor.builder(TreeMapService.class);
+
+        ClientServiceDescriptor descriptor = builder.unary("bar")
+                .name("Foo")
+                .build();
+
+        ClientMethodDescriptor method = descriptor.method("bar");
+        assertThat(method.descriptor().getFullMethodName(), is("Foo/bar"));
+    }
+
+    public static class StringServiceBindableService
+               extends StringServiceGrpc.StringServiceImplBase {
+       }
 }

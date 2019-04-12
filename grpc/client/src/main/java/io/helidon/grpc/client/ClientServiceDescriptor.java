@@ -31,31 +31,14 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
 import io.grpc.ClientInterceptor;
-import io.grpc.Context;
-import io.grpc.MethodDescriptor;
 import io.grpc.MethodDescriptor.MethodType;
-import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import org.eclipse.microprofile.metrics.MetricType;
 
 import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 
 /**
- * Encapsulates all details about a gRPC service. A {@link ClientServiceDescriptor} can
- * easily be built like the following:
- *
- * 1. When protobuf service definition is available:
- * Lets say that the service class is MyService.class. In this case,
- *      ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(
- *              MyService.class, MyService.getServiceDescriptor()).build();
- *
- * 2. When probuf service definition is not available, the ClientServiceDefinition can be built
- * by building the individual service methods. For example, to define a service called MyService
- * containing one method "get" that takes an Integer as argument ands returns a Person:
- *
- * ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder("MyService", MyService.class)
- *                 .unary("get", Integer.class, Person.class)
- *                 .build();
+ * Encapsulates all details about a client side gRPC service.
  *
  * @author Mahesh Kannan
  */
@@ -64,76 +47,87 @@ public class ClientServiceDescriptor {
     private String serviceName;
     private Map<String, ClientMethodDescriptor> methods;
     private LinkedList<ClientInterceptor> interceptors;
-    private Map<Context.Key<?>, Object> context;
     private MetricType metricType;
 
     private ClientServiceDescriptor(String serviceName,
-                                   Map<String, ClientMethodDescriptor> methods,
-                                   LinkedList<ClientInterceptor> interceptors,
-                                   Map<Context.Key<?>, Object> context,
-                                   MetricType metricType) {
+                                    Map<String, ClientMethodDescriptor> methods,
+                                    LinkedList<ClientInterceptor> interceptors,
+                                    MetricType metricType) {
         this.serviceName = serviceName;
         this.methods = methods;
         this.interceptors = interceptors;
-        this.context = context;
         this.metricType = metricType;
     }
 
     /**
-     * Create a {@link io.helidon.grpc.client.ClientServiceDescriptor} from a protobuf service descriptor.
+     * Create a {@link ClientServiceDescriptor} from a {@link io.grpc.ServiceDescriptor}.
      *
-     * @param svc The BindableService.
-     * @return a {@link Builder}
+     * @param descriptor the {@link io.grpc.ServiceDescriptor}
+     * @return a {@link ClientServiceDescriptor}
      */
-    public static Builder builder(BindableService svc) {
-        return new Builder(svc);
+    public static ClientServiceDescriptor create(io.grpc.ServiceDescriptor descriptor) {
+        return builder(descriptor).build();
     }
 
     /**
-     * Create a {@link Builder}.
+     * Create a {@link ClientServiceDescriptor} from a {@link BindableService}.
      *
-     * @param serviceClass The service class.
-     * @param sd           The {@link io.grpc.ServiceDescriptor} to use to initialize this  builder.
-     * @return a {@link Builder}
+     * @param service the BindableService
+     * @return a {@link ClientServiceDescriptor}
      */
-    public static Builder builder(Class serviceClass, io.grpc.ServiceDescriptor sd) {
-        return builder(sd.getName(), serviceClass, sd.getMethods(), sd);
+    public static ClientServiceDescriptor create(BindableService service) {
+        return builder(service).build();
     }
 
     /**
-     * Create a {@link Builder}. Typically used to construct when a protobuf descriptor is *not* available.
+     * Create a {@link ClientServiceDescriptor.Builder} from a {@link io.grpc.ServiceDescriptor}.
      *
-     * @param serviceName       The getName of the service to use to initialise the builder.
-     * @param serviceClass      The service class.
+     * @param service the {@link io.grpc.ServiceDescriptor}
      * @return a {@link Builder}
      */
-    public static Builder builder(String serviceName,
-                                  Class serviceClass) {
-        return builder(serviceName, serviceClass, Collections.emptyList(), null);
+    public static Builder builder(io.grpc.ServiceDescriptor service) {
+        return new Builder(service);
     }
 
     /**
-     * Create a {@link Builder}.
+     * Create a {@link ClientServiceDescriptor.Builder} from a {@link BindableService}.
      *
-     * @param serviceName       The getName of the service to use to initialise the builder.
-     * @param serviceClass      The service class.
-     * @param methodDescriptors The methods descriptors that describe this service.
-     * @param schemaDesc        The schema getDescriptor for this service.
+     * @param service the {@link BindableService}
      * @return a {@link Builder}
      */
-    public static Builder builder(String serviceName,
-                                  Class serviceClass,
-                                  Collection<MethodDescriptor<?, ?>> methodDescriptors,
-                                  Object schemaDesc) {
-        return new Builder(serviceName, serviceClass, methodDescriptors, schemaDesc);
+    public static Builder builder(BindableService service) {
+        return new Builder(service);
     }
 
     /**
-     * Return service getName.
+     * Create a {@link Builder} form a name and type.
+     * <p>
+     * The {@link Class#getSimpleName() class simple name} will be used for the service name.
      *
-     * @return service getName
+     * @param serviceClass the service class
+     * @return a {@link Builder}
      */
-    public String serviceName() {
+    public static Builder builder(Class<?> serviceClass) {
+        return builder(serviceClass.getSimpleName(), serviceClass);
+    }
+
+    /**
+     * Create a {@link Builder} form a name and type.
+     *
+     * @param serviceName  the getName of the service to use to initialise the builder
+     * @param serviceClass the service class
+     * @return a {@link Builder}
+     */
+    public static Builder builder(String serviceName, Class<?> serviceClass) {
+        return new Builder(serviceName, serviceClass);
+    }
+
+    /**
+     * Obtain the service name.
+     *
+     * @return the service name
+     */
+    public String name() {
         return serviceName;
     }
 
@@ -141,13 +135,10 @@ public class ClientServiceDescriptor {
      * Return {@link io.helidon.grpc.client.ClientMethodDescriptor} for a specified method getName.
      *
      * @param name   method getName
-     * @param <ReqT> The request type.
-     * @param <ResT> The response type.
      * @return method getDescriptor for the specified getName
      */
-    @SuppressWarnings("unchecked")
-    public <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> method(String name) {
-        return (ClientMethodDescriptor<ReqT, ResT>) methods.get(name);
+    public ClientMethodDescriptor method(String name) {
+        return methods.get(name);
     }
 
     /**
@@ -169,21 +160,17 @@ public class ClientServiceDescriptor {
     }
 
     /**
-     * Return context map.
-     *
-     * @return context map
-     */
-    public Map<Context.Key<?>, Object> context() {
-        return context;
-    }
-
-    /**
      * Return the type of metric that should be collected for this service.
      *
      * @return metric type
      */
     public MetricType metricType() {
         return metricType;
+    }
+
+    @Override
+    public String toString() {
+        return "ClientServiceDescriptor(name='" + serviceName + "')";
     }
 
     // ---- inner interface: Config -----------------------------------------
@@ -193,9 +180,16 @@ public class ClientServiceDescriptor {
      */
     public interface Config {
         /**
-         * Set the getName for the service.
+         * Obtain the name fo the service this configuration configures.
          *
-         * @param name the service getName
+         * @return  the name fo the service this configuration configures
+         */
+        String name();
+
+        /**
+         * Set the name for the service.
+         *
+         * @param name the name of service
          * @return this {@link Config} instance for fluent call chaining
          * @throws NullPointerException     if the getName is null
          * @throws IllegalArgumentException if the getName is a blank String
@@ -203,7 +197,7 @@ public class ClientServiceDescriptor {
         Config name(String name);
 
         /**
-         * Register the proto for the service.
+         * Register the proto file for the service.
          *
          * @param proto the service proto
          * @return this {@link Config} instance for fluent call chaining
@@ -237,116 +231,72 @@ public class ClientServiceDescriptor {
         Config intercept(String methodName, ClientInterceptor... interceptors);
 
         /**
-         * Add value to the {@link Context} for the service.
-         *
-         * @param key   the key for the context value
-         * @param value the value to add
-         * @param <V>   the type of the value
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        <V> Config addContextValue(Context.Key<V> key, V value);
-
-        /**
          * Register unary method for the service.
          *
          * @param name The getName of the method
-         * @param requestType The method request type
-         * @param responseType The method response type
-         * @param <ReqT> The method request type
-         * @param <ResT> The method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config unary(String name, Class<ReqT> requestType, Class<ResT> responseType);
+        Config unary(String name);
 
         /**
          * Register unary method for the service.
          *
          * @param name       the getName of the method
          * @param configurer the method configurer
-         * @param <ReqT>     the method request type
-         * @param <ResT>     the method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config unary(String name, Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer);
+        Config unary(String name, Consumer<ClientMethodDescriptor.Config> configurer);
 
         /**
          * Register server streaming method for the service.
          *
          * @param name The getName of the method
-         * @param requestType The method request type
-         * @param responseType The method response type
-         * @param <ReqT> The method request type
-         * @param <ResT> The method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config serverStreaming(String name, Class<ReqT> requestType, Class<ResT> responseType);
+        Config serverStreaming(String name);
 
         /**
          * Register server streaming method for the service.
          *
          * @param name       the getName of the method
          * @param configurer the method configurer
-         * @param <ReqT>     the method request type
-         * @param <ResT>     the method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config serverStreaming(String name, Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer);
+        Config serverStreaming(String name, Consumer<ClientMethodDescriptor.Config> configurer);
 
         /**
          * Register client streaming method for the service.
          *
          * @param name The getName of the method
-         * @param requestType The method request type
-         * @param responseType The method response type
-         * @param <ReqT> The method request type
-         * @param <ResT> The method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config clientStreaming(String name, Class<ReqT> requestType, Class<ResT> responseType);
+        Config clientStreaming(String name);
 
         /**
          * Register client streaming method for the service.
          *
          * @param name       the getName of the method
          * @param configurer the method configurer
-         * @param <ReqT>     the method request type
-         * @param <ResT>     the method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config clientStreaming(String name, Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer);
+        Config clientStreaming(String name, Consumer<ClientMethodDescriptor.Config> configurer);
 
         /**
          * Register bi-directional streaming method for the service.
          *
          * @param name The getName of the method
-         * @param requestType The method request type
-         * @param responseType The method response type
-         * @param <ReqT> The method request type
-         * @param <ResT> The method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config bidirectional(String name, Class<ReqT> requestType, Class<ResT> responseType);
+        Config bidirectional(String name);
 
         /**
          * Register bi-directional streaming method for the service.
          *
          * @param name       the getName of the method
          * @param configurer the method configurer
-         * @param <ReqT>     the method request type
-         * @param <ResT>     the method response type
          * @return this {@link Config} instance for fluent call chaining
          */
-        <ReqT, ResT> Config bidirectional(String name, Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer);
-
-        /**
-         * Register the specified {@link ClientMethodDescriptor}.
-         *
-         * @param cmd The {@link ClientMethodDescriptor} to be registered
-         * @param <ReqT>     the method request type
-         * @param <ResT>     the method response type
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        <ReqT, ResT> Config registerMethod(ClientMethodDescriptor<ReqT, ResT> cmd);
+        Config bidirectional(String name, Consumer<ClientMethodDescriptor.Config> configurer);
 
         /**
          * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Counter}.
@@ -354,13 +304,6 @@ public class ClientServiceDescriptor {
          * @return this {@link Config} instance for fluent call chaining
          */
         Config counted();
-
-        /**
-         * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Gauge}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config gauged();
 
         /**
          * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Meter}.
@@ -398,9 +341,8 @@ public class ClientServiceDescriptor {
      */
     public static final class Builder
             implements Config, io.helidon.common.Builder<ClientServiceDescriptor> {
-        private String serviceName;
+        private String name;
         private LinkedList<ClientInterceptor> interceptors = new LinkedList<>();
-        private Map<Context.Key<?>, Object> context = new HashMap<>();
         private MetricType metricType;
         private Class<?> serviceClass;
         private Descriptors.FileDescriptor proto;
@@ -409,51 +351,44 @@ public class ClientServiceDescriptor {
         private Map<String, ClientMethodDescriptor.Builder> methodBuilders = new HashMap<>();
 
         /**
-         * Builds the ClientService from the protoc generated classes. This is typically used
-         * in scenarios where the client does not want to use the generated stubs but would
-         * like to invoke methods on the service.
+         * Builds the ClientService from a {@link io.grpc.BindableService}.
          *
-         * @param service A {@link io.grpc.BindableService} from which Build is bootstrapped.
+         * @param service the {@link io.grpc.BindableService} to use to initialize the builder
          */
         private Builder(BindableService service) {
-            ServerServiceDefinition def = service.bindService();
-            initialize(def.getServiceDescriptor().getName(), service.getClass(),
-                       def.getServiceDescriptor().getMethods(),
-                       def.getServiceDescriptor());
+            this(service.bindService().getServiceDescriptor());
         }
 
         /**
-         * Create a new Builder using the specified service name, service class, descriptors and schema.
-         * @param serviceName The service name.
-         * @param serviceClass The service class.
-         * @param methodDescriptors The collection of {@link io.grpc.MethodDescriptor}s.
-         * @param schema The schema.
+         * Builds the ClientService from a {@link io.grpc.BindableService}.
+         *
+         * @param serviceDescriptor the {@link io.grpc.ServiceDescriptor} to use to initialize the builder
          */
-        private Builder(String serviceName,
-                        Class serviceClass,
-                        Collection<MethodDescriptor<?, ?>> methodDescriptors,
-                        Object schema) {
-            initialize(serviceName, serviceClass, methodDescriptors, schema);
+        private Builder(ServiceDescriptor serviceDescriptor) {
+            this.name         = serviceDescriptor.getName();
+            this.serviceClass = serviceDescriptor.getClass();
+
+            for (io.grpc.MethodDescriptor<?, ?> md : serviceDescriptor.getMethods()) {
+                String methodName = extractMethodName(md.getFullMethodName());
+
+                methodBuilders.put(methodName, ClientMethodDescriptor.builder(this.name, methodName, md.toBuilder()));
+            }
         }
 
-        private void initialize(String serviceName,
-                                Class serviceClass,
-                                Collection<MethodDescriptor<?, ?>> methodDescriptors,
-                                Object schemaDesc) {
-            name(serviceName).serviceClass(serviceClass);
-            Object desc = schemaDesc;
+        /**
+         * Create a new {@link Builder}.
+         *
+         * @param name the service name
+         * @param serviceClass the service class
+         */
+        private Builder(String name, Class serviceClass) {
+            this.name         = name;
+            this.serviceClass = serviceClass;
+        }
 
-            if (desc instanceof io.grpc.ServiceDescriptor) {
-                desc = ((ServiceDescriptor) schemaDesc).getSchemaDescriptor();
-            }
-
-            if (desc instanceof io.grpc.protobuf.ProtoFileDescriptorSupplier) {
-                this.proto(((io.grpc.protobuf.ProtoFileDescriptorSupplier) desc).getFileDescriptor());
-            } else if (desc instanceof Descriptors.FileDescriptor) {
-                this.proto((Descriptors.FileDescriptor) desc);
-            }
-
-            descriptors(methodDescriptors);
+        @Override
+        public String name() {
+            return name;
         }
 
         @Override
@@ -466,52 +401,10 @@ public class ClientServiceDescriptor {
                 throw new IllegalArgumentException("Service getName cannot be blank");
             }
 
-            this.serviceName = serviceName.trim();
+            this.name = serviceName.trim();
             for (Map.Entry<String, ClientMethodDescriptor.Builder> e : methodBuilders.entrySet()) {
-                e.getValue().fullName(io.grpc.MethodDescriptor.generateFullMethodName(this.serviceName, e.getKey()));
+                e.getValue().fullName(io.grpc.MethodDescriptor.generateFullMethodName(this.name, e.getKey()));
             }
-            return this;
-        }
-
-        /**
-         * Sets the service class.
-         * @param clz The service class.
-         * @return This {@link io.helidon.grpc.client.ClientServiceDescriptor.Builder} instance for fluent API.
-         */
-        public Builder serviceClass(Class clz) {
-            this.serviceClass = clz;
-            return this;
-        }
-
-        /**
-         * Adds the specified MethodDescriptors to this Builder.
-         *
-         * @param methodDescriptors The descriptors.
-         * @return This {@link io.helidon.grpc.client.ClientServiceDescriptor.Builder} instance for fluent API.
-         */
-        @SuppressWarnings("unchecked")
-        public Builder descriptors(Collection<MethodDescriptor<?, ?>> methodDescriptors) {
-            for (io.grpc.MethodDescriptor<?, ?> md : methodDescriptors) {
-                String methodName = extractMethodName(md.getFullMethodName());
-                ClientMethodDescriptor.Builder cmdBuilder = ClientMethodDescriptor.builder(md);
-                cmdBuilder.fullName(this.serviceName + "/" + methodName);
-
-                if (this.proto != null) {
-                    Class requestType = getTypeFromMethodDescriptor(methodName, true);
-                    Class responseType = getTypeFromMethodDescriptor(methodName, false);
-
-                    if (requestType != null) {
-                        cmdBuilder.requestType(requestType);
-                    }
-                    if (responseType != null) {
-                        cmdBuilder.responseType(responseType);
-                    }
-                }
-
-
-                registerMethod(cmdBuilder.build());
-            }
-
             return this;
         }
 
@@ -528,51 +421,50 @@ public class ClientServiceDescriptor {
         }
 
         @Override
-        public <ReqT, ResT> Builder unary(String name,
-                                          Class<ReqT> requestType, Class<ResT> responseType) {
-            return registerMethod(name, requestType, responseType, MethodType.UNARY);
+        public Builder unary(String name) {
+            return unary(name, null);
         }
 
         @Override
-        public <ReqT, ResT> Builder unary(String name,
-                                          Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer) {
-            return registerMethod(name, configurer, MethodType.UNARY);
+        public Builder unary(String name, Consumer<ClientMethodDescriptor.Config> configurer) {
+            methodBuilders.put(name, createMethodDescriptor(name, MethodType.UNARY, configurer));
+            return this;
         }
 
         @Override
-        public <ReqT, ResT> Builder serverStreaming(String name,
-                                                    Class<ReqT> requestType, Class<ResT> responseType) {
-            return registerMethod(name, requestType, responseType, MethodType.SERVER_STREAMING);
+        public Builder serverStreaming(String name) {
+            return serverStreaming(name, null);
         }
 
         @Override
-        public <ReqT, ResT> Builder serverStreaming(String name,
-                                                    Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer) {
-            return registerMethod(name, configurer, MethodType.SERVER_STREAMING);
+        public Builder serverStreaming(String name,
+                                                    Consumer<ClientMethodDescriptor.Config> configurer) {
+            methodBuilders.put(name, createMethodDescriptor(name, MethodType.SERVER_STREAMING, configurer));
+            return this;
         }
 
         @Override
-        public <ReqT, ResT> Builder clientStreaming(String name,
-                                                    Class<ReqT> requestType, Class<ResT> responseType) {
-            return registerMethod(name, requestType, responseType, MethodType.CLIENT_STREAMING);
+        public Builder clientStreaming(String name) {
+            return clientStreaming(name, null);
         }
 
         @Override
-        public <ReqT, ResT> Builder clientStreaming(String name,
-                                                    Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer) {
-            return registerMethod(name, configurer, MethodType.CLIENT_STREAMING);
+        public Builder clientStreaming(String name,
+                                                    Consumer<ClientMethodDescriptor.Config> configurer) {
+            methodBuilders.put(name, createMethodDescriptor(name, MethodType.CLIENT_STREAMING, configurer));
+            return this;
         }
 
         @Override
-        public <ReqT, ResT> Builder bidirectional(String name,
-                                                  Class<ReqT> requestType, Class<ResT> responseType) {
-            return registerMethod(name, requestType, responseType, MethodType.BIDI_STREAMING);
+        public Builder bidirectional(String name) {
+            return bidirectional(name, null);
         }
 
         @Override
-        public <ReqT, ResT> Builder bidirectional(String name,
-                                                  Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer) {
-            return registerMethod(name, configurer, MethodType.BIDI_STREAMING);
+        public Builder bidirectional(String name,
+                                                  Consumer<ClientMethodDescriptor.Config> configurer) {
+            methodBuilders.put(name, createMethodDescriptor(name, MethodType.BIDI_STREAMING, configurer));
+            return this;
         }
 
         @Override
@@ -596,19 +488,10 @@ public class ClientServiceDescriptor {
         }
 
         @Override
-        public <V> Builder addContextValue(Context.Key<V> key, V value) {
-            this.context.put(key, value);
-            return this;
-        }
-
-        @Override
         public Builder counted() {
             return metricType(MetricType.COUNTER);
         }
-        @Override
-        public Builder gauged() {
-            return metricType(MetricType.GAUGE);
-        }
+
         @Override
         public Builder metered() {
             return metricType(MetricType.METERED);
@@ -621,21 +504,13 @@ public class ClientServiceDescriptor {
 
         @Override
         public Builder timed() {
-            return metricType(MetricType.TIMER);
+            this.metricType = MetricType.TIMER;
+            return this;
         }
 
         @Override
         public Builder disableMetrics() {
             return metricType(MetricType.INVALID);
-        }
-
-        private Builder metricType(MetricType metricType) {
-            this.metricType = metricType;
-            return this;
-        }
-
-        public Descriptors.FileDescriptor getProto() {
-            return proto;
         }
 
         @Override
@@ -645,70 +520,37 @@ public class ClientServiceDescriptor {
                 methods.put(entry.getKey(), entry.getValue().build());
             }
 
-            return new ClientServiceDescriptor(serviceName,
+            return new ClientServiceDescriptor(name,
                                                methods,
                                                interceptors,
-                                               context,
                                                metricType);
         }
 
         // ---- helpers -----------------------------------------------------
 
-        // A simple helper method
-        private <ReqT, ResT> Builder registerMethod(String name,
-                                                    Class<ReqT> requestType,
-                                                    Class<ResT> responseType,
-                                                    MethodType methodType) {
-            return registerMethod(createMethodDescriptor(name, methodType, requestType, responseType, null).build());
-        }
-
-        // A simple helper method
-        private <ReqT, ResT> Builder registerMethod(String name,
-                                                    Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer,
-                                                    MethodType methodType) {
-            return registerMethod(createMethodDescriptor(name, methodType, configurer).build());
-        }
-
-        /**
-         * Register the specified ClientMethodDescriptor.
-         *
-         * @param cmd The ClientMethodDescriptor to be registered.
-         * @param <ReqT> Request type.
-         * @param <ResT> Response type.
-         * @return The current builder.
-         */
-        public <ReqT, ResT> Builder registerMethod(ClientMethodDescriptor<ReqT, ResT> cmd) {
-            ClientMethodDescriptor.Builder bldr = cmd.toBuilder().fullName(this.serviceName + "/" + cmd.name());
-            methodBuilders.put(cmd.name(), bldr);
+        private Builder metricType(MetricType metricType) {
+            this.metricType = metricType;
             return this;
         }
 
-        @SuppressWarnings("unchecked")
-        private <ReqT, ResT> ClientMethodDescriptor.Builder<ReqT, ResT> createMethodDescriptor(
+        private ClientMethodDescriptor.Builder createMethodDescriptor(
                 String methodName,
                 MethodType methodType,
-                Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer) {
+                Consumer<ClientMethodDescriptor.Config> configurer) {
 
-            Class<ReqT> requestType = (Class<ReqT>) getTypeFromMethodDescriptor(methodName, true);
-            Class<ResT> responseType = (Class<ResT>) getTypeFromMethodDescriptor(methodName, false);
-
-            return createMethodDescriptor(methodName, methodType, requestType, responseType, configurer);
-        }
-
-        private <ReqT, ResT> ClientMethodDescriptor.Builder<ReqT, ResT> createMethodDescriptor(
-                String methodName,
-                MethodType methodType,
-                Class<ReqT> requestType, Class<ResT> responseType,
-                Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> configurer) {
-
-            io.grpc.MethodDescriptor<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
-                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(this.serviceName, methodName))
+            io.grpc.MethodDescriptor.Builder<?, ?> grpcDesc = io.grpc.MethodDescriptor.newBuilder()
+                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(this.name, methodName))
                     .setType(methodType)
-                    .setRequestMarshaller(this.marshallerSupplier.get(requestType))
-                    .setResponseMarshaller(this.marshallerSupplier.get(responseType))
-                    .build();
+                    .setSampledToLocalTracing(true);
 
-            ClientMethodDescriptor.Builder<ReqT, ResT> builder = ClientMethodDescriptor.builder(grpcDesc);
+            Class<?> requestType = getTypeFromMethodDescriptor(methodName, true);
+            Class<?> responseType = getTypeFromMethodDescriptor(methodName, false);
+
+            ClientMethodDescriptor.Builder builder = ClientMethodDescriptor.builder(this.name, methodName, grpcDesc)
+                    .defaultMarshallerSupplier(this.marshallerSupplier)
+                    .requestType(requestType)
+                    .responseType(responseType);
+
             if (configurer != null) {
                 configurer.accept(builder);
             }
@@ -729,7 +571,7 @@ public class ClientServiceDescriptor {
             // todo: add error handling here, and fail fast with a more
             // todo: meaningful exception (and message) than a NPE
             // todo: if the service or the method cannot be found
-            Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
+            Descriptors.ServiceDescriptor svc = proto.findServiceByName(name);
             Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
             Descriptors.Descriptor type = fInput ? mtd.getInputType() : mtd.getOutputType();
 
@@ -787,7 +629,5 @@ public class ClientServiceDescriptor {
 
             return sb.toString();
         }
-
     }
-
 }

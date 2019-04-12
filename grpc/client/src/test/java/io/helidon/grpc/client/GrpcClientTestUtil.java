@@ -16,72 +16,14 @@
 
 package io.helidon.grpc.client;
 
-import java.util.function.Consumer;
-
-import io.helidon.grpc.client.test.StringServiceGrpc;
 import io.helidon.grpc.core.InterceptorPriority;
-import io.helidon.grpc.server.GrpcServer;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.MethodDescriptor;
-import org.eclipse.microprofile.metrics.MetricType;
-import services.StringService;
-
-import static io.helidon.grpc.client.test.Strings.StringMessage;
 
 public class GrpcClientTestUtil {
-
-    public static volatile GrpcServer grpcServer;
-
-    public static volatile int grpcPort;
-
-    static ClientServiceDescriptor protoStringSvcDesc;
-
-    static MethodDescriptor<StringMessage, StringMessage> _toLower;
-    static MethodDescriptor<StringMessage, StringMessage> _toUpper;
-    static MethodDescriptor<StringMessage, StringMessage> _split;
-    static MethodDescriptor<StringMessage, StringMessage> _join;
-    static MethodDescriptor<StringMessage, StringMessage> _echo;
-
-    public static void initProtoBasedStringServiceDesc() {
-        protoStringSvcDesc = ClientServiceDescriptor.builder(StringService.class,
-                                                             StringServiceGrpc.getServiceDescriptor()).build();
-
-        _toLower = protoStringSvcDesc.<StringMessage, StringMessage>method("Lower").descriptor();
-        _toUpper = protoStringSvcDesc.<StringMessage, StringMessage>method("Upper").descriptor();
-        _split = protoStringSvcDesc.<StringMessage, StringMessage>method("Split").descriptor();
-        _join = protoStringSvcDesc.<StringMessage, StringMessage>method("Join").descriptor();
-        _echo = protoStringSvcDesc.<StringMessage, StringMessage>method("Echo").descriptor();
-    }
-
-   public static <ReqT, ResT> Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> getMetricConfigurer(MetricType metricType) {
-        Consumer<ClientMethodDescriptor.Config<ReqT, ResT>> metricConfigurer;
-
-        switch (metricType) {
-        case COUNTER:
-            metricConfigurer = ClientMethodDescriptor.Config::counted;
-            break;
-        case GAUGE:
-            metricConfigurer = ClientMethodDescriptor.Config::gauged;
-            break;
-        case HISTOGRAM:
-            metricConfigurer = ClientMethodDescriptor.Config::histogram;
-            break;
-        case METERED:
-            metricConfigurer = ClientMethodDescriptor.Config::metered;
-            break;
-        case TIMER:
-            metricConfigurer = ClientMethodDescriptor.Config::timed;
-            break;
-        default:
-            metricConfigurer = ClientMethodDescriptor.Config::disableMetrics;
-            break;
-        }
-
-        return metricConfigurer;
-    }
 
     public static class BaseInterceptor
             implements PriorityClientInterceptor {
@@ -134,10 +76,5 @@ public class GrpcClientTestUtil {
             return InterceptorPriority.Context;
         }
     }
-
-    public static ClientServiceDescriptor getProtoStringSvcDesc() {
-        return protoStringSvcDesc;
-    }
-
 }
 
