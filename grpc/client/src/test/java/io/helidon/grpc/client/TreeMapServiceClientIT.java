@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,6 @@ import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 
-import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -40,15 +40,18 @@ import services.TreeMapService;
 import services.TreeMapService.Person;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
 public class TreeMapServiceClientIT {
 
-    private static volatile int grpcPort;
-    private static volatile GrpcServer grpcServer;
+    private static GrpcServer grpcServer;
+
+    private static Channel channel;
 
     @BeforeAll
-    public static void startServer() throws IOException, SecurityException {
+    public static void startServer() throws Exception {
 
         LogManager.getLogManager().readConfiguration();
 
@@ -57,122 +60,134 @@ public class TreeMapServiceClientIT {
                 .register(new StringService())
                 .build();
 
-        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(grpcPort).build();
+        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0).build();
 
-        GrpcServer.create(serverConfig, routing)
+        grpcServer = GrpcServer.create(serverConfig, routing)
                 .start()
-                .thenAccept(s -> {
-                    System.out.println("gRPC server is UP and listening on localhost:" + s.port());
-                    grpcServer = s;
-                    grpcPort = s.port();
-                    s.whenShutdown().thenRun(() -> System.out.println("gRPC server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
+
+        channel = ManagedChannelBuilder.forAddress("localhost", grpcServer.port()).usePlaintext().build();
     }
 
     @AfterAll
     public static void shutdownGrpcServer() {
-        grpcServer.shutdown().thenRun(() -> {
-            System.out.println("Server shutdown...");
-        });
+        grpcServer.shutdown();
     }
 
     @Test
-    public void testCreateAndInvokeUnary() throws ExecutionException, InterruptedException {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
-                .unary("get", Integer.class, Person.class)
+    public void testCreateAndInvokeAsyncUnary() throws Exception {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .unary("get")
                 .build();
 
-        Channel ch = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
-        GrpcServiceClient treeSvcClient = GrpcServiceClient.builder()
-                .clientServiceDescriptor(svcDesc)
-                .channel(ch)
-                .callOptions(CallOptions.DEFAULT)
-                .build();
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
 
-        assertThat(treeSvcClient.unary("get", 1).get(), equalTo(TreeMapService.BILBO));
+        assertThat(client.unary("get", 1).get(), equalTo(TreeMapService.BILBO));
     }
 
     @Test
-    public void testCreateAndInvokeServerStreamingMethod() throws ExecutionException, InterruptedException {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
-                .unary("get", Integer.class, Person.class)
-                .serverStreaming("greaterOrEqualTo", Integer.class, Person.class)
+    public void testCreateAndInvokeUnary() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .unary("get")
                 .build();
 
-        Channel ch = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
-        GrpcServiceClient treeSvcClient = GrpcServiceClient.builder()
-                .clientServiceDescriptor(svcDesc)
-                .channel(ch)
-                .callOptions(CallOptions.DEFAULT)
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
+        TestStreamObserver<Person> observer = new TestStreamObserver<>();
+        client.unary("get", 1, observer);
+
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValueCount(1)
+                .assertValue(TreeMapService.BILBO);
+    }
+
+    @Test
+    public void testCreateAndInvokeServerStreamingMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .serverStreaming("greaterOrEqualTo")
                 .build();
 
-        assertThat(treeSvcClient.unary("get", 1).get(), equalTo(TreeMapService.BILBO));
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
 
-        AccumulatingStreamObserver<Person> respStream = new AccumulatingStreamObserver<>();
-        treeSvcClient.serverStreaming("greaterOrEqualTo", 3, respStream);
-        respStream.waitForCompletion();
+        TestStreamObserver<Person> observer = new TestStreamObserver<>();
 
-        assertThat(respStream.getResult().size(), equalTo(3));
-        List<Integer> ids = respStream.getResult().stream().map(p -> p.getId()).collect(Collectors.toList());
+        client.serverStreaming("greaterOrEqualTo", 3, observer);
+
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValueCount(3);
+
+        List<Integer> ids = observer.values()
+                .stream()
+                .map(Person::getId)
+                .collect(Collectors.toList());
 
         assertThat(ids, equalTo(Arrays.asList(3, 4, 5)));
     }
 
-
     @Test
     public void testCreateAndInvokeClientStreamingMethod() throws ExecutionException, InterruptedException {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
-                .unary("get", Integer.class, Person.class)
-                .serverStreaming("greaterOrEqualTo", Integer.class, Person.class)
-                .clientStreaming("sumOfAges", Integer.class, Integer.class)
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .clientStreaming("sumOfAges")
                 .build();
 
-        Channel ch = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
-        GrpcServiceClient treeSvcClient = GrpcServiceClient.builder()
-                .clientServiceDescriptor(svcDesc)
-                .channel(ch)
-                .callOptions(CallOptions.DEFAULT)
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
+
+        CompletableFuture<Integer> sum = client.clientStreaming("sumOfAges", Arrays.asList(3, 4, 5));
+
+        int expected = TreeMapService.ARAGON.getAge() + TreeMapService.GALARDRIEL.getAge() + TreeMapService.GANDALF.getAge();
+        assertThat(sum.get(), is(expected));
+    }
+
+    @Test
+    public void testCreateAndInvokeObservableClientStreamingMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .clientStreaming("sumOfAges")
                 .build();
 
-        CompletableFuture<Integer> sum = treeSvcClient.clientStreaming("sumOfAges", Arrays.asList(3, 4, 5));
-        assertThat(sum.get(), equalTo(
-                TreeMapService.ARAGON.getAge() +
-                        TreeMapService.GALARDRIEL.getAge() +
-                        TreeMapService.GANDALF.getAge()));
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
+        TestStreamObserver<Integer> observer = new TestStreamObserver<>();
+
+        StreamObserver<Object> requestObserver = client.clientStreaming("sumOfAges", observer);
+        requestObserver.onNext(3);
+        requestObserver.onNext(4);
+        requestObserver.onNext(5);
+        requestObserver.onCompleted();
+
+        int expected = TreeMapService.ARAGON.getAge() + TreeMapService.GALARDRIEL.getAge() + TreeMapService.GANDALF.getAge();
+
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValueCount(1)
+                .assertValue(expected);
     }
 
 
     @Test
-    public void testCreateAndInvokeBidiStreamingMethod() throws ExecutionException, InterruptedException {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
-                .unary("get", Integer.class, Person.class)
-                .bidirectional("persons", Integer.class, Person.class)
+    public void testCreateAndInvokeBidiStreamingMethod() {
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+                .bidirectional("persons")
                 .build();
 
-        Channel ch = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
-        GrpcServiceClient treeSvcClient = GrpcServiceClient.builder()
-                .clientServiceDescriptor(svcDesc)
-                .channel(ch)
-                .callOptions(CallOptions.DEFAULT)
-                .build();
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
 
-        AccumulatingStreamObserver<Person> persons = new AccumulatingStreamObserver<>();
-        StreamObserver<Integer> ids = treeSvcClient.bidiStreaming("persons", persons);
-        for (int id : new int[] {3, 4, 5}) {
-            ids.onNext(id);
-        }
-        ids.onCompleted();
+        TestStreamObserver<Person> observer = new TestStreamObserver<>();
+        StreamObserver<Integer> requestObserver = client.bidiStreaming("persons", observer);
 
-        persons.waitForCompletion();
+        requestObserver.onNext(3);
+        requestObserver.onNext(4);
+        requestObserver.onNext(5);
+        requestObserver.onCompleted();
 
-        assertThat(persons.getResult(), equalTo(Arrays.asList(
-                TreeMapService.ARAGON, TreeMapService.GALARDRIEL, TreeMapService.GANDALF
-        )));
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValueCount(3);
+
+        assertThat(observer.values(), contains(TreeMapService.ARAGON, TreeMapService.GALARDRIEL, TreeMapService.GANDALF));
     }
-
 }

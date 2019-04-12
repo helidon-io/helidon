@@ -16,23 +16,23 @@
 
 package io.helidon.grpc.client;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import io.helidon.grpc.client.test.StringServiceGrpc;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 
-import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -43,19 +43,21 @@ import org.junit.jupiter.api.Test;
 import services.StringService;
 import services.TreeMapService;
 
-import static io.helidon.grpc.client.GrpcClientTestUtil.*;
+import static io.helidon.grpc.client.GrpcClientTestUtil.HighPriorityInterceptor;
+import static io.helidon.grpc.client.GrpcClientTestUtil.LowPriorityInterceptor;
+import static io.helidon.grpc.client.GrpcClientTestUtil.MediumPriorityInterceptor;
 import static io.helidon.grpc.client.test.Strings.StringMessage;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+/**
+ * Test a {@link GrpcServiceClient} that contains a {@link ClientServiceDescriptor}
+ * created from a protocol buffer generated service.
+ */
 public class ProtoGrpcServiceClientIT {
 
-    private static volatile int grpcPort;
     private static volatile GrpcServer grpcServer;
-
-    private static ClientServiceDescriptor stringSvcDesc;
 
     private static GrpcServiceClient grpcClient;
 
@@ -67,8 +69,7 @@ public class ProtoGrpcServiceClientIT {
     private static HighPriorityInterceptor highPriorityInterceptor = new HighPriorityInterceptor();
 
     @BeforeAll
-    @SuppressWarnings("uncheckled")
-    public static void startServer() throws IOException, SecurityException {
+    public static void startServer() throws Exception {
 
         LogManager.getLogManager().readConfiguration();
 
@@ -77,56 +78,30 @@ public class ProtoGrpcServiceClientIT {
                 .register(new StringService())
                 .build();
 
-        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(grpcPort).build();
+        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0).build();
 
-        GrpcServer.create(serverConfig, routing)
+        grpcServer = GrpcServer.create(serverConfig, routing)
                 .start()
-                .thenAccept(s -> {
-                    System.out.println("gRPC server is UP and listening on localhost:" + s.port());
-                    grpcServer = s;
-                    grpcPort = s.port();
-                    s.whenShutdown().thenRun(() -> System.out.println("gRPC server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
 
-        ClientServiceDescriptor stringSvcDesc2 = ClientServiceDescriptor
-                .builder(StringService.class, StringServiceGrpc.getServiceDescriptor())
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor
+                .builder(StringServiceGrpc.getServiceDescriptor())
                 .intercept(mediumPriorityInterceptor)
+                .intercept("Upper", highPriorityInterceptor)
+                .intercept("Lower", lowPriorityInterceptor)
                 .build();
 
-
-        ClientMethodDescriptor upperDesc = stringSvcDesc2.<StringMessage, StringMessage>method("Upper")
-                .toBuilder().intercept(highPriorityInterceptor).build();
-        ClientMethodDescriptor lowerDesc = stringSvcDesc2.<StringMessage, StringMessage>method("Lower")
-                .toBuilder().intercept(lowPriorityInterceptor).build();
-
-        stringSvcDesc = ClientServiceDescriptor
-                .builder(StringService.class, StringServiceGrpc.getServiceDescriptor())
-                .intercept(mediumPriorityInterceptor)
-                .registerMethod(upperDesc)
-                .registerMethod(lowerDesc)
+        Channel channel = ManagedChannelBuilder.forAddress("localhost", grpcServer.port())
+                .usePlaintext()
                 .build();
 
-        // Build GrpcServiceClient
-        Channel ch = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
-        grpcClient = GrpcServiceClient.builder()
-                .channel(ch)
-                .callOptions(CallOptions.DEFAULT)
-                .clientServiceDescriptor(stringSvcDesc)
-                .build();
-
-        System.out.println("Grpc Client created....");
+        grpcClient = GrpcServiceClient.create(channel, descriptor);
     }
 
     @AfterAll
     public static void shutdownGrpcServer() {
-        grpcServer.shutdown().thenRun(() -> {
-            System.out.println("Server shutdown...");
-        });
+        grpcServer.shutdown();
     }
 
     @BeforeEach
@@ -138,191 +113,122 @@ public class ProtoGrpcServiceClientIT {
 
     @Test
     public void testServiceName() {
-        assertThat(grpcClient.serviceName(), equalTo("StringService"));
-    }
-
-    @Test
-    public void testCorrectMethodCountForStringService() {
-
-        Set<String> methodNames = new HashSet<>();
-        methodNames.addAll(Arrays.asList("Lower", "Upper", "Split", "Join", "Echo"));
-
-        for (String name : methodNames) {
-            assertThat(stringSvcDesc.method(name), notNullValue());
-        }
-    }
-
-    @Test
-    public void testCorrectNameForStringService() {
-
-        Set<String> methodNames = new HashSet<>();
-        methodNames.addAll(Arrays.asList("Lower", "Upper", "Split", "Join", "Echo"));
-
-        assertThat(stringSvcDesc.methods().size(), is(methodNames.size()));
+        assertThat(grpcClient.serviceName(), is("StringService"));
     }
 
     @Test
     public void testBlockingUnaryMethods() {
-        assertThat(
-                grpcClient.<StringMessage, StringMessage>blockingUnary("Lower", inputMsg).getText(),
-                equalTo(inputStr.toLowerCase()));
+        assertThat(grpcClient.<StringMessage, StringMessage>blockingUnary("Lower", inputMsg).getText(),
+                   is(inputStr.toLowerCase()));
     }
 
     @Test
     public void testAsyncUnaryMethodWithCompletableFuture() throws InterruptedException, ExecutionException {
-        // Async that returns a CompletableFuture.
         CompletableFuture<StringMessage> result = grpcClient.unary("Upper", inputMsg);
         assertThat(result.get().getText(), equalTo(inputStr.toUpperCase()));
     }
 
     @Test
-    public void testAsyncUnaryMethodWithStreamObserver() throws InterruptedException, ExecutionException {
-        // Async that takes a StreamObserver.
-        GrpcServiceClient.SingleValueStreamObserver<StringMessage> observer = new GrpcServiceClient.SingleValueStreamObserver();
+    public void testAsyncUnaryMethodWithStreamObserver() {
+        TestStreamObserver<StringMessage> observer = new TestStreamObserver<>();
         grpcClient.unary("Upper", inputMsg, observer);
-        assertThat(observer.getFuture().get().getText(), equalTo(inputStr.toUpperCase()));
+
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValue(v -> v.getText().equals(inputStr.toUpperCase()));
     }
 
     @Test
     public void testAsyncClientStreamingMethodWithIterable() throws Throwable {
-        // Prepare the input collection
-        final String expectedSentence = "A simple invocation of a client streaming method";
+        String expectedSentence = "A simple invocation of a client streaming method";
         Collection<StringMessage> input = Arrays.stream(expectedSentence.split(" "))
-                .map(w -> StringMessage.newBuilder().setText(w).build())
-                .collect(Collectors.toList());
+                                                .map(w -> StringMessage.newBuilder().setText(w).build())
+                                                .collect(Collectors.toList());
 
         CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input);
         assertThat(result.get().getText(), equalTo(expectedSentence));
     }
 
     @Test
-    public void testAsyncClientStreamingMethod() throws Throwable {
-        GrpcServiceClient.SingleValueStreamObserver<StringMessage> respStream = new GrpcServiceClient.SingleValueStreamObserver();
-        StreamObserver<StringMessage> clientStream = grpcClient.clientStreaming("Join", respStream);
+    public void testAsyncClientStreamingMethod() {
+        TestStreamObserver<StringMessage> observer = new TestStreamObserver<>();
+        StreamObserver<StringMessage> clientStream = grpcClient.clientStreaming("Join", observer);
 
-        final String expectedSentence = "A simple invocation of a client streaming method";
+        String expectedSentence = "A simple invocation of a client streaming method";
         for (String word : expectedSentence.split(" ")) {
             clientStream.onNext(StringMessage.newBuilder().setText(word).build());
         }
         clientStream.onCompleted();
 
-        assertThat(respStream.getFuture().get().getText(), equalTo(expectedSentence));
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValue(v -> v.getText().equals(expectedSentence));
     }
 
     @Test
-    public void testBlockingServerStreamingMethods() throws Throwable {
-        final String sentence = "A simple invocation of a client streaming method";
+    public void testBlockingServerStreamingMethods() {
+        String sentence = "A simple invocation of a client streaming method";
+        StringMessage message = StringMessage.newBuilder().setText(sentence).build();
+
+        Iterator<StringMessage> iterator = grpcClient.blockingServerStreaming("Split", message);
+
+        Spliterator<StringMessage> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
+        String result = StreamSupport.stream(spliterator, false)
+                                            .map(StringMessage::getText)
+                                            .collect(Collectors.joining(" "));
+
+        assertThat(result, is(sentence));
+    }
+
+    @Test
+    public void testAsyncServerStreamingMethods() {
+        String sentence = "A simple invocation of a client streaming method";
         String[] expectedWords = sentence.split(" ");
-        int index = 0;
+        StringMessage request = StringMessage.newBuilder().setText(sentence).build();
+        TestStreamObserver<StringMessage> observer = new TestStreamObserver<>();
 
-        // Blocking call
-        Iterator<StringMessage> iter = grpcClient.blockingServerStreaming(
-                "Split", StringMessage.newBuilder().setText(sentence).build());
-        while (iter.hasNext()) {
-            assertThat(iter.next().getText(), equalTo(expectedWords[index++]));
-        }
+        grpcClient.serverStreaming("Split", request, observer);
+
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValueCount(expectedWords.length);
+
+        String[] results = observer.values()
+                                   .stream()
+                                   .map(StringMessage::getText)
+                                   .toArray(String[]::new);
+
+        assertThat(results, is(expectedWords));
     }
 
     @Test
-    public void testAsyncServerStreamingMethods() throws Throwable {
-        final String sentence = "A simple invocation of a client streaming method";
-        final String[] expectedWords = sentence.split(" ");
-        final CompletableFuture<Boolean> done = new CompletableFuture<>();
+    public void testInvokeBidiStreamingMethod() {
+        String sentence = "A simple invocation of a Bidi streaming method";
+        String[] expectedWords = sentence.split(" ");
 
-        // Async serverStreaming call
-        grpcClient.serverStreaming("Split", StringMessage.newBuilder().setText(sentence).build(), new StreamObserver<StringMessage>() {
-            private int index = 0;
-            private boolean currentStatus = true;
-
-            @Override
-            public void onNext(StringMessage value) {
-                currentStatus = currentStatus && value.getText().equals(expectedWords[index++]);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                currentStatus = false;
-            }
-
-            @Override
-            public void onCompleted() {
-                done.complete(currentStatus);
-            }
-        });
-
-        assertThat(done.get(), is(true));
-    }
-
-    @Test
-    public void testBidiStreamingMethodWithIterable() throws InterruptedException, ExecutionException {
-        final String sentence = "A simple invocation of a Bidi streaming method";
-        final String[] expectedWords = sentence.split(" ");
-
-        Collection<StringMessage> input = Arrays.stream(sentence.split(" "))
-                .map(w -> StringMessage.newBuilder().setText(w).build())
-                .collect(Collectors.toList());
-
-        CompletableFuture<Boolean> status = new CompletableFuture<>();
-        grpcClient.bidiStreaming("Echo", input, new StreamObserver<StringMessage>() {
-            private int index = 0;
-            private boolean currentStatus = true;
-
-            @Override
-            public void onNext(StringMessage value) {
-                currentStatus = currentStatus && value.getText().equals(expectedWords[index++]);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                status.complete(currentStatus = false);
-                t.printStackTrace();
-            }
-
-            @Override
-            public void onCompleted() {
-                status.complete(currentStatus);
-            }
-        });
-
-        assertThat(status.get(), equalTo(true));
-    }
-
-    @Test
-    public void testInvokeBidiStreamingMethod() throws InterruptedException, ExecutionException {
-        final String sentence = "A simple invocation of a Bidi streaming method";
-        final String[] expectedWords = sentence.split(" ");
-
-        Collection<StringMessage> input = Arrays.stream(sentence.split(" "))
-                .map(w -> StringMessage.newBuilder().setText(w).build())
-                .collect(Collectors.toList());
-
-        CompletableFuture<Boolean> status = new CompletableFuture<>();
-        StreamObserver<StringMessage> clientStream = grpcClient.bidiStreaming("Echo", new StreamObserver<StringMessage>() {
-            private int index = 0;
-            private boolean currentStatus = true;
-
-            @Override
-            public void onNext(StringMessage value) {
-                currentStatus = currentStatus && value.getText().equals(expectedWords[index++]);
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                status.complete(currentStatus = false);
-            }
-
-            @Override
-            public void onCompleted() {
-                status.complete(currentStatus);
-            }
-        });
+        TestStreamObserver<StringMessage> observer = new TestStreamObserver<>();
+        StreamObserver<StringMessage> clientStream = grpcClient.bidiStreaming("Echo", observer);
 
         for (String w : expectedWords) {
             clientStream.onNext(StringMessage.newBuilder().setText(w).build());
         }
         clientStream.onCompleted();
 
-        assertThat(status.get(), equalTo(true));
+        assertThat(observer.awaitTerminalEvent(10, TimeUnit.SECONDS), is(true));
+        observer.assertComplete()
+                .assertNoErrors()
+                .assertValueCount(expectedWords.length);
+
+
+        String[] results = observer.values()
+                                   .stream()
+                                   .map(StringMessage::getText)
+                                   .toArray(String[]::new);
+
+        assertThat(results, is(expectedWords));
     }
 
     @Test
@@ -346,5 +252,4 @@ public class ProtoGrpcServiceClientIT {
         assertThat(mediumPriorityInterceptor.getInvocationCount(), equalTo(2));
         assertThat(highPriorityInterceptor.getInvocationCount(), equalTo(1));
     }
-
 }

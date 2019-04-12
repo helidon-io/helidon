@@ -18,35 +18,26 @@ package io.helidon.grpc.client;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 import io.helidon.grpc.core.MarshallerSupplier;
 
 import io.grpc.ClientInterceptor;
-import io.grpc.Context;
 import io.grpc.MethodDescriptor;
 import org.eclipse.microprofile.metrics.MetricType;
-
-import static io.helidon.grpc.core.GrpcHelper.extractNamePrefix;
 
 /**
  * Encapsulates all metadata necessary to define a gRPC method. In addition to wrapping a {@link io.grpc.MethodDescriptor},
  * this class also holds the request and response types of the gRPC method. A
  * {@link io.helidon.grpc.client.ClientServiceDescriptor} can contain zero or more {@link io.grpc.MethodDescriptor}.
  *
- * An instance of ClientMethodDescriptor can be created either from an existing {@link io.grpc.MethodDescriptor} or from
- * one of the factory methods like {@link io.helidon.grpc.client.ClientMethodDescriptor#unary(String, Class, Class)}, or
- * {@link io.helidon.grpc.client.ClientMethodDescriptor#clientStreaming(String, Class, Class)} etc.
- *
- * @param <ReqT> request type
- * @param <ResT> response type
+ * An instance of ClientMethodDescriptor can be created either from an existing {@link io.grpc.MethodDescriptor} or
+ * from one of the factory methods {@link #bidirectional(String, String)}, {@link #clientStreaming(String, String)},
+ * {@link #serverStreaming(String, String)} or {@link #unary(String, String)}.
  *
  * @author Mahesh Kannan
  */
-public final class ClientMethodDescriptor<ReqT, ResT> {
+public final class ClientMethodDescriptor {
 
     /**
      * The simple name of the method.
@@ -57,7 +48,7 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
      * The {@link io.grpc.MethodDescriptor} for this method. This is usually obtained from protocol buffer
      * method getDescriptor (from service getDescriptor).
      */
-    private io.grpc.MethodDescriptor<ReqT, ResT> descriptor;
+    private io.grpc.MethodDescriptor descriptor;
 
     /**
      * The metric type to be used for collecting method level metrics.
@@ -65,163 +56,116 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
     private MetricType metricType;
 
     /**
-     * The context to be used for method invocation.
-     */
-    private Map<Context.Key, Object> context;
-
-    /**
-     * The type of the request parameter of this method.
-     */
-    private Class requestType;
-
-    /**
-     * The type of the return value of this method.
-     */
-    private Class responseType;
-
-    /**
      * The list of client interceptors for this method.
      */
     private ArrayList<ClientInterceptor> interceptors;
 
     private ClientMethodDescriptor(String name,
-                                  MethodDescriptor<ReqT, ResT> descriptor,
-                                  MetricType metricType,
-                                  Map<Context.Key, Object> context,
-                                  Class requestType,
-                                  Class responseType,
-                                  ArrayList<ClientInterceptor> interceptors) {
+                                   MethodDescriptor descriptor,
+                                   MetricType metricType,
+                                   ArrayList<ClientInterceptor> interceptors) {
         this.name = name;
         this.descriptor = descriptor;
         this.metricType = metricType;
-        this.context = context;
-        this.requestType = requestType;
-        this.responseType = responseType;
         this.interceptors = interceptors;
     }
 
     /**
      * Creates a new {@link ClientMethodDescriptor.Builder} with the specified name and {@link io.grpc.MethodDescriptor}.
      *
-     * @param simpleName   The simple method name.
-     * @param descriptor The {@link io.grpc.MethodDescriptor} to initialize this builder.
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the simple method name
+     * @param descriptor  the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
+     * @return A new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> Builder<ReqT, ResT> builder(String simpleName, io.grpc.MethodDescriptor<ReqT, ResT> descriptor) {
-        String fullName = descriptor.getFullMethodName();
-        int index = fullName.lastIndexOf('/');
-        return new Builder<>(fullName.substring(0, index) + "/" + simpleName, descriptor);
+    static  Builder builder(String serviceName,
+                                                    String name,
+                                                    io.grpc.MethodDescriptor.Builder descriptor) {
+        return new Builder(serviceName, name, descriptor);
     }
 
     /**
-     * Creates a new {@link ClientMethodDescriptor.Builder} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new {@link ClientMethodDescriptor.Builder} with the specified
+     * name and {@link io.grpc.MethodDescriptor}.
      *
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the simple method name
+     * @param descriptor  the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
+     * @return a new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> Builder<ReqT, ResT> builder(io.grpc.MethodDescriptor<ReqT, ResT> descriptor) {
-        return new Builder<>(descriptor);
+    static  ClientMethodDescriptor create(String serviceName,
+                                          String name,
+                                          io.grpc.MethodDescriptor.Builder descriptor) {
+        return builder(serviceName, name, descriptor).build();
     }
 
     /**
-     * Creates a new UNARY {@link ClientMethodDescriptor} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new unary {@link ClientMethodDescriptor.Builder} with
+     * the specified name.
      *
-     * @param fullName The full method name.
-     * @param <ReqT>   The request type.
-     * @param <ResT>   The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the method name
+     * @return a new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> unary(String fullName,
-                                                                 Class<ReqT> requestType,
-                                                                 Class<ResT> responseType) {
-        return createMethodDescriptor(fullName, MethodDescriptor.MethodType.UNARY, requestType, responseType);
+    static  ClientMethodDescriptor.Builder unary(String serviceName, String name) {
+        return builder(serviceName, name, MethodDescriptor.MethodType.UNARY);
     }
 
     /**
-     * Creates a new Client Streaming {@link ClientMethodDescriptor} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new client Streaming {@link ClientMethodDescriptor.Builder} with
+     * the specified name.
      *
-     * @param fullName The full method name.
-     * @param <ReqT>   The request type.
-     * @param <ResT>   The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the method name
+     * @return a new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> clientStreaming(String fullName,
-                                                                 Class<ReqT> requestType,
-                                                                 Class<ResT> responseType) {
-        return createMethodDescriptor(fullName, MethodDescriptor.MethodType.CLIENT_STREAMING, requestType, responseType);
+    static  ClientMethodDescriptor.Builder clientStreaming(String serviceName, String name) {
+        return builder(serviceName, name, MethodDescriptor.MethodType.CLIENT_STREAMING);
     }
 
     /**
-     * Creates a new Server Streaming {@link ClientMethodDescriptor} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new server streaming {@link ClientMethodDescriptor.Builder} with
+     * the specified name.
      *
-     * @param fullName The full method name.
-     * @param <ReqT>   The request type.
-     * @param <ResT>   The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the method name
+     * @return a new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> serverStreaming(String fullName,
-                                                                           Class<ReqT> requestType,
-                                                                           Class<ResT> responseType) {
-        return createMethodDescriptor(fullName, MethodDescriptor.MethodType.SERVER_STREAMING, requestType, responseType);
+    static  ClientMethodDescriptor.Builder serverStreaming(String serviceName, String name) {
+        return builder(serviceName, name, MethodDescriptor.MethodType.SERVER_STREAMING);
     }
 
     /**
-     * Creates a new BiDi {@link ClientMethodDescriptor} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new bidirectional {@link ClientMethodDescriptor.Builder} with
+     * the specified name.
      *
-     * @param fullName The full method name.
-     * @param <ReqT>   The request type.
-     * @param <ResT>   The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the method name
+     * @return a new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> bidirectional(String fullName,
-                                                                           Class<ReqT> requestType,
-                                                                           Class<ResT> responseType) {
-        return createMethodDescriptor(fullName, MethodDescriptor.MethodType.BIDI_STREAMING, requestType, responseType);
-    }
-
-    // private helper method
-    private static <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> createMethodDescriptor(String fullName,
-                                                                                          MethodDescriptor.MethodType methodType,
-                                                                                          Class<ReqT> requestType,
-                                                                                          Class<ResT> responseType) {
-        MethodDescriptor<ReqT, ResT> cmd = MethodDescriptor.<ReqT, ResT>newBuilder()
-                .setType(methodType)
-                .setFullMethodName(fullName)
-                .setRequestMarshaller(MarshallerSupplier.defaultInstance().get(requestType))  // otherwise NPE
-                .setResponseMarshaller(MarshallerSupplier.defaultInstance().get(responseType))  // otherwise NPE
-                .build();
-
-        String prefix = extractNamePrefix(fullName);
-        String simpleName = fullName.substring(prefix.length() + 1);
-        return ClientMethodDescriptor.builder(simpleName, cmd)
-                .requestType(requestType)
-                .responseType(responseType)
-                .build();
+    static  ClientMethodDescriptor.Builder bidirectional(String serviceName, String name) {
+        return builder(serviceName, name, MethodDescriptor.MethodType.BIDI_STREAMING);
     }
 
     /**
-     * Creates a new {@link ClientMethodDescriptor} with the specified name and {@link io.grpc.MethodDescriptor}.
+     * Creates a new {@link ClientMethodDescriptor.Builder} with the specified name.
      *
-     * @param name       The method name.
-     * @param descriptor The {@link io.grpc.MethodDescriptor}.
-     * @param <ReqT>     The request type.
-     * @param <ResT>     The response type.
-     * @return A new instance of a {@link io.helidon.grpc.client.ClientMethodDescriptor.Builder}
+     * @param serviceName the name of the owning gRPC service
+     * @param name        the method name
+     * @param methodType  the gRPC method type
+     * @return a new instance of a {@link ClientMethodDescriptor.Builder}
      */
-    static <ReqT, ResT> ClientMethodDescriptor<ReqT, ResT> create(String name, io.grpc.MethodDescriptor<ReqT, ResT> descriptor) {
-        return builder(name, descriptor).build();
-    }
+    static  ClientMethodDescriptor.Builder builder(String serviceName,
+                                                   String name,
+                                                   MethodDescriptor.MethodType methodType) {
 
-    ClientMethodDescriptor.Builder toBuilder() {
-        return builder(this.name, this.descriptor)
-                .requestType(this.requestType)
-                .responseType(this.responseType)
-                .metricType(this.metricType)
-                .intercept(this.interceptors)
-                .context(this.context);
+        MethodDescriptor.Builder builder = MethodDescriptor.newBuilder()
+                .setFullMethodName(serviceName + "/" + name)
+                .setType(methodType);
+
+        return new Builder(serviceName, name, builder)
+                .requestType(Object.class)
+                .responseType(Object.class);
     }
 
     /**
@@ -236,9 +180,13 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
     /**
      * Returns the {@link io.grpc.MethodDescriptor} of this method.
      *
+     * @param <ReqT> the request type
+     * @param <RespT> the response type
+     *
      * @return The {@link io.grpc.MethodDescriptor} of this method.
      */
-    public MethodDescriptor<ReqT, ResT> descriptor() {
+    @SuppressWarnings("unchecked")
+    public <ReqT, RespT> MethodDescriptor<ReqT, RespT> descriptor() {
         return descriptor;
     }
 
@@ -252,33 +200,6 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
     }
 
     /**
-     * Returns the context.
-     *
-     * @return The context object.
-     */
-    public Map<Context.Key, Object> context() {
-        return context;
-    }
-
-    /**
-     * Returns the type of parameter of this method.
-     *
-     * @return the type of parameter of this method.
-     */
-    public Class requestType() {
-        return requestType;
-    }
-
-    /**
-     * Returns the type of return value of this method.
-     *
-     * @return the type of return value of this method.
-     */
-    public Class responseType() {
-        return responseType;
-    }
-
-    /**
      * Obtain the {@link ClientInterceptor}s to use for this method.
      *
      * @return the {@link ClientInterceptor}s to use for this method
@@ -288,46 +209,9 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
     }
 
     /**
-     * Checks if this object is identical to the specified {@link ClientMethodDescriptor}. The two instances are considered
-     * identical if both have identical requestType, responseType, context, interceptors and descriptor.
-     * @param o The other {@link ClientMethodDescriptor}.
-     * @return true if they are identical, false otherwise.
-     */
-    public boolean isIdentical(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ClientMethodDescriptor<?, ?> that = (ClientMethodDescriptor<?, ?>) o;
-        return Objects.equals(name, that.name)
-                && metricType == that.metricType
-                && Objects.equals(requestType, that.requestType)
-                && Objects.equals(responseType, that.responseType)
-                && Objects.equals(context, that.context)
-                && Objects.equals(interceptors, that.interceptors)
-                && isIdentical(descriptor, that.descriptor);
-    }
-
-    private boolean isIdentical(MethodDescriptor d1, MethodDescriptor d2) {
-        return d1.getRequestMarshaller() == d2.getRequestMarshaller()
-                && d1.getResponseMarshaller() == d2.getResponseMarshaller()
-                && d1.getType() == d2.getType()
-                && d1.getFullMethodName().equals(d2.getFullMethodName())
-                && d1.isIdempotent() == d2.isIdempotent()
-                && d1.isSafe() == d2.isSafe()
-                && d1.isSampledToLocalTracing() == d2.isSampledToLocalTracing()
-                && d1.getSchemaDescriptor() == d2.getSchemaDescriptor();
-    }
-
-    /**
      * ClientMethod configuration API.
-     *
-     * @param <ReqT> request type
-     * @param <ResT> response type
      */
-    public interface Config<ReqT, ResT> {
+    public interface Config {
 
         /**
          * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Counter}.
@@ -335,54 +219,35 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
          * @return this {@link Config} instance for fluent call chaining
          */
 
-        Config<ReqT, ResT> counted();
-
-        /**
-         * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Gauge}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config<ReqT, ResT> gauged();
+        Config counted();
 
         /**
          * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Meter}.
          *
          * @return this {@link Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> metered();
+        Config metered();
 
         /**
          * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Histogram}.
          *
          * @return this {@link Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> histogram();
+        Config histogram();
 
         /**
          * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Timer}.
          *
          * @return this {@link Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> timed();
+        Config timed();
 
         /**
          * Explicitly disable metrics collection for this service.
          *
          * @return this {@link Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> disableMetrics();
-
-        /**
-         * Add a {@link Context.Key} and value to be added to the call {@link Context}
-         * when this method is invoked.
-         *
-         * @param key   the {@link Context.Key} to add
-         * @param value the value to map to the {@link Context.Key}
-         * @param <T>   the type of the {@link Context.Key} and value
-         * @return this {@link Config} instance for fluent call chaining
-         * @throws NullPointerException if the key parameter is null
-         */
-        <T> Config<ReqT, ResT> addContextKey(Context.Key<T> key, T value);
+        Config disableMetrics();
 
         /**
          * Sets the type of parameter of this method.
@@ -390,7 +255,7 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
          * @param type The type of parameter of this method.
          * @return this {@link Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> requestType(Class type);
+        Config requestType(Class type);
 
         /**
          * Sets the type of parameter of this method.
@@ -398,7 +263,7 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
          * @param type The type of parameter of this method.
          * @return this {@link Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> responseType(Class type);
+        Config responseType(Class type);
 
         /**
          * Register one or more {@link ClientInterceptor interceptors} for the method.
@@ -406,163 +271,147 @@ public final class ClientMethodDescriptor<ReqT, ResT> {
          * @param interceptors the interceptor(s) to register
          * @return this {@link io.helidon.grpc.client.ClientMethodDescriptor.Config} instance for fluent call chaining
          */
-        Config<ReqT, ResT> intercept(ClientInterceptor... interceptors);
+        Config intercept(ClientInterceptor... interceptors);
+
+        /**
+         * Register the {@link MarshallerSupplier} for the method.
+         * <p>
+         * If not set the default {@link MarshallerSupplier} from the service will be used.
+         *
+         * @param marshallerSupplier the {@link MarshallerSupplier} for the service
+         * @return this {@link Config} instance for fluent call chaining
+         */
+        Config marshallerSupplier(MarshallerSupplier marshallerSupplier);
     }
 
     /**
      * {@link MethodDescriptor} builder implementation.
-     *
-     * @param <ReqT> request type
-     * @param <ResT> response type
      */
-    public static class Builder<ReqT, ResT>
-            implements Config<ReqT, ResT> {
+    public static class Builder
+            implements Config, io.helidon.common.Builder<ClientMethodDescriptor> {
 
         private String name;
-        private io.grpc.MethodDescriptor<ReqT, ResT> descriptor;
+        private io.grpc.MethodDescriptor.Builder descriptor;
         private MetricType metricType;
-        private Map<Context.Key, Object> context = new HashMap<>();
-        private Class requestType;
-        private Class responseType;
+        private Class<?> requestType;
+        private Class<?> responseType;
         private ArrayList<ClientInterceptor> interceptors = new ArrayList<>();
-        private io.grpc.MethodDescriptor.Builder<ReqT, ResT> descBuilder;
+        private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
+        private MarshallerSupplier marshallerSupplier;
 
         /**
          * Constructs a new Builder instance.
          *
-         * @param descriptor The gRPC method descriptor.
+         * @param serviceName The name of the service ths method belongs to
+         * @param name the name of this method
+         * @param descriptor The gRPC method descriptor builder
          */
-        Builder(MethodDescriptor<ReqT, ResT> descriptor) {
-            this(descriptor.getFullMethodName(), descriptor);
-        }
-
-        /**
-         * Constructs a new Builder instance.
-         *
-         * @param fullName The full method name.
-         * @param descriptor The gRPC method descriptor.
-         */
-        Builder(String fullName, MethodDescriptor<ReqT, ResT> descriptor) {
-            this.descBuilder = descriptor.toBuilder();
-            fullName(fullName);
+        Builder(String serviceName, String name, MethodDescriptor.Builder descriptor) {
+            this.name = name;
+            this.descriptor = descriptor.setFullMethodName(serviceName + "/" + name);
         }
 
         @Override
-        public Builder<ReqT, ResT> counted() {
+        public Builder counted() {
             return metricType(MetricType.COUNTER);
         }
 
         @Override
-        public Builder<ReqT, ResT> gauged() {
-            return metricType(MetricType.GAUGE);
-        }
-
-        @Override
-        public Builder<ReqT, ResT> metered() {
+        public Builder metered() {
             return metricType(MetricType.METERED);
         }
 
         @Override
-        public Builder<ReqT, ResT> histogram() {
+        public Builder histogram() {
             return metricType(MetricType.HISTOGRAM);
         }
 
         @Override
-        public Builder<ReqT, ResT> timed() {
+        public Builder timed() {
             return metricType(MetricType.TIMER);
         }
 
         @Override
-        public Builder<ReqT, ResT> disableMetrics() {
+        public Builder disableMetrics() {
             return metricType(MetricType.INVALID);
         }
 
-        /**
-         * Sets the simple name of this Method.
-         *
-         * @param name the simple name of the method.
-         * @return This builder instance for fluent API.
-         */
-        public Builder<ReqT, ResT> name(String name) {
-            String prefix = extractNamePrefix(descBuilder.build().getFullMethodName());
-            return fullName(prefix + "/" + name);
-        }
-
-        /**
-         * Sets the full name of this Method.
-         *
-         * @param fullName the simple name of the method.
-         * @return This builder instance for fluent API.
-         */
-        public Builder<ReqT, ResT> fullName(String fullName) {
-            descBuilder.setFullMethodName(fullName);
-            this.name = fullName.substring(fullName.lastIndexOf('/') + 1);
-            return this;
-        }
-
-        private Builder<ReqT, ResT> metricType(MetricType metricType) {
+        private Builder metricType(MetricType metricType) {
             this.metricType = metricType;
             return this;
         }
 
         @Override
-        public <T> Builder<ReqT, ResT> addContextKey(Context.Key<T> key, T value) {
-            this.context.put(Objects.requireNonNull(key, "The context key cannot be null"), value);
-            return this;
-        }
-
-        @Override
-        public Builder<ReqT, ResT> requestType(Class type) {
+        public Builder requestType(Class type) {
             this.requestType = type;
             return this;
         }
 
         @Override
-        public Builder<ReqT, ResT> responseType(Class type) {
+        public Builder responseType(Class type) {
             this.responseType = type;
             return this;
         }
 
         @Override
-        public Builder<ReqT, ResT> intercept(ClientInterceptor... interceptors) {
+        public Builder intercept(ClientInterceptor... interceptors) {
             Collections.addAll(this.interceptors, interceptors);
             return this;
         }
 
-        // Internal method
-        private Builder<ReqT, ResT> intercept(ArrayList<ClientInterceptor> interceptors) {
-            this.interceptors.addAll(interceptors);
+        @Override
+        public Builder marshallerSupplier(MarshallerSupplier supplier) {
+            this.marshallerSupplier = supplier;
             return this;
         }
 
-        // Internal method
-        private Builder<ReqT, ResT> context(Map<Context.Key, Object> ctx) {
-            this.context.putAll(ctx);
+        Builder defaultMarshallerSupplier(MarshallerSupplier supplier) {
+            if (supplier == null) {
+                this.defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
+            } else {
+                this.defaultMarshallerSupplier = supplier;
+            }
+            return this;
+        }
+
+        /**
+         * Sets the full name of this Method.
+         *
+         * @param fullName the full name of the method
+         * @return this builder instance for fluent API
+         */
+        Builder fullName(String fullName) {
+            descriptor.setFullMethodName(fullName);
+            this.name = fullName.substring(fullName.lastIndexOf('/') + 1);
             return this;
         }
 
         /**
          * Builds and returns a new instance of {@link ClientMethodDescriptor}.
          *
-         * @return A new instance of {@link ClientMethodDescriptor}.
+         * @return a new instance of {@link ClientMethodDescriptor}
          */
+        @Override
         @SuppressWarnings("unchecked")
-        public ClientMethodDescriptor<ReqT, ResT> build() {
-            if (this.requestType != null) {
-                descBuilder.setRequestMarshaller(MarshallerSupplier.defaultInstance().get(this.requestType));
-            }
-            if (this.responseType != null) {
-                descBuilder.setResponseMarshaller(MarshallerSupplier.defaultInstance().get(this.responseType));
+        public ClientMethodDescriptor build() {
+            MarshallerSupplier supplier = this.marshallerSupplier;
+
+            if (supplier == null) {
+                supplier = defaultMarshallerSupplier;
             }
 
-            this.descriptor = descBuilder.build();
-            return new ClientMethodDescriptor<>(name,
-                                                descriptor,
-                                                metricType,
-                                                context,
-                                                requestType,
-                                                responseType,
-                                                interceptors);
+            if (requestType != null) {
+                descriptor.setRequestMarshaller(supplier.get(requestType));
+            }
+
+            if (responseType != null) {
+                descriptor.setResponseMarshaller(supplier.get(responseType));
+            }
+
+            return new ClientMethodDescriptor(name,
+                                              descriptor.build(),
+                                              metricType,
+                                              interceptors);
         }
 
     }
