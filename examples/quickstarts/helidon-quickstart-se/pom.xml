@@ -81,6 +81,7 @@
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
                                 <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
                         </archive>
                     </configuration>

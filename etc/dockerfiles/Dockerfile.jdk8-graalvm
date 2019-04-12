@@ -1,0 +1,47 @@
+FROM debian:stretch as build
+
+WORKDIR /build
+
+RUN set -x \
+    && apt-get -y update \
+    && apt-get -y install curl
+
+RUN curl -O -L https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/graalvm-ce-1.0.0-rc13-linux-amd64.tar.gz && \
+    tar -xvzf graalvm-*.tar.gz && \
+    rm graalvm-*.tar.gz && \
+    mv graalvm-* graalvm
+
+RUN cd graalvm && \
+    rm -rf \
+    samples \
+    man \
+    jre/man \
+    jre/languages \
+    src.zip \
+    bin/jvisualvm lib/visualvm \
+    bin/js jre/bin/js \
+    bin/node jre/bin/node \
+    bin/npm jre/bin/npm \
+    bin/polyglot jre/bin/polyglot \
+    bin/lli jre/bin/lli \
+    jre/lib/amd64/libjvmcicompiler.so \
+    jre/lib/amd64/liblcms.so \
+    jre/lib/boot/graaljs-scriptengine.jar \
+    jre/lib/graalvm/graal-truffle-compiler-libgraal.jar \
+    jre/lib/graalvm/graaljs-launcher.jar \
+    jre/lib/graalvm/sulong-launcher.jar
+
+RUN echo "done!"
+
+FROM debian:stretch-slim as final
+
+RUN set -x \
+    && apt-get -y update \
+    && apt-get -y install gcc zlib1g-dev \
+    && apt-get clean autoclean \
+    && apt-get autoremove --yes \
+    && rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+WORKDIR /graal
+COPY --from=build /build/graalvm /graal/graalvm
+ENV GRAALVM_HOME=/graal/graalvm
