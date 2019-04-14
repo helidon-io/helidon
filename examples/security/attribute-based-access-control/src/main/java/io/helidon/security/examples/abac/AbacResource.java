@@ -17,23 +17,15 @@ package io.helidon.security.examples.abac;
 
 import java.time.DayOfWeek;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
-import io.helidon.security.AuthorizationResponse;
-import io.helidon.security.SecurityContext;
 import io.helidon.security.SubjectType;
 import io.helidon.security.abac.policy.PolicyValidator;
 import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.abac.time.TimeValidator;
 import io.helidon.security.annotations.Authenticated;
-import io.helidon.security.annotations.Authorized;
 
 /**
  * Annotation only resource.
