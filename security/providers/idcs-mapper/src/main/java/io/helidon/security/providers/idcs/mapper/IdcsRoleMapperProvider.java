@@ -73,8 +73,8 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
      *
      * @return a new fluent API builder.
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
     /**
