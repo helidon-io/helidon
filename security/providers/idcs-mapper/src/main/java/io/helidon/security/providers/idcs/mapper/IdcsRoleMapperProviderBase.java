@@ -65,14 +65,28 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
     private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProviderBase.class.getName());
 
+    /**
+     * Json key for group roles to be retrieved from IDCS response.
+     */
     protected static final String ROLE_GROUP = "groups";
+    /**
+     * Json key for app roles to be retrieved from IDCS response.
+     */
     protected static final String ROLE_APPROLE = "appRoles";
+    /**
+     * Json key for token to be retrieved from IDCS response when requesting application token.
+     */
     protected static final String ACCESS_TOKEN_KEY = "access_token";
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
     private final String defaultIdcsSubjectType;
 
+    /**
+     * Configures the needed fields from the provided builder.
+     *
+     * @param builder builder with oidcConfig and other needed fields.
+     */
     protected IdcsRoleMapperProviderBase(Builder<?> builder) {
         this.oidcConfig = builder.oidcConfig;
         this.defaultIdcsSubjectType = builder.defaultIdcsSubjectType;
@@ -123,6 +137,12 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return complete(builder.build());
     }
 
+    /**
+     * Create a {@link java.util.concurrent.CompletionStage} with the provided response as its completion.
+     *
+     * @param response authentication response to complete with
+     * @return stage completed with the response
+     */
     protected CompletionStage<AuthenticationResponse> complete(AuthenticationResponse response) {
         return CompletableFuture.completedFuture(response);
     }
@@ -153,6 +173,13 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return builder.build();
     }
 
+    /**
+     * Process the server response to retrieve groups and app roles from it.
+     *
+     * @param groupResponse response from IDCS
+     * @param subjectName name of the subject
+     * @return list of grants obtained from the IDCS response
+     */
     protected Optional<List<? extends Grant>> processServerResponse(Response groupResponse, String subjectName) {
         if (groupResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
             JsonObject jsonObject = groupResponse.readEntity(JsonObject.class);
@@ -198,16 +225,28 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         }
     }
 
+    /**
+     * Access to {@link io.helidon.security.providers.oidc.common.OidcConfig} so the field is not duplicated by
+     *  classes that extend this provider.
+     *
+     * @return open ID Connect configuration (also used to configure access to IDCS)
+     */
     protected OidcConfig oidcConfig() {
         return oidcConfig;
     }
 
+    /**
+     * Default subject type to use when requesting data from IDCS.
+     *
+     * @return configured default subject type or {@link #IDCS_SUBJECT_TYPE_USER}
+     */
     protected String defaultIdcsSubjectType() {
         return defaultIdcsSubjectType;
     }
 
     /**
      * Fluent API builder for {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase}.
+     * @param <B> Type of the extending builder
      */
     public static class Builder<B extends Builder<B>> {
 
@@ -219,6 +258,9 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
+        /**
+         * Default constructor.
+         */
         protected Builder() {
         }
 
@@ -255,6 +297,10 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             return me;
         }
 
+        /**
+         * Get the configuration to access IDCS instance.
+         * @return oidc config
+         */
         protected OidcConfig oidcConfig() {
             return oidcConfig;
         }
@@ -301,17 +347,29 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         }
     }
 
+    /**
+     * A token for app access to IDCS.
+     */
     protected static class AppToken {
         private final WebTarget tokenEndpoint;
         // caching application token (as that can be re-used for group requests)
         private Optional<String> tokenContent = Optional.empty();
         private Jwt appJwt;
 
-        public AppToken(WebTarget tokenEndpoint) {
+        /**
+         * Create a new token with a token endpoint.
+         *
+         * @param tokenEndpoint used to get a new token from IDCS
+         */
+        protected AppToken(WebTarget tokenEndpoint) {
             this.tokenEndpoint = tokenEndpoint;
         }
 
-        public synchronized Optional<String> getToken() {
+        /**
+         * Get the token to use for requests to IDCS.
+         * @return token content or empty if it could not be obtained
+         */
+        protected synchronized Optional<String> getToken() {
             if (null == appJwt) {
                 fromServer();
             } else {
