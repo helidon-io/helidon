@@ -28,7 +28,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -52,6 +51,11 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
     // caching application token (as that can be re-used for group requests)
     private final AppToken appToken;
 
+    /**
+     * Constructor that accepts any {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.Builder} descendant.
+     *
+     * @param builder used to configure this instance
+     */
     protected IdcsRoleMapperProvider(Builder<?> builder) {
         super(builder);
 
@@ -94,19 +98,33 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         String username = subject.principal().getName();
 
         List<? extends Grant> grants = roleCache.computeValue(username, () -> computeGrants(subject))
-                .orElse(CollectionsHelper.listOf());
+                .orElse(LinkedList::new);
+
+
+        grants = addAdditionalGrants(subject)
+                .map(newGrants -> {
+                    List<Grant> newList = new LinkedList<>(grants);
+                    newList.addAll(newGrants);
+                    return newList;
+                })
+                .orElse(grants);
 
         return buildSubject(subject, grants);
     }
 
+    /**
+     * Compute grants for the provided subject.
+     * This implementation gets grants from server {@link #getGrantsFromServer(io.helidon.security.Subject)}.
+     *
+     * @param subject to retrieve roles (or in general {@link io.helidon.security.Grant grants})
+     * @return An optional list of grants to be added to the subject
+     */
     protected Optional<List<Grant>> computeGrants(Subject subject) {
         List<Grant> result = new LinkedList<>();
 
         getGrantsFromServer(subject)
                 .map(result::addAll);
 
-        addAdditionalGrants(subject)
-                .map(result::addAll);
 
         return (result.isEmpty() ? Optional.empty() : Optional.of(result));
     }
@@ -121,6 +139,12 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         return Optional.empty();
     }
 
+    /**
+     * Retrieves grants from IDCS server.
+     *
+     * @param subject to get grants for
+     * @return optional list of grants to be added
+     */
     protected Optional<List<? extends Grant>> getGrantsFromServer(Subject subject) {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
@@ -146,6 +170,8 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
 
     /**
      * Fluent API builder for {@link IdcsRoleMapperProvider}.
+     *
+     * @param <B> type of builder extending this builder
      */
     public static class Builder<B extends Builder<B>> extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
             implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
@@ -154,6 +180,9 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
+        /**
+         * Default contructor.
+         */
         protected Builder() {
         }
 

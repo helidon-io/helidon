@@ -49,7 +49,15 @@ import io.helidon.security.util.TokenHandler;
  * Supports multi tenancy in IDCS.
  */
 public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
+    /**
+     * Name of the header containing the IDCS tenant. This is the default used, can be overriden
+     * in builder by {@link IdcsMtRoleMapperProvider.Builder#idcsTenantTokenHandler(io.helidon.security.util.TokenHandler)}
+     */
     protected static final String IDCS_TENANT_HEADER = "X-USER-IDENTITY-SERVICE-GUID";
+    /**
+     * Name of the header containing the IDCS app. This is the default used, can be overriden
+     * in builder by {@link IdcsMtRoleMapperProvider.Builder#idcsAppNameTokenHandler(io.helidon.security.util.TokenHandler)}
+     */
     protected static final String IDCS_APP_HEADER = "X-RESOURCE-SERVICE-INSTANCE-IDENTITY-APPNAME";
 
     private static final Logger LOGGER = Logger
@@ -62,6 +70,12 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     private final MultitenancyEndpoints multitenantEndpoints;
     private final ConcurrentHashMap<String, AppToken> tokenCache = new ConcurrentHashMap<>();
 
+    /**
+     * Configure instance from any descendant of
+     * {@link io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.Builder}.
+     *
+     * @param builder containing the required configuration
+     */
     protected IdcsMtRoleMapperProvider(Builder<?> builder) {
         super(builder);
 
@@ -101,6 +115,14 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         return builder().config(config).build();
     }
 
+    /**
+     * Enhance the subject with appropriate roles from IDCS.
+     *
+     * @param subject          subject of the user (never null)
+     * @param request          provider request
+     * @param previousResponse authenticated response (never null)
+     * @return enhanced subject
+     */
     protected Subject enhance(Subject subject,
                               ProviderRequest request,
                               AuthenticationResponse previousResponse) {
@@ -109,8 +131,12 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         Optional<String> maybeIdcsAppName = idcsAppNameTokenHandler.extractToken(request.env().headers());
 
         if (!maybeIdcsAppName.isPresent() || !maybeIdcsTenantId.isPresent()) {
-            LOGGER.finest(() -> "Missing multitenant information TENANT: " + maybeIdcsTenantId + ", APP_NAME: " + maybeIdcsAppName +
-                    ", subject: " + subject);
+            LOGGER.finest(() -> "Missing multitenant information TENANT: "
+                    + maybeIdcsTenantId
+                    + ", APP_NAME: "
+                    + maybeIdcsAppName
+                    + ", subject: "
+                    + subject);
             return subject;
         }
 
@@ -150,6 +176,14 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         return Optional.empty();
     }
 
+    /**
+     * Get grants from IDCS server. The result is cached.
+     *
+     * @param idcsTenantId ID of the IDCS tenant
+     * @param idcsAppName  Name of IDCS application
+     * @param subject      subject to get grants for
+     * @return optional list of grants from server
+     */
     protected Optional<List<? extends Grant>> getGrantsFromServer(String idcsTenantId, String idcsAppName, Subject subject) {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
@@ -186,12 +220,20 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                 .getToken();
     }
 
+    /**
+     * Get the {@link io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.MultitenancyEndpoints} used
+     * to get assertion and token endpoints of a multitenant IDCS.
+     *
+     * @return endpoints to use by this implementation
+     */
     protected MultitenancyEndpoints multitenancyEndpoints() {
         return multitenantEndpoints;
     }
 
     /**
      * Fluent API builder for {@link io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider}.
+     *
+     * @param <B> type of a descendant of this builder
      */
     public static class Builder<B extends Builder<B>>
             extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
@@ -204,6 +246,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
+        /**
+         * Default constructor.
+         */
         protected Builder() {
         }
 
@@ -320,6 +365,16 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         private final ConcurrentHashMap<String, WebTarget> assertEndpointCache = new ConcurrentHashMap<>();
         private final ConcurrentHashMap<String, WebTarget> tokenEndpointCache = new ConcurrentHashMap<>();
 
+        /**
+         * Creates endpoints from provided OIDC configuration using default URIs.
+         * <p>
+         * <ul>
+         * <li>For Asserter endpoint: {@code /admin/v1/Asserter}</li>
+         * <li>For Token endpoint: {@code /oauth2/v1/token?IDCS_CLIENT_TENANT=}</li>
+         * </ul>
+         *
+         * @param config IDCS base configuration
+         */
         protected DefaultMultitenancyEndpoints(OidcConfig config) {
             idcsInfraHostName = config.identityUri().getHost();
             int index = idcsInfraHostName.indexOf('.');
@@ -383,8 +438,8 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * New (immutable) cache key.
          *
          * @param idcsTenantId IDCS stenant ID
-         * @param idcsAppName IDCS application name
-         * @param username username
+         * @param idcsAppName  IDCS application name
+         * @param username     username
          */
         protected MtCacheKey(String idcsTenantId, String idcsAppName, String username) {
             Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory");
@@ -396,14 +451,29 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
             this.username = username;
         }
 
+        /**
+         * IDCS Tenant ID.
+         *
+         * @return tenant id of the cache record
+         */
         protected String idcsTenantId() {
             return idcsTenantId;
         }
 
+        /**
+         * Username.
+         *
+         * @return username of the cache record
+         */
         protected String username() {
             return username;
         }
 
+        /**
+         * IDCS Application ID.
+         *
+         * @return application id of the cache record
+         */
         protected String idcsAppName() {
             return idcsAppName;
         }
@@ -417,9 +487,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                 return false;
             }
             MtCacheKey cacheKey = (MtCacheKey) o;
-            return idcsTenantId.equals(cacheKey.idcsTenantId) &&
-                    idcsAppName.equals(cacheKey.idcsAppName) &&
-                    username.equals(cacheKey.username);
+            return idcsTenantId.equals(cacheKey.idcsTenantId)
+                    && idcsAppName.equals(cacheKey.idcsAppName)
+                    && username.equals(cacheKey.username);
         }
 
         @Override
