@@ -17,7 +17,6 @@ package io.helidon.security.examples.abac;
 
 import java.time.DayOfWeek;
 
-import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
