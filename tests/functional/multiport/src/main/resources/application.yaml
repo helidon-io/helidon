@@ -1,0 +1,32 @@
+server:
+  port: 7001
+  host: "localhost"
+  sockets:
+    health:
+      port: 8001
+      bind-address: "localhost"
+    metrics:
+      port: 8002
+      bind-address: "localhost"
+    nothing:
+      port: 8003
+      bind-address: "localhost"
+
+health:
+  # endpoint will be exposed on this named route
+  routing: "health"
+  web-context: "myhealth"
+
+metrics:
+  # endpoint will be exposed on this named route
+  routing: "metrics"
+  web-context: "mymetrics"
+  # if we want to add vendor metrics to additional named routes
+  # default is added automatically
+  vendor-metrics-routings: ["metrics", "health"]
+  # possibility to disable base metrics
+  base:
+    thread:
+      daemon.count.enabled: false
+      max.count.enabled: false
+      count.enabled: false

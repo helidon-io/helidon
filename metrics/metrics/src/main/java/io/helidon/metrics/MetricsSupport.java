@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -130,7 +131,7 @@ public final class MetricsSupport implements Service {
      */
     static boolean requestsJsonData(RequestHeaders headers) {
         Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
-        boolean requestsJson =  mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
+        boolean requestsJson = mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
 
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("Generating metrics for media type " + mediaType
@@ -184,6 +185,7 @@ public final class MetricsSupport implements Service {
         StringBuilder result = new StringBuilder();
 
         registry.stream()
+                .sorted(Comparator.comparing(HelidonMetric::getName))
                 .forEach(mpMetric -> result.append(mpMetric.prometheusData()));
 
         return result.toString();
@@ -209,7 +211,7 @@ public final class MetricsSupport implements Service {
 
         if (!(metric instanceof HelidonMetric)) {
             throw new IllegalArgumentException(String.format(
-                "Metric of type %s is expected to implement %s but does not",
+                    "Metric of type %s is expected to implement %s but does not",
                     metric.getClass().getName(),
                     HelidonMetric.class.getName()));
         }
@@ -230,6 +232,7 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonData(Registry registry) {
         JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
+                .sorted(Comparator.comparing(HelidonMetric::getName))
                 .forEach(mpMetric -> mpMetric.jsonData(builder));
         return builder.build();
     }
@@ -247,34 +250,61 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonMeta(Registry registry) {
         JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
+                .sorted(Comparator.comparing(HelidonMetric::getName))
                 .forEach(mpMetric -> mpMetric.jsonMeta(builder));
         return builder.build();
     }
 
-    @Override
-    public void update(Routing.Rules rules) {
-        Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
-        Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
-        Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
+    /**
+     * Configure vendor metrics on the provided routing.
+     * This method is exclusive to {@link #update(io.helidon.webserver.Routing.Rules)}
+     * (e.g. you should not use both, as otherwise you would duplicate the metrics)
+     *
+     * @param routingName name of the routing (may be null)
+     * @param rules       routing builder or routing rules
+     */
+    public void configureVendorMetrics(String routingName,
+                                       Routing.Rules rules) {
+        String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
 
-        Counter totalCount = vendor.counter(new Metadata("requests.count",
+        Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
+        Counter totalCount = vendor.counter(new Metadata(metricPrefix + "count",
                                                          "Total number of requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
                                                          MetricUnits.NONE));
 
-        Meter totalMeter = vendor.meter(new Metadata("requests.meter",
+        Meter totalMeter = vendor.meter(new Metadata(metricPrefix + "meter",
                                                      "Meter for overall requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
                                                      MetricUnits.NONE));
 
+        rules.any((req, res) -> {
+            totalCount.inc();
+            totalMeter.mark();
+            req.next();
+        });
+    }
+
+    /**
+     * Configure metrics endpoint on the provided routing rules.
+     * This method just adds the endpoint {@code /metrics} (or appropriate
+     * one as configured).
+     * For simple routings, just register {@code MetricsSupport} instance.
+     * This method is exclusive to {@link #update(io.helidon.webserver.Routing.Rules)}
+     * (e.g. you should not use both, as otherwise you would register the endpoint twice)
+     *
+     * @param rules routing rules (also accepts {@link io.helidon.webserver.Routing.Builder}
+     */
+    public void configureEndpoint(Routing.Rules rules) {
+        Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
+        Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
+        Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
         // register the metric registry and factory to be available to all
         rules.any((req, res) -> {
             req.context().register(app);
             req.context().register(rf);
-            totalCount.inc();
-            totalMeter.mark();
             req.next();
         });
 
@@ -295,6 +325,23 @@ public final class MetricsSupport implements Service {
                             .options(context + "/" + type, (req, res) -> optionsAll(req, res, registry))
                             .options(context + "/" + type + "/{metric}", (req, res) -> optionsOne(req, res, registry));
                 });
+    }
+
+    /**
+     * Method invoked by the web server to update routing rules.
+     * Register this instance with webserver through
+     * {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...)}
+     * rather than calling this method directly.
+     * If multiple sockets (and routings) should be supported, you can use
+     * the {@link #configureEndpoint(io.helidon.webserver.Routing.Rules)}, and
+     * {@link #configureVendorMetrics(String, io.helidon.webserver.Routing.Rules)} methods.
+     *
+     * @param rules a routing rules to update
+     */
+    @Override
+    public void update(Routing.Rules rules) {
+        configureVendorMetrics(null, rules);
+        configureEndpoint(rules);
     }
 
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
@@ -380,7 +427,11 @@ public final class MetricsSupport implements Service {
          */
         public Builder config(Config config) {
             this.config = config;
-            config.get("helidon.metrics.context").asString().ifPresent(this::context);
+            // align with health checks
+            config.get("web-context").asString().ifPresent(this::context);
+            // backward compatibility
+            config.get("context").asString().ifPresent(this::context);
+
 
             return this;
         }
@@ -407,9 +458,25 @@ public final class MetricsSupport implements Service {
          *
          * @param newContext context to use
          * @return updated builder instance
+         * @deprecated use {@link #webContext(String)} instead, aligned with API of heatlh checks
          */
+        @Deprecated
         public Builder context(String newContext) {
-            this.context = newContext;
+            return webContext(newContext);
+        }
+
+        /**
+         * Set a new root context for REST API of metrics.
+         *
+         * @param path context to use
+         * @return updated builder instance
+         */
+        public Builder webContext(String path) {
+            if (path.startsWith("/")) {
+                this.context = path;
+            } else {
+                this.context = "/" + path;
+            }
             return this;
         }
     }
