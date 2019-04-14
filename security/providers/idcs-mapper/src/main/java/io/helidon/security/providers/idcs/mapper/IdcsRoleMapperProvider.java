@@ -98,18 +98,18 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         String username = subject.principal().getName();
 
         List<? extends Grant> grants = roleCache.computeValue(username, () -> computeGrants(subject))
-                .orElse(LinkedList::new);
+                .orElseGet(LinkedList::new);
 
 
-        grants = addAdditionalGrants(subject)
+        List<Grant> result = addAdditionalGrants(subject)
                 .map(newGrants -> {
                     List<Grant> newList = new LinkedList<>(grants);
                     newList.addAll(newGrants);
                     return newList;
                 })
-                .orElse(grants);
+                .orElseGet(() -> new LinkedList<>(grants));
 
-        return buildSubject(subject, grants);
+        return buildSubject(subject, result);
     }
 
     /**
