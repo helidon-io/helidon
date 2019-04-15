@@ -100,10 +100,16 @@ class NettyWebServer implements WebServer {
             if (soConfig.ssl() != null) {
                 // TODO configuration support for CLIENT AUTH (btw, ClientAuth.REQUIRE doesn't seem to work with curl nor with
                 // Chrome)
+                String[] protocols;
+                if (soConfig.enabledSslProtocols().isEmpty()) {
+                    protocols = null;
+                } else {
+                    protocols = soConfig.enabledSslProtocols().toArray(new String[0]);
+                }
                 sslContext = new JdkSslContext(
                         soConfig.ssl(), false, null,
                         IdentityCipherSuiteFilter.INSTANCE, null,
-                        ClientAuth.NONE, soConfig.enabledSslProtocols(), false);
+                        ClientAuth.NONE, protocols, false);
             }
 
             if (soConfig.backlog() > 0) {

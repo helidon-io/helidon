@@ -25,6 +25,7 @@ import javax.net.ssl.SSLContext;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import java.util.Set;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
@@ -71,7 +72,7 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
-    public String[] enabledSslProtocols() {
+    public Set<String> enabledSslProtocols() {
         return socketConfig.enabledSslProtocols();
     }
 
@@ -128,7 +129,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int timeoutMillis;
         private final int receiveBufferSize;
         private final SSLContext sslContext;
-        private final String[] enabledSslProtocols;
+        private final Set<String> enabledSslProtocols;
 
         /**
          * Creates new instance.
@@ -143,7 +144,7 @@ class ServerBasicConfig implements ServerConfiguration {
         SocketConfig(int port,
                      InetAddress bindAddress,
                      SSLContext sslContext,
-                     String[] sslProtocols,
+                     Set<String> sslProtocols,
                      int backlog,
                      int timeoutMillis,
                      int receiveBufferSize) {
@@ -194,7 +195,7 @@ class ServerBasicConfig implements ServerConfiguration {
         }
 
         @Override
-        public String[] enabledSslProtocols() {
+        public Set<String> enabledSslProtocols() {
             return enabledSslProtocols;
         }
     }

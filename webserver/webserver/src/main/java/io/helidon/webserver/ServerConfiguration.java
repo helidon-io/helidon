@@ -462,6 +462,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
             config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
             config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);
+            config.get("ssl-protocols").asList(String.class).ifPresent(soConfigBuilder::enabledSSlProtocols);
 
             // ssl
             Config sslConfig = config.get("ssl");

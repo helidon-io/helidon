@@ -25,10 +25,12 @@ import io.opentracing.util.GlobalTracer;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Tests {@link ServerConfiguration.Builder}.
@@ -90,6 +92,7 @@ public class ServerConfigurationTest {
         assertThat(sc.receiveBufferSize(), is(30));
         assertThat(sc.timeoutMillis(), is(40));
         assertThat(sc.bindAddress(), is(InetAddress.getByName("127.0.0.1")));
+        assertThat(sc.enabledSslProtocols(), hasSize(0));
         assertThat(sc.ssl(), nullValue());
 
         assertThat(sc.workersCount(), is(50));
@@ -99,6 +102,7 @@ public class ServerConfigurationTest {
         assertThat(sc.socket("secure").receiveBufferSize(), is(31));
         assertThat(sc.socket("secure").timeoutMillis(), is(41));
         assertThat(sc.socket("secure").bindAddress(), is(InetAddress.getByName("127.0.0.2")));
+        assertThat(sc.socket("secure").enabledSslProtocols(), hasSize(0));
         assertThat(sc.socket("secure").ssl(), nullValue());
 
         assertThat(sc.socket("other").port(), is(12));
@@ -106,6 +110,7 @@ public class ServerConfigurationTest {
         assertThat(sc.socket("other").receiveBufferSize(), is(32));
         assertThat(sc.socket("other").timeoutMillis(), is(42));
         assertThat(sc.socket("other").bindAddress(), is(InetAddress.getByName("127.0.0.3")));
+        assertThat(sc.socket("other").enabledSslProtocols(), hasSize(0));
         assertThat(sc.socket("other").ssl(), nullValue());
     }
 
@@ -118,6 +123,7 @@ public class ServerConfigurationTest {
         assertThat(sc.ssl(), notNullValue());
 
         assertThat(sc.socket("secure").port(), is(11));
+        assertThat(sc.socket("secure").enabledSslProtocols(), hasItems("TLSv1.2"));
         assertThat(sc.socket("secure").ssl(), notNullValue());
     }
 }
