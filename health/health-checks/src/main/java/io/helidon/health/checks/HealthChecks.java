@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.eclipse.microprofile.health.HealthCheck;
  * @see #healthChecks()
  */
 public final class HealthChecks {
+    private static final boolean IS_GRAAL_VM = Boolean.getBoolean("com.oracle.graalvm.isaot");
     private HealthChecks() {
     }
 
@@ -67,10 +68,17 @@ public final class HealthChecks {
      * @see io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)
      */
     public static HealthCheck[] healthChecks() {
-        return new HealthCheck[] {
-                deadlockCheck(),
-                diskSpaceCheck(),
-                heapMemoryCheck()
-        };
+        if (IS_GRAAL_VM) {
+            return new HealthCheck[] {
+                    //diskSpaceCheck(), // - bug
+                    heapMemoryCheck()
+            };
+        } else {
+            return new HealthCheck[] {
+                    deadlockCheck(),
+                    diskSpaceCheck(),
+                    heapMemoryCheck()
+            };
+        }
     }
 }
