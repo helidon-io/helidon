@@ -28,6 +28,20 @@ import io.netty.util.internal.logging.JdkLoggerFactory;
 // supressing checkstyle issues, as this class cannot follow usual naming rules
 @SuppressWarnings({"StaticVariableName", "VisibilityModifier"})
 public final class NettySubstitutions {
+    @TargetClass(className = "io.netty.util.internal.PlatformDependent")
+    static final class PlatformDependentSvmExtension {
+        /**
+         * The class PlatformDependent caches the byte array base offset by reading the
+         * field from PlatformDependent0. The automatic recomputation of Substrate VM
+         * correctly recomputes the field in PlatformDependent0, but since the caching
+         * in PlatformDependent happens during image building, the non-recomputed value
+         * is cached.
+         */
+        @Alias
+        @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.ArrayBaseOffset, declClass = byte[].class)
+        private static long BYTE_ARRAY_BASE_OFFSET;
+    }
+
     @TargetClass(className = "io.netty.util.internal.PlatformDependent0")
     static final class PlatformDependent0SvmExtension {
         @Alias @RecomputeFieldValue(kind = RecomputeFieldValue.Kind.FieldOffset, declClassName = "java.nio.Buffer", name =
