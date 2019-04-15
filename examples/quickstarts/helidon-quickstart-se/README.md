@@ -117,8 +117,22 @@ You can also put the Graal VM `bin` directory in your PATH, or pass
 See https://github.com/oracle/helidon-build-tools/tree/master/helidon-maven-plugin
  for more information.
 
+Start the application:
+
+```
+./target/helidon-quickstart-se
+```
+
 ### Multi-stage Docker build
+
+Build the "native" Docker Image
 
 ```
 docker build -t helidon-quickstart-se-native -f Dockerfile.native .
+```
+
+Start the application:
+
+```
+docker run --rm -p 8080:8080 helidon-quickstart-se-native:latest
 ```
