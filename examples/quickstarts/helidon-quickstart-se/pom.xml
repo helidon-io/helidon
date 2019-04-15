@@ -22,16 +22,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.helidon.examples</groupId>
-    <artifactId>quickstart-se</artifactId>
+    <artifactId>helidon-quickstart-se</artifactId>
     <version>1.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>${project.artifactId}</name>
+    <name>Helidon Quickstart SE Example</name>
 
     <properties>
         <helidon.version>1.0.3-SNAPSHOT</helidon.version>
-        <!-- Default package. Will be overriden by Maven archetype -->
-        <package>io.helidon.examples.quickstart.se</package>
-        <mainClass>${package}.Main</mainClass>
+        <helidon.plugin.version>1.0.10</helidon.plugin.version>
+        <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>
@@ -82,9 +81,15 @@
                                 <addClasspath>true</addClasspath>
                                 <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
                                 <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
                             </manifest>
                         </archive>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-maven-plugin</artifactId>
+                    <version>${helidon.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -108,38 +113,6 @@
                             <overWriteIfNewer>true</overWriteIfNewer>
                             <includeScope>runtime</includeScope>
                             <excludeScope>test</excludeScope>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-dockerfile</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <filtering>true</filtering>
-                                    <directory>src/main/docker</directory>
-                                    <includes>
-                                        <include>Dockerfile</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <filtering>true</filtering>
-                                    <directory>src/main/k8s</directory>
-                                    <includes>
-                                        <include>app.yaml</include>
-                                    </includes>
-                                </resource>
-                            </resources>
                         </configuration>
                     </execution>
                 </executions>
@@ -201,4 +174,31 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.integrations.graal</groupId>
+                    <artifactId>helidon-graal-native-image-extension</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

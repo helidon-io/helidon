@@ -64,38 +64,47 @@ Fat Jars are jar files that contain the application and its dependencies ; they
 This section describes the Dockerfile provided by the
  <<getting-started/02_base-example.adoc, quickstarts>>.
 
-The Dockerfile is located at `src/main/docker/Dockerfile` and contains the
- following:
+The Dockerfile is located at `./Dockerfile` and contains the following:
 
 [source,yaml]
 ----
-FROM openjdk:8-jre-slim #<1>
+# Multistage Docker build. <1>
+# 1st stage, build the app <2>
+FROM maven:3.5.4-jdk-9 as build
 
-RUN mkdir /app
-COPY libs /app/libs #<2>
-COPY ${project.artifactId}.jar /app #<3>
+WORKDIR /helidon
 
-CMD ["java", "-jar", "/app/${project.artifactId}.jar"] #<4>
+# Create a first layer to cache the "Maven World" in the local repository.
+# Incremental docker builds will always resume after that, unless you update
+# the pom
+ADD pom.xml .
+RUN mvn package -DskipTests # <3>
+
+# Do the Maven build!
+# Incremental docker builds will resume here when you change sources
+ADD src src
+RUN mvn package -DskipTests # <4>
+
+RUN echo "done!"
+
+# 2nd stage, build the runtime image <5>
+FROM openjdk:8-jre-slim # <6>
+WORKDIR /helidon
+
+# Copy the binary built in the 1st stage
+COPY --from=build /helidon/target/helidon-quickstart-se.jar ./
+COPY --from=build /helidon/target/libs ./libs # <5>
+
+CMD ["java", "-jar", "helidon-quickstart-se.jar"] # <7>
 ----
-<1> The base image is the Java 8 JRE image provided by the OpenJDK project.
-<2> First, the application dependencies are copied to `/app`.
-<3> Then, the application jar file is copied to `/app`.
-<4> The command to start the application.
-
-[IMPORTANT]
-.Incremental build
-====
-When rebuilding an image Docker rebuilds from the first layer that is
- effectively changed. Copying the application jar file after the libraries
- ensures that Docker does not rebuild the prior layers.
-====
-
-[NOTE]
-.What is ${project.artifactId}?
-====
-It's a Maven property. The file above is processed during the Maven build, a new
- file is created under the target directory and the property value is expanded.
-====
+<1> This is a multi-stage Docker build. See more info
+ link:{docker-multi-stage-url}[here]
+<2> The first stage that creates the build artifacts
+<3> Create a layer, using just the `pom.xml`, that contains the Maven cache.
+<4> When resuming here, Maven won't re-download the world.
+<5> The final stage that creates the image for our application.
+<6> Using a lightweight image.
+<7> The command to start the application.
 
 [source,bash]
 .Build the project
@@ -126,7 +135,7 @@ curl -X GET http://localhost:8080/greet
 This section describes how to build an image with a custom Java 11 JRE using
  `jlink`.
 
-Replace `src/main/docker/Dockerfile` with the following:
+Replace `Dockerfile` with the following:
 
 [source,yaml]
 ----
