@@ -20,12 +20,12 @@ import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
-import java.util.Set;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
