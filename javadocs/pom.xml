@@ -358,7 +358,7 @@
                 </dependency>
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
-                    <artifactId>helidon-integrations-cdi-ecipselink</artifactId>
+                    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
