@@ -101,9 +101,15 @@ NOTE: By default, Jib uses link:{distroless-java-url}/[distroless/java] as the
  link:{jib-maven-plugin-url}#extended-usage[documentation]
 
 [source,bash]
+.Package the updated application
+----
+mvn package
+----
+
+[source,bash]
 .Run the image
 ----
-docker run --rm -p 8080:8080 jib-quickstart-se
+docker run --rm -p 8080:8080 jib-helidon-quickstart-se
 ----
 
 [source,bash]
