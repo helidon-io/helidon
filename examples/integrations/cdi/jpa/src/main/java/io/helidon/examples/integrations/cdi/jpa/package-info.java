@@ -17,7 +17,5 @@
 /**
  * Provides classes and interfaces demonstrating the usage of JPA and
  * JTA integration within Helidon MicroProfile.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  */
 package io.helidon.examples.integrations.cdi.jpa;

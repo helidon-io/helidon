@@ -302,9 +302,6 @@ public class CDISEPlatform extends JMXServerPlatformBase {
      * annotate an implementation of {@link MBeanServer} for use by
      * the {@link CDISEPlatform#getMBeanServer()} method.</p>
      *
-     * @author <a href="mailto:laird.nelson@oracle.com">Laird
-     * Nelson</a>
-     *
      * @see CDISEPlatform#launchContainerRunnable(Runnable)
      *
      * @see CDISEPlatform#getMBeanServer()
@@ -318,9 +315,6 @@ public class CDISEPlatform extends JMXServerPlatformBase {
         /**
          * An {@link AnnotationLiteral} that implements {@link
          * Eclipselink}.
-         *
-         * @author <a href="mailto:laird.nelson@oracle.com">Laird
-         * Nelson</a>
          */
         class Literal extends AnnotationLiteral<Eclipselink> implements Eclipselink {
 

@@ -834,9 +834,6 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * indicating that its implementations can supply {@link
      * DataSource}s.
      *
-     * @author <a href="mailto:laird.nelson@oracle.com">Laird
-     * Nelson</a>
-     *
      * @see #getDataSource(boolean, boolean, String)
      */
     @FunctionalInterface
