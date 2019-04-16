@@ -25,11 +25,11 @@ import io.opentracing.util.GlobalTracer;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 
 /**
@@ -123,7 +123,7 @@ public class ServerConfigurationTest {
         assertThat(sc.ssl(), notNullValue());
 
         assertThat(sc.socket("secure").port(), is(11));
-        assertThat(sc.socket("secure").enabledSslProtocols(), hasItems("TLSv1.2"));
+        assertThat(sc.socket("secure").enabledSslProtocols(), contains("TLSv1.2"));
         assertThat(sc.socket("secure").ssl(), notNullValue());
     }
 }
