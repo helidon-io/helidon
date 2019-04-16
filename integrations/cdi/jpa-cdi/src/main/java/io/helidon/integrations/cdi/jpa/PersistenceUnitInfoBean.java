@@ -49,8 +49,6 @@ import io.helidon.integrations.cdi.jpa.jaxb.PersistenceUnitValidationModeType;
  * A {@link PersistenceUnitInfo} implementation that can be
  * constructed by hand.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see PersistenceUnitInfo
  */
 public class PersistenceUnitInfoBean implements PersistenceUnitInfo {

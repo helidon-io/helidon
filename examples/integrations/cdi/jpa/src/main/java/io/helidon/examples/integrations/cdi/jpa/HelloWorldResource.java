@@ -18,7 +18,7 @@ package io.helidon.examples.integrations.cdi.jpa;
 import java.net.URI;
 import java.util.Objects;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -42,15 +42,12 @@ import javax.ws.rs.core.Response;
  * A JAX-RS root resource class that manipulates greetings in a
  * database.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see #get(String)
  *
  * @see #post(String, String)
  */
 @Path("")
-// @RequestScoped // see https://github.com/oracle/helidon/issues/363
-@ApplicationScoped
+@RequestScoped
 public class HelloWorldResource {
 
     /**

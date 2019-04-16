@@ -13,12 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.integrations.cdi.jpa.weld;
 
-/**
- * Provides classes and interfaces for working with <a
- * href="https://www.eclipse.org/eclipselink/#jpa"
- * target="_parent">Eclipselink</a> in CDI.
- *
- * @see io.helidon.integrations.cdi.eclipselink.CDISEPlatform
- */
-package io.helidon.integrations.cdi.eclipselink;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.SynchronizationType;
+
+interface EntityManagerRegistry {
+
+    EntityManager get(String persistenceUnitName,
+                      Supplier<? extends EntityManagerFactory> entityManagerFactorySupplier,
+                      SynchronizationType synchronizationType,
+                      Map<?, ?> properties);
+
+    EntityManager remove(String persistenceUnitName);
+
+}

@@ -39,8 +39,6 @@ import javax.transaction.TransactionScoped;
  * transactional concerns if a JTA implementation is not present at
  * runtime.</p>
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see WeldJpaInjectionServices
  *
  * @see Initialized

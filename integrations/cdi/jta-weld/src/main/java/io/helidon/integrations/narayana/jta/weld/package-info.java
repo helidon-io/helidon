@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,12 @@
  */
 
 /**
- * Provides classes and interfaces that integrate the OCI object
- * storage service into CDI 2.0-based applications.
+ * Provides classes and interfaces that enable <a
+ * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#transactional_observer_methods">transactional
+ * observer methods</a> in <a
+ * href="http://weld.cdi-spec.org/">Weld</a>-backed <a
+ * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html">CDI</a> 2.0
+ * SE implementations using the <a
+ * href="http://narayana.io/">Narayana</a> engine.
  */
-package io.helidon.integrations.cdi.oci.objectstorage;
+package io.helidon.integrations.narayana.jta.weld;

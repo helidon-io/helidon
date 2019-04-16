@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
  */
 
 /**
- * Provides classes and interfaces that integrate the OCI object
- * storage service into CDI 2.0-based applications.
+ * Provides classes and interfaces that integrate <a
+ * href="https://jcp.org/en/jsr/detail?id=907">JTA</a> version 1.2
+ * into <a
+ * href="http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html">CDI</a>
+ * version 2.0 using <a href="http://narayana.io/">Narayana</a> as the
+ * underlying implementation.
  */
-package io.helidon.integrations.cdi.oci.objectstorage;
+package io.helidon.integrations.narayana.jta.cdi;

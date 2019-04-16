@@ -28,8 +28,6 @@ import javax.persistence.Table;
 /**
  * A contrived representation for example purposes only of a two-part
  * greeting as might be stored in a database.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  */
 @Access(AccessType.FIELD)
 @Entity(name = "Greeting")

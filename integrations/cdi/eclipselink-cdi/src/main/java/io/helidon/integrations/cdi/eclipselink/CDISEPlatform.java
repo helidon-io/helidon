@@ -54,8 +54,6 @@ import org.eclipse.persistence.transaction.JTATransactionController;
  * <blockquote><pre>&lt;property name="eclipselink.target-server"
  *          value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/&gt;</pre></blockquote>
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see #getExternalTransactionControllerClass()
  */
 public class CDISEPlatform extends JMXServerPlatformBase {
@@ -237,8 +235,6 @@ public class CDISEPlatform extends JMXServerPlatformBase {
      * A {@link JTATransactionController} whose {@link
      * #acquireTransactionManager()} method uses CDI, not JNDI, to
      * return a {@link TransactionManager} instance.
-     *
-     * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
      *
      * @see #acquireTransactionManager()
      *

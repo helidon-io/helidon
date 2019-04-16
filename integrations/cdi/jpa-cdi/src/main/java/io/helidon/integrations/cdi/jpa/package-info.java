@@ -20,8 +20,6 @@
  * href="https://javaee.github.io/tutorial/partpersist.html#BNBPY"
  * target="_parent">JPA</a> into CDI.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see io.helidon.integrations.cdi.jpa.JpaExtension
  *
  * @see io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean

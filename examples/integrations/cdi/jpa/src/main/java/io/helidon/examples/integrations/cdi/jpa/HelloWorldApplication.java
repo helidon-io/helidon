@@ -25,8 +25,6 @@ import javax.ws.rs.core.Application;
 /**
  * An example {@link Application} demonstrating the modular
  * integration of JPA and JTA with Helidon MicroProfile.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  */
 @ApplicationScoped
 public class HelloWorldApplication extends Application {

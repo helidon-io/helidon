@@ -20,8 +20,6 @@
  * target="_parent">JPA</a> into <a href="http://weld.cdi-spec.org/"
  * target="_parent">Weld</a>-based CDI 2.0 SE environments.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see
  * io.helidon.integrations.cdi.jpa.weld.WeldJpaInjectionServices
  */

@@ -27,8 +27,6 @@ import javax.ws.rs.ext.Provider;
  * An {@link ExceptionMapper} that handles {@link
  * PersistenceException}s.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see ExceptionMapper
  */
 @ApplicationScoped

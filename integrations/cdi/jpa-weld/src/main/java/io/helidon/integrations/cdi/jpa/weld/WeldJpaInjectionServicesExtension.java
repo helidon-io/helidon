@@ -28,8 +28,6 @@ import javax.inject.Singleton;
  * WeldJpaInjectionServices} class become a bean in {@link Singleton}
  * scope.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see WeldJpaInjectionServices
  *
  * @see TransactionObserver

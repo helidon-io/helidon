@@ -79,8 +79,6 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_AFTER;
  * <a href="https://javaee.github.io/tutorial/partpersist.html#BNBPY"
  * target="_parent">JPA</a> into CDI.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see PersistenceUnitInfoBean
  */
 public class JpaExtension implements Extension {

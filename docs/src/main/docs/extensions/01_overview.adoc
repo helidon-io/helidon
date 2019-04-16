@@ -54,7 +54,7 @@ Create and inject an Oracle Cloud Infrastructure Object Storage client in your
 
 [CARD]
 .Java Transaction API objects
-[link=extensions/05_cdi_jta_narayana.adoc]
+[link=extensions/05_cdi_jta.adoc]
 --
 Use the Java Transaction API in your application code.
 --

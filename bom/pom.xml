@@ -414,12 +414,12 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-jta-narayana</artifactId>
+                <artifactId>helidon-integrations-cdi-jta</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
+                <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

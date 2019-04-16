@@ -55,13 +55,12 @@ import org.jboss.weld.injection.spi.ResourceReferenceFactory;
 import org.jboss.weld.manager.api.ExecutorServices;
 import org.jboss.weld.manager.api.WeldManager;
 
+import static javax.persistence.spi.PersistenceUnitTransactionType.JTA;
 import static javax.persistence.spi.PersistenceUnitTransactionType.RESOURCE_LOCAL;
 
 /**
  * A {@link JpaInjectionServices} implementation that integrates JPA
  * functionality into Weld-based CDI environments.
- *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
  *
  * @see JpaInjectionServices
  */
@@ -1020,6 +1019,7 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
                     }
                 };
             } else {
+                assert JTA.equals(persistenceUnitInfo.getTransactionType());
                 this.emSupplier = () -> {
                     try {
                         final EntityManager em = emfFuture.get().createEntityManager(synchronizationType);

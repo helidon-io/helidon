@@ -26,5 +26,8 @@
         <exclude name="io.helidon.integrations.cdi.jpa.weld.TransactionObserver">
             <if-class-not-available name="javax.transaction.TransactionScoped"/>
         </exclude>
+        <exclude name="io.helidon.integrations.cdi.jpa.weld.TransactionalEntityManagerRegistry">
+            <if-class-not-available name="javax.transaction.TransactionScoped"/>
+        </exclude>
     </scan>
 </beans>

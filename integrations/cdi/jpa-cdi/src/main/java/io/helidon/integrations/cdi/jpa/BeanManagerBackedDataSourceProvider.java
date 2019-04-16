@@ -27,8 +27,6 @@ import javax.sql.DataSource;
  * that uses a {@link BeanManager} to look up relevant {@link
  * DataSource}s.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see PersistenceUnitInfoBean.DataSourceProvider
  */
 @ApplicationScoped

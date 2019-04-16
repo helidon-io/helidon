@@ -19,8 +19,6 @@
  * href="https://github.com/brettwooldridge/HikariCP/blob/HikariCP-2.7.8/README.md#-hikaricpits-fasterhikari-hikal%C4%93-origin-japanese-light-ray"
  * target="_parent">Hikari connection pool</a>.
  *
- * @author <a href="mailto:laird.nelson@oracle.com">Laird Nelson</a>
- *
  * @see
  * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
  */
