@@ -168,6 +168,22 @@ class JwtAuthTest {
         private String issuer;
 
         @Inject
+        @Claim(standard = Claims.exp)
+        private long expirationPrimitive;
+
+        @Inject
+        @Claim(standard = Claims.exp)
+        private Long expiration;
+
+        @Inject
+        @Claim(standard = Claims.email_verified)
+        private Boolean emailVerified;
+
+        @Inject
+        @Claim(standard = Claims.email_verified)
+        private boolean emailVerifiedPrimitive;
+
+        @Inject
         @Claim("iss")
         private JsonString issuerJson;
 
