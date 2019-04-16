@@ -5,22 +5,31 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.3] - 2019-04-16
 
 ### Notes
+
+This release contains bug and documentation fixes as well as progress towards
+implementing MicroProfile 2.2. It also improves GraalVM native image support
+in our SE quickstart example.
 
 ### Improvements
 
 - Update MicroProfile Config to 1.3  [537](https://github.com/oracle/helidon/pull/537)
 - Update MicroProfile Fault Tolerance to 2.0 [555](https://github.com/oracle/helidon/pull/555)
+- Add GraalVM support to quickstart examples [574](https://github.com/oracle/helidon/pull/574) [547](https://github.com/oracle/helidon/pull/547)
+- WebServer: Provide configuration for enabled SSL protocols [530](https://github.com/oracle/helidon/pull/530)
+- Quickstart examples now use multi-stage Docker build [547](https://github.com/oracle/helidon/pull/547)
 
 ### Fixes
 
 - Update Jackson to 2.9.8 [559](https://github.com/oracle/helidon/issues/559)
-- Documentation: updates [544](https://github.com/oracle/helidon/pull/544) [531](https://github.com/oracle/helidon/pull/531)
+- Documentation: updates [544](https://github.com/oracle/helidon/pull/544) [531](https://github.com/oracle/helidon/pull/531) [584](https://github.com/oracle/helidon/pull/584) 
 - Config: Fix race condition in SubscriberInputStream [540](https://github.com/oracle/helidon/pull/540)
 - Config object mapping missing from bom pom [529](https://github.com/oracle/helidon/pull/529)
-- Finish write-content span before completing delegate [563](https://github.com/oracle/helidon/pull/563)
+- Tracing: Finish write-content span before completing delegate [563](https://github.com/oracle/helidon/pull/563)
+- Explicit authorization no longer hides other HTTP errors. [572](https://github.com/oracle/helidon/pull/572)
+
 
 ## [1.0.2] - 2019-03-21
 
@@ -243,7 +252,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.0.2...HEAD
+[1.0.3]: https://github.com/oracle/helidon/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/oracle/helidon/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/oracle/helidon/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
