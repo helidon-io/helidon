@@ -57,24 +57,18 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
     private final long evictParallelismThreshold;
     private final ScheduledFuture<?> evictionFuture;
     private final BiFunction<K, V, Boolean> evictor;
-    private final long evictDelay;
-    private final long evictPeriod;
-    private final TimeUnit evictTimeUnit;
 
     EvictableCacheImpl(Builder<K, V> builder) {
         cacheMaxSize = builder.cacheMaxSize();
         cacheTimoutNanos = TimeUnit.NANOSECONDS.convert(builder.cacheTimeout(), builder.cacheTimeoutUnit());
         evictParallelismThreshold = builder.parallelismThreshold();
         evictor = builder.evictor();
-        this.evictDelay = builder.cacheEvictDelay();
-        this.evictPeriod = builder.cacheEvictPeriod();
-        this.evictTimeUnit = builder.cacheEvictTimeUnit();
 
         evictionFuture = EXECUTOR.scheduleAtFixedRate(
                 this::evict,
-                evictDelay,
-                evictPeriod,
-                evictTimeUnit);
+                builder.cacheEvictDelay(),
+                builder.cacheEvictPeriod(),
+                builder.cacheEvictTimeUnit());
         EXECUTOR.setRemoveOnCancelPolicy(true);
     }
 
