@@ -394,11 +394,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
-                <artifactId>helidon-integrations-cdi-hibernate</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jedis</artifactId>
                 <version>${project.version}</version>
             </dependency>
