@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.3-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-examples-project</artifactId>
@@ -69,5 +69,4 @@
             </modules>
         </profile>
     </profiles>
-
 </project>

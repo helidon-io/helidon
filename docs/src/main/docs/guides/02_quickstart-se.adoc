@@ -99,22 +99,20 @@ curl -X GET http://localhost:8080/greet/Jose
 
 == Build a Docker Image
 
-The project also contains a Dockerfile so that you can easily
-build and run a Docker image. Because the example's runtime
-dependencies are already in `target/libs`, the Dockerfile is
-pretty simple (see `target/Dockerfile`). To build the Docker
-image, you need to have Docker installed and running on your system.
+The project also contains a Dockerfile so that you can easily build and run a
+ Docker image. To build the Docker image, you need to have Docker installed and
+ running on your system.
 
 [source,bash]
 .Docker build
 ----
-docker build -t helidon-quickstart-se target
+docker build -t helidon-quickstart-se .
 ----
 
 [source,bash]
 .Run Docker Image
 ----
-docker run --rm -p 8080:8080 quickstart-se:latest
+docker run --rm -p 8080:8080 helidon-quickstart-se:latest
 ----
 
 Then you can try the application as you did before.
@@ -135,7 +133,7 @@ kubectl get nodes
 [source,bash]
 .Deploy the application to Kubernetes
 ----
-kubectl create -f target/app.yaml
+kubectl create -f app.yaml
 kubectl get pods                    # Wait for quickstart pod to be RUNNING
 ----
 
@@ -159,5 +157,5 @@ After you're done, cleanup.
 [source,bash]
 .Remove the application from Kubernetes
 ----
-kubectl delete -f target/app.yaml
+kubectl delete -f app.yaml
 ----

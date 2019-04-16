@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -204,4 +205,11 @@ public class JerseyExampleResource {
     public String pathEncoding2(@PathParam("id") String param) {
         return param;
     }
+
+    @DELETE
+    @Path("notfound")
+    public Response deleteNotFound(@Context UriInfo uriInfo) {
+    	throw new WebApplicationException(Response.status(404).entity("Not Found").build());
+    }
+
 }

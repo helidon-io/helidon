@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
@@ -68,6 +69,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public SSLContext ssl() {
         return socketConfig.ssl();
+    }
+
+    @Override
+    public Set<String> enabledSslProtocols() {
+        return socketConfig.enabledSslProtocols();
     }
 
     @Override
@@ -123,6 +129,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int timeoutMillis;
         private final int receiveBufferSize;
         private final SSLContext sslContext;
+        private final Set<String> enabledSslProtocols;
 
         /**
          * Creates new instance.
@@ -137,6 +144,7 @@ class ServerBasicConfig implements ServerConfiguration {
         SocketConfig(int port,
                      InetAddress bindAddress,
                      SSLContext sslContext,
+                     Set<String> sslProtocols,
                      int backlog,
                      int timeoutMillis,
                      int receiveBufferSize) {
@@ -146,13 +154,14 @@ class ServerBasicConfig implements ServerConfiguration {
             this.timeoutMillis = timeoutMillis <= 0 ? 0 : timeoutMillis;
             this.receiveBufferSize = receiveBufferSize <= 0 ? 0 : receiveBufferSize;
             this.sslContext = sslContext;
+            this.enabledSslProtocols = sslProtocols;
         }
 
         /**
          * Creates default values instance.
          */
         SocketConfig() {
-            this(0, null, null, 0, 0, 0);
+            this(0, null, null, null, 0, 0, 0);
         }
 
         @Override
@@ -183,6 +192,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public SSLContext ssl() {
             return sslContext;
+        }
+
+        @Override
+        public Set<String> enabledSslProtocols() {
+            return enabledSslProtocols;
         }
     }
 }

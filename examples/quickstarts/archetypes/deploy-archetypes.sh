@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,27 +15,26 @@
 # limitations under the License.
 #
 
+trap 'echo "ERROR: Error occurred at ${BASH_SOURCE}:${LINENO} command: ${BASH_COMMAND}"' ERR
 set -eo pipefail
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  SCRIPT_PATH="$(readlink "$0")"
+  readonly SCRIPT_PATH="$(readlink "$0")"
 else
-  SCRIPT_PATH="${0}"
+  readonly SCRIPT_PATH="${0}"
 fi
 
 # Current directory
-MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
+readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 
-EXAMPLE_DIR="${MY_DIR}/.."
-
-EXAMPLES=" \
-  helidon-quickstart-se \
-  helidon-quickstart-mp \
-"
-
-# Create archetypes from example projects
-bash ${MY_DIR}/create-archetypes.sh 
+readonly MVN_VERSION=$(mvn \
+    -q \
+    -f ${MY_DIR}/../pom.xml \
+    -Dexec.executable="echo" \
+    -Dexec.args="\${project.version}" \
+    --non-recursive \
+    org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
 
 if [ -n "${STAGING_REPO_ID}" ] ; then
     readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deployByRepositoryId/${STAGING_REPO_ID}/"
@@ -43,18 +42,9 @@ else
     readonly MAVEN_REPO_URL="https://oss.sonatype.org/service/local/staging/deploy/maven2/"
 fi
 
-# Deploy the archetypes
-for _ex in ${EXAMPLES}; do
+readonly MAVEN_DEPLOY_ARGS="org.apache.maven.plugins:maven-deploy-plugin:2.8.2:deploy -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}"
+readonly MAVEN_ARGS="-B clean verify -DskipTests gpg:sign -Dgpg.passphase=${GPG_PASSPHRASE} ${MAVEN_DEPLOY_ARGS}"
 
-  echo "========== Deploying ${pom_file} =========="
-  pom_file="${EXAMPLE_DIR}/${_ex}/target/generated-sources/archetype/pom.xml"
-  if [ -f "${pom_file}" ]; then
-      mvn -f "${pom_file}" \
-        clean verify gpg:sign org.apache.maven.plugins:maven-deploy-plugin:2.8.2:deploy -B -DskipTests \
-        -Dgpg.passphase="${GPG_PASSPHRASE}" \
-        -DaltDeploymentRepository=ossrh::default::${MAVEN_REPO_URL}
-  else
-    echo "${pom_file} does not exist. Skipping."
-  fi
-
-done
+${MY_DIR}/create-archetypes.sh \
+    --version="${MVN_VERSION}" \
+    --maven-args="${MAVEN_ARGS}"

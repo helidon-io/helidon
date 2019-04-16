@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.notNullValue;
  * Class FallbackBean.
  */
 @Dependent
-public class FallbackBean {
+public class FallbackBean extends BaseFallbackBean {
 
     private AtomicBoolean called = new AtomicBoolean(false);
 
@@ -47,9 +47,16 @@ public class FallbackBean {
         throw new RuntimeException("Oops");
     }
 
-    public String onFailure() {
+    private String onFailure() {
         FaultToleranceTest.printStatus("FallbackBean::onFailure()", "success");
         return "fallback";
+    }
+
+    @Fallback(fallbackMethod = "onFailureBase")
+    public String fallbackBase() {
+        called.set(true);
+        FaultToleranceTest.printStatus("FallbackBean::fallback()", "failure");
+        throw new RuntimeException("Oops");
     }
 
     @Fallback(FallbackBeanHandler.class)

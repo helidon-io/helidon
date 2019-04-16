@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,6 +48,8 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Provides access to built-in {@link ConfigSource} implementations.
  *
@@ -57,6 +58,10 @@ import io.helidon.config.spi.ConfigSource;
 public final class ConfigSources {
 
     private static final String SOURCES_KEY = "sources";
+    static final String ENV_VARS_NAME = "env-vars";
+    static final String SYS_PROPS_NAME = "sys-props";
+    static final String DEFAULT_MAP_NAME = "map";
+    static final String DEFAULT_PROPERTIES_NAME = "properties";
 
     private ConfigSources() {
         throw new AssertionError("Instantiation not allowed.");
@@ -134,7 +139,7 @@ public final class ConfigSources {
      * <p>
      * {@link Instant#now()} is the {@link ConfigParser.Content#stamp() content timestamp}.
      *
-     * @param content   a configuration content
+     * @param content a configuration content
      * @param mediaType a configuration media type
      * @return a config source
      */
@@ -156,7 +161,20 @@ public final class ConfigSources {
      * @see #create(Properties)
      */
     public static MapBuilder create(Map<String, String> map) {
-        return new MapBuilder(map);
+        return create(map, DEFAULT_MAP_NAME);
+    }
+
+    /**
+     * Provides a {@link MapBuilder} for creating a {@code ConfigSource}
+     * for a {@code Map}.
+     *
+     * @param map a map
+     * @param name the name.
+     * @return new Builder instance
+     * @see #create(Properties)
+     */
+    public static MapBuilder create(Map<String, String> map, String name) {
+        return new MapBuilder(map, name);
     }
 
     /**
@@ -168,7 +186,20 @@ public final class ConfigSources {
      * @see #create(Map)
      */
     public static MapBuilder create(Properties properties) {
-        return new MapBuilder(properties);
+        return create(properties, DEFAULT_PROPERTIES_NAME);
+    }
+
+    /**
+     * Provides a {@link MapBuilder} for creating a {@code ConfigSource} for a
+     * {@code Map} from a {@code Properties} object.
+     *
+     * @param properties properties
+     * @param name the name.
+     * @return new Builder instance
+     * @see #create(Map)
+     */
+    public static MapBuilder create(Properties properties, String name) {
+        return new MapBuilder(properties, name);
     }
 
     /**
@@ -190,7 +221,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for config derived from system properties
      */
     public static ConfigSource systemProperties() {
-        return create(System.getProperties()).lax().build();
+        return create(System.getProperties(), SYS_PROPS_NAME).lax().build();
     }
 
     /**
@@ -200,7 +231,7 @@ public final class ConfigSources {
      * @return {@code ConfigSource} for config derived from environment variables
      */
     public static ConfigSource environmentVariables() {
-        return create(System.getenv()).lax().build();
+        return create(EnvironmentVariables.expand(), ENV_VARS_NAME).lax().build();
     }
 
     /**
@@ -416,41 +447,27 @@ public final class ConfigSources {
      * {@link ConfigSource#changes() ConfigSource mutability}.
      */
     public static final class MapBuilder implements Builder<ConfigSource> {
-
-        private static final String PROPERTIES_NAME = "properties";
-        private static final String SYS_PROPS_NAME = "sys-props";
-        private static final String MAP_NAME = "map";
-        private static final String ENV_VARS_NAME = "env-vars";
-
         private Map<String, String> map;
         private boolean strict;
         private String mapSourceName;
         private volatile ConfigSource configSource;
 
-        private MapBuilder(Map<String, String> map) {
-            Objects.requireNonNull(map, "map cannot be null");
+        private MapBuilder(final Map<String, String> map, final String name) {
+            requireNonNull(name, "name cannot be null");
+            requireNonNull(map, "map cannot be null");
 
             this.map = Collections.unmodifiableMap(map);
             this.strict = true;
-            // mapSourceName
-            if (map == System.getenv()) {
-                mapSourceName = ENV_VARS_NAME;
-            } else {
-                mapSourceName = MAP_NAME;
-            }
+            this.mapSourceName = name;
         }
 
-        private MapBuilder(Properties properties) {
-            Objects.requireNonNull(properties, "properties cannot be null");
+        private MapBuilder(final Properties properties, final String name) {
+            requireNonNull(name, "name cannot be null");
+            requireNonNull(properties, "properties cannot be null");
 
             this.map = ConfigUtils.propertiesToMap(properties);
             this.strict = true;
-            // mapSourceName
-            if (properties == System.getProperties()) {
-                mapSourceName = SYS_PROPS_NAME;
-            } else {
-                mapSourceName = PROPERTIES_NAME;
-            }
+            this.mapSourceName = name;
         }
 
         /**
@@ -568,7 +585,7 @@ public final class ConfigSources {
          * @return updated builder
          */
         public CompositeBuilder add(Supplier<ConfigSource> source) {
-            Objects.requireNonNull(source, "source cannot be null");
+            requireNonNull(source, "source cannot be null");
 
             configSources.add(source.get());
             return this;
@@ -584,7 +601,7 @@ public final class ConfigSources {
          * @see MergingStrategy#fallback()
          */
         public CompositeBuilder mergingStrategy(MergingStrategy mergingStrategy) {
-            Objects.requireNonNull(mergingStrategy, "mergingStrategy cannot be null");
+            requireNonNull(mergingStrategy, "mergingStrategy cannot be null");
 
             this.mergingStrategy = mergingStrategy;
             return this;
@@ -650,8 +667,7 @@ public final class ConfigSources {
          */
         @Override
         public ConfigSource build() {
-            final List<ConfigSource> finalConfigSources = new LinkedList<>();
-            finalConfigSources.addAll(configSources);
+            final List<ConfigSource> finalConfigSources = new LinkedList<>(configSources);
 
             final MergingStrategy finalMergingStrategy = mergingStrategy != null
                     ? mergingStrategy

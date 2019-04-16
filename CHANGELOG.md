@@ -1,4 +1,6 @@
+
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,7 +11,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Improvements
 
+- Update MicroProfile Config to 1.3  [537](https://github.com/oracle/helidon/pull/537)
+- Update MicroProfile Fault Tolerance to 2.0 [555](https://github.com/oracle/helidon/pull/555)
+
 ### Fixes
+
+- Update Jackson to 2.9.8 [559](https://github.com/oracle/helidon/issues/559)
+- Documentation: updates [544](https://github.com/oracle/helidon/pull/544) [531](https://github.com/oracle/helidon/pull/531)
+- Config: Fix race condition in SubscriberInputStream [540](https://github.com/oracle/helidon/pull/540)
+- Config object mapping missing from bom pom [529](https://github.com/oracle/helidon/pull/529)
+- Finish write-content span before completing delegate [563](https://github.com/oracle/helidon/pull/563)
+
+## [1.0.2] - 2019-03-21
+
+### Fixes
+
+- Config: SE config should map env vars the same way that MP does [446](https://github.com/oracle/helidon/issues/446)
+- Config: Refactor usage of exceptions in optional sources [477](https://github.com/oracle/helidon/issues/477)
+- WebServer: 404 Response without body [390](https://github.com/oracle/helidon/issues/390)
 
 ## [1.0.1] - 2019-03-13
 
@@ -224,7 +243,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/1.0.2...HEAD
+[1.0.2]: https://github.com/oracle/helidon/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/oracle/helidon/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
 [0.11.1]: https://github.com/oracle/helidon/compare/0.11.0...0.11.1

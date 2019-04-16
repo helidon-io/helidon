@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: ${project.artifactId}
+  name: helidon-quickstart-se
   labels:
-    app: ${project.artifactId}
+    app: helidon-quickstart-se
 spec:
   type: NodePort
   selector:
-    app: ${project.artifactId}
+    app: helidon-quickstart-se
   ports:
   - port: 8080
     targetPort: 8080
@@ -32,18 +32,18 @@ spec:
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: ${project.artifactId}
+  name: helidon-quickstart-se
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: ${project.artifactId}
+        app: helidon-quickstart-se
         version: v1
     spec:
       containers:
-      - name: ${project.artifactId}
-        image: ${project.artifactId}
+      - name: helidon-quickstart-se
+        image: helidon-quickstart-se
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

@@ -20,7 +20,7 @@ apply plugin: 'maven'
 group = 'io.helidon.examples'
 version = '1.0-SNAPSHOT'
 
-description = """quickstart-se"""
+description = """helidon-quickstart-se"""
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -29,7 +29,7 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-    helidonversion = '1.0.2-SNAPSHOT'
+    helidonversion = '1.0.3-SNAPSHOT'
 }
 
 repositories {

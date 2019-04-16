@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.Version;
 import io.helidon.common.http.ContextualRegistry;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -45,6 +46,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.util.concurrent.Future;
 
@@ -85,6 +87,7 @@ class NettyWebServer implements WebServer {
                    Map<String, Routing> namedRoutings) {
         Set<Map.Entry<String, SocketConfiguration>> sockets = config.sockets().entrySet();
 
+        LOGGER.info(() -> "Version: " + Version.VERSION);
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
 
@@ -99,7 +102,16 @@ class NettyWebServer implements WebServer {
             if (soConfig.ssl() != null) {
                 // TODO configuration support for CLIENT AUTH (btw, ClientAuth.REQUIRE doesn't seem to work with curl nor with
                 // Chrome)
-                sslContext = new JdkSslContext(soConfig.ssl(), false, ClientAuth.NONE);
+                String[] protocols;
+                if (soConfig.enabledSslProtocols().isEmpty()) {
+                    protocols = null;
+                } else {
+                    protocols = soConfig.enabledSslProtocols().toArray(new String[0]);
+                }
+                sslContext = new JdkSslContext(
+                        soConfig.ssl(), false, null,
+                        IdentityCipherSuiteFilter.INSTANCE, null,
+                        ClientAuth.NONE, protocols, false);
             }
 
             if (soConfig.backlog() > 0) {

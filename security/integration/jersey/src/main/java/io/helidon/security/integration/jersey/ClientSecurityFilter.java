@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         // from there
 
         // first try to find the context on request configuration
-        SecurityContext context = (SecurityContext) requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
+        SecurityContext context = resolveProperty(requestContext, ClientSecurityFeature.PROPERTY_CONTEXT);
 
         if (null == context) {
             LOGGER.finest("Security not propagated, as the property \""
@@ -94,6 +94,11 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                     .headers(HttpUtil.toSimpleMap(requestContext.getStringHeaders()));
 
             EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
+
+            for (String name : requestContext.getConfiguration().getPropertyNames()) {
+                outboundEp.addAtribute(name, requestContext.getConfiguration().getProperty(name));
+            }
+
             for (String name : requestContext.getPropertyNames()) {
                 outboundEp.addAtribute(name, requestContext.getProperty(name));
             }
@@ -146,5 +151,14 @@ public class ClientSecurityFilter implements ClientRequestFilter {
 
             throw e;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T resolveProperty(ClientRequestContext requestContext, final String property) {
+        Object value = requestContext.getProperty(property);
+        if (null == value) {
+            value = requestContext.getConfiguration().getProperty(property);
+        }
+        return (T) value;
     }
 }

@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/bash -e
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,17 +24,18 @@
 # If new-helidon-version is not passed then the script will look in
 # FULL_VERSION
 #
+trap 'echo "ERROR: Error occurred at ${BASH_SOURCE}:${LINENO} command: ${BASH_COMMAND}"' ERR
 set -eo pipefail
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  SCRIPT_PATH="$(readlink "$0")"
+  readonly SCRIPT_PATH="$(readlink "$0")"
 else
-  SCRIPT_PATH="${0}"
+  readonly SCRIPT_PATH="${0}"
 fi
 
 # Current directory
-MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
+readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 
 EXAMPLE_DIR="${MY_DIR}/.."
 

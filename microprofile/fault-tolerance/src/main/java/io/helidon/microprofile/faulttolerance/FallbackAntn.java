@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
@@ -55,16 +55,14 @@ public class FallbackAntn extends MethodAntn implements Fallback {
         Method method = method();
         if (!methodName.isEmpty()) {
             try {
-                final Method fallbackMethod = method.getDeclaringClass().getMethod(methodName,
-                        method().getParameterTypes());
+                final Method fallbackMethod = JavaMethodFinder.findMethod(method.getDeclaringClass(),
+                        methodName,
+                        method.getGenericParameterTypes());
                 if (!fallbackMethod.getReturnType().isAssignableFrom(method.getReturnType())
-                        && !method.getReturnType().isAssignableFrom(Future.class)) {        // async
+                        && !method.getReturnType().isAssignableFrom(Future.class)
+                        && !method.getReturnType().isAssignableFrom(CompletionStage.class)) {        // async
                     throw new FaultToleranceDefinitionException("Fallback method return type "
                             + "is invalid: " + fallbackMethod.getReturnType());
-                }
-                if (!Arrays.equals(fallbackMethod.getParameterTypes(), method.getParameterTypes())) {
-                    throw new FaultToleranceDefinitionException("Fallback method parameter types "
-                            + "are incompatible");
                 }
             } catch (NoSuchMethodException e) {
                 throw new FaultToleranceDefinitionException(e);

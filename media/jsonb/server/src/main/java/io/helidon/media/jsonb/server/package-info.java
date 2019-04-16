@@ -15,14 +15,13 @@
  */
 
 /**
- * This package contains JSON-P ({@code javax.json}) support for {@link io.helidon.webserver.WebServer WebServer}'s
+ * This package contains JSON-B ({@code javax.json.bind}) support for {@link io.helidon.webserver.WebServer WebServer}'s
  * {@link io.helidon.webserver.Routing Routing}.
  * <p>
- * For more information see {@link io.helidon.media.jsonp.server.JsonSupport JsonSupport} documentation.
+ * For more information see {@link io.helidon.media.jsonb.server.JsonBindingSupport JsonSupport} documentation.
  *
- * @see io.helidon.media.jsonp.server.JsonSupport
+ * @see io.helidon.media.jsonb.server.JsonBindingSupport
  * @see io.helidon.webserver.Routing
- * @see javax.json.Json
- * @see javax.json.JsonStructure
+ * @see javax.json.bind.Jsonb
  */
-package io.helidon.media.jsonp.server;
+package io.helidon.media.jsonb.server;
