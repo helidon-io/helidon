@@ -62,7 +62,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>helidon-integrations-cdi-jta-narayana-weld</artifactId>
+            <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
