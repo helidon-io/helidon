@@ -594,6 +594,9 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         @Override
         public JwtProvider build() {
+            if (verifySignature && (null == verifyKeys)) {
+                throw new JwtException("Failed to extract verify JWK from configuration");
+            }
             return new JwtProvider(this);
         }
 
@@ -789,8 +792,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         private void verifyKeys(Config config) {
-            verifyJwk(Resource.create(config, "jwk")
-                              .orElseThrow(() -> new JwtException("Failed to extract verify JWK from configuration")));
+            Resource.create(config, "jwk").ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {

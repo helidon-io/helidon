@@ -68,7 +68,8 @@ jwt-no-verification:
   atn-token:
     # JWK configuration (where to get keys for verification/signatures)
     # either of the following (as defined in Resource utility):
-    jwk-resource-path: "verify-jwk.json"
+    # Not needed, as we do not verify signature
+    # jwk-resource-path: "verify-jwk.json"
     # Expected audience (if not defined, any audience is accepted - security issue...)
     jwt-audience: "audience.application.id"
     verify-signature: false
