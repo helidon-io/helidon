@@ -197,19 +197,30 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         SecurityContext securityContext = jerseySecurityContext.securityContext();
 
         if (fc.isExplicitAtz() && !securityContext.atzChecked()) {
-            // authorization should have been explicit, yet it was not checked - this is a programmer error
-            if (featureConfig().isDebug()) {
-                responseContext.setEntity("Authorization was marked as explicit, yet it was never called in method");
-            } else {
-                responseContext.setEntity("");
+            // now we have an option that the response code is already an error (e.g. BadRequest)
+            // in such a case we return the original error, as we may have never reached the method code
+            switch (responseContext.getStatusInfo().getFamily()) {
+            case CLIENT_ERROR:
+            case SERVER_ERROR:
+                break;
+            case INFORMATIONAL:
+            case SUCCESSFUL:
+            case REDIRECTION:
+            case OTHER:
+            default:
+                // authorization should have been explicit, yet it was not checked - this is a programmer error
+                if (featureConfig().isDebug()) {
+                    responseContext.setEntity("Authorization was marked as explicit, yet it was never called in resource method");
+                } else {
+                    responseContext.setEntity("");
+                }
+                responseContext.setStatus(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+                LOGGER.severe("Authorization failure. Request for" + fc.getResourcePath() + " has failed, as it was marked"
+                                      + "as explicitly authorized, yet authorization was never called on security context. The "
+                                      + "method was invoked and may have changed data. Marking as internal server error");
+                fc.setShouldFinish(true);
+                break;
             }
-            responseContext.setStatus(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-            LOGGER.severe("Authorization failure. Request for" + fc.getResourcePath() + " has failed, as it was marked"
-                                  + "as explicitly authorized, yet authorization was never called on security context. The method"
-                                  + " was invoked and may have changed data. Marking as internal server error");
-            fc.setShouldFinish(true);
-        } else {
-            fc.setShouldFinish(false);
         }
 
         SpanContext requestSpan = securityContext.tracingSpan();
@@ -310,7 +321,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         if (!featureConfig().shouldAuthenticateAnnotatedOnly()) {
             definition.requiresAuthentication(true);
         }
-
 
         //this is specific jersey implementation - if parent is null, this is application scope, otherwise resource scope
         Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = (
