@@ -23,4 +23,4 @@
  * SE implementations using the <a
  * href="http://narayana.io/">Narayana</a> engine.
  */
-package io.helidon.integrations.narayana.jta.weld;
+package io.helidon.integrations.jta.weld;

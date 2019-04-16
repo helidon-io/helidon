@@ -22,4 +22,4 @@
  * version 2.0 using <a href="http://narayana.io/">Narayana</a> as the
  * underlying implementation.
  */
-package io.helidon.integrations.narayana.jta.cdi;
+package io.helidon.integrations.jta.cdi;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.narayana.jta.weld;
+package io.helidon.integrations.jta.weld;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
@@ -29,7 +29,7 @@ import javax.transaction.UserTransaction;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 
-import io.helidon.integrations.narayana.jta.cdi.NarayanaExtension;
+import io.helidon.integrations.jta.cdi.NarayanaExtension;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

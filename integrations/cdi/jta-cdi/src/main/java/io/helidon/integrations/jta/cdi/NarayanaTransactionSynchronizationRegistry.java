@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.narayana.jta.cdi;
+package io.helidon.integrations.jta.cdi;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
