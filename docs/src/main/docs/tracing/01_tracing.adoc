@@ -58,6 +58,32 @@ ServerConfiguration.builder()
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
 
+=== Configuring Tracing with Helidon MP
+There is an additional dependency that adds Tracing support to MP server and Jersey client:
+
+[source,xml,subs="verbatim,attributes"]
+.MP Tracing
+----
+<dependency>
+    <groupId>io.helidon.microprofile.tracing</groupId>
+    <artifactId>helidon-microprofile-tracing</artifactId>
+</dependency>
+----
+
+The minimal required configuration is `tracing.service` that contains
+the service name to be associated with tracing spans sent by this instance.
+
+All tracer specific configuration is expected in config under `tracing`.
+
+Example `microprofile-config.properties` with tracer configuration:
+
+----
+tracing.service=helidon-mp
+tracing.protocol=https
+tracing.host=tracer.example.com
+tracing.port=9411
+----
+
 == Trace propagation across services
 Tracing propagation is supported currently only with Jersey client.
 
