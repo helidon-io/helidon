@@ -30,6 +30,7 @@
     <properties>
         <helidon.version>1.0.3-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+        <exec.mainClass>${mainClass}</exec.mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>
