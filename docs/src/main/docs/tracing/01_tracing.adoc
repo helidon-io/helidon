@@ -57,3 +57,46 @@ ServerConfiguration.builder()
 ----
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
+
+== Trace propagation across services
+Tracing propagation is supported currently only with Jersey client.
+
+Tracing propagation works automatically in Helidon MP as long as you execute
+the client call in the same thread as the Jersey server side.
+
+_Exceptions that require manual handling_:
+
+- When the resource method is annotated with Fault Tolerance annotations (e.g. `@Fallback`)
+- When you use `async()` on the Jersey client request
+- When you are not in a Jersey Server scope (e.g. when using Jersey client from Helidon SE)
+
+In such cases, you must provide the SpanContext by hand:
+[source,java]
+.Tracing propagation with Jersey client (on a different thread)
+----
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
+import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
+
+...
+
+Response response = client.target(serviceEndpoint)
+    .request()
+    // tracer should be provided unless available as GlobalTracer
+    .property(TRACER_PROPERTY_NAME, tracer)
+    .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
+    .get();
+----
+
+Tracer and SpanContext can be obtained from `ServerRequest` - in Helidon SE
+this is available as part of rouing, in Helidon MP you can inject it into Resource classes:
+
+----
+@Context
+io.helidon.webserver.ServerRequest serverRequest;
+
+...
+
+SpanContext spanContext = serverRequest.spanContext();
+// optional, you could also use GlobalTracer.get() if it is configured
+Tracer tracer = req.webServer().configuration().tracer();
+----
