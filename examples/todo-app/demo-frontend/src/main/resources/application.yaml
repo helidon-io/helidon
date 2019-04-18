@@ -38,7 +38,6 @@ security:
       - name: "http-signatures"
   providers:
     - google-login:
-        proxy-host: "www-proxy.uk.oracle.com"
         client-id: "1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com"
     - abac:
     - http-signatures:
