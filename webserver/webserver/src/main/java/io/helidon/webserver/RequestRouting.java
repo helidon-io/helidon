@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
 
@@ -349,7 +350,10 @@ class RequestRouting implements Routing {
                     RoutedRequest nextRequest = new RoutedRequest(this, nextResponse, nextItem.path, errorHandlers);
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
                     requestSpan.log(nextItem.handlerRoute.diagnosticEvent());
-                    nextItem.handlerRoute.handler().accept(nextRequest, nextResponse);
+                    // execute in the context, so context can be retrieved with Contexts (runs in our thread)
+                    Contexts.inContext(nextRequest.context(), () -> nextItem.handlerRoute
+                            .handler()
+                            .accept(nextRequest, nextResponse));
                 } catch (RuntimeException re) {
                     nextNoCheck(re);
                 }

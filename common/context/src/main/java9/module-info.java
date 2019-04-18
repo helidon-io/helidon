@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
  */
 
 /**
- * Helidon Common classes for HTTP server and client.
+ * Helidon Common Context library.
  */
-module io.helidon.common.http {
+module io.helidon.common.context {
     requires java.logging;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.common.reactive;
 
-    exports io.helidon.common.http;
+    exports io.helidon.common.context;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package io.helidon.common.http;
 
-import java.util.Optional;
-import java.util.function.Supplier;
+import io.helidon.common.context.Context;
 
 /**
  * A registry for context objects. Enables instance localization between several <i>services / components / ...</i> integrated in
@@ -47,7 +46,7 @@ import java.util.function.Supplier;
  * }</pre></li>
  * </ol>
  */
-public interface ContextualRegistry {
+public interface ContextualRegistry extends Context {
 
     /**
      * Creates a new empty instance.
@@ -69,79 +68,4 @@ public interface ContextualRegistry {
     static ContextualRegistry create(ContextualRegistry parent) {
         return new ListContextualRegistry(parent);
     }
-
-    /**
-     * Register a new instance.
-     *
-     * @param instance an instance to register
-     * @param <T>      a type of the registered instance
-     * @throws NullPointerException if the registered object is {@code null}
-     */
-    <T> void register(T instance);
-
-    /**
-     * Register a new instance using a provided supplier. The supplier is guarantied to be called at most once when it's
-     * requested by the {@link #get(Class)} method. The returned value is then registered and the supplier is never used again.
-     *
-     * @param type     a type of supplied instance
-     * @param supplier a supplier of the instance to register
-     * @param <T>      a type of supplied object
-     * @throws NullPointerException if the {@code type} or the {@code supplier} is {@code null}
-     */
-    <T> void supply(Class<T> type, Supplier<T> supplier);
-
-    /**
-     * Optionally gets registered instance by its type.
-     *
-     * <p>More specifically, it returns <b>the last</b> registered instance without specified <i>classifier</i> which can be cast
-     * to the requested type.
-     *
-     * @param type a type of requested instance
-     * @param <T>  a type of requested instance
-     * @return The last registered instance compatible with the specified type
-     */
-    <T> Optional<T> get(Class<T> type);
-
-    /**
-     * Register a new instance with specified classifier.
-     *
-     * <p>Registered instance can be obtained only using {@link #get(Object, Class)} method with a {@code classifier} equal with
-     * the one used during registration.
-     *
-     * @param classifier an additional registered instance classifier
-     * @param instance   an instance to register
-     * @param <T>        a type of the registered instance
-     * @throws NullPointerException if {@code classifier} or registered object is {@code null}
-     */
-    <T> void register(Object classifier, T instance);
-
-    /**
-     * Registers a new instance using a provided supplier. The supplier is guarantied to be called at most once when it's
-     * requested by the {@link #get(Object, Class)} method. The returned value gets registered and the supplier is never called
-     * again.
-     *
-     * <p>Registered instance can be obtained only using {@link #get(Object, Class)} method with a {@code classifier} equal with
-     * the one used during registration.
-     *
-     * @param classifier an additional registered instance classifier
-     * @param type       a type of requested instance
-     * @param supplier   a supplier of the instance to register
-     * @param <T>        a type of supplied object
-     * @throws NullPointerException If any parameter is {@code null}.
-     */
-    <T> void supply(Object classifier, Class<T> type, Supplier<T> supplier);
-
-    /**
-     * Optionally gets a registered instance by its type.
-     *
-     * <p>More specifically, it returns <b>the last</b> registered instance with equal <i>classifier</i> which can be cast
-     * to the requested type.
-     *
-     * @param classifier an additional registered instance classifier
-     * @param type       a type of requested instance
-     * @param <T>        a type of requested instance
-     * @return the last registered instance compatible with the specified type
-     * @throws NullPointerException If {@code classifier} is null.
-     */
-    <T> Optional<T> get(Object classifier, Class<T> type);
 }
