@@ -167,6 +167,12 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
             if (instance == null) {
                 assert !underway;
                 instance = this;
+                if (LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.logp(Level.WARNING,
+                                WeldJpaInjectionServices.class.getName(),
+                                "<init>",
+                                "experimental");
+                }
             } else if (underway) {
                 throw new IllegalStateException();
             }
