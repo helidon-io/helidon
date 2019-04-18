@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
+import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
@@ -422,11 +423,11 @@ public class JpaExtension implements Extension {
      * {@link EntityManager} instances.</p>
      *
      * @param event the {@link AfterBeanDiscovery} event describing
-     * the fact that bean discovery has been performed; may be {@code
-     * null} in which case no action will be taken
+     * the fact that bean discovery has been performed; must not be
+     * {@code null}
      *
      * @param beanManager the {@link BeanManager} currently in effect;
-     * may be {@code null} in which case no action will be taken
+     * must not be {@code null}
      *
      * @exception IOException if an input or output error occurs,
      * typically because a {@code META-INF/persistence.xml} resource
@@ -436,6 +437,9 @@ public class JpaExtension implements Extension {
      * Unmarshaller#unmarshal(Reader) unmarshalling} a {@code
      * META-INF/persistence.xml} resource
      *
+     * @exception NullPointerException if either {@code event} or
+     * {@code beanManager} is {@code null}
+     *
      * @exception ReflectiveOperationException if reflection failed
      *
      * @exception XMLStreamException if there was a problem setting up
@@ -443,154 +447,265 @@ public class JpaExtension implements Extension {
      *
      * @see PersistenceUnitInfo
      */
-    private void afterBeanDiscovery(@Observes @Priority(LIBRARY_AFTER)
-                                    final AfterBeanDiscovery event,
-                                    final BeanManager beanManager)
+    private void addPersistenceUnitInfoBeans(@Observes @Priority(LIBRARY_AFTER)
+                                             final AfterBeanDiscovery event,
+                                             final BeanManager beanManager)
         throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
         final String cn = JpaExtension.class.getName();
-        final String mn = "afterBeanDiscovery";
+        final String mn = "addPersistenceUnitInfoBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
 
-        if (event != null && beanManager != null) {
-            final PersistenceProviderResolver resolver = PersistenceProviderResolverHolder.getPersistenceProviderResolver();
-            event.addBean()
-                .types(PersistenceProviderResolver.class)
-                .scope(Singleton.class)
-                .createWith(cc -> resolver);
-            final Collection<? extends PersistenceProvider> providers = resolver.getPersistenceProviders();
-            for (final PersistenceProvider provider : providers) {
-                event.addBean()
-                    .addTransitiveTypeClosure(provider.getClass())
-                    .scope(Singleton.class)
-                    .createWith(cc -> provider);
-            }
+        Objects.requireNonNull(event);
+        Objects.requireNonNull(beanManager);
 
-            // Should we consider type-level @PersistenceContext
-            // definitions of persistence units?
-            boolean processImplicits = true;
+        final Collection<? extends PersistenceProvider> providers = addPersistenceProviderBeans(event);
 
-            // Collect all pre-existing PersistenceUnitInfo beans and
-            // make sure their associated PersistenceProviders are
-            // beanified.  (Many times this Set will be empty.)
-            final Set<Bean<?>> preexistingPersistenceUnitInfoBeans =
-                beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
-            if (preexistingPersistenceUnitInfoBeans != null && !preexistingPersistenceUnitInfoBeans.isEmpty()) {
-                processImplicits = false;
-                for (final Bean<?> preexistingPersistenceUnitInfoBean : preexistingPersistenceUnitInfoBeans) {
-                    if (preexistingPersistenceUnitInfoBean != null) {
-                        // We use the Bean directly to create a
-                        // PersistenceUnitInfo instance.  We need it
-                        // only for the return values of
-                        // getPersistenceProviderClassName() and
-                        // getClassLoader().
-                        final Object pui = preexistingPersistenceUnitInfoBean.create(null);
-                        if (pui instanceof PersistenceUnitInfo) {
-                            maybeAddPersistenceProviderBean(event, (PersistenceUnitInfo) pui, providers);
-                        }
-                    }
-                }
-            }
+        // Should we consider type-level @PersistenceContext
+        // definitions of persistence units ("implicits")?
+        boolean processImplicits = true;
 
-            // Load all META-INF/persistence.xml resources with JAXB,
-            // and turn them into PersistenceUnitInfo instances, and
-            // add beans for all of them as well as their associated
-            // PersistenceProviders (if applicable).
-            final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            assert classLoader != null;
-            final Enumeration<URL> urls = classLoader.getResources("META-INF/persistence.xml");
-            if (urls != null && urls.hasMoreElements()) {
-                processImplicits = false;
-                final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
-                if (classLoader instanceof URLClassLoader) {
-                    tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
-                } else {
-                    tempClassLoaderSupplier = () -> classLoader;
-                }
-                // We use StAX for XML loading because it is the same
-                // strategy used by CDI implementations.  If the end
-                // user wants to customize the StAX implementation
-                // then we want that customization to apply here as
-                // well.
-                //
-                // Note that XMLInputFactory is NOT deprecated in JDK 8
-                // ( https://docs.oracle.com/javase/8/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory-- ),
-                // IS deprecated in JDK 9
-                // ( https://docs.oracle.com/javase/9/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory-- )
-                // with a claim that it was deprecated since JDK 1.7, but in
-                // JDK 7 it actually was _not_ deprecated
-                // ( https://docs.oracle.com/javase/7/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory() )
-                // and now in JDK 10 it is NO LONGER deprecated
-                // ( https://docs.oracle.com/javase/10/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory() ),
-                // nor in JDK 11
-                // ( https://docs.oracle.com/en/java/javase/11/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ),
-                // nor in JDK 12
-                // ( https://docs.oracle.com/en/java/javase/12/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory() ).
-                // So we suppress deprecation warnings since the JDK
-                // can't even figure it out!
-                @SuppressWarnings("deprecation")
-                final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
-                assert xmlInputFactory != null;
-                final Unmarshaller unmarshaller =
-                    JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
-                assert unmarshaller != null;
-                final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
-                while (urls.hasMoreElements()) {
-                    final URL url = urls.nextElement();
-                    assert url != null;
-                    Collection<? extends PersistenceUnitInfo> persistenceUnitInfos = null;
-                    try (InputStream inputStream = new BufferedInputStream(url.openStream())) {
-                        final XMLStreamReader reader = xmlInputFactory.createXMLStreamReader(inputStream);
-                        assert reader != null;
-                        persistenceUnitInfos =
-                            PersistenceUnitInfoBean.fromPersistence((Persistence) unmarshaller.unmarshal(reader),
-                                                                    classLoader,
-                                                                    tempClassLoaderSupplier,
-                                                                    new URL(url, ".."), // e.g. META-INF/..
-                                                                    this.unlistedManagedClassesByPersistenceUnitNames,
-                                                                    dataSourceProvider);
-                    }
-                    if (persistenceUnitInfos != null && !persistenceUnitInfos.isEmpty()) {
-                        for (final PersistenceUnitInfo persistenceUnitInfo : persistenceUnitInfos) {
-                            final String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
-                            event.addBean()
-                                .types(Collections.singleton(PersistenceUnitInfo.class))
-                                .scope(Singleton.class)
-                                .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
-                                .createWith(cc -> persistenceUnitInfo);
-                            maybeAddPersistenceProviderBean(event, persistenceUnitInfo, providers);
-                        }
-                    }
-                }
-            }
-
-            if (processImplicits) {
-                for (final PersistenceUnitInfoBean persistenceUnitInfoBean : this.implicitPersistenceUnits.values()) {
-                    assert persistenceUnitInfoBean != null;
-                    final String persistenceUnitName = persistenceUnitInfoBean.getPersistenceUnitName();
-                    if (!persistenceUnitInfoBean.excludeUnlistedClasses()) {
-                        final Collection<? extends Class<?>> unlistedManagedClasses =
-                            this.unlistedManagedClassesByPersistenceUnitNames.get(persistenceUnitName);
-                        if (unlistedManagedClasses != null && !unlistedManagedClasses.isEmpty()) {
-                            for (final Class<?> unlistedManagedClass : unlistedManagedClasses) {
-                                assert unlistedManagedClass != null;
-                                persistenceUnitInfoBean.addManagedClassName(unlistedManagedClass.getName());
-                            }
-                        }
-                    }
-                    event.addBean()
-                        .types(Collections.singleton(PersistenceUnitInfo.class))
-                        .scope(Singleton.class)
-                        .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
-                        .createWith(cc -> persistenceUnitInfoBean);
-                    maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
-                }
-            }
-
+        // Collect all pre-existing PersistenceUnitInfo beans
+        // (i.e. supplied by the end user) and make sure their
+        // associated PersistenceProviders are beanified.  (Almost
+        // always this Set will be empty.)
+        final Set<Bean<?>> preexistingPersistenceUnitInfoBeans =
+            beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
+        if (preexistingPersistenceUnitInfoBeans != null && !preexistingPersistenceUnitInfoBeans.isEmpty()) {
+            processImplicits = false;
+            maybeAddPersistenceProviderBeans(event, beanManager, preexistingPersistenceUnitInfoBeans, providers);
         }
+
+        // Next, and most commonly, load all META-INF/persistence.xml
+        // resources with JAXB, and turn them into PersistenceUnitInfo
+        // instances, and add beans for all of them as well as their
+        // associated PersistenceProviders (if applicable).
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        assert classLoader != null;
+        final Enumeration<URL> urls = classLoader.getResources("META-INF/persistence.xml");
+        if (urls != null && urls.hasMoreElements()) {
+            processImplicits = false;
+            this.processPersistenceXmls(event, beanManager, classLoader, urls, providers);
+        }
+
+        // If we did not find any PersistenceUnitInfo instances via
+        // any other means, only then look at those defined "implicitly",
+        // i.e. via type-level @PersistenceContext annotations.
+        if (processImplicits) {
+            this.processImplicitPersistenceUnits(event, providers);
+        }
+
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
         this.implicitPersistenceUnits.clear();
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private static Collection<? extends PersistenceProvider> addPersistenceProviderBeans(final AfterBeanDiscovery event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "addPersistenceProviderBeans";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+
+        Objects.requireNonNull(event);
+        final PersistenceProviderResolver resolver = PersistenceProviderResolverHolder.getPersistenceProviderResolver();
+        event.addBean()
+            .types(PersistenceProviderResolver.class)
+            .scope(Singleton.class)
+            .createWith(cc -> resolver);
+        final Collection<? extends PersistenceProvider> providers = resolver.getPersistenceProviders();
+        assert providers != null;
+        for (final PersistenceProvider provider : providers) {
+            event.addBean()
+                .addTransitiveTypeClosure(provider.getClass())
+                .scope(Singleton.class)
+                .createWith(cc -> provider);
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, providers);
+        }
+        return providers;
+    }
+
+    private void processImplicitPersistenceUnits(final AfterBeanDiscovery event,
+                                                 final Collection<? extends PersistenceProvider> providers)
+        throws ReflectiveOperationException {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "processImplicitPersistenceUnits";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, providers});
+        }
+
+        Objects.requireNonNull(event);
+        for (final PersistenceUnitInfoBean persistenceUnitInfoBean : this.implicitPersistenceUnits.values()) {
+            assert persistenceUnitInfoBean != null;
+            final String persistenceUnitName = persistenceUnitInfoBean.getPersistenceUnitName();
+            if (!persistenceUnitInfoBean.excludeUnlistedClasses()) {
+                final Collection<? extends Class<?>> unlistedManagedClasses =
+                    this.unlistedManagedClassesByPersistenceUnitNames.get(persistenceUnitName);
+                if (unlistedManagedClasses != null && !unlistedManagedClasses.isEmpty()) {
+                    for (final Class<?> unlistedManagedClass : unlistedManagedClasses) {
+                        assert unlistedManagedClass != null;
+                        persistenceUnitInfoBean.addManagedClassName(unlistedManagedClass.getName());
+                    }
+                }
+            }
+            event.addBean()
+                .types(Collections.singleton(PersistenceUnitInfo.class))
+                .scope(Singleton.class)
+                .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
+                .createWith(cc -> persistenceUnitInfoBean);
+            maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private void processPersistenceXmls(final AfterBeanDiscovery event,
+                                        final BeanManager beanManager,
+                                        final ClassLoader classLoader,
+                                        final Enumeration<URL> urls,
+                                        final Collection<? extends PersistenceProvider> providers)
+        throws IOException, JAXBException, ReflectiveOperationException, XMLStreamException {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "processPersistenceXmls";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, beanManager, classLoader, urls, providers});
+        }
+
+        Objects.requireNonNull(event);
+        if (urls != null && urls.hasMoreElements()) {
+            final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
+            if (classLoader instanceof URLClassLoader) {
+                tempClassLoaderSupplier = () -> new URLClassLoader(((URLClassLoader) classLoader).getURLs());
+            } else {
+                tempClassLoaderSupplier = () -> classLoader;
+            }
+            // We use StAX for XML loading because it is the same
+            // strategy used by CDI implementations.  If the end user
+            // wants to customize the StAX implementation then we want
+            // that customization to apply here as well.
+            //
+            // Note that XMLInputFactory is NOT deprecated in JDK 8:
+            //   https://docs.oracle.com/javase/8/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory--
+            // ...but IS deprecated in JDK 9:
+            //   https://docs.oracle.com/javase/9/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory--
+            // ...with an incorrect claim that it was deprecated since
+            // JDK 1.7.  In JDK 7 it actually was *not* deprecated:
+            //   https://docs.oracle.com/javase/7/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory()
+            // ...and now in JDK 10 it is NO LONGER deprecated:
+            //   https://docs.oracle.com/javase/10/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory()
+            // ...nor in JDK 11:
+            //   https://docs.oracle.com/en/java/javase/11/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory()
+            // ...nor in JDK 12:
+            //   https://docs.oracle.com/en/java/javase/12/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory()
+            // So we suppress deprecation warnings since deprecation
+            // in JDK 9 appears to have been a mistake.
+            @SuppressWarnings("deprecation")
+            final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
+            assert xmlInputFactory != null;
+            final Unmarshaller unmarshaller =
+                JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
+            assert unmarshaller != null;
+            final DataSourceProvider dataSourceProvider = new BeanManagerBackedDataSourceProvider(beanManager);
+            while (urls.hasMoreElements()) {
+                final URL url = urls.nextElement();
+                assert url != null;
+                Collection<? extends PersistenceUnitInfo> persistenceUnitInfos = null;
+                try (InputStream inputStream = new BufferedInputStream(url.openStream())) {
+                    final XMLStreamReader reader = xmlInputFactory.createXMLStreamReader(inputStream);
+                    assert reader != null;
+                    persistenceUnitInfos =
+                        PersistenceUnitInfoBean.fromPersistence((Persistence) unmarshaller.unmarshal(reader),
+                                                                classLoader,
+                                                                tempClassLoaderSupplier,
+                                                                new URL(url, ".."), // e.g. META-INF/..
+                                                                this.unlistedManagedClassesByPersistenceUnitNames,
+                                                                dataSourceProvider);
+                }
+                if (persistenceUnitInfos != null && !persistenceUnitInfos.isEmpty()) {
+                    for (final PersistenceUnitInfo persistenceUnitInfo : persistenceUnitInfos) {
+                        final String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
+                        event.addBean()
+                            .types(Collections.singleton(PersistenceUnitInfo.class))
+                            .scope(Singleton.class)
+                            .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
+                            .createWith(cc -> persistenceUnitInfo);
+                        maybeAddPersistenceProviderBean(event, persistenceUnitInfo, providers);
+                    }
+                }
+            }
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private static void maybeAddPersistenceProviderBeans(final AfterBeanDiscovery event,
+                                                         final BeanManager beanManager,
+                                                         final Set<Bean<?>> preexistingPersistenceUnitInfoBeans,
+                                                         final Collection<? extends PersistenceProvider> providers)
+        throws ReflectiveOperationException {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "maybeAddPersistenceProviderBeans";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, beanManager, preexistingPersistenceUnitInfoBeans, providers});
+        }
+
+        Objects.requireNonNull(event);
+        Objects.requireNonNull(beanManager);
+        Objects.requireNonNull(preexistingPersistenceUnitInfoBeans);
+        for (final Bean<?> bean : preexistingPersistenceUnitInfoBeans) {
+            if (bean != null) {
+                assert bean.getTypes().contains(PersistenceUnitInfo.class);
+                @SuppressWarnings("unchecked")
+                final Bean<PersistenceUnitInfo> preexistingPersistenceUnitInfoBean = (Bean<PersistenceUnitInfo>) bean;
+                // We use Contextual#create() directly to create a
+                // PersistenceUnitInfo contextual instance (normally
+                // for this use case in CDI you would acquire a
+                // contextual reference via
+                // BeanManager#getReference(), but it is too early in
+                // the (spec-defined) lifecycle to do that here).  We
+                // also deliberately do not use
+                // Context#get(Contextual, CreationalContext), since
+                // that might "install" the instance so acquired in
+                // whatever Context/scope it is defined in and we just
+                // need it transiently.
+                //
+                // Getting a contextual instance this way, via
+                // Contextual#create(), is normally frowned upon,
+                // since it bypasses CDI's Context mechansims and
+                // proxying and interception features (it is the
+                // foundation upon which they are built), but here we
+                // need the instance only for the return values of
+                // getPersistenceProviderClassName() and
+                // getClassLoader().  We then destroy the instance
+                // immediately so that everything behaves as though
+                // this contextual instance acquired by shady means
+                // never existed.
+                final CreationalContext<PersistenceUnitInfo> cc =
+                    beanManager.createCreationalContext(preexistingPersistenceUnitInfoBean);
+                final PersistenceUnitInfo pui = preexistingPersistenceUnitInfoBean.create(cc);
+                assert pui != null;
+                try {
+                    maybeAddPersistenceProviderBean(event, pui, providers);
+                } finally {
+                    preexistingPersistenceUnitInfoBean.destroy(pui, cc);
+                    // Contextual#destroy() *should* release the
+                    // CreationalContext, but it is an idempotent call
+                    // and many Bean authors forget to do this.
+                    cc.release();
+                }
+            }
+        }
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -653,12 +768,14 @@ public class JpaExtension implements Extension {
             }
 
             if (add) {
-
                 // The PersistenceProvider class in question is not one we
                 // already loaded.  Add a bean for it too.
+
+                final String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
                 event.addBean()
                     .types(PersistenceProvider.class)
                     .scope(Singleton.class)
+                    .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
                     .createWith(cc -> {
                             try {
                                 ClassLoader classLoader = persistenceUnitInfo.getClassLoader();
@@ -667,7 +784,7 @@ public class JpaExtension implements Extension {
                                 }
                                 assert classLoader != null;
                                 @SuppressWarnings("unchecked")
-                                    final Class<? extends PersistenceProvider> c =
+                                final Class<? extends PersistenceProvider> c =
                                     (Class<? extends PersistenceProvider>) Class.forName(providerClassName, true, classLoader);
                                 return c.getDeclaredConstructor().newInstance();
                             } catch (final ReflectiveOperationException reflectiveOperationException) {
