@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -63,7 +64,8 @@ public class BuilderImplTest {
                                           eq(true), //cachingEnabled
                                           eq(BuilderImpl.DEFAULT_CHANGES_EXECUTOR), //changesExecutor
                                           eq(Flow.defaultBufferSize()), //changesMaxBuffer
-                                          eq(true) //keyResolving
+                                          eq(true), //keyResolving
+                                          isNull() //aliasGenerator
         );
     }
 
@@ -87,7 +89,8 @@ public class BuilderImplTest {
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(1), //changesMaxBuffer
-                                          eq(true) //keyResolving
+                                          eq(true), //keyResolving
+                                          isNull() //aliasGenerator
         );
     }
 
@@ -113,7 +116,8 @@ public class BuilderImplTest {
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(1), //changesMaxBuffer
-                                          eq(false) //keyResolving
+                                          eq(false), //keyResolving
+                                          isNull() //aliasGenerator
         );
     }
 
@@ -131,6 +135,9 @@ public class BuilderImplTest {
         assertThat(config.get("prop3").asString().get(), is("source-3"));
         assertThat(config.get(TEST_SYS_PROP_NAME).asString().get(), is(TEST_SYS_PROP_VALUE));
         assertThat(config.get(TEST_ENV_VAR_NAME).asString().get(), is(TEST_ENV_VAR_VALUE));
+
+        String envVarName = TEST_ENV_VAR_NAME.toLowerCase().replace("_", ".");
+        assertThat(config.get(envVarName).asString().get(), is(TEST_ENV_VAR_VALUE));
     }
 
     @Test

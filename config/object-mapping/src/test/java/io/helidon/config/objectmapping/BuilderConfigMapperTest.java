@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigMappers;
+import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.CustomType;
 import io.helidon.config.objectmapping.FactoryMethodConfigMapperTest.DefaultCustomTypeSupplier;
@@ -34,9 +35,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests {@link ConfigMappers} with focus on builder pattern.
@@ -47,36 +48,28 @@ public class BuilderConfigMapperTest {
     public void testBuilderNoBuildMethod() {
         Config config = Config.empty();
 
-        BuilderNoBuildMethodBean bean = config.as(BuilderNoBuildMethodBean.class).get();
-
-        assertThat(bean.isOk(), is(true));
+        assertThrows(ConfigMappingException.class, () -> config.as(BuilderNoBuildMethodBean.class).get());
     }
 
     @Test
     public void testBuilderBadTypeBuildMethod() {
         Config config = Config.empty();
 
-        BadTypeBuilderBean bean = config.as(BadTypeBuilderBean.class).get();
-
-        assertThat(bean.isOk(), is(true));
+        assertThrows(ConfigMappingException.class, () -> config.as(BadTypeBuilderBean.class).get());
     }
 
     @Test
     public void testTransientBuilder() {
         Config config = Config.empty();
 
-        TransientBuilderBean bean = config.as(TransientBuilderBean.class).get();
-
-        assertThat(bean.isOk(), is(true));
+        assertThrows(ConfigMappingException.class, () -> config.as(TransientBuilderBean.class).get());
     }
 
     @Test
     public void testTransientBuildMethod() {
         Config config = Config.empty();
 
-        TransientBuildMethodBean bean = config.as(TransientBuildMethodBean.class).get();
-
-        assertThat(bean.isOk(), is(true));
+        assertThrows(ConfigMappingException.class, () -> config.as(TransientBuildMethodBean.class).get());
     }
 
     @Test

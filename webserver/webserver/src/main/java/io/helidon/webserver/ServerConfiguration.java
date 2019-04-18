@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -208,7 +209,6 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
-
         private int workers;
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
@@ -394,6 +394,33 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        /**
+         * Configures the SSL protocols to enable with the default server socket.
+         * @param protocols protocols to enable, if {@code null} enables the
+         * default protocols
+         * @return an updated builder
+         */
+        public Builder enabledSSlProtocols(String... protocols){
+            this.defaultSocketBuilder.enabledSSlProtocols(protocols);
+            return this;
+        }
+
+        /**
+         * Configures the SSL protocols to enable with the default server socket.
+         * @param protocols protocols to enable, if {@code null} or empty enables
+         *  the default protocols
+         * @return an updated builder
+         */
+        public Builder enabledSSlProtocols(List<String> protocols){
+            this.defaultSocketBuilder.enabledSSlProtocols(protocols);
+            return this;
+        }
+
+        /**
+         * Configure experimental features.
+         * @param experimental experimental configuration
+         * @return an updated builder
+         */
         public Builder experimental(ExperimentalConfiguration experimental) {
             this.experimental = experimental;
             return this;
@@ -462,6 +489,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             config.get("backlog").asInt().ifPresent(soConfigBuilder::backlog);
             config.get("timeout").asInt().ifPresent(soConfigBuilder::timeoutMillis);
             config.get("receive-buffer").asInt().ifPresent(soConfigBuilder::receiveBufferSize);
+            config.get("ssl-protocols").asList(String.class).ifPresent(soConfigBuilder::enabledSSlProtocols);
 
             // ssl
             Config sslConfig = config.get("ssl");

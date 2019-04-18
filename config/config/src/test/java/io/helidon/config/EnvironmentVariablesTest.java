@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.EnvironmentVariables.shouldMap;
+import static io.helidon.config.EnvironmentVariables.shouldAlias;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -49,17 +49,6 @@ public class EnvironmentVariablesTest {
         return map;
     }
 
-    static int countKeysToMap(final Map<String, String> env) {
-        return (int) env.keySet()
-                        .stream()
-                        .filter(EnvironmentVariables::shouldMap)
-                        .count();
-    }
-
-    static int expectedMappedSize(final Map<String, String> env) {
-        return env.size() + (countKeysToMap(env) * 2);
-    }
-
     static String variant(final String key) {
         return key.replace("_dash_", "-").replace("_", ".");
     }
@@ -69,18 +58,18 @@ public class EnvironmentVariablesTest {
     }
 
     @Test
-    public void testShouldNotMap() {
-        assertThat(shouldMap(""), is(false));
-        assertThat(shouldMap("_"), is(false));
-        assertThat(shouldMap("__"), is(false));
-        assertThat(shouldMap("x__y"), is(false));
-        assertThat(shouldMap("_xy"), is(false));
-        assertThat(shouldMap("xy_"), is(false));
-        assertThat(shouldMap("xyz"), is(false));
+    public void testShouldNotAlias() {
+        assertThat(shouldAlias(""), is(false));
+        assertThat(shouldAlias("_"), is(false));
+        assertThat(shouldAlias("__"), is(false));
+        assertThat(shouldAlias("x__y"), is(false));
+        assertThat(shouldAlias("_xy"), is(false));
+        assertThat(shouldAlias("xy_"), is(false));
+        assertThat(shouldAlias("xyz"), is(false));
     }
 
     @Test
-    public void testNotMapped() {
+    public void testNotAliased() {
         Map<String, String> env = toMap("", "v",
                                         "_", "v",
                                         "__", "v",
@@ -101,20 +90,19 @@ public class EnvironmentVariablesTest {
     }
 
     @Test
-    public void testShouldMap() {
-        assertThat(shouldMap("x_y"), is(true));
-        assertThat(shouldMap("x_dash_y"), is(true));
+    public void testShouldAlias() {
+        assertThat(shouldAlias("x_y"), is(true));
+        assertThat(shouldAlias("x_dash_y"), is(true));
     }
 
     @Test
-    public void testCurrentEnvMappings() {
+    public void testCurrentEnvExpansion() {
         Map<String, String> env = env();
-
         Map<String, String> mapped = EnvironmentVariables.expand(env);
         assertThat(mapped, is(not(nullValue())));
 
         env.forEach((k, v) -> {
-            if (shouldMap(k)) {
+            if (shouldAlias(k)) {
                 assertThat(mapped, hasEntry(k, v));
                 assertThat(mapped, hasEntry(variant(k), v));
                 assertThat(mapped, hasEntry(lowerVariant(k), v));
@@ -123,24 +111,30 @@ public class EnvironmentVariablesTest {
     }
 
     @Test
-    public void testDashMapping() {
-        Map<String, String> env = toMap("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "16");
-        Map<String, String> mapped = EnvironmentVariables.expand(env);
-        assertThat(mapped, is(not(nullValue())));
-        assertThat(mapped.size(), is(3));
-        assertThat(mapped, hasEntry("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "16"));
-        assertThat(mapped, hasEntry("SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE", "16"));
-        assertThat(mapped, hasEntry("server.executor-service.max-pool-size", "16"));
+    public void testDashAliases() {
+        Map<String, String> env = toMap("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "16",
+                                        "APP_PAGE_DASH_SIZE", "17");
+        Map<String, String> expanded = EnvironmentVariables.expand(env);
+        assertThat(expanded, is(not(nullValue())));
+        assertThat(expanded.size(), is(6));
+
+        assertThat(expanded, hasEntry("SERVER_EXECUTOR_dash_SERVICE_MAX_dash_POOL_dash_SIZE", "16"));
+        assertThat(expanded, hasEntry("SERVER.EXECUTOR-SERVICE.MAX-POOL-SIZE", "16"));
+        assertThat(expanded, hasEntry("server.executor-service.max-pool-size", "16"));
+
+        assertThat(expanded, hasEntry("APP_PAGE_DASH_SIZE", "17"));
+        assertThat(expanded, hasEntry("APP.PAGE-SIZE", "17"));
+        assertThat(expanded, hasEntry("app.page-size", "17"));
     }
 
     @Test
-    public void testCamelCaseMapping() {
+    public void testCamelCaseAliases() {
         Map<String, String> env = toMap("app_someKey", "v");
-        Map<String, String> mapped = EnvironmentVariables.expand(env);
-        assertThat(mapped, is(not(nullValue())));
-        assertThat(mapped.size(), is(3));
-        assertThat(mapped, hasEntry("app_someKey", "v"));
-        assertThat(mapped, hasEntry("app.someKey", "v"));
-        assertThat(mapped, hasEntry("app.somekey", "v"));
+        Map<String, String> expanded = EnvironmentVariables.expand(env);
+        assertThat(expanded, is(not(nullValue())));
+        assertThat(expanded.size(), is(3));
+        assertThat(expanded, hasEntry("app_someKey", "v"));
+        assertThat(expanded, hasEntry("app.someKey", "v"));
+        assertThat(expanded, hasEntry("app.somekey", "v"));
     }
 }

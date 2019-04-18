@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class RegistryFactoryTest {
         unconfigured = RegistryFactory.create();
         Config config = Config.builder()
                 .sources(ConfigSources.create(CollectionsHelper.mapOf(
-                        "helidon.metrics.base." + METRIC_USED_HEAP + ".enabled",
+                        "base." + METRIC_USED_HEAP + ".enabled",
                         "false")))
                 .build();
         configured = RegistryFactory.create(config);

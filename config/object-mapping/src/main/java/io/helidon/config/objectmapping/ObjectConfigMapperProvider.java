@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import static io.helidon.config.objectmapping.ReflectionUtil.findStaticMethodWit
 @Priority(1000) // priority should be low to be one of the last ones used
 public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_FROM = "from";
+    private static final String METHOD_OF = "of";
     private static final String METHOD_VALUE_OF = "valueOf";
     private static final String METHOD_FROM_CONFIG = "fromConfig";
     private static final String METHOD_FROM_STRING = "fromString";
@@ -64,6 +65,8 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
                 .or(() -> findStaticConfigMethodMapper(type, METHOD_FROM))
                 // Config constructor
                 .or(() -> findConfigConstructorMapper(type))
+                // T of(Config)
+                .or(() -> findStaticConfigMethodMapper(type, METHOD_OF))
                 // T valueOf(Config)
                 .or(() -> findStaticConfigMethodMapper(type, METHOD_VALUE_OF))
                 // T fromConfig(Config)
@@ -76,6 +79,8 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
                 .or(() -> findParseCharSequenceMethodMapper(type))
                 // String constructor
                 .or(() -> findStringConstructorMapper(type))
+                // T of(String)
+                .or(() -> findStaticStringMethodMapper(type, METHOD_OF))
                 // T valueOf(String)
                 .or(() -> findStaticStringMethodMapper(type, METHOD_VALUE_OF))
                 // T fromString(String)
@@ -153,7 +158,11 @@ public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     }
 
     private static <T> Optional<Function<Config, T>> findGenericMapper(Class<T> type) {
-        return findConstructor(type)
+        try {
+            return findConstructor(type)
                 .map(methodHandle -> new GenericConfigMapper<>(type, methodHandle));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 }

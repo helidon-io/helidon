@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -46,23 +48,25 @@ final class ConfigFactory {
     private final Map<ConfigKeyImpl, ConfigNode> fullKeyToNodeMap;
     private final ConfigFilter filter;
     private final ProviderImpl provider;
+    private final Function<String, List<String>> aliasGenerator;
     private final ConcurrentMap<PrefixedKey, Reference<Config>> configCache;
     private final Flow.Publisher<ConfigDiff> changesPublisher;
     private final Instant timestamp;
 
     /**
      * Create new instance of the factory operating on specified {@link ConfigSource}.
-     *
-     * @param mapperManager manager to be used to map string value to appropriate type
-     * @param node          root configuration node provided by the configuration source to be used to build
-     *                      {@link Config} instances on.
-     * @param filter        config filter used to filter each single value
-     * @param provider      shared config provider
+     * @param mapperManager  manager to be used to map string value to appropriate type
+     * @param node           root configuration node provided by the configuration source to be used to build
+     *                       {@link Config} instances on.
+     * @param filter         config filter used to filter each single value
+     * @param provider       shared config provider
+     * @param aliasGenerator key alias generator (may be {@code null})
      */
     ConfigFactory(ConfigMapperManager mapperManager,
-                  ConfigNode.ObjectNode node,
+                  ObjectNode node,
                   ConfigFilter filter,
-                  ProviderImpl provider) {
+                  ProviderImpl provider,
+                  Function<String, List<String>> aliasGenerator) {
         Objects.requireNonNull(mapperManager, "mapperManager argument is null.");
         Objects.requireNonNull(node, "node argument is null.");
         Objects.requireNonNull(filter, "filter argument is null.");
@@ -72,6 +76,7 @@ final class ConfigFactory {
         this.fullKeyToNodeMap = createFullKeyToNodeMap(node);
         this.filter = filter;
         this.provider = provider;
+        this.aliasGenerator = aliasGenerator;
 
         configCache = new ConcurrentHashMap<>();
         changesPublisher = new FilteringConfigChangeEventPublisher(provider.changes());
@@ -148,7 +153,7 @@ final class ConfigFactory {
      * @return new instance of {@link Config} for specified {@code key}
      */
     private Config createConfig(ConfigKeyImpl prefix, ConfigKeyImpl key) {
-        ConfigNode value = fullKeyToNodeMap.get(prefix.child(key));
+        ConfigNode value = findNode(prefix, key);
 
         if (null == value) {
             return new ConfigMissingImpl(prefix, key, this, mapperManager);
@@ -164,6 +169,20 @@ final class ConfigFactory {
         default:
             return new ConfigMissingImpl(prefix, key, this, mapperManager);
         }
+    }
+
+    private ConfigNode findNode(ConfigKeyImpl prefix, ConfigKeyImpl key) {
+        ConfigNode node = fullKeyToNodeMap.get(prefix.child(key));
+        if (node == null && aliasGenerator != null) {
+            final String fullKey = key.toString();
+            for (final String keyAlias : aliasGenerator.apply(fullKey)) {
+                node = fullKeyToNodeMap.get(prefix.child(keyAlias));
+                if (node != null) {
+                    break;
+                }
+            }
+        }
+        return node;
     }
 
     public Flow.Publisher<ConfigDiff> changes() {

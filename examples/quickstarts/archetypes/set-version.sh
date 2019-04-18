@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 #
 # Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
@@ -24,17 +24,18 @@
 # If new-helidon-version is not passed then the script will look in
 # FULL_VERSION
 #
+trap 'echo "ERROR: Error occurred at ${BASH_SOURCE}:${LINENO} command: ${BASH_COMMAND}"' ERR
 set -eo pipefail
 
 # Path to this script
 if [ -h "${0}" ] ; then
-  SCRIPT_PATH="$(readlink "$0")"
+  readonly SCRIPT_PATH="$(readlink "$0")"
 else
-  SCRIPT_PATH="${0}"
+  readonly SCRIPT_PATH="${0}"
 fi
 
 # Current directory
-MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
+readonly MY_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; pwd -P)
 
 EXAMPLE_DIR="${MY_DIR}/.."
 
@@ -74,8 +75,4 @@ for _ex in ${EXAMPLES}; do
 
 done
 
-echo "Updating ${MY_DIR}/archetype.properties"
-# Update archetype.version in archetype property file
-cat "${MY_DIR}/archetype.properties" | sed "s/^archetype.version=.*/archetype.version=${newVersion}/" \
-     > "${TEMP_FILE}" && mv "${TEMP_FILE}"  "${MY_DIR}/archetype.properties"
 

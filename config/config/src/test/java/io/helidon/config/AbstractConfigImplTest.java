@@ -16,25 +16,27 @@
 
 package io.helidon.config;
 
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.config.internal.ConfigKeyImpl;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigNode;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests of the {@link AbstractConfigImpl} class.
@@ -61,7 +63,8 @@ public class AbstractConfigImplTest {
                         mock(ConfigMapperManager.class),
                         mock(ConfigNode.ObjectNode.class),
                         mock(ConfigFilter.class),
-                        providerMock),
+                        providerMock,
+                        key -> Collections.emptyList()),
                 mock(ConfigMapperManager.class));
 
         // WHEN we reproduce the issue https://github.com/oracle/helidon/issues/299

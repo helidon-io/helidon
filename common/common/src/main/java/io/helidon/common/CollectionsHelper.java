@@ -17,7 +17,6 @@
 package io.helidon.common;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,8 +52,7 @@ public abstract class CollectionsHelper {
      */
     @SafeVarargs
     public static <T> List<T> listOf(T... elts){
-        List<T> list = new ArrayList<>();
-        list.addAll(Arrays.asList(elts));
+        List<T> list = Arrays.asList(elts);
         return Collections.unmodifiableList(list);
     }
 

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>tck-project</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
     <artifactId>tck-config</artifactId>
     <name>Helidon Microprofile Tests TCK Config</name>
@@ -66,6 +66,12 @@
                     <systemPropertyVariables>
                         <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
+                    <environmentVariables>
+                        <my_int_property>45</my_int_property>
+                        <MY_BOOLEAN_PROPERTY>true</MY_BOOLEAN_PROPERTY>
+                        <my_string_property>haha</my_string_property>
+                        <MY_STRING_PROPERTY>woohoo</MY_STRING_PROPERTY>
+                    </environmentVariables>
                     <suiteXmlFiles>
                         <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>

@@ -18,20 +18,21 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
 
-import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandKey;
 import com.netflix.hystrix.HystrixCommandProperties;
 import com.netflix.hystrix.HystrixThreadPoolKey;
 import com.netflix.hystrix.HystrixThreadPoolProperties;
-import org.apache.commons.configuration.AbstractConfiguration;
 import org.eclipse.microprofile.metrics.Histogram;
 
+import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE;
 import static com.netflix.hystrix.HystrixCommandProperties.ExecutionIsolationStrategy.THREAD;
 import static io.helidon.microprofile.faulttolerance.CircuitBreakerHelper.State;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
@@ -57,6 +58,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.regis
 public class FaultToleranceCommand extends HystrixCommand<Object> {
     private static final Logger LOGGER = Logger.getLogger(FaultToleranceCommand.class.getName());
 
+    static final int MAX_THREAD_WAITING_PERIOD = 2000;      // milliseconds
     static final String HELIDON_MICROPROFILE_FAULTTOLERANCE = "io.helidon.microprofile.faulttolerance";
 
     private final String commandKey;
@@ -73,10 +75,14 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
     private long queuedNanos = -1L;
 
+    private Thread runThread;
+
+    private ClassLoader contextClassLoader;
+
     /**
      * Default thread pool size for a command or a command group.
      */
-    private static final int MAX_THREAD_POOL_SIZE = 10;
+    private static final int MAX_THREAD_POOL_SIZE = 32;
 
     /**
      * Default max thread pool queue size.
@@ -91,15 +97,21 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * @param commandKey The command key.
      * @param introspector The method introspector.
      * @param context CDI invocation context.
+     * @param contextClassLoader Context class loader or {@code null} if not available.
      */
-    public FaultToleranceCommand(String commandKey, MethodIntrospector introspector, InvocationContext context) {
+    public FaultToleranceCommand(String commandKey, MethodIntrospector introspector,
+                                 InvocationContext context, ClassLoader contextClassLoader) {
         super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(HELIDON_MICROPROFILE_FAULTTOLERANCE))
                 .andCommandKey(
                         HystrixCommandKey.Factory.asKey(commandKey))
                 .andCommandPropertiesDefaults(
                         HystrixCommandProperties.Setter()
                                 .withFallbackEnabled(false)
-                                .withExecutionIsolationStrategy(THREAD))
+                                .withExecutionIsolationStrategy(introspector.hasBulkhead()
+                                        && !introspector.isAsynchronous() ? SEMAPHORE : THREAD)
+                                .withExecutionIsolationThreadInterruptOnFutureCancel(true)
+                                .withExecutionIsolationThreadInterruptOnTimeout(true)
+                                .withExecutionTimeoutEnabled(false))
                 .andThreadPoolKey(
                         introspector.hasBulkhead()
                                 ? HystrixThreadPoolKey.Factory.asKey(commandKey)
@@ -125,6 +137,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         this.commandKey = commandKey;
         this.introspector = introspector;
         this.context = context;
+        this.contextClassLoader = contextClassLoader;
 
         // Special initialization for methods with breakers
         if (introspector.hasCircuitBreaker()) {
@@ -190,6 +203,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      */
     @Override
     public Object run() throws Exception {
+        // Config requires use of appropriate context class loader
+        if (contextClassLoader != null) {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+
         if (introspector.hasBulkhead()) {
             bulkheadHelper.markAsRunning(this);
 
@@ -214,6 +232,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
         // Finally, invoke the user method
         try {
+            runThread = Thread.currentThread();
             return context.proceed();
         } finally {
             if (introspector.hasBulkhead()) {
@@ -232,16 +251,10 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     public Object execute() {
         boolean lockRemoved = false;
 
-        try {
-            // Configure command before execution
-            introspector.getHystrixProperties()
-                    .entrySet()
-                    .forEach(entry -> setProperty(entry.getKey(), entry.getValue()));
-
-            // Get lock and check breaker delay
-            if (introspector.hasCircuitBreaker()) {
-                breakerHelper.lock();       // acquire exclusive access to command data
-
+        // Get lock and check breaker delay
+        if (introspector.hasCircuitBreaker()) {
+            try {
+                breakerHelper.lock();
                 // OPEN_MP -> HALF_OPEN_MP
                 if (breakerHelper.getState() == State.OPEN_MP) {
                     long delayNanos = TimeUtil.convertToNanos(introspector.getCircuitBreaker().delay(),
@@ -250,31 +263,46 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                         breakerHelper.setState(State.HALF_OPEN_MP);
                     }
                 }
-                logCircuitBreakerState("Enter");
+            } finally {
+                breakerHelper.unlock();
             }
 
-            // Record state of breaker
-            boolean wasBreakerOpen = isCircuitBreakerOpen();
+            logCircuitBreakerState("Enter");
+        }
 
-            // Track invocation in a bulkhead
-            if (introspector.hasBulkhead()) {
-                bulkheadHelper.trackInvocation(this);
+        // Record state of breaker
+        boolean wasBreakerOpen = isCircuitBreakerOpen();
+
+        // Track invocation in a bulkhead
+        if (introspector.hasBulkhead()) {
+            bulkheadHelper.trackInvocation(this);
+        }
+
+        // Execute command
+        Object result = null;
+        Future<Object> future = null;
+        Throwable throwable = null;
+        long startNanos = System.nanoTime();
+        try {
+            future = super.queue();
+            result = future.get();
+        } catch (Exception e) {
+            if (e instanceof ExecutionException) {
+                waitForThreadToComplete();
             }
+            if (e instanceof InterruptedException) {
+                future.cancel(true);
+            }
+            throwable = decomposeException(e);
+        }
 
-            // Execute command
-            Object result = null;
-            Throwable throwable = null;
-            long startNanos = System.nanoTime();
+        executionTime = System.nanoTime() - startNanos;
+        boolean hasFailed = (throwable != null);
+
+        if (introspector.hasCircuitBreaker()) {
             try {
-                result = super.execute();
-            } catch (Throwable t) {
-                throwable = t;
-            }
+                breakerHelper.lock();
 
-            executionTime = System.nanoTime() - startNanos;
-            boolean hasFailed = (throwable != null);
-
-            if (introspector.hasCircuitBreaker()) {
                 // Keep track of failure ratios
                 breakerHelper.pushResult(throwable == null);
 
@@ -332,27 +360,26 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                 }
 
                 updateMetricsAfter(throwable, wasBreakerOpen, isClosedNow, breakerOpening);
+            } finally {
+                if (!lockRemoved) {
+                    breakerHelper.unlock();
+                }
             }
+        }
 
-            // Untrack invocation in a bulkhead
-            if (introspector.hasBulkhead()) {
-                bulkheadHelper.untrackInvocation(this);
-            }
+        // Untrack invocation in a bulkhead
+        if (introspector.hasBulkhead()) {
+            bulkheadHelper.untrackInvocation(this);
+        }
 
-            // Display circuit breaker state at exit
-            logCircuitBreakerState("Exit 3");
+        // Display circuit breaker state at exit
+        logCircuitBreakerState("Exit 3");
 
-            // Outcome of execution
-            if (throwable != null) {
-                throw ExceptionUtil.toWrappedException(throwable);
-            } else {
-                return result;
-            }
-        } finally {
-            // Free lock unless command data was reset
-            if (introspector.hasCircuitBreaker() && !lockRemoved) {
-                breakerHelper.unlock();
-            }
+        // Outcome of execution
+        if (throwable != null) {
+            throw ExceptionUtil.toWrappedException(throwable);
+        } else {
+            return result;
         }
     }
 
@@ -383,17 +410,6 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     }
 
     /**
-     * Sets a Hystrix property on a command.
-     *
-     * @param key Property key.
-     * @param value Property value.
-     */
-    private void setProperty(String key, Object value) {
-        final AbstractConfiguration configManager = ConfigurationManager.getConfigInstance();
-        configManager.setProperty(String.format("hystrix.command.%s.%s", commandKey, key), value);
-    }
-
-    /**
      * Logs circuit breaker state, if one is present.
      *
      * @param preamble Message preamble.
@@ -404,6 +420,32 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             LOGGER.info(preamble + ": breaker for " + getCommandKey() + " in state "
                     + breakerHelper.getState() + " (Hystrix: " + hystrixState
                     + " Thread:" + Thread.currentThread().getName() + ")");
+        }
+    }
+
+    /**
+     * <p>After a timeout expires, Hystrix can report an {@link ExecutionException}
+     * while a thread is still running and cannot be interrupted (e.g. busy
+     * loop). Hystrix makes this possible by using another thread to monitor
+     * the command's thread.</p>
+     *
+     * <p>According to the FT spec, the thread may continue to run, so here
+     * we give it a chance to do that before completing the execution of the
+     * command. For more information see TCK test {@code
+     * TimeoutUninterruptableTest::timeoutTest}.</p>
+     */
+    private void waitForThreadToComplete() {
+        if (!introspector.isAsynchronous() && runThread != null) {
+            try {
+                int waitTime = 250;
+                while (runThread.getState() == Thread.State.RUNNABLE && waitTime <= MAX_THREAD_WAITING_PERIOD) {
+                    LOGGER.info(() -> "Waiting for completion of thread " + runThread);
+                    Thread.sleep(waitTime);
+                    waitTime += 250;
+                }
+            } catch (InterruptedException e) {
+                // Falls through
+            }
         }
     }
 }

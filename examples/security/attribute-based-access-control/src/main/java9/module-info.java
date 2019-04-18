@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,19 @@
  * Example of attribute based access control.
  */
 module io.helidon.security.examples.abac {
-    // bundle of security providers and tools
-    requires io.helidon.security.bundle;
-    // jersey integration is separately packaged
-    requires io.helidon.security.integration.jersey;
+    // CDI API
+    requires cdi.api;
     // implementation of expression language to use (used by the abac provider: policy expression language
     requires javax.el;
+    requires io.helidon.microprofile.v1_2;
+    // needed for security components and restrictions of this module
+    requires io.helidon.security;
+    requires io.helidon.security.annotations;
+    requires io.helidon.security.abac.time;
+    requires io.helidon.security.abac.role;
+    requires io.helidon.security.abac.policy;
+    requires io.helidon.security.abac.scope;
 
-
-    // webserver jersey integration (also transitively provides webserver)
-    requires io.helidon.webserver.jersey;
     // needed for jersey to start without a lot of errors (hk2 actually)
     requires java.xml.bind;
 

@@ -396,7 +396,7 @@ Support for HTTP Signatures (both inbound and outbound).
 ----
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers  -http-sign</artifactId>
+    <artifactId>helidon-security-providers-http-sign</artifactId>
 </dependency>
 ----
 

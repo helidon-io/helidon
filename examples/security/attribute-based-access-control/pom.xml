@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples.security</groupId>
         <artifactId>helidon-examples-security-project</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-security-abac</artifactId>
     <name>Helidon Security Examples ABAC</name>
@@ -39,30 +39,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-jersey</artifactId>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-1.2</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.bundles</groupId>
-            <artifactId>helidon-bundles-jersey</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-         <dependency>
-             <groupId>io.helidon.bundles</groupId>
-             <artifactId>helidon-bundles-config</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.bundles</groupId>
-            <artifactId>helidon-bundles-security</artifactId>
-            <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>jsr305</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>

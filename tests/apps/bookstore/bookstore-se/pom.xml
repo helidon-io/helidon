@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tests.apps.bookstore</groupId>
         <artifactId>helidon-tests-apps-bookstore-project</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -215,12 +215,6 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.9.7</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
