@@ -117,9 +117,7 @@ public final class ContentReaders {
                 @Override
                 public void onNext(DataChunk item) {
                     try {
-                        synchronized (bytes) {
-                            Utils.write(item.data(), bytes);
-                        }
+                        Utils.write(item.data(), bytes);
                     } catch (IOException e) {
                         onError(new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e));
                     } finally {

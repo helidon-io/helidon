@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,11 @@ package io.helidon.microprofile.server;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
@@ -107,7 +109,8 @@ public class ServerImpl implements Server {
         STARTUP_LOGGER.finest("Builders ready");
 
         List<JaxRsApplication> applications = builder.applications();
-        loadExtensions(builder, mpConfig, config, applications, routingBuilder, serverConfigBuilder);
+        Map<String, Routing.Builder> namedRoutings = new HashMap<>();
+        loadExtensions(builder, mpConfig, config, applications, routingBuilder, namedRoutings, serverConfigBuilder);
 
         STARTUP_LOGGER.finest("Extensions loaded");
 
@@ -178,9 +181,11 @@ public class ServerImpl implements Server {
 
         STARTUP_LOGGER.finest("Registered jersey application(s)");
 
-        server = routingBuilder
-                .build()
-                .createServer(serverConfigBuilder.build());
+        WebServer.Builder serverBuilder = WebServer.builder(routingBuilder.build());
+        namedRoutings.forEach(serverBuilder::addNamedRouting);
+
+        server = serverBuilder.config(serverConfigBuilder.build())
+                .build();
 
         STARTUP_LOGGER.finest("Server created");
     }
@@ -198,7 +203,9 @@ public class ServerImpl implements Server {
                                 MpConfig mpConfig,
                                 Config config,
                                 List<JaxRsApplication> apps,
-                                Routing.Builder routingBuilder, ServerConfiguration.Builder serverConfigBuilder) {
+                                Routing.Builder routingBuilder,
+                                Map<String, Routing.Builder> namedRouting,
+                                ServerConfiguration.Builder serverConfigBuilder) {
         // extensions
         List<MpService> extensions = new LinkedList<>(builder.extensions());
         ServiceLoader.load(MpService.class).forEach(extensions::add);
@@ -248,6 +255,11 @@ public class ServerImpl implements Server {
             @Override
             public Routing.Builder serverRoutingBuilder() {
                 return routingBuilder;
+            }
+
+            @Override
+            public Routing.Builder serverNamedRoutingBuilder(String name) {
+                return namedRouting.computeIfAbsent(name, routeName -> Routing.builder());
             }
 
             @Override

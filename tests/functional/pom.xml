@@ -35,5 +35,6 @@
 
     <modules>
         <module>bookstore</module>
+        <module>multiport</module>
     </modules>
 </project>

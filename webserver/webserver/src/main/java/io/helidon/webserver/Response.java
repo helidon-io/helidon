@@ -26,8 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -76,7 +74,7 @@ abstract class Response implements ServerResponse {
         this.headers = new HashResponseHeaders(bareResponse);
         this.completionStage = bareResponse.whenCompleted().thenApply(a -> this);
         this.sendLockSupport = new SendLockSupport();
-        this.writers = new ArrayList<>(defaultWriters());
+        this.writers = new ArrayList<>();
         this.filters = new ArrayList<>();
     }
 
@@ -93,54 +91,6 @@ abstract class Response implements ServerResponse {
         this.sendLockSupport = response.sendLockSupport;
         this.writers = response.writers;
         this.filters = response.filters;
-    }
-
-    private Collection<Writer> defaultWriters() {
-        // Byte array
-        Writer<byte[]> byteArrayWriter = new Writer<>(byte[].class, null, ContentWriters.byteArrayWriter(true));
-        // Char sequence
-        Writer<CharSequence> charSequenceWriter = new Writer<>(CharSequence.class, null, s -> {
-            MediaType mediaType = headers.contentType().orElse(MediaType.TEXT_PLAIN);
-            String charset = mediaType.charset().orElse(StandardCharsets.UTF_8.name());
-            headers.contentType(mediaType.withCharset(charset));
-            return ContentWriters.charSequenceWriter(Charset.forName(charset)).apply(s);
-        });
-        // Channel
-        Writer<ReadableByteChannel> byteChannelWriter
-                = new Writer<>(ReadableByteChannel.class, null, ContentWriters.byteChannelWriter());
-        // Path
-        Writer<Path> pathWriter = new Writer<>(Path.class, null,
-               path -> {
-                   // Set response length - if possible
-                   try {
-                       // Is it existing and readable file
-                       if (!Files.exists(path)) {
-                           throw new IllegalArgumentException("File path argument doesn't exist!");
-                       }
-                       if (!Files.isRegularFile(path)) {
-                           throw new IllegalArgumentException("File path argument isn't a file!");
-                       }
-                       if (!Files.isReadable(path)) {
-                           throw new IllegalArgumentException("File path argument isn't readable!");
-                       }
-                       // Try to write length
-                       try {
-                           headers.contentLength(Files.size(path));
-                       } catch (Exception e) {
-                           // Cannot get length or write length, not a big deal
-                       }
-                       // And write
-                       FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
-                       return ContentWriters.byteChannelWriter().apply(fc);
-                   } catch (IOException e) {
-                       throw new IllegalArgumentException("Cannot read a file!", e);
-                   }
-               });
-        // File
-        Writer<File> fileWriter = new Writer<>(File.class,
-                                               null,
-                                               file -> pathWriter.function.apply(file.toPath()));
-        return Arrays.asList(byteArrayWriter, charSequenceWriter, byteChannelWriter, pathWriter, fileWriter);
     }
 
     /**
@@ -249,20 +199,67 @@ abstract class Response implements ServerResponse {
             return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
         }
 
+        // Try to get a publisher from registered writers
         synchronized (sendLockSupport) {
             for (int i = writers.size() - 1; i >= 0; i--) {
                 Writer<T> writer = writers.get(i);
                 if (writer.accept(content)) {
-                    Flow.Publisher<DataChunk> result = writer.function.apply(content);
-                    if (result == null) {
-                        break;
-                    } else {
-                        return result;
-                    }
+                    return writer.function.apply(content);
                 }
             }
         }
+
+        return createDefaultPublisher(content);
+    }
+
+    private <T> Flow.Publisher<DataChunk> createDefaultPublisher(T content) {
+        final Class<?> type = content.getClass();
+        if (File.class.isAssignableFrom(type)) {
+            return toPublisher(((File) content).toPath());
+        } else if (Path.class.isAssignableFrom(type)) {
+            return toPublisher((Path) content);
+        } else if (ReadableByteChannel.class.isAssignableFrom(type)) {
+            return ContentWriters.byteChannelWriter().apply((ReadableByteChannel) content);
+        } else if (CharSequence.class.isAssignableFrom(type)) {
+            return toPublisher((CharSequence) content);
+        } else if (byte[].class.isAssignableFrom(type)) {
+            return ContentWriters.byteArrayWriter(true).apply((byte[]) content);
+        }
         return null;
+    }
+
+    private Flow.Publisher<DataChunk> toPublisher(CharSequence s) {
+        MediaType mediaType = headers.contentType().orElse(MediaType.TEXT_PLAIN);
+        String charset = mediaType.charset().orElse(StandardCharsets.UTF_8.name());
+        headers.contentType(mediaType.withCharset(charset));
+        return ContentWriters.charSequenceWriter(Charset.forName(charset)).apply(s);
+    }
+
+    private Flow.Publisher<DataChunk> toPublisher(Path path) {
+        // Set response length - if possible
+        try {
+            // Is it existing and readable file
+            if (!Files.exists(path)) {
+                throw new IllegalArgumentException("File path argument doesn't exist!");
+            }
+            if (!Files.isRegularFile(path)) {
+                throw new IllegalArgumentException("File path argument isn't a file!");
+            }
+            if (!Files.isReadable(path)) {
+                throw new IllegalArgumentException("File path argument isn't readable!");
+            }
+            // Try to write length
+            try {
+                headers.contentLength(Files.size(path));
+            } catch (Exception e) {
+                // Cannot get length or write length, not a big deal
+            }
+            // And write
+            FileChannel fc = FileChannel.open(path, StandardOpenOption.READ);
+            return ContentWriters.byteChannelWriter().apply(fc);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Cannot read a file!", e);
+        }
     }
 
     @Override

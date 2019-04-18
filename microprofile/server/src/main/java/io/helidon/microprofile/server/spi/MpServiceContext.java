@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,15 @@ public interface MpServiceContext {
      * @return server routing builder
      */
     Routing.Builder serverRoutingBuilder();
+
+    /**
+     * Helidon webserver routing builder that can be used to add routes to a named socket
+     *  of the webserver.
+     *
+     * @param name name of the named routing (should match a named socket configuration)
+     * @return builder for routing of the named route
+     */
+    Routing.Builder serverNamedRoutingBuilder(String name);
 
     /**
      * Register an instance of a class for later use (e.g. for outbound configuration).
