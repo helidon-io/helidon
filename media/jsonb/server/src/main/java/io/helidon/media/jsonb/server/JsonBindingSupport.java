@@ -31,6 +31,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import static io.helidon.media.common.ContentTypeCharset.determineCharset;
+
 /**
  * A {@link Service} and a {@link Handler} that provides <a
  * href="http://json-b.net/">JSON-B</a> support to Helidon.
@@ -58,7 +60,7 @@ public final class JsonBindingSupport implements Service, Handler {
             .registerReader(cls -> true,
                             JsonBinding.reader(jsonb));
         response.registerWriter(payload -> wantsJson(request, response),
-                                JsonBinding.writer(jsonb));
+                                JsonBinding.writer(jsonb, determineCharset(response.headers())));
         request.next();
     }
 

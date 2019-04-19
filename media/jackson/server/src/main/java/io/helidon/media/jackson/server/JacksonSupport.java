@@ -28,13 +28,17 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+
+import static io.helidon.media.common.ContentTypeCharset.determineCharset;
 
 /**
  * A {@link Service} and a {@link Handler} that provides Jackson
  * support to Helidon.
  */
 public final class JacksonSupport implements Service, Handler {
-
     private final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends ObjectMapper> objectMapperProvider;
 
     /**
@@ -66,7 +70,7 @@ public final class JacksonSupport implements Service, Handler {
             .registerReader(cls -> objectMapper.canDeserialize(objectMapper.constructType(cls)),
                             JacksonProcessing.reader(objectMapper));
         response.registerWriter(payload -> objectMapper.canSerialize(payload.getClass()) && this.wantsJson(request, response),
-                                JacksonProcessing.writer(objectMapper));
+                                JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
         request.next();
     }
 
@@ -76,7 +80,11 @@ public final class JacksonSupport implements Service, Handler {
      * @return a new {@link JacksonSupport}
      */
     public static JacksonSupport create() {
-        return create((req, res) -> new ObjectMapper());
+        final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new ParameterNamesModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule());
+        return create((req, res) -> mapper);
     }
 
     /**
@@ -132,5 +140,4 @@ public final class JacksonSupport implements Service, Handler {
         }
         return returnValue;
     }
-
 }
