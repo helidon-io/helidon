@@ -18,6 +18,7 @@ package io.helidon.openapi;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -163,7 +164,7 @@ public class OpenAPISupport implements Service {
             OpenApiDocument.INSTANCE.config(config);
             OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
             OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
-            if (isAnnotationProcessingEnabled) {
+            if (isAnnotationProcessingEnabled()) {
                     expandModelUsingAnnotations(config);
             } else {
                 LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
@@ -173,12 +174,28 @@ public class OpenAPISupport implements Service {
         }
     }
 
+    /**
+     * Reports whether annotation processing is always off, regardless of
+     * configuration or builder settings.
+     * <p>
+     * In Helidion SE, annotation scanning is always off for OpenAPI.
+     *
+     * @return whether annotation processing is always disabled
+     */
+    boolean isAnnotationProcessingAlwaysDisabled() {
+        return true;
+    }
+
+    private boolean isAnnotationProcessingEnabled() {
+        return !isAnnotationProcessingAlwaysDisabled() && isAnnotationProcessingEnabled;
+    }
+
     private void expandModelUsingAnnotations(final OpenApiConfig config) throws IOException {
         try (InputStream jandexIS = getClass().getResourceAsStream(JANDEX_INDEX_PATH)) {
             if (jandexIS == null) {
                 LOGGER.log(Level.FINE,
                         "OpenAPI Annotation processing enabled but jandex index {0} not found; "
-                        + "continuing", JANDEX_INDEX_PATH);
+                        + "continuing without scanning for OpenAPI-related annotations", JANDEX_INDEX_PATH);
                 return;
             }
         LOGGER.log(Level.FINE, "Using Jandex index at {0}", JANDEX_INDEX_PATH);
@@ -207,8 +224,10 @@ public class OpenAPISupport implements Service {
                     + " is not one of recognized types: "
                     + OpenAPIMediaTypes.recognizedFileTypes());
         }
-        final InputStream is = getClass().getResourceAsStream(path.toString());
-        if (is == null) {
+        final InputStream is;
+        try {
+            is = Files.newInputStream(path);
+        } catch (IOException ex) {
             throw new IllegalArgumentException("OpenAPI file "
                     + path.toAbsolutePath().toString()
                     + " was specified but was not found");
@@ -484,7 +503,7 @@ public class OpenAPISupport implements Service {
         /**
          * Path under which to register OpenAPI endpoint on the web server.
          *
-         * @param path webContext to use, defaults to
+         * @param path webContext to use, defaults to {@value DEFAULT_WEB_CONTEXT}
          * @return updated builder instance
          */
         public Builder webContext(String path) {
