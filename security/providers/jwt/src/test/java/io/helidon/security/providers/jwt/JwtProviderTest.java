@@ -19,6 +19,7 @@ package io.helidon.security.providers.jwt;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -43,6 +44,7 @@ import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -69,12 +71,12 @@ public class JwtProviderTest {
                 .resource(Resource.create("verify-jwk.json"))
                 .build();
 
-        providersConfig = Config.create().get("security.providers");
+        providersConfig = Config.create();
     }
 
     @Test
     public void testWrongToken() {
-        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
 
         //now we need to use the same token to invoke authentication
         ProviderRequest atnRequest = mock(ProviderRequest.class);
@@ -114,7 +116,7 @@ public class JwtProviderTest {
 
         Subject subject = Subject.create(principal);
 
-        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.user()).thenReturn(Optional.of(subject));
@@ -183,13 +185,150 @@ public class JwtProviderTest {
     }
 
     @Test
+    @DisplayName("RSA Invalid Signature: verify-signature = false")
+    public void testInvalidSignatureOk() {
+        String username = "user1";
+        String userId = "user1-id";
+        String email = "user1@example.org";
+        String familyName = "Novak";
+        String givenName = "Standa";
+        String fullName = "Standa Novak";
+        Locale locale = Locale.CANADA_FRENCH;
+
+        Principal principal = Principal.builder()
+                .name(username)
+                .id(userId)
+                .addAttribute("email", email)
+                .addAttribute("email_verified", true)
+                .addAttribute("family_name", familyName)
+                .addAttribute("given_name", givenName)
+                .addAttribute("full_name", fullName)
+                .addAttribute("locale", locale)
+                .build();
+
+        Subject subject = Subject.create(principal);
+
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt-no-verification"));
+
+        SecurityContext context = Mockito.mock(SecurityContext.class);
+        when(context.user()).thenReturn(Optional.of(subject));
+
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.securityContext()).thenReturn(context);
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .path("/rsa")
+                .transport("http")
+                .targetUri(URI.create("http://localhost:8080/rsa"))
+                .build();
+
+        EndpointConfig outboundEp = EndpointConfig.create();
+
+        assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
+
+        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
+        signedToken = signedToken.substring("bearer ".length());
+        // the token is headers.body.signature
+        int lastDot = signedToken.lastIndexOf('.') + 1;
+        signedToken = signedToken.substring(0, lastDot) + Base64.getEncoder().encodeToString("invalidSignature".getBytes());
+
+        SignedJwt signedJwt = SignedJwt.parseToken(signedToken);
+        assertThat("Should not be valid signature (wrong length)", signedJwt.verifySignature(verifyKeys).isValid(), is(false));
+
+        //now we need to use the same token to invoke authentication
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + signedToken)
+                .build();
+        when(atnRequest.env()).thenReturn(se);
+
+        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        OptionalHelper.from(authenticationResponse.user()
+                                    .map(Subject::principal))
+                .ifPresentOrElse(atnPrincipal -> {
+                    assertThat(atnPrincipal.id(), is(userId));
+                    assertThat(atnPrincipal.getName(), is(username));
+                    assertThat(atnPrincipal.abacAttribute("email"), is(Optional.of(email)));
+                    assertThat(atnPrincipal.abacAttribute("email_verified"), is(Optional.of(true)));
+                    assertThat(atnPrincipal.abacAttribute("family_name"), is(Optional.of(familyName)));
+                    assertThat(atnPrincipal.abacAttribute("given_name"), is(Optional.of(givenName)));
+                    assertThat(atnPrincipal.abacAttribute("full_name"), is(Optional.of(fullName)));
+                    assertThat(atnPrincipal.abacAttribute("locale"), is(Optional.of(locale)));
+                }, () -> fail("User must be present in response"));
+    }
+
+    @Test
+    @DisplayName("RSA Invalid Signature: verify-signature = true")
+    public void testInvalidSignatureFail() {
+        String username = "user1";
+        String userId = "user1-id";
+        String email = "user1@example.org";
+        String familyName = "Novak";
+        String givenName = "Standa";
+        String fullName = "Standa Novak";
+        Locale locale = Locale.CANADA_FRENCH;
+
+        Principal principal = Principal.builder()
+                .name(username)
+                .id(userId)
+                .addAttribute("email", email)
+                .addAttribute("email_verified", true)
+                .addAttribute("family_name", familyName)
+                .addAttribute("given_name", givenName)
+                .addAttribute("full_name", fullName)
+                .addAttribute("locale", locale)
+                .build();
+
+        Subject subject = Subject.create(principal);
+
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
+
+        SecurityContext context = Mockito.mock(SecurityContext.class);
+        when(context.user()).thenReturn(Optional.of(subject));
+
+        ProviderRequest request = mock(ProviderRequest.class);
+        when(request.securityContext()).thenReturn(context);
+        SecurityEnvironment outboundEnv = SecurityEnvironment.builder()
+                .path("/rsa")
+                .transport("http")
+                .targetUri(URI.create("http://localhost:8080/rsa"))
+                .build();
+
+        EndpointConfig outboundEp = EndpointConfig.create();
+
+        assertThat(provider.isOutboundSupported(request, outboundEnv, outboundEp), is(true));
+
+        OutboundSecurityResponse response = provider.syncOutbound(request, outboundEnv, outboundEp);
+
+        String signedToken = response.requestHeaders().get("Authorization").get(0);
+        signedToken = signedToken.substring("bearer ".length());
+        // the token is headers.body.signature
+        int lastDot = signedToken.lastIndexOf('.') + 1;
+        signedToken = signedToken.substring(0, lastDot) + Base64.getEncoder().encodeToString("invalidSignature".getBytes());
+
+        SignedJwt signedJwt = SignedJwt.parseToken(signedToken);
+        assertThat("Should not be valid signature (wrong length)", signedJwt.verifySignature(verifyKeys).isValid(), is(false));
+
+        //now we need to use the same token to invoke authentication
+        ProviderRequest atnRequest = mock(ProviderRequest.class);
+        SecurityEnvironment se = SecurityEnvironment.builder()
+                .header("Authorization", "bearer " + signedToken)
+                .build();
+        when(atnRequest.env()).thenReturn(se);
+
+        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(atnRequest);
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.FAILURE));
+    }
+
+    @Test
     public void testOctBothWays() {
         String userId = "user1-id";
 
         Principal tp = Principal.create(userId);
         Subject subject = Subject.create(tp);
 
-        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.user()).thenReturn(Optional.of(subject));
@@ -281,7 +420,7 @@ public class JwtProviderTest {
 
         Subject subject = Subject.create(principal);
 
-        JwtProvider provider = JwtProvider.create(providersConfig.get("0.jwt"));
+        JwtProvider provider = JwtProvider.create(providersConfig.get("jwt"));
 
         SecurityContext context = Mockito.mock(SecurityContext.class);
         when(context.user()).thenReturn(Optional.of(subject));

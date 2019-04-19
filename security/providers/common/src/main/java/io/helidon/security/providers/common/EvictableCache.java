@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,7 +238,7 @@ public interface EvictableCache<K, V> {
         }
 
         /**
-         * Configure evictor to check if a records is still valid.
+         * Configure evictor to check if a record is still valid.
          * This should be a fast way to check, as it is happening in a {@link ConcurrentHashMap#forEachKey(long, Consumer)}.
          * This is also called during all get and remove operations to only return valid records.
          *

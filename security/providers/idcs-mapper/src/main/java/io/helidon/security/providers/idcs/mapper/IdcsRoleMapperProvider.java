@@ -19,33 +19,20 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.logging.Logger;
 
 import javax.json.Json;
-import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import io.helidon.common.CollectionsHelper;
-import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
-import io.helidon.security.Role;
 import io.helidon.security.Subject;
-import io.helidon.security.jwt.Jwt;
-import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
@@ -53,26 +40,32 @@ import io.helidon.security.spi.SubjectMappingProvider;
 
 /**
  * {@link SubjectMappingProvider} to obtain roles from IDCS server for a user.
+ * Supports multi tenancy in IDCS.
  */
-public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
-    private static final Logger LOGGER = Logger.getLogger(IdcsRoleMapperProvider.class.getName());
-    private static final String ACCESS_TOKEN_KEY = "access_token";
+public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    private final EvictableCache<String, List<? extends Grant>> roleCache;
+    private final EvictableCache<String, List<Grant>> roleCache;
     private final WebTarget assertEndpoint;
-    private final WebTarget tokenEndpoint;
 
     // caching application token (as that can be re-used for group requests)
-    private volatile SignedJwt appToken;
-    private volatile Jwt appJwt;
+    private final AppToken appToken;
 
-    private IdcsRoleMapperProvider(Builder builder) {
+    /**
+     * Constructor that accepts any {@link io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.Builder} descendant.
+     *
+     * @param builder used to configure this instance
+     */
+    protected IdcsRoleMapperProvider(Builder<?> builder) {
+        super(builder);
+
         this.roleCache = builder.roleCache;
-        OidcConfig oidcConfig = builder.oidcConfig;
+        OidcConfig oidcConfig = builder.oidcConfig();
 
         this.assertEndpoint = oidcConfig.generalClient().target(oidcConfig.identityUri() + "/admin/v1/Asserter");
-        this.tokenEndpoint = oidcConfig.tokenEndpoint();
+        WebTarget tokenEndpoint = oidcConfig.tokenEndpoint();
+
+        appToken = new IdcsMtRoleMapperProvider.AppToken(tokenEndpoint);
     }
 
     /**
@@ -80,8 +73,8 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
      *
      * @return a new fluent API builder.
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder<?> builder() {
+        return new Builder<>();
     }
 
     /**
@@ -101,45 +94,67 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
     }
 
     @Override
-    public CompletionStage<AuthenticationResponse> map(ProviderRequest authenticatedRequest,
-                                                       AuthenticationResponse previousResponse) {
-        // this only supports users
-        return previousResponse.user().map(subject -> enhance(subject, previousResponse))
-                .orElseGet(() -> CompletableFuture.completedFuture(previousResponse));
-    }
-
-    private CompletionStage<AuthenticationResponse> enhance(Subject subject,
-                                                            AuthenticationResponse previousResponse) {
+    protected Subject enhance(Subject subject, ProviderRequest request, AuthenticationResponse previousResponse) {
         String username = subject.principal().getName();
 
-        List<? extends Grant> grants = roleCache.computeValue(username, () -> getGrantsFromServer(username))
-                .orElse(CollectionsHelper.listOf());
+        List<? extends Grant> grants = roleCache.computeValue(username, () -> computeGrants(subject))
+                .orElseGet(LinkedList::new);
 
-        AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
-        builder.user(buildSubject(subject, grants));
-        previousResponse.service().ifPresent(builder::service);
-        previousResponse.description().ifPresent(builder::description);
-        builder.requestHeaders(previousResponse.requestHeaders());
 
-        AuthenticationResponse response = builder.build();
+        List<Grant> result = addAdditionalGrants(subject)
+                .map(newGrants -> {
+                    List<Grant> newList = new LinkedList<>(grants);
+                    newList.addAll(newGrants);
+                    return newList;
+                })
+                .orElseGet(() -> new LinkedList<>(grants));
 
-        return CompletableFuture.completedFuture(response);
+        return buildSubject(subject, result);
     }
 
-    private Subject buildSubject(Subject originalSubject, List<? extends Grant> grants) {
-        Subject.Builder builder = Subject.builder();
-        builder.update(originalSubject);
+    /**
+     * Compute grants for the provided subject.
+     * This implementation gets grants from server {@link #getGrantsFromServer(io.helidon.security.Subject)}.
+     *
+     * @param subject to retrieve roles (or in general {@link io.helidon.security.Grant grants})
+     * @return An optional list of grants to be added to the subject
+     */
+    protected Optional<List<Grant>> computeGrants(Subject subject) {
+        List<Grant> result = new LinkedList<>();
 
-        grants.forEach(builder::addGrant);
+        getGrantsFromServer(subject)
+                .map(result::addAll);
 
-        return builder.build();
+
+        return (result.isEmpty() ? Optional.empty() : Optional.of(result));
     }
 
-    private Optional<List<? extends Grant>> getGrantsFromServer(String subject) {
-        return getAppToken().flatMap(appToken -> {
-            JsonObjectBuilder requestBuilder = JSON.createObjectBuilder();
-            requestBuilder.add("mappingAttributeValue", subject);
-            requestBuilder.add("includeMemberships", true);
+    /**
+     * Extension point to add additional grants that are not retrieved from IDCS.
+     *
+     * @param subject subject to enhance
+     * @return grants to add to the subject
+     */
+    protected Optional<List<? extends Grant>> addAdditionalGrants(Subject subject) {
+        return Optional.empty();
+    }
+
+    /**
+     * Retrieves grants from IDCS server.
+     *
+     * @param subject to get grants for
+     * @return optional list of grants to be added
+     */
+    protected Optional<List<? extends Grant>> getGrantsFromServer(Subject subject) {
+        String subjectName = subject.principal().getName();
+        String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
+
+        return appToken.getToken().flatMap(appToken -> {
+            JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
+                    .add("mappingAttributeValue", subjectName)
+                    .add("subjectType", subjectType)
+                    .add("includeMemberships", true);
+
             JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
@@ -149,106 +164,26 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
                     .header("Authorization", "Bearer " + appToken)
                     .post(Entity.json(requestBuilder.build()));
 
-            if (groupResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                JsonObject jsonObject = groupResponse.readEntity(JsonObject.class);
-                JsonArray groups = jsonObject.getJsonArray("groups");
-
-                if (null == groups) {
-                    LOGGER.finest(() -> "No groups found for user " + subject);
-                    return Optional.empty();
-                }
-
-                List<Role> result = new LinkedList<>();
-
-                for (int i = 0; i < groups.size(); i++) {
-                    JsonObject groupJson = groups.getJsonObject(i);
-                    String groupName = groupJson.getString("display");
-                    String groupId = groupJson.getString("value");
-                    String groupRef = groupJson.getString("$ref");
-
-                    Role role = Role.builder()
-                            .name(groupName)
-                            .addAttribute("groupId", groupId)
-                            .addAttribute("groupRef", groupRef)
-                            .build();
-
-                    result.add(role);
-                }
-
-                return Optional.of(result);
-            } else {
-                LOGGER.warning("Cannot read groups for user \""
-                                       + subject
-                                       + "\". Response code: "
-                                       + groupResponse.getStatus()
-                                       + ", entity: "
-                                       + groupResponse.readEntity(String.class));
-                return Optional.empty();
-            }
+            return processServerResponse(groupResponse, subjectName);
         });
-    }
-
-    private synchronized Optional<String> getAppToken() {
-        // if cached and valid, use the cached token
-        return OptionalHelper.from(getCachedAppToken())
-                // otherwise retrieve a new one (and cache it as a side effect)
-                .or(this::getAndCacheAppTokenFromServer)
-                .asOptional()
-                // we are interested in the text content of the token
-                .map(SignedJwt::tokenContent);
-    }
-
-    private Optional<SignedJwt> getCachedAppToken() {
-        if (null == appToken) {
-            return Optional.empty();
-        }
-
-        if (appJwt.validate(Jwt.defaultTimeValidators()).isValid()) {
-            return Optional.of(appToken);
-        }
-
-        appToken = null;
-        appJwt = null;
-
-        return Optional.empty();
-    }
-
-    private Optional<SignedJwt> getAndCacheAppTokenFromServer() {
-        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
-        formData.putSingle("grant_type", "client_credentials");
-        formData.putSingle("scope", "urn:opc:idm:__myscopes__");
-
-        Response tokenResponse = tokenEndpoint
-                .request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
-                .post(Entity.form(formData));
-
-        if (tokenResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-            JsonObject response = tokenResponse.readEntity(JsonObject.class);
-            String accessToken = response.getString(ACCESS_TOKEN_KEY);
-            LOGGER.finest(() -> "Access token: " + accessToken);
-            SignedJwt signedJwt = SignedJwt.parseToken(accessToken);
-
-            this.appToken = signedJwt;
-            this.appJwt = signedJwt.getJwt();
-
-            return Optional.of(signedJwt);
-        } else {
-            LOGGER.severe("Failed to obtain access token for application to read groups"
-                                  + " from IDCS. Response code: " + tokenResponse.getStatus() + ", entity: "
-                                  + tokenResponse.readEntity(String.class));
-            return Optional.empty();
-        }
     }
 
     /**
      * Fluent API builder for {@link IdcsRoleMapperProvider}.
+     *
+     * @param <B> type of builder extending this builder
      */
-    public static final class Builder implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
-        private OidcConfig oidcConfig;
-        private EvictableCache<String, List<? extends Grant>> roleCache;
+    public static class Builder<B extends Builder<B>> extends IdcsRoleMapperProviderBase.Builder<Builder<B>>
+            implements io.helidon.common.Builder<IdcsRoleMapperProvider> {
+        private EvictableCache<String, List<Grant>> roleCache;
 
-        private Builder() {
+        @SuppressWarnings("unchecked")
+        private B me = (B) this;
+
+        /**
+         * Default contructor.
+         */
+        protected Builder() {
         }
 
         @Override
@@ -270,21 +205,11 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
          * @param config current node must have "oidc-config" as one of its children
          * @return updated builder instance
          */
-        public Builder config(Config config) {
-            config.get("oidc-config").as(OidcConfig.class).ifPresent(this::oidcConfig);
+        public B config(Config config) {
+            super.config(config);
             config.get("cache-config").as(EvictableCache.class).ifPresent(this::roleCache);
-            return this;
-        }
 
-        /**
-         * Use explicit {@link OidcConfig} instance, e.g. when using it also for OIDC provider.
-         *
-         * @param config oidc specific configuration, must have at least identity endpoint and client credentials configured
-         * @return updated builder instance
-         */
-        public Builder oidcConfig(OidcConfig config) {
-            this.oidcConfig = config;
-            return this;
+            return me;
         }
 
         /**
@@ -293,9 +218,9 @@ public final class IdcsRoleMapperProvider implements SubjectMappingProvider {
          * @param roleCache cache to use
          * @return update builder instance
          */
-        public Builder roleCache(EvictableCache<String, List<? extends Grant>> roleCache) {
+        public B roleCache(EvictableCache<String, List<Grant>> roleCache) {
             this.roleCache = roleCache;
-            return this;
+            return me;
         }
     }
 }
