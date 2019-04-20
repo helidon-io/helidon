@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.json.JsonReader;
@@ -35,6 +36,8 @@ import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.RequestHeaders;
+import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -120,64 +123,74 @@ public final class JsonSupport implements Service, Handler {
     public void accept(ServerRequest request, ServerResponse response) {
         // Reader
         request.content()
-                .registerReader(JsonStructure.class::isAssignableFrom, (publisher, type) -> {
-                    Charset charset = determineCharset(request.headers());
-                    return reader(charset).apply(publisher);
-                });
+                .registerReader(
+                        JsonStructure.class::isAssignableFrom,
+                        (publisher, type) -> {
+                            Charset charset = determineCharset(request.headers());
+                            return reader(charset).apply(publisher);
+                        });
         // Writer
-        response.registerWriter(json -> (json instanceof JsonStructure) && testOrSetContentType(request, response),
-                                json -> {
-                                    Charset charset = determineCharset(response.headers());
-                                    return writer(charset).apply((JsonStructure) json);
-                                });
+        response.registerWriter(
+                json -> (json instanceof JsonStructure) && testOrSetJsonContentType(request.headers(), response.headers()),
+                json -> {
+                    Charset charset = determineCharset(response.headers());
+                    return writer(charset).apply((JsonStructure) json);
+                });
         request.next();
     }
 
     /**
-     * Deals with request {@code Accept} and response {@code Content-Type} headers to determine if writer can be used.
+     * Tests the request {@code Accept} and response {@code Content-Type} headers to determine if JSON can be written.
      * <p>
-     * If response has no {@code Content-Type} header then it is set to the response.
+     * If the response has no {@code Content-Type} header then it will be computed based on the client's {@code Accept} headers.
      *
-     * @param request  a server request
-     * @param response a server response
-     * @return {@code true} if JSON writer can be used
+     * @param requestHeaders  a client's request headers
+     * @param responseHeaders the server's response headers
+     * @return {@code true} if JSON can be written
      */
-    private boolean testOrSetContentType(ServerRequest request, ServerResponse response) {
-        MediaType mt = response.headers().contentType().orElse(null);
-        if (mt == null) {
-            // Find if accepts any JSON compatible type
-            List<MediaType> acceptedTypes = request.headers().acceptedTypes();
-            MediaType preferredType;
-            if (acceptedTypes.isEmpty()) {
-                preferredType = MediaType.APPLICATION_JSON;
-            } else {
-                preferredType = acceptedTypes
-                        .stream()
-                        .map(type -> {
-                            if (type.test(MediaType.APPLICATION_JSON)) {
-                                return MediaType.APPLICATION_JSON;
-                            } else if (type.test(JsonProcessing.APPLICATION_JAVASCRIPT)) {
-                                return JsonProcessing.APPLICATION_JAVASCRIPT;
-                            } else if (type.test(JsonProcessing.TEXT_JAVASCRIPT)) {
-                                return JsonProcessing.TEXT_JAVASCRIPT;
-                            } else if (type.hasSuffix("json")) {
-                                return MediaType.create(type.type(), type.subtype());
-                            } else {
-                                return null;
-                            }
-                        })
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .orElse(null);
-            }
-            if (preferredType == null) {
-                return false;
-            } else {
-                response.headers().contentType(preferredType);
-                return true;
-            }
+    private boolean testOrSetJsonContentType(RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
+        Optional<MediaType> contentType = responseHeaders.contentType();
+        if (contentType.isPresent()) {
+            return MediaType.JSON_PREDICATE.test(contentType.get());
         } else {
-            return MediaType.JSON_PREDICATE.test(mt);
+            Optional<MediaType> computedType = computeJsonContentType(requestHeaders.acceptedTypes());
+            if (computedType.isPresent()) {
+                responseHeaders.contentType(computedType.get());
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Attempts to determine which JSON media type to use in the response's {@code Content-Type} header.
+     * <p>
+     * If the request specifies only non-JSON media types acceptable then no media type will be returned.
+     *
+     * @param acceptedTypes all media types acceptable in the response
+     * @return an acceptable JSON media type to use for {@code Content-Type} if one was found
+     */
+    private static Optional<MediaType> computeJsonContentType(List<MediaType> acceptedTypes) {
+        if (acceptedTypes.isEmpty()) {
+            return Optional.of(MediaType.APPLICATION_JSON);
+        } else {
+            return acceptedTypes.stream()
+                    .map(type -> {
+                        if (type.test(MediaType.APPLICATION_JSON)) {
+                            return MediaType.APPLICATION_JSON;
+                        } else if (type.test(JsonProcessing.APPLICATION_JAVASCRIPT)) {
+                            return JsonProcessing.APPLICATION_JAVASCRIPT;
+                        } else if (type.test(JsonProcessing.TEXT_JAVASCRIPT)) {
+                            return JsonProcessing.TEXT_JAVASCRIPT;
+                        } else if (type.hasSuffix("json")) {
+                            return MediaType.create(type.type(), type.subtype());
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst();
         }
     }
 

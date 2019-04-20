@@ -15,13 +15,16 @@
  */
 package io.helidon.media.jackson.server;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 import io.helidon.common.http.MediaType;
 import io.helidon.media.jackson.common.JacksonProcessing;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.RequestHeaders;
+import io.helidon.webserver.ResponseHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -63,10 +66,13 @@ public final class JacksonSupport implements Service, Handler {
     public void accept(final ServerRequest request, final ServerResponse response) {
         final ObjectMapper objectMapper = this.objectMapperProvider.apply(request, response);
         request.content()
-            .registerReader(cls -> objectMapper.canDeserialize(objectMapper.constructType(cls)),
-                            JacksonProcessing.reader(objectMapper));
-        response.registerWriter(payload -> objectMapper.canSerialize(payload.getClass()) && this.wantsJson(request, response),
-                                JacksonProcessing.writer(objectMapper));
+            .registerReader(
+                    cls -> objectMapper.canDeserialize(objectMapper.constructType(cls)),
+                    JacksonProcessing.reader(objectMapper));
+        response.registerWriter(
+                payload -> objectMapper.canSerialize(payload.getClass())
+                        && testOrSetJsonContentType(request.headers(), response.headers()),
+                JacksonProcessing.writer(objectMapper));
         request.next();
     }
 
@@ -97,40 +103,55 @@ public final class JacksonSupport implements Service, Handler {
         return new JacksonSupport(objectMapperProvider);
     }
 
-    private static boolean wantsJson(final ServerRequest request, final ServerResponse response) {
-        final boolean returnValue;
-        final MediaType outgoingMediaType = response.headers().contentType().orElse(null);
-        if (outgoingMediaType == null) {
-            final MediaType preferredType;
-            final Collection<? extends MediaType> acceptedTypes = request.headers().acceptedTypes();
-            if (acceptedTypes == null || acceptedTypes.isEmpty()) {
-                preferredType = MediaType.APPLICATION_JSON;
-            } else {
-                preferredType = acceptedTypes
-                    .stream()
-                    .map(type -> {
-                            if (type.test(MediaType.APPLICATION_JSON)) {
-                                return MediaType.APPLICATION_JSON;
-                            } else if (type.hasSuffix("json")) {
-                                return MediaType.create(type.type(), type.subtype());
-                            } else {
-                                return null;
-                            }
-                        })
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-            }
-            if (preferredType == null) {
-                returnValue = false;
-            } else {
-                response.headers().contentType(preferredType);
-                returnValue = true;
-            }
+    /**
+     * Tests the request {@code Accept} and response {@code Content-Type} headers to determine if JSON can be written.
+     * <p>
+     * If the response has no {@code Content-Type} header then it will be computed based on the client's {@code Accept} headers.
+     *
+     * @param requestHeaders  a client's request headers
+     * @param responseHeaders the server's response headers
+     * @return {@code true} if JSON can be written
+     */
+    private boolean testOrSetJsonContentType(RequestHeaders requestHeaders, ResponseHeaders responseHeaders) {
+        Optional<MediaType> contentType = responseHeaders.contentType();
+        if (contentType.isPresent()) {
+            return MediaType.JSON_PREDICATE.test(contentType.get());
         } else {
-            returnValue = MediaType.JSON_PREDICATE.test(outgoingMediaType);
+            Optional<MediaType> computedType = computeJsonContentType(requestHeaders.acceptedTypes());
+            if (computedType.isPresent()) {
+                responseHeaders.contentType(computedType.get());
+                return true;
+            } else {
+                return false;
+            }
         }
-        return returnValue;
+    }
+
+    /**
+     * Attempts to determine which JSON media type to use in the response's {@code Content-Type} header.
+     * <p>
+     * If the request specifies only non-JSON media types acceptable then no media type will be returned.
+     *
+     * @param acceptedTypes all media types acceptable in the response
+     * @return an acceptable JSON media type to use for {@code Content-Type} if one was found
+     */
+    private static Optional<MediaType> computeJsonContentType(List<MediaType> acceptedTypes) {
+        if (acceptedTypes.isEmpty()) {
+            return Optional.of(MediaType.APPLICATION_JSON);
+        } else {
+            return acceptedTypes.stream()
+                    .map(type -> {
+                        if (type.test(MediaType.APPLICATION_JSON)) {
+                            return MediaType.APPLICATION_JSON;
+                        } else if (type.hasSuffix("json")) {
+                            return MediaType.create(type.type(), type.subtype());
+                        } else {
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst();
+        }
     }
 
 }

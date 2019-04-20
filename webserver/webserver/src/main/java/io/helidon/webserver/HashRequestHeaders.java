@@ -40,7 +40,7 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
 
     /**
      * Header value of the non compliant {@code Accept} header sent by
-     * {@link HTTPURLConnection} when none is set.
+     * {@link HttpURLConnection} when none is set.
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
      */
     static final String HUC_ACCEPT_DEFAULT = "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2";
@@ -135,7 +135,7 @@ class HashRequestHeaders extends ReadOnlyParameters implements RequestHeaders {
             return Optional.empty();
         }
         List<MediaType> accepts = acceptedTypes();
-        if (accepts == null || accepts.isEmpty()) {
+        if (accepts.isEmpty()) {
             return Optional.ofNullable(mediaTypes[0]);
         }
 
