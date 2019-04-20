@@ -74,7 +74,6 @@ public class CharBuffer extends Writer {
     }
 
     private void ensureCapacity(int minCapacity) {
-        // overflow-conscious code
         if (minCapacity - buffer.length > 0) {
             grow(minCapacity);
         }
@@ -83,7 +82,6 @@ public class CharBuffer extends Writer {
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     private void grow(int minCapacity) {
-        // overflow-conscious code
         int oldCapacity = buffer.length;
         int newCapacity = oldCapacity << 1;
         if (newCapacity - minCapacity < 0) {
