@@ -110,6 +110,9 @@ public class OpenAPISupport implements Service {
      */
     public static final String DEFAULT_WEB_CONTEXT = "/openapi";
 
+    /**
+     * Default media type used in responses in absence of incoming Accept header.
+     */
     public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE =  MediaType.APPLICATION_OPENAPI_YAML;
 
     private static final Logger LOGGER = Logger.getLogger(OpenAPISupport.class.getName());
