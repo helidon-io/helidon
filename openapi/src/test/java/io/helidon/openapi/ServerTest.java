@@ -16,6 +16,7 @@
  */
 package io.helidon.openapi;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -119,6 +120,31 @@ public class ServerTest {
         assertEquals("string", fromConfig(c, "paths./greet/greeting.put.requestBody.content.application/json.schema.properties.greeting.type"));
     }
 
+    @Test
+    public void checkExplicitResponseMediaType() throws Exception {
+        validateResponseMediaType(MediaType.APPLICATION_OPENAPI_YAML);
+        validateResponseMediaType(MediaType.APPLICATION_YAML);
+        validateResponseMediaType(MediaType.APPLICATION_OPENAPI_JSON);
+        validateResponseMediaType(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
+    public void checkDefaultResponseMediaType() throws Exception {
+        validateResponseMediaType(null);
+    }
+
+    private void validateResponseMediaType(MediaType mt) throws Exception {
+        HttpURLConnection cnx = getURLConnection("GET", QUICKSTART_PATH, mt);
+        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode(),
+                "Unexpected response code");
+        MediaType expectedMT = mt != null ? mt : OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE;
+        MediaType actualMT = mediaTypeFromResponse(cnx);
+        assertTrue(expectedMT.test(actualMT),
+                "Expected response media type " + expectedMT.toString()
+        + " but received " + actualMT.toString());
+        yamlFromResponse(cnx); // to allow Java to reuse the connection
+    }
+
     private String fromConfig(Config c, String key) {
         Config v = c.get(key);
         if (!v.exists()) {
@@ -131,7 +157,9 @@ public class ServerTest {
         URL url = new URL("http://localhost:" + webServer.port() + path);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", mediaType.toString());
+        if (mediaType != null) {
+            conn.setRequestProperty("Accept", mediaType.toString());
+        }
         System.out.println("Connecting: " + method + " " + url);
         return conn;
     }
@@ -139,8 +167,6 @@ public class ServerTest {
     @SuppressWarnings("unchecked")
     private Map<String, Object> yamlFromResponse(HttpURLConnection cnx) throws IOException {
         MediaType returnedMediaType = mediaTypeFromResponse(cnx);
-        assertTrue(MediaType.APPLICATION_OPENAPI_YAML.test(returnedMediaType),
-                "Unexpected returned media type");
 
         Yaml yaml = new Yaml();
         Charset cs = Charset.defaultCharset();

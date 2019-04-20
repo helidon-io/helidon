@@ -99,6 +99,11 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      */
     public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application", "vnd.oai.openapi+json");
 
+    /**
+     * A {@link MediaType} constant representing YAML.
+     */
+    public static final MediaType APPLICATION_YAML = createMediaType("application", "x-yaml");
+
     private static final MediaType APPLICATION_JAVASCRIPT = createMediaType("application", "javascript");
 
     // Common predicates

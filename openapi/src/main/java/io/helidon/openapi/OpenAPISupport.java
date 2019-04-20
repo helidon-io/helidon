@@ -110,6 +110,8 @@ public class OpenAPISupport implements Service {
      */
     public static final String DEFAULT_WEB_CONTEXT = "/openapi";
 
+    public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE =  MediaType.APPLICATION_OPENAPI_YAML;
+
     private static final Logger LOGGER = Logger.getLogger(OpenAPISupport.class.getName());
 
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "/openapi.";
@@ -354,12 +356,12 @@ public class OpenAPISupport implements Service {
 
     private MediaType chooseResponseMediaType(ServerRequest req) {
         /*
-         * Response media type default is YAML unless otherwise specified.
+         * Response media type default is application/vnd.oai.openapi (YAML)
+         * unless otherwise specified.
          */
-        MediaType resultMediaType = MediaType.APPLICATION_OPENAPI_YAML;
+        MediaType resultMediaType = DEFAULT_RESPONSE_MEDIA_TYPE;
         Optional<MediaType> requestedMT = req.headers()
-                .bestAccepted(MediaType.APPLICATION_OPENAPI_YAML,
-                              MediaType.APPLICATION_OPENAPI_JSON);
+                .bestAccepted(OpenAPIMediaTypes.preferredOrdering());
         if (requestedMT.isPresent()) {
             resultMediaType = requestedMT.get();
         }
@@ -370,21 +372,30 @@ public class OpenAPISupport implements Service {
     /**
      * Abstraction of the different representations of a static OpenAPI
      * document file and the file type(s) they correspond to.
+     * <p>
+     * Each {@code OpenAPIMediaType} stands for a single format (e.g., yaml, json).
+     * That said, each can map to multiple file types (e.g.,
+     * yml and yaml) and multiple actual media types (the proposed OpenAPI media
+     * type vnd.oai.openapi and application/x-yaml).
      */
     private enum OpenAPIMediaTypes {
 
-        JSON(Format.JSON, MediaType.APPLICATION_OPENAPI_JSON, "json"),
-        YAML(Format.YAML, MediaType.APPLICATION_OPENAPI_YAML, "yaml", "yml");
+        JSON(Format.JSON,
+            new MediaType[] {MediaType.APPLICATION_OPENAPI_JSON, MediaType.APPLICATION_JSON},
+            "json"),
+        YAML(Format.YAML,
+            new MediaType[] {MediaType.APPLICATION_OPENAPI_YAML, MediaType.APPLICATION_YAML},
+            "yaml", "yml");
 
         private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;
 
         private final Format format;
         private final List<String> fileTypes;
-        private final MediaType mediaType;
+        private final List<MediaType> mediaTypes;
 
-        OpenAPIMediaTypes(Format format, MediaType mediaType, String... fileTypes) {
+        OpenAPIMediaTypes(Format format, MediaType[] mediaTypes, String... fileTypes) {
             this.format = format;
-            this.mediaType = mediaType;
+            this.mediaTypes = Arrays.asList(mediaTypes);
             this.fileTypes = new ArrayList<>(Arrays.asList(fileTypes));
         }
 
@@ -407,7 +418,7 @@ public class OpenAPISupport implements Service {
 
         private static OpenAPIMediaTypes byMediaType(MediaType mt) {
             for (OpenAPIMediaTypes candidateType : values()) {
-                if (candidateType.mediaType == mt) {
+                if (candidateType.mediaTypes.contains(mt)) {
                     return candidateType;
                 }
             }
@@ -420,6 +431,20 @@ public class OpenAPISupport implements Service {
                 result.addAll(type.fileTypes);
             }
             return result;
+        }
+
+        /**
+         * Media types we recognize as OpenAPI, in order of preference.
+         *
+         * @return MediaTypes in order that we recognize them as OpenAPI content.
+         */
+        private static MediaType[] preferredOrdering() {
+            return new MediaType[] {
+                MediaType.APPLICATION_OPENAPI_YAML,
+                MediaType.APPLICATION_YAML,
+                MediaType.APPLICATION_OPENAPI_JSON,
+                MediaType.APPLICATION_JSON
+            };
         }
     }
 
