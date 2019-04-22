@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package io.helidon.openapi;
+
+import io.helidon.common.http.MediaType;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.openapi.test.MyModelReader;
+import io.helidon.webserver.WebServer;
+import java.net.HttpURLConnection;
+import javax.json.JsonString;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+/**
+ *
+ */
+public class ServerModelReaderTest {
+
+    private static final String SIMPLE_PROPS_PATH = "/openapi";
+
+    private static final OpenAPISupport.Builder OPENAPI_SUPPORT_BUILDER =
+        OpenAPISupport.builder()
+                .config(Config.create(ConfigSources.classpath("simple.properties")));
+
+    private static WebServer webServer;
+
+    @BeforeAll
+    public static void startup() {
+        webServer = ServerTest.startServer(OPENAPI_SUPPORT_BUILDER);
+    }
+
+    @AfterAll
+    public static void shutdown() {
+        ServerTest.shutdownServer(webServer);
+    }
+
+    @Test
+    public void checkCustomModelReader() throws Exception {
+        HttpURLConnection cnx = ServerTest.getURLConnection(webServer, "GET", SIMPLE_PROPS_PATH,
+                MediaType.APPLICATION_OPENAPI_JSON);
+        ServerTest.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
+        JsonStructure json = ServerTest.jsonFromResponse(cnx);
+        JsonValue v = json.getValue(String.format("/paths/%s/get/summary",
+                ServerTest.escapeForJsonPointer(MyModelReader.MODEL_READER_PATH)));
+        if (v.getValueType().equals(JsonValue.ValueType.STRING)) {
+            JsonString s = (JsonString) v;
+            assertEquals(MyModelReader.SUMMARY, s.getString(),
+                    "Unexpected summary value as added by model reader");
+        }
+    }
+}
