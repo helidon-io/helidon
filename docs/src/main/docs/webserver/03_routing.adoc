@@ -117,7 +117,7 @@ By implementing the `Service` interface you can organize your code into one
 or more services, each with its own path prefix and set of handlers.
 
 [source,java]
-.Use Routing.Builder.register to register your service
+.Use `Routing.Builder.register` to register your service
 ----
 .register("/hello", new HelloService())
 ----
