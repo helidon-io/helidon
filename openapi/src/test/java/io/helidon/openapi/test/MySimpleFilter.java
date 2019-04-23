@@ -16,11 +16,24 @@
  */
 package io.helidon.openapi.test;
 
+import java.util.Map;
+
 import org.eclipse.microprofile.openapi.OASFilter;
+import org.eclipse.microprofile.openapi.models.Operation;
+import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.PathItem.HttpMethod;
 
 /**
  * Example filter for testing.
  */
 public class MySimpleFilter implements OASFilter {
 
+    @Override
+    public PathItem filterPathItem(PathItem pathItem) {
+        for (Map.Entry<HttpMethod, Operation> methodOp : pathItem.getOperations().entrySet())
+            if (MyModelReader.DOOMED_OPERATION_ID.equals(methodOp.getValue().getOperationId())) {
+                return null;
+            }
+        return OASFilter.super.filterPathItem(pathItem);
+    }
 }

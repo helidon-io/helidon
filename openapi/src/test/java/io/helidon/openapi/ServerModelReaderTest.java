@@ -16,17 +16,20 @@
  */
 package io.helidon.openapi;
 
+import java.net.HttpURLConnection;
+import javax.json.JsonException;
+import javax.json.JsonString;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
+
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.openapi.test.MyModelReader;
 import io.helidon.webserver.WebServer;
-import java.net.HttpURLConnection;
-import javax.json.JsonString;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
+
 import org.junit.jupiter.api.AfterAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -71,5 +74,28 @@ public class ServerModelReaderTest {
             assertEquals(MyModelReader.SUMMARY, s.getString(),
                     "Unexpected summary value as added by model reader");
         }
+    }
+
+    @Test
+    public void makeSureFilteredPathIsMissing() throws Exception {
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                webServer.port(),
+                "GET",
+                SIMPLE_PROPS_PATH,
+                MediaType.APPLICATION_OPENAPI_JSON);
+        TestUtil.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
+        JsonStructure json = TestUtil.jsonFromResponse(cnx);
+        /*
+         * Although the model reader adds this path, the filter should have
+         * removed it.
+         */
+        final JsonException ex = assertThrows(
+            JsonException.class,
+                () -> {
+                        JsonValue v = json.getValue(String.format("/paths/%s/get/summary",
+                            TestUtil.escapeForJsonPointer(MyModelReader.DOOMED_PATH)));
+                });
+        assertTrue(ex.getMessage().contains(
+                String.format("contains no mapping for the name '%s'", MyModelReader.DOOMED_PATH)));
     }
 }
