@@ -59,7 +59,7 @@ import io.opentracing.noop.NoopTracerFactory;
  *     </tr>
  *     <tr>
  *         <td>{@code protocol}</td>
- *         <td>{@code udp}</td>
+ *         <td>{@code http}</td>
  *         <td>The protocol to use. By default http is used. To switch to agent
  *          mode, use {@code udp}</td>
  *     </tr>
