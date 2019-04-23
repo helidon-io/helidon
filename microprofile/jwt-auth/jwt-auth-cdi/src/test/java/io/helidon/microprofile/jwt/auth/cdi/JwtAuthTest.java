@@ -133,6 +133,14 @@ class JwtAuthTest {
                 .get(String.class);
 
         assertThat(httpResponse, is("Hello user1"));
+
+        httpResponse = target.path("/public")
+                .path("/hello")
+                .request()
+                .header("Authorization", signedToken)
+                .get(String.class);
+
+        assertThat(httpResponse, is("Hello user1"));
     }
 
     @Test
@@ -151,7 +159,7 @@ class JwtAuthTest {
     public static class MyApp extends Application {
         @Override
         public Set<Class<?>> getClasses() {
-            return CollectionsHelper.setOf(MyResource.class);
+            return CollectionsHelper.setOf(MyResource.class, ResourceWithPublicMethod.class);
         }
     }
 
@@ -168,6 +176,59 @@ class JwtAuthTest {
         private String issuer;
 
         @Inject
+        @Claim(standard = Claims.exp)
+        private long expirationPrimitive;
+
+        @Inject
+        @Claim(standard = Claims.exp)
+        private Long expiration;
+
+        @Inject
+        @Claim(standard = Claims.email_verified)
+        private Boolean emailVerified;
+
+        @Inject
+        @Claim(standard = Claims.email_verified)
+        private boolean emailVerifiedPrimitive;
+
+        @Inject
+        @Claim("iss")
+        private JsonString issuerJson;
+
+        @Inject
+        @Claim(standard = Claims.aud)
+        private ClaimValue<Optional<Set<String>>> audience;
+
+        @Path("/hello")
+        @GET
+        public String hello() {
+            return "Hello " + (null == callerPrincipal ? "Unknown" : callerPrincipal.getName());
+        }
+
+    }
+
+    @Path("/public")
+    @RequestScoped
+    public static class ResourceWithPublicMethod {
+        @Inject
+        private JsonWebToken callerPrincipal;
+
+        @Context
+        private SecurityContext securityContext;
+
+        @Inject
+        @Claim(standard = Claims.iss)
+        private String issuer;
+
+        @Inject
+        @Claim(standard = Claims.exp)
+        private Long expiration;
+
+        @Inject
+        @Claim(standard = Claims.email_verified)
+        private Boolean emailVerified;
+
+        @Inject
         @Claim("iss")
         private JsonString issuerJson;
 
@@ -182,7 +243,6 @@ class JwtAuthTest {
         }
 
         @PermitAll
-        @Path("/public")
         @GET
         public String noAuth() {
             return "Hello World";
