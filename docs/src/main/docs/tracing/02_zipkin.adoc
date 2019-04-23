@@ -18,7 +18,7 @@
 
 = Zipkin Tracing
 :description: Helidon Tracing Support
-:keywords: helidon, tracing
+:keywords: helidon, tracing, zipkin
 
 Helidon is integrated with the Zipkin tracer.
 
@@ -31,7 +31,7 @@ on the Zipkin tracer.
 To use Zipkin as a tracer,
     add the following dependency to your project:
 
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.tracing</groupId>
