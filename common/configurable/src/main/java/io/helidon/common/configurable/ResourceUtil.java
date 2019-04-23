@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ final class ResourceUtil {
         try {
             return uri.toURL().openStream();
         } catch (IOException e) {
-            throw new ResourceException("Failed to open strem to uri: " + uri, e);
+            throw new ResourceException("Failed to open stream to uri: " + uri, e);
         }
     }
 
@@ -105,7 +105,7 @@ final class ResourceUtil {
         try {
             return uri.toURL().openConnection(proxy).getInputStream();
         } catch (IOException e) {
-            throw new ResourceException("Failed to open strem to uri: " + uri, e);
+            throw new ResourceException("Failed to open stream to uri: " + uri, e);
         }
     }
 
