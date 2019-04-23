@@ -45,22 +45,22 @@ public class ServerModelReaderTest {
 
     @BeforeAll
     public static void startup() {
-        webServer = ServerTest.startServer(OPENAPI_SUPPORT_BUILDER);
+        webServer = TestUtil.startServer(OPENAPI_SUPPORT_BUILDER);
     }
 
     @AfterAll
     public static void shutdown() {
-        ServerTest.shutdownServer(webServer);
+        TestUtil.shutdownServer(webServer);
     }
 
     @Test
     public void checkCustomModelReader() throws Exception {
-        HttpURLConnection cnx = ServerTest.getURLConnection(webServer, "GET", SIMPLE_PROPS_PATH,
+        HttpURLConnection cnx = TestUtil.getURLConnection(webServer, "GET", SIMPLE_PROPS_PATH,
                 MediaType.APPLICATION_OPENAPI_JSON);
-        ServerTest.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
-        JsonStructure json = ServerTest.jsonFromResponse(cnx);
+        TestUtil.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
+        JsonStructure json = TestUtil.jsonFromResponse(cnx);
         JsonValue v = json.getValue(String.format("/paths/%s/get/summary",
-                ServerTest.escapeForJsonPointer(MyModelReader.MODEL_READER_PATH)));
+                TestUtil.escapeForJsonPointer(MyModelReader.MODEL_READER_PATH)));
         if (v.getValueType().equals(JsonValue.ValueType.STRING)) {
             JsonString s = (JsonString) v;
             assertEquals(MyModelReader.SUMMARY, s.getString(),

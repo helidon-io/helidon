@@ -23,8 +23,8 @@ import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.Paths;
 
 /**
- * Defines a path via the model reader mechanism for testing that
- * defines a GET endpoint at "/test/newpath" with id "newPath" and a
+ * Defines a path via the OpenAPI model reader mechanism for tests that
+ * define a GET endpoint at "/test/newpath" with id "newPath" and a
  * fixed summary.
  */
 public class MyModelReader implements OASModelReader {
