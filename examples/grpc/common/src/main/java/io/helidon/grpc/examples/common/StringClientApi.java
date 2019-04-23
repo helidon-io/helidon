@@ -81,7 +81,7 @@ public class StringClientApi {
         }
         serverStream.onCompleted();
 
-        // async client streaming
+        // asynchronous client streaming
         Collection<StringMessage> input = Arrays.stream(testStr.split(" "))
                 .map(w -> StringMessage.newBuilder().setText(w).build())
                 .collect(Collectors.toList());
@@ -102,7 +102,7 @@ public class StringClientApi {
         System.out.println(resultStr);
         Thread.sleep(500L);
 
-        // async server streaming
+        // asynchronous server streaming
         observer = new PrintObserver<>();
         grpcClient.serverStreaming("Split", request, observer);
         Thread.sleep(1000L); // wait for server to complete all responses

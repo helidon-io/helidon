@@ -25,7 +25,7 @@ import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.client.GrpcServiceClient;
 
 /**
- * A simple gRPC health check client implemented with Helidon gRPC client API.
+ * A gRPC health check client implemented with Helidon gRPC client API.
  *
  * @author Bin Chen
  */

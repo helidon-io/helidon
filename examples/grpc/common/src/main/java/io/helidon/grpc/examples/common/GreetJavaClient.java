@@ -69,7 +69,6 @@ public class GreetJavaClient
         System.out.println(grpcClient.unary("Greet", "Aleks").get());
         System.out.println(grpcClient.unary("SetGreeting", "Ciao").get());
         System.out.println(grpcClient.unary("Greet", "Aleks").get());
-
         Thread.sleep(5000);
     }
 }

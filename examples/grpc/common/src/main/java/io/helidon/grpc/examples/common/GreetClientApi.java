@@ -71,7 +71,7 @@ public class GreetClientApi
         System.out.println(grpcClient.<SetGreetingRequest, SetGreetingResponse>blockingUnary("SetGreeting", SetGreetingRequest.newBuilder().setGreeting("Ciao").build()));
         System.out.println(grpcClient.<GreetRequest, GreetResponse>blockingUnary("Greet", GreetRequest.newBuilder().setName("Aleks").build()));
 
-        // async unary
+        // asynchronous unary
         System.out.println(grpcClient.<GreetRequest, GreetResponse>unary("Greet", GreetRequest.newBuilder().setName("Aleks").build()).get());
         System.out.println(grpcClient.<SetGreetingRequest, SetGreetingResponse>unary("SetGreeting", SetGreetingRequest.newBuilder().setGreeting("Ciao").build()).get());
         System.out.println(grpcClient.<GreetRequest, GreetResponse>unary("Greet", GreetRequest.newBuilder().setName("Aleks").build()).get());
