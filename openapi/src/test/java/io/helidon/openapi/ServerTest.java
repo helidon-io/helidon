@@ -32,8 +32,6 @@ import org.junit.jupiter.api.BeforeAll;
 /**
  * Starts a server with the default OpenAPI endpoint to test a static OpenAPI
  * document file in various ways.
- * <p>
- * This class also exposes various useful methods for other test classes to use.
  */
 public class ServerTest {
 
