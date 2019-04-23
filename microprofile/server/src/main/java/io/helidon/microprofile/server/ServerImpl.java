@@ -192,8 +192,6 @@ public class ServerImpl implements Server {
                                 Routing.Builder routingBuilder,
                                 Map<String, Routing.Builder> namedRouting,
                                 ServerConfiguration.Builder serverConfigBuilder) {
-                                Routing.Builder routingBuilder,
-                                ServerConfiguration.Builder serverConfigBuilder) {
 
         List<JaxRsApplication> newApps = new LinkedList<>();
 
@@ -201,6 +199,7 @@ public class ServerImpl implements Server {
                                                           config,
                                                           apps,
                                                           routingBuilder,
+                                                          namedRouting,
                                                           serverConfigBuilder,
                                                           newApps);
 
@@ -217,6 +216,7 @@ public class ServerImpl implements Server {
                                                     Config config,
                                                     List<JaxRsApplication> apps,
                                                     Routing.Builder routingBuilder,
+                                                    Map<String, Routing.Builder> namedRouting,
                                                     ServerConfiguration.Builder serverConfigBuilder,
                                                     List<JaxRsApplication> newApps) {
         return new MpServiceContext() {
