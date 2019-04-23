@@ -82,16 +82,17 @@ public class TestUtil {
      */
     public static String stringYAMLFromResponse(HttpURLConnection cnx) throws IOException {
         MediaType returnedMediaType = mediaTypeFromResponse(cnx);
-        assertTrue(MediaType.APPLICATION_OPENAPI_YAML.test(returnedMediaType), "Unexpected returned media type");
+        assertTrue(MediaType.APPLICATION_OPENAPI_YAML.test(returnedMediaType),
+                "Unexpected returned media type");
         return stringFromResponse(cnx, returnedMediaType);
     }
 
     /**
-     * Ensures that the returned {@code MediaType} is consistent with the
-     * expected one and consumes the payload as the expected {@code MediaType}
-     * to make sure it is correct.
+     * Connects to localhost at the specified port, sends a request using the
+     * specified method, and consumes the response payload as the indicated
+     * media type, returning the actual media type reported in the response.
      *
-     * @param ws {@code WebServer} to which to create the connection
+     * @param port port with which to create the connection
      * @param path URL path to access on the web server
      * @param expectedMediaType the {@code MediaType} with which the response
      * must be consistent
@@ -99,16 +100,18 @@ public class TestUtil {
      * @throws Exception in case of errors sending the request or receiving the
      * response
      */
-    public static MediaType validateResponseMediaTypeAndConsumeAndCheckPayload(
-            WebServer ws, String path, MediaType expectedMediaType) throws Exception {
-        HttpURLConnection cnx = getURLConnection(ws, "GET", path, expectedMediaType);
+    public static MediaType connectAndConsumePayload(
+            int port, String path, MediaType expectedMediaType) throws Exception {
+        HttpURLConnection cnx = getURLConnection(port, "GET", path, expectedMediaType);
         MediaType actualMT = validateResponseMediaType(cnx, expectedMediaType);
         if (actualMT.test(MediaType.APPLICATION_OPENAPI_YAML) || actualMT.test(MediaType.APPLICATION_YAML)) {
             yamlFromResponse(cnx);
-        } else if (actualMT.test(MediaType.APPLICATION_OPENAPI_JSON) || actualMT.test(MediaType.APPLICATION_JSON)) {
+        } else if (actualMT.test(MediaType.APPLICATION_OPENAPI_JSON)
+                || actualMT.test(MediaType.APPLICATION_JSON)) {
             jsonFromResponse(cnx);
         } else {
-            throw new IllegalArgumentException("Expected either JSON or YAML response but received " + actualMT.toString());
+            throw new IllegalArgumentException(
+                    "Expected either JSON or YAML response but received " + actualMT.toString());
         }
         return actualMT;
     }
@@ -123,7 +126,11 @@ public class TestUtil {
     public static MediaType mediaTypeFromResponse(HttpURLConnection cnx) {
         MediaType returnedMediaType = MediaType.parse(cnx.getContentType());
         if (!returnedMediaType.charset().isPresent()) {
-            returnedMediaType = MediaType.builder().type(returnedMediaType.type()).subtype(returnedMediaType.subtype()).charset(Charset.defaultCharset().name()).build();
+            returnedMediaType = MediaType.builder()
+                    .type(returnedMediaType.type())
+                    .subtype(returnedMediaType.subtype())
+                    .charset(Charset.defaultCharset().name())
+                    .build();
         }
         return returnedMediaType;
     }
@@ -140,7 +147,9 @@ public class TestUtil {
      */
     public static Config configFromResponse(HttpURLConnection cnx) throws IOException {
         MediaType mt = mediaTypeFromResponse(cnx);
-        String configMT = MediaType.APPLICATION_OPENAPI_YAML.test(mt) ? YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML : MediaType.APPLICATION_JSON.toString();
+        String configMT = MediaType.APPLICATION_OPENAPI_YAML.test(mt)
+                ? YamlConfigParser.MEDIA_TYPE_APPLICATION_YAML
+                : MediaType.APPLICATION_JSON.toString();
         String yaml = stringYAMLFromResponse(cnx);
         return Config.create(ConfigSources.create(yaml, configMT));
     }
@@ -233,11 +242,20 @@ public class TestUtil {
      * @throws Exception in case of errors reading the content type from the
      * response
      */
-    public static MediaType validateResponseMediaType(HttpURLConnection cnx, MediaType expectedMediaType) throws Exception {
-        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode(), "Unexpected response code");
-        MediaType expectedMT = expectedMediaType != null ? expectedMediaType : OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE;
+    public static MediaType validateResponseMediaType(
+            HttpURLConnection cnx,
+            MediaType expectedMediaType) throws Exception {
+        assertEquals(Http.Status.OK_200.code(), cnx.getResponseCode(),
+                "Unexpected response code");
+        MediaType expectedMT = expectedMediaType != null
+                ? expectedMediaType
+                : OpenAPISupport.DEFAULT_RESPONSE_MEDIA_TYPE;
         MediaType actualMT = mediaTypeFromResponse(cnx);
-        assertTrue(expectedMT.test(actualMT), "Expected response media type " + expectedMT.toString() + " but received " + actualMT.toString());
+        assertTrue(expectedMT.test(actualMT),
+                "Expected response media type "
+                        + expectedMT.toString()
+                        + " but received "
+                        + actualMT.toString());
         return actualMT;
     }
 
@@ -245,15 +263,19 @@ public class TestUtil {
      * Returns a {@code HttpURLConnection} for the requested method and path and
      * {code @MediaType} from the specified {@link WebServer}.
      *
-     * @param ws {@code WebServer} to use (we need the port)
+     * @param port port to connect to
      * @param method HTTP method to use in building the connection
      * @param path path to the resource in the web server
      * @param mediaType {@code MediaType} to be Accepted
      * @return the connection to the server and path
      * @throws Exception in case of errors creating the connection
      */
-    public static HttpURLConnection getURLConnection(WebServer ws, String method, String path, MediaType mediaType) throws Exception {
-        URL url = new URL("http://localhost:" + ws.port() + path);
+    public static HttpURLConnection getURLConnection(
+            int port,
+            String method,
+            String path,
+            MediaType mediaType) throws Exception {
+        URL url = new URL("http://localhost:" + port + path);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
         if (mediaType != null) {
@@ -271,7 +293,8 @@ public class TestUtil {
      * @throws ExecutionException if the stop operation failed as it ran
      * @throws TimeoutException if the stop operation timed out
      */
-    public static void stopServer(WebServer server) throws InterruptedException, ExecutionException, TimeoutException {
+    public static void stopServer(WebServer server) throws
+            InterruptedException, ExecutionException, TimeoutException {
         if (server != null) {
             server.shutdown().toCompletableFuture().get(10, TimeUnit.SECONDS);
         }
@@ -289,8 +312,19 @@ public class TestUtil {
      * @throws java.util.concurrent.ExecutionException if the start failed
      * @throws java.util.concurrent.TimeoutException if the start timed out
      */
-    public static WebServer startServer(int port, OpenAPISupport.Builder... openAPIBuilders) throws InterruptedException, ExecutionException, TimeoutException {
-        WebServer result = WebServer.create(ServerConfiguration.builder().port(port).build(), Routing.builder().register(openAPIBuilders).build()).start().toCompletableFuture().get(10, TimeUnit.SECONDS);
+    public static WebServer startServer(
+            int port,
+            OpenAPISupport.Builder... openAPIBuilders) throws
+            InterruptedException, ExecutionException, TimeoutException {
+        WebServer result = WebServer.create(ServerConfiguration.builder()
+                        .port(port)
+                        .build(),
+                Routing.builder()
+                        .register(openAPIBuilders)
+                        .build())
+                .start()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
         LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", result.port());
         return result;
     }
@@ -307,7 +341,8 @@ public class TestUtil {
      * @throws IOException in case of errors reading the response payload
      */
     public static String stringFromResponse(HttpURLConnection cnx, MediaType mediaType) throws IOException {
-        try (final InputStreamReader isr = new InputStreamReader(cnx.getInputStream(), mediaType.charset().get())) {
+        try (final InputStreamReader isr = new InputStreamReader(
+                cnx.getInputStream(), mediaType.charset().get())) {
             StringBuilder sb = new StringBuilder();
             CharBuffer cb = CharBuffer.allocate(1024);
             while (isr.read(cb) != -1) {

@@ -71,10 +71,15 @@ public class ServerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSimpleAsYAML() throws Exception {
-        HttpURLConnection cnx = TestUtil.getURLConnection(webServer, "GET", QUICKSTART_PATH, MediaType.APPLICATION_OPENAPI_YAML);
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                webServer.port(),
+                "GET",
+                QUICKSTART_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
         Map<String, Object> openAPIDocument = TestUtil.yamlFromResponse(cnx);
 
-        ArrayList<Map<String, Object>> servers = TestUtil.as(ArrayList.class, openAPIDocument.get("servers"));
+        ArrayList<Map<String, Object>> servers = TestUtil.as(
+                ArrayList.class, openAPIDocument.get("servers"));
         Map<String, Object> server = servers.get(0);
         assertEquals("http://localhost:8000", server.get("url"), "unexpected URL");
         assertEquals("Local test server", server.get("description"), "unexpected description");
@@ -102,10 +107,18 @@ public class ServerTest {
      */
     @Test
     public void testSimpleAsConfig() throws Exception {
-        HttpURLConnection cnx = TestUtil.getURLConnection(webServer, "GET", QUICKSTART_PATH, MediaType.APPLICATION_OPENAPI_YAML);
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                webServer.port(),
+                "GET",
+                QUICKSTART_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
         Config c = TestUtil.configFromResponse(cnx);
-        assertEquals("Sets the greeting prefix", TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"));
-        assertEquals("string", TestUtil.fromConfig(c, "paths./greet/greeting.put.requestBody.content.application/json.schema.properties.greeting.type"));
+        assertEquals("Sets the greeting prefix",
+                TestUtil.fromConfig(c, "paths./greet/greeting.put.summary"));
+        assertEquals("string",
+                TestUtil.fromConfig(c,
+                        "paths./greet/greeting.put.requestBody.content."
+                            + "application/json.schema.properties.greeting.type"));
     }
 
     /**
@@ -117,10 +130,10 @@ public class ServerTest {
      */
     @Test
     public void checkExplicitResponseMediaType() throws Exception {
-        validateResponseMediaTypeAndConsumeAndCheckPayload(MediaType.APPLICATION_OPENAPI_YAML);
-        validateResponseMediaTypeAndConsumeAndCheckPayload(MediaType.APPLICATION_YAML);
-        validateResponseMediaTypeAndConsumeAndCheckPayload(MediaType.APPLICATION_OPENAPI_JSON);
-        validateResponseMediaTypeAndConsumeAndCheckPayload(MediaType.APPLICATION_JSON);
+        connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_YAML);
+        connectAndConsumePayload(MediaType.APPLICATION_YAML);
+        connectAndConsumePayload(MediaType.APPLICATION_OPENAPI_JSON);
+        connectAndConsumePayload(MediaType.APPLICATION_JSON);
     }
 
     /**
@@ -131,10 +144,10 @@ public class ServerTest {
      */
     @Test
     public void checkDefaultResponseMediaType() throws Exception {
-        validateResponseMediaTypeAndConsumeAndCheckPayload(null);
+        connectAndConsumePayload(null);
     }
 
-    private static void validateResponseMediaTypeAndConsumeAndCheckPayload(MediaType mt) throws Exception {
-        TestUtil.validateResponseMediaTypeAndConsumeAndCheckPayload(webServer, QUICKSTART_PATH, mt);
+    private static void connectAndConsumePayload(MediaType mt) throws Exception {
+        TestUtil.connectAndConsumePayload(webServer.port(), QUICKSTART_PATH, mt);
     }
 }

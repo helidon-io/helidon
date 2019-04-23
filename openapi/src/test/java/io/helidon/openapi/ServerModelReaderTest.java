@@ -31,7 +31,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
- *
+ * Makes sure that the app-supplied model reader participates in constructing
+ * the OpenAPI model.
  */
 public class ServerModelReaderTest {
 
@@ -55,10 +56,14 @@ public class ServerModelReaderTest {
 
     @Test
     public void checkCustomModelReader() throws Exception {
-        HttpURLConnection cnx = TestUtil.getURLConnection(webServer, "GET", SIMPLE_PROPS_PATH,
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                webServer.port(),
+                "GET",
+                SIMPLE_PROPS_PATH,
                 MediaType.APPLICATION_OPENAPI_JSON);
         TestUtil.validateResponseMediaType(cnx, MediaType.APPLICATION_OPENAPI_JSON);
         JsonStructure json = TestUtil.jsonFromResponse(cnx);
+        // The model reader adds the following key/value (among others) to the model.
         JsonValue v = json.getValue(String.format("/paths/%s/get/summary",
                 TestUtil.escapeForJsonPointer(MyModelReader.MODEL_READER_PATH)));
         if (v.getValueType().equals(JsonValue.ValueType.STRING)) {
