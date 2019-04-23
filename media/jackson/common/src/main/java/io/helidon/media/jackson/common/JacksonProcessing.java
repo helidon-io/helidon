@@ -15,8 +15,8 @@
  */
 package io.helidon.media.jackson.common;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -24,10 +24,13 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
+import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Media type support for Jackson.
@@ -93,21 +96,20 @@ public final class JacksonProcessing {
      * of {@link DataChunk}s by using the supplied {@link ObjectMapper}.
      *
      * @param objectMapper the {@link ObjectMapper} to use; must not be {@code null}
+     * @param charset the charset to use; may be null
      * @return created function
      * @exception NullPointerException if {@code objectMapper} is {@code null}
      */
-    public static Function<Object, Flow.Publisher<DataChunk>> writer(final ObjectMapper objectMapper) {
+    public static Function<Object, Flow.Publisher<DataChunk>> writer(final ObjectMapper objectMapper, final Charset charset) {
         Objects.requireNonNull(objectMapper);
         return payload -> {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            CharBuffer buffer = new CharBuffer();
             try {
-                objectMapper.writeValue(baos, payload);
+                objectMapper.writeValue(buffer, payload);
             } catch (final IOException wrapMe) {
                 throw new JacksonRuntimeException(wrapMe.getMessage(), wrapMe);
             }
-            return ContentWriters.byteArrayWriter(false)
-                .apply(baos.toByteArray());
+            return ContentWriters.charBufferWriter(charset == null ? UTF_8 : charset).apply(buffer);
         };
     }
-
 }
