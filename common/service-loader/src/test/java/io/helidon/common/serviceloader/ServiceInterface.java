@@ -16,7 +16,7 @@
 package io.helidon.common.serviceloader;
 
 /**
- * TODO javadoc.
+ * Testing Java Service loader service interface.
  */
 public interface ServiceInterface {
     String message();
