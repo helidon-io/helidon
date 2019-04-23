@@ -145,9 +145,8 @@ public class OpenAPISupport implements Service {
         } catch (IOException ex) {
             throw new RuntimeException("Error initializing OpenAPI information", ex);
         }
-        String webContextPath = DEFAULT_WEB_CONTEXT;
+        String webContextPath = webContext.orElse(DEFAULT_WEB_CONTEXT);
         if (webContext.isPresent()) {
-            webContextPath = webContext.get();
             LOGGER.log(Level.FINE, "OpenAPI path set to {0}", webContextPath);
         } else {
             LOGGER.log(Level.FINE, "OpenAPI path defaulting to {0}", webContextPath);
@@ -362,13 +361,9 @@ public class OpenAPISupport implements Service {
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
          */
-        MediaType resultMediaType = DEFAULT_RESPONSE_MEDIA_TYPE;
-        Optional<MediaType> requestedMT = req.headers()
-                .bestAccepted(OpenAPIMediaTypes.preferredOrdering());
-        if (requestedMT.isPresent()) {
-            resultMediaType = requestedMT.get();
-        }
-
+        MediaType resultMediaType = req.headers()
+                .bestAccepted(OpenAPIMediaTypes.preferredOrdering())
+                .orElse(DEFAULT_RESPONSE_MEDIA_TYPE);
         return resultMediaType;
     }
 
