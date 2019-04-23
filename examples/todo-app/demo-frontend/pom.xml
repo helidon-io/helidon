@@ -35,6 +35,7 @@
 
     <properties>
         <mainClass>io.helidon.demo.todos.frontend.Main</mainClass>
+        <exec.mainClass>${mainClass}</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -42,35 +43,10 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
-        <!-- needed by Google client -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
-
-        <!--
-         ~ Test scope
-        -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${version.lib.junit}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <version>${version.lib.hamcrest}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>${version.lib.mockito}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Helidon Web Server -->
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
@@ -80,29 +56,28 @@
             <artifactId>helidon-media-jsonp-server</artifactId>
         </dependency>
         <dependency>
-            <!-- to add tracer builder -->
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
-            <!-- to add zipkin support -->
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-zipkin</artifactId>
         </dependency>
         <dependency>
-            <!-- to propagate tracing information -->
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-jersey-client</artifactId>
         </dependency>
-        <!-- Helidon Config -->
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
         </dependency>
-        <!-- Helidon Security -->
         <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-google-login</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.integration</groupId>
@@ -112,12 +87,10 @@
             <groupId>io.helidon.security.integration</groupId>
             <artifactId>helidon-security-integration-jersey</artifactId>
         </dependency>
-        <!-- Metrics -->
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
-        <!-- Jersey client (used to call other service) -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
@@ -130,6 +103,21 @@
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -137,11 +125,8 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.6</version>
                 <configuration>
                     <workingDirectory>src/main/resources/WEB</workingDirectory>
-                    <nodeVersion>v8.11.1</nodeVersion>
-                    <npmVersion>5.6.0</npmVersion>
                 </configuration>
                 <executions>
                     <execution>

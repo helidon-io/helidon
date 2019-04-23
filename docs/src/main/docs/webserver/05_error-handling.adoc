@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -97,23 +97,3 @@ exception called `req.next()`, then the exception is translated to an HTTP respo
  error code `500`.
 
 
-== Registering an application - Organizing code into services
-
-You can also register an application that has its own handlers at a path prefix or context root.
-[source,java]
-.Registering routing logic for a context root
-----
-.register("/context-root", new MyComplexApplication())
-----
-
-[source,java]
-.Routing logic implementation
-----
-public class MyComplexApplication implements Consumer<Routing.Config> {
-    @Override
-    public void accept(Routing.Config config) {
-        config.get("/subpath", (req, res) -> {/* handler */});
-    }
-}
-----
-In this example, the `GET` handler matches requests to `/context-root/subpath`.
