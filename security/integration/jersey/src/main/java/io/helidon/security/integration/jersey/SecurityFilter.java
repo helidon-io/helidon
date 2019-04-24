@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +62,11 @@ import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;
+import org.glassfish.jersey.server.model.AbstractResourceModelVisitor;
 import org.glassfish.jersey.server.model.Invocable;
+import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.model.ResourceMethod;
+import org.glassfish.jersey.server.model.RuntimeResource;
 
 /**
  * A filter that handles authentication and authorization.
@@ -74,6 +78,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
     private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
     private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
+    private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
 
     @Context
     private ServerConfig serverConfig;
@@ -275,7 +280,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     protected FilterContext initRequestFiltering(ContainerRequestContext requestContext) {
         FilterContext context = new FilterContext();
 
-        Method definitionMethod = getDefinitionMethod(requestContext);
+        if (!(requestContext.getUriInfo() instanceof ExtendedUriInfo)) {
+            throw new IllegalStateException("Could not get Extended Uri Info. Incompatible version of Jersey?");
+        }
+
+        ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
+
+        Method definitionMethod = getDefinitionMethod(requestContext, uriInfo);
 
         if (definitionMethod == null) {
             // this will end in 404, just let it on
@@ -283,7 +294,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             return context;
         }
 
-        context.setMethodSecurity(getMethodSecurity(definitionMethod));
+        context.setMethodSecurity(getMethodSecurity(definitionMethod, uriInfo));
         context.setResourceName(definitionMethod.getDeclaringClass().getSimpleName());
         context.setMethod(requestContext.getMethod());
         context.setHeaders(HttpUtil.toSimpleMap(requestContext.getHeaders()));
@@ -345,11 +356,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return definition;
     }
 
-    private SecurityDefinition getMethodSecurity(Method definitionMethod) {
+    private SecurityDefinition getMethodSecurity(Method definitionMethod, ExtendedUriInfo uriInfo) {
         // Check cache
-        if (resourceMethodSecurity.containsKey(definitionMethod)) {
-            return resourceMethodSecurity.get(definitionMethod);
-        }
 
         // Jersey model 'definition method' is the method that contains JAX-RS/Jersey annotations. JAX-RS does not support
         // merging annotations from a parent, so we don't have to look for annotations on corresponding methods of interfaces
@@ -357,6 +365,75 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
         // Jersey model does not have a 'definition class', so we have to find it from a handler class
         Class<?> definitionClass = getDefinitionClass(resourceInfo.getResourceClass());
+
+        if (definitionClass.getAnnotation(Path.class) == null) {
+            // this is a sub-resource
+            // I must locate the resource class and method that was invoked
+            PathVisitor visitor = new PathVisitor();
+            visitor.visit(uriInfo.getMatchedRuntimeResources());
+            Collections.reverse(visitor.list);
+            StringBuilder fullPathBuilder = new StringBuilder();
+
+            List<Method> methodsToProcess = new LinkedList<>();
+
+            for (Invocable m : visitor.list) {
+                // first the top most class (MpMainResource.sub())
+                // then the one under it (MpSubResource.sub())
+                // these methods are above our sub resource
+                Method parentDefMethod = m.getDefinitionMethod();
+                Class<?> parentClass = parentDefMethod.getDeclaringClass();
+
+                fullPathBuilder.append("/")
+                        .append(parentClass.getName())
+                        .append(".")
+                        .append(parentDefMethod.getName());
+                methodsToProcess.add(parentDefMethod);
+            }
+
+            fullPathBuilder.append("/")
+                    .append(definitionClass.getName())
+                    .append(".")
+                    .append(definitionMethod.getName());
+            methodsToProcess.add(definitionMethod);
+
+            String fullPath = fullPathBuilder.toString();
+            // now full path can be used as a cache
+            if (subResourceMethodSecurity.containsKey(fullPath)) {
+                return subResourceMethodSecurity.get(fullPath);
+            }
+
+            // now process each definition method and class
+            SecurityDefinition current = appWideSecurity;
+
+            for (Method method : methodsToProcess) {
+                Class<?> clazz = method.getDeclaringClass();
+                current = securityForClass(clazz, current);
+                Authenticated atn = method.getAnnotation(Authenticated.class);
+                Authorized atz = method.getAnnotation(Authorized.class);
+                Audited audited = method.getAnnotation(Audited.class);
+
+                SecurityDefinition methodDef = current.copyMe();
+                methodDef.add(atn);
+                methodDef.add(atz);
+                methodDef.add(audited);
+
+                addCustomAnnotations(methodDef.getOperationScope(), method);
+                for (AnnotationAnalyzer analyzer : analyzers) {
+                    AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(method,
+                                                                                            current.analyzerResponse(analyzer));
+
+                    methodDef.analyzerResponse(analyzer, analyzerResponse);
+                }
+                current = methodDef;
+            }
+
+            subResourceMethodSecurity.put(fullPath, current);
+            return current;
+        }
+
+        if (resourceMethodSecurity.containsKey(definitionMethod)) {
+            return resourceMethodSecurity.get(definitionMethod);
+        }
 
         SecurityDefinition definition = this.resourceClassSecurity
                 .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appWideSecurity));
@@ -407,12 +484,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     /**
      * The term 'definition method' used by the Jersey model means the method that contains JAX-RS/Jersey annotations.
      */
-    private Method getDefinitionMethod(ContainerRequestContext requestContext) {
-        if (!(requestContext.getUriInfo() instanceof ExtendedUriInfo)) {
-            throw new IllegalStateException("Could not get Extended Uri Info. Incompatible version of Jersey?");
-        }
-
-        ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
+    private Method getDefinitionMethod(ContainerRequestContext requestContext, ExtendedUriInfo uriInfo) {
         ResourceMethod matchedResourceMethod = uriInfo.getMatchedResourceMethod();
         Invocable invocable = matchedResourceMethod.getInvocable();
         return invocable.getDefinitionMethod();
@@ -479,4 +551,40 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return application;
     }
 
+    private static final class PathVisitor extends AbstractResourceModelVisitor {
+        private final List<Invocable> list = new LinkedList<>();
+
+        private PathVisitor() {
+        }
+
+        @Override
+        public void visitResource(Resource resource) {
+            if (resource.getResourceLocator() != null) {
+                resource.getResourceLocator().accept(this);
+            }
+        }
+
+        @Override
+        public void visitChildResource(Resource resource) {
+            visitResource(resource);
+        }
+
+        @Override
+        public void visitResourceMethod(ResourceMethod method) {
+            list.add(method.getInvocable());
+        }
+
+        @Override
+        public void visitRuntimeResource(RuntimeResource runtimeResource) {
+            for (Resource resource : runtimeResource.getResources()) {
+                resource.accept(this);
+            }
+        }
+
+        public void visit(List<RuntimeResource> runtimeResources) {
+            for (RuntimeResource runtimeResource : runtimeResources) {
+                runtimeResource.accept(this);
+            }
+        }
+    }
 }

@@ -36,5 +36,6 @@
     <modules>
         <module>bookstore</module>
         <module>multiport</module>
+        <module>jax-rs-subresource</module>
     </modules>
 </project>
