@@ -168,7 +168,7 @@ public class OpenAPISupport implements Service {
             OpenApiDocument.INSTANCE.config(config);
             OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
             OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
-            if (isAnnotationProcessingEnabled()) {
+            if (isAnnotationProcessingEnabled) {
                     expandModelUsingAnnotations(config);
             } else {
                 LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
@@ -176,22 +176,6 @@ public class OpenAPISupport implements Service {
             OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
             OpenApiDocument.INSTANCE.initialize();
         }
-    }
-
-    /**
-     * Reports whether annotation processing is always off, regardless of
-     * configuration or builder settings.
-     * <p>
-     * In Helidion SE, annotation scanning is always off for OpenAPI.
-     *
-     * @return whether annotation processing is always disabled
-     */
-    boolean isAnnotationProcessingAlwaysDisabled() {
-        return true;
-    }
-
-    private boolean isAnnotationProcessingEnabled() {
-        return !isAnnotationProcessingAlwaysDisabled() && isAnnotationProcessingEnabled;
     }
 
     private void expandModelUsingAnnotations(final OpenApiConfig config) throws IOException {
