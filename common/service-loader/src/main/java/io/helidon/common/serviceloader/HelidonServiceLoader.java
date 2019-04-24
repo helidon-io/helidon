@@ -54,24 +54,30 @@ import io.helidon.common.Prioritized;
  * <li>Value provided in {@link Builder#addService(Object, int)} (if used)</li>
  * <li>then by {@link io.helidon.common.Prioritized#priority()} if service implements it</li>
  * <li>then by {@link javax.annotation.Priority} annotation if present</li>
- * <li>otherwise a default priority {@value #DEFAULT_PRIORITY} from {@link #DEFAULT_PRIORITY} is used</li>
+ * <li>otherwise a default priority {@value Prioritized#DEFAULT_PRIORITY} from {@link Prioritized#DEFAULT_PRIORITY} is used</li>
  * </ul>
+ * Example:
+ * <pre>
+ * {@literal @}Priority(4500)
+ * public class MyServiceImpl implements Service, Prioritized {
+ *     public int priority() {
+ *         return 6200;
+ *     }
+ * }
+ * </pre>
+ * Such a service would have a priority of {@code 6200} as that is more significant than the annotation.
+ * <p>
  * A service with lower priority number is returned before a service with a higher priority number.
  * Services with the same priority have order defined by the order they are in the configured services
  * and then as they are loaded from the {@link java.util.ServiceLoader}.
- * Negative priorities are allowed.
+ * Negative priorities are not allowed.
  * A service with priority {@code 1} will be returned before a service with priority {@code 2}.
- * <p>
  *
  * @param <T> Type of the service to be loaded
  * @see java.util.ServiceLoader
  * @see #builder(java.util.ServiceLoader)
  */
 public final class HelidonServiceLoader<T> implements Iterable<T> {
-    /**
-     * Default priority of a service.
-     */
-    public static final int DEFAULT_PRIORITY = 100;
     /**
      * System property used to exclude some implementation from the list of services that are configured for Java Service
      * loader or services that are registered using {@link io.helidon.common.serviceloader.HelidonServiceLoader.Builder}.
@@ -85,23 +91,23 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
     /**
      * Create a builder for customizable service loader.
      *
-     * @param javaServiceLoader the Java Service loader used to get service implementations
+     * @param serviceLoader the Java Service loader used to get service implementations
      * @param <T>               type of the service
      * @return a new fluent API builder
      */
-    public static <T> Builder<T> builder(ServiceLoader<T> javaServiceLoader) {
-        return new Builder<>(javaServiceLoader);
+    public static <T> Builder<T> builder(ServiceLoader<T> serviceLoader) {
+        return new Builder<>(serviceLoader);
     }
 
     /**
      * Create a prioritized service loader from a Java Service loader.
      *
-     * @param javaServiceLoader the Java service loader
+     * @param serviceLoader the Java service loader
      * @param <T>               type of the service
      * @return service loader with exclusions defined by system properties and no custom services
      */
-    public static <T> HelidonServiceLoader<T> create(ServiceLoader<T> javaServiceLoader) {
-        Builder<T> builder = builder(javaServiceLoader);
+    public static <T> HelidonServiceLoader<T> create(ServiceLoader<T> serviceLoader) {
+        Builder<T> builder = builder(serviceLoader);
         return builder.build();
     }
 
@@ -139,18 +145,18 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
         private final List<ServiceWithPriority<T>> customServices = new LinkedList<ServiceWithPriority<T>>();
         private final Set<String> excludedServiceClasses = new HashSet<>();
         private boolean useSysPropExclude = true;
-        private boolean useJavaServiceLoader = true;
+        private boolean useSystemServiceLoader = true;
         private boolean replaceImplementations = true;
 
-        private Builder(ServiceLoader<T> javaServiceLoader) {
-            this.serviceLoader = javaServiceLoader;
+        private Builder(ServiceLoader<T> serviceLoader) {
+            this.serviceLoader = serviceLoader;
         }
 
         @Override
         public HelidonServiceLoader<T> build() {
             // first merge the lists together
             List<ServiceWithPriority<T>> services = new LinkedList<>(customServices);
-            if (useJavaServiceLoader) {
+            if (useSystemServiceLoader) {
                 Set<String> uniqueImplementations = new HashSet<>();
 
                 if (replaceImplementations) {
@@ -202,11 +208,11 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
          * <p>
          * This defaults to {@code true}.
          *
-         * @param useJavaServiceLoader whether to use the Java Service loader
+         * @param useServiceLoader whether to use the Java Service loader
          * @return updated builder instance
          */
-        public Builder<T> useJavaServiceLoader(boolean useJavaServiceLoader) {
-            this.useJavaServiceLoader = useJavaServiceLoader;
+        public Builder<T> useSystemServiceLoader(boolean useServiceLoader) {
+            this.useSystemServiceLoader = useServiceLoader;
             return this;
         }
 
@@ -322,6 +328,13 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
             private ServiceWithPriority(T instance, int priority) {
                 this.instance = instance;
                 this.priority = priority;
+
+                if (priority < 0) {
+                    throw new IllegalArgumentException("Service: "
+                                                               + instance.getClass().getName()
+                                                               + " declares a negative priority, which is not allowed. Priority: "
+                                                               + priority);
+                }
             }
 
             private ServiceWithPriority(T service) {
@@ -346,7 +359,7 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
                 }
                 Priority prio = o.getClass().getAnnotation(Priority.class);
                 if (null == prio) {
-                    return DEFAULT_PRIORITY;
+                    return Prioritized.DEFAULT_PRIORITY;
                 }
                 return prio.value();
             }

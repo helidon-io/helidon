@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link io.helidon.common.serviceloader.HelidonServiceLoader}.
@@ -62,7 +63,7 @@ class HelidonServiceLoaderTest {
     @Test
     void testCustomServiceWithCustomPrio() {
         List<ServiceInterface> loaded = HelidonServiceLoader.builder(javaLoader)
-                .addService(new ServiceImpl3(), -1)
+                .addService(new ServiceImpl3(), 0)
                 .build()
                 .asList();
 
@@ -99,11 +100,11 @@ class HelidonServiceLoaderTest {
     }
 
     @Test
-    void testWithoutJavaServiceLoader() {
+    void testWithoutSystemServiceLoader() {
         List<ServiceInterface> loaded = HelidonServiceLoader.builder(javaLoader)
                 .addService(new ServiceImpl3())
                 .addService(new ServiceImpl2())
-                .useJavaServiceLoader(false)
+                .useSystemServiceLoader(false)
                 .build()
                 .asList();
 
@@ -141,5 +142,24 @@ class HelidonServiceLoaderTest {
         assertThat(loaded.get(1).message(), is(ServiceImpl2.class.getName()));
         assertThat(loaded.get(2).message(), is(ServiceImpl1.class.getName()));
     }
+
+    @Test
+    void testNegativePrioFails() {
+        assertThrows(IllegalArgumentException.class, () -> HelidonServiceLoader.builder(javaLoader)
+                .addService(new ServiceImpl2("something"), -11)
+                .replaceImplementations(false)
+                .build()
+                .asList());
+    }
+
+    @Test
+    void testZeropPrioWorks() {
+        HelidonServiceLoader.builder(javaLoader)
+                .addService(new ServiceImpl2("something"), 0)
+                .replaceImplementations(false)
+                .build()
+                .asList();
+    }
+
 }
 

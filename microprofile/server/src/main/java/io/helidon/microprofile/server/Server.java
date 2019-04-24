@@ -343,7 +343,7 @@ public interface Server {
          *
          * @param loaderBuilder builder of server extensions
          * @return updated builder instance
-         * @see io.helidon.common.serviceloader.HelidonServiceLoader.Builder#useJavaServiceLoader(boolean)
+         * @see io.helidon.common.serviceloader.HelidonServiceLoader.Builder#useSystemServiceLoader(boolean)
          */
         public Builder extensionsService(HelidonServiceLoader.Builder<MpService> loaderBuilder) {
             this.extensionBuilder = loaderBuilder;
