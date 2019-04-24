@@ -85,7 +85,7 @@ backend:
               items:
                 -  includes:
                      - "security/*.adoc"
-            - title: "Microprofile"
+            - title: "MicroProfile"
               pathprefix: "/microprofile"
               glyph:
                 type: "icon"

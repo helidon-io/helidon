@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Serving Static Content
-:description: Helidon Microprofile static content
+:description: Helidon MicroProfile static content
 :keywords: helidon, microprofile, micro-profile
 
 You can serve static content from a location in a file system

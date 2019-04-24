@@ -50,7 +50,7 @@ Here is the code for a minimalist web application that runs on a random free por
 
 == Maven Coordinates
 
-The <<getting-started/03_managing-dependencies.adoc, Getting Started>> page describes how you
+The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
