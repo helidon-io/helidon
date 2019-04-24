@@ -110,3 +110,31 @@ requests accepted by the predicate. All other requests are _nexted_, meaning tha
                       })
                       .otherwise((req, resp) -> { /* Otherwise logic */ }); // Optional. Default logic is req.next()
 ----
+
+== Organizing Code into Services
+
+By implementing the `Service` interface you can organize your code into one
+or more services, each with its own path prefix and set of handlers.
+
+[source,java]
+.Use `Routing.Builder.register` to register your service
+----
+.register("/hello", new HelloService())
+----
+
+[source,java]
+.Service implementation
+----
+public class HelloService implements Service {
+    @Override
+    public void update(Routing.Rules rules) {
+        rules.get("/subpath", this::getHandler);
+    }
+
+    private void getHandler(ServerRequest request,
+                            ServerResponse response) {
+        // Some logic
+    }
+}
+----
+In this example, the `GET` handler matches requests to `/hello/subpath`.

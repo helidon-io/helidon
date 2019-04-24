@@ -31,7 +31,6 @@ import io.helidon.common.http.Content;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.jsonp.common.JsonProcessing;
@@ -43,6 +42,8 @@ import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
+
+import static io.helidon.media.common.ContentTypeCharset.determineCharset;
 
 /**
  * It provides contains JSON-P ({@code javax.json}) support for {@link WebServer WebServer}'s
@@ -192,27 +193,6 @@ public final class JsonSupport implements Service, Handler {
                     .filter(Objects::nonNull)
                     .findFirst();
         }
-    }
-
-    /**
-     * Returns a charset from {@code Content-Type} header parameter or {@code null} if not defined.
-     *
-     * @param headers parameters representing request or response headers
-     * @return a charset or {@code UTF-8} as default
-     * @throws RuntimeException if charset is not supported
-     */
-    private Charset determineCharset(Parameters headers) {
-        return headers.first(Http.Header.CONTENT_TYPE)
-                .map(MediaType::parse)
-                .flatMap(MediaType::charset)
-                .map(sch -> {
-                    try {
-                        return Charset.forName(sch);
-                    } catch (Exception e) {
-                        return null; // Do not need default charset. Can use JSON specification.
-                    }
-                })
-                .orElse(null);
     }
 
     /**
