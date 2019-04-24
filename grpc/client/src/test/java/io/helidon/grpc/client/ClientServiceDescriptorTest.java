@@ -24,14 +24,12 @@ import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServiceDescriptor;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Test;
 import services.TreeMapService;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
@@ -49,7 +47,6 @@ public class ClientServiceDescriptorTest {
         String serviceName = "StringService";
         assertThat(descriptor.name(), is(serviceName));
         assertThat(descriptor.interceptors(), is(emptyIterable()));
-        assertThat(descriptor.metricType(), is(nullValue()));
 
         Collection<MethodDescriptor<?, ?>> expectedMethods = grpcDescriptor.getMethods();
         Collection<ClientMethodDescriptor> actualMethods = descriptor.methods();
@@ -60,7 +57,6 @@ public class ClientServiceDescriptorTest {
             ClientMethodDescriptor method = descriptor.method(name);
             assertThat(method.name(), is(name));
             assertThat(method.interceptors(), is(emptyIterable()));
-            assertThat(method.metricType(), is(nullValue()));
             MethodDescriptor<Object, Object> actualDescriptor = method.descriptor();
             assertThat(actualDescriptor.getType(), is(methodDescriptor.getType()));
         }
@@ -73,7 +69,6 @@ public class ClientServiceDescriptorTest {
         String serviceName = "StringService";
         assertThat(descriptor.name(), is(serviceName));
         assertThat(descriptor.interceptors(), is(emptyIterable()));
-        assertThat(descriptor.metricType(), is(nullValue()));
 
         Collection<ServerMethodDefinition<?, ?>> expectedMethods = bindableService.bindService().getMethods();
         Collection<ClientMethodDescriptor> actualMethods = descriptor.methods();
@@ -85,7 +80,6 @@ public class ClientServiceDescriptorTest {
             ClientMethodDescriptor method = descriptor.method(name);
             assertThat(method.name(), is(name));
             assertThat(method.interceptors(), is(emptyIterable()));
-            assertThat(method.metricType(), is(nullValue()));
             MethodDescriptor<Object, Object> actualDescriptor = method.descriptor();
             assertThat(actualDescriptor.getType(), is(methodDescriptor.getType()));
         }
@@ -105,63 +99,6 @@ public class ClientServiceDescriptorTest {
     public void testDefaultMethodCount() {
         ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
         assertThat(svcDesc.methods().size(), equalTo(0));
-    }
-
-    @Test
-    public void testDefaultMetricType() {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
-        assertThat(svcDesc.metricType(), nullValue());
-    }
-
-    @Test
-    public void testDefaultInterceptorCount() {
-        ClientServiceDescriptor svcDesc = ClientServiceDescriptor.builder(TreeMapService.class).build();
-        assertThat(svcDesc.interceptors().size(), equalTo(0));
-    }
-
-    @Test
-    public void shouldHaveCounterMetricType() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
-                .counted()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.COUNTER));
-    }
-
-    @Test
-    public void shouldHaveHistogramMetricType() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
-                .histogram()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.HISTOGRAM));
-    }
-
-    @Test
-    public void shouldHaveMeterMetricType() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
-                .metered()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.METERED));
-    }
-
-    @Test
-    public void shouldHaveDisabledMetricType() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
-                .disableMetrics()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.INVALID));
-    }
-
-    @Test
-    public void shouldHaveTimerMetricType() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
-                .timed()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.TIMER));
     }
 
     @Test

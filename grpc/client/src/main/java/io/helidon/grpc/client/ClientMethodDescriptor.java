@@ -24,7 +24,6 @@ import io.helidon.grpc.core.MarshallerSupplier;
 
 import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * Encapsulates all metadata necessary to define a gRPC method. In addition to wrapping a {@link io.grpc.MethodDescriptor},
@@ -34,8 +33,6 @@ import org.eclipse.microprofile.metrics.MetricType;
  * An instance of ClientMethodDescriptor can be created either from an existing {@link io.grpc.MethodDescriptor} or
  * from one of the factory methods {@link #bidirectional(String, String)}, {@link #clientStreaming(String, String)},
  * {@link #serverStreaming(String, String)} or {@link #unary(String, String)}.
- *
- * @author Mahesh Kannan
  */
 public final class ClientMethodDescriptor {
 
@@ -51,22 +48,15 @@ public final class ClientMethodDescriptor {
     private io.grpc.MethodDescriptor descriptor;
 
     /**
-     * The metric type to be used for collecting method level metrics.
-     */
-    private MetricType metricType;
-
-    /**
      * The list of client interceptors for this method.
      */
     private ArrayList<ClientInterceptor> interceptors;
 
     private ClientMethodDescriptor(String name,
                                    MethodDescriptor descriptor,
-                                   MetricType metricType,
                                    ArrayList<ClientInterceptor> interceptors) {
         this.name = name;
         this.descriptor = descriptor;
-        this.metricType = metricType;
         this.interceptors = interceptors;
     }
 
@@ -191,15 +181,6 @@ public final class ClientMethodDescriptor {
     }
 
     /**
-     * Returns the {@link org.eclipse.microprofile.metrics.MetricType} of this method.
-     *
-     * @return The {@link org.eclipse.microprofile.metrics.MetricType} of this method.
-     */
-    public MetricType metricType() {
-        return metricType;
-    }
-
-    /**
      * Obtain the {@link ClientInterceptor}s to use for this method.
      *
      * @return the {@link ClientInterceptor}s to use for this method
@@ -212,42 +193,6 @@ public final class ClientMethodDescriptor {
      * ClientMethod configuration API.
      */
     public interface Config {
-
-        /**
-         * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Counter}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-
-        Config counted();
-
-        /**
-         * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Meter}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config metered();
-
-        /**
-         * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Histogram}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config histogram();
-
-        /**
-         * Collect metrics for this method using {@link org.eclipse.microprofile.metrics.Timer}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config timed();
-
-        /**
-         * Explicitly disable metrics collection for this service.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config disableMetrics();
 
         /**
          * Sets the type of parameter of this method.
@@ -292,7 +237,6 @@ public final class ClientMethodDescriptor {
 
         private String name;
         private io.grpc.MethodDescriptor.Builder descriptor;
-        private MetricType metricType;
         private Class<?> requestType;
         private Class<?> responseType;
         private ArrayList<ClientInterceptor> interceptors = new ArrayList<>();
@@ -309,36 +253,6 @@ public final class ClientMethodDescriptor {
         Builder(String serviceName, String name, MethodDescriptor.Builder descriptor) {
             this.name = name;
             this.descriptor = descriptor.setFullMethodName(serviceName + "/" + name);
-        }
-
-        @Override
-        public Builder counted() {
-            return metricType(MetricType.COUNTER);
-        }
-
-        @Override
-        public Builder metered() {
-            return metricType(MetricType.METERED);
-        }
-
-        @Override
-        public Builder histogram() {
-            return metricType(MetricType.HISTOGRAM);
-        }
-
-        @Override
-        public Builder timed() {
-            return metricType(MetricType.TIMER);
-        }
-
-        @Override
-        public Builder disableMetrics() {
-            return metricType(MetricType.INVALID);
-        }
-
-        private Builder metricType(MetricType metricType) {
-            this.metricType = metricType;
-            return this;
         }
 
         @Override
@@ -410,7 +324,6 @@ public final class ClientMethodDescriptor {
 
             return new ClientMethodDescriptor(name,
                                               descriptor.build(),
-                                              metricType,
                                               interceptors);
         }
 

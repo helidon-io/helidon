@@ -33,30 +33,24 @@ import io.grpc.BindableService;
 import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServiceDescriptor;
-import org.eclipse.microprofile.metrics.MetricType;
 
 import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 
 /**
  * Encapsulates all details about a client side gRPC service.
- *
- * @author Mahesh Kannan
  */
 public class ClientServiceDescriptor {
 
     private String serviceName;
     private Map<String, ClientMethodDescriptor> methods;
     private LinkedList<ClientInterceptor> interceptors;
-    private MetricType metricType;
 
     private ClientServiceDescriptor(String serviceName,
                                     Map<String, ClientMethodDescriptor> methods,
-                                    LinkedList<ClientInterceptor> interceptors,
-                                    MetricType metricType) {
+                                    LinkedList<ClientInterceptor> interceptors) {
         this.serviceName = serviceName;
         this.methods = methods;
         this.interceptors = interceptors;
-        this.metricType = metricType;
     }
 
     /**
@@ -157,15 +151,6 @@ public class ClientServiceDescriptor {
      */
     public List<ClientInterceptor> interceptors() {
         return interceptors;
-    }
-
-    /**
-     * Return the type of metric that should be collected for this service.
-     *
-     * @return metric type
-     */
-    public MetricType metricType() {
-        return metricType;
     }
 
     @Override
@@ -298,40 +283,6 @@ public class ClientServiceDescriptor {
          */
         Config bidirectional(String name, Consumer<ClientMethodDescriptor.Config> configurer);
 
-        /**
-         * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Counter}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config counted();
-
-        /**
-         * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Meter}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config metered();
-
-        /**
-         * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Histogram}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config histogram();
-
-        /**
-         * Collect metrics for this service using {@link org.eclipse.microprofile.metrics.Timer}.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config timed();
-
-        /**
-         * Explicitly disable metrics collection for this service.
-         *
-         * @return this {@link Config} instance for fluent call chaining
-         */
-        Config disableMetrics();
     }
 
     // ---- inner class: BaseBuilder --------------------------------------------
@@ -343,7 +294,6 @@ public class ClientServiceDescriptor {
             implements Config, io.helidon.common.Builder<ClientServiceDescriptor> {
         private String name;
         private LinkedList<ClientInterceptor> interceptors = new LinkedList<>();
-        private MetricType metricType;
         private Class<?> serviceClass;
         private Descriptors.FileDescriptor proto;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.defaultInstance();
@@ -488,50 +438,16 @@ public class ClientServiceDescriptor {
         }
 
         @Override
-        public Builder counted() {
-            return metricType(MetricType.COUNTER);
-        }
-
-        @Override
-        public Builder metered() {
-            return metricType(MetricType.METERED);
-        }
-
-        @Override
-        public Builder histogram() {
-            return metricType(MetricType.HISTOGRAM);
-        }
-
-        @Override
-        public Builder timed() {
-            this.metricType = MetricType.TIMER;
-            return this;
-        }
-
-        @Override
-        public Builder disableMetrics() {
-            return metricType(MetricType.INVALID);
-        }
-
-        @Override
         public ClientServiceDescriptor build() {
             Map<String, ClientMethodDescriptor> methods = new LinkedHashMap<>();
             for (Map.Entry<String, ClientMethodDescriptor.Builder> entry : methodBuilders.entrySet()) {
                 methods.put(entry.getKey(), entry.getValue().build());
             }
 
-            return new ClientServiceDescriptor(name,
-                                               methods,
-                                               interceptors,
-                                               metricType);
+            return new ClientServiceDescriptor(name, methods, interceptors);
         }
 
         // ---- helpers -----------------------------------------------------
-
-        private Builder metricType(MetricType metricType) {
-            this.metricType = metricType;
-            return this;
-        }
 
         private ClientMethodDescriptor.Builder createMethodDescriptor(
                 String methodName,

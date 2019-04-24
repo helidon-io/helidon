@@ -32,8 +32,6 @@ import io.grpc.stub.StreamObserver;
 
 /**
  * A gRPC Client for a specific gRPC service.
- *
- * @author Mahesh Kannan
  */
 @ThreadSafe
 public class GrpcServiceClient {
@@ -332,8 +330,6 @@ public class GrpcServiceClient {
      * an exception.
      *
      * @param <T> The type of objects received in this stream.
-     *
-     * @author Mahesh Kannan
      */
     public static class SingleValueStreamObserver<T>
             implements StreamObserver<T> {

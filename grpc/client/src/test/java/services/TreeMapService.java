@@ -25,7 +25,6 @@ import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
 
 import io.grpc.stub.StreamObserver;
-import org.mockito.internal.stubbing.answers.Returns;
 
 /**
  * A simple class that implements gRPC service. Used for testing.
@@ -69,7 +68,7 @@ public class TreeMapService
     }
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
+    public void update(ServiceDescriptor.Rules config) {
         config.unary("get", this::get);
         config.serverStreaming("greaterOrEqualTo", this::greaterOrEqualTo);
         config.clientStreaming("sumOfAges", this::sumOfAges);
