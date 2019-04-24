@@ -62,7 +62,7 @@ public final class JsonBindingSupport implements Service, Handler {
         request.content()
             .registerReader(cls -> true,
                             JsonBinding.reader(jsonb));
-        response.registerWriter(payload -> wantsJson(request, response),
+        response.registerWriter(payload -> testOrSetJsonContentType(request.headers(), response.headers()),
                                 JsonBinding.writer(jsonb, determineCharset(response.headers())));
         request.next();
     }

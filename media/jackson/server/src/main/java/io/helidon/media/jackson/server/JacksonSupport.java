@@ -72,8 +72,10 @@ public final class JacksonSupport implements Service, Handler {
         request.content()
             .registerReader(cls -> objectMapper.canDeserialize(objectMapper.constructType(cls)),
                             JacksonProcessing.reader(objectMapper));
-        response.registerWriter(payload -> objectMapper.canSerialize(payload.getClass()) && this.wantsJson(request, response),
-                                JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
+        response.registerWriter(
+                payload -> objectMapper.canSerialize(payload.getClass())
+                        && testOrSetJsonContentType(request.headers(), response.headers()),
+                JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
         request.next();
     }
 
