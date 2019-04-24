@@ -37,8 +37,24 @@ class SecurityDefinition {
      */
     private final Map<Class<? extends Annotation>, List<Annotation>> applicationScope = new HashMap<>();
     private final Map<Class<? extends Annotation>, List<Annotation>> resourceScope = new HashMap<>();
+    /*
+    anotace -> list<List<Annotation>>
+
+    RolesAllowed.class -> ["user"], ["admin", "manager"], ["subsub"]
+    Scope.class -> [], [], ["someScope"]
+     */
+    private final Map<Class<? extends Annotation>, List<ProcessedResource>> resourceScopeNew = new HashMap<>();
+    /*
+    top level resource class: @RolesAllowed("user")
+    resourceScopeNew.put(RolesAllowed.class,
+     */
+    private static class ProcessedResource {
+        private List<Annotation> resourceAnnotations;
+    }
+
     private final Map<Class<? extends Annotation>, List<Annotation>> operationScope = new HashMap<>();
     private final Map<AnnotationAnalyzer, AnnotationAnalyzer.AnalyzerResponse> analyzerResponses = new IdentityHashMap<>();
+
 
     /*
      * True if authentication is needed to execute.
