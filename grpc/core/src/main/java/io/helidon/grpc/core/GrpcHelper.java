@@ -24,8 +24,6 @@ import io.grpc.StatusRuntimeException;
 
 /**
  * Helper methods for common gRPC tasks.
- *
- * @author Jonathan Knight
  */
 public final class GrpcHelper {
 

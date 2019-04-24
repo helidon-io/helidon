@@ -73,8 +73,8 @@ You can also register an interceptor for a specific service, either by implement
 public class MyService implements GrpcService {
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.intercept(new LoggingInterceptor())   // <1>
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.intercept(new LoggingInterceptor())   // <1>
                 .unary("MyMethod", this::myMethod);
     }
 
@@ -108,8 +108,8 @@ Finally, you can also register an interceptor at the method level:
 public class MyService implements GrpcService {
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.unary("MyMethod",
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("MyMethod",
                      this::myMethod,
                      cfg -> cfg.intercept(new LoggingInterceptor()));  // <1>
     }

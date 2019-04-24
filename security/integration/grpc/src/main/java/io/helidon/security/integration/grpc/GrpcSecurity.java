@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -102,7 +101,7 @@ import io.opentracing.contrib.grpc.OpenTracingContextKey;
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public final class GrpcSecurity
-        implements PriorityServerInterceptor, Consumer<ServiceDescriptor.Config> {
+        implements PriorityServerInterceptor, ServiceDescriptor.Configurer {
     private static final Logger LOGGER = Logger.getLogger(GrpcSecurity.class.getName());
 
     /**
@@ -372,23 +371,23 @@ public final class GrpcSecurity
     }
 
     /**
-     * If the {@link #config} field is set then modify the {@link ServiceDescriptor.Config}
+     * If the {@link #config} field is set then modify the {@link ServiceDescriptor.Rules}
      * with any applicable security configuration.
      *
-     * @param serviceConfig  the {@link ServiceDescriptor.Config} to modify
+     * @param rules  the {@link ServiceDescriptor.Rules} to modify
      */
     @Override
-    public void accept(ServiceDescriptor.Config serviceConfig) {
-        config.ifPresent(grpcConfig -> modifyServiceDescriptorConfig(serviceConfig, grpcConfig));
+    public void configure(ServiceDescriptor.Rules rules) {
+        config.ifPresent(grpcConfig -> modifyServiceDescriptorConfig(rules, grpcConfig));
     }
 
-    private void modifyServiceDescriptorConfig(ServiceDescriptor.Config serviceConfig, Config grpcConfig) {
-        String serviceName = serviceConfig.name();
+    private void modifyServiceDescriptorConfig(ServiceDescriptor.Rules rules, Config grpcConfig) {
+        String serviceName = rules.name();
 
         grpcConfig.get("services")
                 .asNodeList()
                 .map(list -> findServiceConfig(serviceName, list))
-                .ifPresent(cfg -> configureServiceSecurity(serviceConfig, cfg));
+                .ifPresent(cfg -> configureServiceSecurity(rules, cfg));
     }
 
     private Config findServiceConfig(String serviceName, List<Config> list) {
@@ -398,7 +397,7 @@ public final class GrpcSecurity
                 .orElse(null);
     }
 
-    private void configureServiceSecurity(ServiceDescriptor.Config serviceConfig, Config grpcServiceConfig) {
+    private void configureServiceSecurity(ServiceDescriptor.Rules rules, Config grpcServiceConfig) {
         if (grpcServiceConfig.exists()) {
             GrpcSecurityHandler defaults;
 
@@ -418,11 +417,11 @@ public final class GrpcSecurity
                                                          .key() + " must contain name key with a method name to "
                                                          + "register to gRPC server security"));
 
-                        serviceConfig.intercept(name, GrpcSecurityHandler.create(methodConfig, defaults));
+                        rules.intercept(name, GrpcSecurityHandler.create(methodConfig, defaults));
                     }
                 });
             } else {
-                serviceConfig.intercept(defaults);
+                rules.intercept(defaults);
             }
         }
     }

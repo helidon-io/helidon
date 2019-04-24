@@ -55,8 +55,8 @@ interface and define one or more methods for the service:
 class EchoService implements GrpcService {
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.unary("Echo", this::echo); // <1>
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("Echo", this::echo); // <1>
     }
 
     /**
@@ -135,10 +135,9 @@ The service implementation will be very similar to our original implementation:
 class EchoService implements GrpcService {
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config
-            .proto(Echo.getDescriptor())  // <1>
-            .unary("Echo", this::echo);   // <2>
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.proto(Echo.getDescriptor())  // <1>
+             .unary("Echo", this::echo);   // <2>
     }
 
     /**

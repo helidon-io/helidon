@@ -29,9 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * @author Jonathan Knight
- */
+
 public class HealthServiceImplTest {
     @Test
     public void shouldRequestCheckForUpService() {

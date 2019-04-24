@@ -31,8 +31,6 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 /**
  * An example of a secure gRPC server.
- *
- * @author Jonathan Knight
  */
 public class SecureServer {
 

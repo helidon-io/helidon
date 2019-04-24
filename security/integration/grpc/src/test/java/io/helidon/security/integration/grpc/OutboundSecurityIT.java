@@ -52,9 +52,7 @@ import services.SecuredOutboundEchoService;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * @author Jonathan Knight
- */
+
 public class OutboundSecurityIT {
 
     private static WebServer webServer;

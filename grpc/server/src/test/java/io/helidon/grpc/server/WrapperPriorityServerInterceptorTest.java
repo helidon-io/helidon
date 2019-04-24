@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * @author Jonathn Knight
+ * {@link PriorityServerInterceptor} unit tests.
  */
 @SuppressWarnings("unchecked")
 public class WrapperPriorityServerInterceptorTest {

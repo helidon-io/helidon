@@ -24,8 +24,6 @@ import io.grpc.ServerInterceptor;
 
 /**
  * An implementation of {@link io.helidon.grpc.server.GrpcRouting}.
- *
- * @author Aleksandar Seovic
  */
 public class GrpcRoutingImpl
         implements GrpcRouting {

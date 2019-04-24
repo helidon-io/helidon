@@ -60,8 +60,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for gRPC server with SSL connections
- *
- * @author Bin Chen
  */
 public class SslIT {
 

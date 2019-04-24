@@ -25,8 +25,6 @@ import io.grpc.ManagedChannelBuilder;
 
 /**
  * A GreetService client that uses {@link io.grpc.CallCredentials} using basic auth.
- *
- * @author Jonathan Knight
  */
 public class SecureGreetClient {
 

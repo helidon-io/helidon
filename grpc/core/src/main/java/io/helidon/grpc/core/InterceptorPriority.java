@@ -19,8 +19,6 @@ package io.helidon.grpc.core;
 /**
  * An enum that sets a priority ordering that interceptors registered with
  * a gRPC service ot method will be applied.
- *
- * @author Jonathan Knight
  */
 public enum InterceptorPriority {
     /**

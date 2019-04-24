@@ -76,7 +76,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class GrpcSecurityHandler
-        implements PriorityServerInterceptor, Consumer<ServiceDescriptor.Config> {
+        implements PriorityServerInterceptor, ServiceDescriptor.Configurer {
     private static final Logger LOGGER = Logger.getLogger(GrpcSecurityHandler.class.getName());
     private static final String KEY_ROLES_ALLOWED = "roles-allowed";
     private static final String KEY_AUTHENTICATOR = "authenticator";
@@ -147,7 +147,8 @@ public class GrpcSecurityHandler
      * <pre>
      * {
      *   #
-     *   # these are used by {@link GrpcSecurity} when loaded from config, to register with {@link io.helidon.webserver.WebServer}
+     *   # these are used by {@link GrpcSecurity} when loaded from config, to register
+     *   # with the {@link io.helidon.grpc.server.GrpcServer}
      *   #
      *   path = "/noRoles"
      *   methods = ["get"]
@@ -293,13 +294,13 @@ public class GrpcSecurityHandler
     }
 
     /**
-     * Modifies a {@link ServiceDescriptor.Config} to add this {@link GrpcSecurityHandler}.
+     * Modifies a {@link io.helidon.grpc.server.ServiceDescriptor.Rules} to add this {@link GrpcSecurityHandler}.
      *
-     * @param config  the {@link ServiceDescriptor.Config} to modify
+     * @param rules  the {@link io.helidon.grpc.server.ServiceDescriptor.Rules} to modify
      */
     @Override
-    public void accept(ServiceDescriptor.Config config) {
-        config.addContextValue(GrpcSecurity.GRPC_SECURITY_HANDLER, this);
+    public void configure(ServiceDescriptor.Rules rules) {
+        rules.addContextValue(GrpcSecurity.GRPC_SECURITY_HANDLER, this);
     }
 
     @Override

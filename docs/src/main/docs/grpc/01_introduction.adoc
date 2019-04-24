@@ -44,8 +44,8 @@ Here is the code for a minimalist gRPC application that runs on a default port (
 
     static class HelloService implements GrpcService { <5>
         @Override
-        public void update(ServiceDescriptor.Config config) {
-            config.unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello World!"))); // <6>
+        public void update(ServiceDescriptor.Rules rules) {
+            rules.unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello World!"))); // <6>
         }
     }
 ----

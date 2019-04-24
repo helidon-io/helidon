@@ -27,14 +27,12 @@ import io.helidon.grpc.server.test.Strings.StringMessage;
 
 import io.grpc.stub.StreamObserver;
 
-/**
- * @author Aleksandar Seovic
- */
+
 public class StringService
         implements GrpcService {
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.proto(Strings.getDescriptor())
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.proto(Strings.getDescriptor())
                 .unary("Upper", this::upper)
                 .unary("Lower", this::lower)
                 .serverStreaming("Split", this::split)

@@ -23,8 +23,6 @@ import io.grpc.protobuf.lite.ProtoLiteUtils;
 /**
  * A supplier of {@link MethodDescriptor.Marshaller} instances for specific
  * classes.
- *
- * @author Aleksandar Seovic
  */
 @FunctionalInterface
 public interface MarshallerSupplier {

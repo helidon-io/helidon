@@ -27,8 +27,6 @@ import io.grpc.Metadata;
 /**
  * A {@link io.grpc.CallCredentials2} that add a basic auth
  * authorization header to a request.
- *
- * @author Jonathan Knight
  */
 public class TestCallCredentials
         extends CallCredentials2 {

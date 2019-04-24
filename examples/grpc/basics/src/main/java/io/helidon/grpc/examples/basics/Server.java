@@ -22,21 +22,17 @@ import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.GreetService;
 import io.helidon.grpc.examples.common.GreetServiceJava;
 import io.helidon.grpc.examples.common.StringService;
-import io.helidon.grpc.server.GrpcMetrics;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
-import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
  * A basic example of a Helidon gRPC server.
- *
- * @author Aleksandar Seovic
  */
 public class Server {
 
@@ -86,7 +82,6 @@ public class Server {
         // start web server with metrics and health endpoints
         Routing routing = Routing.builder()
                 .register(health)
-                .register(MetricsSupport.create())
                 .build();
 
         ServerConfiguration webServerConfig = ServerConfiguration.builder(config.get("webserver")).build();
@@ -109,7 +104,6 @@ public class Server {
         GreetServiceJava greetServiceJava = new GreetServiceJava(config);
 
         return GrpcRouting.builder()
-                .intercept(GrpcMetrics.timed())
                 .register(greetService)
                 .register(greetServiceJava)
                 .register(new StringService())

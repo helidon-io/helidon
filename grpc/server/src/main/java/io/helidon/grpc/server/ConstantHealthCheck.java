@@ -22,8 +22,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 /**
  * A simple {@link HealthCheck} implementation
  * that always returns the same response.
- *
- * @author Aleksandar Seovic
  */
 public class ConstantHealthCheck
         implements HealthCheck {

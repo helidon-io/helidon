@@ -16,7 +16,5 @@
 
 /**
  * Examples of using outbound security with gRPC services.
- *
- * @author Jonathan Knight
  */
 package io.helidon.grpc.examples.security.outbound;

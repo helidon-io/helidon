@@ -20,8 +20,6 @@ import io.grpc.Metadata;
 
 /**
  * A collection of common gRPC {@link io.grpc.Context.Key} instances.
- *
- * @author Jonathan Knight
  */
 public final class ContextKeys {
     /**

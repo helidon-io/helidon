@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.grpc.server;
+package io.helidon.grpc.metrics;
 
 import java.io.StringReader;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +29,9 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
 
+import io.helidon.grpc.server.GrpcRouting;
+import io.helidon.grpc.server.GrpcServer;
+import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
 import io.helidon.metrics.MetricsSupport;
@@ -50,9 +53,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Tests for gRPC server with metrics.
- *
- * @author Jonathan Knight
+ * Integration tests for gRPC server with metrics.
  */
 public class MetricsIT {
 
@@ -74,7 +75,7 @@ public class MetricsIT {
     private static final Logger LOGGER = Logger.getLogger(MetricsIT.class.getName());
 
     /**
-     * The Helidon {@link GrpcServer} being tested.
+     * The Helidon {@link io.helidon.grpc.server.GrpcServer} being tested.
      */
     private static GrpcServer grpcServer;
 
@@ -145,7 +146,9 @@ public class MetricsIT {
         // Add the EchoService and enable GrpcMetrics
         GrpcRouting routing = GrpcRouting.builder()
                                          .intercept(GrpcMetrics.timed())
-                                         .register(new EchoService())
+                                         .register(new EchoService(), rules -> rules.intercept(GrpcMetrics.metered())
+                                                                                    .intercept("Echo",
+                                                                                               GrpcMetrics.counted()))
                                          .build();
 
         // Run the server on port 0 so that it picks a free ephemeral port

@@ -24,8 +24,6 @@ import io.reactivex.observers.TestObserver;
  * A test {@link io.grpc.stub.StreamObserver} that is based on the
  * RxJava {@link io.reactivex.observers.TestObserver} that allows tests
  * to easily assert state of the observer.
- * 
- * @author Jonathan Knight
  */
 public class TestStreamObserver<T>
         extends TestObserver<T>

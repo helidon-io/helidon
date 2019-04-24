@@ -18,8 +18,6 @@ package io.helidon.grpc.client;
 /**
  * An enum of possible gRPC client call attributes to attach to
  * call tracing spans.
- *
- * @author Jonathan Knight
  */
 public enum ClientRequestAttribute {
     /**

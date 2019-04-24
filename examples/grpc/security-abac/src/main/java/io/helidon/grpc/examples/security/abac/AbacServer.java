@@ -40,8 +40,6 @@ import io.helidon.security.providers.abac.AbacProvider;
  * This server configures in code the same rules that
  * the {@link AbacServerFromConfig} class uses from
  * its configuration.
- *
- * @author Jonathan Knight
  */
 public class AbacServer {
 

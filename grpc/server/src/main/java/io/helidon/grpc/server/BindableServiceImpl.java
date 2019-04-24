@@ -16,6 +16,7 @@
 
 package io.helidon.grpc.server;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
@@ -33,8 +34,6 @@ import io.grpc.stub.StreamObserver;
 /**
  * A {@link io.grpc.BindableService} implementation that creates {@link io.grpc.ServerServiceDefinition}
  * from a {@link ServiceDescriptor}.
- *
- * @author Aleksandar Seovic
  */
 class BindableServiceImpl implements BindableService {
     /**
@@ -76,9 +75,20 @@ class BindableServiceImpl implements BindableService {
         priorityServerInterceptors.add(method.interceptors());
         List<ServerInterceptor> interceptors = priorityServerInterceptors.getInterceptors();
 
-        // iterate the interceptors in reverse order so that the handler chain is in the correct order
-        for (int i = interceptors.size() - 1; i >= 0; i--) {
-            handler = new InterceptingCallHandler<>(descriptor, interceptors.get(i), handler);
+        if (interceptors.size() > 0) {
+            LinkedHashSet<ServerInterceptor> uniqueInterceptors = new LinkedHashSet<>(interceptors.size());
+
+            // iterate the interceptors in reverse order so that the handler chain is in the correct order
+            for (int i = interceptors.size() - 1; i >= 0; i--) {
+                ServerInterceptor interceptor = interceptors.get(i);
+                if (!uniqueInterceptors.contains(interceptor)) {
+                    uniqueInterceptors.add(interceptor);
+                }
+            }
+
+            for (ServerInterceptor interceptor : uniqueInterceptors) {
+                handler = new InterceptingCallHandler<>(descriptor, interceptor, handler);
+            }
         }
 
         return handler;

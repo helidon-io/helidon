@@ -23,8 +23,6 @@ import io.helidon.config.Config;
 
 /**
  * SSL configuration details.
- *
- * @author Bin Chen
  */
 public class SslConfiguration {
     private boolean jdkSSL;

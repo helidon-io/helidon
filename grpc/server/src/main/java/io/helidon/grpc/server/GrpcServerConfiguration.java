@@ -24,8 +24,6 @@ import io.opentracing.util.GlobalTracer;
 
 /**
  * The configuration for a gRPC server.
- *
- * @author Jonathan Knight
  */
 public interface GrpcServerConfiguration {
     /**

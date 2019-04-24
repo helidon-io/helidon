@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.grpc.server;
+package io.helidon.grpc.metrics;
 
+import java.util.Map;
+
+import io.helidon.common.CollectionsHelper;
+import io.helidon.grpc.server.GrpcService;
+import io.helidon.grpc.server.MethodDescriptor;
+import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.webserver.Routing;
 
+import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -29,12 +36,14 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -46,13 +55,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * A test for the {@link io.helidon.grpc.server.GrpcMetrics} interceptor.
+ * A test for the {@link io.helidon.grpc.metrics.GrpcMetrics} interceptor.
  * <p>
  * This test runs as an integration test because it causes Helidon metrics
  * to be initialised which may impact other tests that rely on metrics being
  * configured a specific way.
- *
- * @author Jonathan Knight
  */
 @SuppressWarnings("unchecked")
 public class GrpcMetricsInterceptorIT {
@@ -89,36 +96,32 @@ public class GrpcMetricsInterceptorIT {
     }
 
     @Test
-    public void shouldUseCountedMetric() {
+    public void shouldUseCountedMetric() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .unary("barCounted", this::dummyUnary)
+                .unary("testCounted", this::dummyUnary)
                 .build();
 
-        MethodDescriptor methodDescriptor = descriptor.method("barCounted");
+        MethodDescriptor methodDescriptor = descriptor.method("testCounted");
         GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("Foo.barCounted");
+        Counter appCounter = appRegistry.counter("Foo.testCounted");
 
         assertVendorMetrics();
         assertThat(appCounter.getCount(), is(1L));
     }
 
     @Test
-    public void shouldUseHistogramMetric() {
+    public void shouldUseHistogramMetric() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .unary("barHistogram", this::dummyUnary)
                 .build();
 
         MethodDescriptor methodDescriptor = descriptor.method("barHistogram");
         GrpcMetrics metrics = GrpcMetrics.histogram();
-
-        metrics.setServiceDescriptor(descriptor);
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
@@ -131,15 +134,13 @@ public class GrpcMetricsInterceptorIT {
     }
 
     @Test
-    public void shouldUseMeteredMetric() {
+    public void shouldUseMeteredMetric() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .unary("barMetered", this::dummyUnary)
                 .build();
 
         MethodDescriptor methodDescriptor = descriptor.method("barMetered");
         GrpcMetrics metrics = GrpcMetrics.metered();
-
-        metrics.setServiceDescriptor(descriptor);
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
@@ -152,15 +153,13 @@ public class GrpcMetricsInterceptorIT {
     }
 
     @Test
-    public void shouldUseTimerMetric() {
+    public void shouldUseTimerMetric() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .unary("barTimed", this::dummyUnary)
                 .build();
 
         MethodDescriptor methodDescriptor = descriptor.method("barTimed");
         GrpcMetrics metrics = GrpcMetrics.timed();
-
-        metrics.setServiceDescriptor(descriptor);
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
@@ -173,136 +172,110 @@ public class GrpcMetricsInterceptorIT {
     }
 
     @Test
-    public void shouldUseServiceOverrideMetric() {
+    public void shouldApplyTags() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .unary("barServiceOverride", this::dummyUnary)
+                .unary("barTags", this::dummyUnary)
                 .build();
 
-        MethodDescriptor methodDescriptor = descriptor.method("barServiceOverride");
-        GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
+        MethodDescriptor methodDescriptor = descriptor.method("barTags");
+        Map<String, String> tags = CollectionsHelper.mapOf("one", "t1", "two", "t2");
+        GrpcMetrics metrics = GrpcMetrics.counted().tags(tags);
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
         call.close(Status.OK, new Metadata());
 
-        Meter appMeter = appRegistry.meter("Foo.barServiceOverride");
+        Counter appCounter = appRegistry.counter("Foo.barTags");
 
         assertVendorMetrics();
-        assertThat(appMeter.getCount(), is(1L));
+        assertThat(appCounter.toString(), containsString("tags='{one=t1, two=t2}'"));
     }
 
     @Test
-    public void shouldUseMethodOverrideToSetCounterMetric() {
+    public void shouldApplyDescription() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .unary("barOverrideCount", this::dummyUnary, MethodDescriptor.Config::counted)
+                .unary("barDesc", this::dummyUnary)
                 .build();
 
-        MethodDescriptor methodDescriptor = descriptor.method("barOverrideCount");
-        GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
+        MethodDescriptor methodDescriptor = descriptor.method("barDesc");
+        GrpcMetrics metrics = GrpcMetrics.counted().description("foo");
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
         call.close(Status.OK, new Metadata());
 
-        Counter appCounter = appRegistry.counter("Foo.barOverrideCount");
+        Counter appCounter = appRegistry.counter("Foo.barDesc");
+
+        assertVendorMetrics();
+        assertThat(appCounter.toString(), containsString("description='foo'"));
+    }
+
+    @Test
+    public void shouldApplyUnits() throws Exception {
+        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+                .unary("barUnits", this::dummyUnary)
+                .build();
+
+        MethodDescriptor methodDescriptor = descriptor.method("barUnits");
+        GrpcMetrics metrics = GrpcMetrics.counted().units(MetricUnits.BITS);
+
+        ServerCall<String, String> call = call(metrics, methodDescriptor);
+
+        call.close(Status.OK, new Metadata());
+
+        Counter appCounter = appRegistry.counter("Foo.barUnits");
+
+        assertVendorMetrics();
+        assertThat(appCounter.toString(), containsString("unit='bits'"));
+    }
+
+    @Test
+    public void shouldHaveCorrectNameWithDotsForSlashes() throws Exception {
+        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
+                .name("My/Service")
+                .unary("bar", this::dummyUnary)
+                .build();
+
+        MethodDescriptor methodDescriptor = descriptor.method("bar");
+        GrpcMetrics metrics = GrpcMetrics.counted();
+
+        ServerCall<String, String> call = call(metrics, descriptor, methodDescriptor);
+
+        call.close(Status.OK, new Metadata());
+
+        Counter appCounter = appRegistry.counter("My.Service.bar");
 
         assertVendorMetrics();
         assertThat(appCounter.getCount(), is(1L));
     }
 
     @Test
-    public void shouldUseMethodOverrideToSetHistogramMetric() {
+    public void shouldUseNameFunction() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .unary("barOverrideHistogram", this::dummyUnary, MethodDescriptor.Config::histogram)
+                .unary("barUnits", this::dummyUnary)
                 .build();
 
-        MethodDescriptor methodDescriptor = descriptor.method("barOverrideHistogram");
-        GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
+        MethodDescriptor methodDescriptor = descriptor.method("barUnits");
+        GrpcMetrics metrics = GrpcMetrics.counted().nameFunction((svc, method, type) -> "overridden");
 
         ServerCall<String, String> call = call(metrics, methodDescriptor);
 
         call.close(Status.OK, new Metadata());
 
-        Histogram appHistogram = appRegistry.histogram("Foo.barOverrideHistogram");
+        Counter appCounter = appRegistry.counter("overridden");
 
         assertVendorMetrics();
-        assertThat(appHistogram.getCount(), is(1L));
+        assertThat(appCounter.getCount(), is(1L));
     }
 
-    @Test
-    public void shouldUseMethodOverrideToSetMeterMetric() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .unary("barOverrideMeter", this::dummyUnary, MethodDescriptor.Config::metered)
-                .build();
-
-        MethodDescriptor methodDescriptor = descriptor.method("barOverrideMeter");
-        GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
-
-        ServerCall<String, String> call = call(metrics, methodDescriptor);
-
-        call.close(Status.OK, new Metadata());
-
-        Meter appMeter = appRegistry.meter("Foo.barOverrideMeter");
-
-        assertVendorMetrics();
-        assertThat(appMeter.getCount(), is(1L));
+    private ServerCall<String, String> call(GrpcMetrics metrics, MethodDescriptor methodDescriptor) throws Exception {
+        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService()).build();
+        return call(metrics, descriptor, methodDescriptor);
     }
 
-    @Test
-    public void shouldUseMethodOverrideToSetTimerMetric() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .unary("barOverrideTimer", this::dummyUnary, MethodDescriptor.Config::timed)
-                .build();
-
-        MethodDescriptor methodDescriptor = descriptor.method("barOverrideTimer");
-        GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
-
-        ServerCall<String, String> call = call(metrics, methodDescriptor);
-
-        call.close(Status.OK, new Metadata());
-
-        Timer appTimer = appRegistry.timer("Foo.barOverrideTimer");
-
-        assertVendorMetrics();
-        assertThat(appTimer.getCount(), is(1L));
-    }
-
-    @Test
-    public void shouldUseMethodOverrideToDisableMetrics() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .unary("barOverrideOff", this::dummyUnary, MethodDescriptor.Config::disableMetrics)
-                .build();
-
-        MethodDescriptor methodDescriptor = descriptor.method("barOverrideOff");
-        GrpcMetrics metrics = GrpcMetrics.counted();
-
-        metrics.setServiceDescriptor(descriptor);
-
-        ServerCall<String, String> call = call(metrics, methodDescriptor);
-
-        call.close(Status.OK, new Metadata());
-
-        assertVendorMetrics();
-        assertThat(appRegistry.getNames().contains("barOverrideOff"), is(false));
-    }
-
-    private ServerCall<String, String> call(GrpcMetrics metrics, MethodDescriptor methodDescriptor) {
+    private ServerCall<String, String> call(GrpcMetrics metrics,
+                                            ServiceDescriptor descriptor,
+                                            MethodDescriptor methodDescriptor) throws Exception {
         Metadata headers = new Metadata();
         ServerCall<String, String> call = mock(ServerCall.class);
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class);
@@ -311,7 +284,9 @@ public class GrpcMetricsInterceptorIT {
         when(call.getMethodDescriptor()).thenReturn(methodDescriptor.descriptor());
         when(next.startCall(any(ServerCall.class), any(Metadata.class))).thenReturn(listener);
 
-        ServerCall.Listener<String> result = metrics.interceptCall(call, headers, next);
+        Context context = Context.ROOT.withValue(ServiceDescriptor.SERVICE_DESCRIPTOR_KEY, descriptor);
+
+        ServerCall.Listener<String> result = context.call(() -> metrics.interceptCall(call, headers, next));
 
         assertThat(result, is(sameInstance(listener)));
 

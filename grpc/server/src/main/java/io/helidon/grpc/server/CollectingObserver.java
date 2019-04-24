@@ -32,8 +32,6 @@ import io.grpc.stub.StreamObserver;
  * @param <U>  ToDo: Add JavaDoc
  * @param <A>  ToDo: Add JavaDoc
  * @param <R>  ToDo: Add JavaDoc
- *
- * @author Aleksandar Seovic
  */
 public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
     private final Collector<T, A, R> collector;

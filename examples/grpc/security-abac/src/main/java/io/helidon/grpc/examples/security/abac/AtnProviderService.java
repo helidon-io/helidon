@@ -22,8 +22,6 @@ import io.helidon.security.spi.SecurityProviderService;
 
 /**
  * A service provider for the {@link AtnProvider}.
- *
- * @author Jonathan Knight
  */
 public class AtnProviderService
         implements SecurityProviderService {

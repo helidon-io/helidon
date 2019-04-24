@@ -31,8 +31,6 @@ import io.opentracing.Tracer;
 
 /**
  * A client for the {@link GreetService}.
- *
- * @author Aleksandar Seovic
  */
 public class GreetClient {
 

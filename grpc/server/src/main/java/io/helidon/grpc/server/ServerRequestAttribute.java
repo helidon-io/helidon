@@ -18,8 +18,6 @@ package io.helidon.grpc.server;
 /**
  * An enum representing different types of gRPC request
  * attribute that can be added to tracing logs.
- *
- * @author Jonathan Knight
  */
 public enum ServerRequestAttribute {
     /**

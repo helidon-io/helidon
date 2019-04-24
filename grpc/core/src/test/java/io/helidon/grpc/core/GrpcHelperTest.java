@@ -24,11 +24,10 @@ import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * @author Jonathan Knight
+ * {@link GrpcHelper} unit tests
  */
 public class GrpcHelperTest {
 

@@ -46,7 +46,7 @@ GrpcRouting.builder()
     // This is step 1 - register security instance with gRPC server processing
     // security - instance of security either from config or from a builder
     // securityDefaults - default enforcement for each service that has a security definition
-    .intercept(WebSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
+    .intercept(GrpcSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
     // this is step 2 - protect a service
     // register and protect this service with authentication (from defaults) and role "user"
     .register(greetService, GrpcSecurity.rolesAllowed("user"))
@@ -71,7 +71,7 @@ GrpcRouting.builder()
     // This is step 1 - register security instance with gRPC server processing
     // security - instance of security either from config or from a builder
     // securityDefaults - default enforcement for each service that has a security definition
-    .intercept(WebSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
+    .intercept(GrpcSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
     // this is step 2 - add the service descriptor
     .register(greetService)
     .build();
@@ -93,28 +93,20 @@ GrpcRouting.builder()
 ----
 # This may change in the future - to align with gRPC server configuration,
 # once it is supported
-security.grpc-server {
+security
+  grpc-server:
     # Configuration of integration with gRPC server
-    defaults {
-        authenticate = true
-    }
+    defaults:
+        authenticate: true
     # Configuration security for individual services
-    services: [
-        {
-            name = "GreetService"
-            defaults {
-                roles-allowed = ["user"]
-            }
-            # Configuration security for individual methods of the service
-            methods: [
-                {
-                    name = "SetGreeting"
-                    roles-allowed = ["admin"]
-                }
-            ]
-        }
-    ]
-}
+    services:
+    - name: "GreetService"
+      defaults:
+      roles-allowed: ["user"]
+      # Configuration security for individual methods of the service
+      methods:
+      - name: "SetGreeting"
+        roles-allowed: ["admin"]
 ----
 
 ==== Outbound security

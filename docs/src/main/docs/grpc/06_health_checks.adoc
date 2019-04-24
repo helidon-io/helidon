@@ -40,8 +40,8 @@ directly within `GrpcService` implementation:
 public class MyService implements GrpcService {
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.unary("MyMethod", this::myMethod)
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("MyMethod", this::myMethod)
                 .healthCheck(this::healthCheck);  // <1>
     }
 

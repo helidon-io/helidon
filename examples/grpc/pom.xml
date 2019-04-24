@@ -33,6 +33,7 @@
     <modules>
         <module>common</module>
         <module>basics</module>
+        <module>metrics</module>
         <module>opentracing</module>
         <module>security</module>
         <module>security-abac</module>

@@ -29,8 +29,6 @@ import io.grpc.ServerInterceptor;
  * A {@link io.grpc.ServerInterceptor} that provides a
  * {@link io.helidon.grpc.core.InterceptorPriority} to indicate where it should
  * be applied in a list of interceptors.
- *
- * @author Jonathan Knight
  */
 public interface PriorityServerInterceptor
         extends ServerInterceptor {

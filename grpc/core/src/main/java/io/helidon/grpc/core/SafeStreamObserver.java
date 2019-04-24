@@ -26,8 +26,6 @@ import io.grpc.stub.StreamObserver;
  * A {@link io.grpc.stub.StreamObserver} that handles exceptions correctly.
  *
  * @param <T> the type of response expected
- *
- * @author Jonathan Knight
  */
 public class SafeStreamObserver<T>
         implements StreamObserver<T> {

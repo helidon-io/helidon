@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author Jonathan Knight
+ * {@link ContextSettingServerInterceptor} unit tests.
  */
 @SuppressWarnings("unchecked")
 public class ContextSettingServerInterceptorTest {
@@ -102,7 +102,7 @@ public class ContextSettingServerInterceptorTest {
         Context.Key<String> key2 = Context.key("test-service-key");
         ServiceDescriptor serviceDescriptor = ServiceDescriptor.builder(createMockService())
                 .addContextValue(key1, "test-service-value")
-                .unary("test", this::dummyUnary, cfg -> cfg.addContextKey(key2, "test-method-value"))
+                .unary("test", this::dummyUnary, cfg -> cfg.addContextValue(key2, "test-method-value"))
                 .build();
 
         ContextSettingServerInterceptor interceptor = new ContextSettingServerInterceptor();
@@ -135,7 +135,7 @@ public class ContextSettingServerInterceptorTest {
         Context.Key<String> key = Context.key("test-service-key");
         ServiceDescriptor serviceDescriptor = ServiceDescriptor.builder(createMockService())
                 .addContextValue(key, "test-service-value")
-                .unary("test", this::dummyUnary, cfg -> cfg.addContextKey(key, "test-method-value"))
+                .unary("test", this::dummyUnary, cfg -> cfg.addContextValue(key, "test-method-value"))
                 .build();
 
         ContextSettingServerInterceptor interceptor = new ContextSettingServerInterceptor();

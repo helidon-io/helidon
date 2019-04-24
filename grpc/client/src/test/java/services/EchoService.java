@@ -24,15 +24,13 @@ import io.grpc.stub.StreamObserver;
 
 /**
  * A simple test gRPC echo service.
- *
- * @author Jonathan Knight
  */
 public class EchoService
         implements GrpcService {
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.proto(Echo.getDescriptor())
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.proto(Echo.getDescriptor())
                 .unary("Echo", this::echo);
     }
 

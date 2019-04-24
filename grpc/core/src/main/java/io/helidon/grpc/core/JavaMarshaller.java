@@ -32,8 +32,6 @@ import io.grpc.MethodDescriptor;
  * uses Java serialization.
  *
  * @param <T>  the type of value to to be marshalled
- *
- * @author Aleksandar Seovic
  */
 @Singleton
 @Named("java")

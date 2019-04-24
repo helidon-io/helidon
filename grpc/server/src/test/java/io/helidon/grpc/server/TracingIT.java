@@ -46,8 +46,6 @@ import static com.oracle.bedrock.deferred.DeferredHelper.invoking;
 
 /**
  * Tests for gRPC server with tracing.
- *
- * @author Bin Chen
  */
 public class TracingIT {
 

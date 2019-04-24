@@ -24,8 +24,6 @@ import io.grpc.stub.StreamObserver;
 
 /**
  * A client to the {@link io.helidon.grpc.examples.common.StringService}.
- *
- * @author Aleksandar Seovic
  */
 public class StringClient {
 

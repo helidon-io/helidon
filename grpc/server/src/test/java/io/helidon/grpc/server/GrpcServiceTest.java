@@ -37,7 +37,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * @author Jonathan Knight
+ * {@link GrpcService} unit tests.
  */
 public class GrpcServiceTest {
 
@@ -514,7 +514,7 @@ public class GrpcServiceTest {
     private class GrpcServiceStub
             implements GrpcService {
         @Override
-        public void update(ServiceDescriptor.Config config) {
+        public void update(ServiceDescriptor.Rules rules) {
         }
     }
 }

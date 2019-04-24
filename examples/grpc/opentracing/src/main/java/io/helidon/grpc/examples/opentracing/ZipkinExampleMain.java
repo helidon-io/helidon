@@ -33,8 +33,6 @@ import io.opentracing.Tracer;
 
 /**
  * An example gRPC server with Zipkin tracing enabled.
- *
- * @author Jonathan Knight
  */
 public class ZipkinExampleMain {
 

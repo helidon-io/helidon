@@ -35,8 +35,6 @@ import io.grpc.ClientInterceptor;
  * <p>
  * Interceptors added that are not {@link PriorityClientInterceptor} instances will
  * have a priority of {@link InterceptorPriority#Normal}.
- *
- * @author Jonathan Knight
  */
 public class PriorityClientInterceptors {
 

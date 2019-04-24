@@ -56,8 +56,6 @@ import io.grpc.stub.StreamObserver;
 
 /**
  * An example server that configures services with outbound security.
- *
- * @author Jonathan Knight
  */
 public class SecureServer {
 
@@ -168,8 +166,8 @@ public class SecureServer {
         }
 
         @Override
-        public void update(ServiceDescriptor.Config config) {
-            config.proto(Greet.getDescriptor())
+        public void update(ServiceDescriptor.Rules rules) {
+            rules.proto(Greet.getDescriptor())
                     .unary("Greet", this::greet)
                     .unary("SetGreeting", this::setGreeting);
         }

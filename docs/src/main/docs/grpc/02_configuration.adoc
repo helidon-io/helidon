@@ -43,11 +43,10 @@ GrpcServer grpcServer = GrpcServer.create(configuration, routing);
 You can also define the configuration in a file.
 
 [source,hocon]
-.GrpcServer configuration file `application.conf`
+.GrpcServer configuration file `application.yaml`
 ----
-grpcserver {
-  port: 3333,
-}
+grpcserver:
+  port: 3333
 ----
 
 Then, in your application code, load the configuration from that file.

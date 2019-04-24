@@ -34,8 +34,6 @@ import io.helidon.security.integration.grpc.GrpcSecurity;
  * This server's configuration file configures security with
  * same rules that the {@link AbacServer} class builds in
  * code.
- *
- * @author Jonathan Knight
  */
 public class AbacServerFromConfig {
 

@@ -42,8 +42,6 @@ import static io.helidon.security.integration.grpc.GrpcSecurity.ABAC_ATTRIBUTE_M
  * A gRPC {@link CallCredentials2} implementation.
  * <p>
  * Only works as part of integration with the Helidon Security component.
- *
- * @author Jonathan Knight
  */
 public class GrpcClientSecurity
         extends CallCredentials2 {

@@ -67,8 +67,6 @@ import static java.lang.String.format;
 
 /**
  * A gRPC Server implementation.
- *
- * @author Aleksandar Seovic
  */
 public class GrpcServerImpl implements GrpcServer {
 

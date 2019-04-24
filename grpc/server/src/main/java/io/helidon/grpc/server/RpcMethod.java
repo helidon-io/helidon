@@ -26,8 +26,6 @@ import io.grpc.MethodDescriptor.MethodType;
 /**
  * An annotation to mark a class as representing a gRPC service
  * or a method as a gRPC service method.
- *
- * @author Aleksandar Seovic
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

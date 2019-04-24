@@ -31,8 +31,6 @@ import org.eclipse.microprofile.health.HealthCheckResponse.State;
 
 /**
  * An implementation of the {@link HealthGrpc} service.
- *
- * @author Aleksandar Seovic
  */
 class HealthServiceImpl
         extends HealthGrpc.HealthImplBase {

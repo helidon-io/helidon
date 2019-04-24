@@ -35,13 +35,11 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyIterable.emptyIterable;
@@ -53,7 +51,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * @author Jonathan Knight
+ * {@link ServiceDescriptor} unit tests.
  */
 public class ServiceDescriptorTest {
 
@@ -189,7 +187,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -202,13 +199,13 @@ public class ServiceDescriptorTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldAddBidirectionalMethodWithConfigurer() {
-        Consumer<MethodDescriptor.Config<String, String>> configurer = mock(Consumer.class);
+        MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .bidirectional("methodOne", this::dummyBiDi, configurer)
                 .build();
 
-        verify(configurer).accept(notNull());
+        verify(configurer).configure(notNull());
 
         MethodDescriptor methodDescriptor = descriptor.method("methodOne");
 
@@ -218,7 +215,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -242,7 +238,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -255,13 +250,13 @@ public class ServiceDescriptorTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldAddClientStreamingMethodWithConfigurer() {
-        Consumer<MethodDescriptor.Config<String, String>> configurer = mock(Consumer.class);
+        MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .clientStreaming("methodOne", this::dummyClientStreaming, configurer)
                 .build();
 
-        verify(configurer).accept(notNull());
+        verify(configurer).configure(notNull());
 
         MethodDescriptor methodDescriptor = descriptor.method("methodOne");
 
@@ -271,7 +266,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -295,7 +289,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -308,13 +301,13 @@ public class ServiceDescriptorTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldAddServerStreamingMethodWithConfigurer() {
-        Consumer<MethodDescriptor.Config<String, String>> configurer = mock(Consumer.class);
+        MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .serverStreaming("methodOne", this::dummyServerStreaming, configurer)
                 .build();
 
-        verify(configurer).accept(notNull());
+        verify(configurer).configure(notNull());
 
         MethodDescriptor methodDescriptor = descriptor.method("methodOne");
 
@@ -324,7 +317,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -348,7 +340,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -361,13 +352,13 @@ public class ServiceDescriptorTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldAddUnaryMethodWithConfigurer() {
-        Consumer<MethodDescriptor.Config<String, String>> configurer = mock(Consumer.class);
+        MethodDescriptor.Configurer configurer = mock(MethodDescriptor.Configurer.class);
 
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
                 .unary("methodOne", this::dummyServerStreaming, configurer)
                 .build();
 
-        verify(configurer).accept(notNull());
+        verify(configurer).configure(notNull());
 
         MethodDescriptor methodDescriptor = descriptor.method("methodOne");
 
@@ -377,7 +368,6 @@ public class ServiceDescriptorTest {
 
         assertThat(methodDescriptor.name(), is("methodOne"));
         assertThat(methodDescriptor.callHandler(), is(notNullValue()));
-        assertThat(methodDescriptor.metricType(), is(nullValue()));
 
         io.grpc.MethodDescriptor grpcDescriptor = methodDescriptor.descriptor();
         assertThat(grpcDescriptor, is(notNullValue()));
@@ -454,58 +444,6 @@ public class ServiceDescriptorTest {
         assertThat(methodDescriptor1.interceptors(), contains(interceptor1, interceptor2));
         assertThat(methodDescriptor2, is(notNullValue()));
         assertThat(methodDescriptor2.interceptors(), contains(interceptor3));
-    }
-
-    @Test
-    public void shouldHaveNoMetricsByDefault() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService()).build();
-
-        assertThat(descriptor.metricType(), is(nullValue()));
-    }
-
-    @Test
-    public void shouldHaveCounterMetrics() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .counted()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.COUNTER));
-    }
-
-    @Test
-    public void shouldHaveHistogramMetrics() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .histogram()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.HISTOGRAM));
-    }
-
-    @Test
-    public void shouldHaveMeteredMetrics() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .metered()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.METERED));
-    }
-
-    @Test
-    public void shouldHaveTimerMetrics() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .timed()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.TIMER));
-    }
-
-    @Test
-    public void shouldHaveDisabledMetrics() {
-        ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())
-                .disableMetrics()
-                .build();
-
-        assertThat(descriptor.metricType(), is(MetricType.INVALID));
     }
 
     @Test

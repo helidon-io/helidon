@@ -23,8 +23,6 @@ import java.lang.annotation.Target;
 
 /**
  * An annotation used to mark a class as representing a gRPC service.
- *
- * @author Aleksandar Seovic
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

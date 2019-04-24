@@ -25,7 +25,7 @@ import io.helidon.grpc.server.ServiceDescriptor;
 import io.grpc.stub.StreamObserver;
 
 /**
- * @author Aleksandar Seovic
+ * A plain Java implementation of the GreetService.
  */
 public class GreetServiceJava
         implements GrpcService {
@@ -44,10 +44,9 @@ public class GreetServiceJava
     }
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config
-                .unary("Greet", this::greet)
-                .unary("SetGreeting", this::setGreeting);
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.unary("Greet", this::greet)
+             .unary("SetGreeting", this::setGreeting);
     }
 
     // ---- service methods -------------------------------------------------

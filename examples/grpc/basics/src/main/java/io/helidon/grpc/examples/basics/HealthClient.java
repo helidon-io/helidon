@@ -23,8 +23,6 @@ import io.grpc.health.v1.HealthGrpc;
 
 /**
  * A simple gRPC health check client.
- *
- * @author Aleksandar Seovic
  */
 public class HealthClient {
 

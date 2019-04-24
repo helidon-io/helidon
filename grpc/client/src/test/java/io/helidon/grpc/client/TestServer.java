@@ -26,8 +26,6 @@ import services.EchoService;
 
 /**
  * A test gRPC server.
- *
- * @author Jonathan Knight
  */
 public class TestServer {
     /**

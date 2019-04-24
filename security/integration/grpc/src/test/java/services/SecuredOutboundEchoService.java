@@ -33,8 +33,6 @@ import io.grpc.stub.StreamObserver;
 /**
  * A simple test gRPC echo service that
  * makes a secure outbound http request.
- *
- * @author Jonathan Knight
  */
 public class SecuredOutboundEchoService
         implements GrpcService {
@@ -49,8 +47,8 @@ public class SecuredOutboundEchoService
     }
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.name("EchoService")
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.name("EchoService")
                 .proto(Echo.getDescriptor())
                 .unary("Echo", this::echo);
     }

@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author Jonathan Knight
+ * {@link GrpcServerConfiguration} unit tests.
  */
 public class GrpcServerConfigurationTest {
 

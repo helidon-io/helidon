@@ -35,8 +35,6 @@ import io.grpc.ServerInterceptor;
  * <p>
  * Interceptors added that are not {@link PriorityServerInterceptor} instances will
  * have a priority of {@link io.helidon.grpc.core.InterceptorPriority#Normal}.
- *
- * @author Jonathan Knight
  */
 public class PriorityServerInterceptors {
 

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
@@ -29,8 +28,6 @@ import io.grpc.ServerInterceptor;
  * GrpcRouting represents the composition of gRPC services with interceptors and routing rules.
  *
  * It is together with {@link GrpcServerConfiguration.Builder} a cornerstone of the {@link GrpcServer}.
- *
- * @author Aleksandar Seovic
  */
 public interface GrpcRouting {
 
@@ -125,11 +122,11 @@ public interface GrpcRouting {
          * Add a {@link GrpcService} with the {@link GrpcRouting} to be built by this builder.
          *
          * @param service    the {@link GrpcService} to register
-         * @param configurer an optional consumer that can update the {@link ServiceDescriptor}
+         * @param configurer an optional configurer that can update the {@link ServiceDescriptor}
          *                   for the registered service
          * @return this builder to allow fluent method chaining
          */
-        public Builder register(GrpcService service, Consumer<ServiceDescriptor.Config> configurer) {
+        public Builder register(GrpcService service, ServiceDescriptor.Configurer configurer) {
             return register(ServiceDescriptor.builder(service), configurer);
         }
 
@@ -147,11 +144,11 @@ public interface GrpcRouting {
          * Add a {@link BindableService} with the {@link GrpcRouting} to be built by this builder.
          *
          * @param service    the {@link BindableService} to register
-         * @param configurer an optional consumer that can update the {@link ServiceDescriptor}
+         * @param configurer an optional configurer that can update the {@link ServiceDescriptor}
          *                   for the registered service
          * @return this builder to allow fluent method chaining
          */
-        public Builder register(BindableService service, Consumer<ServiceDescriptor.Config> configurer) {
+        public Builder register(BindableService service, ServiceDescriptor.Configurer configurer) {
             return register(ServiceDescriptor.builder(service), configurer);
         }
 
@@ -177,33 +174,19 @@ public interface GrpcRouting {
 
         // ---- helpers -----------------------------------------------------
 
-        @SuppressWarnings("unchecked")
         private Builder register(ServiceDescriptor.Builder builder,
-                                 Consumer<ServiceDescriptor.Config> configurer) {
+                                 ServiceDescriptor.Configurer configurer) {
             if (configurer != null) {
-                configurer.accept(builder);
+                configurer.configure(builder);
             }
 
             interceptors.stream()
-                    .filter(this::isServiceDescriptorConfigConsumer)
-                    .map(Consumer.class::cast)
-                    .forEach(consumer -> consumer.accept(builder));
+                    .filter(interceptor -> ServiceDescriptor.Configurer.class.isAssignableFrom(interceptor.getClass()))
+                    .map(ServiceDescriptor.Configurer.class::cast)
+                    .forEach(interceptor -> interceptor.configure(builder));
 
             services.add(builder.build());
             return this;
-        }
-
-        private boolean isServiceDescriptorConfigConsumer(ServerInterceptor interceptor) {
-            if (interceptor instanceof Consumer) {
-                try {
-                    interceptor.getClass().getMethod("accept", ServiceDescriptor.Config.class);
-                    return true;
-                } catch (NoSuchMethodException e) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
         }
     }
 }

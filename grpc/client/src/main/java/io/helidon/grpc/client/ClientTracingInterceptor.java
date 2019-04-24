@@ -46,8 +46,6 @@ import io.opentracing.propagation.TextMap;
 /**
  * A {@link ClientInterceptor} that captures tracing information into
  * Open Tracing {@link Span}s for client calls.
- *
- * @author Jonathan Knight
  */
 public class ClientTracingInterceptor
         implements ClientInterceptor {

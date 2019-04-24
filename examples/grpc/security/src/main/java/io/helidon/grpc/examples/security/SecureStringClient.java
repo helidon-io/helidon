@@ -27,8 +27,6 @@ import io.grpc.ManagedChannelBuilder;
 /**
  * A {@link io.helidon.grpc.examples.common.StringService} client that optionally
  * provides {@link CallCredentials} using basic auth.
- *
- * @author Jonathan Knight
  */
 public class SecureStringClient {
 

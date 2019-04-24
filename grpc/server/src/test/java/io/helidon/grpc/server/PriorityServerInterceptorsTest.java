@@ -28,7 +28,7 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author Jonathan Knight
+ * {@link PriorityServerInterceptors} unit tests.
  */
 public class PriorityServerInterceptorsTest {
     @Test

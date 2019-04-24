@@ -30,7 +30,7 @@ import io.grpc.stub.StreamObserver;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 
 /**
- * @author Aleksandar Seovic
+ * An implementation of the GreetService.
  */
 public class GreetService implements GrpcService {
     /**
@@ -48,8 +48,8 @@ public class GreetService implements GrpcService {
     }
 
     @Override
-    public void update(ServiceDescriptor.Config config) {
-        config.proto(Greet.getDescriptor())
+    public void update(ServiceDescriptor.Rules rules) {
+        rules.proto(Greet.getDescriptor())
                 .unary("Greet", this::greet)
                 .unary("SetGreeting", this::setGreeting)
                 .healthCheck(this::healthCheck);

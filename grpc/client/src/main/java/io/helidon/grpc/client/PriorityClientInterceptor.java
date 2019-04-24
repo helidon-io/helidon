@@ -30,8 +30,6 @@ import io.grpc.MethodDescriptor;
  * A {@link io.grpc.ClientInterceptor} that provides a
  * {@link InterceptorPriority} to indicate where it should
  * be applied in a list of interceptors.
- *
- * @author Jonathan Knight
  */
 public interface PriorityClientInterceptor
         extends ClientInterceptor {
