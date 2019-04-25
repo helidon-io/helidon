@@ -21,14 +21,14 @@
 :keywords: helidon, microprofile, micro-profile
 
 MicroProfile is a collection of enterprise Java APIs that should feel familiar to
-Java EE developers. MicroProfile includes existing APIs like JAX-RS, JSON-P and
+Java EE developers. MicroProfile includes existing APIs such as JAX-RS, JSON-P and
 CDI, and adds additional APIs in areas such as configuration, metrics, fault
 tolerance and more.
 
 == Getting Started with Helidon MicroProfile
 
-MicroProfile is implemented by Helidon MP. The 1.0 release of Helidon supports
-MicroProfile 1.2. You can find the exact version of APIs supported on the
+Helidon MP {helidon-version} supports
+MicroProfile {mp-version}. You can find the exact version of APIs supported on the
 https://github.com/oracle/helidon/wiki/Supported-APIs[Helidon Supported APIs]
 wiki page.
 

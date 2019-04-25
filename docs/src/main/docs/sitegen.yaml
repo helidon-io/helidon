@@ -23,6 +23,7 @@ engine:
       plantumlconfig: "_plantuml-config.txt"
       javadoc-base-url: "./apidocs/index.html"
       helidon-version: "${project.version}"
+      mp-version: "1.2"
       guides-dir: "${project.basedir}/../examples/guides"
 assets:
   - target: "/"
