@@ -17,16 +17,19 @@
 package io.helidon.common.configurable;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
  * Supplier of a custom scheduled thread pool.
+ * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final int EXECUTOR_DEFAULT_CORE_POOL_SIZE = 16;
@@ -38,7 +41,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
     private final boolean isDaemon;
     private final String threadNamePrefix;
     private final boolean prestart;
-    private volatile ScheduledThreadPoolExecutor instance;
+    private volatile ScheduledExecutorService instance;
 
     private ScheduledThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -77,9 +80,10 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
     }
 
     @Override
-    public synchronized ScheduledThreadPoolExecutor get() {
+    public synchronized ScheduledExecutorService get() {
         if (null == instance) {
-            instance = new ScheduledThreadPoolExecutor(corePoolSize,
+            ScheduledThreadPoolExecutor service;
+            service = new ScheduledThreadPoolExecutor(corePoolSize,
                     new ThreadFactory() {
                         private AtomicInteger value = new AtomicInteger();
 
@@ -93,8 +97,9 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
                         }
                     });
             if (prestart) {
-                instance.prestartAllCoreThreads();
+                service.prestartAllCoreThreads();
             }
+            instance = Contexts.wrap(service);
         }
         return instance;
     }

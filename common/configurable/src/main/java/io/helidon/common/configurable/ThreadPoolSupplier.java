@@ -24,10 +24,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
  * Supplier of a custom thread pool.
+ * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final int EXECUTOR_DEFAULT_CORE_POOL_SIZE = 10;
@@ -45,7 +47,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final boolean isDaemon;
     private final String threadNamePrefix;
     private final boolean prestart;
-    private volatile ThreadPoolExecutor instance;
+    private volatile ExecutorService instance;
 
     private ThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -87,15 +89,16 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     }
 
     @Override
-    public synchronized ThreadPoolExecutor get() {
+    public synchronized ExecutorService get() {
         if (null == instance) {
-            instance = new ThreadPoolExecutor(corePoolSize,
+            ThreadPoolExecutor executor;
+            executor = new ThreadPoolExecutor(corePoolSize,
                                               maxPoolSize,
                                               keepAliveMinutes,
                                               TimeUnit.MINUTES,
                                               new LinkedBlockingQueue<>(queueCapacity),
                                               new ThreadFactory() {
-                                                  private AtomicInteger value = new AtomicInteger();
+                                                  private final AtomicInteger value = new AtomicInteger();
 
                                                   @Override
                                                   public Thread newThread(Runnable r) {
@@ -106,8 +109,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
                                                       return t;
                                                   }
                                               });
+            instance = Contexts.wrap(executor);
             if (prestart) {
-                instance.prestartAllCoreThreads();
+                executor.prestartAllCoreThreads();
             }
         }
         return instance;

@@ -64,6 +64,12 @@ public final class Contexts {
      * @return a new executor service wrapping the provided one
      */
     public static ExecutorService wrap(ExecutorService toWrap) {
+        if (toWrap instanceof ContextAwareExecutorImpl) {
+            return toWrap;
+        }
+        if (toWrap instanceof ContextAwareScheduledExecutorImpl) {
+            return toWrap;
+        }
         return new ContextAwareExecutorImpl(toWrap);
     }
 
@@ -75,6 +81,9 @@ public final class Contexts {
      * @return a new executor service wrapping the provided one
      */
     public static ScheduledExecutorService wrap(ScheduledExecutorService toWrap) {
+        if (toWrap instanceof ContextAwareScheduledExecutorImpl) {
+            return toWrap;
+        }
         return new ContextAwareScheduledExecutorImpl(toWrap);
     }
 
