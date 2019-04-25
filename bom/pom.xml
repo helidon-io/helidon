@@ -318,6 +318,11 @@
                 <artifactId>helidon-common-key-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-service-loader</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- tracing -->
             <dependency>

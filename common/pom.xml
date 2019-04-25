@@ -36,5 +36,6 @@
         <module>configurable</module>
         <module>key-util</module>
         <module>http</module>
+        <module>service-loader</module>
     </modules>
 </project>
