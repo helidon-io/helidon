@@ -29,12 +29,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-configurable</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>

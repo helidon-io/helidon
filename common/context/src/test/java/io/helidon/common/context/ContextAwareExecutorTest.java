@@ -18,13 +18,10 @@ package io.helidon.common.context;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import io.helidon.common.configurable.ThreadPoolSupplier;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +37,7 @@ public class ContextAwareExecutorTest {
 
     @Test
     void testLifecycle() {
-        ThreadPoolExecutor wrapped = ThreadPoolSupplier.create().get();
+        ExecutorService wrapped = Executors.newFixedThreadPool(1);
         ExecutorService wrapper = Contexts.wrap(wrapped);
 
         assertThat("Wrapped.isShutdown", wrapped.isShutdown(), is(false));
@@ -60,7 +57,7 @@ public class ContextAwareExecutorTest {
 
     @Test
     void testLifecycleWithAwaitTermination() throws InterruptedException {
-        ThreadPoolExecutor wrapped = ThreadPoolSupplier.create().get();
+        ExecutorService wrapped = Executors.newFixedThreadPool(1);
         ExecutorService wrapper = Contexts.wrap(wrapped);
 
         assertThat("Wrapped.isShutdown", wrapped.isShutdown(), is(false));
@@ -83,7 +80,7 @@ public class ContextAwareExecutorTest {
         List<TestCallable> toCall = new LinkedList<>();
 
         Context context = Context.create();
-        ExecutorService executor = Contexts.wrap(ThreadPoolSupplier.create().get());
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
 
         for (int i = 0; i < 10; i++) {
             context.register("key_" + i, TEST_STRING);
@@ -107,7 +104,7 @@ public class ContextAwareExecutorTest {
         List<TestCallable> toCall = new LinkedList<>();
 
         Context context = Context.create();
-        ExecutorService executor = Contexts.wrap(ThreadPoolSupplier.create().get());
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
 
         for (int i = 0; i < 10; i++) {
             context.register("key_" + i, TEST_STRING);
@@ -131,7 +128,7 @@ public class ContextAwareExecutorTest {
         List<TestCallable> toCall = new LinkedList<>();
 
         Context context = Context.create();
-        ExecutorService executor = Contexts.wrap(ThreadPoolSupplier.create().get());
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
 
         for (int i = 0; i < 10; i++) {
             context.register("key_" + i, TEST_STRING);
@@ -153,7 +150,7 @@ public class ContextAwareExecutorTest {
         List<TestCallable> toCall = new LinkedList<>();
 
         Context context = Context.create();
-        ExecutorService executor = Contexts.wrap(ThreadPoolSupplier.create().get());
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
 
         for (int i = 0; i < 10; i++) {
             context.register("key_" + i, TEST_STRING);
@@ -178,7 +175,7 @@ public class ContextAwareExecutorTest {
         }
 
         @Override
-        public String call() throws Exception {
+        public String call() {
             Context context = Contexts.context().get();
             return context.get("key_" + index, String.class).get();
         }

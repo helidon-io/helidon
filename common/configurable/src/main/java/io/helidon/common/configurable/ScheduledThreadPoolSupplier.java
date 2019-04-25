@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,23 +79,26 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
         return builder().build();
     }
 
+    ScheduledThreadPoolExecutor getThreadPool() {
+        return new ScheduledThreadPoolExecutor(corePoolSize,
+                                               new ThreadFactory() {
+                                                   private final AtomicInteger value = new AtomicInteger();
+
+                                                   @Override
+                                                   public Thread newThread(Runnable r) {
+                                                       Thread t = new Thread(null,
+                                                                             r,
+                                                                             threadNamePrefix + value.incrementAndGet());
+                                                       t.setDaemon(isDaemon);
+                                                       return t;
+                                                   }
+                                               });
+    }
+
     @Override
     public synchronized ScheduledExecutorService get() {
         if (null == instance) {
-            ScheduledThreadPoolExecutor service;
-            service = new ScheduledThreadPoolExecutor(corePoolSize,
-                    new ThreadFactory() {
-                        private AtomicInteger value = new AtomicInteger();
-
-                        @Override
-                        public Thread newThread(Runnable r) {
-                            Thread t = new Thread(null,
-                                    r,
-                                    threadNamePrefix + value.incrementAndGet());
-                            t.setDaemon(isDaemon);
-                            return t;
-                        }
-                    });
+            ScheduledThreadPoolExecutor service = getThreadPool();
             if (prestart) {
                 service.prestartAllCoreThreads();
             }

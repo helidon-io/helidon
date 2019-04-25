@@ -17,12 +17,11 @@ package io.helidon.common.context;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +38,7 @@ public class ContextAwareScheduledExecutorTest {
 
     @Test
     void testSchedule() throws Exception {
-        ScheduledExecutorService wrapped = ScheduledThreadPoolSupplier.create().get();
+        ScheduledExecutorService wrapped = Executors.newSingleThreadScheduledExecutor();
         ScheduledExecutorService wrapper = Contexts.wrap(wrapped);
 
 
@@ -80,7 +79,7 @@ public class ContextAwareScheduledExecutorTest {
 
     @Test
     void testScheduleCallable() throws Exception {
-        ScheduledExecutorService wrapped = ScheduledThreadPoolSupplier.create().get();
+        ScheduledExecutorService wrapped = Executors.newSingleThreadScheduledExecutor();
         ScheduledExecutorService wrapper = Contexts.wrap(wrapped);
 
 
@@ -113,7 +112,7 @@ public class ContextAwareScheduledExecutorTest {
 
     @Test
     void testScheduleAtFixedRate() throws InterruptedException, ExecutionException {
-        ScheduledExecutorService wrapped = ScheduledThreadPoolSupplier.create().get();
+        ScheduledExecutorService wrapped = Executors.newSingleThreadScheduledExecutor();
         ScheduledExecutorService wrapper = Contexts.wrap(wrapped);
 
 
@@ -145,7 +144,7 @@ public class ContextAwareScheduledExecutorTest {
 
     @Test
     void testScheduleAtFixedDelay() throws InterruptedException, ExecutionException {
-        ScheduledExecutorService wrapped = ScheduledThreadPoolSupplier.create().get();
+        ScheduledExecutorService wrapped = Executors.newSingleThreadScheduledExecutor();
         ScheduledExecutorService wrapper = Contexts.wrap(wrapped);
 
         CountDownLatch cdl = new CountDownLatch(2);

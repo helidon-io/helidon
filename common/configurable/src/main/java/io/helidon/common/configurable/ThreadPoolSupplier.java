@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,27 +88,30 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         return builder().build();
     }
 
+    ThreadPoolExecutor getThreadPool() {
+        return new ThreadPoolExecutor(corePoolSize,
+                                      maxPoolSize,
+                                      keepAliveMinutes,
+                                      TimeUnit.MINUTES,
+                                      new LinkedBlockingQueue<>(queueCapacity),
+                                      new ThreadFactory() {
+                                          private final AtomicInteger value = new AtomicInteger();
+
+                                          @Override
+                                          public Thread newThread(Runnable r) {
+                                              Thread t = new Thread(null,
+                                                                    r,
+                                                                    threadNamePrefix + value.incrementAndGet());
+                                              t.setDaemon(isDaemon);
+                                              return t;
+                                          }
+                                      });
+    }
+
     @Override
     public synchronized ExecutorService get() {
         if (null == instance) {
-            ThreadPoolExecutor executor;
-            executor = new ThreadPoolExecutor(corePoolSize,
-                                              maxPoolSize,
-                                              keepAliveMinutes,
-                                              TimeUnit.MINUTES,
-                                              new LinkedBlockingQueue<>(queueCapacity),
-                                              new ThreadFactory() {
-                                                  private final AtomicInteger value = new AtomicInteger();
-
-                                                  @Override
-                                                  public Thread newThread(Runnable r) {
-                                                      Thread t = new Thread(null,
-                                                                            r,
-                                                                            threadNamePrefix + value.incrementAndGet());
-                                                      t.setDaemon(isDaemon);
-                                                      return t;
-                                                  }
-                                              });
+            ThreadPoolExecutor executor = getThreadPool();
             instance = Contexts.wrap(executor);
             if (prestart) {
                 executor.prestartAllCoreThreads();
