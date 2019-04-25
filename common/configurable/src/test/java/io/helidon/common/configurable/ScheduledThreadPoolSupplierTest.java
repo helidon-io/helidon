@@ -39,7 +39,7 @@ class ScheduledThreadPoolSupplierTest {
 
     @BeforeAll
     static void initClass() {
-        defaultInstance = ScheduledThreadPoolSupplier.create().get();
+        defaultInstance = ScheduledThreadPoolSupplier.create().getThreadPool();
 
         builtInstance = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("scheduled-thread-pool-unit-test-")
@@ -47,10 +47,10 @@ class ScheduledThreadPoolSupplierTest {
                 .daemon(true)
                 .prestart(true)
                 .build()
-                .get();
+                .getThreadPool();
 
         configuredInstance = ScheduledThreadPoolSupplier.create(Config.create()
-                .get("unit.scheduled-thread-pool")).get();
+                .get("unit.scheduled-thread-pool")).getThreadPool();
     }
 
     @Test
