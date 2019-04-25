@@ -80,7 +80,8 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
     }
 
     ScheduledThreadPoolExecutor getThreadPool() {
-        return new ScheduledThreadPoolExecutor(corePoolSize,
+        ScheduledThreadPoolExecutor result;
+        result = new ScheduledThreadPoolExecutor(corePoolSize,
                                                new ThreadFactory() {
                                                    private final AtomicInteger value = new AtomicInteger();
 
@@ -93,16 +94,16 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
                                                        return t;
                                                    }
                                                });
+        if (prestart) {
+            result.prestartAllCoreThreads();
+        }
+        return result;
     }
 
     @Override
     public synchronized ScheduledExecutorService get() {
         if (null == instance) {
-            ScheduledThreadPoolExecutor service = getThreadPool();
-            if (prestart) {
-                service.prestartAllCoreThreads();
-            }
-            instance = Contexts.wrap(service);
+            instance = Contexts.wrap(getThreadPool());
         }
         return instance;
     }

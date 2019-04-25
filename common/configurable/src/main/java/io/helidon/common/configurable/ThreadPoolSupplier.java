@@ -89,7 +89,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     }
 
     ThreadPoolExecutor getThreadPool() {
-        return new ThreadPoolExecutor(corePoolSize,
+        ThreadPoolExecutor result;
+        result = new ThreadPoolExecutor(corePoolSize,
                                       maxPoolSize,
                                       keepAliveMinutes,
                                       TimeUnit.MINUTES,
@@ -106,16 +107,16 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
                                               return t;
                                           }
                                       });
+        if (prestart) {
+            result.prestartAllCoreThreads();
+        }
+        return result;
     }
 
     @Override
     public synchronized ExecutorService get() {
         if (null == instance) {
-            ThreadPoolExecutor executor = getThreadPool();
-            instance = Contexts.wrap(executor);
-            if (prestart) {
-                executor.prestartAllCoreThreads();
-            }
+            instance = Contexts.wrap(getThreadPool());
         }
         return instance;
     }

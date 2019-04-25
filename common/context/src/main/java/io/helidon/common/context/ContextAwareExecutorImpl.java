@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-class ContextAwareExecutorImpl implements ExecutorService {
+class ContextAwareExecutorImpl implements ContextAwareExecutorService {
     private final ExecutorService delegate;
 
     ContextAwareExecutorImpl(ExecutorService toWrap) {
@@ -98,6 +98,11 @@ class ContextAwareExecutorImpl implements ExecutorService {
     @Override
     public void execute(Runnable command) {
         delegate.execute(wrap(command));
+    }
+
+    @Override
+    public ExecutorService unwrap() {
+        return delegate;
     }
 
     protected <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks) {
