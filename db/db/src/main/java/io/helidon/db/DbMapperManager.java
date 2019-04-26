@@ -98,12 +98,11 @@ public interface DbMapperManager {
      *
      * @param value                  the typed value
      * @param valueClass             type of the value object
-     * @param expectedParameterCount number of parameters as expected by the statement
      * @param <T>                    type of value
      * @return list with indexed parameters (in the order expected by statements using this object)
      * @see io.helidon.db.DbStatement#indexedParam(Object)
      */
-    <T> List<?> toIndexedParameters(T value, Class<T> valueClass, int expectedParameterCount);
+    <T> List<?> toIndexedParameters(T value, Class<T> valueClass);
 
     /**
      * Fluent API builder for {@link io.helidon.db.DbMapperManager}.
