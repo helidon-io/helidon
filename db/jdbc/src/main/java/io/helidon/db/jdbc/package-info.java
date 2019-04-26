@@ -13,21 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Helidon Common Mapper.
+ * Helidon DB implementation for JDBC.
  */
-module io.helidon.db {
-    requires java.logging;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.serviceloader;
-
-    exports io.helidon.db;
-    exports io.helidon.db.spi;
-
-    uses io.helidon.db.spi.DbProvider;
-    uses io.helidon.db.spi.DbMapperProvider;
-}
+package io.helidon.db.jdbc;

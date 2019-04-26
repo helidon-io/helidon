@@ -34,5 +34,6 @@
 
     <modules>
         <module>db</module>
+        <module>jdbc</module>
     </modules>
 </project>
