@@ -13,8 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.db.jsonp;
+
+import java.util.Optional;
+
+import javax.annotation.Priority;
+import javax.json.JsonObject;
+
+import io.helidon.db.DbMapper;
+import io.helidon.db.spi.DbMapperProvider;
 
 /**
- * Reactive Database integration API for Helidon.
+ * JSON-P mapper provider.
  */
-package io.helidon.db;
+@Priority(1000)
+public class JsonProcessingMapperProvider implements DbMapperProvider {
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
+        if (type.equals(JsonObject.class)) {
+            return Optional.of((DbMapper<T>) JsonProcessingMapper.create());
+        }
+        return Optional.empty();
+    }
+}
