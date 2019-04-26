@@ -13,8 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.examples.db.jdbc;
 
 /**
- * Reactive Database integration API for Helidon.
+ * TODO javadoc.
  */
-package io.helidon.db;
+public class Pokemon {
+    private String name;
+    private String type;
+
+    // JSON-B
+    public Pokemon() {
+    }
+
+    public Pokemon(String name, String type) {
+        this.name = name;
+        this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+}
