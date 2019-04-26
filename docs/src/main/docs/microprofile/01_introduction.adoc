@@ -16,23 +16,35 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Microprofile Introduction
-:description: Helidon Microprofile introduction
+= MicroProfile Introduction
+:description: Helidon MicroProfile introduction
 :keywords: helidon, microprofile, micro-profile
 
-MicroProfile is a platform definition that is familiar to Java EE developers. If you have experience with JAX-RS, JSON-P, and CDI, you 
-may prefer to use this model.
-
-To extend the functionality of your MicroProfile application, you might also decide to use the Helidon core APIs, especially for 
-configuration and security.
+MicroProfile is a collection of enterprise Java APIs that should feel familiar to
+Java EE developers. MicroProfile includes existing APIs such as JAX-RS, JSON-P and
+CDI, and adds additional APIs in areas such as configuration, metrics, fault
+tolerance and more.
 
 == Getting Started with Helidon MicroProfile
+
+Helidon MP {helidon-version} supports
+MicroProfile {mp-version}. You can find the exact version of APIs supported on the
+https://github.com/oracle/helidon/wiki/Supported-APIs[Helidon Supported APIs]
+wiki page.
+
+Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.server`) that
+encapsulates the Helidon WebServer. You can either instantiate the server directly
+as is done in the
+<<guides/03_quickstart-mp.adoc, Helidon MP Quickstart example>>
+or use its built-in `main` as shown below.
 
 Complete these tasks to get started with your MicroProfile application.
 
 === Maven Coordinates
 
-Declare the following dependency in your project:
+The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes
+how you should declare dependency management for Helidon applications.
+Then declare the following dependency in your project:
 
 [source,xml]
 .Maven Dependency
@@ -102,7 +114,7 @@ Run the main class. The server will start on port 7001 and serve your
 
 === Adding Jandex
 
-Jandex is an indexing tool for Weld (CDI implementation) that helps speed up
+Jandex is an indexing tool for Weld (the CDI implementation used by Helidon) that helps speed up
 the boot time of an application.
 
 To use Jandex, configure a Maven plugin that adds the index to your
