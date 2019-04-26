@@ -70,9 +70,9 @@ class DbMapperManagerImpl implements DbMapperManager {
     }
 
     @Override
-    public <T> List<?> toIndexedParameters(T value, Class<T> valueClass, int expectedParameterCount) {
+    public <T> List<?> toIndexedParameters(T value, Class<T> valueClass) {
         return executeMapping(() -> findMapper(valueClass, false)
-                                      .toIndexedParameters(value, expectedParameterCount),
+                                      .toIndexedParameters(value),
                               value,
                               GenericType.create(valueClass),
                               TYPE_INDEXED_PARAMS);
@@ -158,7 +158,7 @@ class DbMapperManagerImpl implements DbMapperManager {
             }
 
             @Override
-            public List<?> toIndexedParameters(T value, int expectedParameterCount) {
+            public List<?> toIndexedParameters(T value) {
                 throw indexedParamsException;
             }
         };

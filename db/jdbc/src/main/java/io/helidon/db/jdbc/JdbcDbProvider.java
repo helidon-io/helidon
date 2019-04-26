@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.db.jdbc;
+
+import io.helidon.db.spi.DbProvider;
 
 /**
- * Helidon Common Mapper.
+ * Provider for JDBC database implementation.
  */
-module io.helidon.db {
-    requires java.logging;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.serviceloader;
+public class JdbcDbProvider implements DbProvider {
+    static final String JDBC_DB_TYPE = "jdbc";
+    @Override
+    public String name() {
+        return JDBC_DB_TYPE;
+    }
 
-    exports io.helidon.db;
-    exports io.helidon.db.spi;
-
-    uses io.helidon.db.spi.DbProvider;
-    uses io.helidon.db.spi.DbMapperProvider;
+    @SuppressWarnings("unchecked")
+    @Override
+    public JdbcDbProviderBuilder builder() {
+        return new JdbcDbProviderBuilder();
+    }
 }
