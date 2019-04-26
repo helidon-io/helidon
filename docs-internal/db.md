@@ -10,7 +10,7 @@ The Helidon DB is an abstraction layer over
 - statement processing
 - handling of results
 
-The Helidon DB in addition supports
+The Helidon DB also supports
 - queries using either indexed or named parameters
 - mapping of POJOs to database parameters using provided mapper(s)
     - `.createNamedDmlStatement("insert-mon").namedParam(pokemon)` would work if `Pokemon` db mapper is registered
@@ -22,7 +22,7 @@ The Helidon DB in addition supports
 
 The Helidon DB is *NOT*
 - Statement abstraction 
-    - users define statements in the language understood by the database (such as `SQL`)
+    - users write statements in the language understood by the database (such as `SQL`)
     - there is *NO* query language other than the database native query language
     
 As part of this proposal there is also added support for [generic mapping](generic-mapping.md)
@@ -253,7 +253,7 @@ db.execute(exec -> exec.namedQuery("select-all"))
 ```
 
 #### Get with indexed parameters
-The `get` method is a shortcut to a query method that expects zero to 1 results.
+The `get` methods (`get`, `namedGet`, `createGet` and `createNamedGet`) are a shortcut to a query method that expects zero to 1 results.
 For Java 8, you need to use `OptionalHelper.from(maybeRow)` to be able to use `ifPresentOrElse`.
 When using newer versions of Java, `ifPresentOrElse` is available on `Optional`.
 ```java

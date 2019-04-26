@@ -47,7 +47,7 @@ The main API class is `MapperManager`.
  *
  * @param source     object to map
  * @param sourceType type of the source object (to locate the mapper)
- * @param targetType type of teh target object (to locate the mapper)
+ * @param targetType type of the target object (to locate the mapper)
  * @return result of the mapping
  * @throws io.helidon.common.mapping.MapperException in case the mapper was not found or failed
  */
