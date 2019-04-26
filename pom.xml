@@ -156,7 +156,7 @@
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.0.8</version.lib.rxjava>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
-        <version.lib.snakeyaml>1.19</version.lib.snakeyaml>
+        <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
         <version.lib.spotbugs-annotations>3.1.3</version.lib.spotbugs-annotations>
         <version.lib.testng>6.13.1</version.lib.testng>
         <version.lib.typesafe-config>1.3.3</version.lib.typesafe-config>
