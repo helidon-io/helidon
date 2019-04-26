@@ -76,7 +76,7 @@ public interface MapperManager {
      *
      * @param source     object to map
      * @param sourceType type of the source object (to locate the mapper)
-     * @param targetType type of teh target object (to locate the mapper)
+     * @param targetType type of the target object (to locate the mapper)
      * @param <SOURCE>   type of the source
      * @param <TARGET>   type of the target
      * @return result of the mapping
@@ -90,7 +90,7 @@ public interface MapperManager {
      *
      * @param source     object to map
      * @param sourceType class of the source object (to locate the mapper)
-     * @param targetType class of teh target object (to locate the mapper)
+     * @param targetType class of the target object (to locate the mapper)
      * @param <SOURCE>   type of the source
      * @param <TARGET>   type of the target
      * @return result of the mapping
