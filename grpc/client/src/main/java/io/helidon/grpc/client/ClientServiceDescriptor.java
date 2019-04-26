@@ -420,7 +420,6 @@ public class ClientServiceDescriptor {
         @Override
         public Builder intercept(ClientInterceptor... interceptors) {
             Collections.addAll(this.interceptors, interceptors);
-            System.out.println("Added interceptor; Count: " + this.interceptors.size());
             return this;
         }
 

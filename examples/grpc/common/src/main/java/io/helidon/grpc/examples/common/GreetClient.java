@@ -19,18 +19,21 @@ package io.helidon.grpc.examples.common;
 import java.net.URI;
 
 import io.helidon.grpc.client.ClientRequestAttribute;
+import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.client.ClientTracingInterceptor;
+import io.helidon.grpc.client.GrpcServiceClient;
 import io.helidon.grpc.examples.common.Greet.GreetRequest;
+import io.helidon.grpc.examples.common.Greet.GreetResponse;
 import io.helidon.grpc.examples.common.Greet.SetGreetingRequest;
+import io.helidon.grpc.examples.common.Greet.SetGreetingResponse;
 import io.helidon.tracing.TracerBuilder;
 
 import io.grpc.Channel;
-import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannelBuilder;
 import io.opentracing.Tracer;
 
 /**
- * A client for the {@link GreetService}.
+ * A client for the {@link GreetService} implemented with Helidon gRPC client API.
  */
 public class GreetClient {
 
@@ -38,27 +41,43 @@ public class GreetClient {
     }
 
     /**
-     *  The program entry point.
-     * @param args  the program arguments
+     * The program entry point.
      *
-     * @throws Exception  if an error occurs
+     * @param args  the program arguments
      */
-    public static void main(String[] args) throws Exception {
-        Tracer tracer = (Tracer) TracerBuilder.create("Client")
+    public static void main(String[] args) {
+        Tracer tracer = TracerBuilder.create("Client")
                 .collectorUri(URI.create("http://localhost:9411/api/v2/spans"))
                 .build();
 
         ClientTracingInterceptor tracingInterceptor = ClientTracingInterceptor.builder(tracer)
-                .withVerbosity().withTracedAttributes(ClientRequestAttribute.ALL_CALL_OPTIONS).build();
+                .withVerbosity()
+                .withTracedAttributes(ClientRequestAttribute.ALL_CALL_OPTIONS)
+                .build();
 
-        Channel channel = ClientInterceptors
-                .intercept(ManagedChannelBuilder.forAddress("localhost", 1408).usePlaintext().build(), tracingInterceptor);
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor
+                .builder(GreetServiceGrpc.getServiceDescriptor())
+                .intercept(tracingInterceptor)
+                .build();
 
-        GreetServiceGrpc.GreetServiceBlockingStub greetSvc = GreetServiceGrpc.newBlockingStub(channel);
-        System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));
-        System.out.println(greetSvc.setGreeting(SetGreetingRequest.newBuilder().setGreeting("Ciao").build()));
-        System.out.println(greetSvc.greet(GreetRequest.newBuilder().setName("Aleks").build()));
+        Channel channel = ManagedChannelBuilder.forAddress("localhost", 1408)
+                .usePlaintext()
+                .build();
 
-        Thread.sleep(5000);
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
+
+        // Obtain a greeting from the GreetService
+        GreetRequest request = GreetRequest.newBuilder().setName("Aleks").build();
+        GreetResponse firstGreeting = client.blockingUnary("Greet", request);
+        System.out.println("First greeting: '" + firstGreeting.getMessage() + "'");
+
+        // Change the greeting
+        SetGreetingRequest setRequest = SetGreetingRequest.newBuilder().setGreeting("Ciao").build();
+        SetGreetingResponse setResponse = client.blockingUnary("SetGreeting", setRequest);
+        System.out.println("Greeting set to: '" + setResponse.getGreeting() + "'");
+
+        // Obtain a second greeting from the GreetService
+        GreetResponse secondGreeting = client.blockingUnary("Greet", request);
+        System.out.println("Second greeting: '" + secondGreeting.getMessage() + "'");
     }
 }
