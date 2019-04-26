@@ -231,6 +231,7 @@
         <module>bundles</module>
         <module>metrics</module>
         <module>health</module>
+        <module>db</module>
     </modules>
 
     <build>
