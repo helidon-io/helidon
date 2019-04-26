@@ -43,5 +43,6 @@
         <module>tests</module>
         <module>jwt-auth</module>
         <module>tracing</module>
+        <module>openapi</module>
     </modules>
 </project>

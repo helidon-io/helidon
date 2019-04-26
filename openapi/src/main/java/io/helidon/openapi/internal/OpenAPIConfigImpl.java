@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.openapi;
+package io.helidon.openapi.internal;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,13 +39,13 @@ import io.smallrye.openapi.api.OpenApiConfig;
  * a way to set the scanning-related values. We just initialize them
  * appropriately.
  */
-class OpenAPIConfigImpl implements OpenApiConfig {
+public class OpenAPIConfigImpl implements OpenApiConfig {
 
     private final String modelReader;
     private final String filter;
     private final Map<String, Set<String>> operationServers;
     private final Map<String, Set<String>> pathServers;
-    private final Boolean scanDisable = Boolean.TRUE;
+    private Boolean scanDisable = Boolean.TRUE;
     private final Set<String> scanPackages = Collections.emptySet();
     private final Set<String> scanClasses = Collections.emptySet();
     private final Set<String> scanExcludePackages = Collections.emptySet();
@@ -60,6 +60,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
         operationServers = builder.operationServers;
         pathServers = builder.pathServers;
         servers = new HashSet<>(builder.servers);
+        scanDisable = builder.scanDisable;
     }
 
     /**
@@ -139,7 +140,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     /**
-     * Fluent builder for {@link io.helidon.openapi.OpenAPIConfigImpl}.
+     * Fluent builder for {@link io.helidon.openapi.internal.OpenAPIConfigImpl}.
      * <p>
      * The caller can set values individually by invoking the method
      * corresponding to each value, or by passing a {@link Config} object with
@@ -174,6 +175,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
         private final Map<String, Set<String>> operationServers = new HashMap<>();
         private final Map<String, Set<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
+        private boolean scanDisable = true;
 
         private Builder() {
         }
@@ -291,6 +293,17 @@ class OpenAPIConfigImpl implements OpenApiConfig {
          */
         public Builder addServer(String server) {
             servers.add(server);
+            return this;
+        }
+
+        /**
+         * Sets whether annotation scanning should be disabled.
+         *
+         * @param value new setting for annotation scanning disabled flag
+         * @return updated builder
+         */
+        public Builder scanDisable(boolean value) {
+            scanDisable = value;
             return this;
         }
 

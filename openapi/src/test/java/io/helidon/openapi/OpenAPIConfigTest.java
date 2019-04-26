@@ -17,6 +17,7 @@ package io.helidon.openapi;
  *
  */
 
+import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import java.nio.file.Paths;
 
 import io.helidon.config.Config;
