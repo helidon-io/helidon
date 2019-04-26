@@ -15,6 +15,6 @@
  */
 
 /**
- * Reactive Database integration API for Helidon.
+ * Quick start demo application.
  */
-package io.helidon.db;
+package io.helidon.examples.db.jdbc;

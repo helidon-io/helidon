@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 
 /**
  * Representation of a single row in a database (in SQL this would be a row, in a Document DB, this would be a single document).
@@ -54,9 +55,9 @@ public interface DbRow {
      * @param <T>  type of the returned value
      * @param type class of the returned value type
      * @return instance of requested class containing this database row
-     * @throws io.helidon.common.mapper.MapperException in case the mapping is not defined or fails
+     * @throws MapperException in case the mapping is not defined or fails
      */
-    <T> T as(Class<T> type);
+    <T> T as(Class<T> type) throws MapperException;
 
     /**
      * Map this row to an object using a {@link io.helidon.db.DbMapper}.
@@ -64,9 +65,10 @@ public interface DbRow {
      * @param type type that supports generic declarations
      * @param <T>  type to be returned
      * @return typed row
-     * @throws io.helidon.common.mapper.MapperException in case the mapping is not defined or fails
+     * @throws MapperException in case the mapping is not defined or fails
+     * @throws MapperException in case the mapping is not defined or fails
      */
-    <T> T as(GenericType<T> type);
+    <T> T as(GenericType<T> type) throws MapperException;
 
     /**
      * Get specific class instance representation of this row.

@@ -50,6 +50,7 @@
         <module>webserver</module>
         <module>integrations</module>
         <module>employee-app</module>
+        <module>db</module>
     </modules>
 
     <build>
