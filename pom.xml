@@ -238,6 +238,7 @@
         <module>health</module>
         <module>grpc</module>
         <module>openapi</module>
+        <module>db</module>
     </modules>
 
     <build>
