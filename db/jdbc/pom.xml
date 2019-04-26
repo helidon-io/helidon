@@ -25,29 +25,19 @@
         <version>1.0.4-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-db</artifactId>
-    <name>Helidon DB</name>
-    <description>Helidon Reactive Database API</description>
+    <artifactId>helidon-db-jdbc</artifactId>
+    <name>Helidon DB JDBC</name>
+    <description>Helidon DB implementation for JDBC</description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-service-loader</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-context</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-mapper</artifactId>
+            <artifactId>helidon-common-configurable</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

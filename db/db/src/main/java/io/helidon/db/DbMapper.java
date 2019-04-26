@@ -48,14 +48,13 @@ public interface DbMapper<T> {
      * Convert target type instance to a statement indexed parameters list.
      * <p>
      * Using indexed parameters with typed values is probably not going to work nicely, unless
-     * the order is specified and the number of parameters is always related to which values are used.
+     * the order is specified and the number of parameters is always related the provided value.
      * There are cases where this is useful though - e.g. for types that represent an iterable collection.
      *
      * @param value mapping type instance containing values to be set into statement
-     * @param expectedParameterCount number of parameters expected by the statement
      * @return map of statement named parameters mapped to values to be set
      * @see io.helidon.db.DbStatement#indexedParam(Object)
      */
-    List<?> toIndexedParameters(T value, int expectedParameterCount);
+    List<?> toIndexedParameters(T value);
 
 }

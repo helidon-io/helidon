@@ -17,17 +17,12 @@
 /**
  * Helidon Common Mapper.
  */
-module io.helidon.db {
+module io.helidon.db.jdbc {
     requires java.logging;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.serviceloader;
+    requires java.sql;
 
-    exports io.helidon.db;
-    exports io.helidon.db.spi;
+    requires io.helidon.common.configurable;
+    requires io.helidon.db;
 
-    uses io.helidon.db.spi.DbProvider;
-    uses io.helidon.db.spi.DbMapperProvider;
+    provides io.helidon.db.spi.DbProvider with io.helidon.db.jdbc.JdbcDbProvider;
 }
