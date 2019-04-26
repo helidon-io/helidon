@@ -82,7 +82,8 @@ public interface MapperManager {
      * @return result of the mapping
      * @throws MapperException in case the mapper was not found or failed
      */
-    <SOURCE, TARGET> TARGET map(SOURCE source, GenericType<SOURCE> sourceType, GenericType<TARGET> targetType);
+    <SOURCE, TARGET> TARGET map(SOURCE source, GenericType<SOURCE> sourceType, GenericType<TARGET> targetType)
+            throws MapperException;
 
     /**
      * Map from source to target.
@@ -95,7 +96,7 @@ public interface MapperManager {
      * @return result of the mapping
      * @throws MapperException in case the mapper was not found or failed
      */
-    <SOURCE, TARGET> TARGET map(SOURCE source, Class<SOURCE> sourceType, Class<TARGET> targetType);
+    <SOURCE, TARGET> TARGET map(SOURCE source, Class<SOURCE> sourceType, Class<TARGET> targetType) throws MapperException;
 
     /**
      * Fluent API builder for {@link io.helidon.common.mapper.MapperManager}.
