@@ -18,6 +18,7 @@ package io.helidon.db;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 
 /**
  * Column data and metadata.
@@ -31,10 +32,10 @@ public interface DbColumn {
      * @param type class of the type that should be returned (must be supported by the underlying data type)
      * @param <T>  type of the returned value
      * @return value of this column correctly typed
-     * @throws io.helidon.common.mapper.MapperException in case the type is not the underlying {@link #javaType()} and
-     *                                                  there is no mapper registered for it
+     * @throws MapperException in case the type is not the underlying {@link #javaType()} and
+     *                         there is no mapper registered for it
      */
-    <T> T as(Class<T> type);
+    <T> T as(Class<T> type) throws MapperException;
 
     /**
      * Value of this column as a generic type.
@@ -44,9 +45,9 @@ public interface DbColumn {
      * @param type requested type
      * @param <T>  type of the returned value
      * @return value mapped to the expected type if possible
-     * @throws io.helidon.common.mapper.MapperException in case the mapping cannot be done
+     * @throws MapperException in case the mapping cannot be done
      */
-    <T> T as(GenericType<T> type);
+    <T> T as(GenericType<T> type) throws MapperException;
 
     /**
      * Untyped value of this column, returns java type as provided by the underlying database driver.

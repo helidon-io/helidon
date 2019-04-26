@@ -344,6 +344,23 @@
                 <artifactId>helidon-common-context</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-mapper</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- db -->
+            <dependency>
+                <groupId>io.helidon.db</groupId>
+                <artifactId>helidon-db</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.db</groupId>
+                <artifactId>helidon-db-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- tracing -->
             <dependency>
