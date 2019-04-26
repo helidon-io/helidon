@@ -38,5 +38,6 @@
         <module>http</module>
         <module>service-loader</module>
         <module>context</module>
+        <module>mapper</module>
     </modules>
 </project>
