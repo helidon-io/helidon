@@ -60,7 +60,7 @@ public interface DbRowResult<T> {
      * appropriate mapper using {@link io.helidon.db.DbMapperManager}.
      *
      * @param type generic type to map values to
-     * @param <U>  new type of teh row result
+     * @param <U>  new type of the row result
      * @return row result of the target type
      */
     <U> DbRowResult<U> map(GenericType<U> type);
