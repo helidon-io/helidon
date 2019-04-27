@@ -18,8 +18,6 @@ package io.helidon.media.jsonp.server;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
 import javax.json.JsonReader;
@@ -28,16 +26,15 @@ import javax.json.JsonWriter;
 
 import io.helidon.common.http.Content;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.JsonService;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
 
 import static io.helidon.media.common.ContentTypeCharset.determineCharset;
@@ -77,29 +74,13 @@ import static io.helidon.media.common.ContentTypeCharset.determineCharset;
  * @see JsonReader
  * @see JsonWriter
  */
-public final class JsonSupport implements Service, Handler {
+public final class JsonSupport extends JsonService {
     private static final JsonSupport INSTANCE = new JsonSupport(JsonProcessing.create());
 
     private final JsonProcessing processingSupport;
 
     private JsonSupport(JsonProcessing processing) {
         this.processingSupport = processing;
-    }
-
-    /**
-     * It registers reader and writer for {@link JsonSupport} on {@link ServerRequest}/{@link ServerResponse} for any
-     * {@link Http.Method HTTP method}.
-     * <p>
-     * This method is called from {@link Routing} during build process. The user should register whole class
-     * ot the routing: {@code Routing.builder().}{@link Routing.Builder#register(Service...) register}{@code (JsonSupport
-     * .create())}.
-     *
-     * @param routingRules a routing configuration where JSON support should be registered
-     * @see Routing
-     */
-    @Override
-    public void update(Routing.Rules routingRules) {
-        routingRules.any(this);
     }
 
     /**
@@ -126,7 +107,7 @@ public final class JsonSupport implements Service, Handler {
                     return reader(charset).apply(publisher);
                 });
         // Writer
-        response.registerWriter(json -> (json instanceof JsonStructure) && testOrSetContentType(request, response),
+        response.registerWriter(json -> (json instanceof JsonStructure) && acceptsJson(request, response),
                                 json -> {
                                     Charset charset = determineCharset(response.headers());
                                     return writer(charset).apply((JsonStructure) json);
@@ -134,52 +115,17 @@ public final class JsonSupport implements Service, Handler {
         request.next();
     }
 
-    /**
-     * Deals with request {@code Accept} and response {@code Content-Type} headers to determine if writer can be used.
-     * <p>
-     * If response has no {@code Content-Type} header then it is set to the response.
-     *
-     * @param request  a server request
-     * @param response a server response
-     * @return {@code true} if JSON writer can be used
-     */
-    private boolean testOrSetContentType(ServerRequest request, ServerResponse response) {
-        MediaType mt = response.headers().contentType().orElse(null);
-        if (mt == null) {
-            // Find if accepts any JSON compatible type
-            List<MediaType> acceptedTypes = request.headers().acceptedTypes();
-            MediaType preferredType;
-            if (acceptedTypes.isEmpty()) {
-                preferredType = MediaType.APPLICATION_JSON;
-            } else {
-                preferredType = acceptedTypes
-                        .stream()
-                        .map(type -> {
-                            if (type.test(MediaType.APPLICATION_JSON)) {
-                                return MediaType.APPLICATION_JSON;
-                            } else if (type.test(JsonProcessing.APPLICATION_JAVASCRIPT)) {
-                                return JsonProcessing.APPLICATION_JAVASCRIPT;
-                            } else if (type.test(JsonProcessing.TEXT_JAVASCRIPT)) {
-                                return JsonProcessing.TEXT_JAVASCRIPT;
-                            } else if (type.hasSuffix("json")) {
-                                return MediaType.create(type.type(), type.subtype());
-                            } else {
-                                return null;
-                            }
-                        })
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .orElse(null);
+    @Override
+    protected MediaType toJsonResponseType(final MediaType acceptedType) {
+        MediaType result = super.toJsonResponseType(acceptedType);
+        if (result == null) {
+            if (acceptedType.test(JsonProcessing.APPLICATION_JAVASCRIPT)) {
+                result = JsonProcessing.APPLICATION_JAVASCRIPT;
+            } else if (acceptedType.test(JsonProcessing.TEXT_JAVASCRIPT)) {
+                result = JsonProcessing.TEXT_JAVASCRIPT;
             }
-            if (preferredType == null) {
-                return false;
-            } else {
-                response.headers().contentType(preferredType);
-                return true;
-            }
-        } else {
-            return MediaType.JSON_PREDICATE.test(mt);
         }
+        return result;
     }
 
     /**
