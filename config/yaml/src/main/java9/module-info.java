@@ -21,7 +21,7 @@ module io.helidon.config.yaml {
 
     requires java.logging;
 
-    requires snakeyaml;
+    requires org.yaml.snakeyaml;
 
     requires transitive io.helidon.config;
     requires io.helidon.common;
