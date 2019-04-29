@@ -60,14 +60,9 @@ public class SecureServer {
                 .intercept("SetGreeting", GrpcSecurity.rolesAllowed("admin"))
                 .build();
 
-        ServiceDescriptor greetService2 = ServiceDescriptor.builder(new GreetService(config))
-                .name("GreetService2")
-                .build();
-
         GrpcRouting grpcRouting = GrpcRouting.builder()
                 .intercept(GrpcSecurity.create(security).securityDefaults(GrpcSecurity.authenticate()))
                 .register(greetService1)
-                .register(greetService2)
                 .register(new StringService())
                 .build();
 

@@ -29,7 +29,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.webserver.ServerRequest;
 
-import io.grpc.CallCredentials2;
+import io.grpc.CallCredentials;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -39,12 +39,12 @@ import io.opentracing.tag.Tags;
 import static io.helidon.security.integration.grpc.GrpcSecurity.ABAC_ATTRIBUTE_METHOD;
 
 /**
- * A gRPC {@link CallCredentials2} implementation.
+ * A gRPC {@link CallCredentials} implementation.
  * <p>
  * Only works as part of integration with the Helidon Security component.
  */
 public class GrpcClientSecurity
-        extends CallCredentials2 {
+        extends CallCredentials {
 
     /**
      * Property name for outbound security provider name. Set this with

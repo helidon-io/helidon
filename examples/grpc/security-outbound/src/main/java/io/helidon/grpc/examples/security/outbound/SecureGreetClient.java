@@ -17,8 +17,12 @@
 package io.helidon.grpc.examples.security.outbound;
 
 
+import io.helidon.config.Config;
 import io.helidon.grpc.examples.common.Greet;
 import io.helidon.grpc.examples.common.GreetServiceGrpc;
+import io.helidon.security.Security;
+import io.helidon.security.integration.grpc.GrpcClientSecurity;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
@@ -41,8 +45,23 @@ public class SecureGreetClient {
                 .usePlaintext()
                 .build();
 
+        Config config = Config.create();
+
+        // configure Helidon security and add the basic auth provider
+        Security security = Security.builder()
+                .addProvider(HttpBasicAuthProvider.create(config.get("http-basic-auth")))
+                .build();
+
+        // create the gRPC client security call credentials
+        // setting the properties used by the basic auth provider for user name and password
+        GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client"))
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Bob")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .build();
+
+        // create the GreetService client stub and use the GrpcClientSecurity call credentials
         GreetServiceGrpc.GreetServiceBlockingStub stub = GreetServiceGrpc.newBlockingStub(channel)
-                .withCallCredentials(new BasicAuthCallCredentials("Bob", "password"));
+                .withCallCredentials(clientSecurity);
 
         Greet.GreetResponse greetResponse = stub.greet(Greet.GreetRequest.newBuilder().setName("Bob").build());
 
