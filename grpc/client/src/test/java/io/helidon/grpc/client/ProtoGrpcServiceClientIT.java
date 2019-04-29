@@ -143,10 +143,21 @@ public class ProtoGrpcServiceClientIT {
     public void testAsyncClientStreamingMethodWithIterable() throws Throwable {
         String expectedSentence = "A simple invocation of a client streaming method";
         Collection<StringMessage> input = Arrays.stream(expectedSentence.split(" "))
-                                                .map(w -> StringMessage.newBuilder().setText(w).build())
-                                                .collect(Collectors.toList());
+                .map(w -> StringMessage.newBuilder().setText(w).build())
+                .collect(Collectors.toList());
 
         CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input);
+        assertThat(result.get().getText(), equalTo(expectedSentence));
+    }
+
+    @Test
+    public void testAsyncClientStreamingMethodWithStream() throws Throwable {
+        String expectedSentence = "A simple invocation of a client streaming method";
+        Collection<StringMessage> input = Arrays.stream(expectedSentence.split(" "))
+                .map(w -> StringMessage.newBuilder().setText(w).build())
+                .collect(Collectors.toList());
+
+        CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input.stream());
         assertThat(result.get().getText(), equalTo(expectedSentence));
     }
 
@@ -176,8 +187,8 @@ public class ProtoGrpcServiceClientIT {
 
         Spliterator<StringMessage> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
         String result = StreamSupport.stream(spliterator, false)
-                                            .map(StringMessage::getText)
-                                            .collect(Collectors.joining(" "));
+                .map(StringMessage::getText)
+                .collect(Collectors.joining(" "));
 
         assertThat(result, is(sentence));
     }
@@ -197,9 +208,9 @@ public class ProtoGrpcServiceClientIT {
                 .assertValueCount(expectedWords.length);
 
         String[] results = observer.values()
-                                   .stream()
-                                   .map(StringMessage::getText)
-                                   .toArray(String[]::new);
+                .stream()
+                .map(StringMessage::getText)
+                .toArray(String[]::new);
 
         assertThat(results, is(expectedWords));
     }
@@ -224,9 +235,9 @@ public class ProtoGrpcServiceClientIT {
 
 
         String[] results = observer.values()
-                                   .stream()
-                                   .map(StringMessage::getText)
-                                   .toArray(String[]::new);
+                .stream()
+                .map(StringMessage::getText)
+                .toArray(String[]::new);
 
         assertThat(results, is(expectedWords));
     }
@@ -238,7 +249,7 @@ public class ProtoGrpcServiceClientIT {
                 equalTo(inputStr.toLowerCase()));
 
         assertThat(lowPriorityInterceptor.getInvocationCount(), equalTo(1));
-        assertThat(mediumPriorityInterceptor.getInvocationCount(), equalTo(2));
+        assertThat(mediumPriorityInterceptor.getInvocationCount(), equalTo(1));
         assertThat(highPriorityInterceptor.getInvocationCount(), equalTo(0));
     }
 
@@ -249,7 +260,7 @@ public class ProtoGrpcServiceClientIT {
                 equalTo(inputStr.toUpperCase()));
 
         assertThat(lowPriorityInterceptor.getInvocationCount(), equalTo(0));
-        assertThat(mediumPriorityInterceptor.getInvocationCount(), equalTo(2));
+        assertThat(mediumPriorityInterceptor.getInvocationCount(), equalTo(1));
         assertThat(highPriorityInterceptor.getInvocationCount(), equalTo(1));
     }
 }

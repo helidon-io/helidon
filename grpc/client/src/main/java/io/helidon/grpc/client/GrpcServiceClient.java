@@ -19,6 +19,8 @@ package io.helidon.grpc.client;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -76,9 +78,6 @@ public class GrpcServiceClient {
         for (ClientMethodDescriptor cmd : clientServiceDescriptor.methods()) {
             GrpcMethodStub methodStub = new GrpcMethodStub(channel, callOptions, cmd);
             PriorityClientInterceptors interceptors = new PriorityClientInterceptors(clientServiceDescriptor.interceptors());
-            if (this.clientServiceDescriptor.interceptors().size() > 0) {
-                interceptors.add(this.clientServiceDescriptor.interceptors());
-            }
             if (this.clientServiceDescriptor.interceptors().size() > 0) {
                 interceptors.add(cmd.interceptors());
             }
@@ -198,15 +197,28 @@ public class GrpcServiceClient {
      * @return A {@link StreamObserver} to retrieve the method call result
      */
     public <ReqT, RespT> CompletableFuture<RespT> clientStreaming(String methodName, Iterable<ReqT> items) {
+        return clientStreaming(methodName, StreamSupport.stream(items.spliterator(), false));
+    }
+
+    /**
+     * Invoke the specified client streaming method.
+     *
+     * @param methodName the method name to be invoked
+     * @param items      a {@link java.util.stream.Stream} of items to be streamed to the server
+     * @param <ReqT>     the request type
+     * @param <RespT>    the response type
+     * @return A {@link StreamObserver} to retrieve the method call result
+     */
+    public <ReqT, RespT> CompletableFuture<RespT> clientStreaming(String methodName, Stream<ReqT> items) {
         SingleValueStreamObserver<RespT> obsv = new SingleValueStreamObserver<>();
         GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.CLIENT_STREAMING);
         StreamObserver<ReqT> reqStream = ClientCalls.asyncClientStreamingCall(
                 stub.getChannel().newCall(stub.descriptor().descriptor(), stub.getCallOptions()),
                 obsv);
 
-        for (ReqT item : items) {
+        items.forEach(item -> {
             reqStream.onNext(item);
-        }
+        });
         reqStream.onCompleted();
 
         return obsv.getFuture();

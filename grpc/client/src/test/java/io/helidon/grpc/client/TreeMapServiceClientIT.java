@@ -87,7 +87,7 @@ public class TreeMapServiceClientIT {
 
     @Test
     public void testCreateAndInvokeUnary() {
-        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder(TreeMapService.class)
                 .unary("get")
                 .build();
 
@@ -165,7 +165,6 @@ public class TreeMapServiceClientIT {
                 .assertValue(expected);
     }
 
-
     @Test
     public void testCreateAndInvokeBidiStreamingMethod() {
         ClientServiceDescriptor descriptor = ClientServiceDescriptor.builder("TreeMapService", TreeMapService.class)
@@ -189,4 +188,5 @@ public class TreeMapServiceClientIT {
 
         assertThat(observer.values(), contains(TreeMapService.ARAGON, TreeMapService.GALARDRIEL, TreeMapService.GANDALF));
     }
+
 }
