@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.grpc.core.PriorityBag;
+
 import io.grpc.ServerInterceptor;
 
 /**
@@ -37,7 +39,7 @@ public class GrpcRoutingImpl
      * The {@link List} of the global {@link io.grpc.ServerInterceptor}s that should
      * be applied to all services.
      */
-    private List<ServerInterceptor> interceptors;
+    private PriorityBag<ServerInterceptor> interceptors;
 
     /**
      * Create a {@link GrpcRoutingImpl}.
@@ -46,9 +48,9 @@ public class GrpcRoutingImpl
      * @param interceptors  the {@link List} of the global {@link io.grpc.ServerInterceptor}s that should
      *                      be applied to all services
      */
-    GrpcRoutingImpl(List<ServiceDescriptor> services, List<ServerInterceptor> interceptors) {
+    GrpcRoutingImpl(List<ServiceDescriptor> services, PriorityBag<ServerInterceptor> interceptors) {
         this.services = new ArrayList<>(Objects.requireNonNull(services));
-        this.interceptors = new ArrayList<>(Objects.requireNonNull(interceptors));
+        this.interceptors = interceptors.copyMe();
     }
 
     @Override
@@ -57,7 +59,7 @@ public class GrpcRoutingImpl
     }
 
     @Override
-    public List<ServerInterceptor> interceptors() {
-        return interceptors;
+    public PriorityBag<ServerInterceptor> interceptors() {
+        return interceptors.readOnly();
     }
 }

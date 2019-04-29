@@ -24,7 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Priority;
+
 import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.InterceptorPriorities;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -47,6 +50,7 @@ import io.opentracing.propagation.TextMap;
  * A {@link ClientInterceptor} that captures tracing information into
  * Open Tracing {@link Span}s for client calls.
  */
+@Priority(InterceptorPriorities.TRACING)
 public class ClientTracingInterceptor
         implements ClientInterceptor {
 

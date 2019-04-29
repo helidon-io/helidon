@@ -38,6 +38,7 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.BindableService;
 import io.grpc.HandlerRegistry;
@@ -108,6 +109,11 @@ public class GrpcServerImpl implements GrpcServer {
      * The map of service class name to {@link ServerServiceDefinition}.
      */
     private Map<String, ServerServiceDefinition> mapServices = new ConcurrentHashMap<>();
+
+    /**
+     * The map of service names to {@link io.helidon.grpc.server.ServiceDescriptor ServiceDescriptors}.
+     */
+    private Map<String, ServiceDescriptor> services = new ConcurrentHashMap<>();
 
     // ---- constructors ----------------------------------------------------
 
@@ -226,6 +232,11 @@ public class GrpcServerImpl implements GrpcServer {
         return healthService.healthChecks().toArray(new HealthCheck[0]);
     }
 
+    @Override
+    public Map<String, ServiceDescriptor> services() {
+        return Collections.unmodifiableMap(services);
+    }
+
     // ---- helper methods --------------------------------------------------
 
     private NettyServerBuilder configureNetty(NettyServerBuilder builder) {
@@ -258,7 +269,7 @@ public class GrpcServerImpl implements GrpcServer {
      * @param globalInterceptors the global {@link io.grpc.ServerInterceptor}s to wrap all services with
      * @throws NullPointerException if {@code serviceDescriptor} is {@code null}
      */
-    public void deploy(ServiceDescriptor serviceDescriptor, List<ServerInterceptor> globalInterceptors) {
+    public void deploy(ServiceDescriptor serviceDescriptor, PriorityBag<ServerInterceptor> globalInterceptors) {
         Objects.requireNonNull(serviceDescriptor);
 
         String serverName = config.name();
@@ -266,6 +277,7 @@ public class GrpcServerImpl implements GrpcServer {
         ServerServiceDefinition ssd = service.bindService();
         String serviceName = ssd.getServiceDescriptor().getName();
 
+        services.put(serviceDescriptor.name(), serviceDescriptor);
         handlerRegistry.addService(ssd);
         mapServices.put(service.getClass().getName(), ssd);
         healthService.add(serviceName, serviceDescriptor.healthCheck());

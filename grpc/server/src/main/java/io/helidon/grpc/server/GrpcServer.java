@@ -16,11 +16,12 @@
 
 package io.helidon.grpc.server;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
+
+import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.ServerInterceptor;
 import io.opentracing.Tracer;
@@ -75,6 +76,14 @@ public interface GrpcServer {
      * @return an array of {@link HealthCheck} instances for this server
      */
     HealthCheck[] healthChecks();
+
+    /**
+     * Obtain the deployed services.
+     *
+     * @return an immutable {@link Map} of deployed {@link ServiceDescriptor}s
+     *         keyed by service name
+     */
+    Map<String, ServiceDescriptor> services();
 
     /**
      * Returns {@code true} if the server is currently running. A running server
@@ -270,7 +279,7 @@ public interface GrpcServer {
          */
         @Override
         public GrpcServer build() {
-            List<ServerInterceptor> interceptors = new ArrayList<>();
+            PriorityBag<ServerInterceptor> interceptors = new PriorityBag<>();
             GrpcServerImpl server = new GrpcServerImpl(configuration);
 
             interceptors.add(new ContextSettingServerInterceptor());
@@ -282,7 +291,7 @@ public interface GrpcServer {
 
             // add the global interceptors from the routing AFTER the tracing interceptor
             // so that all of those interceptors are included in the trace timings
-            interceptors.addAll(routing.interceptors());
+            interceptors.merge(routing.interceptors());
 
             for (ServiceDescriptor service : routing.services()) {
                 server.deploy(service, interceptors);

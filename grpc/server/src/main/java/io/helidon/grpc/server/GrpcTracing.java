@@ -21,8 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Priority;
+
 import io.helidon.grpc.core.ContextKeys;
-import io.helidon.grpc.core.InterceptorPriority;
+import io.helidon.grpc.core.InterceptorPriorities;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -42,8 +44,9 @@ import io.opentracing.propagation.TextMapExtractAdapter;
 /**
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.
  */
+@Priority(InterceptorPriorities.TRACING)
 public class GrpcTracing
-        implements PriorityServerInterceptor {
+        implements ServerInterceptor {
     /**
      * public constructor.
      *
@@ -56,11 +59,6 @@ public class GrpcTracing
         streaming = tracingConfig.isStreaming();
         verbose = tracingConfig.isVerbose();
         tracedAttributes = tracingConfig.tracedAttributes();
-    }
-
-    @Override
-    public InterceptorPriority getInterceptorPriority() {
-        return InterceptorPriority.Context;
     }
 
     @Override

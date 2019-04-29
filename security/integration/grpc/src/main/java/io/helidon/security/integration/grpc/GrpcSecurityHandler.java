@@ -31,11 +31,12 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
-import io.helidon.grpc.core.InterceptorPriority;
-import io.helidon.grpc.server.PriorityServerInterceptor;
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
@@ -55,6 +56,7 @@ import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -67,16 +69,17 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
  * or automatically from configuration when integration is done through {@link GrpcSecurity#create(Config)}
  * or {@link GrpcSecurity#create(Security)}.
  * <p>
- * This class is an implementation of a {@link PriorityServerInterceptor} with a priority of
- * {@link InterceptorPriority#Context} that will add itself to the call context with the key
+ * This class is an implementation of a {@link ServerInterceptor} with a priority of
+ * {@link InterceptorPriorities#CONTEXT} that will add itself to the call context with the key
  * {@link GrpcSecurity#GRPC_SECURITY_HANDLER}. This will then cause the {@link GrpcSecurity}
- * interceptor that runs later with a priority of {@link InterceptorPriority#Security} to use
+ * interceptor that runs later with a priority of {@link InterceptorPriorities#AUTHENTICATION} to use
  * this instance of the handler.
  */
 // we need to have all fields optional and this is cleaner than checking for null
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+@Priority(InterceptorPriorities.CONTEXT)
 public class GrpcSecurityHandler
-        implements PriorityServerInterceptor, ServiceDescriptor.Configurer {
+        implements ServerInterceptor, ServiceDescriptor.Configurer {
     private static final Logger LOGGER = Logger.getLogger(GrpcSecurityHandler.class.getName());
     private static final String KEY_ROLES_ALLOWED = "roles-allowed";
     private static final String KEY_AUTHENTICATOR = "authenticator";
@@ -301,11 +304,6 @@ public class GrpcSecurityHandler
     @Override
     public void configure(ServiceDescriptor.Rules rules) {
         rules.addContextValue(GrpcSecurity.GRPC_SECURITY_HANDLER, this);
-    }
-
-    @Override
-    public InterceptorPriority getInterceptorPriority() {
-        return InterceptorPriority.Context;
     }
 
     @Override

@@ -22,6 +22,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import io.helidon.grpc.core.InterceptorPriorities;
+import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.BindableService;
 import io.grpc.Metadata;
@@ -44,12 +48,12 @@ class BindableServiceImpl implements BindableService {
     /**
      * The global interceptors to apply.
      */
-    private final List<ServerInterceptor> globalInterceptors;
+    private final PriorityBag<ServerInterceptor> globalInterceptors;
 
 
-    BindableServiceImpl(ServiceDescriptor descriptor, List<ServerInterceptor> interceptors) {
+    BindableServiceImpl(ServiceDescriptor descriptor, PriorityBag<ServerInterceptor> interceptors) {
         this.descriptor = descriptor;
-        this.globalInterceptors = interceptors;
+        this.globalInterceptors = interceptors.copyMe();
     }
 
     // ---- BindableService implementation ----------------------------------
@@ -70,10 +74,11 @@ class BindableServiceImpl implements BindableService {
     private <ReqT, RespT> ServerCallHandler<ReqT, RespT> wrapCallHandler(MethodDescriptor<ReqT, RespT> method) {
         ServerCallHandler<ReqT, RespT> handler = method.callHandler();
 
-        PriorityServerInterceptors priorityServerInterceptors = new PriorityServerInterceptors(globalInterceptors);
-        priorityServerInterceptors.add(descriptor.interceptors());
-        priorityServerInterceptors.add(method.interceptors());
-        List<ServerInterceptor> interceptors = priorityServerInterceptors.getInterceptors();
+        PriorityBag<ServerInterceptor> priorityServerInterceptors = new PriorityBag<>(InterceptorPriorities.USER);
+        priorityServerInterceptors.addAll(globalInterceptors);
+        priorityServerInterceptors.addAll(descriptor.interceptors());
+        priorityServerInterceptors.addAll(method.interceptors());
+        List<ServerInterceptor> interceptors = priorityServerInterceptors.stream().collect(Collectors.toList());
 
         if (interceptors.size() > 0) {
             LinkedHashSet<ServerInterceptor> uniqueInterceptors = new LinkedHashSet<>(interceptors.size());

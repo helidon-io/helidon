@@ -21,7 +21,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Priority;
+
 import io.helidon.grpc.core.GrpcHelper;
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.MethodDescriptor;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.metrics.RegistryFactory;
@@ -43,6 +46,7 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * A {@link io.grpc.ServerInterceptor} that enables capturing of gRPC call metrics.
  */
+@Priority(InterceptorPriorities.TRACING + 1)
 public class GrpcMetrics
         implements ServerInterceptor, ServiceDescriptor.Configurer, MethodDescriptor.Configurer {
 

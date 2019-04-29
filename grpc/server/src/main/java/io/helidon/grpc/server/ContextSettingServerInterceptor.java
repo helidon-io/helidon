@@ -19,13 +19,16 @@ package io.helidon.grpc.server;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.grpc.core.InterceptorPriority;
+import javax.annotation.Priority;
+
+import io.helidon.grpc.core.InterceptorPriorities;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 
 import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 
@@ -33,8 +36,9 @@ import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
  * A {@link io.grpc.ServerInterceptor} that sets values into the
  * gRPC call context.
  */
+@Priority(InterceptorPriorities.CONTEXT)
 class ContextSettingServerInterceptor
-        implements PriorityServerInterceptor, ServiceDescriptor.Aware {
+        implements ServerInterceptor, ServiceDescriptor.Aware {
 
     /**
      * The {@link ServiceDescriptor} for the service being intercepted.
@@ -67,11 +71,6 @@ class ContextSettingServerInterceptor
         }
 
         return Contexts.interceptCall(context, call, headers, next);
-    }
-
-    @Override
-    public InterceptorPriority getInterceptorPriority() {
-        return InterceptorPriority.Context;
     }
 
     @Override
