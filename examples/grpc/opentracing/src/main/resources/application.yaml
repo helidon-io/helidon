@@ -24,3 +24,6 @@ grpc:
 webserver:
   port: 8080
   bind-address: "0.0.0.0"
+
+tracing:
+  service: "grpc-server"

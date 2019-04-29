@@ -79,7 +79,7 @@ public class Server {
                 .add(grpcServer.healthChecks())
                 .build();
 
-        // start web server with metrics and health endpoints
+        // start web server with health endpoint
         Routing routing = Routing.builder()
                 .register(health)
                 .build();

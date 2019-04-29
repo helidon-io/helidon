@@ -16,7 +16,6 @@
 
 package io.helidon.grpc.examples.opentracing;
 
-import java.net.URI;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
@@ -53,9 +52,7 @@ public class ZipkinExampleMain {
         LogManager.getLogManager().readConfiguration(
                 ZipkinExampleMain.class.getResourceAsStream("/logging.properties"));
 
-        Tracer tracer = (Tracer) TracerBuilder.create("Server")
-                .collectorUri(URI.create("http://localhost:9411/api/v2/spans"))
-                .build();
+        Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
 
         TracingConfiguration tracingConfig = new TracingConfiguration.Builder()
                 .withStreaming()

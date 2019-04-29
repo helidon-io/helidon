@@ -58,5 +58,10 @@
           <artifactId>helidon-health-checks</artifactId>
           <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
