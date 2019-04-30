@@ -23,5 +23,5 @@ module io.helidon.microprofile.openapi {
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
 
-
+    exports io.helidon.microprofile.openapi;
 }

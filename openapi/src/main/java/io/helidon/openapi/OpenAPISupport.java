@@ -192,8 +192,8 @@ public class OpenAPISupport implements Service {
     private void expandModelUsingAnnotations(final OpenApiConfig config) throws IOException {
         try (InputStream jandexIS = getClass().getResourceAsStream(JANDEX_INDEX_PATH)) {
             if (jandexIS == null) {
-                LOGGER.log(Level.FINE,
-                        "OpenAPI Annotation processing enabled but jandex index {0} not found; "
+                LOGGER.log(Level.WARNING,
+                        "OpenAPI Annotation processing is enabled but jandex index {0} not found; "
                         + "continuing without scanning for OpenAPI-related annotations", JANDEX_INDEX_PATH);
                 return;
             }

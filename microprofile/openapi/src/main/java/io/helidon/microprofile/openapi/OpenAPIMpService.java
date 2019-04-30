@@ -38,5 +38,4 @@ public class OpenAPIMpService implements MpService {
 
         openAPISupport.configureEndpoint(context.serverRoutingBuilder());
     }
-
 }
