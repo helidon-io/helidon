@@ -18,16 +18,17 @@ package io.helidon.grpc.client;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.MarshallerSupplier;
+import io.helidon.grpc.core.PriorityBag;
 
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -45,11 +46,11 @@ public class ClientServiceDescriptor {
 
     private String serviceName;
     private Map<String, ClientMethodDescriptor> methods;
-    private LinkedList<ClientInterceptor> interceptors;
+    private PriorityBag<ClientInterceptor> interceptors;
 
     private ClientServiceDescriptor(String serviceName,
                                     Map<String, ClientMethodDescriptor> methods,
-                                    LinkedList<ClientInterceptor> interceptors) {
+                                    PriorityBag<ClientInterceptor> interceptors) {
         this.serviceName = serviceName;
         this.methods = methods;
         this.interceptors = interceptors;
@@ -160,7 +161,7 @@ public class ClientServiceDescriptor {
      *
      * @return service interceptors
      */
-    public List<ClientInterceptor> interceptors() {
+    public PriorityBag<ClientInterceptor> interceptors() {
         return interceptors;
     }
 
@@ -217,6 +218,18 @@ public class ClientServiceDescriptor {
         Rules intercept(ClientInterceptor... interceptors);
 
         /**
+         * Add one or more {@link ClientInterceptor} instances that will intercept calls
+         * to this service.
+         * <p>
+         * The added interceptors will be applied using the specified priority.
+         *
+         * @param priority     the priority to assign to the interceptors
+         * @param interceptors one or more {@link ClientInterceptor}s to add
+         * @return this builder to allow fluent method chaining
+         */
+        Rules intercept(int priority, ClientInterceptor... interceptors);
+
+        /**
          * Register one or more {@link ClientInterceptor interceptors} for a named method of the service.
          *
          * @param methodName   the getName of the method to intercept
@@ -225,6 +238,20 @@ public class ClientServiceDescriptor {
          * @throws IllegalArgumentException if no method exists for the specified getName
          */
         Rules intercept(String methodName, ClientInterceptor... interceptors);
+
+        /**
+         * Register one or more {@link io.grpc.ClientInterceptor interceptors} for a named method of the service.
+         * <p>
+         * The added interceptors will be applied using the specified priority.
+         *
+         * @param methodName   the name of the method to intercept
+         * @param priority     the priority to assign to the interceptors
+         * @param interceptors the interceptor(s) to register
+         * @return this {@link Rules} instance for fluent call chaining
+         *
+         * @throws IllegalArgumentException if no method exists for the specified name
+         */
+        Rules intercept(String methodName, int priority, ClientInterceptor... interceptors);
 
         /**
          * Register unary method for the service.
@@ -304,7 +331,7 @@ public class ClientServiceDescriptor {
     public static final class Builder
             implements Rules, io.helidon.common.Builder<ClientServiceDescriptor> {
         private String name;
-        private LinkedList<ClientInterceptor> interceptors = new LinkedList<>();
+        private PriorityBag<ClientInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
         private Class<?> serviceClass;
         private Descriptors.FileDescriptor proto;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.defaultInstance();
@@ -430,7 +457,13 @@ public class ClientServiceDescriptor {
 
         @Override
         public Builder intercept(ClientInterceptor... interceptors) {
-            Collections.addAll(this.interceptors, interceptors);
+            this.interceptors.addAll(Arrays.asList(interceptors));
+            return this;
+        }
+
+        @Override
+        public Rules intercept(int priority, ClientInterceptor... interceptors) {
+            this.interceptors.addAll(Arrays.asList(interceptors), priority);
             return this;
         }
 
@@ -443,6 +476,19 @@ public class ClientServiceDescriptor {
             }
 
             method.intercept(interceptors);
+
+            return this;
+        }
+
+        @Override
+        public Rules intercept(String methodName, int priority, ClientInterceptor... interceptors) {
+            ClientMethodDescriptor.Builder method = methodBuilders.get(methodName);
+
+            if (method == null) {
+                throw new IllegalArgumentException("No method exists with getName '" + methodName + "'");
+            }
+
+            method.intercept(priority, interceptors);
 
             return this;
         }

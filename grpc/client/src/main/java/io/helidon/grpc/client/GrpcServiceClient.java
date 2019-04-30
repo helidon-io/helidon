@@ -18,11 +18,17 @@ package io.helidon.grpc.client;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.concurrent.ThreadSafe;
+
+import io.helidon.grpc.core.InterceptorPriorities;
+import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -75,17 +81,31 @@ public class GrpcServiceClient {
         // Merge Interceptors specified in Channel, ClientServiceDescriptor and ClientMethodDescriptor.
         // Add the merged interceptor list to the AbstractStub which will be be used for the invocation
         // of the method.
-        for (ClientMethodDescriptor cmd : clientServiceDescriptor.methods()) {
-            GrpcMethodStub methodStub = new GrpcMethodStub(channel, callOptions, cmd);
-            PriorityClientInterceptors interceptors = new PriorityClientInterceptors(clientServiceDescriptor.interceptors());
-            if (this.clientServiceDescriptor.interceptors().size() > 0) {
-                interceptors.add(cmd.interceptors());
+        for (ClientMethodDescriptor methodDescriptor : clientServiceDescriptor.methods()) {
+            GrpcMethodStub methodStub = new GrpcMethodStub(channel, callOptions, methodDescriptor);
+
+            PriorityBag<ClientInterceptor> priorityInterceptors = new PriorityBag<>(InterceptorPriorities.USER);
+            priorityInterceptors.addAll(clientServiceDescriptor.interceptors());
+            priorityInterceptors.addAll(methodDescriptor.interceptors());
+            List<ClientInterceptor> interceptors = priorityInterceptors.stream().collect(Collectors.toList());
+
+            if (interceptors.size() > 0) {
+                LinkedHashSet<ClientInterceptor> uniqueInterceptors = new LinkedHashSet<>(interceptors.size());
+
+                // iterate the interceptors in reverse order so that the interceptor chain is in the correct order
+                for (int i = interceptors.size() - 1; i >= 0; i--) {
+                    ClientInterceptor interceptor = interceptors.get(i);
+                    if (!uniqueInterceptors.contains(interceptor)) {
+                        uniqueInterceptors.add(interceptor);
+                    }
+                }
+
+                for (ClientInterceptor interceptor : uniqueInterceptors) {
+                    methodStub = (GrpcMethodStub) methodStub.withInterceptors(interceptor);
+                }
             }
-            if (interceptors.getInterceptors().size() > 0) {
-               methodStub = (GrpcMethodStub) methodStub.withInterceptors(
-                       interceptors.getInterceptors().toArray(new ClientInterceptor[0]));
-            }
-            methodStubs.put(cmd.name(), methodStub);
+
+            methodStubs.put(methodDescriptor.name(), methodStub);
         }
     }
 

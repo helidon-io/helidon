@@ -16,11 +16,11 @@
 
 package io.helidon.grpc.client;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.MarshallerSupplier;
+import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
@@ -50,11 +50,11 @@ public final class ClientMethodDescriptor {
     /**
      * The list of client interceptors for this method.
      */
-    private ArrayList<ClientInterceptor> interceptors;
+    private PriorityBag<ClientInterceptor> interceptors;
 
     private ClientMethodDescriptor(String name,
                                    MethodDescriptor descriptor,
-                                   ArrayList<ClientInterceptor> interceptors) {
+                                   PriorityBag<ClientInterceptor> interceptors) {
         this.name = name;
         this.descriptor = descriptor;
         this.interceptors = interceptors;
@@ -184,8 +184,8 @@ public final class ClientMethodDescriptor {
      *
      * @return the {@link ClientInterceptor}s to use for this method
      */
-    List<ClientInterceptor> interceptors() {
-        return Collections.unmodifiableList(interceptors);
+    PriorityBag<ClientInterceptor> interceptors() {
+        return interceptors.readOnly();
     }
 
     /**
@@ -218,6 +218,17 @@ public final class ClientMethodDescriptor {
         Rules intercept(ClientInterceptor... interceptors);
 
         /**
+         * Register one or more {@link ClientInterceptor interceptors} for the method.
+         * <p>
+         * The added interceptors will be applied using the specified priority.
+         *
+         * @param priority     the priority to assign to the interceptors
+         * @param interceptors one or more {@link ClientInterceptor}s to register
+         * @return this builder to allow fluent method chaining
+         */
+        Rules intercept(int priority, ClientInterceptor... interceptors);
+
+        /**
          * Register the {@link MarshallerSupplier} for the method.
          * <p>
          * If not set the default {@link MarshallerSupplier} from the service will be used.
@@ -238,7 +249,7 @@ public final class ClientMethodDescriptor {
         private io.grpc.MethodDescriptor.Builder descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
-        private ArrayList<ClientInterceptor> interceptors = new ArrayList<>();
+        private PriorityBag<ClientInterceptor> interceptors = new PriorityBag<>(InterceptorPriorities.USER);
         private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
         private MarshallerSupplier marshallerSupplier;
 
@@ -268,7 +279,13 @@ public final class ClientMethodDescriptor {
 
         @Override
         public Builder intercept(ClientInterceptor... interceptors) {
-            Collections.addAll(this.interceptors, interceptors);
+            this.interceptors.addAll(Arrays.asList(interceptors));
+            return this;
+        }
+
+        @Override
+        public Builder intercept(int priority, ClientInterceptor... interceptors) {
+            this.interceptors.addAll(Arrays.asList(interceptors), priority);
             return this;
         }
 

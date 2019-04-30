@@ -43,7 +43,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 
-public class TreeMapServiceClientIT {
+public class PojoServiceClientIT {
 
     private static GrpcServer grpcServer;
 

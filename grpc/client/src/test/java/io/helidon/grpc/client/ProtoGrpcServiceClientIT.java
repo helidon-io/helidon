@@ -28,13 +28,20 @@ import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.annotation.Priority;
+
 import io.helidon.grpc.client.test.StringServiceGrpc;
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 
+import io.grpc.CallOptions;
 import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,9 +50,6 @@ import org.junit.jupiter.api.Test;
 import services.StringService;
 import services.TreeMapService;
 
-import static io.helidon.grpc.client.GrpcClientTestUtil.HighPriorityInterceptor;
-import static io.helidon.grpc.client.GrpcClientTestUtil.LowPriorityInterceptor;
-import static io.helidon.grpc.client.GrpcClientTestUtil.MediumPriorityInterceptor;
 import static io.helidon.grpc.client.test.Strings.StringMessage;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -262,5 +266,56 @@ public class ProtoGrpcServiceClientIT {
         assertThat(lowPriorityInterceptor.getInvocationCount(), equalTo(0));
         assertThat(mediumPriorityInterceptor.getInvocationCount(), equalTo(1));
         assertThat(highPriorityInterceptor.getInvocationCount(), equalTo(1));
+    }
+
+
+    /**
+     * A base {@link ClientInterceptor}.
+     */
+    abstract static class BaseInterceptor
+            implements ClientInterceptor {
+
+        private int invocationCount;
+
+        @Override
+        public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method,
+                                                                   CallOptions callOptions,
+                                                                   Channel next) {
+            invocationCount++;
+            return next.newCall(method, callOptions);
+        }
+
+        int getInvocationCount() {
+            return invocationCount;
+        }
+
+        void reset() {
+            this.invocationCount = 0;
+        }
+
+    }
+
+    /**
+     * A high priority {@link ClientInterceptor}.
+     */
+    @Priority(InterceptorPriorities.USER)
+    static class HighPriorityInterceptor
+            extends BaseInterceptor {
+    }
+
+    /**
+     * A medium priority {@link ClientInterceptor}.
+     */
+    @Priority(InterceptorPriorities.USER + 1000)
+    static class MediumPriorityInterceptor
+            extends BaseInterceptor {
+    }
+
+    /**
+     * A low priority {@link ClientInterceptor}.
+     */
+    @Priority(InterceptorPriorities.USER + 2000)
+    static class LowPriorityInterceptor
+            extends BaseInterceptor {
     }
 }
