@@ -26,11 +26,19 @@ import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.Prioritized;
+
 /**
  * A bag of values ordered by priority.
  * <p>
- * Within a given priority value elements are ordered in the order that they
- * were added to the bag.
+ * An element with lower priority number is more significant than an element
+ * with a higher priority number.
+ * <p>
+ * For cases where priority is the same, elements are ordered in the order that
+ * they were added to the bag.
+ * <p>
+ * Elements added with negative priorities are assumed to have no priority and
+ * will be least significant in order.
  *
  * @param <T> the type of elements in the bag
  */
@@ -139,14 +147,20 @@ public class PriorityBag<T> implements Iterable<T> {
      */
     public void add(T value) {
         if (value != null) {
-            Priority annotation = value.getClass().getAnnotation(Priority.class);
-            int priority = annotation == null ? defaultPriority : annotation.value();
+            int priority;
+            if (value instanceof Prioritized) {
+                priority = ((Prioritized) value).priority();
+            } else {
+                Priority annotation = value.getClass().getAnnotation(Priority.class);
+                priority = annotation == null ? defaultPriority : annotation.value();
+            }
             add(value, priority);
         }
     }
 
     /**
-     * Add an element to the bag.
+     * Add an element to the bag with a specific priority.
+     * <p>
      *
      * @param value    the element to add
      * @param priority the priority of the element

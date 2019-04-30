@@ -20,6 +20,8 @@ import java.util.Arrays;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.Prioritized;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,6 +63,28 @@ public class PriorityBagTest {
     public void shouldGetPriorityFromAnnotation() {
         PriorityBag<Object> bag = new PriorityBag<>();
         Value value = new Value();
+        bag.add("One", 1);
+        bag.add("Three", 3);
+        bag.add(value);
+
+        assertThat(bag, contains("One", value, "Three"));
+    }
+
+    @Test
+    public void shouldGetPriorityFromPrioritized() {
+        PriorityBag<Object> bag = new PriorityBag<>();
+        PrioritizedValue value = new PrioritizedValue();
+        bag.add("One", 1);
+        bag.add("Three", 3);
+        bag.add(value);
+
+        assertThat(bag, contains("One", value, "Three"));
+    }
+
+    @Test
+    public void shouldUsePriorityFromPrioritizedOverAnnotation() {
+        PriorityBag<Object> bag = new PriorityBag<>();
+        AnnotatedPrioritizedValue value = new AnnotatedPrioritizedValue();
         bag.add("One", 1);
         bag.add("Three", 3);
         bag.add(value);
@@ -119,5 +143,24 @@ public class PriorityBagTest {
 
     @Priority(2)
     public static class Value {
+    }
+
+
+    public static class PrioritizedValue
+            implements Prioritized {
+        @Override
+        public int priority() {
+            return 2;
+        }
+    }
+
+
+    @Priority(0)
+    public static class AnnotatedPrioritizedValue
+            implements Prioritized {
+        @Override
+        public int priority() {
+            return 2;
+        }
     }
 }
