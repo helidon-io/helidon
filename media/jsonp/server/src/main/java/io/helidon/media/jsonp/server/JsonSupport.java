@@ -26,7 +26,6 @@ import javax.json.JsonWriter;
 
 import io.helidon.common.http.Content;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.jsonp.common.JsonProcessing;
@@ -113,19 +112,6 @@ public final class JsonSupport extends JsonService {
                                     return writer(charset).apply((JsonStructure) json);
                                 });
         request.next();
-    }
-
-    @Override
-    protected MediaType toJsonResponseType(final MediaType acceptedType) {
-        MediaType result = super.toJsonResponseType(acceptedType);
-        if (result == null) {
-            if (acceptedType.test(JsonProcessing.APPLICATION_JAVASCRIPT)) {
-                result = JsonProcessing.APPLICATION_JAVASCRIPT;
-            } else if (acceptedType.test(JsonProcessing.TEXT_JAVASCRIPT)) {
-                result = JsonProcessing.TEXT_JAVASCRIPT;
-            }
-        }
-        return result;
     }
 
     /**
