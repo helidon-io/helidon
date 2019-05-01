@@ -572,10 +572,6 @@
                 <artifactId>sitegen-maven-plugin</artifactId>
                 <extensions>true</extensions>
             </plugin>
-            <plugin>
-                <groupId>org.jvnet.jaxb2.maven2</groupId>
-                <artifactId>maven-jaxb2-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 
