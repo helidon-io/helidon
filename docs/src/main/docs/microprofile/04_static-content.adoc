@@ -31,9 +31,9 @@ You can serve static content from a location in a file system
 # Location of content on file system
 server.static.path.location=/var/www/html
 # default is index.html
-server.static.classpath.welcome=resource.html
+server.static.path.welcome=resource.html
 # static content path - default is "/"
-# server.static.classpath.context=/static-file
+# server.static.path.context=/static-file
 ----
 
 [source,properties]
