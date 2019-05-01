@@ -510,6 +510,11 @@
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.jvnet.jaxb2.maven2</groupId>
+                    <artifactId>maven-jaxb2-plugin</artifactId>
+                    <version>${version.plugin.jaxb}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -570,7 +575,6 @@
             <plugin>
                 <groupId>org.jvnet.jaxb2.maven2</groupId>
                 <artifactId>maven-jaxb2-plugin</artifactId>
-                <version>${version.plugin.jaxb}</version>
             </plugin>
         </plugins>
     </build>
