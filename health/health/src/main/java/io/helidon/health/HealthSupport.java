@@ -168,7 +168,7 @@ public final class HealthSupport implements Service {
      *
      * @return health support configured with no health checks
      */
-    public static HealthSupport create(){
+    public static HealthSupport create() {
         return builder().build();
     }
 
@@ -177,7 +177,7 @@ public final class HealthSupport implements Service {
      * The endpoint will always return {@code UP}.
      *
      * @param config configuration of this health check, used only to get {@code web-context} property to configure
-     *      {@link Builder#webContext(String)}
+     *               {@link Builder#webContext(String)}
      * @return health support configured with no health checks
      */
     public static HealthSupport create(Config config) {
@@ -208,7 +208,11 @@ public final class HealthSupport implements Service {
          * @return updated builder instance
          */
         public Builder webContext(String path) {
-            this.webContext = path;
+            if (path.startsWith("/")) {
+                this.webContext = path;
+            } else {
+                this.webContext = "/" + path;
+            }
             return this;
         }
 
@@ -237,7 +241,6 @@ public final class HealthSupport implements Service {
             this.healthChecks.addAll(healthChecks);
             return this;
         }
-
 
         /**
          * Add a health check to a white list (in case {@link #includeAll} is set to {@code false}.

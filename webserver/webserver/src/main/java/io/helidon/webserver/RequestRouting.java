@@ -141,7 +141,7 @@ class RequestRouting implements Routing {
         if (spanContext != null) {
             spanBuilder.asChildOf(spanContext);
         }
-        return spanBuilder.start();
+        return spanBuilder.startActive(true).span();
     }
 
     /**

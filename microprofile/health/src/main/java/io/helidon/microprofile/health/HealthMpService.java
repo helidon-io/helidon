@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package io.helidon.microprofile.health;
 
 import java.lang.annotation.Annotation;
+import java.util.Optional;
 
+import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
@@ -31,9 +33,9 @@ import org.eclipse.microprofile.health.HealthCheck;
 public class HealthMpService implements MpService {
     @Override
     public void configure(MpServiceContext mpServiceContext) {
-
+        Config healthConfig = mpServiceContext.helidonConfig().get("health");
         HealthSupport.Builder builder = HealthSupport.builder()
-                .config(mpServiceContext.helidonConfig().get("helidon.health"));
+                .config(healthConfig);
 
         mpServiceContext.cdiContainer()
                 .select(HealthCheck.class, new Health() {
@@ -45,7 +47,22 @@ public class HealthMpService implements MpService {
                 .stream()
                 .forEach(builder::add);
 
-        mpServiceContext.serverRoutingBuilder()
+        healthConfig.get("routing")
+                .asString()
+                .flatMap(routeName -> {
+                    // support for overriding the routing back to default port using config
+                    if ("@default".equals(routeName)) {
+                        return Optional.empty();
+                    } else {
+                        return Optional.of(routeName);
+                    }
+                })
+                // use named routing
+                .map(mpServiceContext::serverNamedRoutingBuilder)
+                // use default server routing
+                .orElseGet(mpServiceContext::serverRoutingBuilder)
+                // register health support
                 .register(builder.build());
+
     }
 }

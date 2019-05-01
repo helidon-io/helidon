@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@ package io.helidon.microprofile.server;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +32,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.annotation.Priority;
 import javax.enterprise.inject.se.SeContainer;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Application;
@@ -42,7 +42,6 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
-import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
@@ -59,8 +58,6 @@ public class ServerImpl implements Server {
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
-
-    private static final int DEFAULT_PRIORITY = 100;
 
     private final SeContainer container;
     private final boolean containerCreated;
@@ -107,7 +104,8 @@ public class ServerImpl implements Server {
         STARTUP_LOGGER.finest("Builders ready");
 
         List<JaxRsApplication> applications = builder.applications();
-        loadExtensions(builder, mpConfig, config, applications, routingBuilder, serverConfigBuilder);
+        Map<String, Routing.Builder> namedRoutings = new HashMap<>();
+        loadExtensions(builder, mpConfig, config, applications, routingBuilder, namedRoutings, serverConfigBuilder);
 
         STARTUP_LOGGER.finest("Extensions loaded");
 
@@ -178,35 +176,50 @@ public class ServerImpl implements Server {
 
         STARTUP_LOGGER.finest("Registered jersey application(s)");
 
-        server = routingBuilder
-                .build()
-                .createServer(serverConfigBuilder.build());
+        WebServer.Builder serverBuilder = WebServer.builder(routingBuilder.build());
+        namedRoutings.forEach(serverBuilder::addNamedRouting);
+
+        server = serverBuilder.config(serverConfigBuilder.build())
+                .build();
 
         STARTUP_LOGGER.finest("Server created");
-    }
-
-    private static int findPriority(Class<?> aClass) {
-        Priority priorityAnnot = aClass.getAnnotation(Priority.class);
-        if (null != priorityAnnot) {
-            return priorityAnnot.value();
-        }
-
-        return DEFAULT_PRIORITY;
     }
 
     private void loadExtensions(Builder builder,
                                 MpConfig mpConfig,
                                 Config config,
                                 List<JaxRsApplication> apps,
-                                Routing.Builder routingBuilder, ServerConfiguration.Builder serverConfigBuilder) {
-        // extensions
-        List<MpService> extensions = new LinkedList<>(builder.extensions());
-        ServiceLoader.load(MpService.class).forEach(extensions::add);
+                                Routing.Builder routingBuilder,
+                                Map<String, Routing.Builder> namedRouting,
+                                ServerConfiguration.Builder serverConfigBuilder) {
 
         List<JaxRsApplication> newApps = new LinkedList<>();
-        // TODO order by Priority
 
-        MpServiceContext context = new MpServiceContext() {
+        MpServiceContext context = createExtensionContext(mpConfig,
+                                                          config,
+                                                          apps,
+                                                          routingBuilder,
+                                                          namedRouting,
+                                                          serverConfigBuilder,
+                                                          newApps);
+
+        // extensions
+        builder.extensions()
+                .forEach(extension -> {
+                    extension.configure(context);
+                    apps.addAll(newApps);
+                    newApps.clear();
+                });
+    }
+
+    private MpServiceContext createExtensionContext(MpConfig mpConfig,
+                                                    Config config,
+                                                    List<JaxRsApplication> apps,
+                                                    Routing.Builder routingBuilder,
+                                                    Map<String, Routing.Builder> namedRouting,
+                                                    ServerConfiguration.Builder serverConfigBuilder,
+                                                    List<JaxRsApplication> newApps) {
+        return new MpServiceContext() {
             @Override
             public org.eclipse.microprofile.config.Config config() {
                 return mpConfig;
@@ -251,15 +264,15 @@ public class ServerImpl implements Server {
             }
 
             @Override
+            public Routing.Builder serverNamedRoutingBuilder(String name) {
+                return namedRouting.computeIfAbsent(name, routeName -> Routing.builder());
+            }
+
+            @Override
             public <U> void register(Class<? extends U> key, U instance) {
                 register.put(key, instance);
             }
         };
-        for (MpService extension : extensions) {
-            extension.configure(context);
-            apps.addAll(newApps);
-            newApps.clear();
-        }
     }
 
     @Override

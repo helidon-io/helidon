@@ -16,7 +16,6 @@
 package io.helidon.media.jsonp.common;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -36,8 +35,11 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
+import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Media type support for json processing.
@@ -129,14 +131,11 @@ public final class JsonProcessing {
      */
     public Function<JsonStructure, Flow.Publisher<DataChunk>> writer(Charset charset) {
         return json -> {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            JsonWriter writer = (charset == null)
-                    ? jsonWriterFactory.createWriter(baos)
-                    : jsonWriterFactory.createWriter(baos, charset);
+            CharBuffer buffer = new CharBuffer();
+            JsonWriter writer = jsonWriterFactory.createWriter(buffer);
             writer.write(json);
             writer.close();
-            return ContentWriters.byteArrayWriter(false)
-                    .apply(baos.toByteArray());
+            return ContentWriters.charBufferWriter(charset == null ? UTF_8 : charset).apply(buffer);
         };
     }
 

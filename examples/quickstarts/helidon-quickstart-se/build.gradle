@@ -29,11 +29,11 @@ tasks.withType(JavaCompile) {
 }
 
 ext {
-    helidonversion = '1.0.3-SNAPSHOT'
+    helidonversion = '1.0.4-SNAPSHOT'
 }
 
 repositories {
-    maven { url "http://repo.maven.apache.org/maven2" }
+    mavenCentral()
     mavenLocal()
 }
 

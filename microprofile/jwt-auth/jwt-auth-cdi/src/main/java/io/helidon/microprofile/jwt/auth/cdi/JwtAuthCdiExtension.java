@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,7 +237,7 @@ public class JwtAuthCdiExtension implements Extension {
         try {
             Claims claims = Claims.valueOf(claimLiteral.name);
             //check if field type and claim type are compatible
-            if ((clazz.equals(Long.class) || JsonNumber.class.isAssignableFrom(clazz))
+            if ((clazz.equals(Long.class) || clazz.equals(long.class) || JsonNumber.class.isAssignableFrom(clazz))
                     && (Long.class.equals(claims.getType()) || JsonNumber.class.isAssignableFrom(claims.getType()))) {
                 return;
             }
@@ -247,7 +247,7 @@ public class JwtAuthCdiExtension implements Extension {
                 return;
             }
 
-            if ((clazz.equals(Boolean.class) || JsonValue.class.isAssignableFrom(clazz))
+            if ((clazz.equals(Boolean.class) || clazz.equals(boolean.class) || JsonValue.class.isAssignableFrom(clazz))
                     && (Boolean.class.equals(claims.getType()) || JsonValue.class.isAssignableFrom(claims.getType()))) {
                 return;
             }

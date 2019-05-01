@@ -68,6 +68,11 @@
             <email>santiago.pericasgeertsen@oracle.com</email>
             <organization>Oracle Corporation</organization>
         </developer>
+        <developer>
+            <name>Bryan Atsatt</name>
+            <email>bryan.atsatt@oracle.com</email>
+            <organization>Oracle Corporation</organization>
+        </developer>
     </developers>
 
     <scm>

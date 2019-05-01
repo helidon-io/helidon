@@ -50,7 +50,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * {@code helidon.metrics.base.${metric_name}.enabled=false}
  */
 final class BaseRegistry extends Registry {
-    private static final String CONFIG_METRIC_ENABLED_BASE = "helidon.metrics.base.";
+    private static final String CONFIG_METRIC_ENABLED_BASE = "base.";
     private static final Metadata MEMORY_USED_HEAP = new Metadata("memory.usedHeap",
                                                                   "Used Heap Memory",
                                                                   "Displays the amount of used heap memory in bytes.",
