@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ security:
   config.require-encryption: false
   properties:
     # This is a nice way to be able to override this with local properties or env-vars
-    idcs-uri: "https://idcs-d424f4f986044976bdc027f7ffa3f085.identity.c9dev1.oc9qadev.com"
-    idcs-client-id: "bfce84c76f8d4fe6b14c8e9123db4600"
-    idcs-client-secret: "${CLEAR=fb9596d4-fea7-4578-a15f-4f46b9d8b478}"
+    idcs-uri: "https://tenant-id.identity.oracle.com"
+    idcs-client-id: "client-id"
+    idcs-client-secret: "client-secret"
     # Used as a base for redirects back to us
     frontend-uri: "http://localhost:7987"
-    proxy-host: "www-proxy.uk.oracle.com"
+    proxy-host: "if you need proxy"
   providers:
   - abac:
   - oidc:

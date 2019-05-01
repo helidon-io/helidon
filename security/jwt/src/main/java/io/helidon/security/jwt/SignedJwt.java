@@ -144,7 +144,7 @@ public final class SignedJwt {
      *
      * @param tokenContent String with the token
      * @return a signed JWT instance that can be used to obtain the {@link #getJwt() instance}
-     * and to {@link #verifySignature(JwkKeys)} verify} the signature
+     *         and to {@link #verifySignature(JwkKeys)} verify} the signature
      * @throws RuntimeException in case of invalid content, see {@link Errors.ErrorMessagesException}
      */
     public static SignedJwt parseToken(String tokenContent) {
@@ -219,6 +219,7 @@ public final class SignedJwt {
 
     /**
      * The full token (header, payload, signature).
+     *
      * @return token content
      */
     public String tokenContent() {
@@ -227,6 +228,7 @@ public final class SignedJwt {
 
     /**
      * Header JSON.
+     *
      * @return header json
      */
     JsonObject headerJson() {
@@ -235,6 +237,7 @@ public final class SignedJwt {
 
     /**
      * Payload JSON.
+     *
      * @return payload JSON
      */
     JsonObject payloadJson() {
@@ -243,6 +246,7 @@ public final class SignedJwt {
 
     /**
      * The bytes that were signed (payload bytes).
+     *
      * @return signed bytes
      */
     public byte[] getSignedBytes() {
@@ -251,6 +255,7 @@ public final class SignedJwt {
 
     /**
      * Signature bytes.
+     *
      * @return bytes of the signature
      */
     public byte[] getSignature() {
@@ -282,7 +287,7 @@ public final class SignedJwt {
      * Verify signature against the provided keys (the kid of thisPrincipal
      * JWT should be present in the {@link JwkKeys} provided).
      *
-     * @param keys JwkKeys to obtain a key to verify signature
+     * @param keys       JwkKeys to obtain a key to verify signature
      * @param defaultJwk Default value of JWK
      * @return Errors with collected messages, see {@link Errors#isValid()} and {@link Errors#checkValid()}
      */
@@ -363,8 +368,14 @@ public final class SignedJwt {
 
         // now if jwk algorithm is none, alg may be
         if (jwk.algorithm().equals(alg)) {
-            if (!jwk.verifySignature(signedBytes, signature)) {
-                collector.fatal(jwk, "Signature of JWT token is not valid, based on alg: " + alg + ", kid: " + kid);
+            try {
+                if (!jwk.verifySignature(signedBytes, signature)) {
+                    collector.fatal(jwk, "Signature of JWT token is not valid, based on alg: " + alg + ", kid: " + kid);
+                }
+            } catch (Exception e) {
+                collector.fatal(jwk,
+                                "Failed to verify signature due to an exception: " + e.getClass().getName() + ": " + e
+                                        .getMessage());
             }
         } else {
             collector.fatal(jwk,

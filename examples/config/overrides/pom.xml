@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.examples.config</groupId>
         <artifactId>helidon-examples-config-project</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-config-overrides</artifactId>
     <name>Helidon Config Examples Overrides</name>

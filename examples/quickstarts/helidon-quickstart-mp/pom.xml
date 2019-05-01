@@ -23,13 +23,14 @@
 
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-quickstart-mp</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.4-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Helidon Quickstart MP Example</name>
 
     <properties>
-        <helidon.version>1.0.3-SNAPSHOT</helidon.version>
+        <helidon.version>1.0.4-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
+        <exec.mainClass>${mainClass}</exec.mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <libs.classpath.prefix>libs</libs.classpath.prefix>

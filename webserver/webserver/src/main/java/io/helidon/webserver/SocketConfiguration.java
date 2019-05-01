@@ -112,7 +112,7 @@ public interface SocketConfiguration {
         private int port = 0;
         private InetAddress bindAddress = null;
         private SSLContext sslContext = null;
-        private Set<String> enabledSslProtocols = new HashSet<>();
+        private final Set<String> enabledSslProtocols = new HashSet<>();
         private int backlog = 0;
         private int timeoutMillis = 0;
         private int receiveBufferSize = 0;

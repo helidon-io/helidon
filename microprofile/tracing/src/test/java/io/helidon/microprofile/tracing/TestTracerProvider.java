@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ public class TestTracerProvider implements TracerProvider {
 
         @Override
         public Scope startActive(boolean finishSpanOnClose) {
-             return null;
+             return new TestScope((TestSpan) start());
         }
 
         @Override
@@ -303,6 +303,23 @@ public class TestTracerProvider implements TracerProvider {
             Map<String, String> map = CollectionsHelper.mapOf();
 
             return map.entrySet();
+        }
+    }
+
+    static class TestScope implements Scope {
+        private final TestSpan testSpan;
+
+        TestScope(TestSpan testSpan) {
+            this.testSpan = testSpan;
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public Span span() {
+            return testSpan;
         }
     }
 }

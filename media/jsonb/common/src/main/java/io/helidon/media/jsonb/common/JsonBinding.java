@@ -16,9 +16,9 @@
 package io.helidon.media.jsonb.common;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -28,8 +28,11 @@ import javax.json.bind.JsonbException;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
+import io.helidon.media.common.CharBuffer;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.ContentWriters;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Contains utility methods for working with JSON-B.
@@ -71,17 +74,16 @@ public final class JsonBinding {
      * of {@link DataChunk}s by using the supplied {@link Jsonb}.
      *
      * @param jsonb the {@link Jsonb} to use; must not be {@code null}
+     * @param charset the charset to use; may be null
      * @return created function
      * @exception NullPointerException if {@code jsonb} is {@code null}
      */
-    public static Function<Object, Flow.Publisher<DataChunk>> writer(final Jsonb jsonb) {
+    public static Function<Object, Flow.Publisher<DataChunk>> writer(final Jsonb jsonb, final Charset charset) {
         Objects.requireNonNull(jsonb);
         return payload -> {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            jsonb.toJson(payload, baos);
-            return ContentWriters.byteArrayWriter(false)
-                .apply(baos.toByteArray());
+            CharBuffer buffer = new CharBuffer();
+            jsonb.toJson(payload, buffer);
+            return ContentWriters.charBufferWriter(charset == null ? UTF_8 : charset).apply(buffer);
         };
     }
-
 }

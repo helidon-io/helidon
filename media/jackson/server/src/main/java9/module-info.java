@@ -19,6 +19,9 @@
  */
 module io.helidon.media.jackson.server {
     requires com.fasterxml.jackson.databind;
+    requires com.fasterxml.jackson.datatype.jdk8;
+    requires com.fasterxml.jackson.datatype.jsr310;
+    requires com.fasterxml.jackson.module.paramnames;
     requires io.helidon.media.jackson.common;
     requires io.helidon.webserver;
 

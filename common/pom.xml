@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.common</groupId>
     <artifactId>helidon-common-project</artifactId>
@@ -36,5 +36,6 @@
         <module>configurable</module>
         <module>key-util</module>
         <module>http</module>
+        <module>service-loader</module>
     </modules>
 </project>

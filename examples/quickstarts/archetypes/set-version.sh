@@ -75,8 +75,4 @@ for _ex in ${EXAMPLES}; do
 
 done
 
-echo "Updating ${MY_DIR}/archetype.properties"
-# Update archetype.version in archetype property file
-cat "${MY_DIR}/archetype.properties" | sed "s/^archetype.version=.*/archetype.version=${newVersion}/" \
-     > "${TEMP_FILE}" && mv "${TEMP_FILE}"  "${MY_DIR}/archetype.properties"
 
