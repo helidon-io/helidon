@@ -33,7 +33,12 @@
 
     <modules>
         <module>datasource-hikaricp</module>
+        <module>eclipselink-cdi</module>
         <module>jedis-cdi</module>
+        <module>jpa-cdi</module>
+        <module>jpa-weld</module>
+        <module>jta-cdi</module>
+        <module>jta-weld</module>
         <module>oci-objectstorage-cdi</module>
     </modules>
 </project>
