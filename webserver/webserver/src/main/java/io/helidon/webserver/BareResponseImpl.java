@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,6 +57,9 @@ class BareResponseImpl implements BareResponse {
 
     private static final Logger LOGGER = Logger.getLogger(BareResponseImpl.class.getName());
 
+    private static final int MAX_CHUNKS_IN_FLIGHT = 32;
+    private static final double REQUEST_THRESHOLD = 0.75;
+
     // See HttpConversionUtil.ExtensionHeaderNames
     private static final String HTTP_2_HEADER_PREFIX = "x-http2";
     private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
@@ -73,6 +77,9 @@ class BareResponseImpl implements BareResponse {
     private final HttpHeaders requestHeaders;
 
     private volatile Flow.Subscription subscription;
+
+    private AtomicInteger chunksInFlight  = new AtomicInteger(0);
+    private AtomicInteger chunksWritten   = new AtomicInteger(0);
 
     /**
      * @param ctx the channel handler context
@@ -218,7 +225,9 @@ class BareResponseImpl implements BareResponse {
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
         this.subscription = subscription;
-        subscription.request(Long.MAX_VALUE);
+        chunksInFlight.set(0);
+        chunksWritten.set(0);
+        subscription.request(MAX_CHUNKS_IN_FLIGHT);
     }
 
     @Override
@@ -227,28 +236,39 @@ class BareResponseImpl implements BareResponse {
             throw new IllegalStateException("Response is already closed!");
         }
         if (data != null) {
-
-            LOGGER.finest(() -> log("Sending data chunk"));
-
             DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
-
             LOGGER.finest(() -> log("Sending data chunk on event loop thread."));
 
             ChannelFuture channelFuture;
+            chunksInFlight.incrementAndGet();
             if (data.flush()) {
                 channelFuture = ctx.writeAndFlush(httpContent);
             } else {
                 channelFuture = ctx.write(httpContent);
             }
-
             channelFuture
                     .addListener(future -> {
                         data.release();
                         LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
+                        if (future.isSuccess()) {
+                            chunksInFlight.decrementAndGet();
+                            chunksWritten.incrementAndGet();
+
+                            // Renew subscription if necessary
+                            float threshold = (float) chunksWritten.get() / MAX_CHUNKS_IN_FLIGHT;
+                            if (threshold >= REQUEST_THRESHOLD) {
+                                chunksWritten.set(0);
+                                subscription.request(MAX_CHUNKS_IN_FLIGHT);
+                            }
+                        }
                     })
                     .addListener(completeOnFailureListener("Failure when sending a content!"))
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
 
+            // If chunks don't have flush flag, they need flushing
+            if (chunksInFlight.get() == MAX_CHUNKS_IN_FLIGHT) {
+                ctx.flush();
+            }
         }
     }
 
