@@ -22,7 +22,6 @@ import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.openapi.OpenAPISupport;
 
 import io.smallrye.openapi.api.OpenApiConfigImpl;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * Sets up OpenAPI support in the Helidon MP server.
@@ -33,7 +32,7 @@ public class OpenAPIMpService implements MpService {
     public void configure(MpServiceContext context) {
 
         OpenAPISupport openAPISupport = new MPOpenAPIBuilder()
-                .openAPIConfig(new OpenApiConfigImpl(ConfigProvider.getConfig()))
+                .openAPIConfig(new OpenApiConfigImpl(context.config()))
                 .build();
 
         openAPISupport.configureEndpoint(context.serverRoutingBuilder());
