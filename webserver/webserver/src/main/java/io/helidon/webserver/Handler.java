@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,14 @@
 package io.helidon.webserver;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
+
+import io.helidon.common.OptionalHelper;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 
 /**
  * The {@link ServerRequest} and {@link ServerResponse} handler.
@@ -73,7 +78,8 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
         Objects.requireNonNull(entityType, "Parameter 'publisherType' is null!");
         Objects.requireNonNull(entityHandler, "Parameter 'entityHandler' is null!");
         return (req, res) -> {
-            CompletionStage<? extends T> cs = null;
+            CompletionStage<? extends T> cs;
+            Optional<Context> context = Contexts.context();
             try {
                 cs = req.content().as(entityType);
             } catch (Throwable thr) {
@@ -84,15 +90,20 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
                 }
                 return;
             }
-            cs.thenAccept(entity -> entityHandler.accept(req, res, entity))
-                    .exceptionally(throwable -> {
-                        if (entityReadErrorHandler == null) {
-                            req.next(throwable instanceof CompletionException ? throwable.getCause() : throwable);
-                        } else {
-                            entityReadErrorHandler.accept(req, res, throwable);
-                        }
-                        return null;
-                    });
+            cs.thenAccept(entity -> {
+                OptionalHelper.from(context)
+                        .ifPresentOrElse(theContext -> {
+                            Contexts.inContext(theContext, () -> entityHandler.accept(req, res, entity));
+                        }, () -> entityHandler.accept(req, res, entity));
+
+            }).exceptionally(throwable -> {
+                if (entityReadErrorHandler == null) {
+                    req.next(throwable instanceof CompletionException ? throwable.getCause() : throwable);
+                } else {
+                    entityReadErrorHandler.accept(req, res, throwable);
+                }
+                return null;
+            });
         };
     }
 
