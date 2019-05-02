@@ -15,8 +15,10 @@
  */
 package io.helidon.db.jdbc;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -30,6 +32,8 @@ import io.helidon.db.DbMapper;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbStatements;
 import io.helidon.db.HelidonDb;
+import io.helidon.db.StatementType;
+import io.helidon.db.common.InterceptorSupport;
 import io.helidon.db.spi.DbMapperProvider;
 import io.helidon.db.spi.DbProviderBuilder;
 
@@ -38,7 +42,7 @@ import io.helidon.db.spi.DbProviderBuilder;
  * the {@link io.helidon.db.spi.DbProviderBuilder} from Helidon DB API.
  */
 public final class JdbcDbProviderBuilder implements DbProviderBuilder<JdbcDbProviderBuilder> {
-    private final List<DbInterceptor> interceptors = new LinkedList<>();
+    private final InterceptorSupport.Builder interceptors = InterceptorSupport.builder();
     private final DbMapperManager.Builder dbMapperBuilder = DbMapperManager.builder();
     private String url;
     private String username;
@@ -58,7 +62,7 @@ public final class JdbcDbProviderBuilder implements DbProviderBuilder<JdbcDbProv
             this.dbMapperManager = dbMapperBuilder.build();
         }
         if (null == mapperManager) {
-            this.mapperManager = MapperManager.builder().build();
+            this.mapperManager = MapperManager.create();
         }
         if (null == connectionPool) {
             connectionPool = ConnectionPool.builder()
@@ -184,12 +188,24 @@ public final class JdbcDbProviderBuilder implements DbProviderBuilder<JdbcDbProv
         return this;
     }
 
+    @Override
+    public JdbcDbProviderBuilder addInterceptor(DbInterceptor interceptor, String... statementNames) {
+        this.interceptors.add(interceptor, statementNames);
+        return this;
+    }
+
+    @Override
+    public JdbcDbProviderBuilder addInterceptor(DbInterceptor interceptor, StatementType... statementTypes) {
+        this.interceptors.add(interceptor, statementTypes);
+        return this;
+    }
+
     DbStatements statements() {
         return statements;
     }
 
-    List<DbInterceptor> interceptors() {
-        return interceptors;
+    InterceptorSupport interceptors() {
+        return interceptors.build();
     }
 
     DbMapperManager dbMapperMananger() {

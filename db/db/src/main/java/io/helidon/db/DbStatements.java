@@ -31,8 +31,9 @@ public interface DbStatements {
      *
      * @param name name of the statement
      * @return text of the statement (such as SQL code for SQL-based database statements)
+     * @throws DbException in case the statement name does not exist
      */
-    String statement(String name);
+    String statement(String name) throws DbException;
 
     /**
      * Builder of statements.
@@ -69,7 +70,7 @@ public interface DbStatements {
          * @param statement database statement {@link String}
          * @return database provider builder
          */
-        Builder addStatement(String name, String statement) {
+        public Builder addStatement(String name, String statement) {
             Objects.requireNonNull(name, "Statement name must be provided");
             Objects.requireNonNull(statement, "Statement body must be provided");
             configuredStatements.put(name, statement);
@@ -83,7 +84,7 @@ public interface DbStatements {
          * @param config config node located on correct node
          * @return updated builder instance
          */
-        Builder config(Config config) {
+        public Builder config(Config config) {
             config.detach().asMap()
                     .ifPresent(configuredStatements::putAll);
             return this;
