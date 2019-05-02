@@ -34,7 +34,7 @@ public class Version {
     /**
      * Display version
      *
-     * @param args
+     * @param args Ignored
      */
     public static void main(String[] args) {
         System.out.println(VERSION + " " + REVISION);
