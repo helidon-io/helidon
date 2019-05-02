@@ -21,8 +21,12 @@ module io.helidon.db.jdbc {
     requires java.logging;
     requires java.sql;
 
-    requires io.helidon.common.configurable;
-    requires io.helidon.db;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.db;
+    requires transitive io.helidon.db.common;
+
+    exports io.helidon.db.jdbc;
 
     provides io.helidon.db.spi.DbProvider with io.helidon.db.jdbc.JdbcDbProvider;
 }
