@@ -34,59 +34,44 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.context.Contexts;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Flow;
 import io.helidon.db.DbColumn;
-import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbRowResult;
+import io.helidon.db.StatementType;
+import io.helidon.db.common.InterceptorSupport;
 
 /**
  * Implementation of query.
  */
 class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<DbRow>> {
-    private final ExecutorService executorService;
-    private final List<DbInterceptor> interceptors;
+    private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
 
-    JdbcStatementQuery(ConnectionPool config,
+    JdbcStatementQuery(StatementType statementType,
+                       ConnectionPool connectionPool,
                        ExecutorService executorService,
                        String statementName,
                        String statement,
                        DbMapperManager dbMapperMananger,
                        MapperManager mapperManager,
-                       List<DbInterceptor> interceptors) {
-        super(config, statementName, statement, dbMapperMananger, mapperManager);
-        this.executorService = executorService;
-        this.interceptors = interceptors;
+                       InterceptorSupport interceptors) {
+        super(statementType,
+              connectionPool,
+              statementName,
+              statement,
+              dbMapperMananger,
+              mapperManager,
+              executorService,
+              interceptors);
     }
 
     @Override
-    public DbRowResult<DbRow> execute() {
-        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
-        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
-
-        DbInterceptorContext dbContext = DbInterceptorContext.create(dbType())
-                .resultFuture(queryFuture)
-                .statementFuture(statementFuture);
-
-        update(dbContext);
-
-        Contexts.context()
-                .ifPresent(context -> {
-                    dbContext.context(context);
-                    interceptors
-                            .forEach(interceptor -> interceptor.statement(dbContext));
-                });
-
-        return doExecute(dbContext, statementFuture, queryFuture);
-    }
-
-    DbRowResult<DbRow> doExecute(DbInterceptorContext dbContext,
-                                 CompletableFuture<Void> statementFuture,
-                                 CompletableFuture<Long> queryFuture) {
+    protected DbRowResult<DbRow> doExecute(DbInterceptorContext dbContext,
+                                           CompletableFuture<Void> statementFuture,
+                                           CompletableFuture<Long> queryFuture) {
         CompletableFuture<ResultWithConn> resultSetFuture = new CompletableFuture<>();
         resultSetFuture.thenAccept(rs -> statementFuture.complete(null))
                 .exceptionally(throwable -> {
@@ -94,17 +79,39 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
                     return null;
                 });
 
-        executorService.submit(() -> {
+        executorService().submit(() -> {
+            Connection conn = null;
             try {
-                Connection conn = connection();
+                conn = connection();
                 PreparedStatement statement = super.build(conn, dbContext);
                 ResultSet rs = statement.executeQuery();
                 // at this moment we have a DbRowResult
                 resultSetFuture.complete(new ResultWithConn(rs, conn));
             } catch (Exception e) {
+                try {
+                    if (null != conn) {
+                        conn.close();
+                    }
+                } catch (SQLException ex) {
+                    LOGGER.log(Level.WARNING, "Failed to close a connection", ex);
+                }
                 resultSetFuture.completeExceptionally(e);
             }
         });
+
+        return processResultSet(queryFuture,
+                                resultSetFuture,
+                                executorService(),
+                                dbMapperManager(),
+                                mapperManager());
+    }
+
+    static DbRowResult<DbRow> processResultSet(
+            CompletableFuture<Long> queryFuture,
+            CompletableFuture<ResultWithConn> resultSetFuture,
+            ExecutorService executorService,
+            DbMapperManager dbMapperManager,
+            MapperManager mapperManager) {
 
         return new DbRowResult<DbRow>() {
             private final AtomicBoolean resultRequested = new AtomicBoolean();
@@ -116,12 +123,12 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
 
             @Override
             public <U> DbRowResult<U> map(Class<U> type) {
-                return null;
+                throw new UnsupportedOperationException("TODO in later release");
             }
 
             @Override
             public <U> DbRowResult<U> map(GenericType<U> type) {
-                return null;
+                throw new UnsupportedOperationException("TODO in later release");
             }
 
             @Override
@@ -140,8 +147,8 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
                 return new RowPublisher(executorService,
                                         resultSetFuture,
                                         queryFuture,
-                                        dbMapperManager(),
-                                        mapperManager());
+                                        dbMapperManager,
+                                        mapperManager);
             }
 
             private CompletionStage<List<DbRow>> toFuture() {
@@ -238,6 +245,10 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
         } catch (ClassNotFoundException e) {
             return null;
         }
+    }
+
+    String name() {
+        return statementName();
     }
 
     private static final class RowPublisher implements Flow.Publisher<DbRow> {
@@ -479,13 +490,21 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
         }
     }
 
-    private static final class ResultWithConn {
+    static final class ResultWithConn {
         private final ResultSet resultSet;
         private final Connection connection;
 
-        private ResultWithConn(ResultSet resultSet, Connection connection) {
+        ResultWithConn(ResultSet resultSet, Connection connection) {
             this.resultSet = resultSet;
             this.connection = connection;
+        }
+
+        public ResultSet resultSet() {
+            return resultSet;
+        }
+
+        public Connection connection() {
+            return connection;
         }
     }
 

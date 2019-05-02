@@ -18,11 +18,10 @@ package io.helidon.db.jdbc;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -30,7 +29,9 @@ import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbException;
 import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
-import io.helidon.db.DbStatement;
+import io.helidon.db.StatementType;
+import io.helidon.db.common.AbstractStatement;
+import io.helidon.db.common.InterceptorSupport;
 
 /**
  * Common JDBC statement builder.
@@ -38,148 +39,38 @@ import io.helidon.db.DbStatement;
  * @param <S> subclass of this class
  * @param <R> Statement execution result type
  */
-public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> implements DbStatement<R> {
+public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends AbstractStatement<S, R> {
 
-    private static final Logger LOG = Logger.getLogger(JdbcStatement.class.getName());
-
-    private static final String DENY_MESSAGE_ARRAY = "Could not add named parameters for query with JDBC default mapping.";
-    private static final String DENY_MESSAGE_MAP = "Could not add JDBC default parameters for query with named parameters.";
-
-    enum ParamType {
-        /**
-         * Array of values to be directly mapped to {@code '?'} tokens in SQL statement.
-         */
-        INDEXED,
-        /**
-         * Mapping of name {@code ->} value to be mapped to {@code ":name"} tokens in SQL statement.
-         */
-        NAMED,
-        /**
-         * Statement type is not known yet.
-         */
-        UNKNOWN
-    }
+    private static final Logger LOGGER = Logger.getLogger(JdbcStatement.class.getName());
 
     private final String dbType;
     private final ConnectionPool connectionPool;
-    private final String statementName;
-    private final String statement;
-    private final DbMapperManager dbMapperManager;
-    private final MapperManager mapperManager;
-    private ParamType paramType;
-    private List<Object> parameters;
-    private Map<String, Object> mappings;
-    @SuppressWarnings("unchecked") private final S me = (S) this;
+    private final ExecutorService executorService;
 
     JdbcStatement(
+            StatementType statementType,
             ConnectionPool connectionPool,
             String statementName,
             String statement,
             DbMapperManager dbMapperManager,
-            MapperManager mapperManager) {
+            MapperManager mapperManager,
+            ExecutorService executorService,
+            InterceptorSupport interceptors) {
+
+        super(statementType,
+              statementName,
+              statement,
+              dbMapperManager,
+              mapperManager,
+              interceptors);
 
         this.dbType = connectionPool.dbType();
         this.connectionPool = connectionPool;
-        this.statementName = statementName;
-        this.statement = statement;
-        this.dbMapperManager = dbMapperManager;
-        this.mapperManager = mapperManager;
-        this.paramType = ParamType.UNKNOWN;
-        this.parameters = null;
-        this.mappings = null;
-    }
-
-    @Override
-    public S params(Map<String, ?> values) {
-        if (paramType == ParamType.UNKNOWN) {
-            initNamed();
-        }
-
-        switch (paramType) {
-        case NAMED:
-            values.forEach((key, value) -> mappings.put(key, value));
-            break;
-        case INDEXED:
-        default:
-            throw new IllegalStateException(DENY_MESSAGE_MAP);
-        }
-        return me;
-    }
-
-    @Override
-    public S addParam(String name, Object value) {
-        if (paramType == ParamType.UNKNOWN) {
-            initNamed();
-        }
-        switch (paramType) {
-        case NAMED:
-            mappings.put(name, value);
-            break;
-        case INDEXED:
-        default:
-            throw new IllegalStateException(DENY_MESSAGE_MAP);
-        }
-        return me;
-    }
-
-    @Override
-    public S params(List<?> values) {
-        Objects.requireNonNull(values, "Parameters cannot be null (may be an empty list)");
-
-        if (paramType == ParamType.UNKNOWN) {
-            initIndexed();
-        }
-
-        switch (paramType) {
-        case INDEXED:
-            parameters.addAll(values);
-            break;
-        case NAMED:
-        default:
-            throw new IllegalStateException(DENY_MESSAGE_ARRAY);
-        }
-        return me;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> S namedParam(T params) {
-        Class<T> theClass = (Class<T>) params.getClass();
-
-        return params(dbMapperManager.toNamedParameters(params, theClass));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> S indexedParam(T params) {
-        Class<T> theClass = (Class<T>) params.getClass();
-
-        return this.params(dbMapperManager.toIndexedParameters(params, theClass));
-    }
-
-    @Override
-    public S addParam(Object value) {
-        if (paramType == ParamType.UNKNOWN) {
-            initIndexed();
-        }
-
-        switch (paramType) {
-        case INDEXED:
-            parameters.add(value);
-            break;
-        case NAMED:
-        default:
-            throw new IllegalStateException(DENY_MESSAGE_ARRAY);
-        }
-        return me;
-    }
-
-    String dbType() {
-        return dbType;
+        this.executorService = executorService;
     }
 
     PreparedStatement build(Connection conn, DbInterceptorContext dbContext) {
-        LOG.fine(() -> String.format("Building SQL statement: %s", dbContext.statement()));
+        LOGGER.fine(() -> String.format("Building SQL statement: %s", dbContext.statement()));
         String statement = dbContext.statement();
         String statementName = dbContext.statementName();
 
@@ -204,18 +95,31 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> implements
      */
     @Deprecated
     protected PreparedStatement build(Connection connection) {
-        LOG.fine(() -> String.format("Building SQL statement: %s", statement));
-        switch (paramType) {
+        LOGGER.fine(() -> String.format("Building SQL statement: %s", statement()));
+        switch (paramType()) {
         // Statement may not contain any parameters, no conversion is needed.
         case UNKNOWN:
-            return prepareStatement(connection, statementName, statement);
+            return prepareStatement(connection, statementName(), statement());
         case INDEXED:
-            return prepareIndexedStatement(connection, statementName, statement, parameters);
+            return prepareIndexedStatement(connection, statementName(), statement(), indexedParams());
         case NAMED:
-            return prepareNamedStatement(connection, statementName, statement, mappings);
+            return prepareNamedStatement(connection, statementName(), statement(), namedParams());
         default:
             throw new IllegalStateException("Unknown SQL statement type");
         }
+    }
+
+    @Override
+    protected String dbType() {
+        return dbType;
+    }
+
+    Connection connection() {
+        return connectionPool.connection();
+    }
+
+    ExecutorService executorService() {
+        return executorService;
     }
 
     private PreparedStatement prepareStatement(Connection conn, String statementName, String statement) {
@@ -235,13 +139,13 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> implements
             // Parameters names must be replaced with ? and names occurence order must be stored.
             MappingParser parser = new MappingParser(statement);
             String jdbcStatement = parser.convert();
-            LOG.finest(() -> String.format("Converted statement: %s", jdbcStatement));
+            LOGGER.finest(() -> String.format("Converted statement: %s", jdbcStatement));
             PreparedStatement preparedStatement = connection.prepareStatement(jdbcStatement);
             List<String> namesOrder = parser.namesOrder();
             int i = 1;
             for (String name : namesOrder) {
                 Object value = parameters.get(name);
-                LOG.info(String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                LOGGER.info(String.format("Mapped parameter %d: %s -> %s", i, name, value));
                 preparedStatement.setObject(i, value);
                 i++;
             }
@@ -260,7 +164,7 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> implements
             PreparedStatement preparedStatement = connection.prepareStatement(statement);
             int i = 1; // JDBC set position parameter starts from 1.
             for (Object value : parameters) {
-                LOG.info(String.format("Indexed parameter %d: %s", i, value));
+                LOGGER.info(String.format("Indexed parameter %d: %s", i, value));
                 preparedStatement.setObject(i, value);
                 // increase value for next iteration
                 i++;
@@ -269,50 +173,6 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> implements
         } catch (SQLException e) {
             throw new DbException("Failed to prepare statement with indexed params: " + statementName, e);
         }
-    }
-
-    private void initIndexed() {
-        this.paramType = ParamType.INDEXED;
-        this.parameters = new LinkedList<>();
-    }
-
-    private void initNamed() {
-        this.paramType = ParamType.NAMED;
-        this.mappings = new HashMap<>();
-    }
-
-    void update(DbInterceptorContext dbContext) {
-        dbContext.statementName(statementName);
-
-        if (paramType == ParamType.NAMED) {
-            dbContext.statement(statement, mappings);
-        } else {
-            dbContext.statement(statement, parameters);
-        }
-    }
-
-    Connection connection() throws SQLException {
-        return connectionPool.connection();
-    }
-
-    ParamType paramType() {
-        return paramType;
-    }
-
-    String statementName() {
-        return statementName;
-    }
-
-    String statement() {
-        return statement;
-    }
-
-    DbMapperManager dbMapperManager() {
-        return dbMapperManager;
-    }
-
-    MapperManager mapperManager() {
-        return mapperManager;
     }
 
     /**
@@ -340,8 +200,6 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> implements
      * {@code "name", "type"}
      */
     private static final class MappingParser {
-
-        private static final Logger LOG = Logger.getLogger(MappingParser.class.getName());
 
         /**
          * Parser ACTION to be performed.

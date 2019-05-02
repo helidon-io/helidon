@@ -98,37 +98,17 @@ public final class Main {
      * @return routing configured with JSON support, a health check, and a service
      */
     private static Routing createRouting(Config config) {
+        Config dbConfig = config.get("db");
 
-        /*db = HelidonDb.builder("jdbc")
-                .statements(Statements.builder()
-                .add("name", "statement")
-                .build())
-                .build();
-         */
-
-        Config jdbcConfig = config.get("jdbc");
-
-        HelidonDb jdbcDb = HelidonDb.builder("jdbc")
-                .config(jdbcConfig)
+        HelidonDb helidonDb = HelidonDb.builder(dbConfig)
                 .addInterceptor(DbCounter.create())
                 .addInterceptor(DbTimer.create())
                 .addInterceptor(DbTracing.create())
                 .build();
+
         // todo maybe use Java ServiceLoader to add interceptors -e.g. when running from config only
-        /*HelidonDb jdbcDb = config
-                .get("jdbc")
-                .as(HelidonDb::create)
-                .orElseThrow(() -> noConfigError(config.key() + ".jdbc"));
-        */
-        /*
-        HelidonDb mongoDb = config
-                .get("mongo")
-                .as(HelidonDb::create)
-                .orElseThrow(() -> noConfigError(config.key() + ".mongo"));
-*/
         HealthSupport health = HealthSupport.builder()
-                .add(DbHealthCheck.create(jdbcDb, "jdbc:mysql"))
-//                .add(new DbHealthCheck(mongoDb, "mongodb"))
+                .add(DbHealthCheck.create(helidonDb, helidonDb.dbType()))
                 .build();
 
         return Routing.builder()
@@ -137,8 +117,7 @@ public final class Main {
                 .register(DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/jdbc", new PokemonService(jdbcDb))
-//                .register("/mongo", new PokemonService(mongoDb))
+                .register("/db", new PokemonService(helidonDb))
                 .build();
     }
 

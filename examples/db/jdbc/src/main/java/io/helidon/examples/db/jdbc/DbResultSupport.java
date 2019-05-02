@@ -100,6 +100,8 @@ public class DbResultSupport implements Service, Handler {
         }
     }
 
+    // server send streaming
+    // json streaming & data type
     private static Flow.Publisher<DataChunk> writer(DbRowResult<DbRow> dbRowResult) {
         return new Flow.Publisher<DataChunk>() {
             @Override

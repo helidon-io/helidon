@@ -29,6 +29,19 @@ import io.helidon.db.spi.DbMapperProvider;
  */
 public interface DbMapperManager {
     /**
+     * Generic type for the {@link io.helidon.db.DbRow} class.
+     */
+    GenericType<Object> TYPE_DB_ROW = GenericType.create(DbRow.class);
+    /**
+     * Generic type for the {@link Map} of String to value pairs for named parameters.
+     */
+    GenericType<Map<String, ?>> TYPE_NAMED_PARAMS = new GenericType<Map<String, ?>>() { };
+    /**
+     * Generic type for the {@link List} of indexed parameters.
+     */
+    GenericType<List<?>> TYPE_INDEXED_PARAMS = new GenericType<List<?>>() { };
+
+    /**
      * Create a fluent API builder to configure the mapper manager.
      *
      * @return a new builder instance
@@ -96,9 +109,9 @@ public interface DbMapperManager {
     /**
      * Read object into a list of indexed parameters.
      *
-     * @param value                  the typed value
-     * @param valueClass             type of the value object
-     * @param <T>                    type of value
+     * @param value      the typed value
+     * @param valueClass type of the value object
+     * @param <T>        type of value
      * @return list with indexed parameters (in the order expected by statements using this object)
      * @see io.helidon.db.DbStatement#indexedParam(Object)
      */

@@ -55,20 +55,20 @@ public interface HelidonDb {
     CompletionStage<Void> ping();
 
     /**
+     * Type of this database provider (such as jdbc:mysql, mongoDB etc.).
+     *
+     * @return name of the database provider
+     */
+    String dbType();
+
+    /**
      * Create Helidon database handler builder.
      *
      * @param config name of the configuration node with driver configuration
      * @return database handler builder
      */
     static HelidonDb create(Config config) {
-        return config.get("source")
-                .asString()
-                // use builder for correct DbSource
-                .map(HelidonDb::builder)
-                // or use the default one
-                .orElseGet(HelidonDb::builder)
-                .config(config)
-                .build();
+        return builder(config).build();
     }
 
     /**
@@ -117,6 +117,23 @@ public interface HelidonDb {
     }
 
     /**
+     * Create a Helidon database handler builder from configuration.
+     *
+     * @param dbConfig configuration that should contain the key {@code source} that defines the type of this database
+     *                 and is used to load appropriate {@link io.helidon.db.spi.DbProvider} from Java Service loader
+     * @return a builder pre-configured from the provided config
+     */
+    static Builder builder(Config dbConfig) {
+        return dbConfig.get("source")
+                .asString()
+                // use builder for correct DbSource
+                .map(HelidonDb::builder)
+                // or use the default one
+                .orElseGet(HelidonDb::builder)
+                .config(dbConfig);
+    }
+
+    /**
      * Helidon database handler builder.
      */
     final class Builder implements io.helidon.common.Builder<HelidonDb> {
@@ -145,8 +162,39 @@ public interface HelidonDb {
             return theBuilder.build();
         }
 
+        /**
+         * Add a global interceptor.
+         *
+         * A global interceptor is applied to each statement.
+         * @param interceptor interceptor to apply
+         * @return updated builder instance
+         */
         public Builder addInterceptor(DbInterceptor interceptor) {
             theBuilder.addInterceptor(interceptor);
+            return this;
+        }
+
+        /**
+         * Add an interceptor to specific named statements.
+         *
+         * @param interceptor interceptor to apply
+         * @param statementNames names of statements to apply it on
+         * @return updated builder instance
+         */
+        public Builder addInterceptor(DbInterceptor interceptor, String... statementNames) {
+            theBuilder.addInterceptor(interceptor, statementNames);
+            return this;
+        }
+
+        /**
+         * Add an interceptor to specific statement types.
+         *
+         * @param interceptor interceptor to apply
+         * @param statementTypes types of statements to apply it on
+         * @return updated builder instance
+         */
+        public Builder addInterceptor(DbInterceptor interceptor, StatementType... statementTypes) {
+            theBuilder.addInterceptor(interceptor, statementTypes);
             return this;
         }
 
@@ -196,7 +244,6 @@ public interface HelidonDb {
             theBuilder.mapperManager(manager);
             return this;
         }
-
     }
 
 }
