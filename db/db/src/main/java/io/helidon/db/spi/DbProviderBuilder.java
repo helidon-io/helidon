@@ -23,6 +23,7 @@ import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbMapper;
 import io.helidon.db.DbStatements;
 import io.helidon.db.HelidonDb;
+import io.helidon.db.StatementType;
 
 /**
  * Database provider builder.
@@ -117,6 +118,36 @@ public interface DbProviderBuilder<T extends DbProviderBuilder<T>> extends Build
      * @return updated builder instance
      */
     T addInterceptor(DbInterceptor interceptor);
+
+    /**
+     * Add an interceptor that is active only on the configured statement names.
+     * This interceptor is only executed on named statements.
+     *
+     * @param interceptor interceptor instance
+     * @param statementNames statement names to be active on
+     * @return updated builder instance
+     */
+    T addInterceptor(DbInterceptor interceptor, String... statementNames);
+
+    /**
+     * Add an interceptor thas is active only on configured statement types.
+     * This interceptor is executed on all statements of that type.
+     * <p>
+     * Note the specific handling of the following types:
+     * <ul>
+     *     <li>{@link io.helidon.db.StatementType#DML} - used only when the statement is created as a DML statement
+     *          such as when using {@link io.helidon.db.HelidonDbExecute#createDmlStatement(String)}
+     *          (this interceptor would not be enabled for inserts, updates, deletes)</li>
+     *     <li>{@link io.helidon.db.StatementType#UNKNOWN} - used only when the statement is created as a general statement
+     *          such as when using {@link io.helidon.db.HelidonDbExecute#createStatement(String)}
+     *          (this interceptor would not be enabled for any other statements)</li>
+     * </ul>
+     *
+     * @param interceptor interceptor instance
+     * @param statementTypes statement types to be active on
+     * @return updated builder instance
+     */
+    T addInterceptor(DbInterceptor interceptor, StatementType... statementTypes);
 
     /**
      * Build database handler for specific provider.

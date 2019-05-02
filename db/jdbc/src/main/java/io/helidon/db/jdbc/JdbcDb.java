@@ -15,25 +15,13 @@
  */
 package io.helidon.db.jdbc;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.reactive.Flow;
-import io.helidon.db.DbException;
-import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbResult;
 import io.helidon.db.DbRow;
@@ -42,6 +30,8 @@ import io.helidon.db.DbStatement;
 import io.helidon.db.DbStatements;
 import io.helidon.db.HelidonDb;
 import io.helidon.db.HelidonDbExecute;
+import io.helidon.db.StatementType;
+import io.helidon.db.common.InterceptorSupport;
 
 /**
  * Helidon DB implementation for JDBC drivers.
@@ -58,7 +48,7 @@ class JdbcDb implements HelidonDb {
     private final DbStatements statements;
     private final DbMapperManager dbMapperMananger;
     private final MapperManager mapperManager;
-    private final List<DbInterceptor> interceptors = new LinkedList<>();
+    private final InterceptorSupport interceptors;
 
     JdbcDb(JdbcDbProviderBuilder builder) {
         this.executorService = builder.executorService();
@@ -66,7 +56,7 @@ class JdbcDb implements HelidonDb {
         this.statements = builder.statements();
         this.dbMapperMananger = builder.dbMapperMananger();
         this.mapperManager = builder.mapperManager();
-        this.interceptors.addAll(builder.interceptors());
+        this.interceptors = builder.interceptors();
     }
 
     @Override
@@ -87,149 +77,30 @@ class JdbcDb implements HelidonDb {
                 });
     }
 
-    private class JdbcExecute implements HelidonDbExecute {
+    @Override
+    public String dbType() {
+        return connectionPool.dbType();
+    }
 
+    private class JdbcExecute implements HelidonDbExecute {
         private final ExecutorService executorService;
         private final DbStatements statements;
-        private final List<DbInterceptor> interceptors;
+        private final InterceptorSupport interceptors;
 
         JdbcExecute(ExecutorService executorService,
                     DbStatements statements,
-                    List<DbInterceptor> interceptors) {
+                    InterceptorSupport interceptors) {
             this.executorService = executorService;
             this.statements = statements;
             this.interceptors = interceptors;
         }
 
         @Override
-        public DbRowResult<DbRow> namedQuery(String statementName, Object... parameters) {
-            return createNamedQuery(statementName)
-                    .params(parameters)
-                    .execute();
-        }
-
-        @Override
-        public CompletionStage<Long> namedInsert(String statementName, Object... parameters) {
-            return doExecuteUpdate(statements.statement(statementName),
-                                   parameters,
-                                   executorService);
-        }
-
-        @Override
-        public CompletionStage<Optional<DbRow>> namedGet(String statementName, Object... parameters) {
-            return doExecuteGet(
-                    statementName,
-                    statements.statement(statementName),
-                    parameters,
-                    executorService);
-        }
-
-        private void prepareStatement(PreparedStatement st, Object[] parameters) throws SQLException {
-            for (int i = 0; i < parameters.length; i++) {
-                Object parameter = parameters[i];
-                st.setObject(i + 1, parameter);
-            }
-        }
-
-        private CompletionStage<Long> doExecuteUpdate(String statement, Object[] parameters, ExecutorService executorService) {
-            CompletableFuture<Long> result = new CompletableFuture<>();
-
-            executorService.submit(() -> {
-                try (Connection jdbcConnection = connectionPool.connection()) {
-                    PreparedStatement preparedStatement = jdbcConnection.prepareStatement(statement);
-                    prepareStatement(preparedStatement, parameters);
-                    result.complete(preparedStatement.executeLargeUpdate());
-                } catch (Exception e) {
-                    result.completeExceptionally(e);
-                }
-            });
-
-            return result;
-        }
-
-        private CompletionStage<Optional<DbRow>> doExecuteGet(String statementName,
-                                                              String statement,
-                                                              Object[] parameters,
-                                                              ExecutorService executorService) {
-
-            CompletableFuture<Optional<DbRow>> result = new CompletableFuture<>();
-
-            createNamedQuery(statementName)
-                    .params(parameters)
-                    .execute()
-                    .publisher()
-                    .subscribe(new Flow.Subscriber<DbRow>() {
-                        private Flow.Subscription subscription;
-                        private final AtomicBoolean done = new AtomicBoolean(false);
-                        // defense against bad publisher - if I receive complete after cancelled...
-                        private final AtomicBoolean cancelled = new AtomicBoolean(false);
-                        private final AtomicReference<DbRow> theRow = new AtomicReference<>();
-
-                        @Override
-                        public void onSubscribe(Flow.Subscription subscription) {
-                            this.subscription = subscription;
-                            subscription.request(2);
-                        }
-
-                        @Override
-                        public void onNext(DbRow dbRow) {
-                            if (done.get()) {
-                                subscription.cancel();
-                                result.completeExceptionally(new DbException("Result of get statement " + statement + " returned "
-                                                                                     + "more than one row."));
-                                cancelled.set(true);
-                            } else {
-                                theRow.set(dbRow);
-                                done.set(true);
-                            }
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            result.completeExceptionally(throwable);
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            result.complete(Optional.of(theRow.get()));
-                        }
-                    });
-
-            return result;
-        }
-
-        @Override
-        public DbStatement<CompletionStage<Optional<DbRow>>> createNamedGet(String statementName) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools
-        }
-
-        @Override
-        public DbStatement<CompletionStage<Optional<DbRow>>> createGet(String statement) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools
-        }
-
-        @Override
-        public DbStatement<DbRowResult<DbRow>> createNamedQuery(String statementName) {
-            return new JdbcStatementQuery(connectionPool,
+        public DbStatement<?, DbRowResult<DbRow>> createNamedQuery(String statementName, String statement) {
+            return new JdbcStatementQuery(StatementType.QUERY,
+                                          connectionPool,
                                           executorService,
                                           statementName,
-                                          statements.statement(statementName),
-                                          dbMapperMananger,
-                                          mapperManager,
-                                          interceptors);
-        }
-
-        @Override
-        public DbStatement<DbRowResult<DbRow>> createQuery(String statement) {
-            return new JdbcStatementQuery(connectionPool,
-                                          executorService,
-                                          generateName("q", statement),
                                           statement,
                                           dbMapperMananger,
                                           mapperManager,
@@ -237,40 +108,78 @@ class JdbcDb implements HelidonDb {
         }
 
         @Override
-        public DbStatement<DbResult> createNamedStatement(String statementName) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools
-            // | Templates.
-        }
-
-        @Override
-        public DbStatement<DbResult> createStatement(String statement) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools
-            // | Templates.
-        }
-
-        @Override
-        public DbStatement<CompletionStage<Long>> createNamedDmlStatement(String statementName) {
-            return new JdbcStatementDml(connectionPool,
+        public DbStatement<?, CompletionStage<Optional<DbRow>>> createNamedGet(String statementName, String statement) {
+            return new JdbcStatementGet(connectionPool,
                                         executorService,
                                         statementName,
-                                        statements.statement(statementName),
+                                        statement,
                                         dbMapperMananger,
-                                        mapperManager);
+                                        mapperManager,
+                                        interceptors);
         }
 
         @Override
-        public DbStatement<CompletionStage<Long>> createDmlStatement(String statement) {
-            return new JdbcStatementDml(connectionPool,
+        public DbStatement<?, CompletionStage<Long>> createNamedDmlStatement(String statementName, String statement) {
+            return new JdbcStatementDml(StatementType.DML,
+                                        connectionPool,
                                         executorService,
-                                        generateName("dml", statement),
+                                        statementName,
                                         statement,
                                         dbMapperMananger,
-                                        mapperManager);
+                                        mapperManager,
+                                        interceptors);
         }
 
-    }
+        @Override
+        public DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName, String statement) {
+            return new JdbcStatementDml(StatementType.INSERT,
+                                        connectionPool,
+                                        executorService,
+                                        statementName,
+                                        statement,
+                                        dbMapperMananger,
+                                        mapperManager,
+                                        interceptors);
+        }
 
-    private String generateName(String type, String statement) {
-        return type + "_" + UUID.randomUUID();
+        @Override
+        public DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName, String statement) {
+            return new JdbcStatementDml(StatementType.UPDATE,
+                                        connectionPool,
+                                        executorService,
+                                        statementName,
+                                        statement,
+                                        dbMapperMananger,
+                                        mapperManager,
+                                        interceptors);
+        }
+
+        @Override
+        public DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName, String statement) {
+            return new JdbcStatementDml(StatementType.DELETE,
+                                        connectionPool,
+                                        executorService,
+                                        statementName,
+                                        statement,
+                                        dbMapperMananger,
+                                        mapperManager,
+                                        interceptors);
+        }
+
+        @Override
+        public DbStatement<?, DbResult> createNamedStatement(String statementName, String statement) {
+            return new JdbcStatementGeneric(connectionPool,
+                                            executorService,
+                                            statementName,
+                                            statement,
+                                            dbMapperMananger,
+                                            mapperManager,
+                                            interceptors);
+        }
+
+        @Override
+        public String statementText(String name) {
+            return statements.statement(name);
+        }
     }
 }

@@ -19,75 +19,21 @@ server:
   host: 0.0.0.0
 
 # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
-jdbc:
-    source: jdbc
-    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
-    username: user
-    password: password
-    statements:
-      # required ping statement
-      ping: "DO 0"
-      # Insert new pokemon
-      create-table: "CREATE TABLE pokemons (name VARCHAR(64) NOT NULL PRIMARY KEY, type VARCHAR(32))"
-      insert1: "INSERT INTO pokemons VALUES(?, ?)"
-      insert2: "INSERT INTO pokemons VALUES(:name, :type)"
-      select-by-type: "SELECT * FROM pokemons WHERE type = ?"
-      select-one: "SELECT * FROM pokemons WHERE name = ?"
-      select-all: "SELECT * FROM pokemons"
-      update: "UPDATE pokemons SET type = :type WHERE name = :name"
-      delete: "DELETE FROM pokemons WHERE name = ?"
-      delete-all: "DELETE FROM pokemons"
-
-
-# docker run --rm --name mongo -p 27017:27017 mongo
-mongo:
-    source: MongoDB
-    url: mongodb://127.0.0.1:27017/pokemon
-#    username:
-#    password:
-#    credDb:
-    statements:
-# Insert operation contains collection name, opertion type and data to be inserted.
-# Name variable is stored as MongoDB primary key attribute _id
-        insert2: '{
-            "collection": "pokemons",
-            "operation": "insert",
-            "value": {
-                "_id": $name,
-                "type": $type
-            }
-        }'
-        select-all: '{
-            "collection": "pokemons",
-            "operation": "query",
-            "query": {}
-        }'
-        select-one: '{
-            "collection": "pokemons",
-            "operation": "query",
-            "query": {
-              "_id": ?
-            }
-        }'
-        delete-all: '{
-            "collection": "pokemons",
-            "operation": "delete"
-        }'
-        update: '{
-            "collection": "pokemons",
-            "operation": "update",
-            "query": {
-                "_id": $name
-            },
-            "value": {
-                $set: { "type": $type }
-            }
-        }'
-        delete: '{
-            "collection": "pokemons",
-            "operation": "delete",
-            "query": {
-                "_id": ?
-            }
-        }'
-        
+db:
+  source: jdbc
+  url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+  username: user
+  password: password
+  statements:
+    # required ping statement
+    ping: "DO 0"
+    # Insert new pokemon
+    create-table: "CREATE TABLE pokemons (name VARCHAR(64) NOT NULL PRIMARY KEY, type VARCHAR(32))"
+    insert1: "INSERT INTO pokemons VALUES(?, ?)"
+    insert2: "INSERT INTO pokemons VALUES(:name, :type)"
+    select-by-type: "SELECT * FROM pokemons WHERE type = ?"
+    select-one: "SELECT * FROM pokemons WHERE name = ?"
+    select-all: "SELECT * FROM pokemons"
+    update: "UPDATE pokemons SET type = :type WHERE name = :name"
+    delete: "DELETE FROM pokemons WHERE name = ?"
+    delete-all: "DELETE FROM pokemons"

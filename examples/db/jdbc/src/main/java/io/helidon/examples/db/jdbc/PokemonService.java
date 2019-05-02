@@ -33,26 +33,14 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * A simple service to greet you. Examples:
- *
- * Get default greeting message:
- * curl -X GET http://localhost:8080/greet
- *
- * Get greeting message for Joe:
- * curl -X GET http://localhost:8080/greet/Joe
- *
- * Change greeting
- * curl -X PUT http://localhost:8080/greet/greeting/Hola
- *
- * The message is returned as a JSON object
+ * Example service using a database.
  */
-
 public class PokemonService implements Service {
 
     /**
      * Local logger instance.
      */
-    private static final Logger LOG = Logger.getLogger(PokemonService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(PokemonService.class.getName());
 
     private final HelidonDb db;
 
@@ -61,11 +49,10 @@ public class PokemonService implements Service {
 
         // TODO dirty hack to prepare database for our POC
         // MySQL init
-        db.execute(handle -> handle.namedInsert("create-table"))
+        db.execute(handle -> handle.namedDml("create-table"))
                 .thenAccept(System.out::println)
                 .exceptionally(throwable -> {
-                    System.err.println("Failed to create table, maybe it already exists?");
-                    throwable.printStackTrace();
+                    LOGGER.log(Level.WARNING, "Failed to create table, maybe it already exists?", throwable);
                     return null;
                 });
     }
@@ -78,17 +65,17 @@ public class PokemonService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/", this::listPokemons)
-            // create new
-            .post("/", Handler.create(Pokemon.class, this::insertPokemon))
-            .post("/{name}/type/{type}", this::insertPokemonSimple)
-            // delete all
-            .delete("/", this::deleteAllPokemons)
-            // get one
-            .get("/{name}", this::getPokemon)
-            // delete one
-            .delete("/{name}", this::deletePokemon)
-            // update one (TODO this is intentionally wrong - should use JSON request, just to make it simple we use path)
-            .put("/{name}/type/{type}", this::updatePokemonType);
+                // create new
+                .post("/", Handler.create(Pokemon.class, this::insertPokemon))
+                .post("/{name}/type/{type}", this::insertPokemonSimple)
+                // delete all
+                .delete("/", this::deleteAllPokemons)
+                // get one
+                .get("/{name}", this::getPokemon)
+                // delete one
+                .delete("/{name}", this::deletePokemon)
+                // update one (TODO this is intentionally wrong - should use JSON request, just to make it simple we use path)
+                .put("/{name}/type/{type}", this::updatePokemonType);
     }
 
     /**
@@ -99,7 +86,7 @@ public class PokemonService implements Service {
      */
     private void insertPokemon(ServerRequest request, ServerResponse response, Pokemon pokemon) {
         db.execute(exec -> exec
-                .createNamedDmlStatement("insert2")
+                .createNamedInsert("insert2")
                 .namedParam(pokemon)
                 .execute())
                 .thenAccept(count -> response.send("Inserted: " + count + " values"))
@@ -115,10 +102,10 @@ public class PokemonService implements Service {
     private void insertPokemonSimple(ServerRequest request, ServerResponse response) {
         // Test Pokemon POJO mapper
         Pokemon pokemon = new Pokemon(request.path().param("name"), request.path().param("type"));
-        LOG.log(Level.INFO,
-                String.format("Running insertPokemonSimple for name=%s type=%s", pokemon.getName(), pokemon.getType()));
+        LOGGER.log(Level.INFO,
+                   String.format("Running insertPokemonSimple for name=%s type=%s", pokemon.getName(), pokemon.getType()));
         db.execute(exec -> exec
-                .createNamedDmlStatement("insert2")
+                .createNamedInsert("insert2")
                 .namedParam(pokemon)
                 .execute())
                 .thenAccept(count -> response.send("Inserted: " + count + " values"))
@@ -163,9 +150,9 @@ public class PokemonService implements Service {
     private void updatePokemonType(ServerRequest request, ServerResponse response) {
         final String name = request.path().param("name");
         final String type = request.path().param("type");
-        LOG.log(Level.INFO, "Running updatePokemonType for {0}", name);
+        LOGGER.log(Level.INFO, "Running updatePokemonType for {0}", name);
         db.execute(exec -> exec
-                .createNamedDmlStatement("update")
+                .createNamedUpdate("update")
                 .addParam("name", name)
                 .addParam("type", type)
                 .execute())
@@ -180,9 +167,9 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
-        LOG.info("Running deleteAllPokemons");
+        LOGGER.info("Running deleteAllPokemons");
         db.execute(exec -> exec
-                .createNamedDmlStatement("delete-all")
+                .createNamedDelete("delete-all")
                 .execute())
                 .thenAccept(count -> response.send("Deleted: " + count + " values"))
                 .exceptionally(throwable -> sendError(throwable, response));
@@ -196,7 +183,7 @@ public class PokemonService implements Service {
      */
     private void deletePokemon(ServerRequest request, ServerResponse response) {
         final String name = request.path().param("name");
-        LOG.log(Level.INFO, "Running deletePokemon for {0}", name);
+        LOGGER.log(Level.INFO, "Running deletePokemon for {0}", name);
         db.execute(exec -> exec.namedDelete("delete", name))
                 .thenAccept(count -> response.send("Deleted: " + count + " values"))
                 .exceptionally(throwable -> sendError(throwable, response));
@@ -212,11 +199,12 @@ public class PokemonService implements Service {
     }
 
     private Void sendError(Throwable throwable, ServerResponse response) {
+        Throwable realCause = throwable;
         if (throwable instanceof CompletionException) {
-            throwable = throwable.getCause();
+            realCause = throwable.getCause();
         }
-        response.send("Failed to process request: " + throwable.getClass().getName() + "(" + throwable.getMessage() + ")");
-        throwable.printStackTrace();
+        response.send("Failed to process request: " + realCause.getClass().getName() + "(" + realCause.getMessage() + ")");
+        LOGGER.log(Level.WARNING, "Failed to process request", throwable);
         return null;
     }
 

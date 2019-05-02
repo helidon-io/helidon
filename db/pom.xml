@@ -34,6 +34,8 @@
 
     <modules>
         <module>db</module>
+        <module>common</module>
         <module>jdbc</module>
+        <module>mongodb</module>
     </modules>
 </project>

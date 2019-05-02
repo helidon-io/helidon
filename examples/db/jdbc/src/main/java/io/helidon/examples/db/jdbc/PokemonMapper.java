@@ -51,5 +51,4 @@ public class PokemonMapper implements DbMapper<Pokemon> {
         list.add(value.getType());
         return list;
     }
-    
 }
