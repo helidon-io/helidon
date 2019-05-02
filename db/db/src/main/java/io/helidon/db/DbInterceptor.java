@@ -18,6 +18,17 @@ package io.helidon.db;
 /**
  * Interceptor to handle work around a database statement.
  * Example of such interceptors: tracing, metrics.
+ * <p>
+ * Interceptors can be defined as global interceptors, interceptors for a type of a statement and interceptors for a named
+ * statement.
+ * These are executed in the following order:
+ * <ol>
+ *     <li>Named interceptors - if there are any interceptors configured for a specific statement, they are executed first</li>
+ *     <li>Type interceptors - if there are any interceptors configured for a type of statement, they are executed next</li>
+ *     <li>Global interceptors - if there are any interceptors configured globally, they are executed last</li>
+ * </ol>
+ * Order of interceptors within a group is based on the order they are registered in a builder, or by their priority when
+ * loaded from a Java Service loader
  */
 @FunctionalInterface
 public interface DbInterceptor {

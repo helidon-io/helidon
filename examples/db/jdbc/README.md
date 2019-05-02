@@ -20,7 +20,7 @@ Then run the `io.helidon.examples.db.jdbc.Main` class
 
 The application has the following endpoints:
 
-- http://localhost:8080/jdbc - the main business endpoint (see `curl` commands below)
+- http://localhost:8080/db - the main business endpoint (see `curl` commands below)
 - http://localhost:8080/metrics - the metrics endpoint (query adds application metrics)
 - http://localhost:8080/health - has a custom database health check
 
@@ -29,8 +29,8 @@ The query operation adds database trace.
 
 `curl` commands:
 
-- `curl http://localhost:8080/jdbc` - list all Pokemon in the database
-- `curl -i -X POST -d '{"name":"Squirtle","type":"water"}' http://localhost:8080/jdbc` - add a new pokemon
-- `curl http://localhost:8080/jdbc/Squirtle` - get a single pokemon
+- `curl http://localhost:8080/db` - list all Pokemon in the database
+- `curl -i -X POST -d '{"name":"Squirtle","type":"water"}' http://localhost:8080/db` - add a new pokemon
+- `curl http://localhost:8080/db/Squirtle` - get a single pokemon
 
 The application also supports update and delete - see `PokemonService.java` for bound endpoints.
