@@ -36,8 +36,9 @@ import java.util.function.Function;
  * Once {@link #execute()} is called, all methods would throw an {@link IllegalStateException}.
  *
  * @param <R> Type of the result of this statement (e.g. a {@link java.util.concurrent.CompletionStage})
+ * @param <D> Type of the descendant of this class
  */
-public interface DbStatement<R> {
+public interface DbStatement<D extends DbStatement<D, R>, R> {
     /**
      * Configure parameters from a {@link java.util.List} by order.
      * The statement must use indexed parameters and configure them by order in the provided array.
@@ -45,7 +46,7 @@ public interface DbStatement<R> {
      * @param parameters ordered parameters to set on this statement, never null
      * @return updated db statement
      */
-    DbStatement<R> params(List<?> parameters);
+    D params(List<?> parameters);
 
     /**
      * Configure parameters from an array by order.
@@ -55,7 +56,7 @@ public interface DbStatement<R> {
      * @param <T>        type of the array
      * @return updated db statement
      */
-    default <T> DbStatement<R> params(T... parameters) {
+    default <T> D params(T... parameters) {
         return params(Arrays.asList(parameters));
     }
 
@@ -66,7 +67,7 @@ public interface DbStatement<R> {
      * @param parameters named parameters to set on this statement
      * @return updated db statement
      */
-    DbStatement<R> params(Map<String, ?> parameters);
+    D params(Map<String, ?> parameters);
 
     /**
      * Configure parameters using {@link Object} instance with registered mapper.
@@ -76,7 +77,7 @@ public interface DbStatement<R> {
      * @param <T>        type of the parameters
      * @return updated db statement
      */
-    <T> DbStatement<R> namedParam(T parameters);
+    <T> D namedParam(T parameters);
 
     /**
      * Configure parameters using {@link Object} instance with registered mapper.
@@ -86,7 +87,7 @@ public interface DbStatement<R> {
      * @param <T>        type of the parameters
      * @return updated db statement
      */
-    <T> DbStatement<R> indexedParam(T parameters);
+    <T> D indexedParam(T parameters);
 
     /**
      * Configure parameters using {@link Object} instance with registered mapper.
@@ -96,7 +97,7 @@ public interface DbStatement<R> {
      * @param <T>        type of the parameters
      * @return updated db statement
      */
-    default <T> DbStatement<R> namedParam(T parameters, Function<T, Map<String, ?>> mapper) {
+    default <T> D namedParam(T parameters, Function<T, Map<String, ?>> mapper) {
         return params(mapper.apply(parameters));
     }
 
@@ -108,7 +109,7 @@ public interface DbStatement<R> {
      * @param <T>        type of the parameters
      * @return updated db statement
      */
-    default <T> DbStatement<R> indexedParam(T parameters, Function<T, List<?>> mapper) {
+    default <T> D indexedParam(T parameters, Function<T, List<?>> mapper) {
         return params(mapper.apply(parameters));
     }
 
@@ -118,7 +119,7 @@ public interface DbStatement<R> {
      * @param parameter next parameter to set on this statement
      * @return updated db statement
      */
-    DbStatement<R> addParam(Object parameter);
+    D addParam(Object parameter);
 
     /**
      * Add next parameter to the map of named parameters (e.g. the ones that use {@code :name} in Helidon
@@ -128,7 +129,7 @@ public interface DbStatement<R> {
      * @param parameter value of parameter
      * @return updated db statement
      */
-    DbStatement<R> addParam(String name, Object parameter);
+    D addParam(String name, Object parameter);
 
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.

@@ -30,9 +30,6 @@ import io.helidon.db.spi.DbMapperProvider;
  * Default implementation of the DbMapperManager.
  */
 class DbMapperManagerImpl implements DbMapperManager {
-    public static final GenericType<Object> TYPE_DB_ROW = GenericType.create(DbRow.class);
-    public static final GenericType<Map<String, ?>> TYPE_NAMED_PARAMS = new GenericType<Map<String, ?>>() { };
-    public static final GenericType<List<?>> TYPE_INDEXED_PARAMS = new GenericType<List<?>>() { };
     public static final String ERROR_NO_MAPPER_FOUND = "Failed to find DB mapper.";
     private final List<DbMapperProvider> providers;
     private final Map<Class<?>, DbMapper<?>> byClass = new ConcurrentHashMap<>();

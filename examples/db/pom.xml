@@ -38,5 +38,6 @@
     <modules>
 
         <module>jdbc</module>
+        <module>mongodb</module>
     </modules>
 </project>

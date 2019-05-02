@@ -112,6 +112,12 @@ public interface DbInterceptorContext {
     boolean isNamed();
 
     /**
+     * Type of the statement being executed.
+     * @return statement type
+     */
+    StatementType statementType();
+
+    /**
      * Set a new context to be used by other interceptors and when executing the statement.
      *
      * @param context context to use
@@ -178,4 +184,12 @@ public interface DbInterceptorContext {
      * @throws IllegalArgumentException in case the statement is using indexed parameters
      */
     DbInterceptorContext parameters(Map<String, Object> namedParameters);
+
+    /**
+     * Set the type of the statement.
+     *
+     * @param type statement type
+     * @return updated interceptor context
+     */
+    DbInterceptorContext statementType(StatementType type);
 }

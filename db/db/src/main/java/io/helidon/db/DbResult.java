@@ -15,18 +15,22 @@
  */
 package io.helidon.db;
 
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 /**
- * {@link io.helidon.db.DbStatementGeneric} execution result.
+ * {@link io.helidon.db.HelidonDbExecute#createNamedStatement(String)} (and other generic statements) execution result.
  * This is used when we do not know in advance whether we execute a query or a DML statement (such as insert, update, delete).
  * <p>
  * This class represents a future of two possible types - either a DML result returning the
  * number of changed rows (objects - depending on database type), or a query result returning the
  * {@link io.helidon.db.DbRowResult}.
  * <p>
- * One of the methods on this interface is called as soon as it is known what type of statement was
+ * One of the consumers on this interface is called as soon as it is known what type of statement was
  * executed - for SQL this would be when we finish execution of the prepared statement.
+ * <p>
+ * Alternative (or in combination) is to use the methods that return {@link java.util.concurrent.CompletionStage}
+ *  to process the results when (and if) they are done.
  */
 public interface DbResult {
     /**
@@ -47,4 +51,47 @@ public interface DbResult {
      */
     DbResult whenRs(Consumer<DbRowResult<DbRow>> consumer);
 
+    /**
+     * In case any exception occurs during processing, the handler is invoked.
+     *
+     * @param exceptionHandler handler to handle exceptional cases when processing the asynchronous request
+     * @return DbResult ot continue with other methods
+     */
+    DbResult exceptionally(Consumer<Throwable> exceptionHandler);
+
+    /**
+     * This future completes if (and only if) the statement was a DML statement.
+     * In case of any exception before the identification of statement type, all of
+     * {@link #dmlFuture()}, {@link #rsFuture()} finish exceptionally, and {@link #exceptionFuture()} completes with the
+     * exception.
+     * In case the exception occurs after the identification of statement type, such as when
+     * processing a result set of a query, only the {@link #exceptionFuture()}
+     * completes. Exceptions that occur during processing of result set are handled by
+     * methods in the {@link io.helidon.db.DbRowResult}.
+     *
+     * @return future for the DML result
+     */
+    CompletionStage<Long> dmlFuture();
+
+    /**
+     * This future completes if (and only if) the statement was a query statement.
+     * In case of any exception before the identification of statement type, all of
+     * {@link #dmlFuture()}, {@link #rsFuture()} finish exceptionally, and {@link #exceptionFuture()} completes with the
+     * exception.
+     * In case the exception occurs after the identification of statement type, such as when
+     * processing a result set of a query, only the {@link #exceptionFuture()}
+     * completes. Exceptions that occur during processing of result set are handled by
+     * methods in the {@link io.helidon.db.DbRowResult}.
+     *
+     * @return future for the query result
+     */
+    CompletionStage<DbRowResult<DbRow>> rsFuture();
+
+    /**
+     * This future completes if (and only if) the statement finished with an exception, either
+     * when executing the statement, or when processing the result set.
+     *
+     * @return future for an exceptional result
+     */
+    CompletionStage<Throwable> exceptionFuture();
 }
