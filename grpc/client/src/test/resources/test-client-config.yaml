@@ -1,0 +1,24 @@
+grpc:
+  channels:
+    default_host_port:
+    default_host:
+      port: 4096
+    default_port:
+      host: "non_default_host.com"
+    default_host_port_ssl_disabled:
+      ssl:
+        enabled: false
+        tlsKey: "clientKey.pem"
+        tlsCert: "clientCert.pem"
+        tlsCaCert: "ca.pem"
+    default_host_ssl_one_way:
+      port: 4096
+      ssl:
+        enabled: true
+        tlsCaCert: "ca.pem"
+    default_port_ssl:
+      host: "non_default_host.com"
+      ssl:
+        tlsKey: "clientKey.pem"
+        tlsCert: "clientCert.pem"
+        tlsCaCert: "ca.pem"

@@ -16,6 +16,8 @@
 
 package io.helidon.grpc.server;
 
+import io.helidon.grpc.core.GrpcSslDescriptor;
+
 import io.helidon.common.context.Context;
 
 import io.opentracing.Tracer;
@@ -38,7 +40,7 @@ public class GrpcServerBasicConfig
 
     private final int workers;
 
-    private final SslConfiguration sslConfig;
+    private final GrpcSslDescriptor sslConfig;
 
     private final Context context;
 
@@ -117,7 +119,7 @@ public class GrpcServerBasicConfig
     }
 
     @Override
-    public SslConfiguration sslConfig() {
+    public GrpcSslDescriptor sslConfig() {
         return sslConfig;
     }
 }

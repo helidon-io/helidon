@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
+import io.helidon.grpc.core.GrpcSslDescriptor;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -102,7 +103,7 @@ public interface GrpcServerConfiguration {
      *
      * @return a SSL context to use
      */
-    SslConfiguration sslConfig();
+    GrpcSslDescriptor sslConfig();
 
     /**
      * Creates new instance with default values for all configuration properties.
@@ -158,7 +159,7 @@ public interface GrpcServerConfiguration {
 
         private int workers;
 
-        private SslConfiguration sslConfig = null;
+        private GrpcSslDescriptor sslConfig = null;
 
         private Context context;
 
@@ -269,7 +270,7 @@ public interface GrpcServerConfiguration {
          * @param sslConfig a SSL context to use
          * @return this builder
          */
-        public Builder sslConfig(SslConfiguration sslConfig) {
+        public Builder sslConfig(GrpcSslDescriptor sslConfig) {
             this.sslConfig = sslConfig;
             return this;
         }
