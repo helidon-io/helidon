@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 public class MpcSourceEnvironmentVariablesTest {
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
 
     @Test
     public void testEnvironmentVariableAliases() {
@@ -122,7 +123,7 @@ public class MpcSourceEnvironmentVariablesTest {
         assertValue("com.ACME.size", "mapped-env-value", appAndEnv);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appAndEnv);
 
-        assertNoValue("com.acme.size", appAndEnv);
+        assertNoValueExceptOnWindows("com.acme.size", "mapped-env-value", appAndEnv);
         assertValue("com/ACME/size", "mapped-env-value", appAndEnv);
         assertValue("server/executor-service/max-pool-size", "mapped-env-value", appAndEnv);
 
@@ -142,7 +143,7 @@ public class MpcSourceEnvironmentVariablesTest {
         assertValue("com.ACME.size", "sys-prop-value", appSysAndEnv);
         assertValue("server.executor-service.max-pool-size", "mapped-env-value", appSysAndEnv);
 
-        assertNoValue("com.acme.size", appAndEnv);
+        assertNoValueExceptOnWindows("com.acme.size", "mapped-env-value", appAndEnv);
         assertValue("com/ACME/size", "mapped-env-value", appSysAndEnv);
         assertValue("server/executor-service/max-pool-size", "mapped-env-value", appSysAndEnv);
     }
@@ -153,6 +154,14 @@ public class MpcSourceEnvironmentVariablesTest {
 
     static void assertNoValue(final String key, final MpConfig config) {
         assertThrows(NoSuchElementException.class, () -> config.getValue(key, String.class));
+    }
+
+    static void assertNoValueExceptOnWindows(final String key, final String expectedValueOnWindows, final MpConfig config) {
+        if (IS_WINDOWS) {
+            assertValue(key, expectedValueOnWindows, config);
+        } else {
+            assertThrows(NoSuchElementException.class, () -> config.getValue(key, String.class));
+        }
     }
 
     static ConfigSource toConfigSource(final Map<String, String> map) {
