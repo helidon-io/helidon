@@ -24,6 +24,9 @@
 
 Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 
+=== _Experimental Feature_
+The Helidon gRPC feature is currently experimental and the APIs are subject to changes until gRPC support is stabilized.
+
 == Quick Start
 
 Here is the code for a minimalist gRPC application that runs on a default port (1408):
