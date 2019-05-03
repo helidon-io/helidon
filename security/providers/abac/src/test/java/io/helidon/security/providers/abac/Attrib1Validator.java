@@ -26,6 +26,7 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 
 /**
@@ -54,15 +55,17 @@ public class Attrib1Validator implements AbacValidator<Attrib1Validator.Attrib1C
 
     @Override
     public Attrib1Config fromAnnotations(EndpointConfig endpointConfig) {
-        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
-            List<Annotation> annotations = new ArrayList<>();
-            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
-                annotations.addAll(list);
-            }
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof Attrib1) {
-                    return new Attrib1Config(((Attrib1) annotation).value());
+        for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
+            for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
+                List<Annotation> annotations = new ArrayList<>();
+                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                    List<? extends Annotation> list = securityLevel.filterAnnotations(annotation, value);
+                    annotations.addAll(list);
+                }
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof Attrib1) {
+                        return new Attrib1Config(((Attrib1) annotation).value());
+                    }
                 }
             }
         }

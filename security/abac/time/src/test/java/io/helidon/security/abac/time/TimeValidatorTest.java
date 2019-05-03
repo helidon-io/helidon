@@ -19,6 +19,7 @@ package io.helidon.security.abac.time;
 import java.lang.annotation.Annotation;
 import java.time.DayOfWeek;
 import java.time.temporal.ChronoField;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import io.helidon.common.Errors;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityTime;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -59,7 +61,14 @@ public class TimeValidatorTest {
         when(tod2.to()).thenReturn("17:30");
         annotations.add(tod2);
 
-        when(ep.combineAnnotations(TimeValidator.TimeOfDay.class, EndpointConfig.AnnotationScope.CLASS))
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+        securityLevels.add(classSecurityLevel);
+
+        when(ep.securityLevels()).thenReturn(securityLevels);
+        when(classSecurityLevel.filterAnnotations(TimeValidator.TimeOfDay.class, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(CollectionsHelper.listOf(tod, tod2));
 
         TimeValidator.DaysOfWeek dow = mock(TimeValidator.DaysOfWeek.class);
@@ -71,7 +80,7 @@ public class TimeValidatorTest {
                 DayOfWeek.FRIDAY
         });
         annotations.add(dow);
-        when(ep.combineAnnotations(TimeValidator.DaysOfWeek.class, EndpointConfig.AnnotationScope.CLASS))
+        when(classSecurityLevel.filterAnnotations(TimeValidator.DaysOfWeek.class, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(CollectionsHelper.listOf(dow));
 
 

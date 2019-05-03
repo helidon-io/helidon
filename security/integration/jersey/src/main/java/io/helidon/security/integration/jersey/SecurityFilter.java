@@ -50,6 +50,7 @@ import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
@@ -334,10 +335,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         //this is specific jersey implementation - if parent is null, this is application scope, otherwise resource scope
-        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = (
-                (null == parent)
-                        ? definition.getApplicationScope()
-                        : definition.getResourceScope());
+        SecurityLevel securityLevel = new SecurityLevel();
+        definition.getSecurityLevels().add(securityLevel);
+
+        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = securityLevel.getClassLevelAnnotations();
 
         addCustomAnnotations(customAnnotsMap, theClass);
 
@@ -417,7 +418,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 methodDef.add(atz);
                 methodDef.add(audited);
 
-                addCustomAnnotations(methodDef.getOperationScope(), method);
+                SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(methodDef.getSecurityLevels().size() - 1);
+                addCustomAnnotations(currentSecurityLevel.getMethodLevelAnnotations(), method);
                 for (AnnotationAnalyzer analyzer : analyzers) {
                     AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(method,
                                                                                             current.analyzerResponse(analyzer));
@@ -447,7 +449,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         methodDef.add(atz);
         methodDef.add(audited);
 
-        addCustomAnnotations(methodDef.getOperationScope(), definitionMethod);
+        SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(methodDef.getSecurityLevels().size() - 1);
+        addCustomAnnotations(currentSecurityLevel.getMethodLevelAnnotations(), definitionMethod);
 
         resourceMethodSecurity.put(definitionMethod, methodDef);
 
@@ -464,7 +467,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     private void addCustomAnnotations(Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap, Class<?> theClass) {
         Annotation[] annotations = theClass.getAnnotations();
         for (Annotation annotation : annotations) {
-            addToMap(annotation.getClass(), customAnnotsMap, annotation);
+            addToMap(annotation.annotationType(), customAnnotsMap, annotation);
         }
     }
 

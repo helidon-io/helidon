@@ -16,6 +16,8 @@
 
 package io.helidon.security.abac.scope;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.CollectionsHelper;
@@ -24,6 +26,7 @@ import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 
 import org.junit.jupiter.api.Test;
@@ -50,8 +53,15 @@ public class ScopeValidatorTest {
                 annotTwo
         });
 
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+        securityLevels.add(classSecurityLevel);
+
         EndpointConfig ep = mock(EndpointConfig.class);
-        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(ep.securityLevels()).thenReturn(securityLevels);
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(CollectionsHelper.listOf(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -89,8 +99,15 @@ public class ScopeValidatorTest {
                 annotTwo
         });
 
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+        securityLevels.add(classSecurityLevel);
+
         EndpointConfig ep = mock(EndpointConfig.class);
-        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(ep.securityLevels()).thenReturn(securityLevels);
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(CollectionsHelper.listOf(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -129,8 +146,15 @@ public class ScopeValidatorTest {
                 annotTwo
         });
 
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+        securityLevels.add(classSecurityLevel);
+
         EndpointConfig ep = mock(EndpointConfig.class);
-        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(ep.securityLevels()).thenReturn(securityLevels);
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(CollectionsHelper.listOf(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);
@@ -167,8 +191,15 @@ public class ScopeValidatorTest {
                 annotTwo
         });
 
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+        securityLevels.add(classSecurityLevel);
+
         EndpointConfig ep = mock(EndpointConfig.class);
-        when(ep.combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
+        when(ep.securityLevels()).thenReturn(securityLevels);
+        when(classSecurityLevel.filterAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.METHOD))
                 .thenReturn(CollectionsHelper.listOf(scopes));
 
         ScopeValidator.ScopesConfig sConfig = validator.fromAnnotations(ep);

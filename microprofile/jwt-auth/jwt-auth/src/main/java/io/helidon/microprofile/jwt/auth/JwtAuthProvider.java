@@ -173,8 +173,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
             return AuthenticationResponse.abstain();
         }
 
-        List<LoginConfig> loginConfigs = providerRequest.endpointConfig()
-                .combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION);
+        //Obtains Application level of security
+        List<LoginConfig> loginConfigs = providerRequest.endpointConfig().securityLevels().get(0)
+                .filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS);
 
         try {
             return loginConfigs.stream()
