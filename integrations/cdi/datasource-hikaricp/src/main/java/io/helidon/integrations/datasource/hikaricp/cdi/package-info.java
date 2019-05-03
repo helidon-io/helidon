@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 /**
  * CDI integration for the <a
- * href="https://github.com/brettwooldridge/HikariCP/blob/HikariCP-2.7.8/README.md#-hikaricpits-fasterhikari-hikal%C4%93-origin-japanese-light-ray">Hikari
- * connection pool</a>.
+ * href="https://github.com/brettwooldridge/HikariCP/blob/HikariCP-2.7.8/README.md#-hikaricpits-fasterhikari-hikal%C4%93-origin-japanese-light-ray"
+ * target="_parent">Hikari connection pool</a>.
+ *
+ * @see
+ * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
  */
 package io.helidon.integrations.datasource.hikaricp.cdi;

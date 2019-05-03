@@ -146,8 +146,7 @@ class JsonSupportTest {
                 .path("/foo")
                 .header("Accept", "application/javascript")
                 .post(MediaPublisher.create(MediaType.APPLICATION_JSON.withCharset("UTF-8"), json.toString()));
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is("application/javascript"));
+        assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
 
         // Without start
         response = TestClient.create(routing)

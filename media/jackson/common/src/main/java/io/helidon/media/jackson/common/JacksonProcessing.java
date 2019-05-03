@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.CharBuffer;
@@ -33,38 +32,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Media type support for Jackson.
+ * Utility methods for Jackson integration.
  */
 public final class JacksonProcessing {
 
     private JacksonProcessing() {
         super();
-    }
-
-    /**
-     * Check whether the type is supported by Jackson.
-     *
-     * @param type media type to check
-     * @return true if the media type checked is supported by Jackson
-     */
-    public static boolean isSupported(MediaType type) {
-        // See https://github.com/FasterXML/jackson-jaxrs-providers/blob/jackson-jaxrs-providers-2.9.4/json/src/main/java/com/fasterxml/jackson/jaxrs/json/JacksonJsonProvider.java#L167-L192
-        final boolean returnValue;
-        if (type == null) {
-            returnValue = true;
-        } else {
-            final String subtype = type.subtype();
-            if (subtype == null) {
-                returnValue = false;
-            } else {
-                returnValue = "json".equalsIgnoreCase(subtype)
-                    || subtype.endsWith("+json")
-                    || "javascript".equals(subtype)
-                    || "x-javascript".equals(subtype)
-                    || "x-json".equals(subtype);
-            }
-        }
-        return returnValue;
     }
 
     /**
