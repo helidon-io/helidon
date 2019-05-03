@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @ExtendWith(RestoreSystemPropertiesExt.class)
 public class MpcSourceEnvironmentVariablesTest {
-    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+    private static final boolean WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
 
     @Test
     public void testEnvironmentVariableAliases() {
@@ -157,7 +157,7 @@ public class MpcSourceEnvironmentVariablesTest {
     }
 
     static void assertNoValueExceptOnWindows(final String key, final String expectedValueOnWindows, final MpConfig config) {
-        if (IS_WINDOWS) {
+        if (WINDOWS) {
             assertValue(key, expectedValueOnWindows, config);
         } else {
             assertThrows(NoSuchElementException.class, () -> config.getValue(key, String.class));
