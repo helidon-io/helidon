@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
-import io.helidon.db.DbStatements;
 import io.helidon.db.HelidonDb;
 import io.helidon.db.StatementType;
 import io.helidon.db.health.DbHealthCheck;
