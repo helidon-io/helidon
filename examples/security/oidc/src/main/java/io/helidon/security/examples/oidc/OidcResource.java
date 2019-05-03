@@ -23,6 +23,9 @@ import javax.ws.rs.core.Context;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authenticated;
 
+/**
+ * A simple JAX-RS resource with a single GET method.
+ */
 @Path("/test")
 public class OidcResource {
 
