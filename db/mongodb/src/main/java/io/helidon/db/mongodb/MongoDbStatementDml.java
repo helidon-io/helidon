@@ -62,7 +62,7 @@ public class MongoDbStatementDml extends MongoDbStatement<MongoDbStatementDml, C
 
     @Override
     public CompletionStage<Long> execute() {
-        statement = new MongoStatement(READER_FACTORY, build());
+        statement = new MongoStatement(statementType, READER_FACTORY, build());
         switch (statement.getOperation()) {
         case INSERT:
             statementType = StatementType.INSERT;

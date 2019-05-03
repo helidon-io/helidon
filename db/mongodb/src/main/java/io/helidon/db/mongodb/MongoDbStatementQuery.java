@@ -73,7 +73,7 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                            CompletableFuture<Void> statementFuture,
                                            CompletableFuture<Long> queryFuture) {
 
-        MongoStatement stmt = new MongoStatement(READER_FACTORY, build());
+        MongoStatement stmt = new MongoStatement(StatementType.QUERY, READER_FACTORY, build());
         if (stmt.getOperation() == MongoOperation.QUERY) {
             return executeQuery(stmt, statementFuture, queryFuture);
         }
