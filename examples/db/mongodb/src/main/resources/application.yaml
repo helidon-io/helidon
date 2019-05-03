@@ -27,7 +27,6 @@ db:
     # Name variable is stored as MongoDB primary key attribute _id
     insert2: '{
             "collection": "pokemons",
-            "operation": "insert",
             "value": {
                 "_id": $name,
                 "type": $type
@@ -35,12 +34,10 @@ db:
         }'
     select-all: '{
             "collection": "pokemons",
-            "operation": "query",
             "query": {}
         }'
     select-one: '{
             "collection": "pokemons",
-            "operation": "query",
             "query": {
               "_id": $name
             }
@@ -51,7 +48,6 @@ db:
         }'
     update: '{
             "collection": "pokemons",
-            "operation": "update",
             "query": {
                 "_id": $name
             },
@@ -61,7 +57,6 @@ db:
         }'
     delete: '{
             "collection": "pokemons",
-            "operation": "delete",
             "query": {
                 "_id": ?
             }

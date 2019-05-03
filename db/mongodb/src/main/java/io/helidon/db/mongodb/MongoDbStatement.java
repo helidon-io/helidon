@@ -168,13 +168,81 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
         private final Document query;
         private final Document value;
 
-        MongoStatement(JsonReaderFactory jrf, String preparedStmt) {
+        MongoStatement(StatementType statementType, JsonReaderFactory jrf, String preparedStmt) {
             this.preparedStmt = preparedStmt;
             this.jsonStmt = readStmt(jrf, preparedStmt);
-            this.operation = MongoOperation.operationByName(jsonStmt.getString(JSON_OPERATION));
+
+            MongoOperation operation;
+            if (jsonStmt.containsKey(JSON_OPERATION)) {
+                operation = MongoOperation.operationByName(jsonStmt.getString(JSON_OPERATION));
+                // make sure we have alignment between statement type and operation
+                switch (statementType) {
+                case QUERY:
+                case GET:
+                    validateOperation(statementType, operation, MongoOperation.QUERY);
+                    break;
+                case INSERT:
+                    validateOperation(statementType, operation, MongoOperation.INSERT);
+                    break;
+                case UPDATE:
+                    validateOperation(statementType, operation, MongoOperation.UPDATE);
+                    break;
+                case DELETE:
+                    validateOperation(statementType, operation, MongoOperation.DELETE);
+                    break;
+                case DML:
+                    validateOperation(statementType, operation, MongoOperation.INSERT,
+                                      MongoOperation.UPDATE, MongoOperation.DELETE);
+                    break;
+                case UNKNOWN:
+                    // any operation is OK for this type
+                    break;
+                }
+            } else {
+                switch (statementType) {
+                case QUERY:
+                    operation = MongoOperation.QUERY;
+                    break;
+                case GET:
+                    operation = MongoOperation.QUERY;
+                    break;
+                case INSERT:
+                    operation = MongoOperation.INSERT;
+                    break;
+                case UPDATE:
+                    operation = MongoOperation.UPDATE;
+                    break;
+                case DELETE:
+                    operation = MongoOperation.DELETE;
+                    break;
+                case DML:
+                case UNKNOWN:
+                default:
+                    throw new IllegalStateException(
+                            "Operation type is not defined in statement, and cannot be inferred from statement type: "
+                                    + statementType);
+                }
+            }
+            this.operation = operation;
             this.collection = jsonStmt.getString(JSON_COLLECTION);
             this.value = jsonStmt.get(JSON_VALUE, Document.class);
             this.query = jsonStmt.get(JSON_QUERY, Document.class);
+        }
+
+        private static void validateOperation(StatementType statementType,
+                                              MongoOperation actual,
+                                              MongoOperation... expected) {
+
+            for (MongoOperation operation : expected) {
+                if (actual == operation) {
+                    return;
+                }
+            }
+
+            throw new IllegalStateException("Statement type is "
+                                                    + statementType
+                                                    + ", yet operation in statement is: "
+                                                    + actual);
         }
 
         public Document/*JsonObject*/ getJsonStmt() {
