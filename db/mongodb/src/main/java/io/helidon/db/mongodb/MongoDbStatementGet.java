@@ -29,7 +29,7 @@ import io.helidon.db.DbException;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbStatement;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -46,7 +46,7 @@ public class MongoDbStatementGet implements DbStatement<MongoDbStatementGet, Com
                         DbMapperManager dbMapperManager,
                         MapperManager mapperManager,
                         InterceptorSupport interceptors) {
-        this.theQuery = new MongoDbStatementQuery(StatementType.GET,
+        this.theQuery = new MongoDbStatementQuery(DbStatementType.GET,
                                                   db,
                                                   statementName,
                                                   statement,

@@ -18,7 +18,7 @@ package io.helidon.db;
 /**
  * Usual supported statement types.
  */
-public enum StatementType {
+public enum DbStatementType {
     /**
      * Query is statement that returns zero or more results.
      */
@@ -45,13 +45,13 @@ public enum StatementType {
     DML("dml"),
     /**
      * The statement type is not yet knows (e.g. when invoking
-     * {@link io.helidon.db.HelidonDbExecute#createNamedStatement(String)})
+     * {@link DbExecute#createNamedStatement(String)})
      */
     UNKNOWN("x");
 
     private final String prefix;
 
-    StatementType(String prefix) {
+    DbStatementType(String prefix) {
         this.prefix = prefix;
     }
 

@@ -22,8 +22,8 @@ import java.util.function.Function;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbStatements;
-import io.helidon.db.HelidonDb;
-import io.helidon.db.HelidonDbExecute;
+import io.helidon.db.Db;
+import io.helidon.db.DbExecute;
 import io.helidon.db.common.InterceptorSupport;
 
 import com.mongodb.ConnectionString;
@@ -36,7 +36,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 /**
  * MongoDB driver handler.
  */
-public class MongoDb implements HelidonDb {
+public class MongoDb implements Db {
     private final MongoDbConfig config;
     private final DbStatements statements;
     private final MongoClient client;
@@ -58,12 +58,12 @@ public class MongoDb implements HelidonDb {
     }
 
     @Override
-    public <T> T inTransaction(Function<HelidonDbExecute, T> executor) {
+    public <T> T inTransaction(Function<DbExecute, T> executor) {
         return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
     }
 
     @Override
-    public <T> T execute(Function<HelidonDbExecute, T> executor) {
+    public <T> T execute(Function<DbExecute, T> executor) {
         return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
     }
 
