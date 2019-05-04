@@ -46,7 +46,7 @@ public interface DbStatements {
 
     /**
      * Create statements from configuration.
-     * Statement configuration is expected to be a map of name -> statement pairs.
+     * Statement configuration is expected to be a map of name to statement pairs.
      *
      * @param config configuration of the statements
      * @return statements as read from the configuration
