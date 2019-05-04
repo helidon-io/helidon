@@ -19,7 +19,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 /**
- * {@link io.helidon.db.HelidonDbExecute#createNamedStatement(String)} (and other generic statements) execution result.
+ * {@link DbExecute#createNamedStatement(String)} (and other generic statements) execution result.
  * This is used when we do not know in advance whether we execute a query or a DML statement (such as insert, update, delete).
  * <p>
  * This class represents a future of two possible types - either a DML result returning the

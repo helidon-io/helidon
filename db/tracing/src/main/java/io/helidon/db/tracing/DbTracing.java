@@ -15,6 +15,8 @@
  */
 package io.helidon.db.tracing;
 
+import java.util.concurrent.CompletableFuture;
+
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -51,7 +53,7 @@ public class DbTracing implements DbInterceptor {
     }
 
     @Override
-    public void statement(DbInterceptorContext interceptorContext) {
+    public CompletableFuture<DbInterceptorContext> statement(DbInterceptorContext interceptorContext) {
         Context context = interceptorContext.context();
         Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
 
@@ -78,6 +80,6 @@ public class DbTracing implements DbInterceptor {
                     return null;
                 });
 
+        return CompletableFuture.completedFuture(interceptorContext);
     }
-
 }

@@ -22,21 +22,22 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.db.Db;
+import io.helidon.db.DbExecute;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbResult;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbRowResult;
 import io.helidon.db.DbStatement;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.DbStatements;
-import io.helidon.db.HelidonDb;
-import io.helidon.db.HelidonDbExecute;
-import io.helidon.db.StatementType;
+import io.helidon.db.common.AbstractDbExecute;
 import io.helidon.db.common.InterceptorSupport;
 
 /**
  * Helidon DB implementation for JDBC drivers.
  */
-class JdbcDb implements HelidonDb {
+class JdbcDb implements Db {
 
     /**
      * Local logger instance.
@@ -60,12 +61,12 @@ class JdbcDb implements HelidonDb {
     }
 
     @Override
-    public <T> T inTransaction(Function<HelidonDbExecute, T> executor) {
+    public <T> T inTransaction(Function<DbExecute, T> executor) {
         return executor.apply(new JdbcExecute(executorService, statements, interceptors));
     }
 
     @Override
-    public <T> T execute(Function<HelidonDbExecute, T> executor) {
+    public <T> T execute(Function<DbExecute, T> executor) {
         return executor.apply(new JdbcExecute(executorService, statements, interceptors));
     }
 
@@ -82,22 +83,21 @@ class JdbcDb implements HelidonDb {
         return connectionPool.dbType();
     }
 
-    private class JdbcExecute implements HelidonDbExecute {
+    private class JdbcExecute extends AbstractDbExecute implements DbExecute {
         private final ExecutorService executorService;
-        private final DbStatements statements;
         private final InterceptorSupport interceptors;
 
         JdbcExecute(ExecutorService executorService,
                     DbStatements statements,
                     InterceptorSupport interceptors) {
+            super(statements);
             this.executorService = executorService;
-            this.statements = statements;
             this.interceptors = interceptors;
         }
 
         @Override
         public DbStatement<?, DbRowResult<DbRow>> createNamedQuery(String statementName, String statement) {
-            return new JdbcStatementQuery(StatementType.QUERY,
+            return new JdbcStatementQuery(DbStatementType.QUERY,
                                           connectionPool,
                                           executorService,
                                           statementName,
@@ -120,7 +120,7 @@ class JdbcDb implements HelidonDb {
 
         @Override
         public DbStatement<?, CompletionStage<Long>> createNamedDmlStatement(String statementName, String statement) {
-            return new JdbcStatementDml(StatementType.DML,
+            return new JdbcStatementDml(DbStatementType.DML,
                                         connectionPool,
                                         executorService,
                                         statementName,
@@ -132,7 +132,7 @@ class JdbcDb implements HelidonDb {
 
         @Override
         public DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName, String statement) {
-            return new JdbcStatementDml(StatementType.INSERT,
+            return new JdbcStatementDml(DbStatementType.INSERT,
                                         connectionPool,
                                         executorService,
                                         statementName,
@@ -144,7 +144,7 @@ class JdbcDb implements HelidonDb {
 
         @Override
         public DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName, String statement) {
-            return new JdbcStatementDml(StatementType.UPDATE,
+            return new JdbcStatementDml(DbStatementType.UPDATE,
                                         connectionPool,
                                         executorService,
                                         statementName,
@@ -156,7 +156,7 @@ class JdbcDb implements HelidonDb {
 
         @Override
         public DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName, String statement) {
-            return new JdbcStatementDml(StatementType.DELETE,
+            return new JdbcStatementDml(DbStatementType.DELETE,
                                         connectionPool,
                                         executorService,
                                         statementName,
@@ -175,11 +175,6 @@ class JdbcDb implements HelidonDb {
                                             dbMapperMananger,
                                             mapperManager,
                                             interceptors);
-        }
-
-        @Override
-        public String statementText(String name) {
-            return statements.statement(name);
         }
     }
 }

@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
-import io.helidon.db.HelidonDb;
+import io.helidon.db.Db;
 import io.helidon.db.health.DbHealthCheck;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
@@ -98,10 +98,10 @@ public final class Main {
         Config dbConfig = config.get("db");
 
         // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
-        HelidonDb helidonDb = HelidonDb.create(dbConfig);
+        Db db = Db.create(dbConfig);
 
         HealthSupport health = HealthSupport.builder()
-                .add(DbHealthCheck.create(helidonDb))
+                .add(DbHealthCheck.create(db))
                 .build();
 
         return Routing.builder()
@@ -110,7 +110,7 @@ public final class Main {
                 .register(DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/db", new PokemonService(helidonDb))
+                .register("/db", new PokemonService(db))
                 .build();
     }
 }

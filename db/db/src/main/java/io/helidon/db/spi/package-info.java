@@ -17,7 +17,7 @@
  * Service provider interface for Helidon DB.
  * The main entry point for driver implementor is {@link io.helidon.db.spi.DbProvider}.
  *
- * @see io.helidon.db.spi.DbProvider
- * @see io.helidon.db.DbInterceptor
+ * @see io.helidon.db.spi.DbInterceptorProvider
+ * @see io.helidon.db.spi.DbMapperProvider
  */
 package io.helidon.db.spi;

@@ -24,43 +24,51 @@ import java.util.concurrent.ExecutorService;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 class JdbcStatementDml extends JdbcStatement<JdbcStatementDml, CompletionStage<Long>> {
 
     private final ExecutorService executorService;
 
-    JdbcStatementDml(StatementType statementType,
+    JdbcStatementDml(DbStatementType dbStatementType,
                      ConnectionPool config,
                      ExecutorService executorService,
                      String statementName,
                      String statement,
                      DbMapperManager dbMapperManager,
                      MapperManager mapperManager, InterceptorSupport interceptors) {
-        super(statementType, config, statementName, statement, dbMapperManager, mapperManager, executorService, interceptors);
+        super(dbStatementType, config, statementName, statement, dbMapperManager, mapperManager, executorService, interceptors);
         this.executorService = executorService;
     }
 
     @Override
-    protected CompletionStage<Long> doExecute(DbInterceptorContext dbContext,
+    protected CompletionStage<Long> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
                                               CompletableFuture<Void> statementFuture,
                                               CompletableFuture<Long> queryFuture) {
 
-        executorService.submit(() -> {
-            try (Connection connection = connection()) {
-                PreparedStatement preparedStatement = build(connection, dbContext);
-                long count = preparedStatement.executeLargeUpdate();
-                statementFuture.complete(null);
-                queryFuture.complete(count);
-                preparedStatement.close();
-            } catch (Exception e) {
-                statementFuture.completeExceptionally(e);
-                queryFuture.completeExceptionally(e);
-            }
+        // query and statement future must always complete either OK, or exceptionally
+        dbContextFuture.exceptionally(throwable -> {
+            statementFuture.completeExceptionally(throwable);
+            queryFuture.completeExceptionally(throwable);
+            return null;
         });
 
-        // the query future is reused, as it completes with the number of updated records
-        return queryFuture;
+        return dbContextFuture.thenCompose(dbContext -> {
+            executorService.submit(() -> {
+                try (Connection connection = connection()) {
+                    PreparedStatement preparedStatement = build(connection, dbContext);
+                    long count = preparedStatement.executeLargeUpdate();
+                    statementFuture.complete(null);
+                    queryFuture.complete(count);
+                    preparedStatement.close();
+                } catch (Exception e) {
+                    statementFuture.completeExceptionally(e);
+                    queryFuture.completeExceptionally(e);
+                }
+            });
+            // the query future is reused, as it completes with the number of updated records
+            return queryFuture;
+        });
     }
 }
