@@ -22,7 +22,6 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.db.HelidonDb;
 import io.helidon.db.health.DbHealthCheck;
-import io.helidon.db.tracing.DbTracing;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.media.jsonp.server.JsonSupport;
@@ -71,7 +70,7 @@ public final class Main {
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
                 ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create("db-poc").buildAndRegister())
+                        .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
                         .build();
 
         WebServer server = WebServer.create(serverConfig, createRouting(config));
@@ -102,7 +101,7 @@ public final class Main {
         HelidonDb helidonDb = HelidonDb.create(dbConfig);
 
         HealthSupport health = HealthSupport.builder()
-                .add(DbHealthCheck.create(helidonDb, helidonDb.dbType()))
+                .add(DbHealthCheck.create(helidonDb))
                 .build();
 
         return Routing.builder()
@@ -114,10 +113,4 @@ public final class Main {
                 .register("/db", new PokemonService(helidonDb))
                 .build();
     }
-
-    private static IllegalStateException noConfigError(String key) {
-        return new IllegalStateException("Attempting to create a Pokemon service with no configuration"
-                                                 + ", config key: " + key);
-    }
-
 }
