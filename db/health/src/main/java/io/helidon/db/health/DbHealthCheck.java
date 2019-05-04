@@ -35,10 +35,23 @@ public final class DbHealthCheck implements HealthCheck {
         this.name = builder.name;
     }
 
+    /**
+     * Create a health check for the database.
+     *
+     * @param db A database that implements {@link io.helidon.db.Db#ping()}
+     * @return health check that can be used with
+     * {@link io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)}
+     */
     public static DbHealthCheck create(Db db) {
         return builder(db).build();
     }
 
+    /**
+     * A fluent API builder to create a fully customized database health check.
+     *
+     * @param db database
+     * @return a new builder
+     */
     public static Builder builder(Db db) {
         return new Builder(db);
     }
@@ -74,6 +87,9 @@ public final class DbHealthCheck implements HealthCheck {
         return builder.build();
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.db.health.DbHealthCheck}.
+     */
     public static final class Builder implements io.helidon.common.Builder<DbHealthCheck> {
         private final Db database;
         private String name;
@@ -88,6 +104,13 @@ public final class DbHealthCheck implements HealthCheck {
             return new DbHealthCheck(this);
         }
 
+        /**
+         * Customized name of the health check.
+         * Default uses {@link io.helidon.db.Db#dbType()}.
+         *
+         * @param name name of the health check
+         * @return updated builder instance
+         */
         public Builder name(String name) {
             this.name = name;
             return this;
