@@ -18,12 +18,13 @@ package io.helidon.db.mongodb;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.db.DbExecute;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbResult;
 import io.helidon.db.DbStatement;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.DbStatements;
-import io.helidon.db.HelidonDbExecute;
-import io.helidon.db.StatementType;
+import io.helidon.db.common.AbstractDbExecute;
 import io.helidon.db.common.InterceptorSupport;
 
 import com.mongodb.reactivestreams.client.MongoDatabase;
@@ -31,9 +32,8 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 /**
  * Execute implementation for MongoDB.
  */
-public class MongoDbExecute implements HelidonDbExecute {
+public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
 
-    private final DbStatements statements;
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
     private final InterceptorSupport interceptors;
@@ -44,8 +44,8 @@ public class MongoDbExecute implements HelidonDbExecute {
                    DbMapperManager dbMapperManager,
                    MapperManager mapperManager,
                    InterceptorSupport interceptors) {
+        super(statements);
         this.db = db;
-        this.statements = statements;
         this.dbMapperManager = dbMapperManager;
         this.mapperManager = mapperManager;
         this.interceptors = interceptors;
@@ -53,7 +53,7 @@ public class MongoDbExecute implements HelidonDbExecute {
 
     @Override
     public MongoDbStatementQuery createNamedQuery(String statementName, String statement) {
-        return new MongoDbStatementQuery(StatementType.QUERY,
+        return new MongoDbStatementQuery(DbStatementType.QUERY,
                                          db,
                                          statementName,
                                          statement,
@@ -69,35 +69,30 @@ public class MongoDbExecute implements HelidonDbExecute {
 
     @Override
     public MongoDbStatementDml createNamedDmlStatement(String statementName, String statement) {
-        return new MongoDbStatementDml(StatementType.DML, db, statementName, statement, dbMapperManager, mapperManager,
+        return new MongoDbStatementDml(DbStatementType.DML, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
     public DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName, String statement) {
-        return new MongoDbStatementDml(StatementType.INSERT, db, statementName, statement, dbMapperManager, mapperManager,
+        return new MongoDbStatementDml(DbStatementType.INSERT, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
     public DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName, String statement) {
-        return new MongoDbStatementDml(StatementType.UPDATE, db, statementName, statement, dbMapperManager, mapperManager,
+        return new MongoDbStatementDml(DbStatementType.UPDATE, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
     public DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName, String statement) {
-        return new MongoDbStatementDml(StatementType.DELETE, db, statementName, statement, dbMapperManager, mapperManager,
+        return new MongoDbStatementDml(DbStatementType.DELETE, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
     public DbStatement<?, DbResult> createNamedStatement(String statementName, String statement) {
         throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public String statementText(String name) {
-        return statements.statement(name);
     }
 }

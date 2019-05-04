@@ -28,7 +28,7 @@ import javax.json.JsonReaderFactory;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbMapperManager;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.AbstractStatement;
 import io.helidon.db.common.InterceptorSupport;
 
@@ -71,7 +71,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
 
     private final MongoDatabase db;
 
-    MongoDbStatement(StatementType statementType,
+    MongoDbStatement(DbStatementType dbStatementType,
                      MongoDatabase db,
                      String statementName,
                      String statement,
@@ -79,7 +79,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
                      MapperManager mapperManager,
                      InterceptorSupport interceptors) {
 
-        super(statementType,
+        super(dbStatementType,
               statementName,
               statement,
               dbMapperManager,
@@ -168,7 +168,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
         private final Document query;
         private final Document value;
 
-        MongoStatement(StatementType statementType, JsonReaderFactory jrf, String preparedStmt) {
+        MongoStatement(DbStatementType dbStatementType, JsonReaderFactory jrf, String preparedStmt) {
             this.preparedStmt = preparedStmt;
             this.jsonStmt = readStmt(jrf, preparedStmt);
 
@@ -176,22 +176,22 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
             if (jsonStmt.containsKey(JSON_OPERATION)) {
                 operation = MongoOperation.operationByName(jsonStmt.getString(JSON_OPERATION));
                 // make sure we have alignment between statement type and operation
-                switch (statementType) {
+                switch (dbStatementType) {
                 case QUERY:
                 case GET:
-                    validateOperation(statementType, operation, MongoOperation.QUERY);
+                    validateOperation(dbStatementType, operation, MongoOperation.QUERY);
                     break;
                 case INSERT:
-                    validateOperation(statementType, operation, MongoOperation.INSERT);
+                    validateOperation(dbStatementType, operation, MongoOperation.INSERT);
                     break;
                 case UPDATE:
-                    validateOperation(statementType, operation, MongoOperation.UPDATE);
+                    validateOperation(dbStatementType, operation, MongoOperation.UPDATE);
                     break;
                 case DELETE:
-                    validateOperation(statementType, operation, MongoOperation.DELETE);
+                    validateOperation(dbStatementType, operation, MongoOperation.DELETE);
                     break;
                 case DML:
-                    validateOperation(statementType, operation, MongoOperation.INSERT,
+                    validateOperation(dbStatementType, operation, MongoOperation.INSERT,
                                       MongoOperation.UPDATE, MongoOperation.DELETE);
                     break;
                 case UNKNOWN:
@@ -199,7 +199,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
                     break;
                 }
             } else {
-                switch (statementType) {
+                switch (dbStatementType) {
                 case QUERY:
                     operation = MongoOperation.QUERY;
                     break;
@@ -220,7 +220,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
                 default:
                     throw new IllegalStateException(
                             "Operation type is not defined in statement, and cannot be inferred from statement type: "
-                                    + statementType);
+                                    + dbStatementType);
                 }
             }
             this.operation = operation;
@@ -229,7 +229,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
             this.query = jsonStmt.get(JSON_QUERY, Document.class);
         }
 
-        private static void validateOperation(StatementType statementType,
+        private static void validateOperation(DbStatementType dbStatementType,
                                               MongoOperation actual,
                                               MongoOperation... expected) {
 
@@ -240,7 +240,7 @@ public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> exte
             }
 
             throw new IllegalStateException("Statement type is "
-                                                    + statementType
+                                                    + dbStatementType
                                                     + ", yet operation in statement is: "
                                                     + actual);
         }

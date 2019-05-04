@@ -27,7 +27,7 @@ import io.helidon.common.context.Context;
  */
 class DbInterceptorContextImpl implements DbInterceptorContext {
     private final String dbType;
-    private StatementType statementType = StatementType.UNKNOWN;
+    private DbStatementType dbStatementType = DbStatementType.UNKNOWN;
     private Context context;
     private String statementName;
     private String statement;
@@ -160,13 +160,13 @@ class DbInterceptorContextImpl implements DbInterceptorContext {
     }
 
     @Override
-    public StatementType statementType() {
-        return statementType;
+    public DbStatementType statementType() {
+        return dbStatementType;
     }
 
     @Override
-    public DbInterceptorContext statementType(StatementType type) {
-        this.statementType = type;
+    public DbInterceptorContext statementType(DbStatementType type) {
+        this.dbStatementType = type;
         return this;
     }
 }

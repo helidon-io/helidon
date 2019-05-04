@@ -27,7 +27,7 @@ import java.util.Optional;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.db.DbInterceptor;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 
 /**
  * Support for interceptors.
@@ -36,13 +36,13 @@ public interface InterceptorSupport {
     /**
      * Get a list of interceptors to be executed for the specified statement.
      *
-     * @param statementType Type of the statement
+     * @param dbStatementType Type of the statement
      * @param statementName Name of the statement (unnamed statements should have a name generated, see
-     *                  {@link AbstractDbExecute#generateName(io.helidon.db.StatementType, String)}
+     *                  {@link AbstractDbExecute#generateName(io.helidon.db.DbStatementType, String)}
      * @return list of interceptors to executed for the defined type and name (may be empty)
      * @see io.helidon.db.DbInterceptor
      */
-    List<DbInterceptor> interceptors(StatementType statementType, String statementName);
+    List<DbInterceptor> interceptors(DbStatementType dbStatementType, String statementName);
 
     /**
      * Create a new fluent API builder.
@@ -58,7 +58,7 @@ public interface InterceptorSupport {
      */
     final class Builder implements io.helidon.common.Builder<InterceptorSupport> {
         private final List<DbInterceptor> interceptors = new LinkedList<>();
-        private final Map<StatementType, List<DbInterceptor>> typeInterceptors = new EnumMap<>(StatementType.class);
+        private final Map<DbStatementType, List<DbInterceptor>> typeInterceptors = new EnumMap<>(DbStatementType.class);
         private final Map<String, List<DbInterceptor>> namedStatementInterceptors = new HashMap<>();
 
         private Builder() {
@@ -68,18 +68,18 @@ public interface InterceptorSupport {
         public InterceptorSupport build() {
             // the result must be immutable (if somebody modifies the builder, the behavior must not change)
             List<DbInterceptor> interceptors = new LinkedList<>(this.interceptors);
-            final Map<StatementType, List<DbInterceptor>> typeInterceptors = new EnumMap<>(this.typeInterceptors);
+            final Map<DbStatementType, List<DbInterceptor>> typeInterceptors = new EnumMap<>(this.typeInterceptors);
             final Map<String, List<DbInterceptor>> namedStatementInterceptors = new HashMap<>(this.namedStatementInterceptors);
 
             final LruCache<CacheKey, List<DbInterceptor>> cachedInterceptors = LruCache.create();
             return new InterceptorSupport() {
                 @Override
-                public List<DbInterceptor> interceptors(StatementType statementType, String statementName) {
+                public List<DbInterceptor> interceptors(DbStatementType dbStatementType, String statementName) {
                     // order is defined in DbInterceptor interface
-                    return cachedInterceptors.computeValue(new CacheKey(statementType, statementName), () -> {
+                    return cachedInterceptors.computeValue(new CacheKey(dbStatementType, statementName), () -> {
                         List<DbInterceptor> result = new LinkedList<>();
                         addAll(result, namedStatementInterceptors.get(statementName));
-                        addAll(result, typeInterceptors.get(statementType));
+                        addAll(result, typeInterceptors.get(dbStatementType));
                         result.addAll(interceptors);
                         return Optional.of(Collections.unmodifiableList(result));
                     }).orElseGet(CollectionsHelper::listOf);
@@ -107,19 +107,19 @@ public interface InterceptorSupport {
             return this;
         }
 
-        public Builder add(DbInterceptor interceptor, StatementType... statementTypes) {
-            for (StatementType statementType : statementTypes) {
-                this.typeInterceptors.computeIfAbsent(statementType, theType -> new LinkedList<>())
+        public Builder add(DbInterceptor interceptor, DbStatementType... dbStatementTypes) {
+            for (DbStatementType dbStatementType : dbStatementTypes) {
+                this.typeInterceptors.computeIfAbsent(dbStatementType, theType -> new LinkedList<>())
                         .add(interceptor);
             }
             return this;
         }
 
         private static final class CacheKey {
-            private final StatementType type;
+            private final DbStatementType type;
             private final String statementName;
 
-            private CacheKey(StatementType type, String statementName) {
+            private CacheKey(DbStatementType type, String statementName) {
                 this.type = type;
                 this.statementName = statementName;
             }

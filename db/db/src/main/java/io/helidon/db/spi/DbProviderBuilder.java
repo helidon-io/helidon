@@ -22,15 +22,15 @@ import io.helidon.config.Config;
 import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbMapper;
 import io.helidon.db.DbStatements;
-import io.helidon.db.HelidonDb;
-import io.helidon.db.StatementType;
+import io.helidon.db.Db;
+import io.helidon.db.DbStatementType;
 
 /**
  * Database provider builder.
  *
  * @param <T> type of the builder extending implementing this interface.
  */
-public interface DbProviderBuilder<T extends DbProviderBuilder<T>> extends Builder<HelidonDb> {
+public interface DbProviderBuilder<T extends DbProviderBuilder<T>> extends Builder<Db> {
 
     /**
      * Use database connection configuration from configuration file.
@@ -135,19 +135,19 @@ public interface DbProviderBuilder<T extends DbProviderBuilder<T>> extends Build
      * <p>
      * Note the specific handling of the following types:
      * <ul>
-     *     <li>{@link io.helidon.db.StatementType#DML} - used only when the statement is created as a DML statement
-     *          such as when using {@link io.helidon.db.HelidonDbExecute#createDmlStatement(String)}
+     *     <li>{@link io.helidon.db.DbStatementType#DML} - used only when the statement is created as a DML statement
+     *          such as when using {@link io.helidon.db.DbExecute#createDmlStatement(String)}
      *          (this interceptor would not be enabled for inserts, updates, deletes)</li>
-     *     <li>{@link io.helidon.db.StatementType#UNKNOWN} - used only when the statement is created as a general statement
-     *          such as when using {@link io.helidon.db.HelidonDbExecute#createStatement(String)}
+     *     <li>{@link io.helidon.db.DbStatementType#UNKNOWN} - used only when the statement is created as a general statement
+     *          such as when using {@link io.helidon.db.DbExecute#createStatement(String)}
      *          (this interceptor would not be enabled for any other statements)</li>
      * </ul>
      *
      * @param interceptor interceptor instance
-     * @param statementTypes statement types to be active on
+     * @param dbStatementTypes statement types to be active on
      * @return updated builder instance
      */
-    T addInterceptor(DbInterceptor interceptor, StatementType... statementTypes);
+    T addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes);
 
     /**
      * Build database handler for specific provider.
@@ -155,5 +155,5 @@ public interface DbProviderBuilder<T extends DbProviderBuilder<T>> extends Build
      * @return database handler instance
      */
     @Override
-    HelidonDb build();
+    Db build();
 }

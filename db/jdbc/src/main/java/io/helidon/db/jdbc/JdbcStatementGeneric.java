@@ -32,7 +32,7 @@ import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbResult;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbRowResult;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 /**
@@ -48,7 +48,7 @@ class JdbcStatementGeneric extends JdbcStatement<JdbcStatementGeneric, DbResult>
                          DbMapperManager dbMapperMananger,
                          MapperManager mapperManager,
                          InterceptorSupport interceptors) {
-        super(StatementType.UNKNOWN,
+        super(DbStatementType.UNKNOWN,
               connectionPool,
               statementName,
               statement,
@@ -59,14 +59,20 @@ class JdbcStatementGeneric extends JdbcStatement<JdbcStatementGeneric, DbResult>
     }
 
     @Override
-    protected DbResult doExecute(DbInterceptorContext dbContext,
+    protected DbResult doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
                                  CompletableFuture<Void> interceptorStatementFuture,
                                  CompletableFuture<Long> interceptorQueryFuture) {
+
         CompletableFuture<DbRowResult<DbRow>> queryResultFuture = new CompletableFuture<>();
         CompletableFuture<Long> dmlResultFuture = new CompletableFuture<>();
         CompletableFuture<Throwable> exceptionFuture = new CompletableFuture<>();
         CompletableFuture<JdbcStatementQuery.ResultWithConn> resultSetFuture = new CompletableFuture<>();
 
+        dbContextFuture.exceptionally(throwable -> {
+            resultSetFuture.completeExceptionally(throwable);
+
+            return null;
+        });
         // this is completed on execution of statement
         resultSetFuture.exceptionally(throwable -> {
             interceptorStatementFuture.completeExceptionally(throwable);
@@ -76,43 +82,46 @@ class JdbcStatementGeneric extends JdbcStatement<JdbcStatementGeneric, DbResult>
             return null;
         });
 
-        // now let's execute the statement
-        executorService().submit(() -> {
-            Connection conn = null;
-            try {
-                conn = connection();
-                PreparedStatement statement = super.build(conn, dbContext);
+        dbContextFuture.thenAccept(dbContext -> {
+            // now let's execute the statement
+            executorService().submit(() -> {
+                Connection conn = null;
+                try {
+                    conn = connection();
+                    PreparedStatement statement = super.build(conn, dbContext);
 
-                boolean isQuery = statement.execute();
-                // statement is executed, we can finish the statement future
-                interceptorStatementFuture.complete(null);
+                    boolean isQuery = statement.execute();
+                    // statement is executed, we can finish the statement future
+                    interceptorStatementFuture.complete(null);
 
-                if (isQuery) {
-                    ResultSet resultSet = statement.getResultSet();
-                    // at this moment we have a DbRowResult
-                    resultSetFuture.complete(new JdbcStatementQuery.ResultWithConn(resultSet, conn));
-                } else {
-                    try {
-                        long update = statement.getLargeUpdateCount();
-                        interceptorQueryFuture.complete(update);
-                        dmlResultFuture.complete(update);
-                        statement.close();
-                    } finally {
-                        conn.close();
+                    if (isQuery) {
+                        ResultSet resultSet = statement.getResultSet();
+                        // at this moment we have a DbRowResult
+                        resultSetFuture.complete(new JdbcStatementQuery.ResultWithConn(resultSet, conn));
+                    } else {
+                        try {
+                            long update = statement.getLargeUpdateCount();
+                            interceptorQueryFuture.complete(update);
+                            dmlResultFuture.complete(update);
+                            statement.close();
+                        } finally {
+                            conn.close();
+                        }
                     }
-                }
-            } catch (Exception e) {
-                if (null != conn) {
-                    try {
-                        // we would not close the connection in the resultSetFuture, so we have to close it here
-                        conn.close();
-                    } catch (SQLException ex) {
-                        LOGGER.log(Level.WARNING, "Failed to close connection", ex);
+                } catch (Exception e) {
+                    if (null != conn) {
+                        try {
+                            // we would not close the connection in the resultSetFuture, so we have to close it here
+                            conn.close();
+                        } catch (SQLException ex) {
+                            LOGGER.log(Level.WARNING, "Failed to close connection", ex);
+                        }
                     }
+                    resultSetFuture.completeExceptionally(e);
                 }
-                resultSetFuture.completeExceptionally(e);
-            }
+            });
         });
+
 
         /*
         Futures:

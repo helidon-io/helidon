@@ -15,13 +15,14 @@
  */
 package io.helidon.db.metrics;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbInterceptorContext;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.metrics.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -64,12 +65,12 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
     protected abstract String defaultNamePrefix();
 
     @Override
-    public void statement(DbInterceptorContext context) {
-        StatementType statementType = context.statementType();
-        String statementName = context.statementName();
+    public CompletableFuture<DbInterceptorContext> statement(DbInterceptorContext interceptorContext) {
+        DbStatementType dbStatementType = interceptorContext.statementType();
+        String statementName = interceptorContext.statementName();
 
         T metric = cache.computeIfAbsent(statementName, s -> {
-            String name = namedFunction.apply(statementName, statementType.toString());
+            String name = namedFunction.apply(statementName, dbStatementType.toString());
             Metadata metadata;
 
             if (null == meta) {
@@ -86,7 +87,9 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
             return metric(registry, metadata);
         });
 
-        executeMetric(metric, context.statementFuture());
+        executeMetric(metric, interceptorContext.statementFuture());
+
+        return CompletableFuture.completedFuture(interceptorContext);
     }
 
     protected boolean measureErrors() {
