@@ -17,6 +17,8 @@ package io.helidon.db.metrics;
 
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.config.Config;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -28,6 +30,18 @@ import org.eclipse.microprofile.metrics.MetricType;
 public final class DbCounter extends DbMetric<Counter> {
     private DbCounter(Builder builder) {
         super(builder);
+    }
+
+    public static DbCounter create(Config config) {
+        return builder().config(config).build();
+    }
+
+    public static DbCounter create() {
+        return builder().build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -59,14 +73,6 @@ public final class DbCounter extends DbMetric<Counter> {
     @Override
     protected String defaultNamePrefix() {
         return "db.counter.";
-    }
-
-    public static DbCounter create() {
-        return builder().build();
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbCounter> {

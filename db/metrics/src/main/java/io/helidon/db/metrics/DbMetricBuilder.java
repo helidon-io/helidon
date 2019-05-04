@@ -17,6 +17,8 @@ package io.helidon.db.metrics;
 
 import java.util.function.BiFunction;
 
+import io.helidon.config.Config;
+
 import org.eclipse.microprofile.metrics.Metadata;
 
 /**
@@ -25,9 +27,9 @@ import org.eclipse.microprofile.metrics.Metadata;
 public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
     private Metadata meta;
     private BiFunction<String, String, String> namedFormat;
-    private boolean measureErrors = false;
+    private boolean measureErrors = true;
     private boolean measureSuccess = true;
-
+    private String description;
 
     public T name(String metricName) {
         namedFormat = (s, s2) -> metricName;
@@ -58,6 +60,11 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
         return me();
     }
 
+    public T description(String description) {
+        this.description = description;
+        return me();
+    }
+
     @SuppressWarnings("unchecked")
     protected T me() {
         return (T) this;
@@ -77,5 +84,17 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
 
     protected boolean measureSuccess() {
         return measureSuccess;
+    }
+
+    public T config(Config config) {
+        config.get("errors").asBoolean().ifPresent(this::measureErrors);
+        config.get("success").asBoolean().ifPresent(this::measureSuccess);
+        config.get("name-format").asString().ifPresent(this::nameFormat);
+        config.get("description").asString().ifPresent(this::description);
+        return me();
+    }
+
+    public String description() {
+        return description;
     }
 }

@@ -208,6 +208,7 @@ public class PokemonService implements Service {
         if (throwable instanceof CompletionException) {
             toLog = throwable.getCause();
         }
+        response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
         response.send("Failed to process request: " + toLog.getClass().getName() + "(" + toLog.getMessage() + ")");
         LOGGER.log(Level.WARNING, "Failed to process request", throwable);
         return null;
