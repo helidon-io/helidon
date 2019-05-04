@@ -18,6 +18,9 @@ server:
   port: 8080
   host: 0.0.0.0
 
+tracing:
+  service: jdbc-db
+
 # docker run --rm --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=pokemon -e MYSQL_USER=user -e MYSQL_PASSWORD=password  mysql:5.7
 db:
   source: jdbc
@@ -30,7 +33,14 @@ db:
     metrics:
       # possible also global:
       global:
-        type: METER
+        - type: METER
+          # changing the name format - by removing the parameter (statement name) we get an overall metric
+          name-format: "db.meter.overall"
+        - type: METER
+          # meter per statement name
+        - type: METER
+          # meter per statement type
+          name-format: "db.meter.%2$s"
       named:
         - names: ["select-all", "select-one"]
           errors: false
