@@ -15,6 +15,9 @@
  */
 package io.helidon.db;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 /**
  * Interceptor to handle work around a database statement.
  * Example of such interceptors: tracing, metrics.
@@ -37,6 +40,7 @@ public interface DbInterceptor {
      * This method is called before the statement execution starts.
      *
      * @param context Context to access data needed to process an interceptor
+     * @return completion stage that completes when this interceptor is finished
      */
-    void statement(DbInterceptorContext context);
+    CompletableFuture<DbInterceptorContext> statement(DbInterceptorContext context);
 }

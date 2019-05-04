@@ -69,4 +69,4 @@ db:
     select-all: "SELECT * FROM pokemons"
     update: "UPDATE pokemons SET type = :type WHERE name = :name"
     delete: "DELETE FROM pokemons WHERE name = ?"
-    delete-all: "DELETE FROM pokemons"
+    # delete-all: "DELETE FROM pokemons"

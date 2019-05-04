@@ -37,7 +37,7 @@ import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbRowResult;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 import com.mongodb.reactivestreams.client.FindPublisher;
@@ -52,14 +52,14 @@ import org.reactivestreams.Subscription;
 class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRowResult<DbRow>> {
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
 
-    MongoDbStatementQuery(StatementType statementType,
+    MongoDbStatementQuery(DbStatementType dbStatementType,
                           MongoDatabase db,
                           String statementName,
                           String statement,
                           DbMapperManager dbMapperManager,
                           MapperManager mapperManager,
                           InterceptorSupport interceptors) {
-        super(statementType,
+        super(dbStatementType,
               db,
               statementName,
               statement,
@@ -69,35 +69,46 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
     }
 
     @Override
-    protected DbRowResult<DbRow> doExecute(DbInterceptorContext dbContext,
+    protected DbRowResult<DbRow> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
                                            CompletableFuture<Void> statementFuture,
                                            CompletableFuture<Long> queryFuture) {
 
-        MongoStatement stmt = new MongoStatement(StatementType.QUERY, READER_FACTORY, build());
-        if (stmt.getOperation() == MongoOperation.QUERY) {
-            return executeQuery(stmt, statementFuture, queryFuture);
-        }
-        throw new UnsupportedOperationException(String.format("Operation %s is not supported",
-                                                              stmt.getOperation().toString()));
+        dbContextFuture.exceptionally(throwable -> {
+            statementFuture.completeExceptionally(throwable);
+            queryFuture.completeExceptionally(throwable);
+            return null;
+        });
+
+        CompletionStage<MongoStatement> mongoStmtFuture = dbContextFuture.thenApply(dbContext -> {
+            MongoStatement stmt = new MongoStatement(DbStatementType.QUERY, READER_FACTORY, build());
+            if (stmt.getOperation() == MongoOperation.QUERY) {
+                return stmt;
+            } else {
+                throw new UnsupportedOperationException(String.format("Operation %s is not supported",
+                                                                      stmt.getOperation().toString()));
+            }
+        });
+
+        return executeQuery(mongoStmtFuture, statementFuture, queryFuture);
     }
 
-    public DbRowResult<DbRow> executeQuery(MongoStatement stmt,
+    public DbRowResult<DbRow> executeQuery(CompletionStage<MongoStatement> stmtFuture,
                                            CompletableFuture<Void> statementFuture,
                                            CompletableFuture<Long> queryFuture) {
 
-        MongoCollection<Document> mc = db().getCollection(stmt.getCollection());
-        Document query = stmt.getQuery();
-        FindPublisher<Document> thePublisher = mc.find((query != null) ? query : EMPTY);
-        return new MongoDbRowResult<>(thePublisher,
+        CompletionStage<FindPublisher<Document>> publisherFuture = stmtFuture.thenApply(mongoStmt -> {
+            MongoCollection<Document> mc = db().getCollection(mongoStmt.getCollection());
+            Document query = mongoStmt.getQuery();
+            return mc.find((query != null) ? query : EMPTY);
+        });
+
+        return new MongoDbRowResult<>(publisherFuture,
                                       dbMapperManager(),
                                       mapperManager(),
                                       DbRow.class,
                                       statementFuture,
                                       queryFuture);
     }
-
-
-
 
     private static class Row implements DbRow {
 
@@ -290,7 +301,7 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
 
     private static final class MongoDbRowResult<T> implements DbRowResult<T> {
         private final AtomicBoolean resultRequested = new AtomicBoolean();
-        private final FindPublisher<Document> documentFindPublisher;
+        private final CompletionStage<FindPublisher<Document>> documentFindPublisherFuture;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
         private final CompletableFuture<Long> queryFuture;
@@ -299,14 +310,14 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
         private final MongoDbRowResult<?> parent;
         private final CompletableFuture<Void> statementFuture;
 
-        private MongoDbRowResult(FindPublisher<Document> documentFindPublisher,
+        private MongoDbRowResult(CompletionStage<FindPublisher<Document>> documentFindPublisherFuture,
                                  DbMapperManager dbMapperManager,
                                  MapperManager mapperManager,
                                  Class<T> initialType,
                                  CompletableFuture<Void> statementFuture,
                                  CompletableFuture<Long> queryFuture) {
 
-            this.documentFindPublisher = documentFindPublisher;
+            this.documentFindPublisherFuture = documentFindPublisherFuture;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
             this.statementFuture = statementFuture;
@@ -316,7 +327,7 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
             this.parent = null;
         }
 
-        private MongoDbRowResult(FindPublisher<Document> documentFindPublisher,
+        private MongoDbRowResult(CompletionStage<FindPublisher<Document>> documentFindPublisherFuture,
                                  DbMapperManager dbMapperManager,
                                  MapperManager mapperManager,
                                  CompletableFuture<Void> statementFuture,
@@ -324,7 +335,7 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                  GenericType<T> nextType,
                                  Function<?, T> resultMapper,
                                  MongoDbRowResult<?> parent) {
-            this.documentFindPublisher = documentFindPublisher;
+            this.documentFindPublisherFuture = documentFindPublisherFuture;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
             this.statementFuture = statementFuture;
@@ -336,7 +347,7 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
 
         @Override
         public <U> DbRowResult<U> map(Function<T, U> mapper) {
-            return new MongoDbRowResult<>(documentFindPublisher,
+            return new MongoDbRowResult<>(documentFindPublisherFuture,
                                           dbMapperManager,
                                           mapperManager,
                                           statementFuture,
@@ -380,7 +391,7 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                                        currentType,
                                                        type);
             }
-            return new MongoDbRowResult<>(documentFindPublisher,
+            return new MongoDbRowResult<>(documentFindPublisherFuture,
                                           dbMapperManager,
                                           mapperManager,
                                           statementFuture,
@@ -449,7 +460,8 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                                    mapperManager,
                                                    statementFuture,
                                                    queryFuture);
-            documentFindPublisher.subscribe(qp);
+            documentFindPublisherFuture.thenAccept(publisher -> publisher.subscribe(qp));
+
             return qp;
         }
 

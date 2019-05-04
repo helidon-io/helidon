@@ -29,7 +29,7 @@ import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbException;
 import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.AbstractStatement;
 import io.helidon.db.common.InterceptorSupport;
 
@@ -48,7 +48,7 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends Ab
     private final ExecutorService executorService;
 
     JdbcStatement(
-            StatementType statementType,
+            DbStatementType dbStatementType,
             ConnectionPool connectionPool,
             String statementName,
             String statement,
@@ -57,7 +57,7 @@ public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends Ab
             ExecutorService executorService,
             InterceptorSupport interceptors) {
 
-        super(statementType,
+        super(dbStatementType,
               statementName,
               statement,
               dbMapperManager,

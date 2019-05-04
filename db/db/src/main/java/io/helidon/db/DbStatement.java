@@ -18,7 +18,6 @@ package io.helidon.db;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Database statement that can process parameters.
@@ -88,30 +87,6 @@ public interface DbStatement<D extends DbStatement<D, R>, R> {
      * @return updated db statement
      */
     <T> D indexedParam(T parameters);
-
-    /**
-     * Configure parameters using {@link Object} instance with registered mapper.
-     *
-     * @param parameters {@link Object} instance containing parameters
-     * @param mapper     method to create map of statement named parameters mapped to values to be set
-     * @param <T>        type of the parameters
-     * @return updated db statement
-     */
-    default <T> D namedParam(T parameters, Function<T, Map<String, ?>> mapper) {
-        return params(mapper.apply(parameters));
-    }
-
-    /**
-     * Configure parameters using {@link Object} instance with registered mapper.
-     *
-     * @param parameters {@link Object} instance containing parameters
-     * @param mapper     method to create map of statement named parameters mapped to values to be set
-     * @param <T>        type of the parameters
-     * @return updated db statement
-     */
-    default <T> D indexedParam(T parameters, Function<T, List<?>> mapper) {
-        return params(mapper.apply(parameters));
-    }
 
     /**
      * Add next parameter to the list of ordered parameters (e.g. the ones that use {@code ?} in SQL).

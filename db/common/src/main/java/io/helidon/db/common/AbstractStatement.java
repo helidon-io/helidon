@@ -19,14 +19,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbStatement;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 
 /**
  * Common statement methods and fields.
@@ -37,7 +39,7 @@ import io.helidon.db.StatementType;
 public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implements DbStatement<S, R> {
     private ParamType paramType = ParamType.UNKNOWN;
     private StatementParameters parameters;
-    private final StatementType statementType;
+    private final DbStatementType dbStatementType;
     private final String statementName;
     private final String statement;
     private final DbMapperManager dbMapperManager;
@@ -47,20 +49,20 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
     /**
      * Statement that handles parameters.
      *
-     * @param statementType   type of this statement
+     * @param dbStatementType   type of this statement
      * @param statementName   name of this statement
      * @param statement       text of this statement
      * @param dbMapperManager db mapper manager to use when mapping types to parameters
      * @param mapperManager   mapper manager to use when mapping results
      * @param interceptors    interceptors to be executed
      */
-    protected AbstractStatement(StatementType statementType,
+    protected AbstractStatement(DbStatementType dbStatementType,
                                 String statementName,
                                 String statement,
                                 DbMapperManager dbMapperManager,
                                 MapperManager mapperManager,
                                 InterceptorSupport interceptors) {
-        this.statementType = statementType;
+        this.dbStatementType = dbStatementType;
         this.statementName = statementName;
         this.statement = statement;
         this.dbMapperManager = dbMapperManager;
@@ -78,24 +80,27 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
                 .statementFuture(statementFuture);
 
         update(dbContext);
-        invokeInterceptors(dbContext);
+        CompletionStage<DbInterceptorContext> dbContextFuture = invokeInterceptors(dbContext);
 
-        return doExecute(dbContext, statementFuture, queryFuture);
+        return doExecute(dbContextFuture, statementFuture, queryFuture);
     }
 
     /**
      * Invoke all interceptors.
      *
      * @param dbContext initial interceptor context
+     * @return future with the result of interceptors processing
      */
-    protected void invokeInterceptors(DbInterceptorContext dbContext) {
-        List<DbInterceptor> statementInterceptors = this.interceptors.interceptors(statementType(), statementName());
-        Contexts.context()
-                .ifPresent(context -> {
-                    dbContext.context(context);
-                    statementInterceptors
-                            .forEach(interceptor -> interceptor.statement(dbContext));
-                });
+    CompletionStage<DbInterceptorContext> invokeInterceptors(DbInterceptorContext dbContext) {
+        CompletableFuture<DbInterceptorContext> result = CompletableFuture.completedFuture(dbContext);
+
+        dbContext.context(Contexts.context().orElseGet(Context::create));
+
+        for (DbInterceptor interceptor : interceptors.interceptors(statementType(), statementName())) {
+            result = result.thenCompose(interceptor::statement);
+        }
+
+        return result;
     }
 
     /**
@@ -103,20 +108,20 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      *
      * @return statement type
      */
-    protected StatementType statementType() {
-        return statementType;
+    protected DbStatementType statementType() {
+        return dbStatementType;
     }
 
     /**
      * Execute the statement against the database.
      *
-     * @param dbContext context after interceptors are invoked
+     * @param dbContext future that completes after all interceptors are invoked
      * @param statementFuture future that should complete when the statement finishes execution
      * @param queryFuture future that should complete when the result set is fully read (if one exists),
      *                      otherwise complete same as statementFuture
      * @return result of this db statement.
      */
-    protected abstract R doExecute(DbInterceptorContext dbContext,
+    protected abstract R doExecute(CompletionStage<DbInterceptorContext> dbContext,
                                    CompletableFuture<Void> statementFuture,
                                    CompletableFuture<Long> queryFuture);
 

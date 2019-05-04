@@ -115,7 +115,7 @@ public interface DbInterceptorContext {
      * Type of the statement being executed.
      * @return statement type
      */
-    StatementType statementType();
+    DbStatementType statementType();
 
     /**
      * Set a new context to be used by other interceptors and when executing the statement.
@@ -191,5 +191,5 @@ public interface DbInterceptorContext {
      * @param type statement type
      * @return updated interceptor context
      */
-    DbInterceptorContext statementType(StatementType type);
+    DbInterceptorContext statementType(DbStatementType type);
 }
