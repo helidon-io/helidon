@@ -18,28 +18,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-project</artifactId>
-        <groupId>io.helidon</groupId>
+        <artifactId>helidon-db-project</artifactId>
+        <groupId>io.helidon.db</groupId>
         <version>1.0.4-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
+    <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.db</groupId>
-    <artifactId>helidon-db-project</artifactId>
-    <name>Helidon DB Project</name>
+    <artifactId>helidon-db-jsonp</artifactId>
+    <name>Helidon DB JSON-Processing</name>
 
-    <description>Support for reactive database access.</description>
+    <description>
+        Support for JSON-Processing as parameters and responses in Helidon DB
+    </description>
 
-    <modules>
-        <module>db</module>
-        <module>common</module>
-        <module>jdbc</module>
-        <module>mongodb</module>
-        <module>tracing</module>
-        <module>metrics</module>
-        <module>health</module>
-        <module>jsonp</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+        </dependency>
+    </dependencies>
 </project>

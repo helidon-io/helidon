@@ -20,13 +20,14 @@ import java.util.Optional;
 import javax.annotation.Priority;
 import javax.json.JsonObject;
 
+import io.helidon.common.Prioritized;
 import io.helidon.db.DbMapper;
 import io.helidon.db.spi.DbMapperProvider;
 
 /**
  * JSON-P mapper provider.
  */
-@Priority(1000)
+@Priority(Prioritized.DEFAULT_PRIORITY)
 public class JsonProcessingMapperProvider implements DbMapperProvider {
     @SuppressWarnings("unchecked")
     @Override

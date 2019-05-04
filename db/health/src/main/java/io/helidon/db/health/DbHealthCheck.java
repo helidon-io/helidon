@@ -30,9 +30,17 @@ public final class DbHealthCheck implements HealthCheck {
     private final HelidonDb db;
     private final String name;
 
-    private DbHealthCheck(HelidonDb db, String name) {
-        this.db = db;
-        this.name = name;
+    private DbHealthCheck(Builder builder) {
+        this.db = builder.database;
+        this.name = builder.name;
+    }
+
+    public static DbHealthCheck create(HelidonDb db) {
+        return builder(db).build();
+    }
+
+    public static Builder builder(HelidonDb db) {
+        return new Builder(db);
     }
 
     @Override
@@ -66,7 +74,23 @@ public final class DbHealthCheck implements HealthCheck {
         return builder.build();
     }
 
-    public static DbHealthCheck create(HelidonDb db, String name) {
-        return new DbHealthCheck(db, name);
+    public static final class Builder implements io.helidon.common.Builder<DbHealthCheck> {
+        private final HelidonDb database;
+        private String name;
+
+        private Builder(HelidonDb database) {
+            this.database = database;
+            this.name = database.dbType();
+        }
+
+        @Override
+        public DbHealthCheck build() {
+            return new DbHealthCheck(this);
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
     }
 }
