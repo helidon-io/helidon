@@ -22,8 +22,6 @@ import java.util.logging.LogManager;
 import io.helidon.config.Config;
 import io.helidon.db.HelidonDb;
 import io.helidon.db.health.DbHealthCheck;
-import io.helidon.db.metrics.DbCounter;
-import io.helidon.db.metrics.DbTimer;
 import io.helidon.db.tracing.DbTracing;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
@@ -100,13 +98,9 @@ public final class Main {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        HelidonDb helidonDb = HelidonDb.builder(dbConfig)
-                .addInterceptor(DbCounter.create())
-                .addInterceptor(DbTimer.create())
-                .addInterceptor(DbTracing.create())
-                .build();
+        // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
+        HelidonDb helidonDb = HelidonDb.create(dbConfig);
 
-        // todo maybe use Java ServiceLoader to add interceptors -e.g. when running from config only
         HealthSupport health = HealthSupport.builder()
                 .add(DbHealthCheck.create(helidonDb, helidonDb.dbType()))
                 .build();

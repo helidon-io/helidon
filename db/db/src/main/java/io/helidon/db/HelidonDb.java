@@ -16,11 +16,16 @@
 package io.helidon.db;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigValue;
+import io.helidon.db.spi.DbInterceptorProvider;
 import io.helidon.db.spi.DbMapperProvider;
 import io.helidon.db.spi.DbProvider;
 import io.helidon.db.spi.DbProviderBuilder;
@@ -137,11 +142,14 @@ public interface HelidonDb {
      * Helidon database handler builder.
      */
     final class Builder implements io.helidon.common.Builder<HelidonDb> {
+        private final HelidonServiceLoader.Builder<DbInterceptorProvider> interceptorServices = HelidonServiceLoader.builder(
+                ServiceLoader.load(DbInterceptorProvider.class));
 
         /**
          * Provider specific database handler builder instance.
          */
         private final DbProviderBuilder<?> theBuilder;
+        private Config config;
 
         /**
          * Create an instance of Helidon database handler builder.
@@ -159,7 +167,57 @@ public interface HelidonDb {
          */
         @Override
         public HelidonDb build() {
+            // add interceptors from service loader
+            if (null != config) {
+                Config interceptors = config.get("interceptors");
+                List<DbInterceptorProvider> providers = interceptorServices.build().asList();
+                for (DbInterceptorProvider provider : providers) {
+                    Config providerConfig = interceptors.get(provider.configKey());
+                    Config global = providerConfig.get("global");
+                    global.ifExists(theConfig -> addInterceptor(provider.create(global)));
+                    Config named = providerConfig.get("named");
+                    if (named.exists()) {
+                        // we must iterate through nodes
+                        named.asNodeList().ifPresent(configs -> {
+                            configs.forEach(namedConfig -> {
+                                ConfigValue<List<String>> names = namedConfig.get("names").asList(String.class);
+                                names.ifPresent(nameList -> {
+                                    addInterceptor(provider.create(namedConfig), nameList.toArray(new String[0]));
+                                });
+                            });
+                        });
+                    }
+                    Config typed = providerConfig.get("typed");
+                    if (typed.exists()) {
+                        typed.asNodeList().ifPresent(configs -> {
+                            configs.forEach(typedConfig -> {
+                                ConfigValue<List<String>> types = typedConfig.get("types").asList(String.class);
+                                types.ifPresent(typeList -> {
+                                    StatementType[] typeArray = typeList.stream()
+                                            .map(StatementType::valueOf)
+                                            .toArray(StatementType[]::new);
+
+                                    addInterceptor(provider.create(typedConfig), typeArray);
+                                });
+                            });
+                        });
+                    }
+                }
+            }
+
             return theBuilder.build();
+        }
+
+        /**
+         * Add an interceptor provider.
+         * The provider is only used when configuration is used ({@link #config(io.helidon.config.Config)}.
+         *
+         * @param provider provider to add to the list of loaded providers
+         * @return updated builder instance
+         */
+        public Builder addInterceptorProvider(DbInterceptorProvider provider) {
+            this.interceptorServices.addService(provider);
+            return this;
         }
 
         /**
@@ -206,6 +264,9 @@ public interface HelidonDb {
          */
         public Builder config(Config config) {
             theBuilder.config(config);
+
+            this.config = config;
+
             return this;
         }
 
