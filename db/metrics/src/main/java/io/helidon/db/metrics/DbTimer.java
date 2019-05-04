@@ -18,18 +18,32 @@ package io.helidon.db.metrics;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.config.Config;
+
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * TODO javadoc.
+ * Timer metric for Helidon DB.
  */
 public final class DbTimer extends DbMetric<Timer> {
 
     private DbTimer(Builder builder) {
         super(builder);
+    }
+
+    public static DbTimer create(Config config) {
+        return builder().config(config).build();
+    }
+
+    public static DbTimer create() {
+        return builder().build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -70,16 +84,7 @@ public final class DbTimer extends DbMetric<Timer> {
         return registry.timer(meta);
     }
 
-    public static DbTimer create() {
-        return builder().build();
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
     public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbTimer> {
-
         @Override
         public DbTimer build() {
             return new DbTimer(this);
