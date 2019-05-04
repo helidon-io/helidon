@@ -74,7 +74,7 @@ public interface DbRowResult<T> {
 
     /**
      * Collect all the results into a list of rows mapped to the correct type.
-     *
+     * <p><b>This is a dangerous operation, as it collects all results in memory. Use with care.</b>
      * @return future with the list
      */
     CompletionStage<List<T>> collect();

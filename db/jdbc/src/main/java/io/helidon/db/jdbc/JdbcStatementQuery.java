@@ -41,7 +41,7 @@ import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbRowResult;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 /**
@@ -50,7 +50,7 @@ import io.helidon.db.common.InterceptorSupport;
 class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<DbRow>> {
     private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
 
-    JdbcStatementQuery(StatementType statementType,
+    JdbcStatementQuery(DbStatementType dbStatementType,
                        ConnectionPool connectionPool,
                        ExecutorService executorService,
                        String statementName,
@@ -58,7 +58,7 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
                        DbMapperManager dbMapperMananger,
                        MapperManager mapperManager,
                        InterceptorSupport interceptors) {
-        super(statementType,
+        super(dbStatementType,
               connectionPool,
               statementName,
               statement,
@@ -69,7 +69,7 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
     }
 
     @Override
-    protected DbRowResult<DbRow> doExecute(DbInterceptorContext dbContext,
+    protected DbRowResult<DbRow> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
                                            CompletableFuture<Void> statementFuture,
                                            CompletableFuture<Long> queryFuture) {
         CompletableFuture<ResultWithConn> resultSetFuture = new CompletableFuture<>();
@@ -79,24 +79,29 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
                     return null;
                 });
 
-        executorService().submit(() -> {
-            Connection conn = null;
-            try {
-                conn = connection();
-                PreparedStatement statement = super.build(conn, dbContext);
-                ResultSet rs = statement.executeQuery();
-                // at this moment we have a DbRowResult
-                resultSetFuture.complete(new ResultWithConn(rs, conn));
-            } catch (Exception e) {
+        dbContextFuture.thenAccept(dbContext -> {
+            executorService().submit(() -> {
+                Connection conn = null;
                 try {
-                    if (null != conn) {
-                        conn.close();
+                    conn = connection();
+                    PreparedStatement statement = super.build(conn, dbContext);
+                    ResultSet rs = statement.executeQuery();
+                    // at this moment we have a DbRowResult
+                    resultSetFuture.complete(new ResultWithConn(rs, conn));
+                } catch (Exception e) {
+                    try {
+                        if (null != conn) {
+                            conn.close();
+                        }
+                    } catch (SQLException ex) {
+                        LOGGER.log(Level.WARNING, "Failed to close a connection", ex);
                     }
-                } catch (SQLException ex) {
-                    LOGGER.log(Level.WARNING, "Failed to close a connection", ex);
+                    resultSetFuture.completeExceptionally(e);
                 }
-                resultSetFuture.completeExceptionally(e);
-            }
+            });
+        }).exceptionally(throwable -> {
+            resultSetFuture.completeExceptionally(throwable);
+            return null;
         });
 
         return processResultSet(queryFuture,

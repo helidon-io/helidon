@@ -24,8 +24,8 @@ import javax.json.JsonObject;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
+import io.helidon.db.Db;
 import io.helidon.db.DbRow;
-import io.helidon.db.HelidonDb;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -42,9 +42,9 @@ public class PokemonService implements Service {
      */
     private static final Logger LOGGER = Logger.getLogger(PokemonService.class.getName());
 
-    private final HelidonDb db;
+    private final Db db;
 
-    PokemonService(HelidonDb db) {
+    PokemonService(Db db) {
         this.db = db;
 
         // TODO dirty hack to prepare database for our POC
@@ -169,7 +169,8 @@ public class PokemonService implements Service {
     private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
         LOGGER.info("Running deleteAllPokemons");
         db.execute(exec -> exec
-                .createNamedDelete("delete-all")
+                // this is to show how ad-hoc statements can be executed (and their naming in Tracing and Metrics)
+                .createDelete("DELETE FROM pokemons")
                 .execute())
                 .thenAccept(count -> response.send("Deleted: " + count + " values"))
                 .exceptionally(throwable -> sendError(throwable, response));

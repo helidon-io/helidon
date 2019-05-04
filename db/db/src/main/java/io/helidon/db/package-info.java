@@ -15,6 +15,6 @@
  */
 
 /**
- * Reactive Database integration API for Helidon.
+ * Reactive Database API for Helidon.
  */
 package io.helidon.db;

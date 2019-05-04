@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
-import io.helidon.db.HelidonDb;
-import io.helidon.db.StatementType;
+import io.helidon.db.Db;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.health.DbHealthCheck;
 import io.helidon.db.metrics.DbCounter;
 import io.helidon.db.metrics.DbTimer;
@@ -100,17 +100,17 @@ public final class Main {
     private static Routing createRouting(Config config) {
         Config dbConfig = config.get("db");
 
-        HelidonDb helidonDb = HelidonDb.builder(dbConfig)
+        Db db = Db.builder(dbConfig)
                 // add an interceptor to named statement(s)
                 .addInterceptor(DbCounter.create(), "select-all", "select-one")
                 // add an interceptor to statement type(s)
-                .addInterceptor(DbTimer.create(), StatementType.DELETE, StatementType.UPDATE, StatementType.INSERT)
+                .addInterceptor(DbTimer.create(), DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT)
                 // add an interceptor to all statements
                 .addInterceptor(DbTracing.create())
                 .build();
 
         HealthSupport health = HealthSupport.builder()
-                .add(DbHealthCheck.create(helidonDb, helidonDb.dbType()))
+                .add(DbHealthCheck.create(db))
                 .build();
 
         return Routing.builder()
@@ -119,7 +119,7 @@ public final class Main {
                 .register("/db", DbResultSupport.create())
                 .register(health)                   // Health at "/health"
                 .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/db", new PokemonService(helidonDb))
+                .register("/db", new PokemonService(db))
                 .build();
     }
 

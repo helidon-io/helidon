@@ -15,10 +15,6 @@
  */
 package io.helidon.db.jdbc;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -31,8 +27,8 @@ import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbMapper;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbStatements;
-import io.helidon.db.HelidonDb;
-import io.helidon.db.StatementType;
+import io.helidon.db.Db;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 import io.helidon.db.spi.DbMapperProvider;
 import io.helidon.db.spi.DbProviderBuilder;
@@ -57,7 +53,7 @@ public final class JdbcDbProviderBuilder implements DbProviderBuilder<JdbcDbProv
     }
 
     @Override
-    public HelidonDb build() {
+    public Db build() {
         if (null == dbMapperManager) {
             this.dbMapperManager = dbMapperBuilder.build();
         }
@@ -195,8 +191,8 @@ public final class JdbcDbProviderBuilder implements DbProviderBuilder<JdbcDbProv
     }
 
     @Override
-    public JdbcDbProviderBuilder addInterceptor(DbInterceptor interceptor, StatementType... statementTypes) {
-        this.interceptors.add(interceptor, statementTypes);
+    public JdbcDbProviderBuilder addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes) {
+        this.interceptors.add(interceptor, dbStatementTypes);
         return this;
     }
 

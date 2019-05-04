@@ -34,24 +34,24 @@ import io.helidon.db.spi.DbProviderBuilder;
 /**
  * Helidon database handler.
  */
-public interface HelidonDb {
+public interface Db {
     /**
      * Execute database statements in transaction.
      *
      * @param <T>      statement execution result type
-     * @param executor database statement executor, see {@link HelidonDbExecute}
+     * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> T inTransaction(Function<HelidonDbExecute, T> executor);
+    <T> T inTransaction(Function<DbExecute, T> executor);
 
     /**
      * Execute database statement.
      *
      * @param <T>      statement execution result type
-     * @param executor database statement executor, see {@link HelidonDbExecute}
+     * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> T execute(Function<HelidonDbExecute, T> executor);
+    <T> T execute(Function<DbExecute, T> executor);
 
     /**
      * Pings the database, completes when DB is up and ready, completes exceptionally if not.
@@ -73,7 +73,7 @@ public interface HelidonDb {
      * @param config name of the configuration node with driver configuration
      * @return database handler builder
      */
-    static HelidonDb create(Config config) {
+    static Db create(Config config) {
         return builder(config).build();
     }
 
@@ -115,7 +115,7 @@ public interface HelidonDb {
      */
     static Builder builder(String dbSource) {
         return DbSourceLoader.get(dbSource)
-                .map(HelidonDb::builder)
+                .map(Db::builder)
                 .orElseThrow(() -> new DbException(
                         "No DbSource defined on classpath/module path for name: "
                                 + dbSource
@@ -133,16 +133,16 @@ public interface HelidonDb {
         return dbConfig.get("source")
                 .asString()
                 // use builder for correct DbSource
-                .map(HelidonDb::builder)
+                .map(Db::builder)
                 // or use the default one
-                .orElseGet(HelidonDb::builder)
+                .orElseGet(Db::builder)
                 .config(dbConfig);
     }
 
     /**
      * Helidon database handler builder.
      */
-    final class Builder implements io.helidon.common.Builder<HelidonDb> {
+    final class Builder implements io.helidon.common.Builder<Db> {
         private final HelidonServiceLoader.Builder<DbInterceptorProvider> interceptorServices = HelidonServiceLoader.builder(
                 ServiceLoader.load(DbInterceptorProvider.class));
 
@@ -167,7 +167,7 @@ public interface HelidonDb {
          * @return new database handler instance
          */
         @Override
-        public HelidonDb build() {
+        public Db build() {
             // add interceptors from service loader
             if (null != config) {
                 Config interceptors = config.get("interceptors");
@@ -209,9 +209,9 @@ public interface HelidonDb {
                             configs.forEach(typedConfig -> {
                                 ConfigValue<List<String>> types = typedConfig.get("types").asList(String.class);
                                 types.ifPresent(typeList -> {
-                                    StatementType[] typeArray = typeList.stream()
-                                            .map(StatementType::valueOf)
-                                            .toArray(StatementType[]::new);
+                                    DbStatementType[] typeArray = typeList.stream()
+                                            .map(DbStatementType::valueOf)
+                                            .toArray(DbStatementType[]::new);
 
                                     added.set(true);
                                     addInterceptor(provider.create(typedConfig), typeArray);
@@ -272,11 +272,11 @@ public interface HelidonDb {
          * Add an interceptor to specific statement types.
          *
          * @param interceptor interceptor to apply
-         * @param statementTypes types of statements to apply it on
+         * @param dbStatementTypes types of statements to apply it on
          * @return updated builder instance
          */
-        public Builder addInterceptor(DbInterceptor interceptor, StatementType... statementTypes) {
-            theBuilder.addInterceptor(interceptor, statementTypes);
+        public Builder addInterceptor(DbInterceptor interceptor, DbStatementType... dbStatementTypes) {
+            theBuilder.addInterceptor(interceptor, dbStatementTypes);
             return this;
         }
 
