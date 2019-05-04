@@ -25,11 +25,35 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNot.not;
 
 /**
  * Tests {@link io.helidon.common.context.ListContext} and {@link Context}.
  */
 public class ListContextTest {
+
+    @Test
+    public void testId() {
+        Context first = Context.create();
+        Context second = Context.create();
+        Context third = Context.create(first);
+        Context fourth = Context.create(second);
+        Context fifth = Context.create(fourth);
+
+        assertThat(first.id(), not(second.id()));
+        assertThat(first.id(), not(third.id()));
+        assertThat(first.id(), not(fourth.id()));
+        assertThat(first.id(), not(fifth.id()));
+
+        assertThat(second.id(), not(third.id()));
+        assertThat(second.id(), not(fourth.id()));
+        assertThat(second.id(), not(fifth.id()));
+
+        assertThat(third.id(), not(fourth.id()));
+        assertThat(third.id(), not(fifth.id()));
+
+        assertThat(fourth.id(), not(fifth.id()));
+    }
 
     @Test
     public void create() {

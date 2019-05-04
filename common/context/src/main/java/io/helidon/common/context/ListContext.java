@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -30,25 +31,21 @@ import java.util.function.Supplier;
  * A {@link Context} implementation with deque registry.
  */
 class ListContext implements Context {
+    private final AtomicLong contextCounter = new AtomicLong(1);
 
     private final Context parent;
     private final ConcurrentHashMap<Object, ClassifiedRegistry> classifiers = new ConcurrentHashMap<>();
     private final ClassifiedRegistry registry = new ClassifiedRegistry();
+    private final String contextId;
 
-    /**
-     * Creates new instance with defined parent.
-     *
-     * @param parent a parent context or {@code null}.
-     */
-    ListContext(Context parent) {
-        this.parent = parent;
+    ListContext(Builder builder) {
+        this.parent = builder.parent();
+        this.contextId = builder.id();
     }
 
-    /**
-     * Creates new instance.
-     */
-    ListContext() {
-        this(null);
+    @Override
+    public String id() {
+        return contextId;
     }
 
     @Override
@@ -107,6 +104,10 @@ class ListContext implements Context {
                 return Optional.empty();
             }
         }
+    }
+
+    AtomicLong contextCounter() {
+        return contextCounter;
     }
 
     private interface RegisteredItem<T> {

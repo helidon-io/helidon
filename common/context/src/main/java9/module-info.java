@@ -19,6 +19,7 @@
  */
 module io.helidon.common.context {
     requires java.logging;
+    requires io.helidon.common;
 
     exports io.helidon.common.context;
 }

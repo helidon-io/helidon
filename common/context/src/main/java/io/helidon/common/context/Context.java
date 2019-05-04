@@ -17,6 +17,8 @@
 package io.helidon.common.context;
 
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 /**
@@ -55,7 +57,7 @@ public interface Context {
      * @return new instance
      */
     static Context create() {
-        return new ListContext();
+        return builder().build();
     }
 
     /**
@@ -67,7 +69,16 @@ public interface Context {
      * @return new instance
      */
     static Context create(Context parent) {
-        return new ListContext(parent);
+        return builder().parent(parent).build();
+    }
+
+    /**
+     * Fluent API builder for advanced configuration.
+     *
+     * @return a new builder
+     */
+    static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -144,4 +155,70 @@ public interface Context {
      * @throws NullPointerException If {@code classifier} is null.
      */
     <T> Optional<T> get(Object classifier, Class<T> type);
+
+    /**
+     * A unique id of this context within this runtime.
+     *
+     * @return id of this context
+     */
+    String id();
+
+    /**
+     * Fluent API builder for {@link Context}.
+     */
+    class Builder implements io.helidon.common.Builder<Context> {
+        private static final AtomicLong PARENT_CONTEXT_COUNTER = new AtomicLong(1);
+        private Context parent;
+        private String id;
+
+        @Override
+        public Context build() {
+            if (null == id) {
+                id = generateId();
+            }
+            return new ListContext(this);
+        }
+
+        private String generateId() {
+            if (null == parent) {
+                return String.valueOf(PARENT_CONTEXT_COUNTER.getAndIncrement());
+            }
+            if (parent instanceof ListContext) {
+                return parent.id() + ":" + ((ListContext) parent).contextCounter().getAndIncrement();
+            }
+            // we cannot depend on the parent, so let's use UUID
+            return parent.id() + ":" + UUID.randomUUID();
+        }
+
+
+        /**
+         * Parent of the new context.
+         * @param parent parent context
+         *
+         * @return updated builder instance
+         */
+        public Builder parent(Context parent) {
+            this.parent = parent;
+            return this;
+        }
+
+        /**
+         * Identification of the new context, should be unique within this runtime.
+         *
+         * @param id context identification
+         * @return updated builder instance
+         */
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        Context parent() {
+            return parent;
+        }
+
+        String id() {
+            return id;
+        }
+    }
 }
