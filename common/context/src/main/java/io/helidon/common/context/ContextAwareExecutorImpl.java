@@ -115,18 +115,20 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
     protected  <T> Callable<T> wrap(Callable<T> task) {
         Optional<Context> context = Contexts.context();
 
-        return context.<Callable<T>>map(value -> () -> Contexts.inContext(value, task))
-                // no need to wrap, no context
-                .orElse(task);
+        if (context.isPresent()) {
+            return () -> Contexts.inContext(context.get(), task);
+        } else {
+            return task;
+        }
     }
 
     protected Runnable wrap(Runnable command) {
         Optional<Context> context = Contexts.context();
 
-        // no need to wrap, no context
-        return context.<Runnable>map(value -> () -> Contexts.inContext(value, command))
-                // no need to wrap, no context
-                .orElse(command);
-
+        if (context.isPresent()) {
+            return () -> Contexts.inContext(context.get(), command);
+        } else {
+            return command;
+        }
     }
 }

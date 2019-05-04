@@ -80,7 +80,7 @@ public interface Context {
     <T> void register(T instance);
 
     /**
-     * Register a new instance using a provided supplier. The supplier is guarantied to be called at most once when it's
+     * Register a new instance using a provided supplier. The supplier is guaranteed to be called at most once when it's
      * requested by the {@link #get(Class)} method. The returned value is then registered and the supplier is never used again.
      *
      * @param type     a type of supplied instance
