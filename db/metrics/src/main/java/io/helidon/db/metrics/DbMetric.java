@@ -33,6 +33,7 @@ import org.eclipse.microprofile.metrics.MetricType;
  */
 abstract class DbMetric<T extends Metric> implements DbInterceptor {
     private final Metadata meta;
+    private final String description;
     private final BiFunction<String, String, String> namedFunction;
     private final MetricRegistry registry;
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
@@ -50,6 +51,13 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
         this.registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
         this.measureErrors = builder.measureErrors();
         this.measureSuccess = builder.measureSuccess();
+        String tmpDescription;
+        if (builder.description() == null) {
+            tmpDescription = ((null == meta) ? "" : meta.getDescription());
+        } else {
+            tmpDescription = builder.description();
+        }
+        this.description = tmpDescription;
     }
 
     protected abstract String defaultNamePrefix();
@@ -65,10 +73,11 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
 
             if (null == meta) {
                 metadata = new Metadata(name, metricType());
+                metadata.setDescription(description);
             } else {
                 metadata = new Metadata(name,
                                         meta.getDisplayName(),
-                                        meta.getDescription(),
+                                        description,
                                         meta.getTypeRaw(),
                                         meta.getUnit(),
                                         meta.getTagsAsString());

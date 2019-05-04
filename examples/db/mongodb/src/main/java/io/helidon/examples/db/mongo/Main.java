@@ -109,7 +109,6 @@ public final class Main {
                 .addInterceptor(DbTracing.create())
                 .build();
 
-        // todo maybe use Java ServiceLoader to add interceptors -e.g. when running from config only
         HealthSupport health = HealthSupport.builder()
                 .add(DbHealthCheck.create(helidonDb, helidonDb.dbType()))
                 .build();

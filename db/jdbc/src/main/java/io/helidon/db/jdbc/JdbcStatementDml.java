@@ -55,6 +55,7 @@ class JdbcStatementDml extends JdbcStatement<JdbcStatementDml, CompletionStage<L
                 queryFuture.complete(count);
                 preparedStatement.close();
             } catch (Exception e) {
+                statementFuture.completeExceptionally(e);
                 queryFuture.completeExceptionally(e);
             }
         });

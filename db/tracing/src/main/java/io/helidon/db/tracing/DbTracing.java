@@ -17,6 +17,7 @@ package io.helidon.db.tracing;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
+import io.helidon.config.Config;
 import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbInterceptorContext;
 
@@ -27,9 +28,28 @@ import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 
 /**
- * TODO javadoc.
+ * Tracing interceptor.
+ * This interceptor is added through Java Service loader.
  */
 public class DbTracing implements DbInterceptor {
+    /**
+     * Create a new tracing interceptor based on the configuration.
+     *
+     * @param config configuration node for this interceptor (currently ignored)
+     * @return a new tracing interceptor
+     */
+    public static DbTracing create(Config config) {
+        return create();
+    }
+
+    /**
+     * Create a new interceptor to trace requests.
+     * @return a new tracing interceptor
+     */
+    public static DbTracing create() {
+        return new DbTracing();
+    }
+
     @Override
     public void statement(DbInterceptorContext interceptorContext) {
         Context context = interceptorContext.context();
@@ -60,7 +80,4 @@ public class DbTracing implements DbInterceptor {
 
     }
 
-    public static DbTracing create() {
-        return new DbTracing();
-    }
 }
