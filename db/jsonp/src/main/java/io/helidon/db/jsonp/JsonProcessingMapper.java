@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -131,7 +132,12 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
 
     @Override
     public List<Object> toIndexedParameters(JsonObject value) {
-        throw new UnsupportedOperationException("Cannot use indexed parameters for JsonObject");
+        // in case the underlying map is linked, we can do this
+        // obviously the number of parameters must match the number in statement, so most likely this is
+        // going to fail
+        List<Object> result = new LinkedList<>();
+        value.forEach((name, json) -> result.add(toObject(name, json, value)));
+        return result;
     }
 
     public static JsonProcessingMapper create() {

@@ -65,6 +65,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db-health</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db-jsonp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
         </dependency>

@@ -35,6 +35,26 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db-tracing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db-metrics</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db-health</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db-jsonp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health</artifactId>
             <version>${project.version}</version>
