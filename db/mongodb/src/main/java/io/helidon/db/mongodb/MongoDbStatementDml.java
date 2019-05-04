@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.db.DbInterceptorContext;
 import io.helidon.db.DbMapperManager;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 import com.mongodb.client.result.DeleteResult;
@@ -41,37 +41,37 @@ import org.reactivestreams.Subscription;
 public class MongoDbStatementDml extends MongoDbStatement<MongoDbStatementDml, CompletionStage<Long>> {
 
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementDml.class.getName());
-    private StatementType statementType;
+    private DbStatementType dbStatementType;
     private MongoStatement statement;
 
-    MongoDbStatementDml(StatementType statementType, MongoDatabase db,
+    MongoDbStatementDml(DbStatementType dbStatementType, MongoDatabase db,
                         String statementName,
                         String statement,
                         DbMapperManager dbMapperManager,
                         MapperManager mapperManager,
                         InterceptorSupport interceptors) {
-        super(statementType,
+        super(dbStatementType,
               db,
               statementName,
               statement,
               dbMapperManager,
               mapperManager,
               interceptors);
-        this.statementType = statementType;
+        this.dbStatementType = dbStatementType;
     }
 
     @Override
     public CompletionStage<Long> execute() {
-        statement = new MongoStatement(statementType, READER_FACTORY, build());
+        statement = new MongoStatement(dbStatementType, READER_FACTORY, build());
         switch (statement.getOperation()) {
         case INSERT:
-            statementType = StatementType.INSERT;
+            dbStatementType = DbStatementType.INSERT;
             break;
         case UPDATE:
-            statementType = StatementType.UPDATE;
+            dbStatementType = DbStatementType.UPDATE;
             break;
         case DELETE:
-            statementType = StatementType.DELETE;
+            dbStatementType = DbStatementType.DELETE;
             break;
         default:
             throw new IllegalStateException("Unexpected value for DML statement: " + statement.getOperation());
@@ -80,29 +80,40 @@ public class MongoDbStatementDml extends MongoDbStatement<MongoDbStatementDml, C
     }
 
     @Override
-    protected CompletionStage<Long> doExecute(DbInterceptorContext dbContext,
+    protected CompletionStage<Long> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
                                               CompletableFuture<Void> statementFuture,
                                               CompletableFuture<Long> queryFuture) {
 
-        if (!dbContext.statement().equals(statement())) {
-            // TODO rebuild the statement from the context
-        }
-        switch (statement.getOperation()) {
-        case INSERT:
-            return executeInsert(statement, statementFuture, queryFuture);
-        case UPDATE:
-            return executeUpdate(statement, statementFuture, queryFuture);
-        case DELETE:
-            return executeDelete(statement, statementFuture, queryFuture);
-        default:
-            throw new UnsupportedOperationException("Statement operation not yet supported: " + statement.getOperation());
+        // if the iterceptors fail with exception, we must fail as well
+        dbContextFuture.exceptionally(throwable -> {
+            statementFuture.completeExceptionally(throwable);
+            queryFuture.completeExceptionally(throwable);
+            return null;
+        });
 
-        }
+        return dbContextFuture.thenCompose(dbContext -> {
+            switch (statement.getOperation()) {
+            case INSERT:
+                return executeInsert(statement, statementFuture, queryFuture);
+            case UPDATE:
+                return executeUpdate(statement, statementFuture, queryFuture);
+            case DELETE:
+                return executeDelete(statement, statementFuture, queryFuture);
+            default:
+                CompletableFuture<Long> result = new CompletableFuture<>();
+                Throwable failure = new UnsupportedOperationException("Statement operation not yet supported: " + statement
+                        .getOperation());
+                result.completeExceptionally(failure);
+                statementFuture.completeExceptionally(failure);
+                queryFuture.completeExceptionally(failure);
+                return result;
+            }
+        });
     }
 
     @Override
-    protected StatementType statementType() {
-        return statementType;
+    protected DbStatementType statementType() {
+        return dbStatementType;
     }
 
     @SuppressWarnings("SubscriberImplementation")

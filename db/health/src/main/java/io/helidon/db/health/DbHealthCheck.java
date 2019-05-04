@@ -17,7 +17,7 @@ package io.helidon.db.health;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.db.HelidonDb;
+import io.helidon.db.Db;
 
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -27,7 +27,7 @@ import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
  * Database health check.
  */
 public final class DbHealthCheck implements HealthCheck {
-    private final HelidonDb db;
+    private final Db db;
     private final String name;
 
     private DbHealthCheck(Builder builder) {
@@ -35,11 +35,11 @@ public final class DbHealthCheck implements HealthCheck {
         this.name = builder.name;
     }
 
-    public static DbHealthCheck create(HelidonDb db) {
+    public static DbHealthCheck create(Db db) {
         return builder(db).build();
     }
 
-    public static Builder builder(HelidonDb db) {
+    public static Builder builder(Db db) {
         return new Builder(db);
     }
 
@@ -75,10 +75,10 @@ public final class DbHealthCheck implements HealthCheck {
     }
 
     public static final class Builder implements io.helidon.common.Builder<DbHealthCheck> {
-        private final HelidonDb database;
+        private final Db database;
         private String name;
 
-        private Builder(HelidonDb database) {
+        private Builder(Db database) {
             this.database = database;
             this.name = database.dbType();
         }

@@ -30,7 +30,7 @@ import io.helidon.db.DbException;
 import io.helidon.db.DbMapperManager;
 import io.helidon.db.DbRow;
 import io.helidon.db.DbStatement;
-import io.helidon.db.StatementType;
+import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
 
 /**
@@ -47,7 +47,7 @@ class JdbcStatementGet implements DbStatement<JdbcStatementGet, CompletionStage<
                      MapperManager mapperManager,
                      InterceptorSupport interceptors) {
 
-        this.query = new JdbcStatementQuery(StatementType.GET,
+        this.query = new JdbcStatementQuery(DbStatementType.GET,
                                             connectionPool,
                                             executorService,
                                             statementName,

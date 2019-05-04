@@ -30,4 +30,5 @@ module io.helidon.db {
 
     uses io.helidon.db.spi.DbProvider;
     uses io.helidon.db.spi.DbMapperProvider;
+    uses io.helidon.db.spi.DbInterceptorProvider;
 }
