@@ -42,7 +42,7 @@ public abstract class DbMetricBuilder<T extends DbMetricBuilder<T>> {
     }
 
     public T nameFormat(String format) {
-        return nameFormat((name, statement) -> String.format(format, name));
+        return nameFormat((name, query) -> String.format(format, name, query));
     }
 
     public T nameFormat(BiFunction<String, String, String> function) {

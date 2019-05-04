@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import io.helidon.common.mapper.MapperManager;
@@ -173,8 +174,22 @@ public interface HelidonDb {
                 List<DbInterceptorProvider> providers = interceptorServices.build().asList();
                 for (DbInterceptorProvider provider : providers) {
                     Config providerConfig = interceptors.get(provider.configKey());
+                    if (!providerConfig.exists()) {
+                        continue;
+                    }
+                    // if configured, we want to at least add a global one
+                    AtomicBoolean added = new AtomicBoolean(false);
                     Config global = providerConfig.get("global");
-                    global.ifExists(theConfig -> addInterceptor(provider.create(global)));
+                    if (global.exists() && !global.isLeaf()) {
+                        // we must iterate through nodes
+                        global.asNodeList().ifPresent(configs -> {
+                            configs.forEach(globalConfig -> {
+                                added.set(true);
+                                addInterceptor(provider.create(globalConfig));
+                            });
+                        });
+                    }
+
                     Config named = providerConfig.get("named");
                     if (named.exists()) {
                         // we must iterate through nodes
@@ -182,6 +197,7 @@ public interface HelidonDb {
                             configs.forEach(namedConfig -> {
                                 ConfigValue<List<String>> names = namedConfig.get("names").asList(String.class);
                                 names.ifPresent(nameList -> {
+                                    added.set(true);
                                     addInterceptor(provider.create(namedConfig), nameList.toArray(new String[0]));
                                 });
                             });
@@ -197,10 +213,18 @@ public interface HelidonDb {
                                             .map(StatementType::valueOf)
                                             .toArray(StatementType[]::new);
 
+                                    added.set(true);
                                     addInterceptor(provider.create(typedConfig), typeArray);
                                 });
                             });
                         });
+                    }
+                    if (!added.get()) {
+                        if (global.exists()) {
+                            addInterceptor(provider.create(global));
+                        } else {
+                            addInterceptor(provider.create(providerConfig));
+                        }
                     }
                 }
             }
