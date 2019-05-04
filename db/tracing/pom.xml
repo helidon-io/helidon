@@ -20,24 +20,29 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>helidon-project</artifactId>
-        <groupId>io.helidon</groupId>
+        <groupId>io.helidon.db</groupId>
+        <artifactId>helidon-db-project</artifactId>
         <version>1.0.4-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
 
-    <groupId>io.helidon.db</groupId>
-    <artifactId>helidon-db-project</artifactId>
-    <name>Helidon DB Project</name>
+    <artifactId>helidon-db-tracing</artifactId>
+    <name>Helidon DB Tracing</name>
 
-    <description>Support for reactive database access.</description>
+    <description>Tracing support for Helidon DB</description>
 
-    <modules>
-        <module>db</module>
-        <module>common</module>
-        <module>jdbc</module>
-        <module>mongodb</module>
-        <module>tracing</module>
-        <module>metrics</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.db</groupId>
+            <artifactId>helidon-db</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentracing</groupId>
+            <artifactId>opentracing-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentracing</groupId>
+            <artifactId>opentracing-util</artifactId>
+        </dependency>
+    </dependencies>
 </project>

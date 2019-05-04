@@ -24,6 +24,29 @@ db:
   url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
   username: user
   password: password
+  interceptors:
+    tracing:
+      global:
+    metrics:
+      # possible also global:
+      global:
+        type: METER
+      named:
+        - names: ["select-all", "select-one"]
+          errors: false
+          type: TIMER
+          description: "Timer for successful selects"
+      typed:
+        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
+          type: COUNTER
+          errors: false
+          name-format: "db.counter.%s.success"
+          description: "Counter of successful DML statements"
+        - types: ["DELETE", "UPDATE", "INSERT", "DML"]
+          type: COUNTER
+          success: false
+          name-format: "db.counter.%s.error"
+          description: "Counter of failed DML statements"
   statements:
     # required ping statement
     ping: "DO 0"

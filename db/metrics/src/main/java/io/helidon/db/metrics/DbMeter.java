@@ -17,30 +17,44 @@ package io.helidon.db.metrics;
 
 import java.util.concurrent.CompletionStage;
 
-import org.eclipse.microprofile.metrics.Counter;
+import io.helidon.config.Config;
+
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * TODO javadoc.
+ * Meter for Helidon DB.
  */
-public final class DbCounter extends DbMetric<Counter> {
-    private DbCounter(Builder builder) {
+public final class DbMeter extends DbMetric<Meter> {
+    private DbMeter(Builder builder) {
         super(builder);
     }
 
+    public static DbMeter create(Config config) {
+        return builder().config(config).build();
+    }
+
+    public static DbMeter create() {
+        return builder().build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
     @Override
-    protected void executeMetric(Counter metric, CompletionStage<Void> aFuture) {
+    protected void executeMetric(Meter metric, CompletionStage<Void> aFuture) {
         aFuture
                 .thenAccept(nothing -> {
                     if (measureSuccess()) {
-                        metric.inc();
+                        metric.mark();
                     }
                 })
                 .exceptionally(throwable -> {
                     if (measureErrors()) {
-                        metric.inc();
+                        metric.mark();
                     }
                     return null;
                 });
@@ -52,27 +66,19 @@ public final class DbCounter extends DbMetric<Counter> {
     }
 
     @Override
-    protected Counter metric(MetricRegistry registry, Metadata meta) {
-        return registry.counter(meta);
+    protected Meter metric(MetricRegistry registry, Metadata meta) {
+        return registry.meter(meta);
     }
 
     @Override
     protected String defaultNamePrefix() {
-        return "db.counter.";
+        return "db.meter.";
     }
 
-    public static DbCounter create() {
-        return builder().build();
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbCounter> {
+    public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbMeter> {
         @Override
-        public DbCounter build() {
-            return new DbCounter(this);
+        public DbMeter build() {
+            return new DbMeter(this);
         }
     }
 }
