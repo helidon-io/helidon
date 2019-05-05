@@ -16,16 +16,25 @@
 package io.helidon.examples.db.mongo;
 
 /**
- * TODO javadoc.
+ * POJO representing a very simplified Pokemon.
  */
 public class Pokemon {
     private String name;
     private String type;
 
-    // JSON-B
+    /**
+     * Default constructor.
+     */
     public Pokemon() {
+        // JSON-B
     }
 
+    /**
+     * Create pokemon with name and type.
+     *
+     * @param name name of the beast
+     * @param type type of the beast
+     */
     public Pokemon(String name, String type) {
         this.name = name;
         this.type = type;

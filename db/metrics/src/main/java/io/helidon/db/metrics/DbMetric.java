@@ -31,25 +31,25 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * TODO javadoc.
+ * Common ancestor for Helidon DB metrics.
  */
 abstract class DbMetric<T extends Metric> implements DbInterceptor {
     private final Metadata meta;
     private final String description;
-    private final BiFunction<String, String, String> namedFunction;
+    private final BiFunction<String, DbStatementType, String> nameFunction;
     private final MetricRegistry registry;
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
 
     protected DbMetric(DbMetricBuilder<?> builder) {
-        BiFunction<String, String, String> namedFunction = builder.namedFormat();
+        BiFunction<String, DbStatementType, String> namedFunction = builder.nameFormat();
         this.meta = builder.meta();
 
         if (null == namedFunction) {
             namedFunction = (name, statement) -> defaultNamePrefix() + name;
         }
-        this.namedFunction = namedFunction;
+        this.nameFunction = namedFunction;
         this.registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
         this.measureErrors = builder.measureErrors();
         this.measureSuccess = builder.measureSuccess();
@@ -70,7 +70,7 @@ abstract class DbMetric<T extends Metric> implements DbInterceptor {
         String statementName = interceptorContext.statementName();
 
         T metric = cache.computeIfAbsent(statementName, s -> {
-            String name = namedFunction.apply(statementName, dbStatementType.toString());
+            String name = nameFunction.apply(statementName, dbStatementType);
             Metadata metadata;
 
             if (null == meta) {

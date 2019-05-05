@@ -26,7 +26,8 @@ import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * Timer metric for Helidon DB.
+ * Timer metric for Helidon DB. This class implements the {@link io.helidon.db.DbInterceptor} and
+ * can be configured either through a {@link io.helidon.db.Db.Builder} or through configuration.
  */
 public final class DbTimer extends DbMetric<Timer> {
 
@@ -34,14 +35,32 @@ public final class DbTimer extends DbMetric<Timer> {
         super(builder);
     }
 
+    /**
+     * Create a timer from configuration.
+     *
+     * @param config configuration to read
+     * @return a new timer
+     * @see io.helidon.db.metrics.DbMetricBuilder#config(io.helidon.config.Config)
+     */
     public static DbTimer create(Config config) {
         return builder().config(config).build();
     }
 
+    /**
+     * Create a new timer using default configuration.
+     * <p>By default the name format is {@code db.timer.statement-name}, where {@code statement-name}
+     * is provided at runtime.
+     *
+     * @return a new timer
+     */
     public static DbTimer create() {
         return builder().build();
     }
 
+    /**
+     * Create a new fluent API builder to create a new timer metric.
+     * @return a new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -84,6 +103,9 @@ public final class DbTimer extends DbMetric<Timer> {
         return registry.timer(meta);
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.db.metrics.DbTimer}.
+     */
     public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbTimer> {
         @Override
         public DbTimer build() {
