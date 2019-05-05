@@ -15,20 +15,15 @@
  */
 
 /**
- * Helidon DB.
+ * Helidon DB JSON-P Mapper.
  */
-module io.helidon.db {
+module io.helidon.db.jsonp {
     requires java.logging;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.serviceloader;
+    requires io.helidon.db;
+    requires java.json;
 
-    exports io.helidon.db;
-    exports io.helidon.db.spi;
+    exports io.helidon.db.jsonp;
 
-    uses io.helidon.db.spi.DbProvider;
-    uses io.helidon.db.spi.DbMapperProvider;
-    uses io.helidon.db.spi.DbInterceptorProvider;
+    provides io.helidon.db.spi.DbMapperProvider with io.helidon.db.jsonp.JsonProcessingMapperProvider;
 }
+
