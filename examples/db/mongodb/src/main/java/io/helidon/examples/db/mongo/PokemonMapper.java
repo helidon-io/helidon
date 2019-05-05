@@ -32,6 +32,11 @@ public class PokemonMapper implements DbMapper<Pokemon> {
     @Override
     public Pokemon read(DbRow row) {
         DbColumn name = row.column("name");
+        // we know that in mongo this is not true
+        if (null == name) {
+            name = row.column("_id");
+        }
+
         DbColumn type = row.column("type");
         return new Pokemon(name.as(String.class), type.as(String.class));
     }
