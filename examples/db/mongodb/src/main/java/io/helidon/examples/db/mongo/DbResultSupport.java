@@ -40,7 +40,8 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * TODO javadoc.
+ * Support to write {@link io.helidon.db.DbRowResult} directly to webserver.
+ * This result support creates an array of json objects and writes them to the response entity.
  */
 public class DbResultSupport implements Service, Handler {
 
@@ -50,6 +51,10 @@ public class DbResultSupport implements Service, Handler {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonWriterFactory WRITER_FACTORY = Json.createWriterFactory(Collections.emptyMap());
 
+    /**
+     * Create a new instance to register with a webserver.
+     * @return {@link io.helidon.webserver.WebServer} {@link io.helidon.webserver.Service}
+     */
     public static DbResultSupport create() {
         return new DbResultSupport();
     }

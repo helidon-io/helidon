@@ -29,14 +29,48 @@ import io.helidon.db.DbException;
  */
 @FunctionalInterface
 public interface ConnectionPool {
-    static Builder builder() {
-        return new Builder();
-    }
-
+    /**
+     * Create a JDBC connection pool from provided configuration.
+     * <table>
+     * <caption>Optional configuration parameters</caption>
+     * <tr>
+     *     <th>key</th>
+     *     <th>default value</th>
+     *     <th>description</th>
+     * </tr>
+     * <tr>
+     *     <td>url</td>
+     *     <td>&nbsp;</td>
+     *     <td>JDBC URL of the database - this property is required when only configuration is used.
+     *              Example: {@code jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false}</td>
+     * </tr>
+     * <tr>
+     *     <td>username</td>
+     *     <td>&nbsp;</td>
+     *     <td>Username used to connect to the database</td>
+     * </tr>
+     * <tr>
+     *     <td>password</td>
+     *     <td>&nbsp;</td>
+     *     <td>Password used to connect to the database</td>
+     * </tr>
+     * </table>
+     *
+     * @param config configuration of connection pool
+     * @return a new instance configured from the provided config
+     */
     static ConnectionPool create(Config config) {
         return ConnectionPool.builder()
                 .config(config)
                 .build();
+    }
+
+    /**
+     * Create a fluent API builder for a JDBC Connection pool based on URL, username and password.
+     * @return a new builder
+     */
+    static Builder builder() {
+        return new Builder();
     }
 
     /**

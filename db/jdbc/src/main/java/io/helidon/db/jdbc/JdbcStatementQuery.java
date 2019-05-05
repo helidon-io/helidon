@@ -24,9 +24,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -262,8 +266,6 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
         private final CompletableFuture<Long> queryFuture;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
-        private final AtomicBoolean running = new AtomicBoolean(true);
-        private RowSubscription subscription;
 
         private RowPublisher(ExecutorService executorService,
                              CompletableFuture<ResultWithConn> resultSetFuture,
@@ -280,38 +282,77 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
 
         @Override
         public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
-            this.subscription = new RowSubscription(subscriber, running);
-            subscriber.onSubscribe(subscription);
+            LinkedBlockingQueue<Long> requestQueue = new LinkedBlockingQueue<>();
+            AtomicBoolean cancelled = new AtomicBoolean();
 
-            resultSetFuture.thenAccept(resultWithConn -> executorService.submit(() -> {
-                //now we have a subscriber, we can handle the processing of result set
-                try (Connection conn = resultWithConn.connection) {
-                    try (ResultSet rs = resultWithConn.resultSet) {
-                        Map<Long, DbColumn> metadata = createMetadata(rs);
-                        long count = 0;
-                        while (running.get() && rs.next()) {
-                            DbRow dbRow = createDbRow(rs, metadata, dbMapperManager, mapperManager);
-                            subscription.nextRow(dbRow);
-                            count++;
-                        }
-                        queryFuture.complete(count);
-                        if (running.get()) {
-                            // not cancelled
-                            subscriber.onComplete();
-                        }
-
+            resultSetFuture.thenAccept(resultWithConn -> {
+                // we have executed the statement, we can correctly subscribe
+                subscriber.onSubscribe(new Flow.Subscription() {
+                    @Override
+                    public void request(long n) {
+                        // add the requested number to the queue
+                        requestQueue.add(n);
                     }
-                } catch (Exception e) {
-                    // if anything fails, just fail
-                    queryFuture.completeExceptionally(e);
-                    subscriber.onError(e);
-                }
-            }))
-                    .exceptionally(throwable -> {
-                        queryFuture.completeExceptionally(throwable);
-                        executorService.submit(() -> subscriber.onError(throwable));
-                        return null;
-                    });
+
+                    @Override
+                    public void cancel() {
+                        cancelled.set(true);
+                        requestQueue.clear();
+                    }
+                });
+
+                // and now we can process the data from the database
+                executorService.submit(() -> {
+                    //now we have a subscriber, we can handle the processing of result set
+                    try (Connection conn = resultWithConn.connection) {
+                        try (ResultSet rs = resultWithConn.resultSet) {
+                            Map<Long, DbColumn> metadata = createMetadata(rs);
+                            long count = 0;
+
+                            // now we only want to process next record if it was requested
+                            while (!cancelled.get()) {
+                                Long nextElement;
+                                try {
+                                    nextElement = requestQueue.poll(10, TimeUnit.MINUTES);
+                                } catch (InterruptedException e) {
+                                    LOGGER.severe("Interrupted while polling for requests, terminating DB read");
+                                    subscriber.onError(e);
+                                    break;
+                                }
+                                if (nextElement == null) {
+                                    LOGGER.severe("No data requested for 10 minutes, terminating DB read");
+                                    subscriber.onError(new TimeoutException("No data requested in 10 minutes"));
+                                    break;
+                                }
+                                for (long i = 0; i < nextElement; i++) {
+                                    if (rs.next()) {
+                                        DbRow dbRow = createDbRow(rs, metadata, dbMapperManager, mapperManager);
+                                        subscriber.onNext(dbRow);
+                                        count++;
+                                    } else {
+                                        queryFuture.complete(count);
+                                        subscriber.onComplete();
+                                        return;
+                                    }
+                                }
+                            }
+
+                            if (cancelled.get()) {
+                                queryFuture
+                                        .completeExceptionally(new CancellationException("Processing cancelled by subscriber"));
+                            }
+                        }
+                    } catch (Exception e) {
+                        // if anything fails, just fail
+                        queryFuture.completeExceptionally(e);
+                        subscriber.onError(e);
+                    }
+                });
+            }).exceptionally(throwable -> {
+                queryFuture.completeExceptionally(throwable);
+                executorService.submit(() -> subscriber.onError(throwable));
+                return null;
+            });
 
         }
 
@@ -442,56 +483,6 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
                     return sb.toString();
                 }
             };
-        }
-    }
-
-    static final class RowSubscription implements Flow.Subscription {
-
-        private final AtomicBoolean isRunnning;
-        private volatile long requested = 0;
-        private final Flow.Subscriber<? super DbRow> subscriber;
-
-        RowSubscription(Flow.Subscriber<? super DbRow> subscriber, AtomicBoolean isRunnning) {
-            this.isRunnning = isRunnning;
-            this.requested = 0;
-            this.subscriber = subscriber;
-        }
-
-        // Called from executor service thread
-        void nextRow(DbRow row) {
-            if (requested > 0) {
-                requested--;
-                subscriber.onNext(row);
-            } else {
-                // Suspend executor service thread when no data are requested
-                while (requested <= 0) {
-                    synchronized (this) {
-                        try {
-                            this.wait();
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(JdbcDb.class.getName()).log(
-                                    Level.WARNING, String.format("Thread interrupted: %s", ex.getMessage()));
-                        }
-                    }
-                }
-            }
-        }
-
-        // Called from data processing thread
-        @Override
-        public void request(long l) {
-            requested += l;
-            // Wake up executor service thread to produce more rows
-            if (requested > 0) {
-                synchronized (this) {
-                    this.notify();
-                }
-            }
-        }
-
-        @Override
-        public void cancel() {
-            isRunnning.set(false);
         }
     }
 

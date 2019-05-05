@@ -15,7 +15,6 @@
  */
 package io.helidon.db;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -42,5 +41,5 @@ public interface DbInterceptor {
      * @param context Context to access data needed to process an interceptor
      * @return completion stage that completes when this interceptor is finished
      */
-    CompletableFuture<DbInterceptorContext> statement(DbInterceptorContext context);
+    CompletionStage<DbInterceptorContext> statement(DbInterceptorContext context);
 }
