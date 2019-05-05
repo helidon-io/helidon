@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
+import io.helidon.common.reactive.Flow;
 import io.helidon.db.DbRow;
 import io.helidon.db.Db;
 import io.helidon.webserver.Handler;
@@ -144,6 +145,33 @@ public class PokemonService implements Service {
         db.execute(exec -> exec.namedQuery("select-all"))
                 .consume(response::send)
                 .exceptionally(throwable -> sendError(throwable, response));
+
+        // let's try again
+        db.execute(exec -> exec.namedQuery("select-all"))
+                .map(Pokemon.class)
+                .publisher()
+                .subscribe(new Flow.Subscriber<Pokemon>() {
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        subscription.request(10);
+                    }
+
+                    @Override
+                    public void onNext(Pokemon item) {
+                        System.out.println("Next: " + item.getName());
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        System.out.println("Failed");
+                        throwable.printStackTrace();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        System.out.println("Completed");
+                    }
+                });
     }
 
     /**

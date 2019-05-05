@@ -39,6 +39,7 @@ import io.helidon.db.DbRow;
 import io.helidon.db.DbRowResult;
 import io.helidon.db.DbStatementType;
 import io.helidon.db.common.InterceptorSupport;
+import io.helidon.db.common.MappingProcessor;
 
 import com.mongodb.reactivestreams.client.FindPublisher;
 import com.mongodb.reactivestreams.client.MongoCollection;
@@ -373,16 +374,24 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                                        GenericType.create(value.getClass()),
                                                        type);
             } else if (currentType.equals(DbMapperManager.TYPE_DB_ROW)) {
+                // maybe we want the same type
+                if (type.equals(DbMapperManager.TYPE_DB_ROW)){
+                    return (DbRowResult<U>) this;
+                }
                 // try to find mapper in db mapper manager
                 theMapper = value -> {
                     //first try db mapper
                     try {
                         return dbMapperManager.read((DbRow) value, type);
-                    } catch (MapperException e) {
+                    } catch (MapperException originalException) {
                         // not found in db mappers, use generic mappers
-                        return mapperManager.map(value,
-                                                 DbMapperManager.TYPE_DB_ROW,
-                                                 type);
+                        try {
+                            return mapperManager.map(value,
+                                                     DbMapperManager.TYPE_DB_ROW,
+                                                     type);
+                        } catch (MapperException ignored) {
+                            throw originalException;
+                        }
                     }
                 };
             } else {
@@ -418,7 +427,9 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
             Flow.Publisher<?> parentPublisher = parent.publisher();
             Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
             // otherwise we must apply mapping
-            return new MappingPublisher<>(parentPublisher, mappingFunction);
+            MappingProcessor<Object, T> processor = MappingProcessor.create(mappingFunction);
+            parentPublisher.subscribe(processor);
+            return processor;
         }
 
         @Override
@@ -479,54 +490,5 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
             resultRequested.set(true);
         }
 
-    }
-
-    private static final class MappingPublisher<T> implements Flow.Publisher<T> {
-        private final Flow.Publisher<?> publisher;
-        private final Function<Object, T> resultMapper;
-        private Flow.Subscription subscription;
-
-        private MappingPublisher(Flow.Publisher<?> publisher,
-                                 Function<Object, T> resultMapper) {
-
-            this.publisher = publisher;
-            this.resultMapper = resultMapper;
-        }
-
-        @Override
-        public void subscribe(Flow.Subscriber<? super T> subscriber) {
-            publisher.subscribe(new Flow.Subscriber<Object>() {
-                @Override
-                public void onSubscribe(Flow.Subscription subscription) {
-                    MappingPublisher.this.subscription = subscription;
-                }
-
-                @Override
-                public void onNext(Object item) {
-                    subscriber.onNext(resultMapper.apply(item));
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    subscriber.onError(throwable);
-                }
-
-                @Override
-                public void onComplete() {
-                    subscriber.onComplete();
-                }
-            });
-            subscriber.onSubscribe(new Flow.Subscription() {
-                @Override
-                public void request(long n) {
-                    subscription.request(n);
-                }
-
-                @Override
-                public void cancel() {
-                    subscription.cancel();
-                }
-            });
-        }
     }
 }
