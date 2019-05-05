@@ -133,8 +133,8 @@ class DbMapperManagerImpl implements DbMapperManager {
                                                    GenericType<?> targetType,
                                                    Throwable throwable) {
 
-        throw new MapperException(GenericType.create(sourceType),
-                                  GenericType.create(targetType),
+        throw new MapperException(sourceType,
+                                  targetType,
                                   "Failed to map source of class '" + source.getClass().getName() + "'",
                                   throwable);
     }
