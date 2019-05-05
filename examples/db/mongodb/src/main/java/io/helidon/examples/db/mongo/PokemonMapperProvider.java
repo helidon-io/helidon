@@ -27,11 +27,7 @@ import io.helidon.db.spi.DbMapperProvider;
  */
 @Priority(1000)
 public class PokemonMapperProvider implements DbMapperProvider {
-
     private static final PokemonMapper MAPPER = new PokemonMapper();
-
-    public PokemonMapperProvider() {
-    }
 
     @SuppressWarnings("unchecked")
     @Override
