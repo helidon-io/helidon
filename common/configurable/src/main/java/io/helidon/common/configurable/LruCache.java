@@ -180,6 +180,7 @@ public final class LruCache<K, V> {
         return capacity;
     }
 
+    // for unit testing
     V directGet(K key) {
         return backingMap.get(key);
     }

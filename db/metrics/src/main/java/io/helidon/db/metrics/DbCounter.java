@@ -25,21 +25,40 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * TODO javadoc.
+ * Counter metric for Helidon DB. This class implements the {@link io.helidon.db.DbInterceptor} and
+ * can be configured either through a {@link io.helidon.db.Db.Builder} or through configuration.
  */
 public final class DbCounter extends DbMetric<Counter> {
     private DbCounter(Builder builder) {
         super(builder);
     }
 
+    /**
+     * Create a counter from configuration.
+     *
+     * @param config configuration to read
+     * @return a new counter
+     * @see io.helidon.db.metrics.DbMetricBuilder#config(io.helidon.config.Config)
+     */
     public static DbCounter create(Config config) {
         return builder().config(config).build();
     }
 
+    /**
+     * Create a new counter using default configuration.
+     * <p>By default the name format is {@code db.counter.statement-name}, where {@code statement-name}
+     * is provided at runtime.
+     *
+     * @return a new counter
+     */
     public static DbCounter create() {
         return builder().build();
     }
 
+    /**
+     * Create a new fluent API builder to create a new counter metric.
+     * @return a new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -75,6 +94,9 @@ public final class DbCounter extends DbMetric<Counter> {
         return "db.counter.";
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.db.metrics.DbCounter}.
+     */
     public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbCounter> {
         @Override
         public DbCounter build() {

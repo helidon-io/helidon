@@ -20,10 +20,10 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.db.DbMapperManager;
-import io.helidon.db.DbStatements;
 import io.helidon.db.Db;
 import io.helidon.db.DbExecute;
+import io.helidon.db.DbMapperManager;
+import io.helidon.db.DbStatements;
 import io.helidon.db.common.InterceptorSupport;
 
 import com.mongodb.ConnectionString;

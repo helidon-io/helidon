@@ -25,21 +25,40 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * Meter for Helidon DB.
+ * Meter for Helidon DB. This class implements the {@link io.helidon.db.DbInterceptor} and
+ * can be configured either through a {@link io.helidon.db.Db.Builder} or through configuration.
  */
 public final class DbMeter extends DbMetric<Meter> {
     private DbMeter(Builder builder) {
         super(builder);
     }
 
+    /**
+     * Create a meter from configuration.
+     *
+     * @param config configuration to read
+     * @return a new meter
+     * @see io.helidon.db.metrics.DbMetricBuilder#config(io.helidon.config.Config)
+     */
     public static DbMeter create(Config config) {
         return builder().config(config).build();
     }
 
+    /**
+     * Create a new meter using default configuration.
+     * <p>By default the name format is {@code db.meter.statement-name}, where {@code statement-name}
+     * is provided at runtime.
+     *
+     * @return a new meter
+     */
     public static DbMeter create() {
         return builder().build();
     }
 
+    /**
+     * Create a new fluent API builder to create a new meter metric.
+     * @return a new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -75,6 +94,9 @@ public final class DbMeter extends DbMetric<Meter> {
         return "db.meter.";
     }
 
+    /**
+     * Fluent API builder for {@link io.helidon.db.metrics.DbMeter}.
+     */
     public static class Builder extends DbMetricBuilder<Builder> implements io.helidon.common.Builder<DbMeter> {
         @Override
         public DbMeter build() {
