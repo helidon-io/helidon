@@ -25,18 +25,29 @@ import io.helidon.common.reactive.Flow;
  * @param <SOURCE> type of the publisher we subscribe to
  * @param <TARGET> type of the publisher we expose
  */
-public class MappingProcessor<SOURCE, TARGET> implements Flow.Processor<SOURCE, TARGET> {
+public final class MappingProcessor<SOURCE, TARGET> implements Flow.Processor<SOURCE, TARGET> {
     private final Function<SOURCE, TARGET> resultMapper;
-    private Flow.Subscriber<TARGET> mySubscriber;
+    private Flow.Subscriber<? super TARGET> mySubscriber;
     private Flow.Subscription subscription;
 
     private MappingProcessor(Function<SOURCE, TARGET> resultMapper) {
         this.resultMapper = resultMapper;
     }
 
+    /**
+     * Create a mapping processor for a mapping function.
+     * @param mappingFunction function that maps source to target (applied for each record)
+     * @param <S> Source type
+     * @param <T> Target type
+     * @return a new mapping processor
+     */
+    public static <S, T> MappingProcessor<S, T> create(Function<S, T> mappingFunction) {
+        return new MappingProcessor<>(mappingFunction);
+    }
+
     @Override
     public void subscribe(Flow.Subscriber<? super TARGET> subscriber) {
-        this.mySubscriber = mySubscriber;
+        this.mySubscriber = subscriber;
         subscriber.onSubscribe(new Flow.Subscription() {
             @Override
             public void request(long n) {
