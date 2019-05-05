@@ -39,7 +39,7 @@ import io.helidon.db.common.InterceptorSupport;
  * @param <S> subclass of this class
  * @param <R> Statement execution result type
  */
-public abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends AbstractStatement<S, R> {
+abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends AbstractStatement<S, R> {
 
     private static final Logger LOGGER = Logger.getLogger(JdbcStatement.class.getName());
 

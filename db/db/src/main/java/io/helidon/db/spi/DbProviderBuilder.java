@@ -19,11 +19,11 @@ import io.helidon.common.Builder;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
+import io.helidon.db.Db;
 import io.helidon.db.DbInterceptor;
 import io.helidon.db.DbMapper;
-import io.helidon.db.DbStatements;
-import io.helidon.db.Db;
 import io.helidon.db.DbStatementType;
+import io.helidon.db.DbStatements;
 
 /**
  * Database provider builder.
