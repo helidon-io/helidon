@@ -69,6 +69,16 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
     }
 
     /**
+     * Create a new mapper that can map {@link javax.json.JsonObject} to DB parameters and {@link io.helidon.db.DbRow}
+     * to a {@link javax.json.JsonObject}.
+     *
+     * @return a new mapper
+     */
+    public static JsonProcessingMapper create() {
+        return new JsonProcessingMapper();
+    }
+
+    /**
      * Get a JSON-P representation of this row.
      *
      * @return json object containing column name to column value.
@@ -85,6 +95,16 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
         Map<String, Object> result = new HashMap<>();
         value.forEach((name, json) -> result.put(name, toObject(name, json, value)));
 
+        return result;
+    }
+
+    @Override
+    public List<Object> toIndexedParameters(JsonObject value) {
+        // in case the underlying map is linked, we can do this
+        // obviously the number of parameters must match the number in statement, so most likely this is
+        // going to fail
+        List<Object> result = new LinkedList<>();
+        value.forEach((name, json) -> result.add(toObject(name, json, value)));
         return result;
     }
 
@@ -128,20 +148,6 @@ public final class JsonProcessingMapper implements DbMapper<JsonObject> {
         default:
             throw new IllegalStateException(String.format("Unknown JSON value type: %s", json.getValueType()));
         }
-    }
-
-    @Override
-    public List<Object> toIndexedParameters(JsonObject value) {
-        // in case the underlying map is linked, we can do this
-        // obviously the number of parameters must match the number in statement, so most likely this is
-        // going to fail
-        List<Object> result = new LinkedList<>();
-        value.forEach((name, json) -> result.add(toObject(name, json, value)));
-        return result;
-    }
-
-    public static JsonProcessingMapper create() {
-        return new JsonProcessingMapper();
     }
 
     @FunctionalInterface

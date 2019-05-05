@@ -163,7 +163,8 @@ public class MongoDbStatementDml extends MongoDbStatement<MongoDbStatementDml, C
 
         MongoCollection<Document> mc = db().getCollection(stmt.getCollection());
         Document query = stmt.getQuery();
-        Document value = stmt.getValue();
+        // TODO should the next line be used?
+        //Document value = stmt.getValue();
         mc.updateMany((query != null) ? query : EMPTY, stmt.getValue())
                 .subscribe(new org.reactivestreams.Subscriber<UpdateResult>() {
                     private final LongAdder count = new LongAdder();

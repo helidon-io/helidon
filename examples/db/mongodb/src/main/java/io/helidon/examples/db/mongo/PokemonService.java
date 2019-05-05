@@ -25,8 +25,8 @@ import javax.json.JsonObject;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Flow;
-import io.helidon.db.DbRow;
 import io.helidon.db.Db;
+import io.helidon.db.DbRow;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -69,17 +69,17 @@ public class PokemonService implements Service {
     @Override
     public void update(Routing.Rules rules) {
         rules.get("/", this::listPokemons)
-            // create new
-            .post("/", Handler.create(Pokemon.class, this::insertPokemon))
-            .post("/{name}/type/{type}", this::insertPokemonSimple)
-            // delete all
-            .delete("/", this::deleteAllPokemons)
-            // get one
-            .get("/{name}", this::getPokemon)
-            // delete one
-            .delete("/{name}", this::deletePokemon)
-            // update one (TODO this is intentionally wrong - should use JSON request, just to make it simple we use path)
-            .put("/{name}/type/{type}", this::updatePokemonType);
+                // create new
+                .post("/", Handler.create(Pokemon.class, this::insertPokemon))
+                .post("/{name}/type/{type}", this::insertPokemonSimple)
+                // delete all
+                .delete("/", this::deleteAllPokemons)
+                // get one
+                .get("/{name}", this::getPokemon)
+                // delete one
+                .delete("/{name}", this::deletePokemon)
+                // update one (TODO this is intentionally wrong - should use JSON request, just to make it simple we use path)
+                .put("/{name}/type/{type}", this::updatePokemonType);
     }
 
     /**
