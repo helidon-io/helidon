@@ -81,7 +81,7 @@ final class MapperManagerImpl implements MapperManager {
             return fromProviders(sourceType, targetType)
                     .orElseGet(() -> {
                         GenericType<SOURCE> sourceGenericType = GenericType.create(sourceType);
-                        GenericType<TARGET> targetGenericType = GenericType.create(sourceType);
+                        GenericType<TARGET> targetGenericType = GenericType.create(targetType);
                         if (fromTypes) {
                             return notFoundMapper(sourceGenericType, targetGenericType);
                         }

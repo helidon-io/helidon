@@ -15,6 +15,7 @@
  */
 package io.helidon.db.common;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -140,7 +141,7 @@ public abstract class AbstractDbExecute implements DbExecute {
         String sha256;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(statement.getBytes());
+            digest.update(statement.getBytes(StandardCharsets.UTF_8));
             sha256 = Base64.getEncoder().encodeToString(digest.digest());
         } catch (NoSuchAlgorithmException ignored) {
             return "sha256failed";
