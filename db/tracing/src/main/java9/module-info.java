@@ -15,20 +15,14 @@
  */
 
 /**
- * Helidon DB.
+ * Helidon DB Tracing.
  */
-module io.helidon.db {
+module io.helidon.db.tracing {
     requires java.logging;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.mapper;
-    requires transitive io.helidon.common.serviceloader;
+    requires io.helidon.db;
+    requires opentracing.api;
+    requires opentracing.util;
 
-    exports io.helidon.db;
-    exports io.helidon.db.spi;
-
-    uses io.helidon.db.spi.DbProvider;
-    uses io.helidon.db.spi.DbMapperProvider;
-    uses io.helidon.db.spi.DbInterceptorProvider;
+    exports io.helidon.db.tracing;
+    provides io.helidon.db.spi.DbInterceptorProvider with io.helidon.db.tracing.DbTracingProvider;
 }
