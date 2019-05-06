@@ -459,6 +459,12 @@
                 <artifactId>helidon-graal-native-image-extension</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- SE OpenAPI support -->
+            <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

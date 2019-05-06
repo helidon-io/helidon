@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,21 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      * A {@link MediaType} constant representing {@code text/html} media type.
      */
     public static final MediaType TEXT_HTML = createMediaType("text", "html");
+    /**
+     * A {@link MediaType} constant representing OpenAPI yaml.
+     * <p>
+     * See https://github.com/opengeospatial/WFS_FES/issues/117#issuecomment-402188280
+     */
+    public static final MediaType APPLICATION_OPENAPI_YAML = createMediaType("application", "vnd.oai.openapi");
+    /**
+     * A {@link MediaType} constant representing OpenAPI json.
+     */
+    public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application", "vnd.oai.openapi+json");
+
+    /**
+     * A {@link MediaType} constant representing YAML.
+     */
+    public static final MediaType APPLICATION_YAML = createMediaType("application", "x-yaml");
 
     private static final MediaType APPLICATION_JAVASCRIPT = createMediaType("application", "javascript");
 
