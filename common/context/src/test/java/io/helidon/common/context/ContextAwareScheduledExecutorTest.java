@@ -49,7 +49,7 @@ public class ContextAwareScheduledExecutorTest {
         AtomicReference<ScheduledFuture<?>> futureRef = new AtomicReference<>();
         AtomicReference<Exception> exceptionRef = new AtomicReference<>();
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             futureRef.set(wrapper.schedule(() -> {
                 try {
                     Contexts.context()
@@ -89,7 +89,7 @@ public class ContextAwareScheduledExecutorTest {
         AtomicReference<ScheduledFuture<String>> futureRef = new AtomicReference<>();
         AtomicReference<Exception> exceptionRef = new AtomicReference<>();
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             futureRef.set(wrapper.schedule(() -> {
                 try {
                     return Contexts.context().get().get(String.class).get();
@@ -123,7 +123,7 @@ public class ContextAwareScheduledExecutorTest {
 
         AtomicReference<ScheduledFuture<?>> futureRef = new AtomicReference<>();
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             futureRef.set(wrapper.scheduleAtFixedRate(() -> {
                     Contexts.context()
                             .get()
@@ -154,7 +154,7 @@ public class ContextAwareScheduledExecutorTest {
         AtomicReference<ScheduledFuture<?>> futureRef = new AtomicReference<>();
 
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             futureRef.set(wrapper.scheduleWithFixedDelay(() -> {
                 Contexts.context()
                         .get()

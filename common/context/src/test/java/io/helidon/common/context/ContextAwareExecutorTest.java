@@ -87,7 +87,7 @@ public class ContextAwareExecutorTest {
             toCall.add(new TestCallable(i));
         }
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             try {
                 List<Future<String>> futures = executor.invokeAll(toCall);
                 for (Future<String> future : futures) {
@@ -111,7 +111,7 @@ public class ContextAwareExecutorTest {
             toCall.add(new TestCallable(i));
         }
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             try {
                 List<Future<String>> futures = executor.invokeAll(toCall, 1, TimeUnit.SECONDS);
                 for (Future<String> future : futures) {
@@ -135,7 +135,7 @@ public class ContextAwareExecutorTest {
             toCall.add(new TestCallable(i));
         }
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             try {
                 String result = executor.invokeAny(toCall);
                 assertThat(result, is(TEST_STRING));
@@ -157,7 +157,7 @@ public class ContextAwareExecutorTest {
             toCall.add(new TestCallable(i));
         }
 
-        Contexts.inContext(context, () -> {
+        Contexts.runInContext(context, () -> {
             try {
                 String result = executor.invokeAny(toCall, 1, TimeUnit.SECONDS);
                 assertThat(result, is(TEST_STRING));

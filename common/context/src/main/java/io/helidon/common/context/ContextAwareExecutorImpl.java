@@ -116,7 +116,7 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
         Optional<Context> context = Contexts.context();
 
         if (context.isPresent()) {
-            return () -> Contexts.inContext(context.get(), task);
+            return () -> Contexts.invokeInContext(context.get(), task);
         } else {
             return task;
         }
@@ -126,7 +126,7 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
         Optional<Context> context = Contexts.context();
 
         if (context.isPresent()) {
-            return () -> Contexts.inContext(context.get(), command);
+            return () -> Contexts.runInContext(context.get(), command);
         } else {
             return command;
         }

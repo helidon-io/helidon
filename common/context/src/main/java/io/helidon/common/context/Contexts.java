@@ -92,7 +92,7 @@ public final class Contexts {
      * @param context  context to run in
      * @param runnable runnable to execute in context
      */
-    public static void inContext(Context context, Runnable runnable) {
+    public static void runInContext(Context context, Runnable runnable) {
         push(context);
         try {
             runnable.run();
@@ -112,7 +112,7 @@ public final class Contexts {
      * @throws java.lang.RuntimeException  in case the {@link java.util.concurrent.Callable#call()} threw a
      *                                          runtime exception
      */
-    public static <T> T inContext(Context context, Callable<T> callable) {
+    public static <T> T invokeInContext(Context context, Callable<T> callable) {
         push(context);
         try {
             return callable.call();

@@ -117,7 +117,7 @@ class ContextsTest {
             cdl.countDown();
         };
 
-        Contexts.inContext(ctx, () -> service.execute(runnable));
+        Contexts.runInContext(ctx, () -> service.execute(runnable));
 
         cdl.await();
 
@@ -132,7 +132,7 @@ class ContextsTest {
 
         Runnable runnable = () -> ref.set(Contexts.context().get().get("message", String.class).orElse("No context found"));
 
-        Future<?> future = Contexts.inContext(ctx, () -> service.submit(runnable));
+        Future<?> future = Contexts.invokeInContext(ctx, () -> service.submit(runnable));
         future.get();
 
         assertThat(ref.get(), is(TEST_STRING + "_2"));
@@ -146,7 +146,7 @@ class ContextsTest {
 
         Runnable runnable = () -> ref.set(Contexts.context().get().get("message", String.class).orElse("No context found"));
 
-        Future<String> future = Contexts.inContext(ctx, () -> service.submit(runnable, "Hello"));
+        Future<String> future = Contexts.invokeInContext(ctx, () -> service.submit(runnable, "Hello"));
         String result = future.get();
 
         assertThat(result, is("Hello"));
@@ -160,7 +160,7 @@ class ContextsTest {
         Context ctx = Context.create();
         ctx.register("message", TEST_STRING + "_1");
 
-        Future<String> future = Contexts.inContext(ctx, () -> service.submit(callable));
+        Future<String> future = Contexts.invokeInContext(ctx, () -> service.submit(callable));
 
         assertThat(future.get(), is(TEST_STRING + "_1"));
     }
@@ -175,12 +175,12 @@ class ContextsTest {
         firstLevel.register("first", TEST_STRING + "_1");
         firstLevel.register("second", TEST_STRING);
 
-        Contexts.inContext(topLevel, () -> {
+        Contexts.runInContext(topLevel, () -> {
             Context myContext = Contexts.context().get();
             assertThat(myContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
             assertThat(myContext.get("first", String.class), is(TEST_STRING_OPTIONAL));
 
-            Contexts.inContext(firstLevel, () -> {
+            Contexts.runInContext(firstLevel, () -> {
                 Context firstLevelContext = Contexts.context().get();
                 assertThat(firstLevelContext.get("topLevel", String.class), is(TEST_STRING_OPTIONAL));
                 assertThat(firstLevelContext.get("first", String.class), is(Optional.of(TEST_STRING + "_1")));
