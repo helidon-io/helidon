@@ -67,3 +67,5 @@ node/
 # Other
 *~
 user.txt
+ObjectStore/
+PutObjectStoreDirHere/

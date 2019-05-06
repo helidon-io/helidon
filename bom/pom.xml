@@ -52,6 +52,17 @@
                 <artifactId>helidon-webserver-test-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- gRPC server -->
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- media -->
             <dependency>
                 <groupId>io.helidon.media</groupId>
@@ -172,6 +183,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
+                <artifactId>helidon-security-integration-grpc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-jersey</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -186,10 +202,10 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-abac</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-abac</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-abac-time</artifactId>
@@ -318,6 +334,11 @@
                 <artifactId>helidon-common-key-util</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-service-loader</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- tracing -->
             <dependency>
@@ -400,7 +421,32 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jedis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jta</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

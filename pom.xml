@@ -62,7 +62,7 @@
             <organization>Oracle Corporation</organization>
         </developer>
         <developer>
-            <name>Laird Jarrett Nelson</name>
+            <name>Laird Nelson</name>
             <email>laird.nelson@oracle.com</email>
             <organization>Oracle Corporation</organization>
         </developer>
@@ -86,6 +86,7 @@
     </scm>
 
     <properties>
+        <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -111,22 +112,28 @@
         <version.lib.brave-opentracing>0.31.0</version.lib.brave-opentracing>
         <version.lib.cdi-api>2.0</version.lib.cdi-api>
         <version.lib.checkstyle>8.18</version.lib.checkstyle>
+        <version.lib.eclipselink>2.7.4</version.lib.eclipselink>
         <version.lib.el-api>3.0.0</version.lib.el-api>
         <version.lib.el-impl>3.0.0</version.lib.el-impl>
         <version.lib.etcd4j>2.16.0</version.lib.etcd4j>
         <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
         <version.lib.graalvm>1.0.0-rc13</version.lib.graalvm>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.grpc>1.16.1</version.lib.grpc>
+        <version.lib.grpc>1.20.0</version.lib.grpc>
         <version.lib.guava>25.0-jre</version.lib.guava>
         <version.lib.h2>1.4.197</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
+        <version.lib.inject>1</version.lib.inject>
         <version.lib.jackson>2.9.8</version.lib.jackson>
         <version.lib.jaegertracing>0.34.0</version.lib.jaegertracing>
+        <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.0.4.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
+        <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
+        <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
         <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
+        <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>2.9.0</version.lib.jedis>
         <version.lib.jersey>2.26</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
@@ -144,10 +151,14 @@
         <version.lib.microprofile-fault-tolerance-api>2.0</version.lib.microprofile-fault-tolerance-api>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
+        <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.34.Final</version.lib.netty>
+        <version.netty.tcnative>2.0.22.Final</version.netty.tcnative>
         <version.lib.oci-java-sdk-objectstorage>1.2.44</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>12.2.0.1</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
+        <version.lib.opentracing.grpc>0.0.12</version.lib.opentracing.grpc>
+        <version.lib.persistence-api>2.2</version.lib.persistence-api>
         <version.lib.prometheus>0.4.0</version.lib.prometheus>
         <version.lib.protobuf.java>3.5.1</version.lib.protobuf.java>
         <version.lib.reactivestreams>1.0.2</version.lib.reactivestreams>
@@ -157,12 +168,16 @@
         <version.lib.rxjava>2.0.8</version.lib.rxjava>
         <version.lib.slf4j>1.7.25</version.lib.slf4j>
         <version.lib.smallrye-openapi>1.1.1</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>1.19</version.lib.snakeyaml>
+        <version.lib.snakeyaml>1.24</version.lib.snakeyaml>
         <version.lib.spotbugs-annotations>3.1.3</version.lib.spotbugs-annotations>
         <version.lib.testng>6.13.1</version.lib.testng>
+        <version.lib.transaction-api>1.2</version.lib.transaction-api>
         <version.lib.typesafe-config>1.3.3</version.lib.typesafe-config>
+        <version.lib.validation-api>2.0.1.Final</version.lib.validation-api>
         <version.lib.weld>3.0.3.Final</version.lib.weld>
         <version.lib.zipkin>2.6.0</version.lib.zipkin>
+        <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
+        <version.lib.bedrock>5.0.11</version.lib.bedrock>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>1.1.0</version.lib.failsafe>
         <version.lib.yasson>1.0.3</version.lib.yasson>
@@ -188,11 +203,12 @@
         <version.plugin.jandex>1.0.5</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
         <version.plugin.javadoc>3.0.0</version.plugin.javadoc>
+        <version.plugin.jaxb>0.14.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.nexus-staging>1.6.7</version.plugin.nexus-staging>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
-        <version.plugin.protobuf>0.5.0</version.plugin.protobuf>
+        <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.site>3.7.1</version.plugin.site>
@@ -203,6 +219,7 @@
         <version.plugin.surefire>2.19.1</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
+        <version.plugin.buildnumber>1.4</version.plugin.buildnumber>
 
         <site.output.dir>${project.build.directory}/docs</site.output.dir>
     </properties>
@@ -219,6 +236,7 @@
         <module>bundles</module>
         <module>metrics</module>
         <module>health</module>
+        <module>grpc</module>
         <module>openapi</module>
     </modules>
 
@@ -244,6 +262,7 @@
                     <configuration>
                         <links>
                             <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                            <link>http://javax-inject.github.io/javax-inject/api/</link>
                             <link>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</link>
                             <link>https://fasterxml.github.io/jackson-core/javadoc/2.9/</link>
                             <link>https://fasterxml.github.io/jackson-databind/javadoc/2.9/</link>
@@ -255,13 +274,20 @@
                             <link>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</link>
                             <link>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</link>
                             <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
-                            <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
                             <link>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</link>
+                            <link>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.jakarta-persistence-api}</link>
+                            <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
+                            <link>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/${version.lib.jsonb-api}</link>
+                            <link>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</link>
+                            <link>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</link>
+                            <link>https://static.javadoc.io/javax.xml.bind/jaxb-api/${version.lib.jaxb-api}/</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
+                            <link>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</link>
+                            <link>http://narayana.io/docs/api/</link>
+                            <link>https://www.eclipse.org/eclipselink/api/2.7/</link>
                         </links>
-                        <doclint>all</doclint>
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
@@ -369,6 +395,17 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${version.plugin.jar}</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                            <manifestEntries>
+                                <Implementation-URL>https://helidon.io</Implementation-URL>
+                                <Scm-Revision>${buildNumber}</Scm-Revision>
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -457,6 +494,13 @@
                     <groupId>org.xolstice.maven.plugins</groupId>
                     <artifactId>protobuf-maven-plugin</artifactId>
                     <version>${version.plugin.protobuf}</version>
+                    <configuration>
+                        <protocArtifact>com.google.protobuf:protoc:3.5.1-1:exe:${os.detected.classifier}</protocArtifact>
+                        <pluginId>grpc-java</pluginId>
+                        <pluginArtifact>
+                            io.grpc:protoc-gen-grpc-java:${version.lib.grpc}:exe:${os.detected.classifier}
+                        </pluginArtifact>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -495,6 +539,27 @@
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.jvnet.jaxb2.maven2</groupId>
+                    <artifactId>maven-jaxb2-plugin</artifactId>
+                    <version>${version.plugin.jaxb}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>buildnumber-maven-plugin</artifactId>
+                    <version>${version.plugin.buildnumber}</version>
+                    <executions>
+                        <execution>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>create</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
                     </configuration>
                 </plugin>
             </plugins>
@@ -553,6 +618,10 @@
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>sitegen-maven-plugin</artifactId>
                 <extensions>true</extensions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>buildnumber-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -616,6 +685,16 @@
                 <version>${version.lib.jaxb-api}</version>
             </dependency>
             <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>${version.lib.jaxb-core}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${version.lib.jaxb-impl}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
                 <version>${version.lib.jaxrs-api}</version>
@@ -634,6 +713,11 @@
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${version.lib.annotation-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>${version.lib.inject}</version>
             </dependency>
             <dependency>
                 <groupId>javax.json</groupId>
@@ -735,8 +819,23 @@
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
+                <artifactId>grpc-services</artifactId>
+                <version>${version.lib.grpc}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
                 <artifactId>grpc-netty</artifactId>
                 <version>${version.lib.grpc}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-tcnative-boringssl-static</artifactId>
+                <version>${version.netty.tcnative}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.opentracing.contrib</groupId>
+              <artifactId>opentracing-grpc</artifactId>
+              <version>${version.lib.opentracing.grpc}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -759,6 +858,16 @@
                 <groupId>io.zipkin.reporter2</groupId>
                 <artifactId>zipkin-sender-urlconnection</artifactId>
                 <version>${version.lib.zipkin}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.zipkin.zipkin2</groupId>
+                <artifactId>zipkin-junit</artifactId>
+                <version>${version.lib.zipkin.junit}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.bedrock</groupId>
+                <artifactId>bedrock-testing-support</artifactId>
+                <version>${version.lib.bedrock}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -833,6 +942,13 @@
             </dependency>
 
             <!-- Microprofile related -->
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-core-bom</artifactId>
+                <version>${version.lib.weld}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
@@ -981,6 +1097,26 @@
 
             <!-- Integrations related -->
             <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${version.lib.jakarta-persistence-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.persistence</groupId>
+                <artifactId>javax.persistence-api</artifactId>
+                <version>${version.lib.persistence-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.transaction</groupId>
+                <artifactId>javax.transaction-api</artifactId>
+                <version>${version.lib.transaction-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${version.lib.validation-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${version.lib.h2}</version>
@@ -1013,6 +1149,37 @@
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
                 <version>${version.lib.jedis}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.persistence</groupId>
+                <artifactId>org.eclipse.persistence.jpa</artifactId>
+                <version>${version.lib.eclipselink}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.narayana.jta</groupId>
+                <artifactId>cdi</artifactId>
+                <version>${version.lib.narayana}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.spec.javax.resource</groupId>
+                        <artifactId>jboss-connector-api_1.7_spec</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>sun.jdk</groupId>
+                        <artifactId>jconsole</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss</groupId>
+                <artifactId>jboss-transaction-spi</artifactId>
+                <version>${version.lib.jboss-transaction-spi}</version>
+                <exclusions>
+                  <exclusion>
+                      <groupId>org.jboss.spec.javax.resource</groupId>
+                      <artifactId>jboss-connector-api_1.7_spec</artifactId>
+                  </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.graalvm.sdk</groupId>

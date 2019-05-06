@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Serving Static Content
-:description: Helidon Microprofile static content
+:description: Helidon MicroProfile static content
 :keywords: helidon, microprofile, micro-profile
 
 You can serve static content from a location in a file system
@@ -31,9 +31,9 @@ You can serve static content from a location in a file system
 # Location of content on file system
 server.static.path.location=/var/www/html
 # default is index.html
-server.static.classpath.welcome=resource.html
+server.static.path.welcome=resource.html
 # static content path - default is "/"
-# server.static.classpath.context=/static-file
+# server.static.path.context=/static-file
 ----
 
 [source,properties]

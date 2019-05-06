@@ -44,27 +44,29 @@ public final class ContentWriters {
     private static final ByteArrayWriter COPY_BYTE_ARRAY_WRITER = new ByteArrayWriter(true);
     private static final ByteArrayWriter BYTE_ARRAY_WRITER = new ByteArrayWriter(false);
 
-    private static final Map<Charset, CharSequenceWriter> STRING_WRITERS = new HashMap<>();
+    private static final Map<Charset, CharSequenceWriter> CHAR_SEQUENCE_WRITERS = new HashMap<>();
+    private static final Map<Charset, CharBufferWriter> CHAR_BUFFER_WRITERS = new HashMap<>();
 
     static {
-        addWriter(StandardCharsets.UTF_8);
-        addWriter(StandardCharsets.UTF_16);
-        addWriter(StandardCharsets.ISO_8859_1);
-        addWriter(StandardCharsets.US_ASCII);
+        addWriters(StandardCharsets.UTF_8);
+        addWriters(StandardCharsets.UTF_16);
+        addWriters(StandardCharsets.ISO_8859_1);
+        addWriters(StandardCharsets.US_ASCII);
 
         // try to register another common charset readers
-        addWriter("cp1252");
-        addWriter("cp1250");
-        addWriter("ISO-8859-2");
+        addWriters("cp1252");
+        addWriters("cp1250");
+        addWriters("ISO-8859-2");
     }
 
-    private static void addWriter(Charset charset) {
-        STRING_WRITERS.put(charset, new CharSequenceWriter(charset));
+    private static void addWriters(final Charset charset) {
+        CHAR_SEQUENCE_WRITERS.put(charset, new CharSequenceWriter(charset));
+        CHAR_BUFFER_WRITERS.put(charset, new CharBufferWriter(charset));
     }
 
-    private static void addWriter(String charset) {
+    private static void addWriters(final String charset) {
         try {
-            addWriter(Charset.forName(charset));
+            addWriters(Charset.forName(charset));
         } catch (Exception ignored) {
             // ignored
         }
@@ -98,7 +100,20 @@ public final class ContentWriters {
      * @throws NullPointerException if parameter {@code charset} is {@code null}
      */
     public static Function<CharSequence, Flow.Publisher<DataChunk>> charSequenceWriter(Charset charset) {
-        return STRING_WRITERS.computeIfAbsent(charset, key -> new CharSequenceWriter(charset));
+        return CHAR_SEQUENCE_WRITERS.computeIfAbsent(charset, key -> new CharSequenceWriter(charset));
+    }
+
+    /**
+     * Returns a writer function for {@link CharBuffer} using provided standard {@code charset}.
+     * <p>
+     * An instance is by default registered in {@code ServerResponse} for all standard charsets.
+     *
+     * @param charset a standard charset to use
+     * @return a {@link String} writer
+     * @throws NullPointerException if parameter {@code charset} is {@code null}
+     */
+    public static Function<CharBuffer, Flow.Publisher<DataChunk>> charBufferWriter(Charset charset) {
+        return CHAR_BUFFER_WRITERS.computeIfAbsent(charset, key -> new CharBufferWriter(charset));
     }
 
     /**
@@ -185,4 +200,28 @@ public final class ContentWriters {
         }
     }
 
+    private static class CharBufferWriter implements Function<CharBuffer, Flow.Publisher<DataChunk>> {
+
+        private final Charset charset;
+
+        /**
+         * Creates new instance.
+         *
+         * @param charset a charset to use
+         * @throws NullPointerException if parameter {@code charset} is {@code null}
+         */
+        CharBufferWriter(Charset charset) {
+            Objects.requireNonNull(charset, "Parameter 'charset' is null!");
+            this.charset = charset;
+        }
+
+        @Override
+        public Flow.Publisher<DataChunk> apply(CharBuffer buffer) {
+            if (buffer == null || buffer.size() == 0) {
+                return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
+            }
+            final DataChunk chunk = DataChunk.create(false, buffer.encode(charset));
+            return ReactiveStreamsAdapter.publisherToFlow(Mono.just(chunk));
+        }
+    }
 }

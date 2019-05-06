@@ -51,4 +51,11 @@ Create and inject a Jedis pool in your application code.
 Create and inject an Oracle Cloud Infrastructure Object Storage client in your
  application code.
 --
+
+[CARD]
+.Java Transaction API objects
+[link=extensions/05_cdi_jta.adoc]
+--
+Use the Java Transaction API in your application code.
+--
 ====

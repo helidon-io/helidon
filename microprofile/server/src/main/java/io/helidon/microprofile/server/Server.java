@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -37,6 +38,7 @@ import javax.ws.rs.core.Application;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
 
@@ -146,8 +148,8 @@ public interface Server {
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
         private final List<Class<?>> resourceClasses = new LinkedList<>();
-        private final List<MpService> extensions = new LinkedList<>();
         private final List<JaxRsApplication> applications = new LinkedList<>();
+        private HelidonServiceLoader.Builder<MpService> extensionBuilder;
         private ResourceConfig resourceConfig;
         private SeContainer cdiContainer;
         private MpConfig config;
@@ -158,6 +160,7 @@ public interface Server {
         private Supplier<? extends ExecutorService> defaultExecutorService;
 
         private Builder() {
+            extensionBuilder = HelidonServiceLoader.builder(ServiceLoader.load(MpService.class));
         }
 
         private static ResourceConfig configForResourceClasses(List<Class<?>> resourceClasses) {
@@ -333,8 +336,34 @@ public interface Server {
             return this;
         }
 
+        /**
+         * Configure the extension builder.
+         * This allows a fully customized handling of {@link io.helidon.microprofile.server.spi.MpService} instances
+         * to be used by the created {@link io.helidon.microprofile.server.Server}.
+         *
+         * @param loaderBuilder builder of server extensions
+         * @return updated builder instance
+         * @see io.helidon.common.serviceloader.HelidonServiceLoader.Builder#useSystemServiceLoader(boolean)
+         */
+        public Builder extensionsService(HelidonServiceLoader.Builder<MpService> loaderBuilder) {
+            this.extensionBuilder = loaderBuilder;
+            return this;
+        }
+
+        /**
+         * Add an extension to the list of extensions.
+         * All {@link io.helidon.microprofile.server.spi.MpService} configured for Java Service loader are loaded
+         * automatically.
+         * This serves as a possibility to add a service that is not loaded through a service loader.
+         * <p>
+         * To have a fully customized list of extensions, use
+         * {@link #extensionsService(io.helidon.common.serviceloader.HelidonServiceLoader.Builder)}.
+         *
+         * @param service service implementation
+         * @return updated builder instance
+         */
         public Builder addExtension(MpService service) {
-            extensions.add(service);
+            extensionBuilder.addService(service);
             return this;
         }
 
@@ -557,7 +586,7 @@ public interface Server {
         }
 
         List<MpService> extensions() {
-            return extensions;
+            return extensionBuilder.build().asList();
         }
 
         boolean containerCreated() {

@@ -27,11 +27,16 @@ public class Version {
     public static final String VERSION = "${project.version}";
 
     /**
+     * Revision Number.
+     */
+    public static final String REVISION = "${buildNumber}";
+
+    /**
      * Display version
      *
-     * @param args
+     * @param args Ignored
      */
     public static void main(String[] args) {
-        System.out.println(VERSION);
+        System.out.println(VERSION + " " + REVISION);
     }
 }
