@@ -358,12 +358,31 @@
                 </dependency>
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
                     <artifactId>helidon-integrations-cdi-jedis</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
                     <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>javax.transaction</groupId>
+                    <artifactId>javax.transaction-api</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-jta</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

@@ -23,6 +23,7 @@ engine:
       plantumlconfig: "_plantuml-config.txt"
       javadoc-base-url: "./apidocs/index.html"
       helidon-version: "${project.version}"
+      mp-version: "1.2"
       guides-dir: "${project.basedir}/../examples/guides"
 assets:
   - target: "/"
@@ -69,6 +70,14 @@ backend:
               items:
                 -  includes:
                      - "webserver/*.adoc"
+            - title: "gRPC server"
+              pathprefix: "/grpc"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                -  includes:
+                     - "grpc/*.adoc"
             - title: "Config"
               pathprefix: "/config"
               glyph:
@@ -85,7 +94,7 @@ backend:
               items:
                 -  includes:
                      - "security/*.adoc"
-            - title: "Microprofile"
+            - title: "MicroProfile"
               pathprefix: "/microprofile"
               glyph:
                 type: "icon"

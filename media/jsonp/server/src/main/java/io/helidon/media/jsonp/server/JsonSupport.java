@@ -18,8 +18,6 @@ package io.helidon.media.jsonp.server;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
 import javax.json.JsonReader;
@@ -28,18 +26,17 @@ import javax.json.JsonWriter;
 
 import io.helidon.common.http.Content;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.MediaType;
-import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.jsonp.common.JsonProcessing;
 import io.helidon.webserver.Handler;
+import io.helidon.webserver.JsonService;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.Service;
 import io.helidon.webserver.WebServer;
+
+import static io.helidon.media.common.ContentTypeCharset.determineCharset;
 
 /**
  * It provides contains JSON-P ({@code javax.json}) support for {@link WebServer WebServer}'s
@@ -76,29 +73,13 @@ import io.helidon.webserver.WebServer;
  * @see JsonReader
  * @see JsonWriter
  */
-public final class JsonSupport implements Service, Handler {
+public final class JsonSupport extends JsonService {
     private static final JsonSupport INSTANCE = new JsonSupport(JsonProcessing.create());
 
     private final JsonProcessing processingSupport;
 
     private JsonSupport(JsonProcessing processing) {
         this.processingSupport = processing;
-    }
-
-    /**
-     * It registers reader and writer for {@link JsonSupport} on {@link ServerRequest}/{@link ServerResponse} for any
-     * {@link Http.Method HTTP method}.
-     * <p>
-     * This method is called from {@link Routing} during build process. The user should register whole class
-     * ot the routing: {@code Routing.builder().}{@link Routing.Builder#register(Service...) register}{@code (JsonSupport
-     * .create())}.
-     *
-     * @param routingRules a routing configuration where JSON support should be registered
-     * @see Routing
-     */
-    @Override
-    public void update(Routing.Rules routingRules) {
-        routingRules.any(this);
     }
 
     /**
@@ -125,81 +106,12 @@ public final class JsonSupport implements Service, Handler {
                     return reader(charset).apply(publisher);
                 });
         // Writer
-        response.registerWriter(json -> (json instanceof JsonStructure) && testOrSetContentType(request, response),
+        response.registerWriter(json -> (json instanceof JsonStructure) && acceptsJson(request, response),
                                 json -> {
                                     Charset charset = determineCharset(response.headers());
                                     return writer(charset).apply((JsonStructure) json);
                                 });
         request.next();
-    }
-
-    /**
-     * Deals with request {@code Accept} and response {@code Content-Type} headers to determine if writer can be used.
-     * <p>
-     * If response has no {@code Content-Type} header then it is set to the response.
-     *
-     * @param request  a server request
-     * @param response a server response
-     * @return {@code true} if JSON writer can be used
-     */
-    private boolean testOrSetContentType(ServerRequest request, ServerResponse response) {
-        MediaType mt = response.headers().contentType().orElse(null);
-        if (mt == null) {
-            // Find if accepts any JSON compatible type
-            List<MediaType> acceptedTypes = request.headers().acceptedTypes();
-            MediaType preferredType;
-            if (acceptedTypes.isEmpty()) {
-                preferredType = MediaType.APPLICATION_JSON;
-            } else {
-                preferredType = acceptedTypes
-                        .stream()
-                        .map(type -> {
-                            if (type.test(MediaType.APPLICATION_JSON)) {
-                                return MediaType.APPLICATION_JSON;
-                            } else if (type.test(JsonProcessing.APPLICATION_JAVASCRIPT)) {
-                                return JsonProcessing.APPLICATION_JAVASCRIPT;
-                            } else if (type.test(JsonProcessing.TEXT_JAVASCRIPT)) {
-                                return JsonProcessing.TEXT_JAVASCRIPT;
-                            } else if (type.hasSuffix("json")) {
-                                return MediaType.create(type.type(), type.subtype());
-                            } else {
-                                return null;
-                            }
-                        })
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .orElse(null);
-            }
-            if (preferredType == null) {
-                return false;
-            } else {
-                response.headers().contentType(preferredType);
-                return true;
-            }
-        } else {
-            return MediaType.JSON_PREDICATE.test(mt);
-        }
-    }
-
-    /**
-     * Returns a charset from {@code Content-Type} header parameter or {@code null} if not defined.
-     *
-     * @param headers parameters representing request or response headers
-     * @return a charset or {@code UTF-8} as default
-     * @throws RuntimeException if charset is not supported
-     */
-    private Charset determineCharset(Parameters headers) {
-        return headers.first(Http.Header.CONTENT_TYPE)
-                .map(MediaType::parse)
-                .flatMap(MediaType::charset)
-                .map(sch -> {
-                    try {
-                        return Charset.forName(sch);
-                    } catch (Exception e) {
-                        return null; // Do not need default charset. Can use JSON specification.
-                    }
-                })
-                .orElse(null);
     }
 
     /**

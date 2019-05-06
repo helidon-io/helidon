@@ -15,26 +15,28 @@
  */
 package io.helidon.media.jackson.server;
 
-import java.util.Collection;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-import io.helidon.common.http.MediaType;
 import io.helidon.media.jackson.common.JacksonProcessing;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
+import io.helidon.webserver.JsonService;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+
+import static io.helidon.media.common.ContentTypeCharset.determineCharset;
 
 /**
  * A {@link Service} and a {@link Handler} that provides Jackson
  * support to Helidon.
  */
-public final class JacksonSupport implements Service, Handler {
-
+public final class JacksonSupport extends JsonService {
     private final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends ObjectMapper> objectMapperProvider;
 
     /**
@@ -55,18 +57,13 @@ public final class JacksonSupport implements Service, Handler {
     }
 
     @Override
-    public void update(final Routing.Rules routingRules) {
-        routingRules.any(this);
-    }
-
-    @Override
     public void accept(final ServerRequest request, final ServerResponse response) {
         final ObjectMapper objectMapper = this.objectMapperProvider.apply(request, response);
         request.content()
             .registerReader(cls -> objectMapper.canDeserialize(objectMapper.constructType(cls)),
                             JacksonProcessing.reader(objectMapper));
-        response.registerWriter(payload -> objectMapper.canSerialize(payload.getClass()) && this.wantsJson(request, response),
-                                JacksonProcessing.writer(objectMapper));
+        response.registerWriter(payload -> objectMapper.canSerialize(payload.getClass()) && acceptsJson(request, response),
+                                JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
         request.next();
     }
 
@@ -76,7 +73,11 @@ public final class JacksonSupport implements Service, Handler {
      * @return a new {@link JacksonSupport}
      */
     public static JacksonSupport create() {
-        return create((req, res) -> new ObjectMapper());
+        final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new ParameterNamesModule())
+            .registerModule(new Jdk8Module())
+            .registerModule(new JavaTimeModule());
+        return create((req, res) -> mapper);
     }
 
     /**
@@ -96,41 +97,4 @@ public final class JacksonSupport implements Service, Handler {
                                                          ? extends ObjectMapper> objectMapperProvider) {
         return new JacksonSupport(objectMapperProvider);
     }
-
-    private static boolean wantsJson(final ServerRequest request, final ServerResponse response) {
-        final boolean returnValue;
-        final MediaType outgoingMediaType = response.headers().contentType().orElse(null);
-        if (outgoingMediaType == null) {
-            final MediaType preferredType;
-            final Collection<? extends MediaType> acceptedTypes = request.headers().acceptedTypes();
-            if (acceptedTypes == null || acceptedTypes.isEmpty()) {
-                preferredType = MediaType.APPLICATION_JSON;
-            } else {
-                preferredType = acceptedTypes
-                    .stream()
-                    .map(type -> {
-                            if (type.test(MediaType.APPLICATION_JSON)) {
-                                return MediaType.APPLICATION_JSON;
-                            } else if (type.hasSuffix("json")) {
-                                return MediaType.create(type.type(), type.subtype());
-                            } else {
-                                return null;
-                            }
-                        })
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-            }
-            if (preferredType == null) {
-                returnValue = false;
-            } else {
-                response.headers().contentType(preferredType);
-                returnValue = true;
-            }
-        } else {
-            returnValue = MediaType.JSON_PREDICATE.test(outgoingMediaType);
-        }
-        return returnValue;
-    }
-
 }

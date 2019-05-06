@@ -49,7 +49,7 @@ tracing.service=helidon-mp
 For additional supported properties, please see <<tracing/01_tracing.adoc#Tracing-config,tracing configuration>>
 
 == Creating custom spans
-Microprofile OpenTracing implementation will add support to simply
+MicroProfile OpenTracing implementation will add support to simply
 add custom spans by annotation. Until we implement this support, you
 can configure custom spans as follows (in JAX-RS resources):
 
