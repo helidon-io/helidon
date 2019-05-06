@@ -351,7 +351,7 @@ class RequestRouting implements Routing {
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
                     requestSpan.log(nextItem.handlerRoute.diagnosticEvent());
                     // execute in the context, so context can be retrieved with Contexts (runs in our thread)
-                    Contexts.inContext(nextRequest.context(), () -> nextItem.handlerRoute
+                    Contexts.runInContext(nextRequest.context(), () -> nextItem.handlerRoute
                             .handler()
                             .accept(nextRequest, nextResponse));
                 } catch (RuntimeException re) {
