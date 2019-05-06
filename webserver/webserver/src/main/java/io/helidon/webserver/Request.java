@@ -237,7 +237,7 @@ abstract class Request implements ServerRequest {
 
         private Content(Content orig) {
             this.originalPublisher = orig.originalPublisher;
-            this.readers = appendDefaultReaders(orig.readers);
+            this.readers = orig.readers;
             this.filters = orig.filters;
             this.readersLock = orig.readersLock;
             this.filtersLock = orig.filtersLock;
