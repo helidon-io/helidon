@@ -17,11 +17,11 @@ package io.helidon.openapi;
  *
  */
 
-import io.helidon.openapi.internal.OpenAPIConfigImpl;
 import java.nio.file.Paths;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
 

@@ -293,10 +293,10 @@ public class OpenAPISupport implements Service {
 
         JSON(Format.JSON,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON, MediaType.APPLICATION_JSON},
-                "json"),
+            "json"),
         YAML(Format.YAML,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML, MediaType.APPLICATION_YAML},
-                "yaml", "yml");
+            "yaml", "yml");
 
         private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;
 
