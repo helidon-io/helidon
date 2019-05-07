@@ -97,7 +97,7 @@ class MpSubResourceTest {
 
     @Test
     void testCombinationSecurity() {
-        WebTarget target = baseTarget.path("/main/sub/thename");
+        WebTarget target = baseTarget.path("/main/sub/thename/secure");
 
         // roles allowed "user"
         assertNotAuthenticated(target.request().get());
@@ -110,6 +110,7 @@ class MpSubResourceTest {
 
         // bellow have correct roles "user,sub,admin"
         String okMessage = "Secured by parent thename";
+        target = baseTarget.path("/main/sub/thename/parent");
         assertOk(secureRequest(target, "jack"), okMessage);
 
     }
