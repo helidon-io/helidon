@@ -39,3 +39,6 @@ security:
           - login: "tom"
             password: "${CLEAR=password}"
             roles: ["user"]
+          - login: "bob"
+            password: "${CLEAR=password}"
+            roles: ["sub2"]

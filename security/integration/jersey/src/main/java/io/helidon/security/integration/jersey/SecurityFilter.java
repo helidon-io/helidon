@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -334,13 +335,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             definition.requiresAuthentication(true);
         }
 
-        //this is specific jersey implementation - if parent is null, this is application scope, otherwise resource scope
-        SecurityLevel securityLevel = new SecurityLevel();
-        definition.getSecurityLevels().add(securityLevel);
-
-        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = securityLevel.getClassLevelAnnotations();
-
+        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
         addCustomAnnotations(customAnnotsMap, theClass);
+
+        SecurityLevel securityLevel = SecurityLevel.create(theClass.getName())
+                .withClassAnnotations(customAnnotsMap)
+                .build();
+        definition.getSecurityLevels().add(securityLevel);
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
@@ -419,7 +420,14 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 methodDef.add(audited);
 
                 SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(methodDef.getSecurityLevels().size() - 1);
-                addCustomAnnotations(currentSecurityLevel.getMethodLevelAnnotations(), method);
+
+                Map<Class<? extends Annotation>, List<Annotation>> methodAnnotations = new HashMap<>();
+                addCustomAnnotations(methodAnnotations, method);
+                SecurityLevel newSecurityLevel = SecurityLevel.create(currentSecurityLevel)
+                        .withMethodName(method.getName())
+                        .withMethodAnnotations(methodAnnotations)
+                        .build();
+                methodDef.getSecurityLevels().set(methodDef.getSecurityLevels().size() - 1, newSecurityLevel);
                 for (AnnotationAnalyzer analyzer : analyzers) {
                     AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(method,
                                                                                             current.analyzerResponse(analyzer));

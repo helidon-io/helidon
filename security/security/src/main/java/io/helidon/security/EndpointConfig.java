@@ -126,15 +126,15 @@ public class EndpointConfig implements AbacSupport {
      *
      * @param scopes scopes the caller is interested in
      * @return a map of annotation classes to annotation instances
-     * @deprecated use iteration over security levels instead
      * @see SecurityProvider#supportedAnnotations()
+     * @deprecated use iteration over security levels instead
      */
     @Deprecated
     public Map<Class<? extends Annotation>, List<Annotation>> annotations(AnnotationScope... scopes) {
         Map<Class<? extends Annotation>, List<Annotation>> result = new HashMap<>();
 
         for (AnnotationScope scope : scopes) {
-            Map<Class<? extends Annotation>, List<Annotation>> map = null;
+            Map<Class<? extends Annotation>, List<Annotation>> map;
             switch (scope) {
             case APPLICATION:
                 map = securityLevels.get(0).getClassLevelAnnotations();
@@ -145,6 +145,8 @@ public class EndpointConfig implements AbacSupport {
             case METHOD:
                 map = securityLevels.get(securityLevels.size() - 1).getMethodLevelAnnotations();
                 break;
+            default:
+                map = null;
             }
             if (null != map) {
                 map.forEach((annotClass, annotList) -> result.computeIfAbsent(annotClass, aClass -> new LinkedList<>())
@@ -311,15 +313,17 @@ public class EndpointConfig implements AbacSupport {
             Map<Class<? extends Annotation>, List<Annotation>> newAnnots = new HashMap<>();
 
             if (securityLevels.isEmpty()) {
-                securityLevels.add(new SecurityLevel()); //Security level of Application
-                securityLevels.add(new SecurityLevel()); // Security level of class and method
+                securityLevels.add(SecurityLevel.create("APPLICATION").build()); //Security level of Application
+                securityLevels.add(SecurityLevel.create("CLASS").build()); // Security level of class and method
             }
-            SecurityLevel nonApplicationLevel;
+            SecurityLevel securityLevel;
+            int index;
             if (scope == AnnotationScope.APPLICATION) {
-                nonApplicationLevel = securityLevels.get(0);
+                index = 0;
             } else {
-                nonApplicationLevel = securityLevels.get(securityLevels.size() - 1);
+                index = securityLevels.size() - 1;
             }
+            securityLevel = securityLevels.get(index);
 
             annotations.forEach((aClass, list) -> {
                 if (!list.isEmpty()) {
@@ -331,13 +335,19 @@ public class EndpointConfig implements AbacSupport {
             switch (scope) {
             case APPLICATION:
             case CLASS:
-                nonApplicationLevel.getClassLevelAnnotations().clear();
-                nonApplicationLevel.getClassLevelAnnotations().putAll(newAnnots);
+                securityLevels.set(index,
+                                   SecurityLevel.create(securityLevel)
+                                           .withClassAnnotations(newAnnots)
+                                           .build());
                 break;
             case METHOD:
-                nonApplicationLevel.getMethodLevelAnnotations().clear();
-                nonApplicationLevel.getMethodLevelAnnotations().putAll(newAnnots);
+                securityLevels.set(index,
+                                   SecurityLevel.create(securityLevel)
+                                           .withMethodAnnotations(newAnnots)
+                                           .build());
                 break;
+            default:
+                throw new IllegalStateException("Scope FIELD is not supported here.");
             }
 
             return this;
