@@ -112,7 +112,7 @@ public final class Contexts {
      * @throws java.lang.RuntimeException  in case the {@link java.util.concurrent.Callable#call()} threw a
      *                                          runtime exception
      */
-    public static <T> T invokeInContext(Context context, Callable<T> callable) {
+    public static <T> T runInContext(Context context, Callable<T> callable) {
         push(context);
         try {
             return callable.call();

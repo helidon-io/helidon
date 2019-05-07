@@ -132,7 +132,7 @@ class ContextsTest {
 
         Runnable runnable = () -> ref.set(Contexts.context().get().get("message", String.class).orElse("No context found"));
 
-        Future<?> future = Contexts.invokeInContext(ctx, () -> service.submit(runnable));
+        Future<?> future = Contexts.runInContext(ctx, () -> service.submit(runnable));
         future.get();
 
         assertThat(ref.get(), is(TEST_STRING + "_2"));
@@ -146,7 +146,7 @@ class ContextsTest {
 
         Runnable runnable = () -> ref.set(Contexts.context().get().get("message", String.class).orElse("No context found"));
 
-        Future<String> future = Contexts.invokeInContext(ctx, () -> service.submit(runnable, "Hello"));
+        Future<String> future = Contexts.runInContext(ctx, () -> service.submit(runnable, "Hello"));
         String result = future.get();
 
         assertThat(result, is("Hello"));
@@ -160,7 +160,7 @@ class ContextsTest {
         Context ctx = Context.create();
         ctx.register("message", TEST_STRING + "_1");
 
-        Future<String> future = Contexts.invokeInContext(ctx, () -> service.submit(callable));
+        Future<String> future = Contexts.runInContext(ctx, () -> service.submit(callable));
 
         assertThat(future.get(), is(TEST_STRING + "_1"));
     }
