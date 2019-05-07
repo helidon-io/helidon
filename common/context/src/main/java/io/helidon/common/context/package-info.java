@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Common tools that use config component.
- *
- * @see io.helidon.common.configurable.Resource
+ * Support fo context propagation across executor boundaries.
  */
-module io.helidon.common.configurable {
-    requires java.logging;
-    requires transitive io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-
-    exports io.helidon.common.configurable;
-}
+package io.helidon.common.context;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class ScheduledThreadPoolSupplierTest {
 
     @BeforeAll
     static void initClass() {
-        defaultInstance = ScheduledThreadPoolSupplier.create().get();
+        defaultInstance = ScheduledThreadPoolSupplier.create().getThreadPool();
 
         builtInstance = ScheduledThreadPoolSupplier.builder()
                 .threadNamePrefix("scheduled-thread-pool-unit-test-")
@@ -47,10 +47,10 @@ class ScheduledThreadPoolSupplierTest {
                 .daemon(true)
                 .prestart(true)
                 .build()
-                .get();
+                .getThreadPool();
 
         configuredInstance = ScheduledThreadPoolSupplier.create(Config.create()
-                .get("unit.scheduled-thread-pool")).get();
+                .get("unit.scheduled-thread-pool")).getThreadPool();
     }
 
     @Test

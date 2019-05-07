@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
+import io.helidon.common.context.ContextAwareExecutorService;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.Test;
@@ -44,7 +48,11 @@ class SchedulerConfigTest {
             CommandScheduler commandScheduler = CommandScheduler.instance();
             assertThat(commandScheduler, notNullValue());
             ScheduledThreadPoolSupplier poolSupplier = commandScheduler.poolSupplier();
-            assertThat(poolSupplier.get().getCorePoolSize(), is(8));
+
+            ScheduledExecutorService service = poolSupplier.get();
+            ContextAwareExecutorService executorService = ((ContextAwareExecutorService) service);
+            ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor) executorService.unwrap();
+            assertThat(stpe.getCorePoolSize(), is(8));
         } finally {
             if (server != null) {
                 server.stop();

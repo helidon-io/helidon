@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.common.context;
+
+import java.util.concurrent.ExecutorService;
 
 /**
- * Common tools that use config component.
- *
- * @see io.helidon.common.configurable.Resource
+ * An interface for wrapped executor services.
  */
-module io.helidon.common.configurable {
-    requires java.logging;
-    requires transitive io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-
-    exports io.helidon.common.configurable;
+public interface ContextAwareExecutorService extends ExecutorService {
+    /**
+     * Unwrap the executor service.
+     *
+     * @return the instance that was used to create this wrapper.
+     */
+    ExecutorService unwrap();
 }
