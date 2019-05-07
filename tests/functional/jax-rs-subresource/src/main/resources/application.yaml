@@ -32,7 +32,7 @@ security:
             roles: ["sub", "sub2", "subsub", "user", "admin"]
           - login: "jill"
             password: "${CLEAR=password}"
-            roles: ["sub", "user"]
+            roles: ["sub2", "user"]
           - login: "john"
             password: "${CLEAR=password}"
             roles: []
