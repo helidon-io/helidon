@@ -457,8 +457,15 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         methodDef.add(atz);
         methodDef.add(audited);
 
-        SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(methodDef.getSecurityLevels().size() - 1);
-        addCustomAnnotations(currentSecurityLevel.getMethodLevelAnnotations(), definitionMethod);
+        int index = methodDef.getSecurityLevels().size() - 1;
+        SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(index);
+        Map<Class<? extends Annotation>, List<Annotation>> methodLevelAnnots = new HashMap<>();
+        addCustomAnnotations(methodLevelAnnots, definitionMethod);
+
+        methodDef.getSecurityLevels().set(index, SecurityLevel.create(currentSecurityLevel)
+                .withMethodName(definitionMethod.getName())
+                .withMethodAnnotations(methodLevelAnnots)
+                .build());
 
         resourceMethodSecurity.put(definitionMethod, methodDef);
 
