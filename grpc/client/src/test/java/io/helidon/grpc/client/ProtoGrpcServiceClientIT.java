@@ -23,7 +23,9 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -31,17 +33,23 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Priority;
 
 import io.helidon.grpc.client.test.StringServiceGrpc;
+import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 
+import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,9 +76,18 @@ public class ProtoGrpcServiceClientIT {
     private static String inputStr = "Some_String_WITH_lower_and_UPPER_cases";
     private static StringMessage inputMsg = StringMessage.newBuilder().setText(inputStr).build();
 
+    // Interceptors to be used in the tests.
     private static LowPriorityInterceptor lowPriorityInterceptor = new LowPriorityInterceptor();
     private static MediumPriorityInterceptor mediumPriorityInterceptor = new MediumPriorityInterceptor();
     private static HighPriorityInterceptor highPriorityInterceptor = new HighPriorityInterceptor();
+
+    // CallCredentials to be used in the tests.
+    private static CustomCallCredentials serviceCred = new CustomCallCredentials("service-level-key", "service-level-value");
+    private static CustomCallCredentials lowerMethodCred = new CustomCallCredentials("lower-method-key", "lower-method-value");
+    private static CustomCallCredentials joinMethodCred = new CustomCallCredentials("join-method-key", "join-method-value");
+
+    // A server interceptor to check the headers.
+    private static HeaderCheckingInterceptor headerCheckingInterceptor = new HeaderCheckingInterceptor(null);
 
     @BeforeAll
     public static void startServer() throws Exception {
@@ -78,6 +95,7 @@ public class ProtoGrpcServiceClientIT {
         LogManager.getLogManager().readConfiguration();
 
         GrpcRouting routing = GrpcRouting.builder()
+                .intercept(headerCheckingInterceptor)
                 .register(new TreeMapService())
                 .register(new StringService())
                 .build();
@@ -94,6 +112,9 @@ public class ProtoGrpcServiceClientIT {
                 .intercept(mediumPriorityInterceptor)
                 .intercept("Upper", highPriorityInterceptor)
                 .intercept("Lower", lowPriorityInterceptor)
+                .callCredentials(serviceCred)
+                .callCredentials("Lower", lowerMethodCred)
+                .callCredentials("Join", joinMethodCred)
                 .build();
 
         Channel channel = ManagedChannelBuilder.forAddress("localhost", grpcServer.port())
@@ -269,6 +290,53 @@ public class ProtoGrpcServiceClientIT {
     }
 
 
+    @Test
+    public void testUnaryMethodLevelCallCredentials() {
+        headerCheckingInterceptor.resetKeyAndValue("lower-method-key");
+        assertThat(
+                grpcClient.<StringMessage, StringMessage>blockingUnary("Lower", inputMsg).getText(),
+                equalTo(inputStr.toLowerCase()));
+
+        assertThat(headerCheckingInterceptor.getValue(), equalTo("lower-method-value"));
+
+        headerCheckingInterceptor.resetKeyAndValue("service-level-key");
+        assertThat(
+                grpcClient.<StringMessage, StringMessage>blockingUnary("Upper", inputMsg).getText(),
+                equalTo(inputStr.toUpperCase()));
+
+        assertThat(headerCheckingInterceptor.getValue(), equalTo("service-level-value"));
+    }
+
+    @Test
+    public void testClientStreamingCallCredentials() throws Exception {
+        headerCheckingInterceptor.resetKeyAndValue("join-method-key");
+        String expectedSentence = "A simple invocation of a client streaming method";
+        Collection<StringMessage> input = Arrays.stream(expectedSentence.split(" "))
+                .map(w -> StringMessage.newBuilder().setText(w).build())
+                .collect(Collectors.toList());
+
+        CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input.stream());
+        assertThat(result.get().getText(), equalTo(expectedSentence));
+        assertThat(headerCheckingInterceptor.getValue(), equalTo("join-method-value"));
+    }
+
+    @Test
+    public void testServerStreamingCallCredentials() {
+        headerCheckingInterceptor.resetKeyAndValue("service-level-key");
+        String sentence = "A simple invocation of a client streaming method";
+        StringMessage message = StringMessage.newBuilder().setText(sentence).build();
+
+        Iterator<StringMessage> iterator = grpcClient.blockingServerStreaming("Split", message);
+
+        Spliterator<StringMessage> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED);
+        String result = StreamSupport.stream(spliterator, false)
+                .map(StringMessage::getText)
+                .collect(Collectors.joining(" "));
+
+        assertThat(result, is(sentence));
+        assertThat(headerCheckingInterceptor.getValue(), equalTo("service-level-value"));
+    }
+
     /**
      * A base {@link ClientInterceptor}.
      */
@@ -318,4 +386,59 @@ public class ProtoGrpcServiceClientIT {
     static class LowPriorityInterceptor
             extends BaseInterceptor {
     }
+
+    private static class HeaderCheckingInterceptor
+            implements ServerInterceptor {
+
+        private String key;
+        private String value;
+
+        public HeaderCheckingInterceptor(String key) {
+            this.key = key;
+        }
+
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                     Metadata headers,
+                                                                     ServerCallHandler<ReqT, RespT> next) {
+            if (key != null) {
+                this.value = headers.get(Metadata.Key.of(this.key, Metadata.ASCII_STRING_MARSHALLER));
+            }
+            return next.startCall(call, headers);
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void resetKeyAndValue(String key) {
+            this.key = key;
+            this.value = null;
+        }
+    }
+
+    private static class CustomCallCredentials
+            extends CallCredentials {
+        private String key;
+        private String value;
+
+        public CustomCallCredentials(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public void applyRequestMetadata(RequestInfo requestInfo, Executor appExecutor, MetadataApplier applier) {
+            if (key != null && value != null) {
+                Metadata metadata = new Metadata();
+                metadata.put(Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER), value);
+                applier.apply(metadata);
+            }
+        }
+
+        @Override
+        public void thisUsesUnstableApi() {
+        }
+    }
+
 }

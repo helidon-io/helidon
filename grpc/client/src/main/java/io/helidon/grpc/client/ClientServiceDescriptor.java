@@ -33,6 +33,7 @@ import io.helidon.grpc.core.PriorityBag;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
+import io.grpc.CallCredentials;
 import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor.MethodType;
 import io.grpc.ServiceDescriptor;
@@ -47,13 +48,16 @@ public class ClientServiceDescriptor {
     private String serviceName;
     private Map<String, ClientMethodDescriptor> methods;
     private PriorityBag<ClientInterceptor> interceptors;
+    private CallCredentials callCredentials;
 
     private ClientServiceDescriptor(String serviceName,
                                     Map<String, ClientMethodDescriptor> methods,
-                                    PriorityBag<ClientInterceptor> interceptors) {
+                                    PriorityBag<ClientInterceptor> interceptors,
+                                    CallCredentials callCredentials) {
         this.serviceName = serviceName;
         this.methods = methods;
         this.interceptors = interceptors;
+        this.callCredentials = callCredentials;
     }
 
     /**
@@ -165,6 +169,15 @@ public class ClientServiceDescriptor {
         return interceptors;
     }
 
+    /**
+     * Return the {@link io.grpc.CallCredentials} set on this service.
+     *
+     * @return the {@link io.grpc.CallCredentials} set on this service
+     */
+    public CallCredentials callCredentials() {
+        return this.callCredentials;
+    }
+
     @Override
     public String toString() {
         return "ClientServiceDescriptor(name='" + serviceName + "')";
@@ -232,7 +245,7 @@ public class ClientServiceDescriptor {
         /**
          * Register one or more {@link ClientInterceptor interceptors} for a named method of the service.
          *
-         * @param methodName   the getName of the method to intercept
+         * @param methodName   the name of the method to intercept
          * @param interceptors the interceptor(s) to register
          * @return this {@link Rules} instance for fluent call chaining
          * @throws IllegalArgumentException if no method exists for the specified getName
@@ -264,7 +277,7 @@ public class ClientServiceDescriptor {
         /**
          * Register unary method for the service.
          *
-         * @param name       the getName of the method
+         * @param name       the name of the method
          * @param configurer the method configurer
          * @return this {@link Rules} instance for fluent call chaining
          */
@@ -273,7 +286,7 @@ public class ClientServiceDescriptor {
         /**
          * Register server streaming method for the service.
          *
-         * @param name The getName of the method
+         * @param name The name of the method
          * @return this {@link Rules} instance for fluent call chaining
          */
         Rules serverStreaming(String name);
@@ -281,7 +294,7 @@ public class ClientServiceDescriptor {
         /**
          * Register server streaming method for the service.
          *
-         * @param name       the getName of the method
+         * @param name       the name of the method
          * @param configurer the method configurer
          * @return this {@link Rules} instance for fluent call chaining
          */
@@ -290,7 +303,7 @@ public class ClientServiceDescriptor {
         /**
          * Register client streaming method for the service.
          *
-         * @param name The getName of the method
+         * @param name The name of the method
          * @return this {@link Rules} instance for fluent call chaining
          */
         Rules clientStreaming(String name);
@@ -298,7 +311,7 @@ public class ClientServiceDescriptor {
         /**
          * Register client streaming method for the service.
          *
-         * @param name       the getName of the method
+         * @param name       the name of the method
          * @param configurer the method configurer
          * @return this {@link Rules} instance for fluent call chaining
          */
@@ -307,7 +320,7 @@ public class ClientServiceDescriptor {
         /**
          * Register bi-directional streaming method for the service.
          *
-         * @param name The getName of the method
+         * @param name The name of the method
          * @return this {@link Rules} instance for fluent call chaining
          */
         Rules bidirectional(String name);
@@ -315,11 +328,29 @@ public class ClientServiceDescriptor {
         /**
          * Register bi-directional streaming method for the service.
          *
-         * @param name       the getName of the method
+         * @param name       the name of the method
          * @param configurer the method configurer
          * @return this {@link Rules} instance for fluent call chaining
          */
         Rules bidirectional(String name, Consumer<ClientMethodDescriptor.Rules> configurer);
+
+        /**
+         * Register the {@link io.grpc.CallCredentials} to be used for this service.
+         *
+         * @param callCredentials the {@link io.grpc.CallCredentials} to set.
+         * @return this {@link Rules} instance for fluent call chaining
+         */
+        Rules callCredentials(CallCredentials callCredentials);
+
+        /**
+         * Register the {@link io.grpc.CallCredentials} to be used for the specified method in this service. This overrides
+         * any {@link io.grpc.CallCredentials} set on this {@link io.helidon.grpc.client.ClientServiceDescriptor}
+         *
+         * @param name the method name
+         * @param callCredentials the {@link io.grpc.CallCredentials} to set.
+         * @return this {@link Rules} instance for fluent call chaining
+         */
+        Rules callCredentials(String name, CallCredentials callCredentials);
 
     }
 
@@ -335,6 +366,7 @@ public class ClientServiceDescriptor {
         private Class<?> serviceClass;
         private Descriptors.FileDescriptor proto;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.defaultInstance();
+        private CallCredentials callCredentials;
 
         private Map<String, ClientMethodDescriptor.Builder> methodBuilders = new HashMap<>();
 
@@ -481,7 +513,7 @@ public class ClientServiceDescriptor {
         }
 
         @Override
-        public Rules intercept(String methodName, int priority, ClientInterceptor... interceptors) {
+        public Builder intercept(String methodName, int priority, ClientInterceptor... interceptors) {
             ClientMethodDescriptor.Builder method = methodBuilders.get(methodName);
 
             if (method == null) {
@@ -494,13 +526,31 @@ public class ClientServiceDescriptor {
         }
 
         @Override
+        public Builder callCredentials(CallCredentials callCredentials) {
+            this.callCredentials = callCredentials;
+            return this;
+        }
+
+        @Override
+        public Builder callCredentials(String methodName, CallCredentials callCredentials) {
+            ClientMethodDescriptor.Builder method = methodBuilders.get(methodName);
+
+            if (method == null) {
+                throw new IllegalArgumentException("No method exists with getName '" + methodName + "'");
+            }
+
+            method.callCredentials(callCredentials);
+            return this;
+        }
+
+        @Override
         public ClientServiceDescriptor build() {
             Map<String, ClientMethodDescriptor> methods = new LinkedHashMap<>();
             for (Map.Entry<String, ClientMethodDescriptor.Builder> entry : methodBuilders.entrySet()) {
                 methods.put(entry.getKey(), entry.getValue().build());
             }
 
-            return new ClientServiceDescriptor(name, methods, interceptors);
+            return new ClientServiceDescriptor(name, methods, interceptors, callCredentials);
         }
 
         // ---- helpers -----------------------------------------------------
