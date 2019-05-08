@@ -164,6 +164,21 @@ public class TestUtil {
         return (Map<String, Object>) yaml.load(new InputStreamReader(cnx.getInputStream(), cs));
     }
 
+    /**
+     * Treats the provided {@code Map} as a YAML map and navigates through it
+     * using the dotted-name convention as expressed in the {@code dottedPath}
+     * argument, finally casting the value retrieved from the last segment of
+     * the path as the specified type and returning that cast value.
+     *
+     * @param <T> type to which the final value will be cast
+     * @param map the YAML-inspired map
+     * @param dottedPath navigation path to the item of interest in the YAML
+     * maps-of-maps; note that the {@code dottedPath} must not use dots except
+     * as path segment separators
+     * @param cl {@code Class} for the return type {@code <T>}
+     * @return value from the lowest-level map retrieved using the last path
+     * segment, cast to the specified type
+     */
     @SuppressWarnings(value = "unchecked")
     public static <T> T fromYaml(Map<String, Object> map, String dottedPath, Class<T> cl) {
         String[] segments = dottedPath.split("\\.");
