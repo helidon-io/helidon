@@ -18,6 +18,8 @@ package io.helidon.grpc.examples.security;
 
 
 import io.helidon.config.Config;
+import io.helidon.grpc.client.ClientServiceDescriptor;
+import io.helidon.grpc.client.GrpcServiceClient;
 import io.helidon.grpc.examples.common.StringServiceGrpc;
 import io.helidon.grpc.examples.common.Strings;
 import io.helidon.security.Security;
@@ -49,8 +51,8 @@ public class SecureStringClient {
                 .build();
 
         // Obtain the user name and password from the program arguments
-        String user = args.length >= 2 ? args[0] : null;
-        String password = args.length >= 2 ? args[1] : null;
+        String user = args.length >= 2 ? args[0] : "Ted";
+        String password = args.length >= 2 ? args[1] : "secret";
 
         Config config = Config.create();
 
@@ -66,14 +68,18 @@ public class SecureStringClient {
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
                 .build();
 
-        // create the StringService client stub and use the GrpcClientSecurity call credentials
-        StringServiceGrpc.StringServiceBlockingStub stub = StringServiceGrpc.newBlockingStub(channel)
-                .withCallCredentials(clientSecurity);
+        // Create the client service descriptor and add the call credentials
+        ClientServiceDescriptor descriptor = ClientServiceDescriptor
+                .builder(StringServiceGrpc.getServiceDescriptor())
+                .callCredentials(clientSecurity)
+                .build();
 
-        String text = "ABCDE";
-        Strings.StringMessage request = Strings.StringMessage.newBuilder().setText(text).build();
-        Strings.StringMessage response = stub.lower(request);
+        // create the client for the service
+        GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
 
-        System.out.println("Text '" + text + "' to lower is '" + response.getText() + "'");
+        Strings.StringMessage request = Strings.StringMessage.newBuilder().setText("ABCDE").build();
+        Strings.StringMessage response = client.blockingUnary("Lower", request);
+
+        System.out.println("Response from Lower method call is '" + response.getText() + "'");
     }
 }
