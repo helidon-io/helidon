@@ -34,6 +34,32 @@
 
     <packaging>jar</packaging>
     
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jboss.jandex</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <id>make-test-index</id>
+                    <goals>
+                      <goal>jandex</goal>
+                    </goals>
+                    <phase>process-test-classes</phase>
+                    <configuration>
+                        <classesDir>${project.build.directory}/test-classes</classesDir>
+                        <fileSets>
+                          <fileSet>
+                            <directory>${project.build.directory}/test-classes</directory>
+                          </fileSet>
+                        </fileSets>
+                      </configuration>
+                  </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -64,7 +90,11 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <scope>test</scope>
         </dependency>
-        
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     
 </project>
