@@ -143,8 +143,19 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         if (!authenticate) {
             return AuthenticationResponse.abstain();
         }
+        Optional<String> maybeToken;
+        try {
+            maybeToken = atnTokenHandler.extractToken(providerRequest.env().headers());
+        } catch (Exception e) {
+            if (optional) {
+                // maybe the token is for somebody else
+                return AuthenticationResponse.abstain();
+            } else {
+                return AuthenticationResponse.failed("JWT header not available or in a wrong format", e);
+            }
+        }
 
-        return atnTokenHandler.extractToken(providerRequest.env().headers())
+        return maybeToken
                 .map(this::authenticateToken)
                 .orElseGet(() -> {
                     if (optional) {

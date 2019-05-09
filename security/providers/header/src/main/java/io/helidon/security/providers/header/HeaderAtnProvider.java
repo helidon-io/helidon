@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,16 @@ public class HeaderAtnProvider extends SynchronousProvider implements Authentica
             return AuthenticationResponse.abstain();
         }
 
-        Optional<String> username = atnTokenHandler.extractToken(providerRequest.env().headers());
+        Optional<String> username;
+        try {
+            username = atnTokenHandler.extractToken(providerRequest.env().headers());
+        } catch (Exception e) {
+            if (optional) {
+                return AuthenticationResponse.abstain();
+            } else {
+                return AuthenticationResponse.failed("Header not available or in a wrong format", e);
+            }
+        }
 
         return username
                 .map(Principal::create)

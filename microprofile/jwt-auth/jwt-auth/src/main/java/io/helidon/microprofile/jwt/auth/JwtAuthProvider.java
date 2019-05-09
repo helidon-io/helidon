@@ -189,7 +189,18 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
     }
 
     AuthenticationResponse authenticate(ProviderRequest providerRequest, LoginConfig loginConfig) {
-        return atnTokenHandler.extractToken(providerRequest.env().headers())
+        Optional<String> maybeToken;
+        try {
+            maybeToken = atnTokenHandler.extractToken(providerRequest.env().headers());
+        } catch (Exception e) {
+            if (optional) {
+                return AuthenticationResponse.abstain();
+            } else {
+                return AuthenticationResponse.failed("Header not available or in a wrong format", e);
+            }
+        }
+
+        return maybeToken
                 .map(token -> {
                     SignedJwt signedJwt;
                     try {

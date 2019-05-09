@@ -177,32 +177,37 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         List<String> missingLocations = new LinkedList<>();
 
         Optional<String> token = Optional.empty();
-        if (oidcConfig.useHeader()) {
-            token = OptionalHelper.from(token)
-                    .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
-                    .asOptional();
-            if (!token.isPresent()) {
-                missingLocations.add("header");
-            }
-        }
 
-        if (oidcConfig.useParam()) {
-            token = OptionalHelper.from(token)
-                    .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
-                    .asOptional();
-
-            if (!token.isPresent()) {
-                missingLocations.add("query-param");
+        try {
+            if (oidcConfig.useHeader()) {
+                token = OptionalHelper.from(token)
+                        .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
+                        .asOptional();
+                if (!token.isPresent()) {
+                    missingLocations.add("header");
+                }
             }
-        }
 
-        if (oidcConfig.useCookie()) {
-            token = OptionalHelper.from(token)
-                    .or(() -> findCookie(providerRequest.env().headers()))
-                    .asOptional();
-            if (!token.isPresent()) {
-                missingLocations.add("cookie");
+            if (oidcConfig.useParam()) {
+                token = OptionalHelper.from(token)
+                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
+                        .asOptional();
+
+                if (!token.isPresent()) {
+                    missingLocations.add("query-param");
+                }
             }
+
+            if (oidcConfig.useCookie()) {
+                token = OptionalHelper.from(token)
+                        .or(() -> findCookie(providerRequest.env().headers()))
+                        .asOptional();
+                if (!token.isPresent()) {
+                    missingLocations.add("cookie");
+                }
+            }
+        } catch (SecurityException e) {
+            return AuthenticationResponse.failed("Failed to extract one of the confiugred tokens", e);
         }
 
         if (token.isPresent()) {
