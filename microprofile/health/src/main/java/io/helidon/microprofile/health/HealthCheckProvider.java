@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.health;
 
+import java.util.List;
+
 import org.eclipse.microprofile.health.HealthCheck;
 
 /**
@@ -31,5 +33,5 @@ public interface HealthCheckProvider {
      *
      * @return  the {@link org.eclipse.microprofile.health.HealthCheck}s
      */
-    HealthCheck[] healthChecks();
+    List<HealthCheck> healthChecks();
 }

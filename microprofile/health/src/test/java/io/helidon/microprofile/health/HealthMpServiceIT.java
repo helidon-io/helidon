@@ -17,6 +17,8 @@
 package io.helidon.microprofile.health;
 
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -181,11 +183,10 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderOne
             implements HealthCheckProvider {
         @Override
-        public HealthCheck[] healthChecks() {
-            return new HealthCheck[]{
+        public List<HealthCheck> healthChecks() {
+            return Arrays.asList(
                     new HealthCheckStub("Three"),
-                    new HealthCheckStub("Four"),
-            };
+                    new HealthCheckStub("Four"));
         }
     }
 
@@ -197,11 +198,10 @@ public class HealthMpServiceIT {
     public static class HealthCheckProviderTwo
             implements HealthCheckProvider {
         @Override
-        public HealthCheck[] healthChecks() {
-            return new HealthCheck[]{
+        public List<HealthCheck> healthChecks() {
+            return Arrays.asList(
                     new HealthCheckStub("Five"),
-                    new HealthCheckStub("Six"),
-            };
+                    new HealthCheckStub("Six"));
         }
     }
 
