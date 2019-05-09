@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import io.helidon.security.EndpointConfig;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.SynchronousProvider;
@@ -81,8 +83,10 @@ public class AtnProviderSync extends SynchronousProvider implements Authenticati
         }
 
         // 3) annotations on target
-        List<AtnAnnot> annots = epConfig
-                .combineAnnotations(AtnAnnot.class, EndpointConfig.AnnotationScope.values());
+        List<AtnAnnot> annots = new ArrayList<>();
+        for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+            annots.addAll(securityLevel.combineAnnotations(AtnAnnot.class, EndpointConfig.AnnotationScope.values()));
+        }
         if (annots.isEmpty()) {
             return null;
         } else {

@@ -45,6 +45,7 @@ import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.providers.abac.AbacAnnotation;
@@ -91,43 +92,45 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
     public RoleConfig fromAnnotations(EndpointConfig endpointConfig) {
         RoleConfig.Builder builder = RoleConfig.builder();
 
-        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
-            //Order of the annotations matters because of annotation handling.
-            List<Annotation> annotations = new ArrayList<>();
-            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                annotations.addAll(endpointConfig.combineAnnotations(annotation, value));
-            }
-            List<String> roles = new ArrayList<>();
-            List<String> serviceRoles = new ArrayList<>();
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof RolesAllowed) {
-                    // these are user roles by default
-                    roles.addAll(Arrays.asList(((RolesAllowed) annotation).value()));
-                    builder.permitAll(false);
-                    builder.denyAll(false);
-                } else if (annotation instanceof Roles) {
-                    // these are configured
-                    Roles r = (Roles) annotation;
-                    if (r.subjectType() == SubjectType.USER) {
-                        roles.addAll(Arrays.asList(r.value()));
-                    } else {
-                        serviceRoles.addAll(Arrays.asList(r.value()));
-                    }
-                    builder.permitAll(false);
-                    builder.denyAll(false);
-                } else if (annotation instanceof PermitAll) {
-                    builder.permitAll(true);
-                    builder.denyAll(false);
-                } else if (annotation instanceof DenyAll) {
-                    builder.permitAll(false);
-                    builder.denyAll(true);
+        for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
+            for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
+                //Order of the annotations matters because of annotation handling.
+                List<Annotation> annotations = new ArrayList<>();
+                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
                 }
-            }
-            if (!roles.isEmpty()) {
-                builder.clearRoles().addRoles(roles);
-            }
-            if (!serviceRoles.isEmpty()) {
-                builder.clearServiceRoles().addServiceRoles(serviceRoles);
+                List<String> roles = new ArrayList<>();
+                List<String> serviceRoles = new ArrayList<>();
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof RolesAllowed) {
+                        // these are user roles by default
+                        roles.addAll(Arrays.asList(((RolesAllowed) annotation).value()));
+                        builder.permitAll(false);
+                        builder.denyAll(false);
+                    } else if (annotation instanceof Roles) {
+                        // these are configured
+                        Roles r = (Roles) annotation;
+                        if (r.subjectType() == SubjectType.USER) {
+                            roles.addAll(Arrays.asList(r.value()));
+                        } else {
+                            serviceRoles.addAll(Arrays.asList(r.value()));
+                        }
+                        builder.permitAll(false);
+                        builder.denyAll(false);
+                    } else if (annotation instanceof PermitAll) {
+                        builder.permitAll(true);
+                        builder.denyAll(false);
+                    } else if (annotation instanceof DenyAll) {
+                        builder.permitAll(false);
+                        builder.denyAll(true);
+                    }
+                }
+                if (!roles.isEmpty()) {
+                    builder.clearRoles().addRoles(roles);
+                }
+                if (!serviceRoles.isEmpty()) {
+                    builder.clearServiceRoles().addServiceRoles(serviceRoles);
+                }
             }
         }
         return builder.build();

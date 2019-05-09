@@ -50,6 +50,7 @@ import io.helidon.security.Grant;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.scope.ScopeValidator;
@@ -219,17 +220,20 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private Set<String> expectedScopes(ProviderRequest request) {
-        List<ScopeValidator.Scopes> expectedScopes = request.endpointConfig()
-                .combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.values());
 
         Set<String> result = new HashSet<>();
 
-        expectedScopes.stream()
-                .map(ScopeValidator.Scopes::value)
-                .map(Arrays::asList)
-                .map(List::stream)
-                .forEach(stream -> stream.map(ScopeValidator.Scope::value)
-                        .forEach(result::add));
+        for (SecurityLevel securityLevel : request.endpointConfig().securityLevels()) {
+            List<ScopeValidator.Scopes> expectedScopes = securityLevel.combineAnnotations(ScopeValidator.Scopes.class,
+                                                                                          EndpointConfig.AnnotationScope
+                                                                                                  .values());
+            expectedScopes.stream()
+                    .map(ScopeValidator.Scopes::value)
+                    .map(Arrays::asList)
+                    .map(List::stream)
+                    .forEach(stream -> stream.map(ScopeValidator.Scope::value)
+                            .forEach(result::add));
+        }
 
         return result;
     }

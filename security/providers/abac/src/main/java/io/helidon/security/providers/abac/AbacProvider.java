@@ -38,6 +38,7 @@ import io.helidon.config.Config;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.providers.abac.spi.AbacValidator;
 import io.helidon.security.providers.abac.spi.AbacValidatorService;
@@ -148,10 +149,12 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
                         .ifPresentOrElse(attribConfig -> attributes
                                 .add(new RuntimeAttribute(validator, validator.fromConfig(attribConfig))), () -> {
                             List<Annotation> annotationConfig = new ArrayList<>();
-                            for (Class<? extends Annotation> annotation : annotations) {
-                                List<? extends Annotation> list = epConfig
-                                        .combineAnnotations(annotation, EndpointConfig.AnnotationScope.values());
-                                annotationConfig.addAll(list);
+                            for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+                                for (Class<? extends Annotation> annotation : annotations) {
+                                    List<? extends Annotation> list = securityLevel
+                                            .combineAnnotations(annotation, EndpointConfig.AnnotationScope.values());
+                                    annotationConfig.addAll(list);
+                                }
                             }
 
                             if (!annotationConfig.isEmpty()) {
@@ -258,38 +261,39 @@ public final class AbacProvider extends SynchronousProvider implements Authoriza
 
     private void validateAnnotations(EndpointConfig epConfig, Errors.Collector collector) {
         // list all annotations that are marked as Attribute and make sure some AbacValidator supports them
-        Map<Class<? extends Annotation>, List<Annotation>> allAnnotations = epConfig
-                .annotations(EndpointConfig.AnnotationScope.values());
 
-        int attributeAnnotations = 0;
-        int unsupported = 0;
-        List<String> unsupportedClassNames = new LinkedList<>();
+        for (SecurityLevel securityLevel : epConfig.securityLevels()) {
+            int attributeAnnotations = 0;
+            int unsupported = 0;
+            List<String> unsupportedClassNames = new LinkedList<>();
+            Map<Class<? extends Annotation>, List<Annotation>> allAnnotations = securityLevel.allAnnotations();
 
-        for (Class<? extends Annotation> type : allAnnotations.keySet()) {
-            AbacAnnotation abacAnnotation = type.getAnnotation(AbacAnnotation.class);
-            if (null != abacAnnotation || isSupportedAnnotation(type)) {
-                attributeAnnotations++;
-                if (!supportedAnnotations.contains(type)) {
-                    unsupported++;
-                    unsupportedClassNames.add(type.getName());
+            for (Class<? extends Annotation> type : allAnnotations.keySet()) {
+                AbacAnnotation abacAnnotation = type.getAnnotation(AbacAnnotation.class);
+                if (null != abacAnnotation || isSupportedAnnotation(type)) {
+                    attributeAnnotations++;
+                    if (!supportedAnnotations.contains(type)) {
+                        unsupported++;
+                        unsupportedClassNames.add(type.getName());
+                    }
                 }
             }
-        }
 
-        //evaluate that we can continue
-        if (unsupported != 0) {
-            boolean fail = failOnUnvalidated;
+            //evaluate that we can continue
+            if (unsupported != 0) {
+                boolean fail = failOnUnvalidated;
 
-            if (unsupported == attributeAnnotations && failIfNoneValidated) {
-                fail = true;
-            }
-
-            if (fail) {
-                for (String unsupportedClassName : unsupportedClassNames) {
-                    collector.fatal(this,
-                                    unsupportedClassName + " attribute annotation is not supported.");
+                if (unsupported == attributeAnnotations && failIfNoneValidated) {
+                    fail = true;
                 }
-                collector.fatal(this, "Supported annotations: " + supportedAnnotations);
+
+                if (fail) {
+                    for (String unsupportedClassName : unsupportedClassNames) {
+                        collector.fatal(this,
+                                        unsupportedClassName + " attribute annotation is not supported.");
+                    }
+                    collector.fatal(this, "Supported annotations: " + supportedAnnotations);
+                }
             }
         }
     }

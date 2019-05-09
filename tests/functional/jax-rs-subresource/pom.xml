@@ -25,8 +25,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-tests-functional-multiport</artifactId>
-    <name>Functional Test: Multiport with MP</name>
+    <artifactId>helidon-tests-functional-jax-rs-subresource</artifactId>
+    <name>Functional Test: JAX-RS Subresources</name>
 
     <dependencies>
         <dependency>
