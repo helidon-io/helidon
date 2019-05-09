@@ -23,19 +23,19 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-class HealthCheckProducerTest {
+class JvmRuntimeProducersTest {
     @Test
     void getRuntime() {
-        assertThat(Runtime.getRuntime(), equalTo(new HealthCheckProducer().produceRuntime()));
+        assertThat(Runtime.getRuntime(), equalTo(new JvmRuntimeProducers().produceRuntime()));
     }
 
     @Test
     void getRuntimeMXBean() {
-        assertThat(ManagementFactory.getRuntimeMXBean(), equalTo(new HealthCheckProducer().produceRuntimeMXBean()));
+        assertThat(ManagementFactory.getRuntimeMXBean(), equalTo(new JvmRuntimeProducers().produceRuntimeMXBean()));
     }
 
     @Test
     void getThreadMXBean() {
-        assertThat(ManagementFactory.getThreadMXBean(), equalTo(new HealthCheckProducer().produceThreadMXBean()));
+        assertThat(ManagementFactory.getThreadMXBean(), equalTo(new JvmRuntimeProducers().produceThreadMXBean()));
     }
 }

@@ -29,7 +29,7 @@ import javax.enterprise.inject.Produces;
  * these dependencies are looked up.
  */
 @ApplicationScoped
-class HealthCheckProducer {
+class JvmRuntimeProducers {
     /**
      * Gets a ThreadMXBean implementation.
      *

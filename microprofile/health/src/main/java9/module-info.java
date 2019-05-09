@@ -22,6 +22,7 @@ module io.helidon.microprofile.health {
     requires java.management;
 
     requires io.helidon.common;
+    requires io.helidon.common.serviceloader;
     requires io.helidon.health;
     requires io.helidon.microprofile.server;
 
