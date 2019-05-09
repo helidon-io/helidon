@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,6 +177,7 @@ public final class OidcSupport implements Service {
         MultivaluedHashMap<String, String> formValues = new MultivaluedHashMap<>();
         formValues.putSingle("grant_type", "authorization_code");
         formValues.putSingle("code", code);
+        formValues.putSingle("redirect_uri", oidcConfig.redirectUriWithHost());
 
         Response response = oidcConfig.tokenEndpoint().request()
                 .accept(MediaType.APPLICATION_JSON_TYPE)
