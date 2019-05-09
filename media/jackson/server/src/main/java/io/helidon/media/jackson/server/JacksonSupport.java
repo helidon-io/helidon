@@ -61,12 +61,12 @@ public final class JacksonSupport extends JsonService {
         final ObjectMapper objectMapper = this.objectMapperProvider.apply(request, response);
         // Don't register reader/writer if content is a String (see #645)
         request.content()
-               .registerReader(cls -> !String.class.isAssignableFrom(cls) &&
-                                      objectMapper.canDeserialize(objectMapper.constructType(cls)),
+               .registerReader(cls -> !String.class.isAssignableFrom(cls)
+                                      && objectMapper.canDeserialize(objectMapper.constructType(cls)),
                                JacksonProcessing.reader(objectMapper));
-        response.registerWriter(payload -> !(payload instanceof String) &&
-                                           objectMapper.canSerialize(payload.getClass()) &&
-                                           acceptsJson(request, response),
+        response.registerWriter(payload -> !(payload instanceof String)
+                                           && objectMapper.canSerialize(payload.getClass())
+                                           && acceptsJson(request, response),
                                 JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
         request.next();
     }
