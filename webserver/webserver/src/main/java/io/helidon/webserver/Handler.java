@@ -93,7 +93,7 @@ public interface Handler extends BiConsumer<ServerRequest, ServerResponse> {
             cs.thenAccept(entity -> {
                 OptionalHelper.from(context)
                         .ifPresentOrElse(theContext -> {
-                            Contexts.inContext(theContext, () -> entityHandler.accept(req, res, entity));
+                            Contexts.runInContext(theContext, () -> entityHandler.accept(req, res, entity));
                         }, () -> entityHandler.accept(req, res, entity));
 
             }).exceptionally(throwable -> {
