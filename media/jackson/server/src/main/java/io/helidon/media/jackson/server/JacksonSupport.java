@@ -59,12 +59,12 @@ public final class JacksonSupport extends JsonService {
     @Override
     public void accept(final ServerRequest request, final ServerResponse response) {
         final ObjectMapper objectMapper = this.objectMapperProvider.apply(request, response);
-        // Don't register reader/writer if content is a String (see #645)
+        // Don't register reader/writer if content is a CharSequence (likely String) (see #645)
         request.content()
-               .registerReader(cls -> !String.class.isAssignableFrom(cls)
+               .registerReader(cls -> !CharSequence.class.isAssignableFrom(cls)
                                       && objectMapper.canDeserialize(objectMapper.constructType(cls)),
                                JacksonProcessing.reader(objectMapper));
-        response.registerWriter(payload -> !(payload instanceof String)
+        response.registerWriter(payload -> !(payload instanceof CharSequence)
                                            && objectMapper.canSerialize(payload.getClass())
                                            && acceptsJson(request, response),
                                 JacksonProcessing.writer(objectMapper, determineCharset(response.headers())));
