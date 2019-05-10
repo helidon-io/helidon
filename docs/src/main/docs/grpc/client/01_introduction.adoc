@@ -36,7 +36,7 @@ In later sections in this document, you will see how to customize both `ClientSe
 == Quick Start
 
 First, create and run a minimalist `HelloService` gRPC server application as described in the
-https://github.com/aseovic/helidon/blob/master/docs/src/main/docs/grpc/01_introduction.adoc[gRPC Server] documentation.
+https://github.com/oracle/helidon/blob/master/docs/src/main/docs/grpc/01_introduction.adoc[gRPC Server] documentation.
 
 Assuming that the server is running on port 1408, create a client as follows:
 
@@ -80,7 +80,7 @@ how you can configure custom marshallers, later in this document.
 The <<getting-started/03_managing-dependencies.adoc, Getting Started>> page describes how you
 should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.grpc</groupId>

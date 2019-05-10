@@ -70,7 +70,7 @@ response marshalling, as well as how you can configure custom marshallers, later
 The <<about/04_managing-dependencies.adoc, Getting Started>> page describes how you
 should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.grpc</groupId>

@@ -106,9 +106,6 @@ public class GrpcChannelsProviderTest {
         assertThat(cfg.sslDescriptor().tlsKey(), equalTo("/certs/clientkey"));
     }
 
-    // "default_host_port", "default_host", "default_port", "default_host_port_ssl_disabled", "default_host_ssl_one_way",
-    // "default_port_ssl",
-
     @Test
     public void testConfigLoading() {
         String[] expectedChannelConfigNames = new String[] {
@@ -193,5 +190,4 @@ public class GrpcChannelsProviderTest {
         assertThat(GrpcChannelsProvider.create().channels().size(), equalTo(1));
         assertThat(GrpcChannelsProvider.create().channel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME), notNullValue());
     }
-
 }
