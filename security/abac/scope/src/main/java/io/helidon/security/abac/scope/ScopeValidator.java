@@ -93,7 +93,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(Scopes.class);
+        return CollectionsHelper.setOf(Scope.class, Scopes.class);
     }
 
     @Override
