@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.net.ssl.SSLException;
 
 import io.helidon.config.Config;
+import io.helidon.grpc.core.GrpcSslDescriptor;
 
 import io.grpc.Channel;
 import io.grpc.ManagedChannel;
@@ -49,19 +50,24 @@ public class GrpcChannelsProvider {
     public static final String DEFAULT_HOST = "localhost";
 
     /**
+     * The configuration key for the channels configuration.
+     */
+    public static final String CFG_KEY_CHANNELS = "channels";
+
+    /**
      * A constant for holding the default port (which is "1408").
      */
     public static final int DEFAULT_PORT = 1408;
 
     private Map<String, GrpcChannelDescriptor> channelConfigs;
 
-    private GrpcChannelsProvider(Map<String, GrpcChannelDescriptor> channelConfigs) {
-        this.channelConfigs = new HashMap<>(channelConfigs);
+    private GrpcChannelsProvider(Map<String, GrpcChannelDescriptor> channelDescriptors) {
+        this.channelConfigs = new HashMap<>(channelDescriptors);
     }
 
     /**
      * Builds a new instance of {@link GrpcChannelsProvider} using default configuration. The
-     * default configuration connects to "localhost:1408" with no ssl.
+     * default configuration connects to "localhost:1408" without SSL.
      *
      * @return a new instance of {@link GrpcChannelsProvider}
      */
@@ -70,8 +76,7 @@ public class GrpcChannelsProvider {
     }
 
     /**
-     * u
-     * Builds a new instance of {@link GrpcChannelsProvider} using the specified configuration.
+     * Creates a {@link GrpcChannelsProvider} using the specified configuration.
      *
      * @param config The externalized configuration.
      * @return a new instance of {@link GrpcChannelsProvider}
@@ -101,17 +106,21 @@ public class GrpcChannelsProvider {
 
     private static SslContext createClientSslContext(String trustCertCollectionFilePath,
                                                      String clientCertChainFilePath,
-                                                     String clientPrivateKeyFilePath) throws SSLException {
+                                                     String clientPrivateKeyFilePath) {
+        try {
+            SslContextBuilder builder = GrpcSslContexts.forClient();
+            if (trustCertCollectionFilePath != null) {
+                builder.trustManager(new File(trustCertCollectionFilePath));
+            }
 
-        SslContextBuilder builder = GrpcSslContexts.forClient();
-        if (trustCertCollectionFilePath != null) {
-            builder.trustManager(new File(trustCertCollectionFilePath));
-        }
+            if (clientCertChainFilePath != null && clientPrivateKeyFilePath != null) {
+                builder.keyManager(new File(clientCertChainFilePath), new File(clientPrivateKeyFilePath));
+            }
 
-        if (clientCertChainFilePath != null && clientPrivateKeyFilePath != null) {
-            builder.keyManager(new File(clientCertChainFilePath), new File(clientPrivateKeyFilePath));
+            return builder.build();
+        } catch (SSLException e) {
+            throw new RuntimeException("Error creating SSL context", e);
         }
-        return builder.build();
     }
 
     // --------------- private methods of GrpcChannelsProvider ---------------
@@ -121,12 +130,10 @@ public class GrpcChannelsProvider {
      *
      * @param name the name of the channel configuration as specified in the configuration file
      * @return a new instance of {@link io.grpc.Channel}
-     * @throws SSLException if any error during Channel creation
      * @throws NullPointerException if name is null
      * @throws IllegalArgumentException if name is empty
      */
-    public Channel channel(String name)
-            throws SSLException {
+    public Channel channel(String name) {
         if (name == null) {
             throw new NullPointerException("name cannot be null.");
         }
@@ -141,25 +148,27 @@ public class GrpcChannelsProvider {
         return createChannel(chCfg);
     }
 
-    /* package private */
     Map<String, GrpcChannelDescriptor> channels() {
         return channelConfigs;
     }
 
-    private Channel createChannel(GrpcChannelDescriptor cfg)
-            throws SSLException {
+    private Channel createChannel(GrpcChannelDescriptor descriptor) {
 
         ManagedChannel channel;
-        if (cfg.sslDescriptor() == null || !cfg.sslDescriptor().isEnabled()) {
-            ManagedChannelBuilder builder = ManagedChannelBuilder.forAddress(cfg.host(), cfg.port());
+        GrpcSslDescriptor sslDescriptor = descriptor.sslDescriptor();
+
+        if (sslDescriptor == null || !sslDescriptor.isEnabled()) {
+            ManagedChannelBuilder builder = ManagedChannelBuilder.forAddress(descriptor.host(), descriptor.port());
             channel = builder.usePlaintext().build();
         } else {
-            channel = NettyChannelBuilder.forAddress(cfg.host(), cfg.port())
-                    .negotiationType(NegotiationType.TLS)
-                    .sslContext(createClientSslContext(cfg.sslDescriptor().tlsCaCert(),
-                                                       cfg.sslDescriptor().tlsCert(),
-                                                       cfg.sslDescriptor().tlsKey()))
-                    .build();
+            SslContext sslContext = createClientSslContext(sslDescriptor.tlsCaCert(),
+                                                           sslDescriptor.tlsCert(),
+                                                           sslDescriptor.tlsKey());
+
+            channel = NettyChannelBuilder.forAddress(descriptor.host(), descriptor.port())
+                                         .negotiationType(NegotiationType.TLS)
+                                         .sslContext(sslContext)
+                                         .build();
         }
         return channel;
     }
@@ -171,20 +180,23 @@ public class GrpcChannelsProvider {
 
         private Map<String, GrpcChannelDescriptor> channelConfigs = new HashMap<>();
 
-        private Builder(Config grpcConfigRoot) {
+        private Builder(Config config) {
 
             // Add the default channel (which can be overridden in the config)
-            channel("default", GrpcChannelDescriptor.builder().build());
+            channel(DEFAULT_CHANNEL_NAME, GrpcChannelDescriptor.builder().build());
 
-            if (grpcConfigRoot == null) {
+            if (config == null) {
                 return;
             }
 
-            for (Config channelConfig : grpcConfigRoot.get("channels").asNodeList().get()) {
-                String key = channelConfig.key().name();
-                GrpcChannelDescriptor cfg = channelConfig.asNode().get().as(GrpcChannelDescriptor.class).get();
+            Config channelsConfig = config.get(CFG_KEY_CHANNELS);
 
-                channelConfigs.put(key, cfg);
+            if (channelsConfig.exists()) {
+                for (Config channelConfig : channelsConfig.asNodeList().get()) {
+                    String key = channelConfig.key().name();
+                    GrpcChannelDescriptor cfg = channelConfig.asNode().get().as(GrpcChannelDescriptor.class).get();
+                    channelConfigs.put(key, cfg);
+                }
             }
         }
 

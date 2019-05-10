@@ -21,6 +21,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.grpc.core.GrpcSslDescriptor;
 
+import io.grpc.Channel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -52,6 +53,15 @@ public class GrpcChannelsProviderTest {
     public static void initGrpcConfig() {
         Config cfg = Config.create(ConfigSources.classpath("test-client-config.yaml"));
         grpcConfig = GrpcChannelsProvider.create(cfg.get("grpc"));
+    }
+
+    @Test
+    public void shouldBuildWithoutChannelsConfig() {
+        GrpcChannelsProvider provider = GrpcChannelsProvider.create(Config.empty());
+
+        // should only have the default channel
+        Channel channel = provider.channel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME);
+        assertThat(channel, is(notNullValue()));
     }
 
     @Test
