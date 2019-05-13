@@ -233,6 +233,14 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                     .map(List::stream)
                     .forEach(stream -> stream.map(ScopeValidator.Scope::value)
                             .forEach(result::add));
+
+            List<ScopeValidator.Scope> expectedScopeAnnotations = securityLevel.combineAnnotations(ScopeValidator.Scope.class,
+                                                                                                   EndpointConfig.AnnotationScope
+                                                                                                           .values());
+
+            expectedScopeAnnotations.stream()
+                    .map(ScopeValidator.Scope::value)
+                    .forEach(result::add);
         }
 
         return result;
