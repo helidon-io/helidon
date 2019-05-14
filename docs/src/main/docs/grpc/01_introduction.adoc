@@ -16,16 +16,17 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= gRPC Server Introduction
 :pagename: grpc-server-introduction
 :description: Helidon gRPC Server Introduction
 :keywords: helidon, grpc, java
 
-= gRPC Server Introduction
-
 Helidon gRPC Server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 
-=== _Experimental Feature_
-The Helidon gRPC feature is currently experimental and the APIs are subject to changes until gRPC support is stabilized.
+== Experimental
+
+WARNING: The Helidon gRPC feature is currently experimental and the APIs are
+ subject to changes until gRPC support is stabilized.
 
 == Quick Start
 
@@ -66,7 +67,7 @@ response marshalling, as well as how you can configure custom marshallers, later
 
 == Maven Coordinates
 
-The <<getting-started/03_managing-dependencies.adoc, Getting Started>> page describes how you
+The <<about/04_managing-dependencies.adoc, Getting Started>> page describes how you
 should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
 [source,xml,subs="verbatim,attributes"]
