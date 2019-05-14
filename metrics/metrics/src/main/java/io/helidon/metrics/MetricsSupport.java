@@ -269,16 +269,28 @@ public final class MetricsSupport implements Service {
 
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Counter totalCount = vendor.counter(new Metadata(metricPrefix + "count",
-                                                         "Total number of requests",
+                                                         "Total number of HTTP requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
                                                          MetricUnits.NONE));
 
         Meter totalMeter = vendor.meter(new Metadata(metricPrefix + "meter",
-                                                     "Meter for overall requests",
+                                                     "Meter for overall HTTP requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
                                                      MetricUnits.NONE));
+
+        vendor.counter(new Metadata("grpc.requests.count",
+                                    "Total number of gRPC requests",
+                                    "Each gRPC request (regardless of the method) will increase this counter",
+                                    MetricType.COUNTER,
+                                    MetricUnits.NONE));
+
+        vendor.meter(new Metadata("grpc.requests.meter",
+                                  "Meter for overall gRPC requests",
+                                  "Each gRPC request will mark the meter to see overall throughput",
+                                  MetricType.METERED,
+                                  MetricUnits.NONE));
 
         rules.any((req, res) -> {
             totalCount.inc();

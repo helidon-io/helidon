@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 import javax.json.Json;
@@ -30,9 +29,7 @@ import javax.json.JsonStructure;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.DataChunk;
-import io.helidon.common.http.MediaType;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.CharBuffer;
@@ -42,38 +39,9 @@ import io.helidon.media.common.ContentWriters;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Media type support for json processing.
+ * Support for json processing integration.
  */
 public final class JsonProcessing {
-    /**
-     * JSONP (JSON with Pending) can have this weird type.
-     */
-    public static final MediaType APPLICATION_JAVASCRIPT = MediaType.create("application", "javascript");
-    /**
-     * And the corresponding (obsolete, yet widely supported) text type.
-     */
-    public static final MediaType TEXT_JAVASCRIPT = MediaType.create("text", "javascript");
-
-    private static final Set<MediaType> SUPPORTED_MEDIA_TYPES = CollectionsHelper.setOf(
-            MediaType.APPLICATION_JSON,
-            APPLICATION_JAVASCRIPT,
-            TEXT_JAVASCRIPT
-    );
-
-    /**
-     * Check whether the type is supported by JSON Processing.
-     *
-     * @param type media type to check
-     * @return true if the media type checked is supported by JSON Processing
-     */
-    public static boolean isSupported(MediaType type) {
-        for (MediaType supportedMediaType : SUPPORTED_MEDIA_TYPES) {
-            if (supportedMediaType.test(type)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private final JsonReaderFactory jsonReaderFactory;
     private final JsonWriterFactory jsonWriterFactory;

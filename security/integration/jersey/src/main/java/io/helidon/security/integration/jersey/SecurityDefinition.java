@@ -16,13 +16,13 @@
 
 package io.helidon.security.integration.jersey;
 
-import java.lang.annotation.Annotation;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.helidon.security.AuditEvent;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
@@ -32,13 +32,9 @@ import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
  * Definition of security for one a method, resource class or application class.
  */
 class SecurityDefinition {
-    /*
-     * Custom annotations as required by each configured security provider
-     */
-    private final Map<Class<? extends Annotation>, List<Annotation>> applicationScope = new HashMap<>();
-    private final Map<Class<? extends Annotation>, List<Annotation>> resourceScope = new HashMap<>();
-    private final Map<Class<? extends Annotation>, List<Annotation>> operationScope = new HashMap<>();
+
     private final Map<AnnotationAnalyzer, AnnotationAnalyzer.AnalyzerResponse> analyzerResponses = new IdentityHashMap<>();
+    private final List<SecurityLevel> securityLevels = new ArrayList<>();
 
     /*
      * True if authentication is needed to execute.
@@ -69,9 +65,7 @@ class SecurityDefinition {
         result.authnOptional = this.authnOptional;
         result.authenticator = this.authenticator;
         result.authorizer = this.authorizer;
-        result.applicationScope.putAll(this.applicationScope);
-        result.resourceScope.putAll(this.resourceScope);
-        result.operationScope.putAll(this.operationScope);
+        result.securityLevels.addAll(this.securityLevels);
         result.authorizeByDefault = this.authorizeByDefault;
         result.atzExplicit = this.atzExplicit;
 
@@ -141,16 +135,10 @@ class SecurityDefinition {
         }
 
         int count = 0;
-        for (List<Annotation> annotations : applicationScope.values()) {
-            count += annotations.size();
+        for (SecurityLevel securityLevel : securityLevels) {
+            count += securityLevel.getClassLevelAnnotations().size();
+            count += securityLevel.getMethodLevelAnnotations().size();
         }
-        for (List<Annotation> annotations : resourceScope.values()) {
-            count += annotations.size();
-        }
-        for (List<Annotation> annotations : operationScope.values()) {
-            count += annotations.size();
-        }
-
         return (count != 0) || authorizeByDefault;
     }
 
@@ -166,16 +154,8 @@ class SecurityDefinition {
         return authorizer;
     }
 
-    Map<Class<? extends Annotation>, List<Annotation>> getApplicationScope() {
-        return applicationScope;
-    }
-
-    Map<Class<? extends Annotation>, List<Annotation>> getResourceScope() {
-        return resourceScope;
-    }
-
-    Map<Class<? extends Annotation>, List<Annotation>> getOperationScope() {
-        return operationScope;
+    public List<SecurityLevel> getSecurityLevels() {
+        return securityLevels;
     }
 
     public boolean isAudited() {

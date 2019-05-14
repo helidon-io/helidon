@@ -16,17 +16,15 @@
 
 package io.helidon.media.jsonb.server;
 
-import java.util.Collection;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
-import io.helidon.common.http.MediaType;
 import io.helidon.media.jsonb.common.JsonBinding;
 import io.helidon.webserver.Handler;
-import io.helidon.webserver.Routing;
+import io.helidon.webserver.JsonService;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
@@ -37,7 +35,7 @@ import static io.helidon.media.common.ContentTypeCharset.determineCharset;
  * A {@link Service} and a {@link Handler} that provides <a
  * href="http://json-b.net/">JSON-B</a> support to Helidon.
  */
-public final class JsonBindingSupport implements Service, Handler {
+public final class JsonBindingSupport extends JsonService {
 
     private final BiFunction<? super ServerRequest, ? super ServerResponse, ? extends Jsonb> jsonbProvider;
 
@@ -49,55 +47,15 @@ public final class JsonBindingSupport implements Service, Handler {
     }
 
     @Override
-    public void update(final Routing.Rules routingRules) {
-        routingRules.any(this);
-    }
-
-    @Override
     public void accept(final ServerRequest request, final ServerResponse response) {
         final Jsonb jsonb = this.jsonbProvider.apply(request, response);
+        // Don't register reader/writer if content is a CharSequence (String) (see #645)
         request.content()
-            .registerReader(cls -> true,
+            .registerReader(cls -> !CharSequence.class.isAssignableFrom(cls),
                             JsonBinding.reader(jsonb));
-        response.registerWriter(payload -> wantsJson(request, response),
+        response.registerWriter(payload -> !(payload instanceof CharSequence) && acceptsJson(request, response),
                                 JsonBinding.writer(jsonb, determineCharset(response.headers())));
         request.next();
-    }
-
-    private static boolean wantsJson(final ServerRequest request, final ServerResponse response) {
-        final boolean returnValue;
-        final MediaType outgoingMediaType = response.headers().contentType().orElse(null);
-        if (outgoingMediaType == null) {
-            final MediaType preferredType;
-            final Collection<? extends MediaType> acceptedTypes = request.headers().acceptedTypes();
-            if (acceptedTypes == null || acceptedTypes.isEmpty()) {
-                preferredType = MediaType.APPLICATION_JSON;
-            } else {
-                preferredType = acceptedTypes
-                    .stream()
-                    .map(type -> {
-                            if (type.test(MediaType.APPLICATION_JSON)) {
-                                return MediaType.APPLICATION_JSON;
-                            } else if (type.hasSuffix("json")) {
-                                return MediaType.create(type.type(), type.subtype());
-                            } else {
-                                return null;
-                            }
-                        })
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
-            }
-            if (preferredType == null) {
-                returnValue = false;
-            } else {
-                response.headers().contentType(preferredType);
-                returnValue = true;
-            }
-        } else {
-            returnValue = MediaType.JSON_PREDICATE.test(outgoingMediaType);
-        }
-        return returnValue;
     }
 
     /**

@@ -36,6 +36,7 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.SecurityContext;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -113,7 +114,11 @@ public class JerseySupport implements Service {
      */
     private JerseySupport(Application application, ExecutorService service) {
         this.appHandler = new ApplicationHandler(application, new WebServerBinder());
-        this.service = service != null ? service : Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        ExecutorService executorService = (service != null)
+                ? service
+                : Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+
+        this.service = Contexts.wrap(executorService);
     }
 
     @Override

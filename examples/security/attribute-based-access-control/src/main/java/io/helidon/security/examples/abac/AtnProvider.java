@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.security.AuthenticationResponse;
@@ -36,6 +37,7 @@ import io.helidon.security.Grant;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.spi.AuthenticationProvider;
@@ -47,24 +49,30 @@ import io.helidon.security.spi.SynchronousProvider;
 public class AtnProvider extends SynchronousProvider implements AuthenticationProvider {
     @Override
     protected AuthenticationResponse syncAuthenticate(ProviderRequest providerRequest) {
-
-        List<Authentications> authenticationAnnots = providerRequest.endpointConfig()
-                .combineAnnotations(Authentications.class, EndpointConfig.AnnotationScope.METHOD);
-
-        List<Authentication> authentications = new LinkedList<>();
-        authenticationAnnots.forEach(atn -> authentications.addAll(Arrays.asList(atn.value())));
-
+        List<SecurityLevel> securityLevels = providerRequest.endpointConfig().securityLevels();
+        ListIterator<SecurityLevel> listIterator = securityLevels.listIterator(securityLevels.size());
         Subject user = null;
         Subject service = null;
+        while (listIterator.hasPrevious()) {
+            SecurityLevel securityLevel = listIterator.previous();
+            List<Authentications> authenticationAnnots = securityLevel
+                    .filterAnnotations(Authentications.class, EndpointConfig.AnnotationScope.METHOD);
 
-        for (Authentication authentication : authentications) {
-            if (authentication.type() == SubjectType.USER) {
-                user = buildSubject(authentication);
-            } else {
-                service = buildSubject(authentication);
+            List<Authentication> authentications = new LinkedList<>();
+            authenticationAnnots.forEach(atn -> authentications.addAll(Arrays.asList(atn.value())));
+
+
+            if (!authentications.isEmpty()) {
+                for (Authentication authentication : authentications) {
+                    if (authentication.type() == SubjectType.USER) {
+                        user = buildSubject(authentication);
+                    } else {
+                        service = buildSubject(authentication);
+                    }
+                }
+                break;
             }
         }
-
         return AuthenticationResponse.success(user, service);
     }
 

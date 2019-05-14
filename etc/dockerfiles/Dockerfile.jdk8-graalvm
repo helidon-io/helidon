@@ -22,10 +22,11 @@ RUN set -x \
     && apt-get -y update \
     && apt-get -y install curl
 
-RUN curl -O -L https://github.com/oracle/graal/releases/download/vm-1.0.0-rc13/graalvm-ce-1.0.0-rc13-linux-amd64.tar.gz && \
+RUN curl -O -L https://github.com/oracle/graal/releases/download/vm-19.0.0/graalvm-ce-linux-amd64-19.0.0.tar.gz && \
     tar -xvzf graalvm-*.tar.gz && \
     rm graalvm-*.tar.gz && \
-    mv graalvm-* graalvm
+    mv graalvm-* graalvm && \
+    graalvm/bin/gu install native-image
 
 RUN cd graalvm && \
     rm -rf \

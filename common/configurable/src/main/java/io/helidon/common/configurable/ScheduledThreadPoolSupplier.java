@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,19 @@
 package io.helidon.common.configurable;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
  * Supplier of a custom scheduled thread pool.
+ * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final int EXECUTOR_DEFAULT_CORE_POOL_SIZE = 16;
@@ -38,7 +41,7 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
     private final boolean isDaemon;
     private final String threadNamePrefix;
     private final boolean prestart;
-    private volatile ScheduledThreadPoolExecutor instance;
+    private volatile ScheduledExecutorService instance;
 
     private ScheduledThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -76,25 +79,31 @@ public final class ScheduledThreadPoolSupplier implements Supplier<ExecutorServi
         return builder().build();
     }
 
-    @Override
-    public synchronized ScheduledThreadPoolExecutor get() {
-        if (null == instance) {
-            instance = new ScheduledThreadPoolExecutor(corePoolSize,
-                    new ThreadFactory() {
-                        private AtomicInteger value = new AtomicInteger();
+    ScheduledThreadPoolExecutor getThreadPool() {
+        ScheduledThreadPoolExecutor result;
+        result = new ScheduledThreadPoolExecutor(corePoolSize,
+                                               new ThreadFactory() {
+                                                   private final AtomicInteger value = new AtomicInteger();
 
-                        @Override
-                        public Thread newThread(Runnable r) {
-                            Thread t = new Thread(null,
-                                    r,
-                                    threadNamePrefix + value.incrementAndGet());
-                            t.setDaemon(isDaemon);
-                            return t;
-                        }
-                    });
-            if (prestart) {
-                instance.prestartAllCoreThreads();
-            }
+                                                   @Override
+                                                   public Thread newThread(Runnable r) {
+                                                       Thread t = new Thread(null,
+                                                                             r,
+                                                                             threadNamePrefix + value.incrementAndGet());
+                                                       t.setDaemon(isDaemon);
+                                                       return t;
+                                                   }
+                                               });
+        if (prestart) {
+            result.prestartAllCoreThreads();
+        }
+        return result;
+    }
+
+    @Override
+    public synchronized ScheduledExecutorService get() {
+        if (null == instance) {
+            instance = Contexts.wrap(getThreadPool());
         }
         return instance;
     }

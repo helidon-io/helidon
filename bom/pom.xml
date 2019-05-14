@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.0.4-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
@@ -50,6 +50,17 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-test-support</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- gRPC server -->
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- media -->
@@ -172,6 +183,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
+                <artifactId>helidon-security-integration-grpc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-jersey</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -186,10 +202,10 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-            <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-abac</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-abac</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-abac-time</artifactId>
@@ -323,6 +339,11 @@
                 <artifactId>helidon-common-service-loader</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-context</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- tracing -->
             <dependency>
@@ -405,7 +426,32 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-jedis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jta</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -416,6 +462,12 @@
             <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-graal-native-image-extension</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- SE OpenAPI support -->
+            <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

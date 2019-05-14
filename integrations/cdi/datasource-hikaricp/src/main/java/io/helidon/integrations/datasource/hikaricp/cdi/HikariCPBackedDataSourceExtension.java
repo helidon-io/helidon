@@ -239,7 +239,7 @@ public class HikariCPBackedDataSourceExtension implements Extension {
                 assert name != null;
                 final String value = propertyString.substring(equalsIndex + 1);
                 assert value != null;
-                properties.setProperty("dataSource." + name, value);
+                properties.setProperty("dataSource." + name.trim(), value.trim());
             }
         }
 
@@ -327,34 +327,34 @@ public class HikariCPBackedDataSourceExtension implements Extension {
         final String databaseName = dsd.databaseName();
         assert databaseName != null;
         if (!databaseName.isEmpty()) {
-            properties.setProperty("datasource.databaseName", databaseName);
+            properties.setProperty("dataSource.databaseName", databaseName);
         }
 
         // description -> dataSource.description (standard DataSource property)
         final String description = dsd.description();
         assert description != null;
         if (!description.isEmpty()) {
-            properties.setProperty("datasource.description", description);
+            properties.setProperty("dataSource.description", description);
         }
 
         // portNumber -> dataSource.portNumber (standard DataSource property)
         final int portNumber = dsd.portNumber();
         if (portNumber >= 0) {
-            properties.setProperty("datasource.portNumber", String.valueOf(portNumber));
+            properties.setProperty("dataSource.portNumber", String.valueOf(portNumber));
         }
 
         // serverName -> dataSource.serverName (standard DataSource property)
         final String serverName = dsd.serverName();
         assert serverName != null;
         if (!serverName.isEmpty()) {
-            properties.setProperty("datasource.serverName", serverName);
+            properties.setProperty("dataSource.serverName", serverName);
         }
 
         // url -> dataSource.url (standard DataSource property)
         final String url = dsd.url();
         assert url != null;
         if (!url.isEmpty()) {
-            properties.setProperty("datasource.url", url);
+            properties.setProperty("dataSource.url", url);
         }
 
         return returnValue;

@@ -20,6 +20,8 @@ import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -35,6 +37,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.jwt.Jwt;
@@ -87,7 +90,15 @@ public class JwtAuthProviderTest {
                 .header("Authorization", "bearer " + WRONG_TOKEN)
                 .build();
         EndpointConfig ec = mock(EndpointConfig.class);
-        when(ec.combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION))
+
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        SecurityLevel classSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+        securityLevels.add(classSecurityLevel);
+
+        when(ec.securityLevels()).thenReturn(securityLevels);
+        when(appSecurityLevel.filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(listOf(new LoginConfig(){
                     @Override
                     public Class<? extends Annotation> annotationType() {
@@ -391,11 +402,16 @@ public class JwtAuthProviderTest {
         when(atnRequest.env()).thenReturn(se);
 
         EndpointConfig ep = mock(EndpointConfig.class);
+        SecurityLevel appSecurityLevel = mock(SecurityLevel.class);
+        List<SecurityLevel> securityLevels = new ArrayList<>();
+        securityLevels.add(appSecurityLevel);
+
         LoginConfig lc = mock(LoginConfig.class);
         when(lc.authMethod()).thenReturn(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD);
         when(lc.realmName()).thenReturn("");
 
-        when(ep.combineAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.APPLICATION))
+        when(ep.securityLevels()).thenReturn(securityLevels);
+        when(appSecurityLevel.filterAnnotations(LoginConfig.class, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(listOf(lc));
         when(atnRequest.endpointConfig()).thenReturn(ep);
 

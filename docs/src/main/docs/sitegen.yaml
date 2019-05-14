@@ -39,8 +39,10 @@ header:
   stylesheets:
     - path: "css/styles.css"
 pages:
-  - includes:
-      - "**/*.adoc"
+    - includes:
+        - "**/*.adoc"
+      excludes:
+        - "grpc/09_marshalling.adoc"
 backend:
     name: "vuetify"
     homePage: "about/01_overview.adoc"
@@ -68,40 +70,48 @@ backend:
                 type: "icon"
                 value: "settings_ethernet"
               items:
-                -  includes:
-                     - "webserver/*.adoc"
+                - includes:
+                    - "webserver/*.adoc"
+            - title: "gRPC server"
+              pathprefix: "/grpc"
+              glyph:
+                type: "icon"
+                value: "swap_horiz"
+              items:
+                - includes:
+                    - "grpc/*.adoc"
             - title: "Config"
               pathprefix: "/config"
               glyph:
                 type: "icon"
                 value: "settings"
               items:
-                -  includes:
-                     - "config/*.adoc"
+                - includes:
+                    - "config/*.adoc"
             - title: "Security"
               pathprefix: "/security"
               glyph:
                 type: "icon"
                 value: "security"
               items:
-                -  includes:
-                     - "security/*.adoc"
+                - includes:
+                    - "security/*.adoc"
             - title: "MicroProfile"
               pathprefix: "/microprofile"
               glyph:
                 type: "icon"
                 value: "widgets"
               items:
-                -  includes:
-                     - "microprofile/*.adoc"
+                - includes:
+                    - "microprofile/*.adoc"
             - title: "Extensions"
               pathprefix: "/extensions"
               glyph:
                 type: "icon"
                 value: "extension"
               items:
-                -  includes:
-                     - "extensions/*.adoc"
+                - includes:
+                    - "extensions/*.adoc"
             - title: "Metrics"
               pathprefix: "/metrics"
               glyph:

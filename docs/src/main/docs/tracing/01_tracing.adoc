@@ -22,7 +22,7 @@
 
 == Tracing Support
 Helidon includes support for tracing through the `https://opentracing.io/[OpenTracing]` APIs.
-Tracing is integrated with WebServer and Security.
+Tracing is integrated with WebServer, gRPC Server, and Security.
 
 Support for specific tracers is abstracted. Your application can depend on
 the abstraction layer and provide a specific tracer implementation as a Java
@@ -42,6 +42,8 @@ Declare the following dependency in your project to use the tracer abstraction:
 </dependency>
 ----
 
+=== Configuring Tracing with WebServer
+
 To configure tracer with WebServer:
 
 [source,java]
@@ -55,6 +57,40 @@ ServerConfiguration.builder()
 ----
 <1> The name of the application (service) to associate with the tracing events
 <2> The endpoint for tracing events, specific to the tracer used, usually loaded from Config
+
+=== Configuring Tracing with gRPC Server
+
+[source,java]
+
+.Configuring OpenTracing `Tracer`
+----
+Tracer tracer = (Tracer) TracerBuilder.create("Server")
+        .collectorUri(URI.create("http://10.0.0.18:9411"))   // <1>
+        .build();
+----
+<1> If using zipkin tracing system, the endpoint would be:
+----
+http://10.0.0.18:9411/api/v2/spans
+----
+
+.Configuring Tracing Attributes
+----
+TracingConfiguration tracingConfig = new TracingConfiguration.Builder()
+                .withStreaming()
+                .withVerbosity()
+                .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,
+                     ServerRequestAttribute.HEADERS,
+                     ServerRequestAttribute.METHOD_NAME)
+                .build();
+----
+
+.Configuring gRPC Server
+----
+GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().port(0)
+                .tracer(tracer)
+                .tracingConfig(tracingConfig)
+                .build();
+----
 
 === Configuration using Helidon Config [[Tracing-config]]
 There is a set of common configuration options that this section describes. In addition each tracer implementation
