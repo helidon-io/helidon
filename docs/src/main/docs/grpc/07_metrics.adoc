@@ -16,11 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Service Metrics
 :pagename: grpc-server-metrics
 :description: Helidon gRPC Service Metrics
 :keywords: helidon, grpc, java
-
-= Service Metrics
 
 Helidon gRPC Server has built-in support for metrics capture, which allows
 service developers to easily enable application-level metrics for their services.

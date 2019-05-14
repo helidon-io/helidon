@@ -16,12 +16,13 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Service Implementation
 :javadoc-base-url-api: {javadoc-base-url}?io/helidon/grpc/server
 :pagename: grpc-server-service-implementation
 :description: Helidon gRPC Service Implementation
 :keywords: helidon, grpc, java
 
-= Service Implementation
+== Service Implementation
 
 While Helidon gRPC Server allows you to deploy any standard gRPC service that
 implements `io.grpc.BindableService` interface, including services generated
@@ -96,7 +97,7 @@ In order to implement Protobuf-based service, you would follow the official
 link:https://grpc.io/docs/quickstart/java.html[instructions] on the gRPC
 web site, which boil down to the following:
 
-==== Define the Service IDL
+=== Define the Service IDL
 
 For this example, we will re-implement the `EchoService` above as a Protobuf
 service in `echo.proto` file.
@@ -126,7 +127,7 @@ as well as the base class for the server-side service implementation.
 We can ignore the last one, and implement the service using Helidon gRPC framework
 instead.
 
-==== Implement the Service
+=== Implement the Service
 
 The service implementation will be very similar to our original implementation:
 
