@@ -37,7 +37,7 @@ import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.configurable.ThreadPoolSupplier;
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
@@ -190,7 +190,10 @@ public interface Server {
             }
 
             if (null == defaultExecutorService) {
-                defaultExecutorService = ThreadPoolSupplier.create(config.helidonConfig().get("server.executor-service"));
+                defaultExecutorService = ServerThreadPoolSupplier.builder()
+                                                                 .name("server")
+                                                                 .config(config.helidonConfig().get("server.executor-service"))
+                                                                 .build();
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");
