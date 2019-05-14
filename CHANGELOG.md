@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0]
 
 ### Notes
 
@@ -14,7 +14,8 @@ significant new features.
 
 ### Improvements
 
-These features represent work in progress and should be considered experimental:
+These features represent work in progress and should be considered experimental.
+These APIs are subject to change. 
 
 - Initial implementation of gRPC server/framework [543](https://github.com/oracle/helidon/pull/543)
 - Initial JTA/JPA support for MP [501](https://github.com/oracle/helidon/pull/501)
@@ -23,7 +24,7 @@ These features represent work in progress and should be considered experimental:
 
 ### Fixes
 
-- Graal native image update to work with GA [677](https://github.com/oracle/helidon/pull/677)
+- Graal native image update to work with 19 GA [677](https://github.com/oracle/helidon/pull/677)
 - Tracing: Activate and start instead of just starting the main span [598](https://github.com/oracle/helidon/pull/598)
 - Config: refactor change support [579](https://github.com/oracle/helidon/pull/579)
 - Config: Config object mapping was missing from bom pom. [529](https://github.com/oracle/helidon/pull/529)
@@ -295,7 +296,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.0.3...HEAD
+[1.1.0]: https://github.com/oracle/helidon/compare/1.0.3...1.1.0
 [1.0.3]: https://github.com/oracle/helidon/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/oracle/helidon/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/oracle/helidon/compare/1.0.0...1.0.1
