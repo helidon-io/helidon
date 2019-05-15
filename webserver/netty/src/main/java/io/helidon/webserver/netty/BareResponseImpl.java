@@ -64,6 +64,7 @@ class BareResponseImpl implements BareResponse {
 
     // See HttpConversionUtil.ExtensionHeaderNames
     private static final String HTTP_2_HEADER_PREFIX = "x-http2";
+    private static final SocketClosedException CLOSED = new SocketClosedException("Response channel is closed!");
 
     private final boolean keepAlive;
     private final ChannelHandlerContext ctx;
@@ -75,6 +76,8 @@ class BareResponseImpl implements BareResponse {
     private final Thread thread;
     private final long requestId;
     private final HttpHeaders requestHeaders;
+    private final ChannelFuture channelClosedFuture;
+    private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
 
     private volatile Flow.Subscription subscription;
 
@@ -94,21 +97,37 @@ class BareResponseImpl implements BareResponse {
         this.thread = thread;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
-        this.responseFuture
+        this.ctx = ctx;
+        this.requestId = requestId;
+        this.keepAlive = HttpUtil.isKeepAlive(request);
+        this.requestHeaders = request.headers();
+
+        responseFuture
                 .thenRun(() -> headersFuture.complete(this))
                 .exceptionally(thr -> {
                     headersFuture.completeExceptionally(thr);
                     return null;
                 });
-        this.ctx = ctx;
-        this.requestId = requestId;
-        ctx.channel()
-           .closeFuture()
-           // to make this work, when programmatically closing the channel, the responseFuture must be closed beforehand!
-           .addListener(channelFuture -> responseFuture
-                   .completeExceptionally(new SocketClosedException("Response channel is closed!")));
-        this.keepAlive = HttpUtil.isKeepAlive(request);
-        this.requestHeaders = request.headers();
+
+        // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
+        // while the channel remains open, and each response adds a new listener that references 'this'.
+        // Use fields to avoid capturing lambdas.
+
+        this.channelClosedListener = this::channelClosed;
+        this.channelClosedFuture = ctx.channel().closeFuture();
+
+        // to make this work, when programmatically closing the channel the responseFuture must be closed first!
+        channelClosedFuture.addListener(channelClosedListener);
+
+        responseFuture.thenRun(this::removeChannelClosedListener);
+    }
+
+    private void channelClosed(Future<? super Void> future) {
+        responseFuture.completeExceptionally(CLOSED);
+    }
+
+    private void removeChannelClosedListener() {
+        channelClosedFuture.removeListener(channelClosedListener);
     }
 
     @Override
