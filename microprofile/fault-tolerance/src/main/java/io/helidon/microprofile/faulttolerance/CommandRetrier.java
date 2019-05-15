@@ -19,6 +19,7 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -28,6 +29,9 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
+
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 
 import com.netflix.config.ConfigurationManager;
 import com.netflix.hystrix.exception.HystrixRuntimeException;

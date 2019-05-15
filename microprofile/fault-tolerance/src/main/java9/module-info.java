@@ -23,6 +23,7 @@ module io.helidon.microprofile.faulttolerance {
     requires javax.inject;
     requires javax.interceptor.api;
 
+    requires io.helidon.common.context;
     requires io.helidon.common.configurable;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
