@@ -77,7 +77,6 @@ import org.glassfish.jersey.server.model.Resource;
  * thread pool which can be configured by one of the JerseySupport constructor.
  */
 public class JerseySupport extends AbstractBinder implements Service {
-    private static final String THREAD_POOL_BINDING_NAME = "Jersey";
 
     /**
      * The request scoped span qualifier that can be injected into a Jersey resource.
