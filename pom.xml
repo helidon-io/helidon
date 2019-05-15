@@ -128,7 +128,7 @@
         <version.lib.jackson>2.9.8</version.lib.jackson>
         <version.lib.jaegertracing>0.34.0</version.lib.jaegertracing>
         <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
-        <version.lib.jandex>2.0.4.Final</version.lib.jandex>
+        <version.lib.jandex>2.1.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.0</version.lib.jaxb-api>
         <version.lib.jaxb-core>2.3.0.1</version.lib.jaxb-core>
         <version.lib.jaxb-impl>2.3.2</version.lib.jaxb-impl>
