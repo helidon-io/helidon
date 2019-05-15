@@ -40,6 +40,7 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.providers.abac.AbacAnnotation;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;
@@ -85,28 +86,29 @@ public final class TimeValidator implements AbacValidator<TimeValidator.TimeConf
     public TimeConfig fromAnnotations(EndpointConfig endpointConfig) {
         TimeConfig.Builder builder = TimeConfig.builder();
 
-        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
-            List<Annotation> annotations = new ArrayList<>();
-            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
-                annotations.addAll(list);
-            }
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof DaysOfWeek) {
-                    DaysOfWeek daw = (DaysOfWeek) annotation;
-                    for (DayOfWeek dayOfWeek : daw.value()) {
-                        builder.addDaysOfWeek(dayOfWeek);
-                    }
-                } else if (annotation instanceof TimesOfDay) {
-                    TimesOfDay tods = (TimesOfDay) annotation;
-                    for (TimeOfDay tod : tods.value()) {
+        for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
+            for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
+                List<Annotation> annotations = new ArrayList<>();
+                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
+                }
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof DaysOfWeek) {
+                        DaysOfWeek daw = (DaysOfWeek) annotation;
+                        for (DayOfWeek dayOfWeek : daw.value()) {
+                            builder.addDaysOfWeek(dayOfWeek);
+                        }
+                    } else if (annotation instanceof TimesOfDay) {
+                        TimesOfDay tods = (TimesOfDay) annotation;
+                        for (TimeOfDay tod : tods.value()) {
+                            builder.addBetween(LocalTime.parse(tod.from()),
+                                               LocalTime.parse(tod.to()));
+                        }
+                    } else if (annotation instanceof TimeOfDay) {
+                        TimeOfDay tod = (TimeOfDay) annotation;
                         builder.addBetween(LocalTime.parse(tod.from()),
                                            LocalTime.parse(tod.to()));
                     }
-                } else if (annotation instanceof TimeOfDay) {
-                    TimeOfDay tod = (TimeOfDay) annotation;
-                    builder.addBetween(LocalTime.parse(tod.from()),
-                                       LocalTime.parse(tod.to()));
                 }
             }
         }

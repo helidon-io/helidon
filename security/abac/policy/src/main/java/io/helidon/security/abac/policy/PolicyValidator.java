@@ -37,6 +37,7 @@ import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.abac.policy.spi.PolicyExecutor;
 import io.helidon.security.abac.policy.spi.PolicyExecutorService;
 import io.helidon.security.providers.abac.AbacAnnotation;
@@ -128,16 +129,17 @@ public final class PolicyValidator implements AbacValidator<PolicyValidator.Poli
     @Override
     public PolicyConfig fromAnnotations(EndpointConfig endpointConfig) {
         PolicyConfig.Builder resultBuilder = PolicyConfig.builder();
-        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
-            List<Annotation> annotations = new ArrayList<>();
-            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
-                annotations.addAll(list);
-            }
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof PolicyStatement) {
-                    PolicyStatement statement = (PolicyStatement) annotation;
-                    resultBuilder.from(PolicyConfig.builder().from(statement).build());
+        for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
+            for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
+                List<Annotation> annotations = new ArrayList<>();
+                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
+                }
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof PolicyStatement) {
+                        PolicyStatement statement = (PolicyStatement) annotation;
+                        resultBuilder.from(PolicyConfig.builder().from(statement).build());
+                    }
                 }
             }
         }

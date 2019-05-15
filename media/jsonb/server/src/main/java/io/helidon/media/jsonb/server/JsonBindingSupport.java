@@ -49,10 +49,11 @@ public final class JsonBindingSupport extends JsonService {
     @Override
     public void accept(final ServerRequest request, final ServerResponse response) {
         final Jsonb jsonb = this.jsonbProvider.apply(request, response);
+        // Don't register reader/writer if content is a CharSequence (String) (see #645)
         request.content()
-            .registerReader(cls -> true,
+            .registerReader(cls -> !CharSequence.class.isAssignableFrom(cls),
                             JsonBinding.reader(jsonb));
-        response.registerWriter(payload -> acceptsJson(request, response),
+        response.registerWriter(payload -> !(payload instanceof CharSequence) && acceptsJson(request, response),
                                 JsonBinding.writer(jsonb, determineCharset(response.headers())));
         request.next();
     }

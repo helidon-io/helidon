@@ -16,11 +16,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= gRPC Server Security
 :description: Helidon Security gRPC integration
 :keywords: helidon, grpc, security
 
-= gRPC Server Security
 Security integration of the  <<grpc/01_introduction.adoc,gRPC server>>
+
+== Prerequisites
+
+Declare the following dependency in your project:
 
 [source,xml]
 .Maven Dependency
@@ -31,7 +35,7 @@ Security integration of the  <<grpc/01_introduction.adoc,gRPC server>>
 </dependency>
 ----
 
-==== Bootstrapping
+== Bootstrapping
 
 There are two steps to configure security with gRPC server:
 
@@ -109,7 +113,7 @@ security
         roles-allowed: ["admin"]
 ----
 
-==== Outbound security
+=== Outbound security
 Outbound security covers three scenarios:
 
 * Calling a secure gRPC service from inside a gRPC service method handler

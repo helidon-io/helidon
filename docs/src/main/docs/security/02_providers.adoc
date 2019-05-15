@@ -625,7 +625,7 @@ public class AbacResource {
 ----
 
 ==== Role Validator
-Checks whether user/service is in role(s)
+Checks whether user/service is in either of the required role(s).
 
 Configuration Key: role-validator
 
@@ -642,8 +642,27 @@ public class AbacResource {
 }
 ----
 
+===== Interaction with sub-resource locators
+When using sub-resource locators in JAX-RS, the roles allowed are collected from each "level" of
+ execution:
+ - Application class annotations
+ - Resource class annotations + resource method annotations
+ - Sub-resource class annotations + sub-resource method annotations
+ - Sub-resource class annotations + sub-resource method annotations (for every sub-resource on the path)
+
+The `RolesAllowed` or `Roles` annotation to be used is the last one in the path as defined above.
+
+_Example 1:_
+There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class.
+In this case the required role is `admin`.
+
+_Example 2:_
+There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class and
+ a `RolesAllowed("user")` defined on the method of the sub-resource that provides the response.
+In this case the required role is `user`.
+
 ==== Scope Validator
-Checks whether user has the defined scopes
+Checks whether user has all the required scopes.
 
 Configuration Key: scope-validator
 

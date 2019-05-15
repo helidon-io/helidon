@@ -106,12 +106,34 @@ class MainTest {
         runJsonFunctionalTest("mp", "");
     }
 
+
+    @Test
+    void basicTestMetricsHealthSE() throws Exception {
+        runMetricsAndHealthTest("se", "jsonp");
+    }
+
+    @Test
+    void basicTestMetricsHealthMP() throws Exception {
+        runMetricsAndHealthTest("mp", "");
+    }
+
+    @Test
+    void basicTestMetricsHealthJsonB() throws Exception {
+        runMetricsAndHealthTest("se", "jsonb");
+    }
+
+    @Test
+    void basicTestMetricsHealthJackson() throws Exception {
+        runMetricsAndHealthTest("se", "jackson");
+    }
+
     /**
      * Run some basic CRUD operations on the server. The server supports
      * running with any of our three JSON libraries: jsonp, jsonb, jackson.
      * So we set a system property to select the library to use before starting
      * the server
      *
+     * @param edition "mp", "se"
      * @param jsonLibrary "jsonp", "jsonb" or "jackson"
      * @throws Exception on test failure
      */
@@ -156,11 +178,24 @@ class MainTest {
         assertThat("HTTP response delete book", conn.getResponseCode(), is(200));
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"se", "mp" })
-    void metricsAndHealth(String edition) throws Exception {
+    /**
+     * Run some basic metrics and health operations on the server. The server supports
+     * running with any of our three JSON libraries: jsonp, jsonb, jackson.
+     * So we set a system property to select the library to use before starting
+     * the server
+     *
+     * @param edition "mp", "se"
+     * @param jsonLibrary "jsonp", "jsonb" or "jackson"
+     * @throws Exception on test failure
+     */
+    private void runMetricsAndHealthTest(String edition, String jsonLibrary) throws Exception {
 
-        startTheApplication(editionToJarPath(edition), Collections.emptyList());
+        List<String> systemPropertyArgs = new LinkedList<>();
+        if (jsonLibrary != null && !jsonLibrary.isEmpty()) {
+            systemPropertyArgs.add("-Dapp.json-library=" + jsonLibrary);
+        }
+
+        startTheApplication(editionToJarPath(edition), systemPropertyArgs);
 
         HttpURLConnection conn;
 
@@ -301,7 +336,7 @@ class MainTest {
         } else if ("mp".equals(edition)) {
             return appJarPathMP;
         } else {
-            return "bad-edition-" + edition;
+            throw new IllegalArgumentException("Invalid edition '" + edition + "'. Must be 'se' or 'mp'");
         }
     }
 }
