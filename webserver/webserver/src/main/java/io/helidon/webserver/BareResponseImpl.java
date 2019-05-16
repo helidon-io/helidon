@@ -97,15 +97,8 @@ class BareResponseImpl implements BareResponse {
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
 
-        responseFuture
-                .thenRun(() -> headersFuture.complete(this))
-                .exceptionally(thr -> {
-                    headersFuture.completeExceptionally(thr);
-                    return null;
-                });
-
         // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
-        // while the channel remains open, and each response adds a new listener that references 'this'.
+        // while the channel remains open since each response adds a new listener that references 'this'.
         // Use fields to avoid capturing lambdas.
 
         this.channelClosedListener = this::channelClosed;
@@ -114,15 +107,20 @@ class BareResponseImpl implements BareResponse {
         // to make this work, when programmatically closing the channel the responseFuture must be closed first!
         channelClosedFuture.addListener(channelClosedListener);
 
-        responseFuture.thenRun(this::removeChannelClosedListener);
+        responseFuture.whenComplete(this::responseComplete);
+    }
+
+    private void responseComplete(BareResponse self, Throwable throwable) {
+        if (throwable == null) {
+            headersFuture.complete(this);
+        } else {
+            headersFuture.completeExceptionally(throwable);
+        }
+        channelClosedFuture.removeListener(channelClosedListener);
     }
 
     private void channelClosed(Future<? super Void> future) {
         responseFuture.completeExceptionally(CLOSED);
-    }
-
-    private void removeChannelClosedListener() {
-        channelClosedFuture.removeListener(channelClosedListener);
     }
 
     @Override
