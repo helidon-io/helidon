@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
@@ -88,13 +89,18 @@ public class StringClient {
      * Call the unary {@code Lower} method using an async call.
      *
      * @param client  the StringService {@link GrpcServiceClient}
-     * @throws java.lang.Exception if the call fails
      */
-    public static void asyncUnary(GrpcServiceClient client) throws Exception {
-        CompletableFuture<StringMessage>  future = client.unary("Lower", inputMsg);
-        StringMessage response = future.get();
+    public static void asyncUnary(GrpcServiceClient client) {
+        CompletionStage<StringMessage> stage = client.unary("Lower", inputMsg);
 
-        System.out.println("Async Lower response: '" + response.getText() + "'");
+        stage.handle((response, error) -> {
+            if (error == null) {
+                System.out.println("Async Lower response: '" + response.getText() + "'");
+            } else {
+                error.printStackTrace();
+            }
+            return null;
+        });
     }
 
     /**
@@ -143,12 +149,17 @@ public class StringClient {
                 .collect(Collectors.toList());
 
         // stream the value to the server
-        CompletableFuture<StringMessage> future = client.clientStreaming("Join", joinValues);
+        CompletionStage<StringMessage> stage = client.clientStreaming("Join", joinValues);
 
         // wait for the response future to complete
-        StringMessage joined = future.get();
-
-        System.out.println("Join response: '" + joined.getText() + "'");
+        stage.handle((response, error) -> {
+            if (error == null) {
+                System.out.println("Join response: '" + response.getText() + "'");
+            } else {
+                error.printStackTrace();
+            }
+            return null;
+        });
     }
 
     /**
