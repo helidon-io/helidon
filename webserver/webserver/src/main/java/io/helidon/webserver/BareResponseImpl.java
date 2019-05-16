@@ -190,6 +190,8 @@ class BareResponseImpl implements BareResponse {
         if (keepAlive) {
             LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
 
+            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
+
             if (!requestContentConsumed.getAsBoolean()) {
                 // the request content wasn't read, close the connection once the content is fully written.
                 LOGGER.finer(() -> log("Request content not fully read; trying to keep the connection; keep-alive: true"));
@@ -199,7 +201,6 @@ class BareResponseImpl implements BareResponse {
                 ctx.channel().read();
             }
 
-            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
         } else {
 
             LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));
