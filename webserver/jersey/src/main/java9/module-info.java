@@ -29,6 +29,7 @@ module io.helidon.webserver.jersey {
     requires io.helidon.common.context;
     requires reactor.core;
     requires java.logging;
+    requires hk2.api;
 
     exports io.helidon.webserver.jersey;
 
