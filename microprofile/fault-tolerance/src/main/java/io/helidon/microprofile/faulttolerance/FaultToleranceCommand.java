@@ -24,6 +24,9 @@ import java.util.logging.Logger;
 
 import javax.interceptor.InvocationContext;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandGroupKey;
 import com.netflix.hystrix.HystrixCommandKey;
@@ -88,6 +91,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * Default max thread pool queue size.
      */
     private static final int MAX_THREAD_POOL_QUEUE_SIZE = -1;
+    private Context helidonContext;
 
     /**
      * Constructor. Specify a thread pool key if a {@code @Bulkhead} is specified
@@ -233,7 +237,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         // Finally, invoke the user method
         try {
             runThread = Thread.currentThread();
-            return context.proceed();
+            return Contexts.runInContext(helidonContext, context::proceed);
         } finally {
             if (introspector.hasBulkhead()) {
                 bulkheadHelper.markAsNotRunning(this);
@@ -249,6 +253,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      */
     @Override
     public Object execute() {
+        this.helidonContext = Contexts.context().orElseGet(Context::create);
         boolean lockRemoved = false;
 
         // Get lock and check breaker delay

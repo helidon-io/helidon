@@ -133,6 +133,8 @@ class NettyWebServer implements WebServer {
 
             bootstraps.put(name, bootstrap);
         }
+
+        contextualRegistry.register(config.tracer());
     }
 
     @Override

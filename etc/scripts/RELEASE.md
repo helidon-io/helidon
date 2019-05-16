@@ -31,9 +31,7 @@ export VERSION="0.7.0"
 
 1. Create local release branch
     ```
-    git remote add upstream git@github.com:oracle/helidon.git
-    git remote -v
-    git fetch upstream
+    git clone git@github.com:oracle/helidon.git
     git checkout -b release-${VERSION}
     ```
 2. Update local release branch
@@ -41,15 +39,18 @@ export VERSION="0.7.0"
    2. Update `CHANGELOG`
       1. Move "Unreleased" to new section for the `0.7.0` release
       2. Update new section with latest info
+      3. Add release to dictionary at bottom of CHANGELOG
    3. Commit changes locally
 
 3. Push local release branch to upstream. This will trigger a release build in Wercker.
 
     ```
-    git push upstream release-${VERSION}
+    git push origin release-${VERSION}
     ```
 
 4. Wait for build pipeline in Wercker to complete
+
+   https://app.wercker.com/Helidon/helidon/runs
 
 5. Check and close nexus staging repository
     1. In browser go to: https://oss.sonatype.org/#view-repositories and login
@@ -77,6 +78,7 @@ export VERSION="0.7.0"
     6. Release repository: Select repository then click Release (up at the top)
        1. In description you can put something like "Helidon 0.7.0 Release"
        2. It might take a while (possibly hours) before the release appears in Maven Central
+       3. To check on progress look at https://repo1.maven.org/maven2/io/helidon/helidon-bom/
        
 6. Create GitHub release
    1. Create a fragment of the change log that you want used for the release
@@ -101,10 +103,11 @@ export VERSION="0.7.0"
       ```
    4. Add and commit changes then push
       ```
-      git push upstream post-release-${VERSION}
+      git push origin post-release-${VERSION}
       ```
    5. Create PR and merge into master
 
+8. Now go to helidon-site and look at the RELEASE.md there to release the website with updated docs
 
 # Staging Repository Profile
 
