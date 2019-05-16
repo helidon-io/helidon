@@ -21,11 +21,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -33,7 +32,6 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Priority;
 
 import io.helidon.grpc.client.test.StringServiceGrpc;
-import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
@@ -149,8 +147,8 @@ public class ProtoGrpcServiceClientIT {
 
     @Test
     public void testAsyncUnaryMethodWithCompletableFuture() throws InterruptedException, ExecutionException {
-        CompletableFuture<StringMessage> result = grpcClient.unary("Upper", inputMsg);
-        assertThat(result.get().getText(), equalTo(inputStr.toUpperCase()));
+        CompletionStage<StringMessage> result = grpcClient.unary("Upper", inputMsg);
+        assertThat(result.toCompletableFuture().get().getText(), equalTo(inputStr.toUpperCase()));
     }
 
     @Test
@@ -171,8 +169,8 @@ public class ProtoGrpcServiceClientIT {
                 .map(w -> StringMessage.newBuilder().setText(w).build())
                 .collect(Collectors.toList());
 
-        CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input);
-        assertThat(result.get().getText(), equalTo(expectedSentence));
+        CompletionStage<StringMessage> result = grpcClient.clientStreaming("Join", input);
+        assertThat(result.toCompletableFuture().get().getText(), equalTo(expectedSentence));
     }
 
     @Test
@@ -182,8 +180,8 @@ public class ProtoGrpcServiceClientIT {
                 .map(w -> StringMessage.newBuilder().setText(w).build())
                 .collect(Collectors.toList());
 
-        CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input.stream());
-        assertThat(result.get().getText(), equalTo(expectedSentence));
+        CompletionStage<StringMessage> result = grpcClient.clientStreaming("Join", input.stream());
+        assertThat(result.toCompletableFuture().get().getText(), equalTo(expectedSentence));
     }
 
     @Test
@@ -315,8 +313,8 @@ public class ProtoGrpcServiceClientIT {
                 .map(w -> StringMessage.newBuilder().setText(w).build())
                 .collect(Collectors.toList());
 
-        CompletableFuture<StringMessage> result = grpcClient.clientStreaming("Join", input.stream());
-        assertThat(result.get().getText(), equalTo(expectedSentence));
+        CompletionStage<StringMessage> result = grpcClient.clientStreaming("Join", input.stream());
+        assertThat(result.toCompletableFuture().get().getText(), equalTo(expectedSentence));
         assertThat(headerCheckingInterceptor.getValue(), equalTo("join-method-value"));
     }
 

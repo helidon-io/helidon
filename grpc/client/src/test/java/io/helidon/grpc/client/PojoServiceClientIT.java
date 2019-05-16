@@ -18,7 +18,7 @@ package io.helidon.grpc.client;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
@@ -82,7 +82,7 @@ public class PojoServiceClientIT {
 
         GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
 
-        assertThat(client.unary("get", 1).get(), equalTo(TreeMapService.BILBO));
+        assertThat(client.unary("get", 1).toCompletableFuture().get(), equalTo(TreeMapService.BILBO));
     }
 
     @Test
@@ -135,10 +135,10 @@ public class PojoServiceClientIT {
 
         GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);
 
-        CompletableFuture<Integer> sum = client.clientStreaming("sumOfAges", Arrays.asList(3, 4, 5));
+        CompletionStage<Integer> sum = client.clientStreaming("sumOfAges", Arrays.asList(3, 4, 5));
 
         int expected = TreeMapService.ARAGON.getAge() + TreeMapService.GALARDRIEL.getAge() + TreeMapService.GANDALF.getAge();
-        assertThat(sum.get(), is(expected));
+        assertThat(sum.toCompletableFuture().get(), is(expected));
     }
 
     @Test

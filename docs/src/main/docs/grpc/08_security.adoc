@@ -114,7 +114,7 @@ security
 ----
 
 === Client security
-When using the Helidon SE gRPC client API security can be configured for for a gRPC service
+When using the Helidon SE gRPC client API security can be configured for a gRPC service
 or at the individual method level. The client API has a custom `CallCredentials` implementation that
 integrates with the Helidon security APIs.
 

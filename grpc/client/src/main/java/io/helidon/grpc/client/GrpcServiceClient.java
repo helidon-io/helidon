@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -149,9 +150,9 @@ public class GrpcServiceClient {
      * @param <ReqT>     the request type
      * @param <RespT>     the response type
      *
-     * @return A {@link CompletableFuture} that will complete with the result of the unary method call
+     * @return A {@link CompletionStage} that will complete with the result of the unary method call
      */
-    public <ReqT, RespT> CompletableFuture<RespT> unary(String methodName, ReqT request) {
+    public <ReqT, RespT> CompletionStage<RespT> unary(String methodName, ReqT request) {
         SingleValueStreamObserver<RespT> observer = new SingleValueStreamObserver<>();
 
         GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.UNARY);
@@ -160,7 +161,7 @@ public class GrpcServiceClient {
                 request,
                 observer);
 
-        return observer.getFuture();
+        return observer.completionStage();
     }
 
     /**
@@ -223,7 +224,7 @@ public class GrpcServiceClient {
      * @param <RespT>    the response type
      * @return A {@link StreamObserver} to retrieve the method call result
      */
-    public <ReqT, RespT> CompletableFuture<RespT> clientStreaming(String methodName, Iterable<ReqT> items) {
+    public <ReqT, RespT> CompletionStage<RespT> clientStreaming(String methodName, Iterable<ReqT> items) {
         return clientStreaming(methodName, StreamSupport.stream(items.spliterator(), false));
     }
 
@@ -236,7 +237,7 @@ public class GrpcServiceClient {
      * @param <RespT>    the response type
      * @return A {@link StreamObserver} to retrieve the method call result
      */
-    public <ReqT, RespT> CompletableFuture<RespT> clientStreaming(String methodName, Stream<ReqT> items) {
+    public <ReqT, RespT> CompletionStage<RespT> clientStreaming(String methodName, Stream<ReqT> items) {
         SingleValueStreamObserver<RespT> obsv = new SingleValueStreamObserver<>();
         GrpcMethodStub<ReqT, RespT> stub = ensureMethod(methodName, MethodType.CLIENT_STREAMING);
         StreamObserver<ReqT> reqStream = ClientCalls.asyncClientStreamingCall(
@@ -248,7 +249,7 @@ public class GrpcServiceClient {
         });
         reqStream.onCompleted();
 
-        return obsv.getFuture();
+        return obsv.completionStage();
     }
 
     /**
@@ -391,7 +392,7 @@ public class GrpcServiceClient {
          *
          * @return The CompletableFuture
          */
-        public CompletableFuture<T> getFuture() {
+        public CompletionStage<T> completionStage() {
             return resultFuture;
         }
 

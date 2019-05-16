@@ -53,7 +53,7 @@ public static void main(String[] args) throws Exception {
 
     GrpcServiceClient client = GrpcServiceClient.create(channel, descriptor);                   // (4)
 
-    CompletableFuture<String> future = client.unary("SayHello", "Helidon gRPC!!");                                // (5)
+    CompletionStage<String> future = client.unary("SayHello", "Helidon gRPC!!");                                // (5)
     System.out.println(future.get());                                                           // (6)
 
 }
@@ -66,7 +66,7 @@ marshalling and unmarshalling the request and response values.
 4. Create the `GrpcServiceClient` that uses the above `Channel` and `ClientServiceDescriptor`. `GrpcClientService` represents
 a client that can be used to define the set of methods described by the specified `ClientServiceDescriptor`. In our case, the
 `ClientServiceDescriptor` defines one unary method called `SayHello`.
-5. Invoke the `SayHello` method which returns a `CompletableFuture<String>`.
+5. Invoke the `SayHello` method which returns a `CompletionStage<String>`.
 6. Print the result.
 
 The example above creates a very simple client to the gRPC server that by default uses Java serialization to marshall
