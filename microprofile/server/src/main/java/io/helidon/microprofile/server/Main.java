@@ -60,45 +60,51 @@ public final class Main {
     }
 
     private static void configureLogging() throws IOException {
+        String configClass = System.getProperty("java.util.logging.config.class");
         String configPath = System.getProperty("java.util.logging.config.file");
-        String source = "defaults";
+        String source;
 
-        if (configPath == null) {
-            // first set up logging - but only if not configured on command line
-            // Let's try to find a logging.properties
-            // first as a file in the current working directory
-            InputStream logConfigStream;
-
-            Path path = Paths.get("").resolve(LOGGING_FILE);
-
-            if (Files.exists(path)) {
-                logConfigStream = Files.newInputStream(path);
-                source = "file: " + path.toAbsolutePath();
-            } else {
-                // second look for classpath (only the first one)
-                logConfigStream = Main.class.getResourceAsStream("/" + LOGGING_FILE);
-                if (null != logConfigStream) {
-                    source = "classpath: /" + LOGGING_FILE;
-                }
-            }
-            if (null != logConfigStream) {
-                try {
-                    LogManager.getLogManager().readConfiguration(logConfigStream);
-                } finally {
-                    logConfigStream.close();
-                }
-            }
-        } else {
-            // logging will be configured automatically, we just validate the file exists
+        if (configClass != null) {
+            source = "class: " + configClass;
+        } else if (configPath != null) {
             Path path = Paths.get(configPath);
-            if (!Files.exists(path)) {
-                throw new IOException("Logging configuration file specified by system property does not exist: "
-                                              + path.toAbsolutePath());
-            }
             source = path.toAbsolutePath().toString();
+        } else {
+            // we want to configure logging ourselves
+            source = findAndConfigureLogging();
         }
 
-        Logger.getLogger(Main.class.getName()).info("Configured logging using " + source);
+        Logger.getLogger(Main.class.getName()).info("Logging configured using " + source);
+    }
+
+    private static String findAndConfigureLogging() throws IOException {
+        String source = "defaults";
+
+        // Let's try to find a logging.properties
+        // first as a file in the current working directory
+        InputStream logConfigStream;
+
+        Path path = Paths.get("").resolve(LOGGING_FILE);
+
+        if (Files.exists(path)) {
+            logConfigStream = Files.newInputStream(path);
+            source = "file: " + path.toAbsolutePath();
+        } else {
+            // second look for classpath (only the first one)
+            logConfigStream = Main.class.getResourceAsStream("/" + LOGGING_FILE);
+            if (null != logConfigStream) {
+                source = "classpath: /" + LOGGING_FILE;
+            }
+        }
+        if (null != logConfigStream) {
+            try {
+                LogManager.getLogManager().readConfiguration(logConfigStream);
+            } finally {
+                logConfigStream.close();
+            }
+        }
+
+        return source;
     }
 
     /**
