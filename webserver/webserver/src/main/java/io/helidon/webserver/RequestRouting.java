@@ -98,7 +98,9 @@ class RequestRouting implements Routing {
 
             Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method());
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers, span);
-            nextRequests.next();
+            // only register the span context once on the top level request, as others are cloned from it
+            nextRequests.context().register(span.context());
+            Contexts.runInContext(nextRequests.context(), (Runnable) nextRequests::next);
         } catch (Error | RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
             throw e;
@@ -351,9 +353,9 @@ class RequestRouting implements Routing {
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
                     requestSpan.log(nextItem.handlerRoute.diagnosticEvent());
                     // execute in the context, so context can be retrieved with Contexts (runs in our thread)
-                    Contexts.runInContext(nextRequest.context(), () -> nextItem.handlerRoute
+                    nextItem.handlerRoute
                             .handler()
-                            .accept(nextRequest, nextResponse));
+                            .accept(nextRequest, nextResponse);
                 } catch (RuntimeException re) {
                     nextNoCheck(re);
                 }
