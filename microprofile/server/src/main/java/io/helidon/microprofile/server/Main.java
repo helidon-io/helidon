@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.server;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -87,7 +88,7 @@ public final class Main {
         Path path = Paths.get("").resolve(LOGGING_FILE);
 
         if (Files.exists(path)) {
-            logConfigStream = Files.newInputStream(path);
+            logConfigStream = new BufferedInputStream(Files.newInputStream(path));
             source = "file: " + path.toAbsolutePath();
         } else {
             // second look for classpath (only the first one)
