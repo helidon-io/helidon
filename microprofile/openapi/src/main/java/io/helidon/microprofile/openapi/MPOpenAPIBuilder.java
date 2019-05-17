@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.openapi.OpenAPISupport;
 
 import io.smallrye.openapi.api.OpenApiConfig;
+import org.jboss.jandex.IndexView;
 
 /**
  * Fluent builder for OpenAPISupport in Helidon MP.
@@ -28,10 +29,16 @@ import io.smallrye.openapi.api.OpenApiConfig;
 public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
 
     private Optional<OpenApiConfig> openAPIConfig;
+    private Optional<IndexView> indexView;
 
     @Override
     public OpenApiConfig openAPIConfig() {
         return openAPIConfig.get();
+    }
+
+    @Override
+    public IndexView indexView() {
+        return indexView.get();
     }
 
     /**
@@ -43,6 +50,18 @@ public final class MPOpenAPIBuilder extends OpenAPISupport.Builder {
      */
     public MPOpenAPIBuilder openAPIConfig(OpenApiConfig config) {
         this.openAPIConfig = Optional.of(config);
+        return this;
+    }
+
+    /**
+     * Sets the IndexView instance to be passed to the smallrye OpenApi impl for
+     * annotation analysis.
+     *
+     * @param indexView {@link IndexView} instance containing endpoint classes
+     * @return updated builder instance
+     */
+    public MPOpenAPIBuilder indexView(IndexView indexView) {
+        this.indexView = Optional.of(indexView);
         return this;
     }
 

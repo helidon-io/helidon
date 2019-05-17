@@ -24,7 +24,7 @@
         <version>1.0.4-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.openapi</groupId>
-    <artifactId>io-helidon-microprofile-openapi</artifactId>
+    <artifactId>helidon-microprofile-openapi</artifactId>
     
     <name>Helidon Microprofile OpenAPI</name>
 

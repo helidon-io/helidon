@@ -16,12 +16,12 @@
  */
 package io.helidon.microprofile.openapi;
 
-
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.openapi.OpenAPISupport;
 
 import io.smallrye.openapi.api.OpenApiConfigImpl;
+import java.io.IOException;
 
 /**
  * Sets up OpenAPI support in the Helidon MP server.
@@ -31,9 +31,17 @@ public class OpenAPIMpService implements MpService {
     @Override
     public void configure(MpServiceContext context) {
 
-        OpenAPISupport openAPISupport = new MPOpenAPIBuilder()
-                .openAPIConfig(new OpenApiConfigImpl(context.config()))
-                .build();
+        final IndexBuilder indexBuilder = context.cdiContainer().getBeanManager().getExtension(IndexBuilder.class);
+
+        OpenAPISupport openAPISupport;
+        try {
+            openAPISupport = new MPOpenAPIBuilder()
+                    .openAPIConfig(new OpenApiConfigImpl(context.config()))
+                    .indexView(indexBuilder.indexView())
+                    .build();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
 
         openAPISupport.configureEndpoint(context.serverRoutingBuilder());
     }

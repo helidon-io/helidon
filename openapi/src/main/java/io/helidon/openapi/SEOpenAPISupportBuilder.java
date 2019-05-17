@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.openapi.internal.OpenAPIConfigImpl;
 
 import io.smallrye.openapi.api.OpenApiConfig;
+import org.jboss.jandex.IndexView;
 
 /**
  * Builds {@link OpenAPISupport} in a Helidon SE environment.
@@ -56,6 +57,11 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
     @Override
     public OpenApiConfig openAPIConfig() {
         return apiConfigBuilder.build();
+    }
+
+    @Override
+    public IndexView indexView() {
+        return null;
     }
 
     /**

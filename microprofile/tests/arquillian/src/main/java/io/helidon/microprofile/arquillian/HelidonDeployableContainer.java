@@ -151,8 +151,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
             URL[] classPath;
 
+            Path rootDir = context.deployDir.resolve("");
             if (isJavaArchive) {
-                Path rootDir = context.deployDir.resolve("");
                 ensureBeansXml(rootDir);
                 classPath = new URL[] {
                         rootDir.toUri().toURL()
@@ -163,7 +163,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 Path classesDir = webInfDir.resolve("classes");
                 Path libDir = webInfDir.resolve("lib");
                 ensureBeansXml(classesDir);
-                classPath = getServerClasspath(classesDir, libDir);
+                classPath = getServerClasspath(classesDir, libDir, rootDir);
             }
 
             startServer(context, classPath, classNames);
@@ -189,7 +189,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         Thread.currentThread().setContextClassLoader(context.classLoader);
 
         List<Supplier<ConfigSource>> configSources = new LinkedList<>();
-        configSources.add(ConfigSources.file(context.deployDir.resolve("META-INF/microprofile-config.properties").toString())
+        configSources.add(ConfigSources.classpath("META-INF/microprofile-config.properties")
                                   .optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("application.properties").toString()).optional());
@@ -227,7 +227,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
     }
 
-    URL[] getServerClasspath(Path classesDir, Path libDir) throws IOException {
+    URL[] getServerClasspath(Path classesDir, Path libDir, Path rootDir) throws IOException {
         List<URL> urls = new ArrayList<>();
 
         // classes directory
@@ -246,6 +246,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                         }
                     });
         }
+
+        urls.add(rootDir.toUri().toURL());
 
         return urls.toArray(new URL[0]);
     }
@@ -380,6 +382,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         private Object runner;
         // existing class loader
         private ClassLoader oldClassLoader;
-    }
+        }
 
 }

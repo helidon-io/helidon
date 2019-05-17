@@ -16,12 +16,15 @@
  */
 
 module io.helidon.microprofile.openapi {
-
+    requires java.logging;
+    
     requires smallrye.open.api;
 
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
+
+    requires jandex;
 
     exports io.helidon.microprofile.openapi;
 }

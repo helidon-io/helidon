@@ -47,7 +47,9 @@ import io.smallrye.openapi.runtime.OpenApiProcessor;
 import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
+import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import org.jboss.jandex.IndexReader;
+import org.jboss.jandex.IndexView;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
@@ -118,13 +120,14 @@ public class OpenAPISupport implements Service {
      */
     public static final MediaType DEFAULT_RESPONSE_MEDIA_TYPE = MediaType.APPLICATION_OPENAPI_YAML;
 
+    /**
+     * Path to the Jandex index file.
+     */
     private static final Logger LOGGER = Logger.getLogger(OpenAPISupport.class.getName());
 
-    private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "/openapi.";
+    private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
     private static final String OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using specified OpenAPI static file %s";
     private static final String OPENAPI_DEFAULTED_STATIC_FILE_LOG_MESSAGE_FORMAT = "Using default OpenAPI static file %s";
-
-    private static final String JANDEX_INDEX_PATH = "/META-INF/jandex.idx";
 
     private final String webContext;
     private final Builder builder;
@@ -190,16 +193,9 @@ public class OpenAPISupport implements Service {
     }
 
     private void expandModelUsingAnnotations(final OpenApiConfig config) throws IOException {
-        try (InputStream jandexIS = getClass().getResourceAsStream(JANDEX_INDEX_PATH)) {
-            if (jandexIS == null) {
-                LOGGER.log(Level.WARNING,
-                        "OpenAPI Annotation processing is enabled but jandex index {0} not found; "
-                        + "continuing without scanning for OpenAPI-related annotations", JANDEX_INDEX_PATH);
-                return;
-            }
-            LOGGER.log(Level.FINE, "Using Jandex index at {0}", JANDEX_INDEX_PATH);
-            IndexReader ir = new IndexReader(jandexIS);
-            OpenApiDocument.INSTANCE.modelFromAnnotations(OpenApiProcessor.modelFromAnnotations(config, ir.read()));
+        if (builder.indexView() != null) {
+            OpenApiDocument.INSTANCE.modelFromAnnotations(
+                    OpenApiProcessor.modelFromAnnotations(config, new FilteredIndexView(builder.indexView(), config)));
         }
     }
 
@@ -458,6 +454,13 @@ public class OpenAPISupport implements Service {
         public abstract OpenApiConfig openAPIConfig();
 
         /**
+         * Returns the Jandex {@link IndexView} containing annotated endpoint classes.
+         *
+         * @return {@code IndexView} containing endpoint classes
+         */
+        public abstract IndexView indexView();
+
+        /**
          * Makes sure the set-up for OpenAPI is consistent, internally and with
          * the current Helidon runtime environment (SE or MP).
          *
@@ -535,7 +538,7 @@ public class OpenAPISupport implements Service {
                     String candidatePath = DEFAULT_STATIC_FILE_PATH_PREFIX + type;
                     InputStream is = null;
                     try {
-                        is = getClass().getResourceAsStream(candidatePath);
+                        is = getContextClassLoader().getResourceAsStream(candidatePath);
                         if (is != null) {
                             Path path = Paths.get(candidatePath);
                             LOGGER.log(Level.FINE, () -> String.format(
