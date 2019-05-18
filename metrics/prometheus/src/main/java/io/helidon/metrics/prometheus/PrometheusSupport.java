@@ -93,7 +93,7 @@ public final class PrometheusSupport implements Service {
 
             for (Collector.MetricFamilySamples.Sample sample: metricFamilySamples.samples) {
                 result.append(sample.name);
-                if (sample.labelNames.size() > 0) {
+                if (!sample.labelNames.isEmpty()) {
                     result.append('{');
                     for (int i = 0; i < sample.labelNames.size(); ++i) {
                         result.append(sample.labelNames.get(i))
