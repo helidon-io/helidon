@@ -56,10 +56,16 @@ public class IndexBuilder implements Extension {
      */
     public IndexBuilder() throws IOException {
         isIndexPresentOnClasspath = checkForIndexFile();
-        LOGGER.log(Level.FINE, () -> isIndexPresentOnClasspath
-                ? String.format("Index file %s was located and will be used", INDEX_PATH)
-                : String.format("Index file %s was not located; one will be built internally", INDEX_PATH)
-        );
+        if (isIndexPresentOnClasspath) {
+            LOGGER.log(Level.FINE, () -> String.format("Index file %s was located and will be used", INDEX_PATH));
+        } else {
+            LOGGER.log(Level.INFO, () -> String.format(
+                    "OpenAPI support could not locate the index file %s "
+                    + "so will build an in-memory index. This slows your app start-up.%n"
+                    + "Consider using the jandex maven plug-in to build the index "
+                    + "and add it to your app at build-time",
+                    INDEX_PATH));
+        }
     }
 
     /**
@@ -70,10 +76,10 @@ public class IndexBuilder implements Extension {
      * @param event {@code ProcessAnnotatedType} event
      */
     <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> type) {
-        Class<?> c = type.getAnnotatedType().getJavaClass();
         if (isIndexPresentOnClasspath) {
             return;
         }
+        Class<?> c = type.getAnnotatedType().getJavaClass();
         annotatedTypes.add(c);
     }
 
