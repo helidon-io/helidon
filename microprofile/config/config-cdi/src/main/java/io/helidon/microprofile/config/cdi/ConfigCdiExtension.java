@@ -587,7 +587,8 @@ public class ConfigCdiExtension implements Extension {
     }
 
     /**
-     * A three tier description of a field type (main type, first generic type, second generic type).
+     * A three tier description of a field type (main type, first
+     * generic type, second generic type).
      */
     static final class FieldTypes {
         private TypedField field0;
