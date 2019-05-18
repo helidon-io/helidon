@@ -51,7 +51,6 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.ObserverMethod;
 import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
@@ -164,7 +163,6 @@ public class ConfigCdiExtension implements Extension {
 
     private <X> void harvestConfigPropertyInjectionPointsFromEnabledObserverMethod(@Observes ProcessObserverMethod<?, X> event,
                                                                                    BeanManager beanManager) {
-        ObserverMethod<?> observerMethod = event.getObserverMethod();
         AnnotatedMethod<X> annotatedMethod = event.getAnnotatedMethod();
         List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
         if (annotatedParameters != null && annotatedParameters.size() > 1) {
