@@ -382,7 +382,8 @@ public class ConfigCdiExtension implements Extension {
     }
 
     /**
-     * A Bean to create {@link ConfigProperty} values for each injection point.
+     * A {@link Bean} to create {@link ConfigProperty} values for each
+     * injection point.
      *
      * @deprecated This class was not intended to be {@code public}
      * and may be removed without notice.
