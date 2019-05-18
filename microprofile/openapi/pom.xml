@@ -29,7 +29,7 @@
     <name>Helidon Microprofile OpenAPI</name>
 
     <description>
-        Microprofile OpenAPI implementation
+        Helidon Microprofile OpenAPI implementation
     </description>
 
     <packaging>jar</packaging>

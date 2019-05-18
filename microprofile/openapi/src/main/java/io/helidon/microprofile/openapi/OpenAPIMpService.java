@@ -16,12 +16,13 @@
  */
 package io.helidon.microprofile.openapi;
 
+import java.io.IOException;
+
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.openapi.OpenAPISupport;
 
 import io.smallrye.openapi.api.OpenApiConfigImpl;
-import java.io.IOException;
 
 /**
  * Sets up OpenAPI support in the Helidon MP server.

@@ -48,7 +48,6 @@ import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
-import org.jboss.jandex.IndexReader;
 import org.jboss.jandex.IndexView;
 
 /**

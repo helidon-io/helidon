@@ -53,7 +53,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
     private final Set<String> servers;
     private final Boolean scanDependenciesDisable = Boolean.TRUE;
     private final Set<String> scanDependenciesJars = Collections.emptySet();
-    private Boolean schemaReferencesEnable = Boolean.FALSE;
 
     private OpenAPIConfigImpl(Builder builder) {
         modelReader = builder.modelReader;
@@ -62,7 +61,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         pathServers = builder.pathServers;
         servers = new HashSet<>(builder.servers);
         scanDisable = builder.scanDisable;
-        schemaReferencesEnable = builder.schemaReferencesEnable;
     }
 
     /**
@@ -134,11 +132,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         return scanDependenciesJars;
     }
 
-//    @Override
-    public boolean schemaReferencesEnable() {
-        return schemaReferencesEnable;
-    }
-
     private static <T, U> Set<U> chooseEntry(Map<T, Set<U>> map, T key) {
         if (map.containsKey(key)) {
             return map.get(key);
@@ -184,7 +177,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
         private final Map<String, Set<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
         private boolean scanDisable = true;
-        private boolean schemaReferencesEnable = false;
 
         private Builder() {
         }
@@ -207,7 +199,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
             stringFromConfig(config, SERVERS, this::servers);
             listFromConfig(config, SERVERS_PATH, this::pathServers);
             listFromConfig(config, SERVERS_OPERATION, this::operationServers);
-            booleanFromConfig(config, SCHEMA_REFERENCES_ENABLED, this::schemaReferencesEnable);
             return this;
         }
 
@@ -314,17 +305,6 @@ public class OpenAPIConfigImpl implements OpenApiConfig {
          */
         public Builder scanDisable(boolean value) {
             scanDisable = value;
-            return this;
-        }
-
-        /**
-         * Sets whether schema references should be enabled.
-         *
-         * @param value new setting for schema references enabled flag
-         * @return updated builder
-         */
-        public Builder schemaReferencesEnable(boolean value) {
-            schemaReferencesEnable = value;
             return this;
         }
 
