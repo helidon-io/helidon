@@ -30,13 +30,6 @@
     <artifactId>tck-openapi</artifactId>
     <name>Helidon Microprofile Tests TCK OpenAPI</name>
 
-    <properties>
-        <microprofile.openapi.version>1.1.2</microprofile.openapi.version>
-        <arquillian.version>1.1.14.Final</arquillian.version>
-        <arquillian-wlp.version>1.0.0.Beta2</arquillian-wlp.version>
-        <testng.version>6.9.9</testng.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
@@ -69,12 +62,12 @@
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-api</artifactId>
-            <version>${microprofile.openapi.version}</version>
+            <version>${version.lib.microprofile-openapi-api}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.openapi</groupId>
             <artifactId>microprofile-openapi-tck</artifactId>
-            <version>${microprofile.openapi.version}</version>
+            <version>${version.lib.microprofile-openapi-api}</version>
         </dependency>
         <dependency>
             <groupId>javax.json</groupId>
