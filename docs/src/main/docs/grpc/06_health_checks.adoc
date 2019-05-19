@@ -16,11 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Service Health Checks
 :pagename: grpc-server-health-checks
 :description: Helidon gRPC Service Health Checks
 :keywords: helidon, grpc, java
 
-= Service Health Checks
+== Service Health Checks
 
 Helidon gRPC services provide a built-in support for Helidon Health Checks.
 

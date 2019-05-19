@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-common-project</artifactId>
         <groupId>io.helidon.common</groupId>
-        <version>1.0.4-SNAPSHOT</version>
+        <version>1.1.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-common-http</artifactId>
@@ -37,6 +37,11 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

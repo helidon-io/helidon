@@ -16,11 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= Interceptors
 :pagename: grpc-server-interceptors
 :description: Helidon gRPC Service Interceptors
 :keywords: helidon, grpc, java
 
-= Interceptors
+== Interceptors
 
 Helidon gRPC allows you to configure standard `io.grpc.ServerInterceptor`s.
 

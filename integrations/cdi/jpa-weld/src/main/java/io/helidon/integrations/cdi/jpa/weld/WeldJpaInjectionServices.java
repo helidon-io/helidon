@@ -467,12 +467,9 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      *
      * @see #registerPersistenceContextInjectionPoint(InjectionPoint)
      *
-     * @deprecated See the documentation for the {@link
-     * JpaInjectionServices#resolvePersistenceContext(InjectionPoint)}
-     * method.
+     * @deprecated
      */
     @Deprecated
-    @Override
     public EntityManager resolvePersistenceContext(final InjectionPoint injectionPoint) {
         return this.registerPersistenceContextInjectionPoint(injectionPoint).createResource().getInstance();
     }
@@ -492,12 +489,9 @@ final class WeldJpaInjectionServices implements JpaInjectionServices {
      *
      * @see #registerPersistenceUnitInjectionPoint(InjectionPoint)
      *
-     * @deprecated See the documentation for the {@link
-     * JpaInjectionServices#resolvePersistenceUnit(InjectionPoint)}
-     * method.
+     * @deprecated
      */
     @Deprecated
-    @Override
     public EntityManagerFactory resolvePersistenceUnit(final InjectionPoint injectionPoint) {
         return this.registerPersistenceUnitInjectionPoint(injectionPoint).createResource().getInstance();
     }

@@ -16,11 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= gRPC Server Routing
 :pagename: grpc-server-routing
 :description: Helidon gRPC Server Routing
 :keywords: helidon, grpc, java
 
-= gRPC Server Routing
+== gRPC Server Routing
 
 Unlike Webserver, which allows you to route requests based on path expression
 and the HTTP verb, gRPC server always routes requests based on the service and

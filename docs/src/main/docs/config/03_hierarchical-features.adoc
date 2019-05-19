@@ -163,7 +163,7 @@ config value exists.
 | `type` | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node
 represents a config value that _does not_ exist
 | `as` | Returns the `ConfigValue` with the correct type that has all methods of `Optional`
-    and a few additional ones - see javadoc link:{javadoc-base-url-api}/ConfigValue.html
+    and a few additional ones - see link:{javadoc-base-url-api}/ConfigValue.html[`ConfigValue`] interface.
 |===
 
 The config system throws a `MissingValueException` if the application tries to

@@ -16,12 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+= gRPC Server Configuration
 :javadoc-base-url-api: {javadoc-base-url}?io/helidon/grpc/server
 :pagename: grpc-server-configuration
 :description: Helidon gRPC Server Configuration
 :keywords: helidon, grpc, java, configuration
-
-= gRPC Server Configuration
 
 Configure the gRPC Server using the Helidon configuration framework, either programmatically
 or via a configuration file.

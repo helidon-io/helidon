@@ -39,6 +39,7 @@ import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.providers.abac.AbacAnnotation;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;
@@ -92,7 +93,7 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
 
     @Override
     public Collection<Class<? extends Annotation>> supportedAnnotations() {
-        return CollectionsHelper.setOf(Scopes.class);
+        return CollectionsHelper.setOf(Scope.class, Scopes.class);
     }
 
     @Override
@@ -108,17 +109,18 @@ public final class ScopeValidator implements AbacValidator<ScopeValidator.Scopes
     @Override
     public ScopesConfig fromAnnotations(EndpointConfig endpointConfig) {
         List<Scope> scopes = new ArrayList<>();
-        for (EndpointConfig.AnnotationScope value : EndpointConfig.AnnotationScope.values()) {
-            List<Annotation> annotations = new ArrayList<>();
-            for (Class<? extends Annotation> annotation : supportedAnnotations()) {
-                List<? extends Annotation> list = endpointConfig.combineAnnotations(annotation, value);
-                annotations.addAll(list);
-            }
-            for (Annotation annot : annotations) {
-                if (annot instanceof Scopes) {
-                    scopes.addAll(Arrays.asList(((Scopes) annot).value()));
-                } else if (annot instanceof Scope) {
-                    scopes.add((Scope) annot);
+        for (SecurityLevel securityLevel : endpointConfig.securityLevels()) {
+            for (EndpointConfig.AnnotationScope scope : EndpointConfig.AnnotationScope.values()) {
+                List<Annotation> annotations = new ArrayList<>();
+                for (Class<? extends Annotation> annotation : supportedAnnotations()) {
+                    annotations.addAll(securityLevel.filterAnnotations(annotation, scope));
+                }
+                for (Annotation annot : annotations) {
+                    if (annot instanceof Scopes) {
+                        scopes.addAll(Arrays.asList(((Scopes) annot).value()));
+                    } else if (annot instanceof Scope) {
+                        scopes.add((Scope) annot);
+                    }
                 }
             }
         }

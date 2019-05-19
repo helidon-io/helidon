@@ -22,6 +22,7 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +51,7 @@ import io.helidon.security.Grant;
 import io.helidon.security.Principal;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.scope.ScopeValidator;
@@ -172,29 +174,44 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         1. Get token from request - if available, validate it and continue
         2. If not - Redirect to login page
          */
+        List<String> missingLocations = new LinkedList<>();
+
         Optional<String> token = Optional.empty();
         if (oidcConfig.useHeader()) {
             token = OptionalHelper.from(token)
                     .or(() -> oidcConfig.headerHandler().extractToken(providerRequest.env().headers()))
                     .asOptional();
+            if (!token.isPresent()) {
+                missingLocations.add("header");
+            }
         }
 
         if (oidcConfig.useParam()) {
             token = OptionalHelper.from(token)
                     .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
                     .asOptional();
+
+            if (!token.isPresent()) {
+                missingLocations.add("query-param");
+            }
         }
 
         if (oidcConfig.useCookie()) {
             token = OptionalHelper.from(token)
                     .or(() -> findCookie(providerRequest.env().headers()))
                     .asOptional();
+            if (!token.isPresent()) {
+                missingLocations.add("cookie");
+            }
         }
 
         if (token.isPresent()) {
             return validateToken(providerRequest, token.get());
         } else {
-            return errorResponse(providerRequest, Http.Status.UNAUTHORIZED_401, null, "Missing token");
+            return errorResponse(providerRequest,
+                                 Http.Status.UNAUTHORIZED_401,
+                                 null,
+                                 "Missing token, could not find in either of: " + missingLocations);
         }
     }
 
@@ -219,17 +236,28 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private Set<String> expectedScopes(ProviderRequest request) {
-        List<ScopeValidator.Scopes> expectedScopes = request.endpointConfig()
-                .combineAnnotations(ScopeValidator.Scopes.class, EndpointConfig.AnnotationScope.values());
 
         Set<String> result = new HashSet<>();
 
-        expectedScopes.stream()
-                .map(ScopeValidator.Scopes::value)
-                .map(Arrays::asList)
-                .map(List::stream)
-                .forEach(stream -> stream.map(ScopeValidator.Scope::value)
-                        .forEach(result::add));
+        for (SecurityLevel securityLevel : request.endpointConfig().securityLevels()) {
+            List<ScopeValidator.Scopes> expectedScopes = securityLevel.combineAnnotations(ScopeValidator.Scopes.class,
+                                                                                          EndpointConfig.AnnotationScope
+                                                                                                  .values());
+            expectedScopes.stream()
+                    .map(ScopeValidator.Scopes::value)
+                    .map(Arrays::asList)
+                    .map(List::stream)
+                    .forEach(stream -> stream.map(ScopeValidator.Scope::value)
+                            .forEach(result::add));
+
+            List<ScopeValidator.Scope> expectedScopeAnnotations = securityLevel.combineAnnotations(ScopeValidator.Scope.class,
+                                                                                                   EndpointConfig.AnnotationScope
+                                                                                                           .values());
+
+            expectedScopeAnnotations.stream()
+                    .map(ScopeValidator.Scope::value)
+                    .forEach(result::add);
+        }
 
         return result;
     }
@@ -270,7 +298,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
-                    .description("Missing token, redirecting to identity server")
+                    .description("Redirecting to identity server: " + description)
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
         } else {
@@ -340,17 +368,21 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
             // make sure we have the correct scopes
             Set<String> expectedScopes = expectedScopes(providerRequest);
-
+            List<String> missingScopes = new LinkedList<>();
             for (String expectedScope : expectedScopes) {
                 if (!scopes.contains(expectedScope)) {
-                    return errorResponse(providerRequest,
-                                         Http.Status.FORBIDDEN_403,
-                                         "insufficient_scope",
-                                         "Scope " + expectedScope + " missing");
+                    missingScopes.add(expectedScope);
                 }
             }
 
-            return AuthenticationResponse.success(subject);
+            if (missingScopes.isEmpty()) {
+                return AuthenticationResponse.success(subject);
+            } else {
+                return errorResponse(providerRequest,
+                                     Http.Status.FORBIDDEN_403,
+                                     "insufficient_scope",
+                                     "Scopes " + missingScopes + " are missing");
+            }
         } else {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 // only log errors when details requested

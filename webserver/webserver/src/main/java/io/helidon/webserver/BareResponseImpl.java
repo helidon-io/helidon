@@ -71,6 +71,8 @@ class BareResponseImpl implements BareResponse {
     private final Thread thread;
     private final long requestId;
     private final HttpHeaders requestHeaders;
+    private final ChannelFuture channelClosedFuture;
+    private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
 
     private volatile Flow.Subscription subscription;
 
@@ -90,20 +92,35 @@ class BareResponseImpl implements BareResponse {
         this.thread = thread;
         this.responseFuture = new CompletableFuture<>();
         this.headersFuture = new CompletableFuture<>();
-        this.responseFuture
-                .thenRun(() -> headersFuture.complete(this))
-                .exceptionally(thr -> {
-                    headersFuture.completeExceptionally(thr);
-                    return null;
-                });
         this.ctx = ctx;
         this.requestId = requestId;
-        ctx.channel()
-                .closeFuture()
-                // to make this work, when programmatically closing the channel, the responseFuture must be closed beforehand!
-                .addListener(channelFuture -> responseFuture.completeExceptionally(CLOSED));
         this.keepAlive = HttpUtil.isKeepAlive(request);
         this.requestHeaders = request.headers();
+
+        // We need to keep this listener so we can remove it when this response completes. If we don't, we leak
+        // while the channel remains open since each response adds a new listener that references 'this'.
+        // Use fields to avoid capturing lambdas.
+
+        this.channelClosedListener = this::channelClosed;
+        this.channelClosedFuture = ctx.channel().closeFuture();
+
+        // to make this work, when programmatically closing the channel the responseFuture must be closed first!
+        channelClosedFuture.addListener(channelClosedListener);
+
+        responseFuture.whenComplete(this::responseComplete);
+    }
+
+    private void responseComplete(BareResponse self, Throwable throwable) {
+        if (throwable == null) {
+            headersFuture.complete(this);
+        } else {
+            headersFuture.completeExceptionally(throwable);
+        }
+        channelClosedFuture.removeListener(channelClosedListener);
+    }
+
+    private void channelClosed(Future<? super Void> future) {
+        responseFuture.completeExceptionally(CLOSED);
     }
 
     @Override
@@ -173,6 +190,8 @@ class BareResponseImpl implements BareResponse {
         if (keepAlive) {
             LOGGER.finest(() -> log("Writing an empty last http content; keep-alive: true"));
 
+            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
+
             if (!requestContentConsumed.getAsBoolean()) {
                 // the request content wasn't read, close the connection once the content is fully written.
                 LOGGER.finer(() -> log("Request content not fully read; trying to keep the connection; keep-alive: true"));
@@ -182,7 +201,6 @@ class BareResponseImpl implements BareResponse {
                 ctx.channel().read();
             }
 
-            writeLastContent(throwable, ChannelFutureListener.CLOSE_ON_FAILURE);
         } else {
 
             LOGGER.finest(() -> log("Closing with an empty buffer; keep-alive: " + keepAlive));

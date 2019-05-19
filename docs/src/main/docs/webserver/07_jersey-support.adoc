@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ Routing.builder()
 As a result, an HTTP GET request to `/jersey/hello` would yield a `Hello World!`
  response string.
 
-==== Registering JAX-RS Application
+==== Registering a JAX-RS Application
 You can also register the JAX-RS `Application` object.
 [source,java]
 .Register the `HelloWorld` resource
@@ -87,22 +87,21 @@ Routing.builder()
 <1> Register the Jersey application at `/jersey` context root
 <2> `MyApplication` handles requests made to /jersey context root.
 
-==== Accessing WebServer internals from a Jersey application
-To access WebServer internals, inject the following beans into the Jersey managed
- beans:
+==== Accessing WebServer Internals from a JAX-RS Application
 
-* request scoped `ServerRequest`
-* and/or request scoped `ServerResponse`
+You can inject WebServer request and response objects into your
+JAX-RS application using `@Context`.
 
 [source,java]
 .Injection of WebServer internal objects
 ----
 @Path("/")
+@RequestScoped
 public class HelloWorld {
-    @Inject
+    @Context
     private ServerRequest request;
 
-    @Inject
+    @Context
     private ServerResponse response;
 }
 ----

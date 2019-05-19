@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 
 /**
  * Supplier of a custom thread pool.
+ * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
-    private static final int EXECUTOR_DEFAULT_CORE_POOL_SIZE = 10;
-    private static final int EXECUTOR_DEFAULT_MAX_POOL_SIZE = 50;
-    private static final int EXECUTOR_DEFAULT_KEEP_ALIVE_MINUTES = 3;
-    private static final int EXECUTOR_DEFAULT_QUEUE_CAPACITY = 10000;
-    private static final boolean EXECUTOR_DEFAULT_IS_DAEMON = true;
-    private static final String EXECUTOR_DEFAULT_THREAD_NAME_PREFIX = "helidon-";
-    private static final boolean EXECUTOR_DEFAULT_PRESTART = true;
+    private static final AtomicInteger DEFAULT_NAME_COUNTER = new AtomicInteger();
+    private static final int DEFAULT_CORE_POOL_SIZE = 10;
+    private static final int DEFAULT_MAX_POOL_SIZE = 50;
+    private static final int DEFAULT_KEEP_ALIVE_MINUTES = 3;
+    private static final int DEFAULT_QUEUE_CAPACITY = 10000;
+    private static final boolean DEFAULT_IS_DAEMON = true;
+    private static final String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
+    private static final boolean DEFAULT_PRESTART = true;
+    private static final String DEFAULT_POOL_NAME_PREFIX = "helidon-thread-pool-";
 
     private final int corePoolSize;
     private final int maxPoolSize;
@@ -45,7 +49,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final boolean isDaemon;
     private final String threadNamePrefix;
     private final boolean prestart;
-    private volatile ThreadPoolExecutor instance;
+    private final String name;
+    private volatile ExecutorService instance;
 
     private ThreadPoolSupplier(Builder builder) {
         this.corePoolSize = builder.corePoolSize;
@@ -55,6 +60,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.isDaemon = builder.isDaemon;
         this.threadNamePrefix = builder.threadNamePrefix;
         this.prestart = builder.prestart;
+        this.name = builder.name == null ? DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet() : builder.name;
     }
 
     /**
@@ -86,29 +92,36 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         return builder().build();
     }
 
-    @Override
-    public synchronized ThreadPoolExecutor get() {
-        if (null == instance) {
-            instance = new ThreadPoolExecutor(corePoolSize,
-                                              maxPoolSize,
-                                              keepAliveMinutes,
-                                              TimeUnit.MINUTES,
-                                              new LinkedBlockingQueue<>(queueCapacity),
-                                              new ThreadFactory() {
-                                                  private AtomicInteger value = new AtomicInteger();
+    ThreadPool getThreadPool() {
+        ThreadPool result;
+        result = new ThreadPool(name,
+                                corePoolSize,
+                                maxPoolSize,
+                                keepAliveMinutes,
+                                TimeUnit.MINUTES,
+                                new LinkedBlockingQueue<>(queueCapacity),
+                                queueCapacity, new ThreadFactory() {
+            private final AtomicInteger threadCount = new AtomicInteger();
 
-                                                  @Override
-                                                  public Thread newThread(Runnable r) {
-                                                      Thread t = new Thread(null,
-                                                                            r,
-                                                                            threadNamePrefix + value.incrementAndGet());
-                                                      t.setDaemon(isDaemon);
-                                                      return t;
-                                                  }
-                                              });
-            if (prestart) {
-                instance.prestartAllCoreThreads();
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(null,
+                                      r,
+                                      threadNamePrefix + threadCount.incrementAndGet());
+                t.setDaemon(isDaemon);
+                return t;
             }
+        });
+        if (prestart) {
+            result.prestartAllCoreThreads();
+        }
+        return result;
+    }
+
+    @Override
+    public synchronized ExecutorService get() {
+        if (null == instance) {
+            instance = Contexts.wrap(getThreadPool());
         }
         return instance;
     }
@@ -117,16 +130,16 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      * A fluent API builder for {@link ThreadPoolSupplier}.
      */
     public static final class Builder implements io.helidon.common.Builder<ThreadPoolSupplier> {
-        private int corePoolSize = EXECUTOR_DEFAULT_CORE_POOL_SIZE;
-        private int maxPoolSize = EXECUTOR_DEFAULT_MAX_POOL_SIZE;
-        private int keepAliveMinutes = EXECUTOR_DEFAULT_KEEP_ALIVE_MINUTES;
-        private int queueCapacity = EXECUTOR_DEFAULT_QUEUE_CAPACITY;
-        private boolean isDaemon = EXECUTOR_DEFAULT_IS_DAEMON;
-        private String threadNamePrefix = EXECUTOR_DEFAULT_THREAD_NAME_PREFIX;
-        private boolean prestart = EXECUTOR_DEFAULT_PRESTART;
+        private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
+        private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
+        private int keepAliveMinutes = DEFAULT_KEEP_ALIVE_MINUTES;
+        private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
+        private boolean isDaemon = DEFAULT_IS_DAEMON;
+        private String threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX;
+        private boolean prestart = DEFAULT_PRESTART;
+        private String name;
 
         private Builder() {
-
         }
 
         @Override
@@ -190,6 +203,17 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         }
 
         /**
+         * Name of this thread pool executor.
+         *
+         * @param name the pool name
+         * @return updated builder instance
+         */
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        /**
          * Name prefix for threads in this thread pool executor.
          *
          * @param threadNamePrefix prefix of a thread name
@@ -239,4 +263,5 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             return this;
         }
     }
+
 }

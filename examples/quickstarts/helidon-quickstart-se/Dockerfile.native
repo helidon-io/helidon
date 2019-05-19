@@ -15,7 +15,7 @@
 #
 
 # 1st stage, build the app
-FROM helidon/jdk8-graalvm-maven:1.0.0-rc13 as build
+FROM helidon/jdk8-graalvm-maven:19.0.0 as build
 
 WORKDIR /helidon
 

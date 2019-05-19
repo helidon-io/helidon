@@ -272,7 +272,7 @@ processProjectPom(){
         -e s@"${PACKAGE}."@'${package}.'@g \
         -e s@"<groupId>${GROUPID}</groupId>"@'<groupId>${groupId}</groupId>'@g \
         -e s@"<artifactId>${ARTIFACTID}</artifactId>"@'<artifactId>${artifactId}</artifactId>'@g \
-        -e s@"<version>${VERSION}</version>"@'<version>${version}</version>'@g \
+        -e s@"^    <version>${VERSION}</version>"@'    <version>${version}</version>'@g \
         -e s@"<name>${NAME}</name>"@'<name>${project.artifactId}</name>'@g \
         > ${outputfile}
 }

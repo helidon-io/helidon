@@ -68,7 +68,7 @@ Tracer tracer = (Tracer) TracerBuilder.create("Server")
         .collectorUri(URI.create("http://10.0.0.18:9411"))   // <1>
         .build();
 ----
-<3> If using zipkin tracing system, the endpoint would be:
+<1> If using zipkin tracing system, the endpoint would be:
 ----
 http://10.0.0.18:9411/api/v2/spans
 ----

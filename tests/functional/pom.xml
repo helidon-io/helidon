@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>1.0.4-SNAPSHOT</version>
+        <version>1.1.1-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.functional</groupId>
@@ -36,5 +36,6 @@
     <modules>
         <module>bookstore</module>
         <module>multiport</module>
+        <module>jax-rs-subresource</module>
     </modules>
 </project>

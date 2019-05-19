@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,10 @@ module io.helidon.webserver.jersey {
     requires transitive jersey.server;
     requires transitive javax.inject;
 
+    requires io.helidon.common.context;
     requires reactor.core;
     requires java.logging;
+    requires hk2.api;
 
     exports io.helidon.webserver.jersey;
 
