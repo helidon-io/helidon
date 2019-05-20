@@ -49,14 +49,14 @@ import io.helidon.webserver.Service;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
-import org.glassfish.hk2.api.TypeLiteral;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.internal.PropertiesDelegate;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * The Jersey Support integrates Jersey (JAX-RS RI) into the Web Server.
@@ -76,7 +76,7 @@ import org.glassfish.jersey.server.model.Resource;
  * Note that due to a blocking IO approach, each request handling is forwarded to a dedicated
  * thread pool which can be configured by one of the JerseySupport constructor.
  */
-public class JerseySupport extends AbstractBinder implements Service {
+public class JerseySupport implements Service {
 
     /**
      * The request scoped span qualifier that can be injected into a Jersey resource.
@@ -117,27 +117,17 @@ public class JerseySupport extends AbstractBinder implements Service {
      * @param application the JAX-RS application to build the Jersey Support from
      * @param service the executor service that is used for a request handling. If {@code null},
      * a thread pool of size
-     * {@link Runtime#availableProcessors()} {@code * 2} is used.
+     * {@link Runtime#availableProcessors()} {@code * 8} is used.
      */
     private JerseySupport(Application application, ExecutorService service) {
-        this.appHandler = new ApplicationHandler(application, new WebServerBinder());
         ExecutorService executorService = (service != null) ? service : getDefaultThreadPool();
         this.service = Contexts.wrap(executorService);
-        appHandler.getInjectionManager().register(this);
+        this.appHandler = new ApplicationHandler(application, new ServerBinder(executorService));
     }
 
     @Override
     public void update(Routing.Rules routingRules) {
         routingRules.any(handler);
-    }
-
-    @Override
-    protected void configure() {
-        // Make the ThreadPool available to inject with its name. It must be held in an
-        // Optional since it is possible to pass a different executor to the ctor.
-        Optional<ThreadPool> pool = ThreadPool.asThreadPool(JerseySupport.this.service);
-        String name = pool.isPresent() ? pool.get().getName() : "none";
-        bind(pool).named(name).to(new TypeLiteral<Optional<ThreadPool>>() {});
     }
 
     private static ExecutorService getDefaultThreadPool() {
@@ -197,6 +187,30 @@ public class JerseySupport extends AbstractBinder implements Service {
             return basePath + "/";
         } else {
             return basePath;
+        }
+    }
+
+    /**
+     * A WebServerBinder that also supports injection of ThreadPool by name if the executor is one.
+     * This class is explicitly static to avoid field assignment order issues in the outer class.
+     */
+    private static class ServerBinder extends WebServerBinder {
+        private final ExecutorService executorService;
+
+        ServerBinder(ExecutorService executorService) {
+            this.executorService = requireNonNull(executorService);
+        }
+
+        @Override
+        protected void configure() {
+            super.configure();
+
+            // If the executor is a ThreadPool, make it available to inject with its name.
+            Optional<ThreadPool> maybePool = ThreadPool.asThreadPool(executorService);
+            if (maybePool.isPresent()) {
+                ThreadPool pool = maybePool.get();
+                bind(pool).named(pool.getName()).to(ThreadPool.class);
+            }
         }
     }
 
