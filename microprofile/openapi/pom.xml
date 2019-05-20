@@ -37,6 +37,9 @@
     <build>
         <plugins>
             <plugin>
+                <!--
+                    Used for the BasicServerTest.
+                -->
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
                 <executions>
