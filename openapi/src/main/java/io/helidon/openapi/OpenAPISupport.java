@@ -55,56 +55,9 @@ import org.jboss.jandex.IndexView;
  * that describes the endpoints handled by the application.
  * <p>
  * The application can use the {@link Builder} to set OpenAPI-related
- * attributes, including:
- * <table>
- * <caption>OpenAPI-related Settings</caption>
- * <tr>
- * <th>Method on {@link Builder}</th>
- * <th>Purpose</th>
- * </tr>
- * <tr>
- * <td>{@link Builder#config}</td>
- * <td>sets multiple OpenAPI-related items from a {@link Config} object</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#staticFile}</td>
- * <td>sets the static OpenAPI document file (defaults in order to
- * {@code openapi.yaml}, {@code openapi.yml}, or {@code openapi.json})</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#enableAnnotationProcessing}</td>
- * <td>sets whether OpenAPI annotations should be processed</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#webContext}</td>
- * <td>sets the endpoint path that will serve the OpenAPI document</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#modelReader}</td>
- * <td>sets the application-provided class for adding to the OpenAPI
- * document</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#filter}</td>
- * <td>sets the application-provided class for filtering OpenAPI document
- * information</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#servers}</td>
- * <td>sets the servers to be reported in the OpenAPI document</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#addOperationServer}</td>
- * <td>associates a server with a given operation ID</td>
- * </tr>
- * <tr>
- * <td>{@link Builder#addPathServer}</td>
- * <td>associates a server with a given path</td>
- * </tr>
- * </table>
- * If the application uses none of these builder methods and does not provide a
- * static {@code openapi} file, then the {@code /openapi} endpoint responds with
- * a nearly-empty OpenAPI document.
+ * attributes. If the application uses none of these builder methods and does
+ * not provide a static {@code openapi} file, then the {@code /openapi} endpoint
+ * responds with a nearly-empty OpenAPI document.
  */
 public class OpenAPISupport implements Service {
 
@@ -288,10 +241,10 @@ public class OpenAPISupport implements Service {
 
         JSON(Format.JSON,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON, MediaType.APPLICATION_JSON},
-            "json"),
+                "json"),
         YAML(Format.YAML,
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML, MediaType.APPLICATION_YAML},
-            "yaml", "yml");
+                "yaml", "yml");
 
         private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;
 
@@ -375,8 +328,8 @@ public class OpenAPISupport implements Service {
 
     /**
      * Creates a new {@link OpenAPISupport} instance using the
-     * '{@value Builder#CONFIG_PREFIX}' portion of the provided {@link Config}
-     * object.
+     * '{@value SEOpenAPISupportBuilder#CONFIG_PREFIX}' portion of the provided
+     * {@link Config} object.
      *
      * @param config {@code Config} object containing OpenAPI-related settings
      * @return new {@code OpenAPISupport} instance created using the
@@ -437,23 +390,24 @@ public class OpenAPISupport implements Service {
          * either as explicitly set using {@link #staticFile(java.lang.String) }
          * or one of the default files.
          *
-         * @return the OpenAPI static file instance for the static file if such a
-         * file exists, null otherwise
+         * @return the OpenAPI static file instance for the static file if such
+         * a file exists, null otherwise
          */
         OpenApiStaticFile staticFile() {
             return staticFilePath.isPresent() ? getExplicitStaticFile() : getDefaultStaticFile();
         }
 
         /**
-         * Returns the smallrye OpenApiConfig instance describing the set-up that
-         * will govern the smallrye OpenAPI behavior.
+         * Returns the smallrye OpenApiConfig instance describing the set-up
+         * that will govern the smallrye OpenAPI behavior.
          *
          * @return {@code OpenApiConfig} conveying how OpenAPI should behave
          */
         public abstract OpenApiConfig openAPIConfig();
 
         /**
-         * Returns the Jandex {@link IndexView} containing annotated endpoint classes.
+         * Returns the Jandex {@link IndexView} containing annotated endpoint
+         * classes.
          *
          * @return {@code IndexView} containing endpoint classes
          */
