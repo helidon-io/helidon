@@ -34,6 +34,10 @@
 
     <packaging>jar</packaging>
     
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+    
     <build>
         <plugins>
             <plugin>

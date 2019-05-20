@@ -20,6 +20,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -131,16 +133,16 @@ public class IndexBuilder implements Extension {
         }
     }
 
-    private void dumpIndex(Level level, Index index) {
+    private void dumpIndex(Level level, Index index) throws UnsupportedEncodingException {
         if (LOGGER.isLoggable(level)) {
             LOGGER.log(level, "Dump of internal Jandex index:");
             PrintStream oldStdout = System.out;
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                System.setOut(new PrintStream(baos));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (PrintStream newPS = new PrintStream(baos, true, Charset.defaultCharset().name())) {
+                System.setOut(newPS);
                 index.printAnnotations();
                 index.printSubclasses();
-                LOGGER.log(level, baos.toString());
+                LOGGER.log(level, baos.toString(Charset.defaultCharset().name()));
             } finally {
                 System.setOut(oldStdout);
             }
