@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,35 +63,4 @@ inject_credentials(){
 if [ "${WERCKER}" = "true" ] ; then
     export MAVEN_OPTS="-Dmaven.repo.local=${WERCKER_CACHE_DIR}/local_repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
     rm -rf ~/.m2/settings* ~/.gitconfig ~/.ssh ${WERCKER_CACHE_DIR}/local_repository/io/helidon
-    # Work around https://github.com/oracle/oci-java-sdk/issues/25
-
-    # resolve property 'version.lib.oci-java-sdk-objectstorage'
-    TEMP_OCI_SDK_VERSION=$(mktemp "oci-java-sdk.XXX")
-    mvn -B -f "${WERCKER_ROOT}/pom.xml" \
-                 -Dexpression=version.lib.oci-java-sdk-objectstorage \
-                 org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate | tee ${TEMP_OCI_SDK_VERSION}
-    OCI_SDK_VERSION=$(grep '^[0-9]' ${TEMP_OCI_SDK_VERSION})
-    if [ -z "${OCI_SDK_VERSION}" ] ; then
-        echo "ERROR, unable to get the OCI SDK version"
-        exit 1
-    fi
-    rm -f ${TEMP_OCI_SDK_VERSION}
-
-    # clone the oci sdk repo at the right branch and install the artifacts
-    TEMP_OCI_SDK_DIR=$(mktemp -d "oci-java-sdk.XXX")
-    git clone \
-        --depth 1 \
-        --branch \
-          v${OCI_SDK_VERSION} \
-        "https://github.com/oracle/oci-java-sdk.git" \
-        "${TEMP_OCI_SDK_DIR}" && \
-    mvn -B -U -f "${TEMP_OCI_SDK_DIR}/pom.xml" \
-        -Dmaven.test.skip=true \
-        -Dmaven.source.skip=true \
-        -Dmaven.javadoc.skip=true \
-        -Dlombok.delombok.skip=true \
-        -pl bmc-objectstorage \
-        -am \
-        install && \
-    rm -rf "${TEMP_OCI_SDK_DIR}"
 fi

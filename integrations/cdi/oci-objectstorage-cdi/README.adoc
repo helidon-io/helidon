@@ -5,24 +5,6 @@ http://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#spi[CDI portable
 extension] that lets the end user inject an `ObjectStorage` client
 into her CDI application.
 
-== Prerequisites
-
-The OCI Java SDK is not available in Maven Central at the moment.
-You will need to populate your local Maven repository with the OCI Java SDK
- artifacts in order to resolve the helidon dependency described in the next section.
-
-```bash
-    git clone --depth 1 --branch v1.2.44 https://github.com/oracle/oci-java-sdk.git
-    mvn -B -U -f oci-java-sdk/pom.xml \
-        -Dmaven.test.skip=true \
-        -Dmaven.source.skip=true \
-        -Dmaven.javadoc.skip=true \
-        -Dlombok.delombok.skip=true \
-        -pl bmc-objectstorage \
-        -am \
-        install
-```
-
 == Installation
 
 Ensure that the Helidon OCI Object Storage CDI Integration project and
