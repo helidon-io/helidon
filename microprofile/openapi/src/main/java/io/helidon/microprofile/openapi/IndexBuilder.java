@@ -77,7 +77,7 @@ public class IndexBuilder implements Extension {
      * @param <X> annotated type
      * @param event {@code ProcessAnnotatedType} event
      */
-    <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> type) {
+    private <X> void processAnnotatedType(@Observes ProcessAnnotatedType<X> type) {
         if (isIndexPresentOnClasspath) {
             return;
         }

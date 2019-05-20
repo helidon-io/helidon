@@ -45,6 +45,7 @@ public final class SEOpenAPISupportBuilder extends OpenAPISupport.Builder {
      * supported by {@link OpenAPIConfigImpl.Builder}.
      *
      * @param config the {@code Config} object possibly containing settings
+     * @exception NullPointerException if the provided {@code Config} is null
      * @return updated builder instance
      */
     public SEOpenAPISupportBuilder helidonConfig(Config config) {

@@ -472,15 +472,13 @@ public class OpenAPISupport implements Service {
                                 OPENAPI_EXPLICIT_STATIC_FILE_LOG_MESSAGE_FORMAT,
                                 path.toAbsolutePath().toString()));
                 return new OpenApiStaticFile(is, specifiedMediaType.format());
-            } catch (Throwable th) {
+            } catch (Exception ex) {
                 try {
                     is.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.FINE,
-                            "Encountered an error closing an input stream "
-                            + "after catching an unrelated error", ex);
+                } catch (IOException ioex) {
+                    ex.addSuppressed(ioex);
                 }
-                throw th;
+                throw ex;
             }
         }
 
@@ -502,17 +500,15 @@ public class OpenAPISupport implements Service {
                         if (candidatePaths != null) {
                             candidatePaths.add(candidatePath);
                         }
-                    } catch (Throwable th) {
+                    } catch (Exception ex) {
                         if (is != null) {
                             try {
                                 is.close();
-                            } catch (IOException ex) {
-                                LOGGER.log(Level.FINE,
-                                        "Encountered an error closing an input stream "
-                                        + "after catching an unrelated error", ex);
+                            } catch (IOException ioex) {
+                                ex.addSuppressed(ioex);
                             }
                         }
-                        throw th;
+                        throw ex;
                     }
                 }
             }
