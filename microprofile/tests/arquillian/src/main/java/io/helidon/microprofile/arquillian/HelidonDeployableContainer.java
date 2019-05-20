@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                                   .optional());
         // The following line supports MP OpenAPI, which allows an alternate
         // location for the config file.
-        configSources.add(ConfigSources.file(context.deployDir.resolve("WEB-INF/classes/META-INF/microprofile-config.properties").toString())
+        configSources.add(ConfigSources.file(
+                context.deployDir.resolve("WEB-INF/classes/META-INF/microprofile-config.properties").toString())
                                   .optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("application.properties").toString()).optional());
@@ -386,6 +387,6 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         private Object runner;
         // existing class loader
         private ClassLoader oldClassLoader;
-        }
+    }
 
 }
