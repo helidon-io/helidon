@@ -189,7 +189,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         Thread.currentThread().setContextClassLoader(context.classLoader);
 
         List<Supplier<ConfigSource>> configSources = new LinkedList<>();
-        configSources.add(ConfigSources.classpath("META-INF/microprofile-config.properties")
+        configSources.add(ConfigSources.file(context.deployDir.resolve("META-INF/microprofile-config.properties").toString())
+                                  .optional());
+        // The following line supports MP OpenAPI, which allows an alternate
+        // location for the config file.
+        configSources.add(ConfigSources.file(context.deployDir.resolve("WEB-INF/classes/META-INF/microprofile-config.properties").toString())
                                   .optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("application.properties").toString()).optional());
