@@ -133,7 +133,7 @@ public class IndexBuilder implements Extension {
         }
     }
 
-    private void dumpIndex(Level level, Index index) throws UnsupportedEncodingException {
+    private static void dumpIndex(Level level, Index index) throws UnsupportedEncodingException {
         if (LOGGER.isLoggable(level)) {
             LOGGER.log(level, "Dump of internal Jandex index:");
             PrintStream oldStdout = System.out;
@@ -149,11 +149,11 @@ public class IndexBuilder implements Extension {
         }
     }
 
-    private ClassLoader contextClassLoader() {
+    private static ClassLoader contextClassLoader() {
         return Thread.currentThread().getContextClassLoader();
     }
 
-    private String resourceNameForClass(Class<?> c) {
+    private static String resourceNameForClass(Class<?> c) {
         return c.getName().replace('.', '/') + ".class";
     }
 }

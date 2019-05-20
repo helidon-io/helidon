@@ -48,6 +48,7 @@ import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import java.io.BufferedInputStream;
 import org.jboss.jandex.IndexView;
 
 /**
@@ -459,11 +460,11 @@ public class OpenAPISupport implements Service {
             }
             final InputStream is;
             try {
-                is = Files.newInputStream(path);
+                is = new BufferedInputStream(Files.newInputStream(path));
             } catch (IOException ex) {
                 throw new IllegalArgumentException("OpenAPI file "
                         + path.toAbsolutePath().toString()
-                        + " was specified but was not found");
+                        + " was specified but was not found", ex);
             }
 
             try {
