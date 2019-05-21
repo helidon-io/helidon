@@ -30,12 +30,17 @@ import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.ProviderConfig;
 
 import static io.helidon.security.CompositeProviderFlag.SUFFICIENT;
+import static io.helidon.security.SecurityResponse.SecurityStatus.ABSTAIN;
 import static io.helidon.security.SecurityResponse.SecurityStatus.SUCCESS;
 
 /**
  * A provider building a single authentication result from one or more authentication providers.
  */
 final class CompositeAuthenticationProvider implements AuthenticationProvider {
+    private static final AuthenticationResponse ABSTAIN_RESPONSE = AuthenticationResponse.abstain();
+    private static final CompletableFuture<AtnResponse> COMPLETED_ABSTAIN = CompletableFuture
+            .completedFuture(new AtnResponse(ABSTAIN_RESPONSE));
+
     private final List<Atn> providers = new LinkedList<>();
 
     CompositeAuthenticationProvider(List<Atn> parts) {
@@ -72,8 +77,7 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        CompletionStage<AtnResponse> result = CompletableFuture
-                .completedFuture(new AtnResponse(AuthenticationResponse.abstain()));
+        CompletionStage<AtnResponse> result = COMPLETED_ABSTAIN;
 
         for (Atn providerConfig : providers) {
             // go through all providers and validate each response, collecting successes
@@ -81,17 +85,17 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
         }
 
         return result.thenApply(atnResponse -> {
-            // when we get here, we should have all the sucesses and the response is the last one
-            AuthenticationResponse response = atnResponse.response;
-            List<AuthenticationResponse> successes = atnResponse.successResponses;
+            // when we get here, we should have all the successes and the response is the last one
 
+            List<AuthenticationResponse> successes = atnResponse.successResponses;
             if (successes.isEmpty()) {
-                // we do not have any successful responses - abstain
-                return AuthenticationResponse.abstain();
+                // no success - abstain
+                // if this was not a valid result of the authentication, we would have
+                // thrown an exception in invokeProvider();
+                return ABSTAIN_RESPONSE;
             }
 
             AuthenticationResponse.Builder responseBuilder = AuthenticationResponse.builder().status(SUCCESS);
-
             combineSubjects(successes, responseBuilder);
 
             // build response
@@ -132,6 +136,12 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
                                 .build();
                         throw new AsyncAtnException(newResponse);
                     }
+
+                    if (atnResponse.status() == ABSTAIN) {
+                        // if we abstain, we want to return the previous response
+                        return new AtnResponse(previous.response);
+                    }
+
                     return new AtnResponse(atnResponse, successes);
                 });
     }
