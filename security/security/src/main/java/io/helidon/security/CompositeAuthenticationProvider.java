@@ -38,8 +38,6 @@ import static io.helidon.security.SecurityResponse.SecurityStatus.SUCCESS;
  */
 final class CompositeAuthenticationProvider implements AuthenticationProvider {
     private static final AuthenticationResponse ABSTAIN_RESPONSE = AuthenticationResponse.abstain();
-    private static final CompletableFuture<AtnResponse> COMPLETED_ABSTAIN = CompletableFuture
-            .completedFuture(new AtnResponse(ABSTAIN_RESPONSE));
 
     private final List<Atn> providers = new LinkedList<>();
 
@@ -77,7 +75,7 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        CompletionStage<AtnResponse> result = COMPLETED_ABSTAIN;
+        CompletionStage<AtnResponse> result = CompletableFuture.completedFuture(new AtnResponse(ABSTAIN_RESPONSE));
 
         for (Atn providerConfig : providers) {
             // go through all providers and validate each response, collecting successes
@@ -139,7 +137,7 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
 
                     if (atnResponse.status() == ABSTAIN) {
                         // if we abstain, we want to return the previous response
-                        return new AtnResponse(previous.response);
+                        return new AtnResponse(previous.response, successes);
                     }
 
                     return new AtnResponse(atnResponse, successes);

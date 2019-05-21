@@ -132,7 +132,7 @@ public class CompositePolicyFlagsTest {
     }
 
     @Test
-    public void testForbidden() {
+    public void testForbiddenFirst() {
         TestConfig tc = new TestConfig(CompositeProviderFlag.FORBIDDEN, CompositeProviderFlag.REQUIRED);
 
         tc.okOk = FAILURE;
@@ -150,6 +150,25 @@ public class CompositePolicyFlagsTest {
         testIt(tc);
 
         tc = new TestConfig(CompositeProviderFlag.REQUIRED, CompositeProviderFlag.FORBIDDEN);
+
+        tc.okOk = FAILURE;
+        tc.okAbstain = SUCCESS;
+        tc.okFail = SUCCESS;
+
+        tc.abstainOk = FAILURE;
+        tc.abstainAbstain = FAILURE;
+        tc.abstainFail = FAILURE;
+
+        tc.failOk = FAILURE;
+        tc.failAbstain = FAILURE;
+        tc.failFail = FAILURE;
+
+        testIt(tc);
+    }
+
+    @Test
+    public void testForbiddenLast() {
+        TestConfig tc = new TestConfig(CompositeProviderFlag.REQUIRED, CompositeProviderFlag.FORBIDDEN);
 
         tc.okOk = FAILURE;
         tc.okAbstain = SUCCESS;
