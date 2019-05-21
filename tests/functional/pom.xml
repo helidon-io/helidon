@@ -37,5 +37,6 @@
         <module>bookstore</module>
         <module>multiport</module>
         <module>jax-rs-subresource</module>
+        <module>context-propagation</module>
     </modules>
 </project>
