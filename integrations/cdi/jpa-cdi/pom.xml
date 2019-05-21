@@ -127,6 +127,24 @@
 
     <profiles>
         <profile>
+            <id>sources</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>resource-bundle</id>
+                                <goals>
+                                    <goal>resource-bundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>xmlbind</id>
             <activation>
                 <jdk>[9,)</jdk>
