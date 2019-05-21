@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.config.cdi;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
@@ -43,13 +44,16 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.AnnotatedField;
+import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedParameter;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
+import javax.enterprise.inject.spi.ProcessBean;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
+import javax.enterprise.inject.spi.ProcessObserverMethod;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Provider;
@@ -93,7 +97,11 @@ public class ConfigCdiExtension implements Extension {
      * Process each injection point for {@link ConfigProperty}.
      *
      * @param pip event from CDI container
+     *
+     * @deprecated This method was not intended to be {@code public}
+     * and may be removed without notice.
      */
+    @Deprecated
     public void collectConfigProducer(@Observes ProcessInjectionPoint<?, ?> pip) {
         ConfigProperty configProperty = pip.getInjectionPoint().getAnnotated().getAnnotation(ConfigProperty.class);
         if (configProperty != null) {
@@ -101,7 +109,6 @@ public class ConfigCdiExtension implements Extension {
             String fullPath = ip.getMember().getDeclaringClass().getName()
                     + "." + getFieldName(ip);
 
-            Type type = ip.getType();
             /*
              Supported types
              group x:
@@ -119,7 +126,7 @@ public class ConfigCdiExtension implements Extension {
              group z':
                 Map<String, String> - a detached key/value mapping of whole subtree
              */
-            FieldTypes ft = FieldTypes.forType(type);
+            FieldTypes ft = FieldTypes.forType(ip.getType());
 
             ConfigQLiteral q = new ConfigQLiteral(
                     fullPath,
@@ -131,8 +138,49 @@ public class ConfigCdiExtension implements Extension {
 
             pip.configureInjectionPoint()
                     .addQualifier(q);
+        }
+    }
 
-            qualifiers.add(new IpConfig(q, type));
+    private void harvestConfigPropertyInjectionPointsFromEnabledBean(@Observes ProcessBean<?> event) {
+        Bean<?> bean = event.getBean();
+        Set<InjectionPoint> beanInjectionPoints = bean.getInjectionPoints();
+        if (beanInjectionPoints != null && !beanInjectionPoints.isEmpty()) {
+            for (InjectionPoint beanInjectionPoint : beanInjectionPoints) {
+                if (beanInjectionPoint != null) {
+                    Type type = beanInjectionPoint.getType();
+                    Set<Annotation> qualifiers = beanInjectionPoint.getQualifiers();
+                    assert qualifiers != null;
+                    for (Annotation qualifier : qualifiers) {
+                        if (qualifier instanceof ConfigQualifier) {
+                            this.qualifiers.add(new IpConfig((ConfigQualifier) qualifier, type));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private <X> void harvestConfigPropertyInjectionPointsFromEnabledObserverMethod(@Observes ProcessObserverMethod<?, X> event,
+                                                                                   BeanManager beanManager) {
+        AnnotatedMethod<X> annotatedMethod = event.getAnnotatedMethod();
+        List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
+        if (annotatedParameters != null && annotatedParameters.size() > 1) {
+            for (AnnotatedParameter<?> annotatedParameter : annotatedParameters) {
+                if (annotatedParameter != null
+                    && !annotatedParameter.isAnnotationPresent(Observes.class)) {
+                    InjectionPoint injectionPoint = beanManager.createInjectionPoint(annotatedParameter);
+                    Type type = injectionPoint.getType();
+                    Set<Annotation> qualifiers = injectionPoint.getQualifiers();
+                    assert qualifiers != null;
+                    for (Annotation qualifier : qualifiers) {
+                        if (qualifier instanceof ConfigQualifier) {
+                            this.qualifiers.add(new IpConfig((ConfigQualifier) qualifier, type));
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -163,7 +211,11 @@ public class ConfigCdiExtension implements Extension {
      *
      * @param abd event from CDI container
      * @param bm  bean manager
+     *
+     * @deprecated This method was not intended to be {@code public}
+     * and may be removed without notice.
      */
+    @Deprecated
     public void registerConfigProducer(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // each injection point will have its own bean
         qualifiers.forEach(q -> abd.addBean(new ConfigPropertyProducer(q.qualifier, q.type, bm)));
@@ -184,7 +236,11 @@ public class ConfigCdiExtension implements Extension {
      * Validate all injection points are valid.
      *
      * @param add event from CDI container
+     *
+     * @deprecated This method was not intended to be {@code public}
+     * and may be removed without notice.
      */
+    @Deprecated
     public void validate(@Observes AfterDeploymentValidation add) {
         LOGGER.entering(getClass().getName(), "validate");
         MpConfig mpConfig = (MpConfig) configResolver.getConfig();
@@ -214,6 +270,7 @@ public class ConfigCdiExtension implements Extension {
                 add.addDeploymentProblem(e);
             }
         });
+        qualifiers.clear();
 
         LOGGER.exiting(getClass().getName(), "validate");
     }
@@ -246,25 +303,25 @@ public class ConfigCdiExtension implements Extension {
 
         // e.g. String, Producer, Optional
         @Nonbinding
-        Class rawType();
+        Class<?> rawType();
 
         // e.g. eq. to raw type, or type argument of Producer, Optional
         @Nonbinding
-        Class typeArg();
+        Class<?> typeArg();
 
         @Nonbinding
-        Class typeArg2();
+        Class<?> typeArg2();
     }
 
-    static class ConfigQLiteral extends AnnotationLiteral<ConfigQualifier> implements ConfigQualifier {
+    static final class ConfigQLiteral extends AnnotationLiteral<ConfigQualifier> implements ConfigQualifier {
         private String fullPath;
         private String key;
         private String defaultValue;
-        private Class rawType;
-        private Class typeArg;
-        private Class typeArg2;
+        private Class<?> rawType;
+        private Class<?> typeArg;
+        private Class<?> typeArg2;
 
-        ConfigQLiteral(String fullPath, String key, String defaultValue, Class rawType, Class typeArg, Class typeArg2) {
+        ConfigQLiteral(String fullPath, String key, String defaultValue, Class<?> rawType, Class<?> typeArg, Class<?> typeArg2) {
             this.fullPath = fullPath;
             this.key = key;
             this.defaultValue = defaultValue;
@@ -289,17 +346,17 @@ public class ConfigCdiExtension implements Extension {
         }
 
         @Override
-        public Class rawType() {
+        public Class<?> rawType() {
             return rawType;
         }
 
         @Override
-        public Class typeArg() {
+        public Class<?> typeArg() {
             return typeArg;
         }
 
         @Override
-        public Class typeArg2() {
+        public Class<?> typeArg2() {
             return typeArg2;
         }
 
@@ -314,7 +371,7 @@ public class ConfigCdiExtension implements Extension {
         }
     }
 
-    static class IpConfig {
+    static final class IpConfig {
         private ConfigQualifier qualifier;
         private Type type;
 
@@ -325,9 +382,14 @@ public class ConfigCdiExtension implements Extension {
     }
 
     /**
-     * A Bean to create {@link ConfigProperty} values for each injection point.
+     * A {@link Bean} to create {@link ConfigProperty} values for each
+     * injection point.
+     *
+     * @deprecated This class was not intended to be {@code public}
+     * and may be removed without notice.
      */
-    public static class ConfigPropertyProducer implements Bean<Object> {
+    @Deprecated
+    public static final class ConfigPropertyProducer implements Bean<Object> {
         private static final Annotation QUALIFIER = new ConfigProperty() {
             @Override
             public String name() {
@@ -451,7 +513,6 @@ public class ConfigCdiExtension implements Extension {
             }
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public Object create(CreationalContext<Object> context) {
             Object value = getConfigValue(context);
@@ -526,9 +587,10 @@ public class ConfigCdiExtension implements Extension {
     }
 
     /**
-     * A three tier description of a field type (main type, first generic type, second generic type).
+     * A three tier description of a field type (main type, first
+     * generic type, second generic type).
      */
-    static class FieldTypes {
+    static final class FieldTypes {
         private TypedField field0;
         private TypedField field1;
         private TypedField field2;
@@ -644,7 +706,6 @@ public class ConfigCdiExtension implements Extension {
 
             @Override
             public int hashCode() {
-
                 return Objects.hash(rawType, paramType);
             }
 
@@ -658,12 +719,13 @@ public class ConfigCdiExtension implements Extension {
         }
     }
 
-    private static class SerializableConfig implements org.eclipse.microprofile.config.Config, Serializable {
+    private static final class SerializableConfig implements org.eclipse.microprofile.config.Config, Serializable {
+
         private static final long serialVersionUID = 1;
 
         private transient org.eclipse.microprofile.config.Config theConfig;
 
-        SerializableConfig() {
+        private SerializableConfig() {
             this.theConfig = ConfigProviderResolver.instance().getConfig();
         }
 
@@ -687,7 +749,8 @@ public class ConfigCdiExtension implements Extension {
             return theConfig.getConfigSources();
         }
 
-        private void readObject(ObjectInputStream ios) {
+        private void readObject(ObjectInputStream ios) throws ClassNotFoundException, IOException {
+            ios.defaultReadObject();
             this.theConfig = ConfigProviderResolver.instance().getConfig();
         }
     }
