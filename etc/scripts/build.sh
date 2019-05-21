@@ -46,7 +46,7 @@ fi
 inject_credentials
 
 mvn -f ${WS_DIR}/pom.xml \
-    clean install \
+    clean install -e \
     -Pexamples,integrations,spotbugs,adoc-check,javadoc,docs,sources,ossrh-releases,tck,tests
 
 examples/quickstarts/archetypes/test-archetypes.sh
