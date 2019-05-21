@@ -154,7 +154,7 @@
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.34.Final</version.lib.netty>
         <version.netty.tcnative>2.0.22.Final</version.netty.tcnative>
-        <version.lib.oci-java-sdk-objectstorage>1.2.44</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci-java-sdk-objectstorage>1.5.2</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>12.2.0.1</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.0.12</version.lib.opentracing.grpc>

@@ -29,31 +29,6 @@ This link:{cdi-extension-api-url}[CDI portable extension] provides support for
 
 == Prerequisites
 
-To install the extension for Oracle Cloud Infrastructure Object Storage clients,
- you must first clone and install the Oracle Cloud Infrastructure Java SDK because
- it is not available, currently, in Maven Central.
-
-Clone the SDK:
-
-[source,bash]
-----
-git clone --depth 1 --branch v1.2.44 https://github.com/oracle/oci-java-sdk.git
-----
-
-Install the SDK:
-
-[source,bash]
-----
-cd oci-java-sdk && mvn -B -U -f oci-java-sdk/pom.xml \
-        -Dmaven.test.skip=true \
-        -Dmaven.source.skip=true \
-        -Dmaven.javadoc.skip=true \
-        -Dlombok.delombok.skip=true \
-        -pl bmc-objectstorage \
-        -am \
-        install
-----
-
 Declare the following dependency in your project:
 
 [source,xml]
