@@ -60,10 +60,5 @@
             <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.openapi</groupId>
-            <artifactId>helidon-microprofile-openapi</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 </project>
