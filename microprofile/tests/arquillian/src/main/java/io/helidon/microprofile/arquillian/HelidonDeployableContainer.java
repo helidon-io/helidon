@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,8 +151,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
             URL[] classPath;
 
+            Path rootDir = context.deployDir.resolve("");
             if (isJavaArchive) {
-                Path rootDir = context.deployDir.resolve("");
                 ensureBeansXml(rootDir);
                 classPath = new URL[] {
                         rootDir.toUri().toURL()
@@ -163,7 +163,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 Path classesDir = webInfDir.resolve("classes");
                 Path libDir = webInfDir.resolve("lib");
                 ensureBeansXml(classesDir);
-                classPath = getServerClasspath(classesDir, libDir);
+                classPath = getServerClasspath(classesDir, libDir, rootDir);
             }
 
             startServer(context, classPath, classNames);
@@ -190,6 +190,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
         List<Supplier<ConfigSource>> configSources = new LinkedList<>();
         configSources.add(ConfigSources.file(context.deployDir.resolve("META-INF/microprofile-config.properties").toString())
+                                  .optional());
+        // The following line supports MP OpenAPI, which allows an alternate
+        // location for the config file.
+        configSources.add(ConfigSources.file(
+                context.deployDir.resolve("WEB-INF/classes/META-INF/microprofile-config.properties").toString())
                                   .optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("arquillian.properties").toString()).optional());
         configSources.add(ConfigSources.file(context.deployDir.resolve("application.properties").toString()).optional());
@@ -227,7 +232,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                 .invoke(context.runner, config, containerConfig, classNames, context.classLoader);
     }
 
-    URL[] getServerClasspath(Path classesDir, Path libDir) throws IOException {
+    URL[] getServerClasspath(Path classesDir, Path libDir, Path rootDir) throws IOException {
         List<URL> urls = new ArrayList<>();
 
         // classes directory
@@ -246,6 +251,8 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                         }
                     });
         }
+
+        urls.add(rootDir.toUri().toURL());
 
         return urls.toArray(new URL[0]);
     }

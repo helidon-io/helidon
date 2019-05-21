@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package io.helidon.openapi;
+package io.helidon.openapi.internal;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,13 +39,13 @@ import io.smallrye.openapi.api.OpenApiConfig;
  * a way to set the scanning-related values. We just initialize them
  * appropriately.
  */
-class OpenAPIConfigImpl implements OpenApiConfig {
+public class OpenAPIConfigImpl implements OpenApiConfig {
 
     private final String modelReader;
     private final String filter;
     private final Map<String, Set<String>> operationServers;
     private final Map<String, Set<String>> pathServers;
-    private final Boolean scanDisable = Boolean.TRUE;
+    private Boolean scanDisable = Boolean.TRUE;
     private final Set<String> scanPackages = Collections.emptySet();
     private final Set<String> scanClasses = Collections.emptySet();
     private final Set<String> scanExcludePackages = Collections.emptySet();
@@ -60,6 +60,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
         operationServers = builder.operationServers;
         pathServers = builder.pathServers;
         servers = new HashSet<>(builder.servers);
+        scanDisable = builder.scanDisable;
     }
 
     /**
@@ -139,7 +140,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
     }
 
     /**
-     * Fluent builder for {@link io.helidon.openapi.OpenAPIConfigImpl}.
+     * Fluent builder for {@link io.helidon.openapi.internal.OpenAPIConfigImpl}.
      * <p>
      * The caller can set values individually by invoking the method
      * corresponding to each value, or by passing a {@link Config} object with
@@ -166,6 +167,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
         static final String SERVERS = CONFIG_PREFIX + "servers";
         static final String SERVERS_PATH = CONFIG_PREFIX + "servers.path";
         static final String SERVERS_OPERATION = CONFIG_PREFIX + "servers.operation";
+        static final String SCHEMA_REFERENCES_ENABLED = CONFIG_PREFIX + "schema-references.enable";
 
         static final List<String> CONFIG_KEYS = Arrays.asList(new String[] {MODEL_READER, FILTER, SERVERS});
 
@@ -174,6 +176,7 @@ class OpenAPIConfigImpl implements OpenApiConfig {
         private final Map<String, Set<String>> operationServers = new HashMap<>();
         private final Map<String, Set<String>> pathServers = new HashMap<>();
         private final Set<String> servers = new HashSet<>();
+        private boolean scanDisable = true;
 
         private Builder() {
         }
@@ -294,6 +297,17 @@ class OpenAPIConfigImpl implements OpenApiConfig {
             return this;
         }
 
+        /**
+         * Sets whether annotation scanning should be disabled.
+         *
+         * @param value new setting for annotation scanning disabled flag
+         * @return updated builder
+         */
+        public Builder scanDisable(boolean value) {
+            scanDisable = value;
+            return this;
+        }
+
         private static void stringFromConfig(Config config,
                 String key,
                 Function<String, Builder> assignment) {
@@ -308,6 +322,12 @@ class OpenAPIConfigImpl implements OpenApiConfig {
                 String value = c.asString().get();
                 assignment.apply(key, value);
             }));
+        }
+
+        private static void booleanFromConfig(Config config,
+                String key,
+                Function<Boolean, Builder> assignment) {
+            config.get(key).ifExists(c -> assignment.apply(c.asBoolean().get()));
         }
 
         /**

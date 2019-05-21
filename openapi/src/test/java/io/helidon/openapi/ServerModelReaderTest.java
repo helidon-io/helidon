@@ -42,8 +42,8 @@ public class ServerModelReaderTest {
     private static final String SIMPLE_PROPS_PATH = "/openapi";
 
     private static final OpenAPISupport.Builder OPENAPI_SUPPORT_BUILDER =
-        OpenAPISupport.builder()
-                .config(Config.create(ConfigSources.classpath("simple.properties")));
+        OpenAPISupport.builderSE()
+                .helidonConfig(Config.create(ConfigSources.classpath("simple.properties")));
 
     private static WebServer webServer;
 

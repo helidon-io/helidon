@@ -29,7 +29,7 @@
     <name>Helidon OpenAPI</name>
 
     <description>
-        OpenAPI implementation
+        Helidon OpenAPI implementation
     </description>
 
     <packaging>jar</packaging>
