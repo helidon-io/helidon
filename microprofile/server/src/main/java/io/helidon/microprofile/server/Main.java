@@ -92,7 +92,7 @@ public final class Main {
             source = "file: " + path.toAbsolutePath();
         } else {
             // second look for classpath (only the first one)
-            logConfigStream = Main.class.getResourceAsStream("/" + LOGGING_FILE);
+            logConfigStream = new BufferedInputStream(Main.class.getResourceAsStream("/" + LOGGING_FILE));
             if (null != logConfigStream) {
                 source = "classpath: /" + LOGGING_FILE;
             }
