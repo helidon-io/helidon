@@ -18,9 +18,11 @@ package io.helidon.microprofile.config;
 
 import java.time.YearMonth;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.config.MissingValueException;
 import io.helidon.microprofile.config.Converters.Ctor;
 import io.helidon.microprofile.config.Converters.Of;
 import io.helidon.microprofile.config.Converters.Parse;
@@ -36,6 +38,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -122,6 +125,15 @@ class MpConfigTest {
         assertThat("Environment variables", ((Set<String>) propertyNames).contains("PATH"));
     }
 
+    @Test
+    public void testGetValueOfNonExistentValueShouldThrowNoSuchElementException() {
+        assertThrows(NoSuchElementException.class, () -> mpConfig.getValue("nonexistent.property", String.class));
+    }
+
+    @Test
+    public void testFindValueOfNonExistentValueShouldThrowMissingValueException() {
+        assertThrows(MissingValueException.class, () -> mpConfig.findValue("nonexistent.property", String.class));
+    }
 
     @Test
     public void testImplicitConversion() {

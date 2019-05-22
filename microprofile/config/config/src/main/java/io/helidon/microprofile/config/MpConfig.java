@@ -158,7 +158,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
         return result;
     }
 
-    private <T> T findValue(String propertyName, Class<T> propertyType) {
+    <T> T findValue(String propertyName, Class<T> propertyType) {
         if (propertyType == Config.class) {
             return config.get().get(propertyName).as(propertyType).get();
         }

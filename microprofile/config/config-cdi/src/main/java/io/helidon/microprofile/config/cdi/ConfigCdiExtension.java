@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedParameter;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -65,8 +67,8 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.MissingValueException;
 import io.helidon.microprofile.config.MpConfig;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import static java.lang.annotation.ElementType.FIELD;
@@ -82,9 +84,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public class ConfigCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName());
     private static final Logger VALUE_LOGGER = Logger.getLogger(ConfigCdiExtension.class.getName() + ".VALUES");
-    private final ConfigProviderResolver configResolver = ConfigProviderResolver.instance();
 
-    private final List<IpConfig> qualifiers = new LinkedList<>();
+    private final List<IpConfig> ipConfigs = new LinkedList<>();
 
     /**
      * Constructor invoked by CDI container.
@@ -113,7 +114,7 @@ public class ConfigCdiExtension implements Extension {
              Supported types
              group x:
                 primitive types + String
-                any java class (except for parametrized types)
+                any java class (except for parameterized types)
              group y = group x + the ones listed here:
                 List<x> - where x is one of the above
                 x[] - where x is one of the above
@@ -152,7 +153,7 @@ public class ConfigCdiExtension implements Extension {
                     assert qualifiers != null;
                     for (Annotation qualifier : qualifiers) {
                         if (qualifier instanceof ConfigQualifier) {
-                            this.qualifiers.add(new IpConfig((ConfigQualifier) qualifier, type));
+                            ipConfigs.add(new IpConfig((ConfigQualifier) qualifier, type));
                             break;
                         }
                     }
@@ -175,7 +176,7 @@ public class ConfigCdiExtension implements Extension {
                     assert qualifiers != null;
                     for (Annotation qualifier : qualifiers) {
                         if (qualifier instanceof ConfigQualifier) {
-                            this.qualifiers.add(new IpConfig((ConfigQualifier) qualifier, type));
+                            ipConfigs.add(new IpConfig((ConfigQualifier) qualifier, type));
                             break;
                         }
                     }
@@ -184,7 +185,7 @@ public class ConfigCdiExtension implements Extension {
         }
     }
 
-    private String getFieldName(InjectionPoint ip) {
+    private static String getFieldName(InjectionPoint ip) {
         Annotated annotated = ip.getAnnotated();
         if (annotated instanceof AnnotatedField) {
             AnnotatedField f = (AnnotatedField) annotated;
@@ -218,12 +219,12 @@ public class ConfigCdiExtension implements Extension {
     @Deprecated
     public void registerConfigProducer(@Observes AfterBeanDiscovery abd, BeanManager bm) {
         // each injection point will have its own bean
-        qualifiers.forEach(q -> abd.addBean(new ConfigPropertyProducer(q.qualifier, q.type, bm)));
+        ipConfigs.forEach(ipc -> abd.addBean(new ConfigPropertyProducer(ipc.qualifier, ipc.type, bm)));
 
         // we also must support injection of Config itself
         abd.addBean()
                 .addType(Config.class)
-                .createWith(creationalContext -> ((MpConfig) configResolver.getConfig()).helidonConfig());
+                .createWith(creationalContext -> ((MpConfig) ConfigProvider.getConfig()).helidonConfig());
 
         abd.addBean()
                 .addType(org.eclipse.microprofile.config.Config.class)
@@ -241,41 +242,34 @@ public class ConfigCdiExtension implements Extension {
      * and may be removed without notice.
      */
     @Deprecated
-    public void validate(@Observes AfterDeploymentValidation add) {
+    public void validate(AfterDeploymentValidation add) {
+        this.validate(add, CDI.current().getBeanManager());
+    }
+
+    private void validate(@Observes AfterDeploymentValidation add, BeanManager beanManager) {
         LOGGER.entering(getClass().getName(), "validate");
-        MpConfig mpConfig = (MpConfig) configResolver.getConfig();
-
-        qualifiers.forEach(q -> {
-            try {
-                Object configValue;
-                if (q.qualifier.rawType().isArray()) {
-                    ConfigQualifier qualifier = q.qualifier;
-                    String configKey = qualifier.key().isEmpty()
-                                       ? qualifier.fullPath().replace('$', '.')
-                                       : qualifier.key();
-                    // default values!!!
-                    configValue = mpConfig.getValue(configKey, q.qualifier.rawType());
-                } else {
-                    configValue = ConfigPropertyProducer.getConfigValue(mpConfig, q.qualifier);
+        CreationalContext<?> cc = beanManager.createCreationalContext(null);
+        try {
+            ipConfigs.forEach(ipc -> {
+                try {
+                    Object configValue = beanManager.getInjectableReference(new InjectionPointTemplate(ipc.type, ipc.qualifier),
+                                                                            cc);
+                    VALUE_LOGGER.finest(() -> "Config value for " + ipc.qualifier.key()
+                                              + " (" + ipc.qualifier.fullPath() + "), is "
+                                              + configValue);
+                } catch (Exception e) {
+                    add.addDeploymentProblem(e);
                 }
-
-                if (null == configValue) {
-                    throw new DeploymentException("Config value for " + q.qualifier.key() + "(" + q.qualifier
-                        .fullPath() + ") is not defined");
-                }
-                VALUE_LOGGER.finest(() -> "Config value for " + q.qualifier.key() + " (" + q.qualifier
-                    .fullPath() + "), is " + configValue);
-
-            } catch (Exception e) {
-                add.addDeploymentProblem(e);
-            }
-        });
-        qualifiers.clear();
+            });
+        } finally {
+            cc.release();
+        }
+        ipConfigs.clear();
 
         LOGGER.exiting(getClass().getName(), "validate");
     }
 
-    private Class<?> getPropertyClass(ConfigQualifier qualifier) {
+    private static Class<?> getPropertyClass(ConfigQualifier qualifier) {
         if (qualifier.rawType().isArray()) {
             return qualifier.rawType().getComponentType();
         }
@@ -321,7 +315,12 @@ public class ConfigCdiExtension implements Extension {
         private Class<?> typeArg;
         private Class<?> typeArg2;
 
-        ConfigQLiteral(String fullPath, String key, String defaultValue, Class<?> rawType, Class<?> typeArg, Class<?> typeArg2) {
+        private ConfigQLiteral(String fullPath,
+                               String key,
+                               String defaultValue,
+                               Class<?> rawType,
+                               Class<?> typeArg,
+                               Class<?> typeArg2) {
             this.fullPath = fullPath;
             this.key = key;
             this.defaultValue = defaultValue;
@@ -375,7 +374,7 @@ public class ConfigCdiExtension implements Extension {
         private ConfigQualifier qualifier;
         private Type type;
 
-        IpConfig(ConfigQualifier qualifier, Type type) {
+        private IpConfig(ConfigQualifier qualifier, Type type) {
             this.qualifier = qualifier;
             this.type = type;
         }
@@ -411,13 +410,13 @@ public class ConfigCdiExtension implements Extension {
         private final Type type;
         private final BeanManager bm;
 
-        ConfigPropertyProducer(ConfigQualifier q, Type type, BeanManager bm) {
+        private ConfigPropertyProducer(ConfigQualifier q, Type type, BeanManager bm) {
             this.qualifier = q;
             this.bm = bm;
             Type actualType = type;
             if (type instanceof ParameterizedType) {
                 ParameterizedType paramType = (ParameterizedType) type;
-                if (Provider.class.equals(paramType.getRawType())) {
+                if (Provider.class.isAssignableFrom((Class<?>) paramType.getRawType())) {
                     actualType = paramType.getActualTypeArguments()[0];
                 }
             }
@@ -425,7 +424,7 @@ public class ConfigCdiExtension implements Extension {
             this.type = actualType;
         }
 
-        static Object getConfigValue(MpConfig config, ConfigQualifier q) {
+        private static Object getConfigValue(MpConfig config, ConfigQualifier q) {
             try {
                 String configKey = q.key().isEmpty() ? q.fullPath().replace('$', '.') : q.key();
                 String defaultValue = ConfigProperty.UNCONFIGURED_VALUE.equals(q.defaultValue()) ? null : q.defaultValue();
@@ -435,12 +434,12 @@ public class ConfigCdiExtension implements Extension {
                     return config.valueWithDefault(configKey, q.rawType(), defaultValue);
                 }
                 // generic declaration
-                return getParametrizedConfigValue(config,
-                                                  configKey,
-                                                  defaultValue,
-                                                  q.rawType(),
-                                                  q.typeArg(),
-                                                  q.typeArg2());
+                return getParameterizedConfigValue(config,
+                                                   configKey,
+                                                   defaultValue,
+                                                   q.rawType(),
+                                                   q.typeArg(),
+                                                   q.typeArg2());
             } catch (IllegalArgumentException e) {
                 if (e.getCause() instanceof ConfigException) {
                     throw new DeploymentException("Config value for " + q.key() + "(" + q.fullPath() + ") is not defined");
@@ -450,27 +449,25 @@ public class ConfigCdiExtension implements Extension {
             }
         }
 
-        @SuppressWarnings("unchecked")
-        static Object getParametrizedConfigValue(MpConfig mpConfig,
-                                                 String configKey,
-                                                 String defaultValue,
-                                                 Class rawType,
-                                                 Class typeArg,
-                                                 Class typeArg2) {
-
-            if (rawType.isAssignableFrom(Optional.class)) {
+        private static <X> Object getParameterizedConfigValue(MpConfig mpConfig,
+                                                              String configKey,
+                                                              String defaultValue,
+                                                              Class<?> rawType,
+                                                              Class<X> typeArg,
+                                                              Class<?> typeArg2) {
+            if (Optional.class.isAssignableFrom(rawType)) {
                 if (typeArg == typeArg2) {
                     return Optional.ofNullable(mpConfig.valueWithDefault(configKey, typeArg, defaultValue));
                 } else {
                     return Optional
-                            .ofNullable(getParametrizedConfigValue(mpConfig,
-                                                                   configKey,
-                                                                   defaultValue,
-                                                                   typeArg,
-                                                                   typeArg2,
-                                                                   typeArg2));
+                            .ofNullable(getParameterizedConfigValue(mpConfig,
+                                                                    configKey,
+                                                                    defaultValue,
+                                                                    typeArg,
+                                                                    typeArg2,
+                                                                    typeArg2));
                 }
-            } else if (rawType.isAssignableFrom(List.class)) {
+            } else if (List.class.isAssignableFrom(rawType)) {
                 try {
                     return mpConfig.asList(configKey, typeArg);
                 } catch (MissingValueException e) {
@@ -482,7 +479,7 @@ public class ConfigCdiExtension implements Extension {
                             return CollectionsHelper.listOf();
                         }
 
-                        List result = new LinkedList();
+                        List<X> result = new LinkedList<>();
 
                         String[] values = defaultValue.split(",");
                         for (String value : values) {
@@ -492,20 +489,20 @@ public class ConfigCdiExtension implements Extension {
                         return result;
                     }
                 }
-            } else if (rawType.isAssignableFrom(Supplier.class)) {
+            } else if (Supplier.class.isAssignableFrom(rawType)) {
                 if (typeArg == typeArg2) {
                     return (Supplier) () -> mpConfig.valueWithDefault(configKey, typeArg, defaultValue);
                 } else {
-                    return (Supplier) () -> getParametrizedConfigValue(mpConfig,
-                                                                       configKey,
-                                                                       defaultValue,
-                                                                       typeArg,
-                                                                       typeArg2,
-                                                                       typeArg2);
+                    return (Supplier) () -> getParameterizedConfigValue(mpConfig,
+                                                                        configKey,
+                                                                        defaultValue,
+                                                                        typeArg,
+                                                                        typeArg2,
+                                                                        typeArg2);
                 }
-            } else if (rawType.isAssignableFrom(Map.class)) {
+            } else if (Map.class.isAssignableFrom(rawType)) {
                 return mpConfig.helidonConfig().get(configKey).detach().asMap();
-            } else if (rawType.isAssignableFrom(Set.class)) {
+            } else if (Set.class.isAssignableFrom(rawType)) {
                 return mpConfig.asSet(configKey, typeArg);
             } else {
                 throw new DeploymentException("Cannot create config property for " + rawType + "<" + typeArg + ">, key: "
@@ -516,8 +513,7 @@ public class ConfigCdiExtension implements Extension {
         @Override
         public Object create(CreationalContext<Object> context) {
             Object value = getConfigValue(context);
-            if (null == value && qualifier.rawType().isPrimitive()) {
-                // primitive field, not configured, no default
+            if (null == value) {
                 throw MissingValueException.create(Config.Key.create(qualifier.key()));
             }
 
@@ -525,7 +521,7 @@ public class ConfigCdiExtension implements Extension {
         }
 
         private Object getConfigValue(CreationalContext<Object> context) {
-            return getConfigValue((MpConfig) ConfigProviderResolver.instance().getConfig(), qualifier);
+            return getConfigValue((MpConfig) ConfigProvider.getConfig(), qualifier);
         }
 
         @Override
@@ -595,12 +591,12 @@ public class ConfigCdiExtension implements Extension {
         private TypedField field1;
         private TypedField field2;
 
-        static FieldTypes forType(Type type) {
+        private static FieldTypes forType(Type type) {
             FieldTypes ft = new FieldTypes();
 
-            // if the first type is a provider, we do not want it and start from its child
+            // if the first type is a Provider or an Instance, we do not want it and start from its child
             TypedField firstType = getTypedField(type);
-            if (firstType.rawType.equals(Provider.class)) {
+            if (Provider.class.isAssignableFrom(firstType.rawType)) {
                 ft.field0 = getTypedField(firstType);
                 firstType = ft.field0;
             } else {
@@ -619,13 +615,13 @@ public class ConfigCdiExtension implements Extension {
             return ft;
         }
 
-        static TypedField getTypedField(Type type) {
+        private static TypedField getTypedField(Type type) {
             if (type instanceof Class) {
-                return new TypedField((Class) type);
+                return new TypedField((Class<?>) type);
             } else if (type instanceof ParameterizedType) {
                 ParameterizedType paramType = (ParameterizedType) type;
 
-                return new TypedField((Class) paramType.getRawType(), paramType);
+                return new TypedField((Class<?>) paramType.getRawType(), paramType);
             }
 
             throw new UnsupportedOperationException("No idea how to handle " + type);
@@ -654,40 +650,40 @@ public class ConfigCdiExtension implements Extension {
             return field;
         }
 
-        TypedField getField0() {
+        private TypedField getField0() {
             return field0;
         }
 
-        TypedField getField1() {
+        private TypedField getField1() {
             return field1;
         }
 
-        TypedField getField2() {
+        private TypedField getField2() {
             return field2;
         }
 
-        static final class TypedField {
-            private final Class rawType;
+        private static final class TypedField {
+            private final Class<?> rawType;
             private ParameterizedType paramType;
 
-            private TypedField(Class rawType) {
+            private TypedField(Class<?> rawType) {
                 this.rawType = rawType;
             }
 
-            private TypedField(Class rawType, ParameterizedType paramType) {
+            private TypedField(Class<?> rawType, ParameterizedType paramType) {
                 this.rawType = rawType;
                 this.paramType = paramType;
             }
 
-            boolean isParameterized() {
+            private boolean isParameterized() {
                 return paramType != null;
             }
 
-            Class getRawType() {
+            private Class<?> getRawType() {
                 return rawType;
             }
 
-            ParameterizedType getParamType() {
+            private ParameterizedType getParamType() {
                 return paramType;
             }
 
@@ -701,7 +697,7 @@ public class ConfigCdiExtension implements Extension {
                 }
                 TypedField that = (TypedField) o;
                 return Objects.equals(rawType, that.rawType)
-                        && Objects.equals(paramType, that.paramType);
+                       && Objects.equals(paramType, that.paramType);
             }
 
             @Override
@@ -726,7 +722,7 @@ public class ConfigCdiExtension implements Extension {
         private transient org.eclipse.microprofile.config.Config theConfig;
 
         private SerializableConfig() {
-            this.theConfig = ConfigProviderResolver.instance().getConfig();
+            this.theConfig = ConfigProvider.getConfig();
         }
 
         @Override
@@ -751,7 +747,60 @@ public class ConfigCdiExtension implements Extension {
 
         private void readObject(ObjectInputStream ios) throws ClassNotFoundException, IOException {
             ios.defaultReadObject();
-            this.theConfig = ConfigProviderResolver.instance().getConfig();
+            this.theConfig = ConfigProvider.getConfig();
         }
+    }
+
+    private static final class InjectionPointTemplate implements InjectionPoint {
+
+        private final Type type;
+
+        private final Set<Annotation> qualifiers;
+
+        private InjectionPointTemplate(Type type, Annotation soleQualifier) {
+            this(type, Collections.singleton(soleQualifier));
+        }
+
+        private InjectionPointTemplate(Type type, Set<Annotation> qualifiers) {
+            super();
+            this.type = type;
+            this.qualifiers = qualifiers;
+        }
+
+        @Override
+        public Type getType() {
+            return this.type;
+        }
+
+        @Override
+        public Set<Annotation> getQualifiers() {
+            return this.qualifiers;
+        }
+
+        @Override
+        public Bean<?> getBean() {
+            return null;
+        }
+
+        @Override
+        public Annotated getAnnotated() {
+            return null;
+        }
+
+        @Override
+        public Member getMember() {
+            return null;
+        }
+
+        @Override
+        public boolean isTransient() {
+            return false;
+        }
+
+        @Override
+        public boolean isDelegate() {
+            return false;
+        }
+
     }
 }
