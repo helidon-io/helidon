@@ -9,11 +9,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+This release adds support for MicroProfile OpenAPI 1.1.2. It also includes bug and performance fixes.
+
 ### Improvements
+
+- MicroProfile OpenAPI 1.1.2 support [712](https://github.com/oracle/helidon/pull/712)
+- MP: Support logging.properties from classpath or from a file. [693](https://github.com/oracle/helidon/pull/693)
 
 ### Fixes
 
-## [1.1.0]
+- WebServer: Make default sizing of Jersey thread pool dynamic, based on # of cores [691](https://github.com/oracle/helidon/pull/691)
+- WebServer: Remove the channel closed listener in BareResponseImpl when request completes. [695](https://github.com/oracle/helidon/pull/695)
+- WebServer: Complete writing a response before checking unconsumed request payload [699](https://github.com/oracle/helidon/pull/699)
+- WebServer: Ensure channel closed listener is removed on exception [702](https://github.com/oracle/helidon/pull/702)
+- Upgrade Weld to 3.1.1.Final [659](https://github.com/oracle/helidon/pull/659)
+- Upgrade Jandex to 2.1.1.Final [694](https://github.com/oracle/helidon/pull/694)
+- Upgrade Oracle OCI SDK to 1.5.2 [715](https://github.com/oracle/helidon/pull/715)
+- Enable ThreadPool injection into Application. [713](https://github.com/oracle/helidon/pull/713)
+- Use jandex index in MP quickstart [714](https://github.com/oracle/helidon/pull/714)
+- Documentation fixes [697](https://github.com/oracle/helidon/pull/697) [704](https://github.com/oracle/helidon/pull/704)
+
+## [1.1.0] - 2019-05-14
 
 ### Notes
 
