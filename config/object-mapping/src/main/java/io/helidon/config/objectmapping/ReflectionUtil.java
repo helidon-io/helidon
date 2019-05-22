@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -325,7 +325,7 @@ final class ReflectionUtil {
 
             final Class<?> propertyType = parameter.getType();
             Class<?> configAsType = propertyType;
-            boolean list = configAsType.isAssignableFrom(List.class);
+            boolean list = List.class.isAssignableFrom(configAsType);
             if (list) {
                 Type genType = parameter.getParameterizedType();
                 if (genType instanceof ParameterizedType) {
@@ -559,7 +559,7 @@ final class ReflectionUtil {
             final Class<T> propertyType = (Class<T>) method.getParameterTypes()[0];
             Class<?> configAsType = propertyType;
 
-            boolean list = configAsType.isAssignableFrom(List.class);
+            boolean list = List.class.isAssignableFrom(configAsType);
             if (list) {
                 Type genType = method.getGenericParameterTypes()[0];
                 if (genType instanceof ParameterizedType) {
@@ -589,7 +589,7 @@ final class ReflectionUtil {
             final Class<T> propertyType = (Class<T>) field.getType();
             Class<?> configAsType = propertyType;
 
-            boolean list = configAsType.isAssignableFrom(List.class);
+            boolean list = List.class.isAssignableFrom(configAsType);
             if (list) {
                 Type genType = field.getGenericType();
                 if (genType instanceof ParameterizedType) {
