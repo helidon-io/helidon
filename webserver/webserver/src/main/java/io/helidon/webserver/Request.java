@@ -282,7 +282,7 @@ abstract class Request implements ServerRequest {
         }
 
         private <T> InternalReader<T> reader(Class<T> clazz, Reader<T> reader) {
-            return new InternalReader<>(aClass -> aClass.isAssignableFrom(clazz), reader);
+            return new InternalReader<>(aClass -> clazz.isAssignableFrom(aClass), reader);
         }
 
         @Override
