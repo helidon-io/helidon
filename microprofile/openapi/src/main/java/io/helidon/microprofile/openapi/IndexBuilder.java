@@ -62,9 +62,11 @@ public class IndexBuilder implements Extension {
             LOGGER.log(Level.FINE, () -> String.format("Index file %s was located and will be used", INDEX_PATH));
         } else {
             LOGGER.log(Level.INFO, () -> String.format(
-                    "OpenAPI support could not locate the index file %s "
-                    + "so will build an in-memory index. This slows your app start-up.%n"
-                    + "Consider using the jandex maven plug-in to build the index "
+                    "OpenAPI support could not locate the Jandex index file %s "
+                    + "so will build an in-memory index.%n"
+                    + "This slows your app start-up and, depending on CDI configuration, "
+                    + "might omit some type information needed for a complete OpenAPI document.%n"
+                    + "Consider using the Jandex plug-in to build the index "
                     + "and add it to your app at build-time",
                     INDEX_PATH));
         }
