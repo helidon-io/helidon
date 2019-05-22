@@ -40,6 +40,8 @@ import net.jodah.failsafe.SyncFailsafe;
 import net.jodah.failsafe.function.CheckedFunction;
 import net.jodah.failsafe.util.concurrent.Scheduler;
 import org.apache.commons.configuration.AbstractConfiguration;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -67,7 +69,12 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getHi
 public class CommandRetrier {
     private static final Logger LOGGER = Logger.getLogger(CommandRetrier.class.getName());
 
-    private static final int DELAY_CORRECTION = 250;
+    private static final long   DEFAULT_DELAY_CORRECTION = 250L;
+    private static final String FT_DELAY_CORRECTION = "fault-tolerance.delayCorrection";
+    private static final int    DEFAULT_COMMAND_THREAD_POOL_SIZE = 32;
+    private static final String FT_COMMAND_THREAD_POOL_SIZE = "fault-tolerance.commandThreadPoolSize";
+    private static final long   DEFAULT_THREAD_WAITING_PERIOD = 2000L;
+    private static final String FT_THREAD_WAITING_PERIOD = "fault-tolerance.threadWaitingPeriod";
 
     private final InvocationContext context;
 
@@ -85,6 +92,12 @@ public class CommandRetrier {
 
     private ClassLoader contextClassLoader;
 
+    private final long delayCorrection;
+
+    private final int commandThreadPoolSize;
+
+    private final long threadWaitingPeriod;
+
     /**
      * Constructor.
      *
@@ -96,6 +109,15 @@ public class CommandRetrier {
         this.introspector = introspector;
         this.isAsynchronous = introspector.isAsynchronous();
         this.method = context.getMethod();
+
+        // Init Helidon config params
+        Config config = ConfigProvider.getConfig();
+        this.delayCorrection = config.getOptionalValue(FT_DELAY_CORRECTION, Long.class)
+                .orElse(DEFAULT_DELAY_CORRECTION);
+        this.commandThreadPoolSize = config.getOptionalValue(FT_COMMAND_THREAD_POOL_SIZE, Integer.class)
+                .orElse(DEFAULT_COMMAND_THREAD_POOL_SIZE);
+        this.threadWaitingPeriod = config.getOptionalValue(FT_THREAD_WAITING_PERIOD, Long.class)
+                .orElse(DEFAULT_THREAD_WAITING_PERIOD);
 
         final Retry retry = introspector.getRetry();
         if (retry != null) {
@@ -122,7 +144,7 @@ public class CommandRetrier {
              * on heavily loaded systems.
              */
             Function<Long, Long> correction =
-                    d -> Math.abs(d - TimeUtil.convertToNanos(DELAY_CORRECTION, ChronoUnit.MILLIS));
+                    d -> Math.abs(d - TimeUtil.convertToNanos(delayCorrection, ChronoUnit.MILLIS));
 
             // Processing for jitter and delay
             if (retry.jitter() > 0) {
@@ -145,6 +167,24 @@ public class CommandRetrier {
         } else {
             this.retryPolicy = new RetryPolicy().withMaxRetries(0);     // no retries
         }
+    }
+
+    /**
+     * Get command thread pool size.
+     *
+     * @return Thread pool size.
+     */
+    int commandThreadPoolSize() {
+        return commandThreadPoolSize;
+    }
+
+    /**
+     * Get thread waiting period.
+     *
+     * @return Thread waiting period.
+     */
+    long threadWaitingPeriod() {
+        return threadWaitingPeriod;
     }
 
     /**
@@ -215,7 +255,7 @@ public class CommandRetrier {
         }
 
         final String commandKey = createCommandKey();
-        command = new FaultToleranceCommand(commandKey, introspector, context, contextClassLoader);
+        command = new FaultToleranceCommand(this, commandKey, introspector, context, contextClassLoader);
 
         // Configure command before execution
         introspector.getHystrixProperties()
