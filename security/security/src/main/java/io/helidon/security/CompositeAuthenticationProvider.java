@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,19 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.ProviderConfig;
+
+import static io.helidon.security.CompositeProviderFlag.SUFFICIENT;
+import static io.helidon.security.SecurityResponse.SecurityStatus.ABSTAIN;
+import static io.helidon.security.SecurityResponse.SecurityStatus.SUCCESS;
 
 /**
  * A provider building a single authentication result from one or more authentication providers.
  */
 final class CompositeAuthenticationProvider implements AuthenticationProvider {
+    private static final AuthenticationResponse ABSTAIN_RESPONSE = AuthenticationResponse.abstain();
+
     private final List<Atn> providers = new LinkedList<>();
 
     CompositeAuthenticationProvider(List<Atn> parts) {
@@ -70,14 +75,30 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public CompletionStage<AuthenticationResponse> authenticate(ProviderRequest providerRequest) {
-        CompletionStage<AuthenticationResponse> previous = CompletableFuture.completedFuture(AuthenticationResponse.abstain());
+        CompletionStage<AtnResponse> result = CompletableFuture.completedFuture(new AtnResponse(ABSTAIN_RESPONSE));
 
         for (Atn providerConfig : providers) {
-            previous = previous.thenCombine(providerConfig.provider.authenticate(providerRequest),
-                                            (prevRes, thisRes) -> processProvider(providerConfig, prevRes, thisRes));
+            // go through all providers and validate each response, collecting successes
+            result = result.thenCompose(theResponse -> invokeProvider(theResponse, providerConfig, providerRequest));
         }
 
-        return previous.exceptionally(throwable -> {
+        return result.thenApply(atnResponse -> {
+            // when we get here, we should have all the successes and the response is the last one
+
+            List<AuthenticationResponse> successes = atnResponse.successResponses;
+            if (successes.isEmpty()) {
+                // no success - abstain
+                // if this was not a valid result of the authentication, we would have
+                // thrown an exception in invokeProvider();
+                return ABSTAIN_RESPONSE;
+            }
+
+            AuthenticationResponse.Builder responseBuilder = AuthenticationResponse.builder().status(SUCCESS);
+            combineSubjects(successes, responseBuilder);
+
+            // build response
+            return responseBuilder.build();
+        }).exceptionally(throwable -> {
             Throwable cause = throwable.getCause();
             if (null == cause) {
                 cause = throwable;
@@ -86,97 +107,120 @@ final class CompositeAuthenticationProvider implements AuthenticationProvider {
                 return ((AsyncAtnException) cause).response;
             }
             return AuthenticationResponse.failed("Failed processing: " + throwable.getMessage(), throwable);
-        }).thenApply(authenticationResponse -> {
-            if (authenticationResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
-                // todo check if this is correct - optional is possible on too many places, maybe atn client should check it?
-                //                if (request.isOptional()) {
-                //                    return AuthenticationResponse
-                //                            .success(SecurityContext.ANONYMOUS, Security.getUser(SecurityContext.ANONYMOUS)
-                // .orElse(null));
-                //                } else {
-                //                    return AuthenticationResponse.failed("All providers abstained, cannot authenticate");
-                //                }
-                return AuthenticationResponse.abstain();
-            }
-            return authenticationResponse;
         });
     }
 
-    private AuthenticationResponse processProvider(Atn providerConfig,
-                                                   AuthenticationResponse prevResponse,
-                                                   AuthenticationResponse thisResponse) {
-        CompositeProviderFlag flag = providerConfig.config.flag();
+    private CompletionStage<AtnResponse> invokeProvider(AtnResponse previous,
+                                                        Atn nextProviderConfig,
+                                                        ProviderRequest providerRequest) {
+        List<AuthenticationResponse> successes = previous.successResponses;
+        CompositeProviderFlag flag = nextProviderConfig.config.flag();
 
-        if (!flag.isValid(thisResponse.status())) {
+        return nextProviderConfig.provider
+                .authenticate(providerRequest)
+                .thenApply(atnResponse -> {
+                    checkAtnResponseStatus(flag, atnResponse, atnResponse.status());
+                    if (atnResponse.status() == SUCCESS) {
+                        successes.add(atnResponse);
+                    }
+                    if ((flag == SUFFICIENT) && (atnResponse.status() == SUCCESS)) {
+                        // no need to go any further
+                        AuthenticationResponse.Builder responseBuilder = AuthenticationResponse.builder();
+                        combineSubjects(successes, responseBuilder);
+
+                        // build response
+                        AuthenticationResponse newResponse = responseBuilder
+                                .status(SUCCESS)
+                                .build();
+                        throw new AsyncAtnException(newResponse);
+                    }
+
+                    if (atnResponse.status() == ABSTAIN) {
+                        // if we abstain, we want to return the previous response
+                        return new AtnResponse(previous.response, successes);
+                    }
+
+                    return new AtnResponse(atnResponse, successes);
+                });
+    }
+
+    private void combineSubjects(List<AuthenticationResponse> successes, AuthenticationResponse.Builder responseBuilder) {
+        Subject userSubject = null;
+        Subject serviceSubject = null;
+        for (AuthenticationResponse success : successes) {
+            Optional<Subject> maybeUser = success.user();
+            Optional<Subject> maybeService = success.service();
+
+            if (maybeUser.isPresent()) {
+                Subject newSubject = maybeUser.get();
+                if (null == userSubject) {
+                    userSubject = newSubject;
+                } else {
+                    userSubject = newSubject.combine(userSubject);
+                }
+            }
+
+            if (maybeService.isPresent()) {
+                Subject newSubject = maybeService.get();
+                if (null == serviceSubject) {
+                    serviceSubject = newSubject;
+                } else {
+                    serviceSubject = newSubject.combine(serviceSubject);
+                }
+            }
+        }
+        if (null != userSubject) {
+            responseBuilder.user(userSubject);
+        }
+        if (null != serviceSubject) {
+            responseBuilder.service(serviceSubject);
+        }
+    }
+
+    private void checkAtnResponseStatus(CompositeProviderFlag flag,
+                                        AuthenticationResponse response,
+                                        SecurityResponse.SecurityStatus status) {
+        if (!flag.isValid(status)) {
+            // invalid response for the flag, must fail
             // terminate sequence
             // not a valid response for this provider, terminate sequence
             // if the response is other than fail, create a new fail
-            switch (thisResponse.status()) {
+            switch (status) {
             case SUCCESS:
             case SUCCESS_FINISH:
             case ABSTAIN:
                 AuthenticationResponse.Builder builder = AuthenticationResponse.builder();
                 builder.status(SecurityResponse.SecurityStatus.FAILURE);
                 builder.description("Composite flag forbids this response: "
-                                            + thisResponse.status());
-                thisResponse.description().map(builder::description);
-                thisResponse.throwable().map(builder::throwable);
+                                            + response.status());
+                response.description().map(builder::description);
+                response.throwable().map(builder::throwable);
                 throw new AsyncAtnException(builder.build());
             case FAILURE:
             case FAILURE_FINISH:
             default:
-                throw new AsyncAtnException(thisResponse);
+                throw new AsyncAtnException(response);
             }
         }
-
-        if ((flag == CompositeProviderFlag.SUFFICIENT) && (
-                thisResponse.status() == SecurityResponse.SecurityStatus.SUCCESS)) {
-            // if flag is sufficient and we have success, finish processing
-            throw new AsyncAtnException(thisResponse);
-        }
-
-        // I only care about success
-        if (prevResponse.status() == SecurityResponse.SecurityStatus.ABSTAIN) {
-            return thisResponse.status().isSuccess() ? thisResponse : prevResponse;
-        }
-
-        if (!thisResponse.status().isSuccess()) {
-            return prevResponse;
-        }
-
-        AuthenticationResponse.Builder responseBuilder = AuthenticationResponse.builder();
-
-        // combine principals
-        OptionalHelper.from(prevResponse.user()
-                                    .map(user -> combine(user, thisResponse.user())))
-                .or(thisResponse::user)
-                .asOptional()
-                .ifPresent(responseBuilder::user);
-
-        OptionalHelper.from(prevResponse.service()
-                                    .map(service -> combine(service, thisResponse.service())))
-                .or(thisResponse::service)
-                .asOptional()
-                .ifPresent(responseBuilder::service);
-
-        // build response
-        return responseBuilder
-                .status(SecurityResponse.SecurityStatus.SUCCESS)
-                .build();
     }
 
-    private Subject combine(Subject older, Optional<Subject> newSubject) {
-        if (newSubject.isPresent()) {
-            Subject newer = newSubject.get();
+    private static final class AtnResponse {
+        private final List<AuthenticationResponse> successResponses = new LinkedList<>();
+        private final AuthenticationResponse response;
 
-            return newer.combine(older);
-        } else {
-            return older;
+        AtnResponse(AuthenticationResponse response) {
+            this.response = response;
+        }
+
+        AtnResponse(AuthenticationResponse atnResponse,
+                    List<AuthenticationResponse> successes) {
+            this(atnResponse);
+            this.successResponses.addAll(successes);
         }
     }
 
     private static final class AsyncAtnException extends RuntimeException {
-        private AuthenticationResponse response;
+        private final AuthenticationResponse response;
 
         private AsyncAtnException(AuthenticationResponse response) {
             this.response = response;

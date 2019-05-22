@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,8 +136,29 @@ public final class TokenHandler {
             // I only understand configured header, ignore everything else
             return Optional.empty();
         }
-        String tokenHeader = tokenHeaders.get(0);
-        return Optional.of(headerExtractor.apply(tokenHeader));
+        if (tokenHeaders.size() > 1) {
+            // we can try to find the one that matches (e.g. if Authorization is defined twice, once with basic
+            // and once with bearer
+            SecurityException caught = null;
+            Optional<String> result = Optional.empty();
+            for (String header : tokenHeaders) {
+                try {
+                    result = Optional.of(headerExtractor.apply(header));
+                } catch (SecurityException e) {
+                    caught = e;
+                }
+            }
+            if (result.isPresent()) {
+                return result;
+            }
+            if (caught != null) {
+                throw caught;
+            }
+            return result;
+        } else {
+            String tokenHeader = tokenHeaders.get(0);
+            return Optional.of(headerExtractor.apply(tokenHeader));
+        }
     }
 
     /**
