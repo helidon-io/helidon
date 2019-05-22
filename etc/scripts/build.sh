@@ -40,7 +40,7 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 source ${WS_DIR}/etc/scripts/wercker-env.sh
 
 if [ "${WERCKER}" = "true" ] ; then
-  apt-get update && apt-get -y install graphviz openssl
+  apt-get update && apt-get -y install graphviz openssl libapr1
 fi
 
 inject_credentials
