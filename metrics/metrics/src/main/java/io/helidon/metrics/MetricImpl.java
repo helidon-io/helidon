@@ -273,10 +273,11 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         private static final long MILLISECONDS = 1000;
         private static final long MICROSECONDS = 1000 * MILLISECONDS;
         private static final long NANOSECONDS = 1000 * MICROSECONDS;
+        private static final String DOUBLE_NAN = String.valueOf(Double.NaN);
 
         // If object is NaN return string and avoid format exception in BigDecimal
         private static final BiFunction<Object, Function<Object, Object>, Object> CHECK_NANS =
-                (o, f) -> o instanceof Double && ((Double) o).isNaN() ? String.valueOf(Double.NaN) : f.apply(o);
+                (o, f) -> o instanceof Double && ((Double) o).isNaN() ? DOUBLE_NAN : f.apply(o);
 
         private TimeUnits(String metricUnit, TimeUnit timeUnit) {
             super(metricUnit, "seconds", timeConverter(timeUnit));
