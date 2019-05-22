@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -272,6 +273,11 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         private static final long MILLISECONDS = 1000;
         private static final long MICROSECONDS = 1000 * MILLISECONDS;
         private static final long NANOSECONDS = 1000 * MICROSECONDS;
+        private static final String DOUBLE_NAN = String.valueOf(Double.NaN);
+
+        // If object is NaN return string and avoid format exception in BigDecimal
+        private static final BiFunction<Object, Function<Object, Object>, Object> CHECK_NANS =
+                (o, f) -> o instanceof Double && ((Double) o).isNaN() ? DOUBLE_NAN : f.apply(o);
 
         private TimeUnits(String metricUnit, TimeUnit timeUnit) {
             super(metricUnit, "seconds", timeConverter(timeUnit));
@@ -279,18 +285,21 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
 
         static Function<Object, Object> timeConverter(TimeUnit from) {
             switch (from) {
-            case NANOSECONDS:
-                return (o) -> String.valueOf(new BigDecimal(String.valueOf(o)).doubleValue() / NANOSECONDS);
-            case MICROSECONDS:
-                return (o) -> String.valueOf(new BigDecimal(String.valueOf(o)).doubleValue() / MICROSECONDS);
-            case MILLISECONDS:
-                return (o) -> String.valueOf(new BigDecimal(String.valueOf(o)).doubleValue() / MILLISECONDS);
-            case SECONDS:
-                return String::valueOf;
-            default:
-                return (o) -> String.valueOf(TimeUnit.SECONDS.convert(new BigDecimal(String.valueOf(o)).longValue(), from));
+                case NANOSECONDS:
+                    return (o) -> CHECK_NANS.apply(o, p ->
+                            String.valueOf(new BigDecimal(String.valueOf(p)).doubleValue() / NANOSECONDS));
+                case MICROSECONDS:
+                    return (o) -> CHECK_NANS.apply(o, p ->
+                            String.valueOf(new BigDecimal(String.valueOf(o)).doubleValue() / MICROSECONDS));
+                case MILLISECONDS:
+                    return (o) -> CHECK_NANS.apply(o, p ->
+                            String.valueOf(new BigDecimal(String.valueOf(o)).doubleValue() / MILLISECONDS));
+                case SECONDS:
+                    return (o) -> CHECK_NANS.apply(o, String::valueOf);
+                default:
+                    return (o) -> CHECK_NANS.apply(o, p ->
+                            String.valueOf(TimeUnit.SECONDS.convert(new BigDecimal(String.valueOf(o)).longValue(), from)));
             }
-
         }
     }
 
