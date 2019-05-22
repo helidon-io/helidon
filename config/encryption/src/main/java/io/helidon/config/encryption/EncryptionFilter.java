@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,8 @@ import io.helidon.config.spi.ConfigFilter;
  * @see ConfigProperties#REQUIRE_ENCRYPTION_ENV_VARIABLE
  */
 public final class EncryptionFilter implements ConfigFilter {
-    static final String PREFIX_AES = "${AES=";
+    static final String PREFIX_LEGACY_AES = "${AES=";
+    static final String PREFIX_GCM = "${GCM=";
     static final String PREFIX_RSA = "${RSA=";
     private static final Logger LOGGER = Logger.getLogger(EncryptionFilter.class.getName());
     private static final String PREFIX_ALIAS = "${ALIAS=";
@@ -197,8 +198,17 @@ public final class EncryptionFilter implements ConfigFilter {
     private String decryptAes(char[] masterPassword, String value) {
         // google_client_secret=${AES=mYRkg+4Q4hua1kvpCCI2hg==}
 
-        if (value.startsWith(PREFIX_AES)) {
-            String b64Value = value.substring(PREFIX_AES.length(), value.length() - 1);
+        if (value.startsWith(PREFIX_LEGACY_AES)) {
+            LOGGER.log(Level.WARNING, () -> "You are using legacy AES encryption. Please re-encrypt the value with GCM.");
+            String b64Value = value.substring(PREFIX_LEGACY_AES.length(), value.length() - 1);
+            try {
+                return EncryptionUtil.decryptAesLegacy(masterPassword, b64Value);
+            } catch (ConfigEncryptionException e) {
+                LOGGER.log(Level.FINEST, e, () -> "Failed to decrypt " + value);
+                return value;
+            }
+        } else if (value.startsWith(PREFIX_GCM)) {
+            String b64Value = value.substring(PREFIX_GCM.length(), value.length() - 1);
             try {
                 return EncryptionUtil.decryptAes(masterPassword, b64Value);
             } catch (ConfigEncryptionException e) {

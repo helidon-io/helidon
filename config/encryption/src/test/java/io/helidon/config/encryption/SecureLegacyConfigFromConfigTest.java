@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,20 +28,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for config encryption filter configured through configuration itself.
  */
-public class SecureConfigFromConfigTest extends AbstractSecureConfigTest {
+public class SecureLegacyConfigFromConfigTest extends AbstractSecureConfigTest {
     private static Config config;
     private static Config configRequiresEncryption;
 
     @BeforeAll
     public static void initClass() {
-        config = Config.create().get("current");
+        config = Config.create().get("legacy");
 
         configRequiresEncryption = Config.builder()
                 .sources(ConfigSources.create(
                         //override require encryption
                         ConfigSources.create(mapOf(ConfigProperties.REQUIRE_ENCRYPTION_CONFIG_KEY, "true")),
                         ConfigSources.classpath("application.yaml")))
-                .build().get("current");
+                .build()
+                .get("legacy");
 
         assertThat("We must have the correct configuration file", config.get("pwd1").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd1").type().isLeaf());
@@ -62,16 +63,16 @@ public class SecureConfigFromConfigTest extends AbstractSecureConfigTest {
         // these are expected not decrypted, as master password was not provided!
         testPassword(getConfigRequiresEncryption(),
                      "pwd4",
-                     "${GCM=bQPPs+e2i4Sry7xB3MJWUPCnGWzx69Rgs6kskDIq8LRSJFonZ1NDlLhVhZBhtwpVdNlDa9qQSw==}"
+                     "${AES=YbaZGjQfwOv0htF2nmRYaOMYp0+qY/IRQUlWHfRKeTw6Q2uy33Rp8ZhTwv0oDywE}"
         );
         testPassword(getConfigRequiresEncryption(),
                      "pwd6",
-                     "${GCM=p5GPxwagVVPyM3E7BvEy798rmQJojLuu957jvEZrqOKuJKeiCXyU7jONvU4=}"
+                     "${AES=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}"
         );
     }
 
     @Test
     public void testWrongSymmetric() {
-        testPassword(getConfig(), "pwd9", "${GCM=not really encrypted}");
+        testPassword(getConfig(), "pwd9", "${AES=not really encrypted}");
     }
 }
