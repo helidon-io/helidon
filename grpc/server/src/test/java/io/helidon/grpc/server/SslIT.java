@@ -18,14 +18,10 @@ package io.helidon.grpc.server;
 
 import java.io.File;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLException;
