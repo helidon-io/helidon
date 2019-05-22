@@ -66,8 +66,8 @@ public class IndexBuilder implements Extension {
                     + "so will build an in-memory index.%n"
                     + "This slows your app start-up and, depending on CDI configuration, "
                     + "might omit some type information needed for a complete OpenAPI document.%n"
-                    + "Consider using the Jandex maven plug-in to build the index "
-                    + "and add it to your app at build-time",
+                    + "Consider using the Jandex maven plug-in during your build "
+                    + "to create the index and add it to your app.",
                     INDEX_PATH));
         }
     }
