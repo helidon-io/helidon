@@ -167,6 +167,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <reuseForks>false</reuseForks>
+                    <includes>
+                        <include>**/*IT.java</include>
+                    </includes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>verify</id>
@@ -175,12 +181,6 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <configuration>
-                            <reuseForks>false</reuseForks>
-                            <includes>
-                                <include>**/*IT.java</include>
-                            </includes>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
