@@ -114,4 +114,17 @@ public class AsynchronousBean {
         FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFuture", "success");
         return CompletableFuture.completedFuture("success");
     }
+
+    /**
+     * Async call with fallback using {@link java.util.concurrent.CompletableFuture}.
+     *
+     * @return A completable future.
+     */
+    @Asynchronous
+    @Fallback(fallbackMethod = "onFailure")
+    public CompletableFuture<String> asyncCompletableFutureWithFallback() {
+        called = true;
+        FaultToleranceTest.printStatus("AsynchronousBean::asyncCompletableFutureWithFallback", "success");
+        return CompletableFuture.completedFuture("success");
+    }
 }
