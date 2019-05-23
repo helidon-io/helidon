@@ -61,7 +61,6 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.regis
 public class FaultToleranceCommand extends HystrixCommand<Object> {
     private static final Logger LOGGER = Logger.getLogger(FaultToleranceCommand.class.getName());
 
-    static final int MAX_THREAD_WAITING_PERIOD = 2000;      // milliseconds
     static final String HELIDON_MICROPROFILE_FAULTTOLERANCE = "io.helidon.microprofile.faulttolerance";
 
     private final String commandKey;
@@ -82,15 +81,11 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
 
     private ClassLoader contextClassLoader;
 
-    /**
-     * Default thread pool size for a command or a command group.
-     */
-    private static final int MAX_THREAD_POOL_SIZE = 32;
+    private final long threadWaitingPeriod;
 
     /**
-     * Default max thread pool queue size.
+     * Helidon context in which to run business method.
      */
-    private static final int MAX_THREAD_POOL_QUEUE_SIZE = -1;
     private Context helidonContext;
 
     /**
@@ -98,12 +93,13 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * on the method. A unique thread pool key will enable setting limits for this
      * command only based on the {@code Bulkhead} properties.
      *
+     * @param commandRetrier The command retrier associated with this command.
      * @param commandKey The command key.
      * @param introspector The method introspector.
      * @param context CDI invocation context.
      * @param contextClassLoader Context class loader or {@code null} if not available.
      */
-    public FaultToleranceCommand(String commandKey, MethodIntrospector introspector,
+    public FaultToleranceCommand(CommandRetrier commandRetrier, String commandKey, MethodIntrospector introspector,
                                  InvocationContext context, ClassLoader contextClassLoader) {
         super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(HELIDON_MICROPROFILE_FAULTTOLERANCE))
                 .andCommandKey(
@@ -125,23 +121,24 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
                                 .withCoreSize(
                                         introspector.hasBulkhead()
                                                 ? introspector.getBulkhead().value()
-                                                : MAX_THREAD_POOL_SIZE)
+                                                : commandRetrier.commandThreadPoolSize())
                                 .withMaximumSize(
                                         introspector.hasBulkhead()
                                                 ? introspector.getBulkhead().value()
-                                                : MAX_THREAD_POOL_SIZE)
+                                                : commandRetrier.commandThreadPoolSize())
                                 .withMaxQueueSize(
                                         introspector.hasBulkhead() && introspector.isAsynchronous()
                                                 ? introspector.getBulkhead().waitingTaskQueue()
-                                                : MAX_THREAD_POOL_QUEUE_SIZE)
+                                                : -1)
                                 .withQueueSizeRejectionThreshold(
                                         introspector.hasBulkhead() && introspector.isAsynchronous()
                                                 ? introspector.getBulkhead().waitingTaskQueue()
-                                                : MAX_THREAD_POOL_QUEUE_SIZE)));
+                                                : -1)));
         this.commandKey = commandKey;
         this.introspector = introspector;
         this.context = context;
         this.contextClassLoader = contextClassLoader;
+        this.threadWaitingPeriod = commandRetrier.threadWaitingPeriod();
 
         // Special initialization for methods with breakers
         if (introspector.hasCircuitBreaker()) {
@@ -443,7 +440,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         if (!introspector.isAsynchronous() && runThread != null) {
             try {
                 int waitTime = 250;
-                while (runThread.getState() == Thread.State.RUNNABLE && waitTime <= MAX_THREAD_WAITING_PERIOD) {
+                while (runThread.getState() == Thread.State.RUNNABLE && waitTime <= threadWaitingPeriod) {
                     LOGGER.info(() -> "Waiting for completion of thread " + runThread);
                     Thread.sleep(waitTime);
                     waitTime += 250;
