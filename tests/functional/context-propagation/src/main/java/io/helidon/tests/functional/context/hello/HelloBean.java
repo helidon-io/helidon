@@ -22,8 +22,10 @@ import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
+import io.opentracing.SpanContext;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 
@@ -40,7 +42,9 @@ public class HelloBean {
      * @return Hello string.
      */
     public String getHello() {
-        Objects.requireNonNull(Contexts.context().get());
+        Context context = Contexts.context().get();
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(context.get(SpanContext.class).get());
         return "Hello World";
     }
 
@@ -51,7 +55,9 @@ public class HelloBean {
      */
     @Timeout(1000)
     public String getHelloTimeout() {
-        Objects.requireNonNull(Contexts.context().get());
+        Context context = Contexts.context().get();
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(context.get(SpanContext.class).get());
         return "Hello World";
     }
 
@@ -62,7 +68,9 @@ public class HelloBean {
      */
     @Asynchronous
     public CompletionStage<String> getHelloAsync() {
-        Objects.requireNonNull(Contexts.context().get());
+        Context context = Contexts.context().get();
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(context.get(SpanContext.class).get());
         return CompletableFuture.completedFuture("Hello World");
     }
 }
