@@ -242,15 +242,15 @@ public class GrpcServerImpl implements GrpcServer {
 
     private Resource findResource(String name) {
         try {
+            // Try to locate the resource on the classpath
             return Resource.create(name);
         } catch (NullPointerException ignored) {
             try {
-                // Not found, try File/Path
+                // Not found, try File
                 File file = new File(name);
                 return Resource.create(file.toPath());
             } catch (NullPointerException ignored2) {
                 // Not found, try URI
-                File file = new File(name);
                 return Resource.create(URI.create(name));
             }
         }
