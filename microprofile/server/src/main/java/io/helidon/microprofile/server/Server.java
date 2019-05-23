@@ -38,6 +38,8 @@ import javax.ws.rs.core.Application;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
@@ -158,6 +160,8 @@ public interface Server {
         private int port = -1;
         private boolean containerCreated;
         private Supplier<? extends ExecutorService> defaultExecutorService;
+        private Context parentContext;
+        private Context serverContext;
 
         private Builder() {
             extensionBuilder = HelidonServiceLoader.builder(ServiceLoader.load(MpService.class));
@@ -179,6 +183,17 @@ public interface Server {
          * @throws MpException in case the server fails to be created
          */
         public Server build() {
+            if (null == parentContext) {
+                serverContext = Context.create();
+            } else {
+                serverContext = Context.create(parentContext);
+            }
+
+            // now run the build within context already
+            return Contexts.runInContext(serverContext, this::doBuild);
+        }
+
+        private Server doBuild() {
             STARTUP_LOGGER.entering(Builder.class.getName(), "build");
 
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -568,6 +583,17 @@ public interface Server {
             return this;
         }
 
+        /**
+         * Configure the parent context to be used by this server.
+         *
+         * @param parentContext context to serve as a parent
+         * @return updated builder instance
+         */
+        public Builder context(Context parentContext) {
+            this.parentContext = parentContext;
+            return this;
+        }
+
         public List<JaxRsApplication> applications() {
             return new LinkedList<>(applications);
         }
@@ -602,6 +628,10 @@ public interface Server {
 
         String basePath() {
             return basePath;
+        }
+
+        Context context() {
+            return serverContext;
         }
     }
 }

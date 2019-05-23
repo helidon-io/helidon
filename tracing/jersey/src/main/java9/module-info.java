@@ -26,6 +26,7 @@ module io.helidon.tracing.jersey {
     requires javax.inject;
     requires opentracing.api;
     requires io.helidon.common;
+    requires io.helidon.common.context;
     requires io.helidon.webserver;
     requires transitive io.helidon.tracing.jersey.client;
 

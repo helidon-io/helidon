@@ -107,7 +107,27 @@ public interface MpServiceContext {
      * @param key      class to register
      * @param instance instance of a class
      * @param <U>      type of the instance
+     * @deprecated use {@link #register(Object)} or {@link #register(Object, Object)} instead
      */
+    @Deprecated
     <U> void register(Class<? extends U> key, U instance);
 
+    /**
+     * Register an instance for later use. This instance will be accessible from {@link io.helidon.config.Config.Context}
+     * throughout the application.
+     *
+     * @param instance instance to register
+     * @see io.helidon.common.context.Context#register(Object, Object)
+     */
+    void register(Object instance);
+
+    /**
+     * Register an instance for later use. This instance will be accessible from {@link io.helidon.config.Config.Context}
+     * throughout the application.
+     *
+     * @param classifier an additional registered instance classifier
+     * @param instance instance to register
+     * @see io.helidon.common.context.Context#register(Object, Object)
+     */
+    void register(Object classifier, Object instance);
 }

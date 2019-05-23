@@ -32,6 +32,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.context.Contexts;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.tracing.spi.TracerProvider;
 
@@ -145,7 +146,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
     public void filter(ClientRequestContext requestContext) {
         // if we run within Jersey server, the tracing context will be filled in by TracingHelperFilter
         // if not, it will be empty
-        Optional<TracingContext> tracingContext = TracingContext.get();
+        Optional<TracingContext> tracingContext = Contexts.context().flatMap(ctx -> ctx.get(TracingContext.class));
 
         // maybe we are disabled
         if (tracingDisabled(tracingContext)) {

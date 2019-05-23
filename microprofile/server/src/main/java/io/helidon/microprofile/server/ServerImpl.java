@@ -20,7 +20,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +38,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.microprofile.config.MpConfig;
@@ -63,7 +63,7 @@ public class ServerImpl implements Server {
     private final boolean containerCreated;
     private final String host;
     private final WebServer server;
-    private final IdentityHashMap<Class<?>, Object> register = new IdentityHashMap<>();
+    private final Context context;
     private int port = -1;
 
     ServerImpl(Builder builder) {
@@ -71,6 +71,7 @@ public class ServerImpl implements Server {
         Config config = mpConfig.helidonConfig();
         this.container = builder.cdiContainer();
         this.containerCreated = builder.containerCreated();
+        this.context = builder.context();
 
         InetAddress listenHost;
         if (null == builder.host()) {
@@ -87,6 +88,7 @@ public class ServerImpl implements Server {
         Routing.Builder routingBuilder = Routing.builder();
         Config serverConfig = config.get("server");
         ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder(serverConfig)
+                .context(this.context)
                 .port(builder.port())
                 .bindAddress(listenHost);
 
@@ -270,7 +272,17 @@ public class ServerImpl implements Server {
 
             @Override
             public <U> void register(Class<? extends U> key, U instance) {
-                register.put(key, instance);
+                context.register(instance);
+            }
+
+            @Override
+            public void register(Object instance) {
+                context.register(instance);
+            }
+
+            @Override
+            public void register(Object classifier, Object instance) {
+                context.register(classifier, instance);
             }
         };
     }

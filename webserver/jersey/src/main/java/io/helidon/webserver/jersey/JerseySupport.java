@@ -39,6 +39,7 @@ import javax.ws.rs.core.SecurityContext;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.webserver.Handler;
@@ -101,10 +102,10 @@ public class JerseySupport implements Service {
 
     private static final Logger LOGGER = Logger.getLogger(JerseySupport.class.getName());
 
-    private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() {}).getType();
-    private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() {}).getType();
-    private static final Type SPAN_TYPE = (new GenericType<Ref<Span>>() {}).getType();
-    private static final Type SPAN_CONTEXT_TYPE = (new GenericType<Ref<SpanContext>>() {}).getType();
+    private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
+    private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
+    private static final Type SPAN_TYPE = (new GenericType<Ref<Span>>() { }).getType();
+    private static final Type SPAN_CONTEXT_TYPE = (new GenericType<Ref<SpanContext>>() { }).getType();
     private static final AtomicReference<ExecutorService> DEFAULT_THREAD_POOL = new AtomicReference<>();
 
     private final ApplicationHandler appHandler;
@@ -134,10 +135,10 @@ public class JerseySupport implements Service {
         if (DEFAULT_THREAD_POOL.get() == null) {
             Config executorConfig = Config.create().get("server.executor-service");
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
-                                                            .name("server")
-                                                            .config(executorConfig)
-                                                            .build()
-                                                            .get());
+                                            .name("server")
+                                            .config(executorConfig)
+                                            .build()
+                                            .get());
         }
         return DEFAULT_THREAD_POOL.get();
     }
@@ -155,11 +156,11 @@ public class JerseySupport implements Service {
             // unfortunately, the URI constructor encodes the 'query' and 'fragment' which is totally silly
             if (req.query() != null && !req.query().isEmpty()) {
                 sb.append("?")
-                  .append(req.query());
+                        .append(req.query());
             }
             if (req.fragment() != null && !req.fragment().isEmpty()) {
                 sb.append("#")
-                  .append(req.fragment());
+                        .append(req.fragment());
             }
             return new URI(sb.toString());
         } catch (URISyntaxException | MalformedURLException e) {
@@ -224,6 +225,15 @@ public class JerseySupport implements Service {
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
+            // create a new context for jersey, so we do not modify webserver's internals
+            Context parent = Contexts.context()
+                    .orElseThrow(() -> new IllegalStateException("Context must be propagated from server"));
+            Context jerseyContext = Context.create(parent);
+
+            Contexts.runInContext(jerseyContext, () -> doAccept(req, res));
+        }
+
+        private void doAccept(ServerRequest req, ServerResponse res) {
             CompletableFuture<Void> whenHandleFinishes = new CompletableFuture<>();
             ResponseWriter responseWriter = new ResponseWriter(res, req, whenHandleFinishes);
             ContainerRequest requestContext = new ContainerRequest(baseUri(req),
@@ -237,36 +247,37 @@ public class JerseySupport implements Service {
             requestContext.setWriter(responseWriter);
 
             req.content()
-               .as(InputStream.class)
-               .thenAccept(is -> {
-                   requestContext.setEntityStream(is);
+                    .as(InputStream.class)
+                    .thenAccept(is -> {
+                        requestContext.setEntityStream(is);
 
-                   service.execute(() -> { // No need to use submit() since the future is not used.
-                       try {
-                           LOGGER.finer("Handling in Jersey started.");
+                        service.execute(() -> { // No need to use submit() since the future is not used.
+                            try {
+                                LOGGER.finer("Handling in Jersey started.");
 
-                           requestContext.setRequestScopedInitializer(injectionManager -> {
-                               injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
-                               injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
-                               injectionManager.<Ref<Span>>getInstance(SPAN_TYPE).set(req.span());
-                               injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE).set(req.spanContext());
-                           });
+                                requestContext.setRequestScopedInitializer(injectionManager -> {
+                                    injectionManager.<Ref<ServerRequest>>getInstance(REQUEST_TYPE).set(req);
+                                    injectionManager.<Ref<ServerResponse>>getInstance(RESPONSE_TYPE).set(res);
+                                    injectionManager.<Ref<Span>>getInstance(SPAN_TYPE).set(req.span());
+                                    injectionManager.<Ref<SpanContext>>getInstance(SPAN_CONTEXT_TYPE).set(req.spanContext());
+                                });
 
-                           appHandler.handle(requestContext);
-                           whenHandleFinishes.complete(null);
-                       } catch (Throwable e) {
-                           // this is very unlikely to happen; Jersey will try to call ResponseWriter.failure(Throwable) rather
-                           // than to propagate the exception
-                           req.next(e);
-                       }
-                   });
+                                appHandler.handle(requestContext);
+                                whenHandleFinishes.complete(null);
+                            } catch (Throwable e) {
+                                // this is very unlikely to happen; Jersey will try to call ResponseWriter.failure(Throwable)
+                                // rather
+                                // than to propagate the exception
+                                req.next(e);
+                            }
+                        });
 
-               })
-               .exceptionally(throwable -> {
-                   // this should not happen; but for the sake of completeness ..
-                   req.next(throwable);
-                   return null;
-               });
+                    })
+                    .exceptionally(throwable -> {
+                        // this should not happen; but for the sake of completeness ..
+                        req.next(throwable);
+                        return null;
+                    });
         }
     }
 

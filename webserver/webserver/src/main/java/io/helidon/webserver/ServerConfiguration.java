@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -167,6 +168,12 @@ public interface ServerConfiguration extends SocketConfiguration {
     Tracer tracer();
 
     /**
+     * The top level {@link io.helidon.common.context.Context} to be used by this webserver.
+     * @return a context instance with registered application scoped instances
+     */
+    Context context();
+
+    /**
      * Returns an {@link ExperimentalConfiguration}.
      *
      * @return Experimental configuration.
@@ -212,6 +219,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         private int workers;
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
+        private Context context;
 
         private Builder() {
         }
@@ -426,6 +434,16 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        /**
+         * Configure the application scoped context to be used as a parent for webserver request contexts.
+         * @param context top level context
+         * @return an updated builder
+         */
+        public Builder context(Context context) {
+            this.context = context;
+            return this;
+        }
+
         private InetAddress string2InetAddress(String address) {
             try {
                 return InetAddress.getByName(address);
@@ -511,7 +529,52 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public ServerConfiguration build() {
-            return new ServerBasicConfig(defaultSocketBuilder.build(), workers, tracer, sockets, experimental);
+            if (null == tracer) {
+                tracer = GlobalTracer.get();
+            }
+
+            if (null == context) {
+                context = Context.create();
+            }
+
+            if (!context.get(Tracer.class).isPresent()) {
+                context.register(tracer);
+            }
+
+            if (workers <= 0) {
+                workers = Runtime.getRuntime().availableProcessors() * 2;
+            }
+
+            if (null == experimental) {
+                experimental = ExperimentalConfiguration.builder().build();
+            }
+
+
+            return new ServerBasicConfig(this);
+        }
+
+        SocketConfiguration.Builder defaultSocketBuilder() {
+            return defaultSocketBuilder;
+        }
+
+        Map<String, SocketConfiguration> sockets() {
+            return sockets;
+        }
+
+        int workers() {
+            return workers;
+        }
+
+        Tracer tracer() {
+            return tracer;
+        }
+
+        ExperimentalConfiguration experimental() {
+            return experimental;
+        }
+
+        Context context() {
+            return context;
         }
     }
 }

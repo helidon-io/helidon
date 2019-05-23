@@ -33,6 +33,7 @@ module io.helidon.tracing.jersey.client {
 
     requires io.helidon.tracing;
     requires io.helidon.common;
+    requires io.helidon.common.context;
 
     exports io.helidon.tracing.jersey.client;
 

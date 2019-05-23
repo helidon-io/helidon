@@ -15,10 +15,13 @@
  */
 package io.helidon.microprofile.tracing;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.tracing.TracerBuilder;
+
+import io.opentracing.Tracer;
 
 /**
  * Extension of microprofile to add support for tracing.
@@ -30,12 +33,18 @@ public class MpTracingService implements MpService {
         // "known" location is:
         Config tracingConfig = context.helidonConfig().get("tracing");
 
-        // register as global tracer and configure webserver
+        // register as global tracer
+        Tracer tracer = TracerBuilder.create(tracingConfig).buildAndRegister();
+
+        // and configure webserver
         context.serverConfigBuilder()
-                .tracer(TracerBuilder.create(tracingConfig)
-                                .buildAndRegister());
+                .tracer(tracer);
 
         context.applications()
                 .forEach(app -> app.register(MpTracingFilter.class));
+
+        // and finally register in current context - this should be the "application" context
+        Contexts.context()
+                .ifPresent(ctx -> ctx.register(tracer));
     }
 }

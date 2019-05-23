@@ -28,6 +28,7 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.Context;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.webserver.ServerRequest;
@@ -46,7 +47,7 @@ import io.opentracing.Tracer;
 @PreMatching
 @Priority(Integer.MIN_VALUE)
 @ApplicationScoped
-public class MpTracingContextFilter implements ContainerRequestFilter, ContainerResponseFilter {
+public class MpTracingContextFilter implements ContainerRequestFilter {
     @Context
     private Provider<ServerRequest> request;
 
@@ -64,11 +65,6 @@ public class MpTracingContextFilter implements ContainerRequestFilter, Container
         TracingContext tracingContext = TracingContext.create(tracer, serverRequest.headers().toMap(), clientEnabled);
         tracingContext.parentSpan(parentSpan);
 
-        TracingContext.set(tracingContext);
-    }
-
-    @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        TracingContext.remove();
+        Contexts.context().ifPresent(ctx -> ctx.register(tracingContext));
     }
 }

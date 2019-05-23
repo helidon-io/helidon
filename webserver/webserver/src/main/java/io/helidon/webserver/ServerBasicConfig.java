@@ -24,8 +24,9 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.common.context.Context;
+
 import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
 
 /**
  * Basic implementation of the {@link ServerConfiguration}.
@@ -39,31 +40,23 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Tracer tracer;
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
+    private final Context context;
 
     /**
      * Creates new instance.
      *
-     * @param socketConfig  a default socket configuration values
-     * @param workers       a count of threads in a pool used to tryProcess HTTP requests
-     * @param tracer        an {@code opentracing.io} tracer
-     * @param socketConfigs socket configurations of additional ports to listen on
+     * @param builder configuration builder
      */
-    ServerBasicConfig(SocketConfiguration socketConfig,
-                      int workers,
-                      Tracer tracer,
-                      Map<String, SocketConfiguration> socketConfigs,
-                      ExperimentalConfiguration experimental) {
-        this.socketConfig = socketConfig == null ? new SocketConfig() : socketConfig;
-        if (workers <= 0) {
-            workers = Runtime.getRuntime().availableProcessors() * 2;
-        }
-        this.workers = workers;
-        this.tracer = tracer == null ? GlobalTracer.get() : tracer;
-        HashMap<String, SocketConfiguration> map = new HashMap<>(socketConfigs);
+    ServerBasicConfig(ServerConfiguration.Builder builder) {
+        this.socketConfig = builder.defaultSocketBuilder().build();
+        this.workers = builder.workers();
+        this.tracer = builder.tracer();
+        this.experimental = builder.experimental();
+        this.context = builder.context();
+
+        HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
         this.socketConfigs = Collections.unmodifiableMap(map);
-        this.experimental = experimental != null ? experimental
-                : new ExperimentalConfiguration.Builder().build();
     }
 
     @Override
@@ -119,6 +112,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public ExperimentalConfiguration experimental() {
         return experimental;
+    }
+
+    @Override
+    public Context context() {
+        return context;
     }
 
     static class SocketConfig implements SocketConfiguration {
