@@ -56,7 +56,7 @@ class JavaMethodFinder {
         Class<?> current = null;
 
         // Continue searching until found or queue exhausted
-        while (queue.size() > 0 && method == null) {
+        while (!queue.isEmpty() && method == null) {
             current = queue.remove();
 
             // Search for compatible method in the current class

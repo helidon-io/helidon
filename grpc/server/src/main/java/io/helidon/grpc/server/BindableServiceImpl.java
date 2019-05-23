@@ -80,7 +80,7 @@ class BindableServiceImpl implements BindableService {
         priorityServerInterceptors.addAll(method.interceptors());
         List<ServerInterceptor> interceptors = priorityServerInterceptors.stream().collect(Collectors.toList());
 
-        if (interceptors.size() > 0) {
+        if (!interceptors.isEmpty()) {
             LinkedHashSet<ServerInterceptor> uniqueInterceptors = new LinkedHashSet<>(interceptors.size());
 
             // iterate the interceptors in reverse order so that the handler chain is in the correct order
