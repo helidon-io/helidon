@@ -17,14 +17,17 @@ package io.helidon.security.abac.role;
 
 import java.lang.reflect.Method;
 
+import javax.annotation.Priority;
 import javax.annotation.security.PermitAll;
 
+import io.helidon.common.Prioritized;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 /**
  * Implementation of {@link AnnotationAnalyzer} which checks for {@link PermitAll} annotation if
  * authentication is needed or not.
  */
+@Priority(Prioritized.DEFAULT_PRIORITY)
 public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
 
     @Override
