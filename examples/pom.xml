@@ -46,6 +46,7 @@
         <module>quickstarts</module>
         <module>health</module>
         <module>grpc</module>
+        <module>openapi</module>
     </modules>
 
     <build>
