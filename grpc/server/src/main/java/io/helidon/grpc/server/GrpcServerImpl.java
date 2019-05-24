@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -140,8 +141,8 @@ public class GrpcServerImpl implements GrpcServer {
             if (sslConfig != null) {
                 if (sslConfig.isJdkSSL()) {
                     SSLContext sslCtx = SSLContextBuilder.create(KeyConfig.pemBuilder()
-                                                                         .key(Resource.create(sslConfig.getTLSKey()))
-                                                                         .certChain(Resource.create(sslConfig.getTLSCerts()))
+                                                                         .key(findResource(sslConfig.getTLSKey()))
+                                                                         .certChain(findResource(sslConfig.getTLSCerts()))
                                                                          .build()).build();
                     sslContext = new JdkSslContext(sslCtx, false, ClientAuth.NONE);
 
@@ -238,6 +239,22 @@ public class GrpcServerImpl implements GrpcServer {
     }
 
     // ---- helper methods --------------------------------------------------
+
+    private Resource findResource(String name) {
+        try {
+            // Try to locate the resource on the classpath
+            return Resource.create(name);
+        } catch (NullPointerException ignored) {
+            try {
+                // Not found, try File
+                File file = new File(name);
+                return Resource.create(file.toPath());
+            } catch (NullPointerException ignored2) {
+                // Not found, try URI
+                return Resource.create(URI.create(name));
+            }
+        }
+    }
 
     private NettyServerBuilder configureNetty(NettyServerBuilder builder) {
         int workersCount = config.workers();
@@ -396,7 +413,8 @@ public class GrpcServerImpl implements GrpcServer {
             aX509Certificates = new X509Certificate[0];
         }
 
-        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(fileCerts, fileKey);
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forServer(fileCerts, fileKey)
+                .sslProvider(SslProvider.OPENSSL);
 
         if (aX509Certificates.length > 0) {
             sslContextBuilder.trustManager(aX509Certificates)
@@ -405,7 +423,7 @@ public class GrpcServerImpl implements GrpcServer {
             sslContextBuilder.clientAuth(ClientAuth.OPTIONAL);
         }
 
-        return GrpcSslContexts.configure(sslContextBuilder, SslProvider.OPENSSL);
+        return GrpcSslContexts.configure(sslContextBuilder);
     }
 
     private static X509Certificate[] loadX509Cert(File... aFile)

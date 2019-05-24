@@ -242,6 +242,14 @@
     </modules>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${version.plugin.os}</version>
+            </extension>
+        </extensions>
+
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -830,8 +838,9 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative-boringssl-static</artifactId>
+                <artifactId>netty-tcnative</artifactId>
                 <version>${version.netty.tcnative}</version>
+                <classifier>${os.detected.classifier}</classifier>
             </dependency>
             <dependency>
               <groupId>io.opentracing.contrib</groupId>
