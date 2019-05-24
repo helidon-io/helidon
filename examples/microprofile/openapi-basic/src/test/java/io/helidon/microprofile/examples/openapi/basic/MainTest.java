@@ -104,7 +104,7 @@ class MainTest {
 
         JsonPointer jp = Json.createPointer("/" + escape(SimpleAPIModelReader.MODEL_READER_PATH) + "/get/summary");
         JsonString js = JsonString.class.cast(jp.getValue(paths));
-        Assertions.assertEquals(SimpleAPIModelReader.SUMMARY, js.getString(), "~1test~1newpath GET summary did not match");
+        Assertions.assertEquals(SimpleAPIModelReader.SUMMARY, js.getString(), "/test/newpath GET summary did not match");
 
         jp = Json.createPointer("/" + escape(SimpleAPIModelReader.DOOMED_PATH));
         Assertions.assertFalse(jp.containsValue(paths), "/test/doomed should not appear but does");
