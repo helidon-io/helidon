@@ -124,4 +124,24 @@ public final class Contexts {
             pop();
         }
     }
+
+    /**
+     * Run the callable in the provided context throwing any exception from
+     * its execution. The callable can use {@link #context()} to retrieve
+     * the context.
+     *
+     * @param context  context to run in
+     * @param callable callable to execute in context
+     * @param <T>      return type of the callable
+     * @return the result of the callable
+     * @throws java.lang.Exception  If thrown in {@link java.util.concurrent.Callable#call()}
+     */
+    public static <T> T runInContextWithThrow(Context context, Callable<T> callable) throws Exception {
+        push(context);
+        try {
+            return callable.call();
+        } finally {
+            pop();
+        }
+    }
 }

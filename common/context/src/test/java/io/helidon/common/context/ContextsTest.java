@@ -166,6 +166,18 @@ class ContextsTest {
     }
 
     @Test
+    void testContextSubmitCallableWithThrow() throws Exception {
+        Callable<String> callable = () -> Contexts.context().get().get("message", String.class).orElse("No context found");
+
+        Context ctx = Context.create();
+        ctx.register("message", TEST_STRING + "_1");
+
+        Future<String> future = Contexts.runInContextWithThrow(ctx, () -> service.submit(callable));
+
+        assertThat(future.get(), is(TEST_STRING + "_1"));
+    }
+
+    @Test
     void testMultipleContexts() {
         Context topLevel = Context.create();
         topLevel.register("topLevel", TEST_STRING);
