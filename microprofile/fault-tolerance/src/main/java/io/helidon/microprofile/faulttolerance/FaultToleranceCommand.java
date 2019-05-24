@@ -234,7 +234,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         // Finally, invoke the user method
         try {
             runThread = Thread.currentThread();
-            return Contexts.runInContext(helidonContext, context::proceed);
+            return Contexts.runInContextWithThrow(helidonContext, context::proceed);
         } finally {
             if (introspector.hasBulkhead()) {
                 bulkheadHelper.markAsNotRunning(this);
