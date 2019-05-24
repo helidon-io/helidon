@@ -18,14 +18,19 @@ package io.helidon.microprofile.examples.openapi.basic;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
+import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonPointer;
+import javax.json.JsonString;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.helidon.microprofile.examples.openapi.basic.internal.SimpleAPIModelReader;
 import io.helidon.microprofile.server.Server;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,6 +87,33 @@ class MainTest {
                 .request()
                 .get();
         Assertions.assertEquals(200, r.getStatus(), "GET health status code");
+
+        client.close();
+    }
+
+    @Test
+    public void testOpenAPI() {
+
+        Client client = ClientBuilder.newClient();
+
+        JsonObject jsonObject = client
+                .target(getConnectionString("/openapi"))
+                .request(MediaType.APPLICATION_JSON)
+                .get(JsonObject.class);
+        JsonObject paths = jsonObject.get("paths").asJsonObject();
+
+        JsonPointer jp = Json.createPointer("/" + escape(SimpleAPIModelReader.MODEL_READER_PATH) + "/get/summary");
+        JsonString js = JsonString.class.cast(jp.getValue(paths));
+        Assertions.assertEquals(SimpleAPIModelReader.SUMMARY, js.getString(), "~1test~1newpath GET summary did not match");
+
+        jp = Json.createPointer("/" + escape(SimpleAPIModelReader.DOOMED_PATH));
+        Assertions.assertFalse(jp.containsValue(paths), "/test/doomed should not appear but does");
+
+        jp = Json.createPointer("/" + escape("/greet") + "/get/summary");
+        js = JsonString.class.cast(jp.getValue(paths));
+        Assertions.assertEquals("Returns a generic greeting", js.getString(), "/greet GET summary did not match");
+
+        client.close();
     }
 
     @AfterAll
@@ -103,5 +135,9 @@ class MainTest {
         // microprofile-config.properties
         // and Application classes annotated as @ApplicationScoped
         return Server.create().start();
+    }
+
+    private String escape(String path) {
+        return path.replace("/", "~1");
     }
 }

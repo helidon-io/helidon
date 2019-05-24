@@ -86,16 +86,12 @@ public class GreetResource {
      *
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @GET
     @Operation(summary = "Returns a generic greeting",
             description = "Greets the user generically")
     @APIResponse(description = "Simple JSON containing the greeting",
             content = @Content(mediaType = "application/json",
-                               schema = @Schema(implementation = GreetingMessage.class
-                                            )
-                               )
-                )
+                               schema = @Schema(implementation = GreetingMessage.class)))
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
         return createResponse("World");
@@ -107,17 +103,12 @@ public class GreetResource {
      * @param name the name to greet
      * @return {@link JsonObject}
      */
-    @SuppressWarnings("checkstyle:designforextension")
     @Path("/{name}")
     @GET
     @Operation(summary = "Returns a personalized greeting")
     @APIResponse(description = "Simple JSON containing the greeting",
             content = @Content(mediaType = "application/json",
-                               schema = @Schema(implementation = GreetingMessage.class
-                                            )
-                               )
-                )
-
+                               schema = @Schema(implementation = GreetingMessage.class)))
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getMessage(@PathParam("name") String name) {
         return createResponse(name);
@@ -133,8 +124,7 @@ public class GreetResource {
     @Path("/greeting")
     @PUT
     @Operation(summary = "Set the greeting prefix",
-               description = "Permits the client to set the prefix part of the greeting (\"Hello\")"
-              )
+               description = "Permits the client to set the prefix part of the greeting (\"Hello\")")
     @RequestBody(
         name = "greeting",
         description = "Conveys the new greeting prefix to use in building greetings",
@@ -144,10 +134,7 @@ public class GreetResource {
                     examples = @ExampleObject(
                         name = "greeting",
                         summary = "Example greeting message to update",
-                        value = "New greeting message"
-                              )
-                    )
-        )
+                        value = "New greeting message")))
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGreeting(JsonObject jsonObject) {
