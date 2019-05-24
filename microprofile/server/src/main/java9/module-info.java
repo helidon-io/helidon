@@ -22,6 +22,7 @@ module io.helidon.microprofile.server {
     requires transitive io.helidon.microprofile.config;
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.webserver.jersey;
+    requires transitive io.helidon.common.context;
 
     requires transitive cdi.api;
     requires transitive java.ws.rs;

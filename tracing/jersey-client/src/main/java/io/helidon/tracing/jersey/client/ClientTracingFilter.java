@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.context.Contexts;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.tracing.spi.TracerProvider;
 
@@ -145,7 +146,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
     public void filter(ClientRequestContext requestContext) {
         // if we run within Jersey server, the tracing context will be filled in by TracingHelperFilter
         // if not, it will be empty
-        Optional<TracingContext> tracingContext = TracingContext.get();
+        Optional<TracingContext> tracingContext = Contexts.context().flatMap(ctx -> ctx.get(TracingContext.class));
 
         // maybe we are disabled
         if (tracingDisabled(tracingContext)) {

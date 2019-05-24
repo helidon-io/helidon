@@ -66,7 +66,7 @@ class NettyWebServer implements WebServer {
     private final CompletableFuture<WebServer> channelsUpFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> channelsCloseFuture = new CompletableFuture<>();
     private final CompletableFuture<WebServer> threadGroupsShutdownFuture = new CompletableFuture<>();
-    private final ContextualRegistry contextualRegistry = ContextualRegistry.create();
+    private final ContextualRegistry contextualRegistry;
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
     private final List<HttpInitializer> initializers = new LinkedList<>();
 
@@ -90,7 +90,7 @@ class NettyWebServer implements WebServer {
         LOGGER.info(() -> "Version: " + Version.VERSION);
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
-
+        this.contextualRegistry = ContextualRegistry.create(config.context());
         this.configuration = config;
 
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
@@ -133,8 +133,6 @@ class NettyWebServer implements WebServer {
 
             bootstraps.put(name, bootstrap);
         }
-
-        contextualRegistry.register(config.tracer());
     }
 
     @Override

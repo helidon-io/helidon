@@ -218,5 +218,10 @@ class ListContext implements Context {
         public Class<T> getType() {
             return (Class<T>) instance.getClass();
         }
+
+        @Override
+        public String toString() {
+            return String.valueOf(instance);
+        }
     }
 }

@@ -32,7 +32,7 @@ class ListContextualRegistry implements ContextualRegistry {
      *
      * @param parent a parent context or {@code null}.
      */
-    ListContextualRegistry(ContextualRegistry parent) {
+    ListContextualRegistry(Context parent) {
         if (parent instanceof ListContextualRegistry) {
             this.delegate = Context.create(((ListContextualRegistry) parent).delegate);
         } else {

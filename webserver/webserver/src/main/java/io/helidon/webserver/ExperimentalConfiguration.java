@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package io.helidon.webserver;
  * Interface ExperimentalConfiguration.
  */
 public interface ExperimentalConfiguration {
-
     /**
      * Config property to set HTTP/2 configuration.
      *
@@ -29,11 +28,30 @@ public interface ExperimentalConfiguration {
     Http2Configuration http2();
 
     /**
+     * Create a new fluent API builder.
+     *
+     * @return a new builder instance.
+     */
+    @SuppressWarnings("deprecation") // will be changed to private constructor and deprecation removed
+    static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Builder for {@link ExperimentalConfiguration}.
      */
     final class Builder implements io.helidon.common.Builder<ExperimentalConfiguration> {
-
         private Http2Configuration http2;
+
+        /**
+         * Do not use this constructor.
+         * Will be changed to {@code private} in next release.
+         *
+         * @deprecated use {@link ExperimentalConfiguration#builder()} instead.
+         */
+        @Deprecated
+        public Builder() {
+        }
 
         /**
          * Sets value for HTTP/2 configuration.

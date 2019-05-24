@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ package io.helidon.tracing.jersey.client.internal;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -32,55 +30,10 @@ import io.opentracing.Tracer;
  * additional spans and that need to update the parent span of this context.
  */
 public final class TracingContext {
-    /**
-     * Tracing context thread local, used by internal implementations of tracing filters.
-     */
-    private static final ThreadLocal<TracingContext> TRACING_CONTEXT = new ThreadLocal<>();
-
     private SpanContext parentSpan;
     private final Tracer tracer;
     private final Map<String, List<String>> inboundHeaders;
-    private boolean traceClient;
-
-    /**
-     * The instance associated with the current thread.
-     * @return context for current thread or {@code empty} if none associated
-     */
-    public static Optional<TracingContext> get() {
-        return Optional.ofNullable(TRACING_CONTEXT.get());
-    }
-
-    /**
-     * Computes the instance and associates it with current thread if none
-     * associated, or returns the instance already associated.
-     *
-     * @param contextSupplier supplier for tracing context to be associated with the thread if none is
-     * @return an instance associated with the current context, either from other provider, or from contextSupplier
-     */
-    public static TracingContext compute(Supplier<TracingContext> contextSupplier) {
-        TracingContext tracingContext = TRACING_CONTEXT.get();
-        if (null == tracingContext) {
-            set(contextSupplier.get());
-        }
-
-        return get().orElseThrow(() -> new IllegalStateException("Computed result was null"));
-    }
-
-    /**
-     * Set the tracing context to be associated with current thread.
-     *
-     * @param context context to associate
-     */
-    public static void set(TracingContext context) {
-        TRACING_CONTEXT.set(context);
-    }
-
-    /**
-     * Remove the tracing context associated with current thread.
-     */
-    public static void remove() {
-        TRACING_CONTEXT.remove();
-    }
+    private final boolean traceClient;
 
     /**
      * Create a new tracing context with client tracing enabled.
@@ -88,7 +41,6 @@ public final class TracingContext {
      * @param tracer tracer to use
      * @param inboundHeaders inbound header to be used for context propagation
      * @return a new tracing context (not associated with current thread)
-     * @see #set(TracingContext)
      * @see #parentSpan(SpanContext)
      */
     public static TracingContext create(Tracer tracer,
@@ -103,7 +55,6 @@ public final class TracingContext {
      * @param inboundHeaders inbound header to be used for context propagation
      * @param clientEnabled whether client tracing should be enabled or not
      * @return a new tracing context (not associated with current thread)
-     * @see #set(TracingContext)
      * @see #parentSpan(SpanContext)
      */
     public static TracingContext create(Tracer tracer,
@@ -113,8 +64,8 @@ public final class TracingContext {
     }
 
     private TracingContext(Tracer tracer,
-                          Map<String, List<String>> inboundHeaders,
-                          boolean traceClient) {
+                           Map<String, List<String>> inboundHeaders,
+                           boolean traceClient) {
         this.tracer = tracer;
         this.inboundHeaders = inboundHeaders;
         this.traceClient = traceClient;

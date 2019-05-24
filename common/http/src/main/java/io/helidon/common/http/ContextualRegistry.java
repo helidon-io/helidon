@@ -65,7 +65,7 @@ public interface ContextualRegistry extends Context {
      * @param parent a parent registry
      * @return new instance
      */
-    static ContextualRegistry create(ContextualRegistry parent) {
+    static ContextualRegistry create(Context parent) {
         return new ListContextualRegistry(parent);
     }
 }

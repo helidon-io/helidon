@@ -144,7 +144,9 @@ class RequestRouting implements Routing {
         if (spanContext != null) {
             spanBuilder.asChildOf(spanContext);
         }
-        return spanBuilder.startActive(true).span();
+
+        // cannot use startActive, as it conflicts with the thread model we use
+        return spanBuilder.start();
     }
 
     /**
@@ -352,7 +354,6 @@ class RequestRouting implements Routing {
                     RoutedRequest nextRequest = new RoutedRequest(this, nextResponse, nextItem.path, errorHandlers);
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
                     requestSpan.log(nextItem.handlerRoute.diagnosticEvent());
-                    // execute in the context, so context can be retrieved with Contexts (runs in our thread)
                     nextItem.handlerRoute
                             .handler()
                             .accept(nextRequest, nextResponse);
