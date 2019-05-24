@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ module io.helidon.microprofile.health {
     requires java.management;
 
     requires io.helidon.common;
+    requires io.helidon.common.serviceloader;
     requires io.helidon.health;
     requires io.helidon.microprofile.server;
 
@@ -33,6 +34,8 @@ module io.helidon.microprofile.health {
     requires microprofile.health.api;
 
     exports io.helidon.microprofile.health;
+
+    uses io.helidon.microprofile.health.HealthCheckProvider;
 
     provides io.helidon.microprofile.server.spi.MpService with io.helidon.microprofile.health.HealthMpService;
 }

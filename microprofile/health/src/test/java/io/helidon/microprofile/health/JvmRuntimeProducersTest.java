@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,19 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-class HealthCheckProducerTest {
+class JvmRuntimeProducersTest {
     @Test
     void getRuntime() {
-        assertThat(Runtime.getRuntime(), equalTo(new HealthCheckProducer().produceRuntime()));
+        assertThat(Runtime.getRuntime(), equalTo(new JvmRuntimeProducers().produceRuntime()));
     }
 
     @Test
     void getRuntimeMXBean() {
-        assertThat(ManagementFactory.getRuntimeMXBean(), equalTo(new HealthCheckProducer().produceRuntimeMXBean()));
+        assertThat(ManagementFactory.getRuntimeMXBean(), equalTo(new JvmRuntimeProducers().produceRuntimeMXBean()));
     }
 
     @Test
     void getThreadMXBean() {
-        assertThat(ManagementFactory.getThreadMXBean(), equalTo(new HealthCheckProducer().produceThreadMXBean()));
+        assertThat(ManagementFactory.getThreadMXBean(), equalTo(new JvmRuntimeProducers().produceThreadMXBean()));
     }
 }

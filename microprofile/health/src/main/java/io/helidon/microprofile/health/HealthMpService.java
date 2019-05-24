@@ -18,7 +18,9 @@ package io.helidon.microprofile.health;
 
 import java.lang.annotation.Annotation;
 import java.util.Optional;
+import java.util.ServiceLoader;
 
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.microprofile.server.spi.MpService;
@@ -46,6 +48,9 @@ public class HealthMpService implements MpService {
                 })
                 .stream()
                 .forEach(builder::add);
+
+        HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
+                .forEach(healthCheckProvider -> builder.add(healthCheckProvider.healthChecks()));
 
         healthConfig.get("routing")
                 .asString()
