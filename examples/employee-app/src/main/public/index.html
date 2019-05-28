@@ -1,189 +1,189 @@
 <!doctype html>
 <html ng-app="demo">
-  <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
-  
-	<script src="EmployeeController.js"></script>
-	 <style>
-    html body {
-      font-family: Arial, Helvetica, sans-serif
-    }
-       
-    fieldset {
-      padding: 0;
-      border: 0;
-      margin-top: 25px;
-      font-size: 75%;
-    }
-    
-    .container {
-      width: 90%;
-      margin: auto;
-	  display: flex;
-    }
-    
-    .peopleContent {
-      flex-grow: 1;
-    }
-    
-    .portrait {
-      width: 120px;
-    }
-    
-    .peopleItem {
-      width: 350px;
-      border: 1px solid #777777;
-      background: #FAFAFA;
-      margin: 3px;
-      padding: 2px;
-      display: flex;
-    }
-    
-    .peopleTitle {
-      width: 100%;
-      background: #FAFAFA;
-      margin: 3px;
-      padding: 2px;
-      display: flex;
-    }
-    
-    #editDialog {
-      display: none;
-    }
-    
-    #addDialog {
-      display: ;
-    }
-  </style>
 
-  </head>
-  <body>
- <div ng-controller="Employees" ng-init="getEmployees()">
-  <div id="TopSection" style="width:88%; margin:auto;">
-      
-   <h1>Cloud Employee App</h1>
-  <div class="click-element animate-show" ng-show="showListEmployes">
-    <h2>People</h2>
-	<br>
-	<form>
-    
-		<div class="col-xs-3">
-          <input class="form-control " type="text"  id="searchText" ng-model="searchText">
-		</div>
-		<div class="col-xs-2">
-		  <select id="searchType" class="form-control" ng-model="searchType">
-            <option value="lastname">By last name</option>
-            <option value="department">By department</option>
-            <option value="title">By title</option>
-          </select>
-		</div>
-		<div class="col-xs-1">
-			<button class="btn btn-success" id="searchButton" type="button" ng-click="searchEmployees()"> 
-				<span class="glyphicon glyphicon-search"></span> Search
-			</button>
-		</div>
-        <div class="col-xs-4">
-			<button class="btn btn-danger" id="homeButton" type="button" ng-click="getEmployees()"> 
-				<span class="glyphicon glyphicon-home"></span>
-			</button>
-		</div>          
-	</form>
-	<input class="btn btn-primary" id="addButton" value="Add New" type="button" ng-click="showDivs(false);reset(form)" >
-	
-  </div>
-</div>
- </br></br>
-    <div id="people" class="container" class="click-element animate-show" ng-show="showListEmployes">
-	<div class="row">
-		<div class ="peopleItem col-sm-3" ng-repeat="emp in employees" ng-click="getEmployeeById(emp.id)"  style="cursor: pointer">
-				<div class="photos"  ng-show="emp.photo != null && emp.photo.length != 0"><img src="data:image/png;base64, {{emp.photo}}" style="width:120px; height:120px"></img> </div>
-				<div class="photos" ng-show="emp.photo == null || emp.photo.length == 0"><img src="nopic.png" style="width:120px; height:120px"></img> </div>
-				<div class="peopleContent">
-					<h4>{{emp.firstName}} {{emp.lastName}}</h4>
-					{{emp.title}}<br>
-					<small>{{emp.department}}</small>
-				</div>			
-			</div>
-		</div>
-		<div ng-show="!employees.length" class="alert alert-info col-sm-7">No people found matching your search criteria</div>
-	</div>
-	
-	
-	<div class="col-sm-5 col-md-offset-2">
-	<div class="panel panel-info " class="click-element animate-show" ng-show="showNewForm">
-            <div class="panel-heading">
-              <h3 class="panel-title"><div id="formTitle" ng-model="formTitle" style="padding:10px"> {{formTitle}} 
-			  <button class="btn btn-primary" id="delete"  type="button" ng-click="deleteEmployee()" ng-show="showPhoto" style="float: right; position: relative; bottom: 9px;">
-			  <span class="glyphicon glyphicon-trash"></span> Delete
-			  </button>
-			</div> </h3>
+        <script src="EmployeeController.js"></script>
+        <style>
+            html body {
+                font-family: Arial, Helvetica, sans-serif
+            }
+
+            fieldset {
+                padding: 0;
+                border: 0;
+                margin-top: 25px;
+                font-size: 75%;
+            }
+
+            .container {
+                width: 90%;
+                margin: auto;
+                display: flex;
+            }
+
+            .peopleContent {
+                flex-grow: 1;
+            }
+
+            .portrait {
+                width: 120px;
+            }
+
+            .peopleItem {
+                width: 350px;
+                border: 1px solid #777777;
+                background: #FAFAFA;
+                margin: 3px;
+                padding: 2px;
+                display: flex;
+            }
+
+            .peopleTitle {
+                width: 100%;
+                background: #FAFAFA;
+                margin: 3px;
+                padding: 2px;
+                display: flex;
+            }
+
+            #editDialog {
+                display: none;
+            }
+
+            #addDialog {
+                display: ;
+            }
+        </style>
+
+    </head>
+    <body>
+        <div ng-controller="Employees" ng-init="getEmployees()">
+            <div id="TopSection" style="width:88%; margin:auto;">
+
+                <h1>Cloud Employee App</h1>
+                <div class="click-element animate-show" ng-show="showListEmployes">
+                    <h2>People</h2>
+                    <br>
+                    <form>
+
+                        <div class="col-xs-3">
+                            <input class="form-control " type="text"  id="searchText" ng-model="searchText">
+                        </div>
+                        <div class="col-xs-2">
+                            <select id="searchType" class="form-control" ng-model="searchType">
+                                <option value="lastname">By last name</option>
+                                <option value="department">By department</option>
+                                <option value="title">By title</option>
+                            </select>
+                        </div>
+                        <div class="col-xs-1">
+                            <button class="btn btn-success" id="searchButton" type="button" ng-click="searchEmployees()"> 
+                                <span class="glyphicon glyphicon-search"></span> Search
+                            </button>
+                        </div>
+                        <div class="col-xs-4">
+                            <button class="btn btn-danger" id="homeButton" type="button" ng-click="getEmployees()"> 
+                                <span class="glyphicon glyphicon-home"></span>
+                            </button>
+                        </div>          
+                    </form>
+                    <input class="btn btn-primary" id="addButton" value="Add New" type="button" ng-click="showDivs(false);reset(form)" >
+
+                </div>
             </div>
-            <div class="panel-body">
-              <form class="form-horizontal" name="form" novalidate ng-submit="form.$valid && submitEmployee()">
-			  <input type="text" id="id" ng-model="id" value=""  style="display: none;">
-    <div class="photo" ng-show="showPhoto && photo != null && photo != 0">
-		<img src="data:image/png;base64, {{photo}}"></img> 
-	</div>
-	<div class="photos" ng-show="photo == null || photo.length == 0"><img src="nopic.png" style="width:120px; height:120px"></img> </div>
-	
-	<div class="form-group" ng-class="{ 'has-error': form.firstName.$invalid && form.$submitted}">
-		<label class="control-label col-xs-3" for="firstName">First Name:</label>
-		<div class="col-xs-5">
-			<input type="text" id="firstName"  name="firstName" ng-model="firstName" value="" class="form-control" required>
-		 </div>
-	</div>
-	 <div class="form-group" ng-class="{ 'has-error': form.lastName.$invalid && form.$submitted}">
-        <label class="control-label col-xs-3" for="lastName">Last Name:</label>
-		<div class="col-xs-5">
-			<input type="text" id="lastName" name="lastName" ng-model="lastName" value="" class="form-control" required>
-		 </div>
-	 </div>
-	 <div class="form-group" ng-class="{ 'has-error': form.email.$invalid && form.$submitted}">	 
-        <label class="control-label col-xs-3" for="email">Email:</label>
-		<div class="col-xs-5">
-			<input type="text" id="email" name="email" value="" ng-model="email" class="form-control" required>
-		</div>
-	</div>
-	<div class="form-group" ng-class="{ 'has-error': form.phone.$invalid && form.$submitted }">
-        <label class="control-label col-xs-3" for="phone">Phone:</label>
-		 <div class="col-xs-5">
-			<input type="text" id="phone" name="phone" value="" ng-model="phone" class="form-control" required>
-		 </div>
-	 </div>
-	 <div class="form-group" ng-class="{ 'has-error': form.birthDate.$invalid && form.$submitted}">
-        <label class="control-label col-xs-3" for="birthDate">Birthdate:</label>
-		<div class="col-xs-5">
-			<input type="text" id="birthDate" name="birthDate" ng-model="birthDate" value="" class="form-control" required>
-		 </div>
-	 </div>
-	 <div class="form-group" ng-class="{ 'has-error': form.title.$invalid && form.$submitted}">
-        <label class="control-label col-xs-3" for="title">Title:</label>
-		 <div class="col-xs-5">
-			<input type="text" id="title" name="title" value=""  ng-model="title" class="form-control" required>
-		 </div>
-	 </div>
-	 <div class="form-group" ng-class="{ 'has-error': form.department.$invalid && form.$submitted}">	 
-        <label class="control-label col-xs-3" for="department">Department:</label>
-		<div class="col-xs-5">
-			<input type="text" id="department" name="department" value="" ng-model="department" class="form-control" required>
-		</div>
-	 </div>	
-       <br><br>
-	    <div style=" text-align: center;">
-			<input type="button" tabindex="-1" class="btn btn-default" value="Cancel"  ng-click="showDivs(true)">
-			<input type="submit" tabindex="-1" class="btn btn-success" value="Save">
-		</div>
-    </form>
-	</div>
+            </br></br>
+            <div id="people" class="container" class="click-element animate-show" ng-show="showListEmployes">
+                <div class="row">
+                    <div class ="peopleItem col-sm-3" ng-repeat="emp in employees" ng-click="getEmployeeById(emp.id)"  style="cursor: pointer">
+                        <div class="photos"  ng-show="emp.photo != null && emp.photo.length != 0"><img src="data:image/png;base64, {{emp.photo}}" style="width:120px; height:120px"></img> </div>
+                        <div class="photos" ng-show="emp.photo == null || emp.photo.length == 0"><img src="nopic.png" style="width:120px; height:120px"></img> </div>
+                        <div class="peopleContent">
+                            <h4>{{emp.firstName}} {{emp.lastName}}</h4>
+                            {{emp.title}}<br>
+                            <small>{{emp.department}}</small>
+                        </div>			
+                    </div>
+                </div>
+                <div ng-show="!employees.length" class="alert alert-info col-sm-7">No people found matching your search criteria</div>
             </div>
-          </div>
-		  
-		  
 
-  </div>
-  </body>
-  
- 
+
+            <div class="col-sm-5 col-md-offset-2">
+                <div class="panel panel-info " class="click-element animate-show" ng-show="showNewForm">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><div id="formTitle" ng-model="formTitle" style="padding:10px"> {{formTitle}} 
+                                <button class="btn btn-primary" id="delete"  type="button" ng-click="deleteEmployee()" ng-show="showPhoto" style="float: right; position: relative; bottom: 9px;">
+                                    <span class="glyphicon glyphicon-trash"></span> Delete
+                                </button>
+                            </div> </h3>
+                    </div>
+                    <div class="panel-body">
+                        <form class="form-horizontal" name="form" novalidate ng-submit="form.$valid && submitEmployee()">
+                            <input type="text" id="id" ng-model="id" value=""  style="display: none;">
+                            <div class="photo" ng-show="showPhoto && photo != null && photo != 0">
+                                <img src="data:image/png;base64, {{photo}}"></img> 
+                            </div>
+                            <div class="photos" ng-show="photo == null || photo.length == 0"><img src="nopic.png" style="width:120px; height:120px"></img> </div>
+
+                            <div class="form-group" ng-class="{ 'has-error': form.firstName.$invalid && form.$submitted}">
+                                <label class="control-label col-xs-3" for="firstName">First Name:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="firstName"  name="firstName" ng-model="firstName" value="" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error': form.lastName.$invalid && form.$submitted}">
+                                <label class="control-label col-xs-3" for="lastName">Last Name:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="lastName" name="lastName" ng-model="lastName" value="" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error': form.email.$invalid && form.$submitted}">	 
+                                <label class="control-label col-xs-3" for="email">Email:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="email" name="email" value="" ng-model="email" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error': form.phone.$invalid && form.$submitted }">
+                                <label class="control-label col-xs-3" for="phone">Phone:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="phone" name="phone" value="" ng-model="phone" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error': form.birthDate.$invalid && form.$submitted}">
+                                <label class="control-label col-xs-3" for="birthDate">Birthdate:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="birthDate" name="birthDate" ng-model="birthDate" value="" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error': form.title.$invalid && form.$submitted}">
+                                <label class="control-label col-xs-3" for="title">Title:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="title" name="title" value=""  ng-model="title" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error': form.department.$invalid && form.$submitted}">	 
+                                <label class="control-label col-xs-3" for="department">Department:</label>
+                                <div class="col-xs-5">
+                                    <input type="text" id="department" name="department" value="" ng-model="department" class="form-control" required>
+                                </div>
+                            </div>	
+                            <br><br>
+                            <div style=" text-align: center;">
+                                <input type="button" tabindex="-1" class="btn btn-default" value="Cancel"  ng-click="showDivs(true)">
+                                <input type="submit" tabindex="-1" class="btn btn-success" value="Save">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </body>
+
+
 </html>

@@ -17,18 +17,19 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-	<parent>
+    <parent>
         <artifactId>helidon-examples-project</artifactId>
         <groupId>io.helidon.examples</groupId>
-        <version>1.0.0</version>
+        <version>1.1.1-SNAPSHOT</version>
     </parent>
-	
+
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example.helidon.employee</groupId>
     <artifactId>employee-app</artifactId>
-    <packaging>jar</packaging>
     <name>${project.artifactId}</name>
 
     <properties>
@@ -100,7 +101,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <executions>                    
+                <executions>
                     <execution>
                         <id>copy-dependencies</id>
                         <phase>prepare-package</phase>
@@ -143,7 +144,7 @@
                             </resources>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <id>copy-dockerfile</id>
                         <phase>process-resources</phase>
@@ -181,25 +182,25 @@
             <groupId>com.oracle.jdbc</groupId>
             <artifactId>ojdbc8</artifactId>
         </dependency>
-		<dependency>
+        <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-webserver</artifactId>
-			<version>${project.version}</version>
-        </dependency>		
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
-			<version>${project.version}</version>
-        </dependency>        
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
-			<version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
-			<version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -214,12 +215,12 @@
         <dependency>
             <groupId>io.helidon.media.jsonb</groupId>
             <artifactId>helidon-media-jsonb-server</artifactId>
-			<version>${project.version}</version>
+            <version>${project.version}</version>
         </dependency>
-		
+
     </dependencies>
-	
-	<!--
+
+    <!--
         com.oracle:jdbc:odjbc8 requires the maven oracle repository
     -->
     <repositories>
@@ -231,5 +232,5 @@
                 <enabled>true</enabled>
             </releases>
         </repository>
-</repositories>
+    </repositories>
 </project>
