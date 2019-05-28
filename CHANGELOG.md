@@ -5,11 +5,11 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.1] - 2019-05-23
 
 ### Notes
 
-This release adds support for MicroProfile OpenAPI 1.1.2. It also includes bug and performance fixes.
+This release adds support for MicroProfile OpenAPI 1.1.2. It also includes bug and performance fixes including substantial performance improvement with MP when under heavy load, and better heap utilization with Keep-Alive connections.
 
 ### Improvements
 
@@ -22,12 +22,16 @@ This release adds support for MicroProfile OpenAPI 1.1.2. It also includes bug a
 - WebServer: Remove the channel closed listener in BareResponseImpl when request completes. [695](https://github.com/oracle/helidon/pull/695)
 - WebServer: Complete writing a response before checking unconsumed request payload [699](https://github.com/oracle/helidon/pull/699)
 - WebServer: Ensure channel closed listener is removed on exception [702](https://github.com/oracle/helidon/pull/702)
+- Metrics: Handle special case of NaN's to avoid NumberFormatException [723](https://github.com/oracle/helidon/pull/723)
+- MicroProfile: Further `ConfigCdiExtension` fixes and improvements [724](https://github.com/oracle/helidon/pull/724)
+- MicroProfile: Make a few FT params configurable via properties [725](https://github.com/oracle/helidon/pull/725)
 - Upgrade Weld to 3.1.1.Final [659](https://github.com/oracle/helidon/pull/659)
 - Upgrade Jandex to 2.1.1.Final [694](https://github.com/oracle/helidon/pull/694)
 - Upgrade Oracle OCI SDK to 1.5.2 [715](https://github.com/oracle/helidon/pull/715)
+- Fix incorrect `isAssignableFrom` [728](https://github.com/oracle/helidon/pull/728) [731](https://github.com/oracle/helidon/pull/731) [732](https://github.com/oracle/helidon/pull/732) [734](https://github.com/oracle/helidon/pull/734) [735](https://github.com/oracle/helidon/pull/735)
 - Enable ThreadPool injection into Application. [713](https://github.com/oracle/helidon/pull/713)
 - Use jandex index in MP quickstart [714](https://github.com/oracle/helidon/pull/714)
-- Documentation fixes [697](https://github.com/oracle/helidon/pull/697) [704](https://github.com/oracle/helidon/pull/704)
+- Documentation fixes [697](https://github.com/oracle/helidon/pull/697) [704](https://github.com/oracle/helidon/pull/704) [719](https://github.com/oracle/helidon/pull/719)
 
 ## [1.1.0] - 2019-05-14
 
@@ -320,7 +324,8 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.1.0...HEAD
+[Unreleased]: https://github.com/oracle/helidon/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/oracle/helidon/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/oracle/helidon/compare/1.0.3...1.1.0
 [1.0.3]: https://github.com/oracle/helidon/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/oracle/helidon/compare/1.0.1...1.0.2
