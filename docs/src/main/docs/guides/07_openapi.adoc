@@ -27,7 +27,6 @@
 :openapi-spec: https://github.com/OAI/OpenAPI-Specification
 :helidon-mp-openapi-example: {helidon-tag}/examples/microprofile/openapi-basic
 :smallrye-mp-openapi: https://github.com/smallrye/smallrye-open-api
-:microprofile-api-version: ${version.lib.microprofile-openapi-api}
 :jandex-plugin-doc: https://github.com/wildfly/jandex-maven-plugin
 
 Easily allow your Helidon SE or MP application to serve an OpenAPI document
@@ -99,11 +98,12 @@ application's start-up.
 Add the link:{jandex-plugin-doc}[Jandex maven plug-in] to the `<build><plugins>` 
 section of your `pom.xml`:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <plugin>
     <groupId>org.jboss.jandex</groupId>
     <artifactId>jandex-maven-plugin</artifactId>
+    <version>{jandex-plugin-version}</version>
     <executions>
       <execution>
         <id>make-index</id>
@@ -154,7 +154,7 @@ and a filter.
 
 To use OpenAPI from your Helidon SE app:
 
-1. in your `pom` add a dependency for Helidon SE support,
+1. in your `pom.xml` add a dependency for Helidon SE support,
 2. in your application add a registration of `OpenAPISupport`,
 3. add a static OpenAPI document at `META-INF/openapi.yml` (optional)
 4. add a model reader class and/or a filter class to your app and configure them
