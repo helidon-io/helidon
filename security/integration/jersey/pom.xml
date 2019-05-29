@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.integration</groupId>
         <artifactId>helidon-security-integration-project</artifactId>
-        <version>1.1.1-SNAPSHOT</version>
+        <version>1.1.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-integration-jersey</artifactId>
     <name>Helidon Security Integration Jersey</name>
@@ -48,6 +48,11 @@
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-service-loader</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
