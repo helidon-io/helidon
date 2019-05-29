@@ -28,20 +28,14 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.example.helidon.employee</groupId>
+    <groupId>io.helidon.service.employee</groupId>
     <artifactId>employee-app</artifactId>
-    <name>${project.artifactId}</name>
+    <name>Employee App Example</name>
 
-    <properties>
-        <!-- Default package. Will be overriden by Maven archetype -->
-        <package>com.example.helidon.employee</package>
-        <mainClass>com.example.helidon.employee.Main</mainClass>
-        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+    <properties>       
+        <mainClass>io.helidon.service.employee.Main</mainClass>        
         <libs.classpath.prefix>libs</libs.classpath.prefix>
-        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <argLine>-Dfile.encoding=UTF-8</argLine>
+        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>        
     </properties>
 
     <build>
@@ -73,17 +67,14 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.9</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.0.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.5</version>
                     <configuration>
                         <archive>
                             <manifest>
@@ -138,7 +129,6 @@
                                     <directory>src/main</directory>
                                     <includes>
                                         <include>public/**</include>
-                                        <include>resources/DbCreds.properties</include>
                                     </includes>
                                 </resource>
                             </resources>

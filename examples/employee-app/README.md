@@ -36,7 +36,9 @@ Follow these steps:
 - Go to https://www.oracle.com/webfolder/application/maven/index.html and
  accept the license
 - Create an OTN account
-- Update your settings.xml as documented [here](https://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9016)
+- Update your settings.xml as documented
+ https://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9016[here]
+ 
 
 ## Build
 
@@ -48,7 +50,7 @@ mvn package
 
 ```sh
 cd target
-java -jar employee-helidon.jar
+java -jar employee-app.jar
 ```
 
 **Note:** For the static elements of the application to work, you must start the application from the target directory.
@@ -109,13 +111,13 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ## Build the Docker Image
 
 ```sh
-docker build -t employee-helidon .
+docker build -t employee-app .
 ```
 
 ## Start the application with Docker
 
 ```sh
-docker run --rm -p 8080:8080 employee-helidon:latest
+docker run --rm -p 8080:8080 employee-app:latest
 ```
 
 Exercise the application as described above.
@@ -127,16 +129,54 @@ Exercise the application as described above.
 kubectl cluster-info                # Verify which cluster
 kubectl get pods                    # Verify connectivity to cluster
 kubectl create -f app.yaml   # Deply application
-kubectl get service helidon-quickstart-se  # Get service info
+kubectl get service employee-app  # Get service info
 ```
 
-## Connect to an Oracle Database
 
 ###  Oracle DB Credentials
-You can connect to two different datastores for the back end application. Just fill in the DbCred.properties files. To use an ArrayList as the data store, simply set `drivertype` to `Array`. To connect to an Oracle database, you must set all the values: `user`, `password`, `hosturl`, and `drivertype`. For Oracle, the `drivertype` should be set to `Oracle`.
+You can connect to two different datastores for the back end application. Just fill in the application.yaml files. To use an ArrayList as the data store, simply set `drivertype` to `Array`. To connect to an Oracle database, you must set all the values: `user`, `password`, `hosturl`, and `drivertype`. For Oracle, the `drivertype` should be set to `Oracle`.
+
 ```c
 user=<user-db>
 password=<password-user-db>
 hosturl=<hostname>:<port>/<database_unique_name>.<host_domain_name>
 drivertype=Array
 ```
+
+## Create the database objects
+1. Create a connection to your Oracle Database using sqlplus or SQL Developer. See https://docs.cloud.oracle.com/iaas/Content/Database/Tasks/connectingDB.htm.
+2. Create the database objects:
+
+      ```sql
+      CREATE TABLE EMPLOYEE (
+            ID INTEGER NOT NULL,
+            FIRSTNAME VARCHAR(100),
+            LASTNAME VARCHAR(100),
+            EMAIL VARCHAR(100),
+            PHONE VARCHAR(100),
+            BIRTHDATE VARCHAR(10),
+            TITLE VARCHAR(100),
+            DEPARTMENT VARCHAR(100),
+            PRIMARY KEY (ID)
+            );
+      ```
+
+      ```sql
+      CREATE SEQUENCE EMPLOYEE_SEQ
+            START WITH     100
+            INCREMENT BY   1;
+      ```
+
+      ```sql
+      INSERT INTO EMPLOYEE (ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) VALUES (EMPLOYEE_SEQ.nextVal, 'Hugh', 'Jast', 'Hugh.Jast@example.com', '730-555-0100', '1970-11-28', 'National Data Strategist', 'Mobility');
+
+      INSERT INTO EMPLOYEE (ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) VALUES (EMPLOYEE_SEQ.nextVal, 'Toy', 'Herzog', 'Toy.Herzog@example.com', '769-555-0102', '1961-08-08', 'Dynamic Operations Manager', 'Paradigm');
+
+      INSERT INTO EMPLOYEE (ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) VALUES (EMPLOYEE_SEQ.nextVal, 'Reed', 'Hahn', 'Reed.Hahn@example.com', '429-555-0153', '1977-02-05', 'Future Directives Facilitator', 'Quality');
+
+      INSERT INTO EMPLOYEE (ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) VALUES (EMPLOYEE_SEQ.nextVal, 'Novella', 'Bahringer', 'Novella.Bahringer@example.com', '293-596-3547', '1961-07-25', 'Principal Factors Architect', 'Division');
+
+      INSERT INTO EMPLOYEE (ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) VALUES (EMPLOYEE_SEQ.nextVal, 'Zora', 'Sawayn', 'Zora.Sawayn@example.com', '923-555-0161', '1978-03-18', 'Dynamic Marketing Designer', 'Security');
+
+      INSERT INTO EMPLOYEE (ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) VALUES (EMPLOYEE_SEQ.nextVal, 'Cordia', 'Willms', 'Cordia.Willms@example.com', '778-555-0187', '1989-03-31', 'Human Division Representative', 'Optimization');
+      ```
