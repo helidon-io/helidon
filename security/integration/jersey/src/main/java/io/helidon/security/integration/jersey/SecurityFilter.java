@@ -47,6 +47,7 @@ import javax.ws.rs.core.UriInfo;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
@@ -126,6 +127,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     }
 
     private void loadAnalyzers() {
+        HelidonServiceLoader.builder(ServiceLoader.load(AnnotationAnalyzer.class))
+                .build()
+                .forEach(analyzers::add);
         ServiceLoader.load(AnnotationAnalyzer.class)
                 .forEach(analyzers::add);
     }
