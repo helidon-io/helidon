@@ -65,4 +65,12 @@ Learn how to use Jib to create a container image without Docker.
 Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
+
+[CARD]
+.Enable OpenAPI Support
+[link=guides/07_openapi.adoc]
+--
+Learn how to enable OpenAPI support in your Helidon SE or MP application.
+--
+
 ====
