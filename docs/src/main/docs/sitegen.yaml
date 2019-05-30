@@ -146,6 +146,14 @@ backend:
               items:
                 - includes:
                     - "guides/*.adoc"
+            - title: "OpenAPI"
+              pathprefix: "/openapi"
+              glyph:
+                type: "icon"
+                value: "fa-share-alt"
+              items:
+                - includes:
+                    - "openapi/*.adoc"
             - title: "Javadocs"
               glyph:
                 type: "icon"
