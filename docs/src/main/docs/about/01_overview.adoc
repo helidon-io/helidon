@@ -102,7 +102,7 @@ Expose health statuses of your applications.
 
 [CARD]
 .OpenAPI
-[icon=fa-share-alt,link=openapi/01_openapi.adoc]
+[icon=donut_large,link=openapi/01_openapi.adoc]
 --
 Support OpenAPI from your application.
 --

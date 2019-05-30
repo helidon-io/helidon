@@ -150,7 +150,7 @@ backend:
               pathprefix: "/openapi"
               glyph:
                 type: "icon"
-                value: "fa-share-alt"
+                value: "donut_large"
               items:
                 - includes:
                     - "openapi/*.adoc"

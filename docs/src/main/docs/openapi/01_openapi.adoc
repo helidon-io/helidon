@@ -30,13 +30,11 @@
 Easily allow your Helidon SE application to serve an OpenAPI document
 that describes your application's endpoints.
 
-== What you need
+== OpenAPI support in Helidon SE
 
-|===
-|About 15 minutes
-|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|a Helidon SE application to update for OpenAPI 
-|===
+You can very simply add support for OpenAPI to your Helidon SE application. This 
+document shows what changes you need to make to your application and how to access
+the OpenAPI document for your application at runtime.
 
 == Changing your application
 OpenAPI support in Helidon SE largely follows the 
