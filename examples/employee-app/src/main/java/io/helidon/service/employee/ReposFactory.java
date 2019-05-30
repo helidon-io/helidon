@@ -24,9 +24,8 @@ public class ReposFactory {
             case "Oracle":
                 return new EmployeeRepositoryImplDB();
             default:
-                System.out.println("No database driver found...");
-                System.exit(1);
-                return null;
+                // Array is default
+                return new EmployeeRepositoryImpl();
         }
 
     }
