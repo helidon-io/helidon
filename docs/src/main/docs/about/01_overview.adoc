@@ -99,4 +99,11 @@ Profile and monitor your applications across multiple services.
 --
 Expose health statuses of your applications.
 --
+
+[CARD]
+.OpenAPI
+[icon=donut_large,link=openapi/01_openapi.adoc]
+--
+Support OpenAPI from your application.
+--
 ====
