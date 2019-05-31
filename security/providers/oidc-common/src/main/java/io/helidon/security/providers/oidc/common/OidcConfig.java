@@ -228,6 +228,18 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  *     <td>helidon</td>
  *     <td>Realm returned in HTTP response if redirect is not enabled or possible.</td>
  * </tr>
+ * <tr>
+ *     <td>redirect-attempt-param</td>
+ *     <td>{@value DEFAULT_ATTEMPT_PARAM}</td>
+ *     <td>Query parameter holding the number of times we redirected to an identity server. Customizable to prevent
+ *     conflicts with application parameters</td>
+ * </tr>
+ * <tr>
+ *     <td>max-redirects</td>
+ *     <td>{@value DEFAULT_MAX_REDIRECTS}</td>
+ *     <td>Maximal number of times we can redirect to an identity server. When the number is reached, no further redirects
+ *     happen and the request finishes with an error (status {@code 401})</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig {
@@ -258,6 +270,8 @@ public final class OidcConfig {
     static final boolean DEFAULT_JWT_VALIDATE_JWK = true;
     static final boolean DEFAULT_REDIRECT = true;
     static final String DEFAULT_REALM = "helidon";
+    static final String DEFAULT_ATTEMPT_PARAM = "h_ra";
+    static final int DEFAULT_MAX_REDIRECTS = 5;
 
     private final String redirectUri;
     private final boolean useCookie;
@@ -285,6 +299,8 @@ public final class OidcConfig {
     private final Client generalClient;
     private final boolean redirect;
     private final String realm;
+    private final String redirectAttemptParam;
+    private final int maxRedirects;
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
@@ -304,6 +320,8 @@ public final class OidcConfig {
         this.identityUri = builder.identityUri;
         this.redirect = builder.redirect;
         this.realm = builder.realm;
+        this.redirectAttemptParam = builder.redirectAttemptParam;
+        this.maxRedirects = builder.maxRedirects;
 
         if (null == builder.signJwk) {
             this.signJwk = JwkKeys.builder().build();
@@ -645,6 +663,25 @@ public final class OidcConfig {
     }
 
     /**
+     * Name of the parameter used in state passed to OIDC to store the number of attempted redirects.
+     * This is to prevent infinite redirects.
+     *
+     * @return name of the query parameter
+     */
+    public String redirectAttemptParam() {
+        return redirectAttemptParam;
+    }
+
+    /**
+     * Maximal number of redirects allowed between Helidon and OIDC provider.
+     *
+     * @return maximal number of redirects
+     */
+    public int maxRedirects() {
+        return maxRedirects;
+    }
+
+    /**
      * A fluent API {@link io.helidon.common.Builder} to build instances of {@link OidcConfig}.
      */
     public static class Builder implements io.helidon.common.Builder<OidcConfig> {
@@ -693,6 +730,8 @@ public final class OidcConfig {
         private URI introspectUri;
         private boolean redirect = DEFAULT_REDIRECT;
         private String realm = DEFAULT_REALM;
+        private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
+        private int maxRedirects = DEFAULT_MAX_REDIRECTS;
 
         @Override
         public OidcConfig build() {
@@ -865,6 +904,8 @@ public final class OidcConfig {
             config.get("audience").asString().ifPresent(this::audience);
 
             config.get("redirect").asBoolean().ifPresent(this::redirect);
+            config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
+            config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
 
             return this;
         }
@@ -1061,7 +1102,7 @@ public final class OidcConfig {
          * @param sameSite SameSite cookie attribute value
          * @return updated builder instance
          */
-        private Builder cookieSameSite(String sameSite) {
+        public Builder cookieSameSite(String sameSite) {
             this.cookieSameSite = sameSite;
             return this;
         }
@@ -1073,7 +1114,7 @@ public final class OidcConfig {
          * @param secure whether the cookie should be secure (true) or not (false)
          * @return updated builder instance
          */
-        private Builder cookieSecure(Boolean secure) {
+        public Builder cookieSecure(Boolean secure) {
             this.cookieSecure = secure;
             return this;
         }
@@ -1085,7 +1126,7 @@ public final class OidcConfig {
          * @param httpOnly whether the cookie should be HttpOnly (true) or not (false)
          * @return updated builder instance
          */
-        private Builder cookieHttpOnly(Boolean httpOnly) {
+        public Builder cookieHttpOnly(Boolean httpOnly) {
             this.cookieHttpOnly = httpOnly;
             return this;
         }
@@ -1098,7 +1139,7 @@ public final class OidcConfig {
          * @param age age in seconds
          * @return updated builder instance
          */
-        private Builder cookieMaxAgeSeconds(long age) {
+        public Builder cookieMaxAgeSeconds(long age) {
             this.cookieMaxAge = age;
             return this;
         }
@@ -1110,7 +1151,7 @@ public final class OidcConfig {
          * @param path the path to use as value of cookie "Path" attribute
          * @return updated builder instance
          */
-        private Builder cookiePath(String path) {
+        public Builder cookiePath(String path) {
             this.cookiePath = path;
             return this;
         }
@@ -1122,7 +1163,7 @@ public final class OidcConfig {
          * @param domain domain to use as value of cookie "Domain" attribute
          * @return updated builder instance
          */
-        private Builder cookieDomain(String domain) {
+        public Builder cookieDomain(String domain) {
             this.cookieDomain = domain;
             return this;
         }
@@ -1233,7 +1274,7 @@ public final class OidcConfig {
          * @param protocol protocol to use (such as https)
          * @return updated builder instance
          */
-        private Builder proxyProtocol(String protocol) {
+        public Builder proxyProtocol(String protocol) {
             this.proxyProtocol = protocol;
             return this;
         }
@@ -1307,6 +1348,31 @@ public final class OidcConfig {
          */
         public Builder redirectUri(String redirectUri) {
             this.redirectUri = redirectUri;
+            return this;
+        }
+
+        /**
+         * Configure the parameter used to store the number of attempts in redirect.
+         * <p>
+         * Defaults to {@value #DEFAULT_ATTEMPT_PARAM}
+         * @param paramName name of the parameter used in the state parameter
+         * @return updated builder instance
+         */
+        public Builder redirectAttemptParam(String paramName) {
+            this.redirectAttemptParam = paramName;
+            return this;
+        }
+
+        /**
+         * Configure maximal number of redirects when redirecting to an OIDC provider within a single authentication
+         * attempt.
+         * <p>
+         * Defaults to {@value #DEFAULT_MAX_REDIRECTS}
+         * @param maxRedirects maximal number of redirects from Helidon to OIDC provider
+         * @return updated builder instance
+         */
+        public Builder maxRedirects(int maxRedirects) {
+            this.maxRedirects = maxRedirects;
             return this;
         }
     }
