@@ -25,21 +25,18 @@ public class EmployeeMockList {
 
 	private static final CopyOnWriteArrayList<Employee> eList = new CopyOnWriteArrayList<Employee>();
 
-	static {
-    	JsonbConfig config = new JsonbConfig().withFormatting(Boolean.TRUE);
+
+	private EmployeeMockList() {
+		JsonbConfig config = new JsonbConfig().withFormatting(Boolean.TRUE);
 
     	Jsonb jsonb = JsonbBuilder.create(config);
 
 		eList.addAll(jsonb.fromJson(EmployeeMockList.class.getResourceAsStream("/employees.json"), new CopyOnWriteArrayList<Employee>(){}.getClass().getGenericSuperclass()));
-		
-    }
-
-	private EmployeeMockList() {
-
 	}
 
 	// Get thread safe ArrayList from here
 	public static CopyOnWriteArrayList<Employee> getInstance() {
+		EmployeeMockList employeeMockList = new EmployeeMockList();
 		return eList;
 	}
 
