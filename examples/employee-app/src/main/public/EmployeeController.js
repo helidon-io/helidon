@@ -1,129 +1,183 @@
-/* Copyright 2018 Oracle and/or its affiliates. All rights reserved. */
 
-var app = angular.module('demo', [])
+      function bindDetail(element, employee){
+    	 alert("here");
+        element.find(".backButton").on("click", function(){
+          $("#detail").hide(400, "swing", function(){ $("#people").show(400, "swing")});
+        });
+        element.find(".deleteButton").on("click", function(){
+          $('<div></div>').dialog({
+            modal: true,
+            title: "Confirm Delete",
+            open: function() {
+              var markup = 'Are you sure you want to delete '+employee.firstName+' ' + employee.lastName +"?";
+              $(this).html(markup);
+            },
+            buttons: {
+              Ok: function() {
+                $("#detail").html("DELETING...");
+                $( this ).dialog( "close" );
+                $.ajax({
+                  url:server +"employees/"+employee.id,
+                  method:"DELETE"
+                  }).done(function(data){
+                    $("#detail").hide();
+                    loadEmployees();
+                  });
+              },
+              Cancel: function(){
+                $( this ).dialog( "close" );
+              }
+            }
+          });
+        });
+        element.find(".editButton").on("click",function(){
+          $("#editFirstName").val(employee.firstName);
+          $("#editLastName").val(employee.lastName);
+          $("#editEmail").val(employee.email);
+          $("#editPhone").val(employee.phone);
+          $("#editBirthDate").val(employee.birthDate);
+          $("#editTitle").val(employee.title);
+          $("#editDept").val(employee.department);
 
-.controller('Employees', function($scope, $http) {
-	$scope.urlService = "/employees/";
-	$scope.showListEmployes = true;
-	$scope.showPhoto = false;
-	$scope.photo = false;
-	$scope.showDivs = function(employeeList){	
-		if (employeeList){
-			$scope.showNewForm = false;
-			$scope.showListEmployes = true;			
-		}else{
-			$scope.formTitle = "Add New Employee"
-			$scope.id = "";
-			$scope.firstName = "";
-			$scope.lastName = "";
-			$scope.birthDate = "";
-			$scope.phone = "";
-			$scope.email = "";
-			$scope.title = "";
-			$scope.department = "";
-			$scope.showPhoto = false;
-			angular.element(document.getElementById("pic")).val(null);
-			$scope.showNewForm = true;
-			$scope.showListEmployes = false;		
-		}
-	}
-	
-	$scope.reset = function(form) {
-    if (form) {
-      form.$setPristine();
-      form.$setUntouched();
-    }
-  };
-  
-	//Get employee list
-	$scope.getEmployees = function(){
-		$http.get($scope.urlService).
-			then(function(response) {
-				$scope.employees = response.data;				
-			});
-		$scope.searchText = "";
-	}
-	
-	//Get employee by ID
-	$scope.getEmployeeById = function(id){
-		$http.get($scope.urlService+"/"+id).
-			then(function(response) {
-				$scope.employee = response.data;
-				$scope.showDetail();				
-			});
-		$scope.searchText = "";		
-	}
-	
-	//Add/Update Employee	
-	$scope.submitEmployee = function(){	
-		var addEmployee={
-				  id:$scope.id,
-                  firstName:$scope.firstName,
-                  lastName:$scope.lastName,
-                  email:$scope.email,
-                  phone:$scope.phone,
-                  birthDate:$scope.birthDate,
-                  title:$scope.title,
-                  department:$scope.department
+          $('#editDialog').dialog({
+            modal:true,
+            title: employee.firstName+' ' + employee.lastName,
+            buttons: {
+              "Update": function(){
+                var editEmployee={
+                  firstName:$("#editFirstName").val(),
+                  lastName:$("#editLastName").val(),
+                  email:$("#editEmail").val(),
+                  phone:$("#editPhone").val(),
+                  birthDate:$("#editBirthDate").val(),
+                  title:$("#editTitle").val(),
+                  dept:$("#editDept").val()
                 };
-		
-		var res;
-		if ($scope.id ==""){		
-			res = $http.post($scope.urlService, JSON.stringify(addEmployee), {				
-				headers: { 'Content-Type': 'application/json','Accept': 'application/json'}
-				});
-		}else{
-			res = $http.put($scope.urlService+$scope.id, JSON.stringify(addEmployee), {
-				headers: { 'Content-Type': 'application/json','Accept': 'application/json'}});
-		}
-		res.success(function(data, status, headers, config) {
-			$scope.message = data;
-			$scope.getEmployees();
-			$scope.showDivs(true);
-			
-		});
-		res.error(function(data, status, headers, config) {
-			alert( "failure message: " + JSON.stringify({data: data}));
-		});	
-	
-	}
-	
-	//Delete employee
-	$scope.deleteEmployee = function() {
-		res = $http.delete($scope.urlService+$scope.id,{headers: { 'Content-Type': 'application/json','Accept': 'application/json'}});
-		res.success(function(data, status, headers, config) {
-			$scope.getEmployees();
-			$scope.showDivs(true);
-			
-		});
-		res.error(function(data, status, headers, config) {
-			alert( "failure message: " + JSON.stringify({data: data}));
-		});	
-	}
-	
-	//Search Employees
-	$scope.searchEmployees = function (){
-		$http.get($scope.urlService+$scope.searchType+"/"+$scope.searchText).
-			then(function(response) {
-				$scope.employees = response.data;
-			});
-	}
-	
-	$scope.showDetail = function(){		
-		$scope.showDivs(false);
-		$scope.showPhoto = true;
-		$scope.formTitle = "Update Employee"
-		$scope.id = $scope.employee.id;
-		$scope.photo = $scope.employee.photo;
-		$scope.firstName = $scope.employee.firstName;
-		$scope.lastName = $scope.employee.lastName;
-		$scope.birthDate = $scope.employee.birthDate;
-		$scope.phone = $scope.employee.phone;
-		$scope.email = $scope.employee.email;
-		$scope.title = $scope.employee.title;
-		$scope.department = $scope.employee.department;
-	}
-	
+                $("#detail").html("UPDATING...");
+                $( this ).dialog( "close" );
+                $.ajax({
+                  url:server +"employees/"+employee.id,
+                  method:"PUT",
+                  data:JSON.stringify(editEmployee),
+                  contentType: 'application/json',
+                  }).done(function(data){
+                    $("#detail").hide();
+                    loadEmployees();
+                });
+              },
+              Cancel: function() {
+                $(this).dialog( "close" );
+              }
+            }
+          });
+        });
+      }
 
-});
+      $("#addButton").button().on("click", function(){
 
+          $("#addFirstName").val("");
+          $("#addLastName").val("");
+          $("#addEmail").val("");
+          $("#addPhone").val("");
+          $("#addBirthDate").val("");
+          $("#addTitle").val("");
+          $("#addDept").val("");
+
+        $("#addDialog").dialog({
+            modal:true,
+            title: "Add new employee",
+            buttons:{
+              "Add":function(){
+                var addEmployee={
+                  firstName:$("#addFirstName").val(),
+                  lastName:$("#addLastName").val(),
+                  email:$("#addEmail").val(),
+                  phone:$("#addPhone").val(),
+                  birthDate:$("#addBirthDate").val(),
+                  title:$("#addTitle").val(),
+                  dept:$("#addDept").val()
+                };
+                $("#detail").html("ADDING...");
+                $( this ).dialog( "close" );
+                $.ajax({
+                  url:server +"employees",
+                  method:"POST",
+                  data:JSON.stringify(addEmployee),
+                  contentType: 'application/json',
+                  }).done(function(data){
+                    $("#detail").hide();
+                    loadEmployees();
+                });
+              },
+              "Cancel":function(){
+                $(this).dialog( "close" );
+              }
+            }
+        });
+      });
+
+      $("#searchButton").button().on("click", function(){
+        var searchTerm =$("#searchText").val().trim();
+        if(searchTerm!=""){
+          $("#people").show();
+          $("#people").html("SEARCHING...");
+          $.ajax({
+            url:server+"employees/"+ $("#searchType").val()+"/"+encodeURIComponent(searchTerm),
+            method:"GET"
+          }).done(function(data){
+            $("#people").empty();
+            $("#people").hide();
+            if(data.length==0){
+              $("#people").html("No results found...");
+            }else{
+              data.forEach(function(employee){
+                var item = $(peopleTemplate.render(employee));
+                item.on("click", function(){
+                  var detailItem = $(detailTemplate.render(employee));
+                  $("#detail").empty();
+                  $("#detail").append(detailItem);
+                  bindDetail(detailItem, employee);
+                  $("#people").hide(400, "swing", function(){ $("#detail").show(400, "swing")});
+                });
+                $("#people").append(item);
+              });
+            }
+            $("#people").show(400, "swing");
+          });
+        }else{
+          loadEmployees();
+        }
+      });
+      $("#searchText").on("keyup", function(e){
+        if(e.keyCode == 13){
+          $("#searchButton").trigger("click");
+        }
+      });
+
+      function loadEmployees(){
+          $("#people").show();
+          $("#people").html("LOADING...");
+          $.ajax({
+  		  dataType: "json",
+            url:server +"employees",
+            method:"GET"
+          }).done(function(data){
+            $("#people").hide();
+            $("#people").empty();
+            data.forEach(function(employee){
+              var item = $(peopleTemplate.render(employee));
+              item.on("click", function(){
+                var detailItem = $(detailTemplate.render(employee));
+                $("#detail").empty();
+                $("#detail").append(detailItem);
+                bindDetail(detailItem, employee);
+                $("#people").hide(400, "swing", function(){ $("#detail").show(400, "swing")});
+              });
+              $("#people").append(item);
+            })
+            $("#people").show(400, "swing");
+          });
+        }
+      
+
+   

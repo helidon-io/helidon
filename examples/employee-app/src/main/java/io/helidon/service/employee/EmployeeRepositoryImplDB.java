@@ -22,10 +22,39 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.config.Config;
+import oracle.jdbc.pool.OracleDataSource;
+
 public class EmployeeRepositoryImplDB implements EmployeeRepository {
 
-    private final Connection conn = DBConnection.getInstance().getConnection();
+    private Connection conn;
 
+    public EmployeeRepositoryImplDB(Config config) {
+        String url = "jdbc:oracle:thin:@";
+        String driver = "oracle.jdbc.driver.OracleDriver";
+        
+    	String dbUserName = config.get("app.user").asString().orElse("sys as SYSDBA");
+        String dbUserPassword =  config.get("app.password").asString().orElse("password");
+        String dbHostURL = config.get("app.hosturl").asString().orElse("localhost:1521/xe");
+		
+        try {
+            // Note: 5/20 Added .getDecl because of deprecation in Java 9
+            Class.forName(driver).getDeclaredConstructor().newInstance();
+        } catch (Exception sqle) {
+            sqle.getMessage();
+        }
+        
+        try {
+            OracleDataSource ods = new OracleDataSource();
+            ods.setURL(url + dbHostURL);
+            ods.setUser(dbUserName);
+            ods.setPassword(dbUserPassword);
+            conn = ods.getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            e.getMessage();
+        }
+	}
     @Override
     public List<Employee> getAll() {
         String queryStr = "SELECT * FROM EMPLOYEE";

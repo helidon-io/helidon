@@ -17,6 +17,11 @@ package io.helidon.service.employee;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
+
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.UUID;
 
@@ -27,7 +32,15 @@ import java.util.UUID;
 
 public class EmployeeRepositoryImpl implements EmployeeRepository {
 
-    private static final CopyOnWriteArrayList<Employee> eList = EmployeeMockList.getInstance();
+    private final CopyOnWriteArrayList<Employee> eList = new CopyOnWriteArrayList<Employee>();
+    
+    public EmployeeRepositoryImpl() {
+    	JsonbConfig config = new JsonbConfig().withFormatting(Boolean.TRUE);
+
+    	Jsonb jsonb = JsonbBuilder.create(config);
+
+		eList.addAll(jsonb.fromJson(EmployeeRepositoryImpl.class.getResourceAsStream("/employees.json"), new CopyOnWriteArrayList<Employee>(){}.getClass().getGenericSuperclass()));
+	}
     
     @Override
     public List<Employee> getByLastName(String name) {

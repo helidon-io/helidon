@@ -18,9 +18,23 @@ package io.helidon.service.employee;
 
 import java.util.List;
 
+import io.helidon.config.Config;
+
  /* Interface for Data Access Objects */
 public interface EmployeeRepository {
 
+	public static EmployeeRepository create(String driverType, Config config) {
+        switch (driverType) {
+            case "Array":
+                return new EmployeeRepositoryImpl();
+            case "Oracle":
+                return new EmployeeRepositoryImplDB(config);
+            default:
+                // Array is default
+                return new EmployeeRepositoryImpl();
+        }
+
+    }
     /**
      * Returns the list of the employees 
      * @return The collection of all the employee objects

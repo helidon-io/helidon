@@ -28,7 +28,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * A simple service to greet you. Examples:
+ * The Employee service endpoints:
  *
  * Get all employees: curl -X GET http://localhost:8080/employees
  *
@@ -49,7 +49,7 @@ public class EmployeeService implements Service {
         Logger.getLogger(EmployeeService.class.getName());
 
     EmployeeService(Config config) {
-    	employees = ReposFactory.getRepo(config.get("app.drivertype").asString().orElse("Array"));
+    	employees = EmployeeRepository.create(config.get("app.drivertype").asString().orElse("Array"), config);
     }
     /**
      * A service registers itself by updating the routine rules.
