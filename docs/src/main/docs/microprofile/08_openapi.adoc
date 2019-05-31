@@ -22,11 +22,13 @@
 :description: Helidon MP OpenAPI Support
 :keywords: helidon, mp, microprofile, openapi
 :helidon-tag: https://github.com/oracle/helidon/tree/{helidon-version}
-:mp-openapi-spec: https://github.com/eclipse/microprofile-open-api/blob/master/spec/src/main/asciidoc/microprofile-openapi-spec.adoc
+:mp-openapi-prefix: https://github.com/eclipse/microprofile-open-api/blob/master
+:mp-openapi-spec: {mp-openapi-prefix}/spec/src/main/asciidoc/microprofile-openapi-spec.adoc
 :openapi-spec: https://github.com/OAI/OpenAPI-Specification
 :helidon-mp-openapi-example: {helidon-tag}/examples/microprofile/openapi-basic
 :jandex-plugin-doc: https://github.com/wildfly/jandex-maven-plugin
-:helidon-openapi-se-doc: 
+:model-reader-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASModelReader.java
+:filter-java: {mp-openapi-prefix}/api/src/main/java/org/eclipse/microprofile/openapi/OASFilter.java
 
 Easily allow your Helidon MP application to serve an OpenAPI document
 that describes your application's endpoints.
@@ -144,13 +146,14 @@ link:{helidon-mp-openapi-example}[Helidon MP OpenAPI example] illustrates more,
 and the link:{mp-openapi-spec}[MicroProfile OpenAPI spec] describes them all.
 
 ==== Provide a static OpenAPI file
-Add a static file at `/META-INF/openapi.yml`, `/META-INF/openapi.yaml`, 
-or `/META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
+Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, 
+or `META-INF/openapi.json`. Tools such as Swagger let you describe your app's API
 and they then generate an OpenAPI document file which you can include in your application
 so OpenAPI can use it.
 
 ==== Write and configure a model reader class
-Write a Java class that implements the OpenAPI `OASModelReader` interface. Your
+Write a Java class that implements the OpenAPI 
+link:{model-reader-java}[`org.eclipse.microprofile.openapi.OASModelReader`] interface. Your
 model reader code programmatically adds elements to the internal model that OpenAPI
 builds. 
 
@@ -158,7 +161,8 @@ Change your application's MP configuration to set `mp.openapi.model.reader` as t
 fully-qualified class name of your class.
 
 ==== Write and configure a filter class
-Write a Java class that implements the OpenAPI `OASFilter` interface. 
+Write a Java class that implements the OpenAPI 
+link:{filter-java}[`org.eclipse.microprofile.openapi.OASFilter`] interface. 
 As OpenAPI composes its internal model, it invokes your filter with each 
 model element _before_ adding the element to the model. Your filter can 
 accept the element as-is, modify it, or suppress it.
