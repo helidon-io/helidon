@@ -18,11 +18,7 @@ package io.helidon.service.employee;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
-
-import javax.json.Json;
-import javax.json.JsonReaderFactory;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +30,6 @@ import io.helidon.webserver.WebServer;
 public class MainTest {
 
     private static WebServer webServer;
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     @BeforeAll
     public static void startTheServer() throws Exception {

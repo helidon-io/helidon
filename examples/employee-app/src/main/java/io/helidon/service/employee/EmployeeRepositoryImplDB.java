@@ -151,7 +151,7 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
             }
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                resultList.add(new Employee(rs.getString("ID"), rs.getString("FIRSTNAME"), rs.getString("LASTNAME"),
+                resultList.add(Employee.of(rs.getString("ID"), rs.getString("FIRSTNAME"), rs.getString("LASTNAME"),
                     rs.getString("EMAIL"), rs.getString("PHONE"), rs.getString("BIRTHDATE"), rs.getString("TITLE"),
                     rs.getString("DEPARTMENT")));
             }

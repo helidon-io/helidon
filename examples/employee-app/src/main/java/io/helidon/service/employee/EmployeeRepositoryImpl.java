@@ -93,7 +93,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
         
         /* Using a UUID for ID when auto generated. Test data starts at 100 */       
         Employee nextEmployee
-            = new Employee(UUID.randomUUID().toString(), employee.getFirstName(), employee.getLastName(),
+            = Employee.of(null, employee.getFirstName(), employee.getLastName(),
                 employee.getEmail(), employee.getPhone(),
                 employee.getBirthDate(), employee.getTitle(), employee.getDepartment());
 
@@ -104,7 +104,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     @Override
     public Employee update(Employee updatedEmployee, String id) {
     	deleteById(id);
-    	Employee e = new Employee (id, 
+    	Employee e = Employee.of(id, 
     			updatedEmployee.getFirstName(), 
     			updatedEmployee.getLastName(), 
     			updatedEmployee.getEmail(), 

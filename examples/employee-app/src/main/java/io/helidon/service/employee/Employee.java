@@ -32,7 +32,7 @@ public final class Employee {
     private final String department;
 
 
-    public Employee(String id, String firstName, String lastName, 
+    private Employee(String id, String firstName, String lastName, 
         String email, String phone, String birthDate,
         String title, String department) {
         this.id = id;
@@ -46,7 +46,7 @@ public final class Employee {
     }
 
     @JsonbCreator
-    public static Employee of(
+    public static Employee of(@JsonbProperty("id") String id,
     		@JsonbProperty("firstName") String firstName,
             @JsonbProperty("lastName") String lastName,
             @JsonbProperty("email") String email,
@@ -54,7 +54,10 @@ public final class Employee {
             @JsonbProperty("birthDate") String birthDate,
             @JsonbProperty("title") String title,
             @JsonbProperty("department") String department) {
-            Employee e = new Employee(UUID.randomUUID().toString(), firstName, 
+	    	if (id == null || id.trim().equals("")) {
+	    		id = UUID.randomUUID().toString();
+	    	}
+            Employee e = new Employee(id, firstName, 
                 lastName, email, phone, birthDate, title, department);
         return e;
     }

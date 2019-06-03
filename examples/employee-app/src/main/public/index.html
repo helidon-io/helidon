@@ -1,5 +1,20 @@
+<!-- 
+Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+ 
+      http://www.apache.org/licenses/LICENSE-2.0
+ 
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ -->
 <html>
-
+<meta charset="utf-8" />
 <head>
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"
 	integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
@@ -15,9 +30,7 @@
 	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
 	crossorigin="anonymous">
 <script src="EmployeeController.js"></script>
-<script>
-	var server = "/";
-</script>
+
 
 <style>
 html body {
@@ -86,106 +99,102 @@ fieldset {
 <script id="peopleTemplate">
 	var peopleTemplate = {};
 	peopleTemplate.render = function(obj) {
-	
-	   return "<div class=\"row\"> "+
-		"<div class=\"peopleItem col-sm-3\""+
-		"	style=\"cursor: pointer\">	"+
-		"	<div class=\"photos\">"+
-		"		<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"+
-		"	</div>"+
-		"	<div class=\"peopleContent\">"+
-		"		<h4>"+obj.firstName +obj.lastName+"</h4>"+
-		"		"+obj.title +"<br> <small>"+obj.department+"</small>"+
-		"	</div>"+
-	"	</div>"+
-"	</div>";
+
+		return "<div class=\"row\"> "
+				+ "<div class=\"peopleItem col-sm-3\""+
+		"	style=\"cursor: pointer\">	"
+				+ "	<div class=\"photos\">"
+				+ "		<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
+				+ "	</div>" + "	<div class=\"peopleContent\">" + "		<h4>"
+				+ obj.firstName + " " + obj.lastName + "</h4>" + "		"
+				+ obj.title + "<br> <small>" + obj.department + "</small>"
+				+ "	</div>" + "	</div>" + "	</div>";
 	}
 </script>
 <script id="detailTemplate">
 	var detailTemplate = {};
 	detailTemplate.render = function(obj) {
-	
-	return "<div class=\"col-sm-5 col-md-offset-2\">"+
-"	<div class=\"panel panel-info\" class=\"click-element animate-show\""+
-"		ng-show=\"showNewForm\">"+
-"		<div class=\"panel-heading\">"+
-"			<h3 class=\"panel-title\">"+
-"				<div id=\"formTitle\" ng-model=\"formTitle\" style=\"padding: 10px\">"+
-"					{{formTitle}}"+
-"					<button class=\"btn btn-primary\" id=\"delete\" type=\"button\""+
-"						onclick=\"deleteEmployee()\" ng-show=\"showPhoto\""+
-"						style=\"float: right; position: relative; bottom: 9px;\">"+
-"						<span class=\"glyphicon glyphicon-trash\"></span> Delete"+
-"					</button>"+
-"				</div>"+
-"			</h3>"+
-"		</div>"+
-"		<div class=\"panel-body\">"+
-"			<form class=\"form-horizontal\" name=\"form\" novalidate"+
-"				ng-submit=\"form.$valid && submitEmployee()\">"+
-"				<input type=\"text\" id=\"id\" ng-model=\"id\" value=\""+obj.id+"\""+
-"					style=\"display: none;\">"+
-"				<div class=\"photos\">"+
-"					<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"firstName\">First"+
-"						Name:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"firstName\" name=\"firstName\""+
-"							value=\""+obj.firstName+"\" class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"lastName\">Last"+
-"						Name:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"lastName\" name=\"lastName\""+
-"							 value=\""+obj.lastName+"\"  class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"email\">Email:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"email\" name=\"email\" value=\""+obj.email+"\""+
-"							 class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"phone\">Phone:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"phone\" name=\"phone\" value=\""+obj.phone+"\""+
-"							 class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"birthDate\">Birthdate:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"birthDate\" name=\"birthDate\""+
-"							 value=\""+obj.birthDate+"\" class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"title\">Title:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"title\" name=\"title\" value=\""+obj.title+"\""+
-"							 class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<div class=\"form-group\">"+
-"					<label class=\"control-label col-xs-3\" for=\"department\">Department:</label>"+
-"					<div class=\"col-xs-5\">"+
-"						<input type=\"text\" id=\"department\" name=\"department\" value=\""+obj.department+"\""+
-"							 class=\"form-control\" required>"+
-"					</div>"+
-"				</div>"+
-"				<br>"+
-"				<br>"+
-"				<div style=\"text-align: center;\">"+
-"					<input type=\"button\" tabindex=\"-1\" class=\"btn btn-default\""+
-"						value=\"Cancel\" onclick=\"showDivs(true)\"> <input"+
-"						type=\"submit\" tabindex=\"-1\" class=\"btn btn-success\" value=\"Save\">"+
-"				</div>";
+
+		return "<div id =\"editForm\" class=\"col-sm-5 col-md-offset-2\">"
+				+ "	<div class=\"panel panel-info\" class=\"click-element animate-show\">"
+				+ "		<div class=\"panel-heading\">"
+				+ "			<h3 class=\"panel-title\">"
+				+ "				<div id=\"formTitle\" ng-model=\"formTitle\" style=\"padding: 10px\">"
+				+ "					Update Employee"
+				+ "					<button class=\"btn btn-primary\" id=\"delete\" type=\"button\""
+				+ "						onclick=\"deleteEmployee()\" "
+				+ "						style=\"float: right; position: relative; bottom: 9px;\">"
+				+ "						<span class=\"glyphicon glyphicon-trash\"></span> Delete"
+				+ "					</button>"
+				+ "				</div>"
+				+ "			</h3>"
+				+ "		</div>"
+				+ "		<div class=\"panel-body\">"
+				+ "			<form class=\"form-horizontal\" name=\"form\" novalidate"+
+"				>"
+				+ "				<input type=\"text\" id=\"editId\" ng-model=\"editId\" value=\""+obj.id+"\""+
+"					style=\"display: none;\">"
+				+ "				<div class=\"photos\">"
+				+ "					<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"editFirstName\">First"
+				+ "						Name:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editFirstName\" name=\"editFirstName\""+
+"							value=\""+obj.firstName+"\" class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"lastName\">Last"
+				+ "						Name:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editLastName\" name=\"editLastName\""+
+"							 value=\""+obj.lastName+"\"  class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"editEmail\">Email:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editEmail\" name=\"editEmail\" value=\""+obj.email+"\""+
+"							 class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"editPhone\">Phone:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editPhone\" name=\"editPhone\" value=\""+obj.phone+"\""+
+"							 class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"editBirthDate\">Birthdate:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editBirthDate\" name=\"editBirthDate\""+
+"							 value=\""+obj.birthDate+"\" class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"editTitle\">Title:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editTitle\" name=\"editTitle\" value=\""+obj.title+"\""+
+"							 class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<div class=\"form-group\">"
+				+ "					<label class=\"control-label col-xs-3\" for=\"editDepartment\">Department:</label>"
+				+ "					<div class=\"col-xs-5\">"
+				+ "						<input type=\"text\" id=\"editDepartment\" name=\"editDepartment\" value=\""+obj.department+"\""+
+"							 class=\"form-control\" required>"
+				+ "					</div>"
+				+ "				</div>"
+				+ "				<br>"
+				+ "				<br>"
+				+ "				<div style=\"text-align: center;\">"
+				+ "					<input type=\"button\" tabindex=\"-1\" class=\"btn btn-default\""
+				+ "						value=\"Cancel\" onclick=\"loadEmployees()\"> <input id=\"saveButton\""
+				+ "						type=\"button\" tabindex=\"-1\" class=\"btn btn-success\" value=\"Save\" onclick=\"updateEmployee()\">"
+				+ "				</div>";
 	}
 </script>
 
@@ -194,102 +203,121 @@ fieldset {
 <body onload="loadEmployees()">
 	<h1>Cloud Employee App</h1>
 	<nav>
-		<div class="click-element animate-show">
-				<h2>People</h2>
-				<br>
-				<form>
+		<div class="click-element animate-show" id="home">
+			<h2>People</h2>
+			<br>
+			<form>
 
-					<div class="col-xs-3">
-						<input class="form-control " type="text" id="searchText"
-							ng-model="searchText">
-					</div>
-					<div class="col-xs-2">
-						<select id="searchType" class="form-control">
-							<option value="lastname">By last name</option>
-							<option value="department">By department</option>
-							<option value="title">By title</option>
-						</select>
-					</div>
-					<div class="col-xs-1">
-						<button class="btn btn-success" id="searchButton" type="button" 
-							onclick="searchEmployees()">
-							<span class="glyphicon glyphicon-search"></span> Search
-						</button>
-					</div>
-					<div class="col-xs-4">
-						<button class="btn btn-danger" id="homeButton" type="button"
-							onclick="getEmployees()">
-							<span class="glyphicon glyphicon-home"></span>
-						</button>
-					</div>
-				</form>
-				<input class="btn btn-primary" id="addButton" value="Add New"
-					type="button" onclick="showDivs(false);reset(form)">
-			</div>
+				<div class="col-xs-3">
+					<input class="form-control " type="text" id="searchText">
+				</div>
+				<div class="col-xs-2">
+					<select id="searchType" class="form-control">
+						<option value="lastname">By last name</option>
+						<option value="department">By department</option>
+						<option value="title">By title</option>
+					</select>
+				</div>
+				<div class="col-xs-1">
+					<button class="btn btn-success" id="searchButton" type="button">
+						<span class="glyphicon glyphicon-search"></span> Search
+					</button>
+				</div>
+				<div class="col-xs-4">
+					<button class="btn btn-danger" id="homeButton" type="button"
+						onclick="loadEmployees()">
+						<span class="glyphicon glyphicon-home"></span>
+					</button>
+				</div>
+			</form>
+			<input class="btn btn-primary" id="addButton" name="addButton"
+				value="Add New" type="button" onclick="showEmployeeForm()">
+		</div>
 	</nav>
 	<div id="people" class="container">LOADING...</div>
 	<div id="detail"></div>
+	<div class="col-sm-5 col-md-offset-2" id="employeeForm"
+		style="display: none">
+		<div class="panel panel-info " class="click-element animate-show">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<div style="padding: 10px">
+						<span id="formTitle"></span>
+						<button class="btn btn-primary" id="deleteButton" type="button"
+							style="float: right; position: relative; bottom: 9px;">
+							<span class="glyphicon glyphicon-trash"></span> Delete
+						</button>
+					</div>
+				</h3>
+			</div>
+			<div class="panel-body">
+				<form class="form-horizontal" name="form" novalidate>
+					<input type="text" id="id" value="" style="display: none;">
+					<div class="photos">
+						<img src="nopic.png" style="width: 120px; height: 120px"></img>
+					</div>
 
-	<div id="editDialog">
-		<p class="validateTips">All form fields are required.</p>
-		<form>
-			<fieldset>
-
-				<label for="editFirstName">First Name</label><input type="text"
-					id="editFirstName" value=""
-					class="text ui-widget-content ui-corner-all"> <label
-					for="editLastName">Last Name</label><input type="text"
-					id="editLastName" value=""
-					class="text ui-widget-content ui-corner-all"> <label
-					for="editEmail">Email</label><input type="text" id="editEmail"
-					value="" class="text ui-widget-content ui-corner-all"> <label
-					for="editPhone">Phone</label><input type="text" id="editPhone"
-					value="" class="text ui-widget-content ui-corner-all"> <label
-					for="editBirthDate">Birthdate</label><input type="text"
-					id="editBirthDate" value=""
-					class="text ui-widget-content ui-corner-all"> <label
-					for="editTitle">Title</label><input type="text" id="editTitle"
-					value="" class="text ui-widget-content ui-corner-all"> <label
-					for="editDept">Department</label><input type="text" id="editDept"
-					value="" class="text ui-widget-content ui-corner-all">
-
-				<!-- Allow form submission with keyboard without duplicating the dialog button -->
-				<input type="submit" tabindex="-1"
-					style="position: absolute; top: -1000px">
-			</fieldset>
-		</form>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="firstName">First
+							Name:</label>
+						<div class="col-xs-5">
+							<input type="text" id="firstName" name="firstName" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="lastName">Last
+							Name:</label>
+						<div class="col-xs-5">
+							<input type="text" id="lastName" name="lastName" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="email">Email:</label>
+						<div class="col-xs-5">
+							<input type="text" id="email" name="email" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="phone">Phone:</label>
+						<div class="col-xs-5">
+							<input type="text" id="phone" name="phone" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="birthDate">Birthdate:</label>
+						<div class="col-xs-5">
+							<input type="text" id="birthDate" name="birthDate" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="title">Title:</label>
+						<div class="col-xs-5">
+							<input type="text" id="title" name="title" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="control-label col-xs-3" for="department">Department:</label>
+						<div class="col-xs-5">
+							<input type="text" id="department" name="department" value=""
+								class="form-control" required>
+						</div>
+					</div>
+					<br> <br>
+					<div style="text-align: center;">
+						<input type="button" tabindex="-1" class="btn btn-default"
+							value="Cancel" onclick="loadEmployees()"> <input
+							type="button" tabindex="-1" class="btn btn-success" value="Save"
+							onclick="save()">
+					</div>
+				</form>
+			</div>
+		</div>
 	</div>
-
-	<div id="addDialog">
-		<p class="validateTips">All form fields are required.</p>
-		<form>
-			<fieldset>
-
-				<label for="addFirstName">First Name</label><input type="text"
-					id="addFirstName" value=""
-					class="text ui-widget-content ui-corner-all"> <label
-					for="addLastName">Last Name</label><input type="text"
-					id="addLastName" value=""
-					class="text ui-widget-content ui-corner-all"> <label
-					for="addEmail">Email</label><input type="text" id="addEmail"
-					value="" class="text ui-widget-content ui-corner-all"> <label
-					for="addPhone">Phone</label><input type="text" id="addPhone"
-					value="" class="text ui-widget-content ui-corner-all"> <label
-					for="addBirthDate">Birthdate</label><input type="text"
-					id="addBirthDate" value=""
-					class="text ui-widget-content ui-corner-all"> <label
-					for="addTitle">Title</label><input type="text" id="addTitle"
-					value="" class="text ui-widget-content ui-corner-all"> <label
-					for="addDept">Department</label><input type="text" id="addDept"
-					value="" class="text ui-widget-content ui-corner-all">
-
-				<!-- Allow form submission with keyboard without duplicating the dialog button -->
-				<input type="submit" tabindex="-1"
-					style="position: absolute; top: -1000px">
-			</fieldset>
-		</form>
-	</div>
-
 </body>
-
 </html>

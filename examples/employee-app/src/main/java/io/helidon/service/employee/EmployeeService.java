@@ -15,7 +15,6 @@
  */
 package io.helidon.service.employee;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class EmployeeService implements Service {
 
     private void getAll(final ServerRequest request, final ServerResponse response) {
     	LOGGER.fine("getAll");
-    	List<Employee> allEmployees = this.employees.getAll();
+    	List<Employee> allEmployees = this.employees.getAll();    	
         response.send(allEmployees);
     }
 
@@ -112,13 +111,12 @@ public class EmployeeService implements Service {
     private void save(ServerRequest request, ServerResponse response) {   	
     	LOGGER.fine("save");
         request.content().as(Employee.class)
-            .thenApply(e -> Employee.of(e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(),
+            .thenApply(e -> Employee.of(null, e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(),
             e.getBirthDate(), e.getTitle(), e.getDepartment()))
             .thenApply(this.employees::save)
-            .thenCompose(p -> {
-                response.status(201).headers().location(URI.create("/employees/" + p.getId()));
-                return response.send();
-            });
+            .thenCompose(p -> 
+                response.status(201).send()
+            );
     }
 
     private void update(ServerRequest request, ServerResponse response) { 
@@ -126,7 +124,7 @@ public class EmployeeService implements Service {
         if (isValidId(response, request.path().param("id"))){
             request.content().as(Employee.class)
                 .thenApply(e -> {                    
-                    return this.employees.update(Employee.of(e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(),
+                    return this.employees.update(Employee.of(e.getId(), e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(),
                             e.getBirthDate(), e.getTitle(), e.getDepartment()), request.path().param("id"));
                 })
                 .thenCompose(
