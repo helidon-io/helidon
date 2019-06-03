@@ -58,54 +58,72 @@ java -jar employee-app.jar
 
 ## Exercise the application
 Get all employees.
-```json
+```sh
 curl -X GET curl -X GET http://localhost:8080/employees
 ```
-Output:  
-&lbrack;`{"birthDate":"1970-11-28T08:28:48.078Z","department":"Mobility","email":"Hugh.Jast@example.com","firstName":"Hugh","id":"100","lastName":"Jast","phone":"730-715-4446","title":"National Data Strategist"}`  
-`. . .`
+
+Only 1 output record is shown for brevity:
+```json
+[{"birthDate":"1970-11-28T08:28:48.078Z","department":"Mobility","email":"Hugh.Jast@example.com","firstName":"Hugh","id":"48cf06ad-6ed4-47e6-ac44-3ea9c67cbe2d","lastName":"Jast","phone":"730-715-4446","title":"National Data Strategist"}]
+```
+
 
 Get all employees whose last name contains "S".
-```json
+```sh
 curl -X GET http://localhost:8080/employees/lastname/S
 ```
-Output:  
-&lbrack;`{"birthDate":"1978-03-18T17:00:12.938Z","department":"Security","email":"Zora.Sawayn@example.com","firstName":"Zora","id":"104","lastName":"Sawayn","phone":"923-814-0502","title":"Dynamic Marketing Designer"}`
-`. . .`
+
+Only 1 output record is shown for brevity:
+```json
+[{"birthDate":"1978-03-18T17:00:12.938Z","department":"Security","email":"Zora.Sawayn@example.com","firstName":"Zora","id":"d7b583a2-f068-40d9-aec0-6f87899c5d8a","lastName":"Sawayn","phone":"923-814-0502","title":"Dynamic Marketing Designer"}]
+```
 
 Get an individual record.
-```json
-curl -X GET http://localhost:8080/employees/100
+```sh
+curl -X GET http://localhost:8080/employees/48cf06ad-6ed4-47e6-ac44-3ea9c67cbe2d
 ```
-&lbrack;`{"birthDate":"1970-11-28T08:28:48.078Z","department":"Mobility","email":"Hugh.Jast@example.com","firstName":"Hugh","id":"100","lastName":"Jast","phone":"730-715-4446","title":"National Data Strategist"}`
+Output:
+```json
+[{"birthDate":"1970-11-28T08:28:48.078Z","department":"Mobility","email":"Hugh.Jast@example.com","firstName":"Hugh","id":"48cf06ad-6ed4-47e6-ac44-3ea9c67cbe2d","lastName":"Jast","phone":"730-715-4446","title":"National Data Strategist"}]
+```
 
 Connect with a web brower at:
-```json
+```txt
 http://localhost:8080/public/index.html
 ```
 
 
 ## Try health and metrics
 
-```c
+```sh
 curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
-. . .
+```
+
+```json
+{"outcome":"UP","checks":[{"name":"deadlock","state":"UP"},{"name":"diskSpace","state":"UP","data":{"free":"306.61 GB","freeBytes":329225338880,"percentFree":"65.84%","total":"465.72 GB","totalBytes":500068036608}},{"name":"heapMemory","state":"UP","data":{"free":"239.35 MB","freeBytes":250980656,"max":"4.00 GB","maxBytes":4294967296,"percentFree":"99.59%","total":"256.00 MB","totalBytes":268435456}}]}
 ```
 
 ### Prometheus Format
 
-```c
+```sh
 curl -s -X GET http://localhost:8080/metrics
-# TYPE base:gc_g1_young_generation_count gauge
-. . .
+```
+
+Only 1 output item is shown for brevity:
+```txt
+# TYPE base:classloader_current_loaded_class_count counter
+# HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
+base:classloader_current_loaded_class_count 3995
 ```
 
 ### JSON Format
-```c
+```sh
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
+```
+
+Output:
+```json
+{"base":{"classloader.currentLoadedClass.count":4011,"classloader.totalLoadedClass.count":4011,"classloader.totalUnloadedClass.count":0,"cpu.availableProcessors":8,"cpu.systemLoadAverage":1.65283203125,"gc.G1 Old Generation.count":0,"gc.G1 Old Generation.time":0,"gc.G1 Young Generation.count":2,"gc.G1 Young Generation.time":8,"jvm.uptime":478733,"memory.committedHeap":268435456,"memory.maxHeap":4294967296,"memory.usedHeap":18874368,"thread.count":11,"thread.daemon.count":4,"thread.max.count":11},"vendor":{"grpc.requests.count":0,"grpc.requests.meter":{"count":0,"meanRate":0.0,"oneMinRate":0.0,"fiveMinRate":0.0,"fifteenMinRate":0.0},"requests.count":5,"requests.meter":{"count":5,"meanRate":0.01046407983617782,"oneMinRate":0.0023897243038835964,"fiveMinRate":0.003944597070306631,"fifteenMinRate":0.0023808575122958794}}}
 ```
 
 ## Build the Docker Image
@@ -122,10 +140,9 @@ docker run --rm -p 8080:8080 employee-app:latest
 
 Exercise the application as described above.
 
-
 ## Deploy the application to Kubernetes
 
-```
+```txt
 kubectl cluster-info                # Verify which cluster
 kubectl get pods                    # Verify connectivity to cluster
 kubectl create -f app.yaml   # Deply application
@@ -136,11 +153,17 @@ kubectl get service employee-app  # Get service info
 ###  Oracle DB Credentials
 You can connect to two different datastores for the back end application. Just fill in the application.yaml files. To use an ArrayList as the data store, simply set `drivertype` to `Array`. To connect to an Oracle database, you must set all the values: `user`, `password`, `hosturl`, and `drivertype`. For Oracle, the `drivertype` should be set to `Oracle`.
 
-```c
-user=<user-db>
-password=<password-user-db>
-hosturl=<hostname>:<port>/<database_unique_name>.<host_domain_name>
-drivertype=Array
+**Sample `application.yaml`**
+```yaml
+app:
+  user: <user-db>
+  password: <password-user-db>
+  hosturl: <hostname>:<port>/<database_unique_name>.<host_domain_name>
+  drivertype: Array
+
+  server:
+    port: 8080
+    host: 0.0.0.0
 ```
 
 ## Create the database objects
