@@ -101,6 +101,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * @param introspector The method introspector.
      * @param context CDI invocation context.
      * @param contextClassLoader Context class loader or {@code null} if not available.
+     * @param taskQueued Future completed when task has been queued.
      */
     public FaultToleranceCommand(CommandRetrier commandRetrier, String commandKey,
                                  MethodIntrospector introspector,
