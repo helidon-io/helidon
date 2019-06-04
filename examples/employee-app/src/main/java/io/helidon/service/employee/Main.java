@@ -105,7 +105,7 @@ public final class Main {
 		return Routing.builder().register(JsonBindingSupport.create()).register(health) // Health at "/health"
 				.register(metrics) // Metrics at "/metrics"
 				.register("/employees", employeeService)
-				.register("/public", StaticContentSupport.create(Paths.get("public"))).build();
+				.register("/public", StaticContentSupport.builder("public").welcomeFileName("index.html")).build();
 	}
 
 }

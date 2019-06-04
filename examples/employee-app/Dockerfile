@@ -39,8 +39,6 @@ WORKDIR /helidon
 # Copy the binary built in the 1st stage
 COPY --from=build /helidon/target/employee-app.jar ./
 COPY --from=build /helidon/target/libs ./libs
-COPY --from=build /helidon/classes/logging.properties ./
-COPY --from=build /helidon/public ./public
 
 CMD ["java", "-jar", "employee-app.jar"]
 
