@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.json.JsonObject;
 import javax.ws.rs.client.Entity;
@@ -140,37 +142,39 @@ public final class OidcSupport implements Service {
 
     @Override
     public void update(Routing.Rules rules) {
-        rules.get(oidcConfig.redirectUri(), (req, res) -> {
-            // redirected from IDCS
-            Optional<String> codeParam = req.queryParams().first(CODE_PARAM_NAME);
-            // if code is not in the request, this is a problem
-            OptionalHelper.from(codeParam)
-                    .ifPresentOrElse(code -> processCode(code, req, res), () -> processError(req, res));
-        });
+        rules.get(oidcConfig.redirectUri(), this::processOidcRedirect)
+             .any(this::addRequestAsHeader);
+    }
 
-        rules.any((req, res) -> {
-            //noinspection unchecked
-            Map<String, List<String>> newHeaders =
-                    req.context()
-                            .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
-                            .map(theMap -> (Map<String, List<String>>) theMap)
-                            .orElseGet(() -> {
-                                Map<String, List<String>> newMap = new HashMap<>();
-                                req.context().register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
-                                return newMap;
-                            });
+    private void addRequestAsHeader(ServerRequest req, ServerResponse res) {
+        //noinspection unchecked
+        Map<String, List<String>> newHeaders = req.context()
+                        .get(WebSecurity.CONTEXT_ADD_HEADERS, Map.class)
+                        .map(theMap -> (Map<String, List<String>>) theMap)
+                        .orElseGet(() -> {
+                            Map<String, List<String>> newMap = new HashMap<>();
+                            req.context().register(WebSecurity.CONTEXT_ADD_HEADERS, newMap);
+                            return newMap;
+                        });
 
-            String query = req.query();
-            if ((null == query) || query.isEmpty()) {
-                newHeaders.put(Security.HEADER_ORIG_URI,
-                               CollectionsHelper.listOf(req.uri().getPath()));
-            } else {
-                newHeaders.put(Security.HEADER_ORIG_URI,
-                               CollectionsHelper.listOf(req.uri().getPath() + "?" + query));
-            }
+        String query = req.query();
+        if ((null == query) || query.isEmpty()) {
+            newHeaders.put(Security.HEADER_ORIG_URI,
+                           CollectionsHelper.listOf(req.uri().getPath()));
+        } else {
+            newHeaders.put(Security.HEADER_ORIG_URI,
+                           CollectionsHelper.listOf(req.uri().getPath() + "?" + query));
+        }
 
-            req.next();
-        });
+        req.next();
+    }
+
+    private void processOidcRedirect(ServerRequest req, ServerResponse res) {
+        // redirected from IDCS
+        Optional<String> codeParam = req.queryParams().first(CODE_PARAM_NAME);
+        // if code is not in the request, this is a problem
+        OptionalHelper.from(codeParam)
+                .ifPresentOrElse(code -> processCode(code, req, res), () -> processError(req, res));
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
@@ -197,8 +201,8 @@ public final class OidcSupport implements Service {
                 }
             }
 
-            res.headers()
-                    .add(Http.Header.LOCATION, state);
+            state = increaseRedirectCounter(state);
+            res.headers().add(Http.Header.LOCATION, state);
 
             if (oidcConfig.useCookie()) {
                 res.headers()
@@ -211,6 +215,27 @@ public final class OidcSupport implements Service {
             LOGGER.log(Level.FINE, "Invalid token or failed request when connecting to OIDC Token Endpoint. Response: " + entity);
             res.status(Http.Status.UNAUTHORIZED_401);
             res.send("Not a valid authorization code");
+        }
+    }
+
+    String increaseRedirectCounter(String state) {
+        if (state.contains("?")) {
+            // there are parameters
+            Pattern attemptPattern = Pattern.compile(".*?(" + oidcConfig.redirectAttemptParam() + "=\\d+).*");
+            Matcher matcher = attemptPattern.matcher(state);
+            if (matcher.matches()) {
+                String attempts = matcher.group(1);
+                int equals = attempts.lastIndexOf('=');
+                String count = attempts.substring(equals + 1);
+                int countNumber = Integer.parseInt(count);
+                countNumber++;
+                return state.replace(attempts, oidcConfig.redirectAttemptParam() + "=" + countNumber);
+            } else {
+                return state + "&" + oidcConfig.redirectAttemptParam() + "=1";
+            }
+        } else {
+            // no parameters
+            return state + "?" + oidcConfig.redirectAttemptParam() + "=1";
         }
     }
 

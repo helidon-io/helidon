@@ -23,6 +23,8 @@ engine:
       plantumlconfig: "_plantuml-config.txt"
       javadoc-base-url: "./apidocs/index.html"
       helidon-version: "${project.version}"
+      microprofile-openapi-version: "${version.lib.microprofile-openapi-api}"
+      jandex-plugin-version: ${version.plugin.jandex}
       mp-version: "1.2"
       guides-dir: "${project.basedir}/../examples/guides"
 assets:
@@ -144,6 +146,14 @@ backend:
               items:
                 - includes:
                     - "guides/*.adoc"
+            - title: "OpenAPI"
+              pathprefix: "/openapi"
+              glyph:
+                type: "icon"
+                value: "donut_large"
+              items:
+                - includes:
+                    - "openapi/*.adoc"
             - title: "Javadocs"
               glyph:
                 type: "icon"

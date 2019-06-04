@@ -31,6 +31,8 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.json.JsonObject;
@@ -86,9 +88,13 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     private final OidcConfig oidcConfig;
     private final TokenHandler paramHeaderHandler;
     private final BiConsumer<SignedJwt, Errors.Collector> jwtValidator;
+    private final Pattern attemptPattern;
 
     private OidcProvider(OidcConfig oidcConfig) {
         this.oidcConfig = oidcConfig;
+
+        attemptPattern = Pattern.compile(".*?" + oidcConfig.redirectAttemptParam() + "=(\\d+).*");
+
         // must re-configure integration with webserver and jersey
 
         if (oidcConfig.useParam()) {
@@ -272,6 +278,13 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                                                  String code,
                                                  String description) {
         if (oidcConfig.shouldRedirect()) {
+            // make sure we do not exceed redirect limit
+            String state = origUri(providerRequest);
+            int redirectAttempt = redirectAttempt(state);
+            if (redirectAttempt >= oidcConfig.maxRedirects()) {
+                return errorResponseNoRedirect(code, description, status);
+            }
+
             Set<String> expectedScopes = expectedScopes(providerRequest);
 
             StringBuilder scopes = new StringBuilder(oidcConfig.baseScopes());
@@ -296,7 +309,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             queryString.append("redirect_uri=").append(oidcConfig.redirectUriWithHost()).append("&");
             queryString.append("scope=").append(scopeString).append("&");
             queryString.append("nonce=").append(nonce).append("&");
-            queryString.append("state=").append(origUri(providerRequest));
+            queryString.append("state=").append(encodeState(state));
 
             // must redirect
             return AuthenticationResponse
@@ -307,23 +320,38 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
         } else {
+            return errorResponseNoRedirect(code, description, status);
+        }
+    }
 
-            if (null == code) {
-                return AuthenticationResponse.builder()
-                        .status(SecurityResponse.SecurityStatus.FAILURE)
-                        .statusCode(Http.Status.UNAUTHORIZED_401.code())
-                        .responseHeader(Http.Header.WWW_AUTHENTICATE, "Bearer realm=\"" + oidcConfig.realm() + "\"")
-                        .description(description)
-                        .build();
-            } else {
-                return AuthenticationResponse.builder()
-                        .status(SecurityResponse.SecurityStatus.FAILURE)
-                        .statusCode(status.code())
-                        .responseHeader(Http.Header.WWW_AUTHENTICATE, errorHeader(code, description))
-                        .description(description)
-                        .build();
+    private AuthenticationResponse errorResponseNoRedirect(String code, String description, Http.Status status) {
+        if (null == code) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.FAILURE)
+                    .statusCode(Http.Status.UNAUTHORIZED_401.code())
+                    .responseHeader(Http.Header.WWW_AUTHENTICATE, "Bearer realm=\"" + oidcConfig.realm() + "\"")
+                    .description(description)
+                    .build();
+        } else {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.FAILURE)
+                    .statusCode(status.code())
+                    .responseHeader(Http.Header.WWW_AUTHENTICATE, errorHeader(code, description))
+                    .description(description)
+                    .build();
+        }
+    }
+
+    private int redirectAttempt(String state) {
+        if (state.contains("?")) {
+            // there are parameters
+            Matcher matcher = attemptPattern.matcher(state);
+            if (matcher.matches()) {
+                return Integer.parseInt(matcher.group(1));
             }
         }
+
+        return 1;
     }
 
     private String errorHeader(String code, String description) {
@@ -338,8 +366,12 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             origUri = CollectionsHelper.listOf(providerRequest.env().targetUri().getPath());
         }
 
+        return origUri.get(0);
+    }
+
+    private String encodeState(String state) {
         try {
-            return URLEncoder.encode(origUri.get(0), "UTF-8");
+            return URLEncoder.encode(state, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new SecurityException("UTF-8 must be supported for security to work", e);
         }
