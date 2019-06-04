@@ -87,6 +87,19 @@ public class CommandScheduler implements Scheduler {
         ScheduledFuture<?> delegate = poolSupplier.get().schedule(callable, delay, unit);
         return new ScheduledFuture<Object>() {
             @Override
+            public int hashCode() {
+                return delegate.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof Delayed)) {
+                    return false;
+                }
+                return compareTo((Delayed) o) == 0;
+            }
+
+            @Override
             public long getDelay(TimeUnit unit) {
                 return delegate.getDelay(unit);
             }
