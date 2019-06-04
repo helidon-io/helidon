@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,12 +77,10 @@ public class BulkheadTest extends FaultToleranceTest {
         Future<String> f1 = bean.executeCancelInQueue(1000);
         Future<String> f2 = bean.executeCancelInQueue(2000);    // should never run
         boolean b = f2.cancel(true);
-        assertTrue(b);
+        assertFalse(b);
         assertTrue(f2.isCancelled());
         assertThrows(CancellationException.class, f2::get);
         assertNotNull(f1.get());
-        // assertThat(bean.getMillis().size(), is(1));
-        // assertThat(bean.getMillis().iterator().next(), is(1000L));
     }
 
     @Test

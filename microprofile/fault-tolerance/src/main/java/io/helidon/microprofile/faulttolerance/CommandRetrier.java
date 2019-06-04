@@ -19,6 +19,7 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
@@ -72,7 +73,7 @@ public class CommandRetrier {
 
     private static final long   DEFAULT_DELAY_CORRECTION = 250L;
     private static final String FT_DELAY_CORRECTION = "fault-tolerance.delayCorrection";
-    private static final int    DEFAULT_COMMAND_THREAD_POOL_SIZE = 32;
+    private static final int    DEFAULT_COMMAND_THREAD_POOL_SIZE = 8;
     private static final String FT_COMMAND_THREAD_POOL_SIZE = "fault-tolerance.commandThreadPoolSize";
     private static final long   DEFAULT_THREAD_WAITING_PERIOD = 2000L;
     private static final String FT_THREAD_WAITING_PERIOD = "fault-tolerance.threadWaitingPeriod";
@@ -104,6 +105,24 @@ public class CommandRetrier {
     private final long bulkheadTaskQueueingPeriod;
 
     private CompletableFuture<?> taskQueued = new CompletableFuture<>();
+
+    class CommandCallable<T> implements Callable<T> {
+
+        private final Callable<T> delegate;
+
+        CommandCallable(Callable<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        public FaultToleranceCommand getCommand() {
+            return command;
+        }
+
+        @Override
+        public T call() throws Exception {
+            return delegate.call();
+        }
+    }
 
     /**
      * Constructor.
@@ -213,7 +232,7 @@ public class CommandRetrier {
 
         try {
             if (isAsynchronous) {
-                Scheduler scheduler = CommandScheduler.instance();
+                Scheduler scheduler = CommandScheduler.create(commandThreadPoolSize);
                 AsyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy).with(scheduler);
 
                 // Store context class loader to access config
@@ -223,7 +242,7 @@ public class CommandRetrier {
                 if (introspector.isReturnType(CompletionStage.class)) {
                     CompletionStage<?> completionStage = (introspector.hasFallback()
                             ? failsafe.withFallback(fallbackFunction)
-                            .future(() -> (CompletionStage<?>) retryExecute())
+                                      .future(() -> (CompletionStage<?>) retryExecute())
                             : failsafe.future(() -> (CompletionStage<?>) retryExecute()));
                     awaitBulkheadAsyncTaskQueued();
                     return completionStage;
@@ -232,8 +251,9 @@ public class CommandRetrier {
                 // If not, it must be a subtype of Future
                 if (introspector.isReturnType(Future.class)) {
                     FailsafeFuture<?> chainedFuture = (introspector.hasFallback()
-                            ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                            : failsafe.get(this::retryExecute));
+                            ? failsafe.withFallback(fallbackFunction)
+                                      .get(new CommandCallable<>(this::retryExecute))
+                            : failsafe.get(new CommandCallable<>(this::retryExecute)));
                     awaitBulkheadAsyncTaskQueued();
                     return new FailsafeChainedFuture<>(chainedFuture);
                 }
@@ -243,13 +263,15 @@ public class CommandRetrier {
             } else {
                 SyncFailsafe<Object> failsafe = Failsafe.with(retryPolicy);
                 return introspector.hasFallback()
-                        ? failsafe.withFallback(fallbackFunction).get(this::retryExecute)
-                        : failsafe.get(this::retryExecute);
+                        ? failsafe.withFallback(fallbackFunction)
+                                  .get(new CommandCallable<>(this::retryExecute))
+                        : failsafe.get(new CommandCallable<>(this::retryExecute));
             }
         } catch (FailsafeException e) {
             throw toException(e.getCause());
         }
     }
+
 
     /**
      * Creates a new command for each retry since Hystrix commands can only be

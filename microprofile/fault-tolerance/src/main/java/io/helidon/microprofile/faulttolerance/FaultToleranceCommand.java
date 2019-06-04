@@ -202,6 +202,10 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         return executionTime;
     }
 
+    BulkheadHelper getBulkheadHelper() {
+        return bulkheadHelper;
+    }
+
     /**
      * Code to run as part of this command. Called from superclass.
      *
