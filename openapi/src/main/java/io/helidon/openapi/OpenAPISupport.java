@@ -24,9 +24,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -86,7 +86,7 @@ public class OpenAPISupport implements Service {
     private final Builder builder;
     private final OpenApiConfig openAPIConfig;
 
-    private final Map<MediaType, String> cachedDocuments = new HashMap<>();
+    private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
 
     private OpenAPISupport(final Builder builder) {
         webContext = builder.webContext();
@@ -199,22 +199,36 @@ public class OpenAPISupport implements Service {
         if (!OpenApiDocument.INSTANCE.isSet()) {
             throw new IllegalStateException("OpenApiDocument used but has not been initialized");
         }
-        synchronized (cachedDocuments) {
-            String result = cachedDocuments.get(resultMediaType);
-            if (result == null) {
-                final Format resultFormat = OpenAPIMediaTypes.byMediaType(resultMediaType).format();
-                result = OpenApiSerializer.serialize(
-                        OpenApiDocument.INSTANCE.get(), resultFormat);
-                cachedDocuments.put(resultMediaType, result);
-                LOGGER.log(Level.FINER,
-                        "Created and cached OpenAPI document in {0} format",
-                        resultFormat.toString());
-            } else {
-                LOGGER.log(Level.FINER,
-                        "Using previously-cached OpenAPI document in {0} format",
-                        OpenAPIMediaTypes.DEFAULT_TYPE.toString());
-            }
-            return result;
+
+        OpenAPIMediaTypes matchingOpenAPIMediaType =
+                OpenAPIMediaTypes.byMediaType(resultMediaType)
+                .orElseGet(() -> {
+                    LOGGER.log(Level.FINER,
+                    () -> String.format(
+                            "Requested media type %s not supported; using default",
+                            resultMediaType.toString()));
+                    return OpenAPIMediaTypes.DEFAULT_TYPE;
+                });
+
+        final Format resultFormat = matchingOpenAPIMediaType.format();
+
+        String result = cachedDocuments.computeIfAbsent(resultFormat,
+                fmt -> {
+                    String r = formatDocument(fmt);
+                    LOGGER.log(Level.FINER,
+                            "Created and cached OpenAPI document in {0} format",
+                            fmt.toString());
+                    return r;
+                });
+        return result;
+    }
+
+    private String formatDocument(Format fmt) {
+        try {
+            return OpenApiSerializer.serialize(
+                    OpenApiDocument.INSTANCE.get(), fmt);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -223,9 +237,17 @@ public class OpenAPISupport implements Service {
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
          */
-        MediaType resultMediaType = req.headers()
-                .bestAccepted(OpenAPIMediaTypes.preferredOrdering())
-                .orElse(DEFAULT_RESPONSE_MEDIA_TYPE);
+        final Optional<MediaType> requestedMediaType = req.headers()
+                .bestAccepted(OpenAPIMediaTypes.preferredOrdering());
+
+        final MediaType resultMediaType = requestedMediaType
+                .orElseGet(() -> {
+                    LOGGER.log(Level.FINER,
+                            () -> String.format("Did not recognize requested media type %s; responding with default %s",
+                                    req.headers().acceptedTypes(),
+                                    DEFAULT_RESPONSE_MEDIA_TYPE.toString()));
+                    return DEFAULT_RESPONSE_MEDIA_TYPE;
+                        });
         return resultMediaType;
     }
 
@@ -241,10 +263,14 @@ public class OpenAPISupport implements Service {
     private enum OpenAPIMediaTypes {
 
         JSON(Format.JSON,
-                new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON, MediaType.APPLICATION_JSON},
+                new MediaType[]{MediaType.APPLICATION_OPENAPI_JSON,
+                                MediaType.APPLICATION_JSON},
                 "json"),
         YAML(Format.YAML,
-                new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML, MediaType.APPLICATION_YAML},
+                new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML,
+                                MediaType.APPLICATION_X_YAML,
+                                MediaType.APPLICATION_YAML,
+                                MediaType.TEXT_PLAIN},
                 "yaml", "yml");
 
         private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;
@@ -276,13 +302,13 @@ public class OpenAPISupport implements Service {
             return null;
         }
 
-        private static OpenAPIMediaTypes byMediaType(MediaType mt) {
+        private static Optional<OpenAPIMediaTypes> byMediaType(MediaType mt) {
             for (OpenAPIMediaTypes candidateType : values()) {
                 if (candidateType.mediaTypes.contains(mt)) {
-                    return candidateType;
+                    return Optional.of(candidateType);
                 }
             }
-            return null;
+            return Optional.empty();
         }
 
         private static List<String> recognizedFileTypes() {
@@ -302,9 +328,11 @@ public class OpenAPISupport implements Service {
         private static MediaType[] preferredOrdering() {
             return new MediaType[]{
                 MediaType.APPLICATION_OPENAPI_YAML,
+                MediaType.APPLICATION_X_YAML,
                 MediaType.APPLICATION_YAML,
                 MediaType.APPLICATION_OPENAPI_JSON,
-                MediaType.APPLICATION_JSON
+                MediaType.APPLICATION_JSON,
+                MediaType.TEXT_PLAIN
             };
         }
     }
