@@ -15,13 +15,6 @@
  */
 var server = "/";
 
-function bindDetail(element, employee) {
-	element.find(".backButton").on("click", function() {
-		$("#detail").hide(400, "swing", function() {
-			$("#people").show(400, "swing")
-		});
-	});
-}
 $(function() {
 	$("#searchButton").button().on(
 			"click",
@@ -41,7 +34,9 @@ $(function() {
 								$("#people").empty();
 								$("#people").hide();
 								if (data.length == 0) {
-									$("#people").html("No results found...");
+									$("#people").html("");
+									$("#notFound").show();
+									$("#notFound").text("No people found matching your search criteria");
 								} else {
 									data.forEach(function(employee) {
 										var item = $(peopleTemplate
@@ -49,9 +44,10 @@ $(function() {
 										item.on("click", function() {
 											var detailItem = $(detailTemplate
 													.render(employee));
+											$("#home").hide();
 											$("#detail").empty();
-											$("#detail").append(detailItem);
-											bindDetail(detailItem, employee);
+											$("#notFound").hide();
+											$("#detail").append(detailItem);											
 											$("#people").hide(
 													400,
 													"swing",
@@ -77,6 +73,7 @@ $(function() {
 });
 
 function showEmployeeForm() {
+	$("#notFound").hide();
 	$("#editForm").hide();
 	$("#deleteButton").hide();
 	$("#employeeForm").show();
@@ -97,6 +94,7 @@ function loadEmployees() {
 		url : server + "employees",
 		method : "GET"
 	}).done(function(data) {
+		$("#notFound").hide();
 		$("#people").hide();
 		$("#people").empty();
 		data.forEach(function(employee) {
@@ -104,8 +102,7 @@ function loadEmployees() {
 			item.on("click", function() {
 				var detailItem = $(detailTemplate.render(employee));
 				$("#detail").empty();
-				$("#detail").append(detailItem);
-				bindDetail(detailItem, employee);
+				$("#home").hide();
 				$("#people").hide(400, "swing", function() {
 					$("#detail").show(400, "swing")
 				});

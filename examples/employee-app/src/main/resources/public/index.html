@@ -94,6 +94,31 @@ fieldset {
 #addDialog {
 	display: none;
 }
+
+ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	background-color: #333;
+}
+
+li {
+	float: left;
+}
+
+li a {
+	display: block;
+	color: white;
+	text-align: center;
+	padding: 14px 16px;
+	text-decoration: none;
+}
+
+/* Change the link color to #111 (black) on hover */
+li a:hover {
+	background-color: #111;
+}
 </style>
 
 <script id="peopleTemplate">
@@ -115,7 +140,7 @@ fieldset {
 	var detailTemplate = {};
 	detailTemplate.render = function(obj) {
 
-		return "<div id =\"editForm\" class=\"col-sm-5 col-md-offset-2\">"
+		return "<br><br><div id =\"editForm\" class=\"col-sm-5 col-md-offset-2\">"
 				+ "	<div class=\"panel panel-info\" class=\"click-element animate-show\">"
 				+ "		<div class=\"panel-heading\">"
 				+ "			<h3 class=\"panel-title\">"
@@ -202,8 +227,13 @@ fieldset {
 
 <body onload="loadEmployees()">
 	<h1>Cloud Employee App</h1>
+	<ul>
+		<li><a href="#" onclick="loadEmployees()">Home</a></li>
+		<li><a href="#" onclick="showEmployeeForm()">New Employee</a></li>
+	</ul>
 	<nav>
 		<div class="click-element animate-show" id="home">
+
 			<h2>People</h2>
 			<br>
 			<form>
@@ -223,26 +253,21 @@ fieldset {
 						<span class="glyphicon glyphicon-search"></span> Search
 					</button>
 				</div>
-				<div class="col-xs-4">
-					<button class="btn btn-danger" id="homeButton" type="button"
-						onclick="loadEmployees()">
-						<span class="glyphicon glyphicon-home"></span>
-					</button>
-				</div>
 			</form>
-			<input class="btn btn-primary" id="addButton" name="addButton"
-				value="Add New" type="button" onclick="showEmployeeForm()">
+
 		</div>
 	</nav>
 	<div id="people" class="container">LOADING...</div>
+	<div id="notFound" class="alert alert-info col-sm-7"></div>
 	<div id="detail"></div>
+	<br><br>
 	<div class="col-sm-5 col-md-offset-2" id="employeeForm"
 		style="display: none">
 		<div class="panel panel-info " class="click-element animate-show">
 			<div class="panel-heading">
 				<h3 class="panel-title">
 					<div style="padding: 10px">
-						<span id="formTitle"></span>
+						<span id="formTitle">Add New Employee</span>
 						<button class="btn btn-primary" id="deleteButton" type="button"
 							style="float: right; position: relative; bottom: 9px;">
 							<span class="glyphicon glyphicon-trash"></span> Delete
@@ -250,6 +275,8 @@ fieldset {
 					</div>
 				</h3>
 			</div>
+			<br>
+			<br>
 			<div class="panel-body">
 				<form class="form-horizontal" name="form" novalidate>
 					<input type="text" id="id" value="" style="display: none;">
