@@ -18,6 +18,7 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
@@ -88,6 +89,8 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      */
     private Context helidonContext;
 
+    private CompletableFuture<?> taskQueued;
+
     /**
      * Constructor. Specify a thread pool key if a {@code @Bulkhead} is specified
      * on the method. A unique thread pool key will enable setting limits for this
@@ -98,9 +101,12 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
      * @param introspector The method introspector.
      * @param context CDI invocation context.
      * @param contextClassLoader Context class loader or {@code null} if not available.
+     * @param taskQueued Future completed when task has been queued.
      */
-    public FaultToleranceCommand(CommandRetrier commandRetrier, String commandKey, MethodIntrospector introspector,
-                                 InvocationContext context, ClassLoader contextClassLoader) {
+    public FaultToleranceCommand(CommandRetrier commandRetrier, String commandKey,
+                                 MethodIntrospector introspector,
+                                 InvocationContext context, ClassLoader contextClassLoader,
+                                 CompletableFuture<?> taskQueued) {
         super(Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(HELIDON_MICROPROFILE_FAULTTOLERANCE))
                 .andCommandKey(
                         HystrixCommandKey.Factory.asKey(commandKey))
@@ -139,6 +145,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         this.context = context;
         this.contextClassLoader = contextClassLoader;
         this.threadWaitingPeriod = commandRetrier.threadWaitingPeriod();
+        this.taskQueued = taskQueued;
 
         // Special initialization for methods with breakers
         if (introspector.hasCircuitBreaker()) {
@@ -194,6 +201,10 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
             throw new IllegalStateException("Command has not been executed yet");
         }
         return executionTime;
+    }
+
+    BulkheadHelper getBulkheadHelper() {
+        return bulkheadHelper;
     }
 
     /**
@@ -286,9 +297,18 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
         Throwable throwable = null;
         long startNanos = System.nanoTime();
         try {
+            // Queue the task
             future = super.queue();
+
+            // Notify successful queueing of task
+            taskQueued.complete(null);
+
+            // Execute and get result from task
             result = future.get();
         } catch (Exception e) {
+            // Notify exception during task queueing
+            taskQueued.completeExceptionally(e);
+
             if (e instanceof ExecutionException) {
                 waitForThreadToComplete();
             }
@@ -419,7 +439,7 @@ public class FaultToleranceCommand extends HystrixCommand<Object> {
     private void logCircuitBreakerState(String preamble) {
         if (introspector.hasCircuitBreaker()) {
             String hystrixState = isCircuitBreakerOpen() ? "OPEN" : "CLOSED";
-            LOGGER.info(preamble + ": breaker for " + getCommandKey() + " in state "
+            LOGGER.info(() -> preamble + ": breaker for " + getCommandKey() + " in state "
                     + breakerHelper.getState() + " (Hystrix: " + hystrixState
                     + " Thread:" + Thread.currentThread().getName() + ")");
         }

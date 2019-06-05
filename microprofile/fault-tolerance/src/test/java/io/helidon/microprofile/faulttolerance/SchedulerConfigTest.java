@@ -34,10 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 class SchedulerConfigTest {
 
-    /**
-     * Loads config from application.yaml where the pool size is set to
-     * 8 instead of 16 (default).
-     */
     @Test
     void testNonDefaultConfig() {
         Server server = null;
@@ -45,7 +41,7 @@ class SchedulerConfigTest {
             server = Server.builder().port(-1).build();
             server.start();
 
-            CommandScheduler commandScheduler = CommandScheduler.instance();
+            CommandScheduler commandScheduler = CommandScheduler.create(8);
             assertThat(commandScheduler, notNullValue());
             ScheduledThreadPoolSupplier poolSupplier = commandScheduler.poolSupplier();
 

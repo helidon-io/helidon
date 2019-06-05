@@ -100,6 +100,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
+                        <fault-tolerance.commandThreadPoolSize>32</fault-tolerance.commandThreadPoolSize>
                         <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                     <suiteXmlFiles>

@@ -80,8 +80,6 @@ public class BulkheadTest extends FaultToleranceTest {
         assertTrue(f2.isCancelled());
         assertThrows(CancellationException.class, f2::get);
         assertNotNull(f1.get());
-        // assertThat(bean.getMillis().size(), is(1));
-        // assertThat(bean.getMillis().iterator().next(), is(1000L));
     }
 
     @Test

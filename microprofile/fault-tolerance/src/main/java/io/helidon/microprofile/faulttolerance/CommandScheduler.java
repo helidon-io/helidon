@@ -16,12 +16,15 @@
 
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
-import io.helidon.config.Config;
 
 import net.jodah.failsafe.util.concurrent.Scheduler;
 
@@ -30,7 +33,6 @@ import net.jodah.failsafe.util.concurrent.Scheduler;
  */
 public class CommandScheduler implements Scheduler {
 
-    private static final int CORE_POOL_SIZE = 32;
     private static final String THREAD_NAME_PREFIX = "helidon-ft-async-";
 
     private static CommandScheduler instance;
@@ -42,37 +44,18 @@ public class CommandScheduler implements Scheduler {
     }
 
     /**
-     * If no command scheduler exists, creates one using a config. Disables
-     * daemon threads.
-     *
-     * @param config Config to use.
-     * @return Existing scheduler or newly created one.
-     */
-    public static synchronized CommandScheduler create(Config config) {
-        if (instance == null) {
-            instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
-                    .daemon(false)
-                    .threadNamePrefix(THREAD_NAME_PREFIX)
-                    .corePoolSize(CORE_POOL_SIZE)
-                    .prestart(false)
-                    .config(config)
-                    .build());
-        }
-        return instance;
-    }
-
-    /**
      * If no command scheduler exists, creates one using default values.
      * Disables daemon threads.
      *
+     * @param threadPoolSize Size of thread pool for async commands.
      * @return Existing scheduler or newly created one.
      */
-    public static synchronized CommandScheduler create() {
+    public static synchronized CommandScheduler create(int threadPoolSize) {
         if (instance == null) {
             instance = new CommandScheduler(ScheduledThreadPoolSupplier.builder()
                     .daemon(false)
                     .threadNamePrefix(THREAD_NAME_PREFIX)
-                    .corePoolSize(CORE_POOL_SIZE)
+                    .corePoolSize(threadPoolSize)
                     .prestart(false)
                     .build());
         }
@@ -89,7 +72,10 @@ public class CommandScheduler implements Scheduler {
     }
 
     /**
-     * Schedules a task using executor.
+     * Schedules a task using an executor. Returns a wrapped future with special logic
+     * to handle cancellations of async bulkhead tasks that have been queued but have
+     * not executed yet. Without forcing interruption of those tasks (see flag), they
+     * would be allowed to start once the bulkhead is freed.
      *
      * @param callable The callable.
      * @param delay Delay before scheduling task.
@@ -98,18 +84,87 @@ public class CommandScheduler implements Scheduler {
      */
     @Override
     public ScheduledFuture<?> schedule(Callable<?> callable, long delay, TimeUnit unit) {
-        return poolSupplier.get().schedule(callable, delay, unit);
+        ScheduledFuture<?> delegate = poolSupplier.get().schedule(callable, delay, unit);
+        return new ScheduledFuture<Object>() {
+            @Override
+            public int hashCode() {
+                return delegate.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (!(o instanceof Delayed)) {
+                    return false;
+                }
+                return compareTo((Delayed) o) == 0;
+            }
+
+            @Override
+            public long getDelay(TimeUnit unit) {
+                return delegate.getDelay(unit);
+            }
+
+            @Override
+            public int compareTo(Delayed o) {
+                return delegate.compareTo(o);
+            }
+
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                CommandRetrier.CommandCallable<?> unwrapped = unwrapCallable(callable);
+                if (unwrapped != null) {
+                    FaultToleranceCommand command = unwrapped.getCommand();
+                    BulkheadHelper bulkheadHelper = command.getBulkheadHelper();
+                    if (bulkheadHelper != null && !bulkheadHelper.isInvocationRunning(command)) {
+                        return delegate.cancel(true);      // overridden
+                    }
+                }
+                return delegate.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return delegate.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return delegate.isDone();
+            }
+
+            @Override
+            public Object get() throws InterruptedException, ExecutionException {
+                return delegate.get();
+            }
+
+            @Override
+            public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+                    TimeoutException {
+                return delegate.get(timeout, unit);
+            }
+        };
     }
 
     /**
-     * Returns underlying instance (for testing purposes).
+     * Get access to underlying command from wrapped callable. First unwrap wrapper
+     * created by Failsafe and then access our wrapper.
      *
-     * @return The instance.
+     * @param callable Callable to be unwrapped
+     * @return Unwrapped callable or {@code null} if cannot be unwrapped.
      */
-    static synchronized CommandScheduler instance() {
-        if (instance == null) {
-            create();
+    private static CommandRetrier.CommandCallable<?> unwrapCallable(Callable<?> callable) {
+        Field[] fields = callable.getClass().getDeclaredFields();
+        if (fields.length > 0) {
+            try {
+                fields[0].setAccessible(true);
+                Callable<?> unwrapped = (Callable<?>) fields[0].get(callable);
+                if (unwrapped instanceof CommandRetrier.CommandCallable<?>) {
+                    return (CommandRetrier.CommandCallable<?>) unwrapped;
+                }
+            } catch (IllegalAccessException e) {
+                // falls through
+            }
         }
-        return instance;
+        return null;        // could not unwrap
     }
 }

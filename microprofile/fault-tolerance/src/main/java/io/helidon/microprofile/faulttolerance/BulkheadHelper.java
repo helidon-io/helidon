@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.eclipse.microprofile.faulttolerance.Bulkhead;
 public class BulkheadHelper {
 
     /**
-     * A command ID is unique to an target (object) and method. A {@link
+     * A command ID is unique to a target (object) and method. A {@link
      * FaultToleranceCommand} instance is created for each invocation of that
      * target/method pair and is assigned the same invocation ID. This class
      * collects information about all those invocations, including their state:
@@ -188,5 +188,9 @@ public class BulkheadHelper {
      */
     boolean isAtMaxRunningInvocations() {
         return invocationData().isAtMaxRunningInvocations();
+    }
+
+    boolean isInvocationRunning(FaultToleranceCommand command) {
+        return invocationData().runningInvocations.contains(command);
     }
 }
