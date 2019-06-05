@@ -53,6 +53,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing-webserver</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <!-- Jersey on java 9 -->
             <groupId>javax.activation</groupId>
             <artifactId>javax.activation-api</artifactId>
