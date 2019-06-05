@@ -26,7 +26,6 @@ import javax.json.bind.JsonbConfig;
 /**
  * Implementation of the {@link EmployeeRepository}. This implementation uses a
  * mock database written with in-memory ArrayList classes.
- * 
  * The strings id, name, and other search strings are validated before being
  * passed to the methods in this class.
  *

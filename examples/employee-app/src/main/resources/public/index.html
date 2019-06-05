@@ -1,18 +1,20 @@
-<!-- 
-Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
- 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
- 
-      http://www.apache.org/licenses/LICENSE-2.0
- 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- -->
+<!--
+
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <html>
 <meta charset="utf-8" />
 <head>
@@ -29,6 +31,8 @@ limitations under the License.
     href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
     integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
     crossorigin="anonymous">
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.js"></script>
 <script src="EmployeeController.js"></script>
 
 
@@ -121,108 +125,132 @@ li a:hover {
 }
 </style>
 
-<script id="peopleTemplate">
-	var peopleTemplate = {};
-	peopleTemplate.render = function(obj) {
 
-		return "<div class=\"row\"> "
-				+ "<div class=\"peopleItem col-sm-3\""+
-		"	style=\"cursor: pointer\">	"
-				+ "	<div class=\"photos\">"
-				+ "		<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
-				+ "	</div>" + "	<div class=\"peopleContent\">" + "		<h4>"
-				+ obj.firstName + " " + obj.lastName + "</h4>" + "		"
-				+ obj.title + "<br> <small>" + obj.department + "</small>"
-				+ "	</div>" + "	</div>" + "	</div>";
-	}
-</script>
-<script id="detailTemplate">
-	var detailTemplate = {};
-	detailTemplate.render = function(obj) {
-
-		return "<br><br><div id =\"editForm\" class=\"col-sm-5 col-md-offset-2\">"
-				+ "	<div class=\"panel panel-info\" class=\"click-element animate-show\">"
-				+ "		<div class=\"panel-heading\">"
-				+ "			<h3 class=\"panel-title\">"
-				+ "				<div id=\"formTitle\" ng-model=\"formTitle\" style=\"padding: 10px\">"
-				+ "					Update Employee"
-				+ "					<button class=\"btn btn-primary\" id=\"delete\" type=\"button\""
-				+ "						onclick=\"deleteEmployee()\" "
-				+ "						style=\"float: right; position: relative; bottom: 9px;\">"
-				+ "						<span class=\"glyphicon glyphicon-trash\"></span> Delete"
-				+ "					</button>"
-				+ "				</div>"
-				+ "			</h3>"
-				+ "		</div>"
-				+ "		<div class=\"panel-body\">"
-				+ "			<form class=\"form-horizontal\" name=\"form\" novalidate"+
-"				>"
-				+ "				<input type=\"text\" id=\"editId\" ng-model=\"editId\" value=\""+obj.id+"\""+
-"					style=\"display: none;\">"
-				+ "				<div class=\"photos\">"
-				+ "					<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editFirstName\">First"
-				+ "						Name:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editFirstName\" name=\"editFirstName\""+
-"							value=\""+obj.firstName+"\" class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"lastName\">Last"
-				+ "						Name:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editLastName\" name=\"editLastName\""+
-"							 value=\""+obj.lastName+"\"  class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editEmail\">Email:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editEmail\" name=\"editEmail\" value=\""+obj.email+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editPhone\">Phone:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editPhone\" name=\"editPhone\" value=\""+obj.phone+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editBirthDate\">Birthdate:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editBirthDate\" name=\"editBirthDate\""+
-"							 value=\""+obj.birthDate+"\" class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editTitle\">Title:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editTitle\" name=\"editTitle\" value=\""+obj.title+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editDepartment\">Department:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editDepartment\" name=\"editDepartment\" value=\""+obj.department+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<br>"
-				+ "				<br>"
-				+ "				<div style=\"text-align: center;\">"
-				+ "					<input type=\"button\" tabindex=\"-1\" class=\"btn btn-default\""
-				+ "						value=\"Cancel\" onclick=\"loadEmployees()\"> <input id=\"saveButton\""
-				+ "						type=\"button\" tabindex=\"-1\" class=\"btn btn-success\" value=\"Save\" onclick=\"updateEmployee()\">"
-				+ "				</div>";
-	}
+<script id="employees_tpl" type="x-tmpl-mustache">
+<div class="row">
+    <div class="peopleItem col-sm-3" style="cursor: pointer">
+        <div class="photos">
+             <img src="nopic.png" style="width: 120px; height: 120px"></img>
+        </div>
+        <div class="peopleContent">
+            <h4>{{firstName}} {{lastName}}</h4>
+            {{title}} <br> <small> {{department}}</small>
+        </div>
+    </div>
+</div>
 </script>
 
+
+
+
+<script id="detail_tpl" type="x-tmpl-mustache">
+<div id="editForm" class="col-sm-5 col-md-offset-2">
+    <div class="panel panel-info" class="click-element animate-show">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <div id="formTitle" style="padding: 10px">
+                    Update Employee
+                    <button class="btn btn-primary" id="delete"
+                        type="button" onclick="deleteEmployee()"
+                        style="float: right; position: relative; bottom: 9px;">
+                        <span class="glyphicon glyphicon-trash"></span>
+                        Delete
+                    </button>
+                </div>
+            </h3>
+        </div>
+        <div class="panel-body">
+            <form class="form-horizontal" name="form" novalidate>
+                <input type="text" id="editId" value="{{id}}"
+                    style="display: none;">
+                <div class="photos">
+                    <img src="nopic.png"
+                        style="width: 120px; height: 120px"></img>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3"
+                        for="editFirstName">First Name:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editFirstName"
+                            name="editFirstName"
+                            value="{{firstName}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3" for="lastName">Last
+                        Name:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editLastName"
+                            name="editLastName"
+                            value="{{lastName}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3"
+                        for="editEmail">Email:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editEmail"
+                            name="editEmail"
+                            value="{{email}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3"
+                        for="editPhone">Phone:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editPhone"
+                            name="editPhone"
+                            value="{{phone}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3"
+                        for="editBirthDate">Birthdate:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editBirthDate"
+                            name="editBirthDate"
+                            value="{{birthDate}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3"
+                        for="editTitle">Title:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editTitle"
+                            name="editTitle"
+                            value="{{title}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-xs-3"
+                        for="editDepartment">Department:</label>
+                    <div class="col-xs-5">
+                        <input type="text" id="editDepartment"
+                            name="editDepartment"
+                            value="{{department}}"
+                            class="form-control" required>
+                    </div>
+                </div>
+                <br> <br>
+                <div style="text-align: center;">
+                    <input type="button" tabindex="-1"
+                        class="btn btn-default" value="Cancel"
+                        onclick="loadEmployees()"> <input
+                        id="saveButton" type="button" tabindex="-1"
+                        class="btn btn-success" value="Save"
+                        onclick="updateEmployee()">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</script>
 </head>
 
 <body onload="loadEmployees()">
@@ -253,7 +281,7 @@ li a:hover {
                 </div>
                 <div class="col-xs-1">
                     <button class="btn btn-success" id="searchButton"
-                        type="button">
+                        type="button" onclick="search()">
                         <span class="glyphicon glyphicon-search"></span>
                         Search
                     </button>
@@ -262,11 +290,12 @@ li a:hover {
 
         </div>
     </nav>
+      <br>
+    <br>
     <div id="people" class="container">LOADING...</div>
     <div id="notFound" class="alert alert-info col-sm-7"></div>
     <div id="detail"></div>
-    <br>
-    <br>
+  
     <div class="col-sm-5 col-md-offset-2" id="employeeForm"
         style="display: none">
         <div class="panel panel-info "
@@ -284,7 +313,7 @@ li a:hover {
                     </div>
                 </h3>
             </div>
-            
+
             <div class="panel-body">
                 <form class="form-horizontal" name="form" novalidate>
                     <input type="text" id="id" value=""

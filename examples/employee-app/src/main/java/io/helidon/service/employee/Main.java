@@ -42,7 +42,6 @@ public final class Main {
 
     /**
      * Application main entry point.
-     * 
      * @param args command line arguments.
      * @throws IOException if there are problems reading logging properties
      */
@@ -52,7 +51,6 @@ public final class Main {
 
     /**
      * Start the server.
-     * 
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
@@ -73,7 +71,7 @@ public final class Main {
         // print a message at shutdown. If unsuccessful, print the exception.
         server.start().thenAccept(ws -> {
             System.out.println("WEB server is up!");
-            System.out.println("Web client at: http://localhost:" + ws.port() 
+            System.out.println("Web client at: http://localhost:" + ws.port()
                 + "/public/index.html");
             ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
         }).exceptionally(t -> {
@@ -89,7 +87,6 @@ public final class Main {
 
     /**
      * Creates new {@link Routing}.
-     *
      * @return routing configured with JSON support, a health check, and a service
      * @param config configuration of this server
      */
@@ -97,7 +94,7 @@ public final class Main {
 
         MetricsSupport metrics = MetricsSupport.create();
         EmployeeService employeeService = new EmployeeService(config);
-        HealthSupport health = HealthSupport.builder().add(HealthChecks.healthChecks()) 
+        HealthSupport health = HealthSupport.builder().add(HealthChecks.healthChecks())
                 .build(); // Adds a convenient set of checks
 
         return Routing.builder().register(JsonBindingSupport.create())

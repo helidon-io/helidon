@@ -15,63 +15,67 @@
  */
 var server = "/";
 
-
-$(function() {
-    $("#searchButton").button().on(
-        "click",
-        function() {
-            var searchTerm = $("#searchText").val().trim();
-            if (searchTerm != "") {
-                $("#people").show();
-                $("#people").html("SEARCHING...");
-                $.ajax({
-                    url: server + "employees/" +
-                        $("#searchType").val() + "/" +
-                        encodeURIComponent(searchTerm),
-                    method: "GET"
-                }).done(
-                    function(data) {
-                        $("#people").empty();
-                        $("#people").hide();
-                        if (data.length == 0) {
-                            $("#people").html("");
-                            $("#notFound").show();
-                            $("#notFound").html("No people found matching your search criteria");
-                        } else {
-                            $("#notFound").hide();
-                            data.forEach(function(employee) {
-                                var item = $(peopleTemplate
-                                    .render(employee));
-                                item.on("click", function() {
-                                    var detailItem = $(detailTemplate
-                                        .render(employee));
-                                    $("#home").hide();
-                                    $("#detail").empty();                                   
-                                    $("#notFound").hide();
-                                    $("#detail").append(detailItem);
-                                    $("#people").hide(
-                                        400,
-                                        "swing",
-                                        function() {
-                                            $("#detail").show(400,
-                                                "swing")
-                                        });
-                                });
-                                $("#people").append(item);
-                            });
-                        }
-                        $("#people").show(400, "swing");
-                    });
-            } else {
-                loadEmployees();
-            }
-        });
-    $("#searchText").on("keyup", function(e) {
-        if (e.keyCode == 13) {
-            $("#searchButton").trigger("click");
-        }
+function search (){
+    var searchTerm = $("#searchText").val().trim();
+    if (searchTerm != "") {
+        $("#people").show();
+        $("#people").html("SEARCHING...");
+        $.ajax({
+            url: server + "employees/" +
+                $("#searchType").val() + "/" +
+                encodeURIComponent(searchTerm),
+            method: "GET"
+        }).done(
+            function(data) {
+                $("#people").empty();
+                $("#people").hide();
+                if (data.length == 0) {
+                    $("#people").html("");
+                    $("#notFound").show();
+                    $("#notFound").html("No people found matching your search criteria");
+                } else {
+                    showResults(data);
+                }
+                $("#people").show(400, "swing");
+            });
+    } else {
+        loadEmployees();
+    }
+}
+$("#searchButton").button().on(
+    "click",
+    function() {
+        
     });
+$("#searchText").on("keyup", function(e) {
+    if (e.keyCode == 13) {
+        $("#searchButton").trigger("click");
+    }
 });
+
+function showResults(data){
+    $("#people").hide();
+    $("#people").empty();
+    $("#notFound").hide();
+    data.forEach(function(employee) {
+        var item = $(renderEmployees(employee));
+        item.on("click", function() {
+            var detailItem = $(renderDetailEmployee(employee));
+            $("#home").hide();
+            $("#detail").empty();                                   
+            $("#notFound").hide();
+            $("#detail").append(detailItem);
+            $("#people").hide(
+                400,
+                "swing",
+                function() {
+                    $("#detail").show(400,
+                        "swing")
+                });
+        });
+        $("#people").append(item);
+    });
+}
 
 function showEmployeeForm() {
     $("#notFound").hide();
@@ -96,23 +100,38 @@ function loadEmployees() {
         url: server + "employees",
         method: "GET"
     }).done(function(data) {
-        $("#people").hide();
-        $("#people").empty();
-        data.forEach(function(employee) {
-            var item = $(peopleTemplate.render(employee));
-            item.on("click", function() {
-                var detailItem = $(detailTemplate.render(employee));
-                $("#detail").empty();
-                $("#home").hide();
-                $("#detail").append(detailItem);
-                $("#people").hide(400, "swing", function() {
-                    $("#detail").show(400, "swing")
-                });
-            });
-            $("#people").append(item);
-        })
+        showResults(data); 
         $("#people").show(400, "swing");
     });
+}
+
+
+function renderEmployees(employee){
+    var template = $('#employees_tpl').html();
+    Mustache.parse(template);
+    var rendered = Mustache.render(template, {
+        "firstName" : employee.firstName,
+        "lastName" : employee.lastName,
+        "title" : employee.title,
+        "department" : employee.department
+    });
+    return rendered;
+}
+
+function renderDetailEmployee(employee){
+    var template = $('#detail_tpl').html();
+    Mustache.parse(template);
+    var rendered = Mustache.render(template,{
+        "id" : employee.id,
+        "firstName" : employee.firstName,
+        "lastName" : employee.lastName,
+        "email" : employee.email,
+        "birthDate" : employee.birthDate,
+        "phone" : employee.phone,
+        "title" : employee.title,
+        "department" : employee.department
+    });
+    return rendered;
 }
 
 function save() {

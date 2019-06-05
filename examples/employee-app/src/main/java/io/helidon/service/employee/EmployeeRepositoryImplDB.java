@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.config.Config;
+
 import oracle.jdbc.pool.OracleDataSource;
 
 /**
@@ -37,7 +38,6 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
     /**
      * Creates the database connection using the parameters specified in the
      * <code>application.yaml</code> file located in the <code>resources</code> directory.
-     * 
      * @param config Represents the application configuration.
      */
     public EmployeeRepositoryImplDB(Config config) {
@@ -150,7 +150,7 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
     }
 
     /**
-     * Execute the <code>select</code> query specified in the parameters. 
+     * Execute the <code>select</code> query specified in the parameters.
      * @param sqlQueryStr Contains the <code>select</code> query
      * @param value Contains the value of the variable of the <code>select</code>.
      * @return
@@ -182,7 +182,8 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
 
     @Override
     public Employee update(Employee updatedEmployee, String id) {
-        String updateTableSQL = "UPDATE EMPLOYEE SET FIRSTNAME=?, LASTNAME=?, EMAIL=?, PHONE=?, BIRTHDATE=?, TITLE=?, DEPARTMENT=?  WHERE ID=?";
+        String updateTableSQL = "UPDATE EMPLOYEE SET FIRSTNAME=?, LASTNAME=?, EMAIL=?, PHONE=?, BIRTHDATE=?, TITLE=?, "
+                + "DEPARTMENT=?  WHERE ID=?";
         try (PreparedStatement preparedStatement = this.conn.prepareStatement(updateTableSQL);) {
             preparedStatement.setString(1, updatedEmployee.getFirstName());
             preparedStatement.setString(2, updatedEmployee.getLastName());

@@ -19,15 +19,7 @@ import java.util.UUID;
 
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbProperty;
-
-/**
- * Represents an employee 
- *
- */
-/**
- * @author luperalt
- *
- */
+/**Represents an employee. */
 public final class Employee {
 
     private final String id;
@@ -39,17 +31,15 @@ public final class Employee {
     private final String title;
     private final String department;
 
-    /**
-     * Creates a new Employee
-     * @param id The employee ID. 
+    /**Creates a new Employee.
+     * @param id The employee ID.
      * @param firstName The employee first name.
      * @param lastName The employee lastName.
      * @param email The employee email.
      * @param phone The employee phone.
      * @param birthDate The employee birthDatee.
      * @param title The employee title.
-     * @param department The employee department.
-     */
+     * @param department The employee department.*/
     private Employee(String id, String firstName, String lastName, String email, String phone, String birthDate,
             String title, String department) {
         this.id = id;
@@ -72,7 +62,7 @@ public final class Employee {
      * @param birthDate The employee birthDatee.
      * @param title The employee title.
      * @param department The employee department.
-     * @return
+     * @return A new employee object
      */
     @JsonbCreator
     public static Employee of(@JsonbProperty("id") String id, @JsonbProperty("firstName") String firstName,
@@ -87,64 +77,64 @@ public final class Employee {
     }
 
     /**
-     * Returns the employee ID
-     * @return
+     * Returns the employee ID.
+     * @return the ID
      */
     public String getId() {
         return this.id;
     }
 
     /**
-     * Returns the employee first name
-     * @return
+     * Returns the employee first name.
+     * @return The first name
      */
     public String getFirstName() {
         return this.firstName;
     }
-    
+
     /**
-     * Returns the employee last name
-     * @return
+     * Returns the employee last name.
+     * @return The last name
      */
     public String getLastName() {
         return this.lastName;
     }
 
     /**
-     * Returns the employee e-mail
-     * @return
+     * Returns the employee e-mail.
+     * @return The email
      */
     public String getEmail() {
         return this.email;
     }
 
     /**
-     * Returns the employee phone
-     * @return
+     * Returns the employee phone.
+     * @return The phone
      */
     public String getPhone() {
         return this.phone;
     }
 
     /**
-     * Returns the employee birthdate
-     * @return
+     * Returns the employee birthdate.
+     * @return The birthdate
      */
     public String getBirthDate() {
         return this.birthDate;
     }
 
     /**
-     * Returns the employee title
-     * @return
+     * Returns the employee title.
+     * @return The title
      */
     public String getTitle() {
         return this.title;
     }
 
     /**
-     * Returns the employee department
-     * @return
+     * Returns the employee department.
+     * @return The department
      */
     public String getDepartment() {
         return this.department;
