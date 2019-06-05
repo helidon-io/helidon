@@ -159,8 +159,7 @@ public class EmployeeService implements Service {
         if (isValidId(response, request.path().param("id"))){
             request.content().as(Employee.class)
                 .thenApply(e -> {                    
-                    return this.employees.update(Employee.of(e.getId(), e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(),
-                            e.getBirthDate(), e.getTitle(), e.getDepartment()), request.path().param("id"));
+                    return this.employees.update(Employee.of(e.getId(), e.getFirstName(), e.getLastName(), e.getEmail(), e.getPhone(), e.getBirthDate(), e.getTitle(), e.getDepartment()), request.path().param("id"));
                 })
                 .thenCompose(
                     p -> response.status(204).send()
@@ -189,9 +188,9 @@ public class EmployeeService implements Service {
      * @return
      */
     private boolean isValidQueryStr(ServerResponse response, String nameStr){
-		Map<String, String> errorMessage = new HashMap<>();   
+        Map<String, String> errorMessage = new HashMap<>();   
         if (nameStr == null || nameStr.isEmpty() || nameStr.length() > 100){
-			errorMessage.put("errorMessage","Invalid query string");
+            errorMessage.put("errorMessage","Invalid query string");
             response.status(400).send(errorMessage);
             return false;
         } else return true;
@@ -207,9 +206,9 @@ public class EmployeeService implements Service {
     private boolean isValidId(ServerResponse response, String idStr){
         Map<String, String> errorMessage = new HashMap<>();        
         if (idStr == null || idStr.isEmpty()){
-			  errorMessage.put("errorMessage","Invalid query string");
-              response.status(400).send(errorMessage);
-              return false;
+            errorMessage.put("errorMessage","Invalid query string");
+            response.status(400).send(errorMessage);
+            return false;
         } else if (this.employees.isIdFound(idStr)){
             return true;
         } else {
