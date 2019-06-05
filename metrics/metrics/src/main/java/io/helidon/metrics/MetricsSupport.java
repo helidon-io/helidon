@@ -37,6 +37,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.server.JsonSupport;
+import io.helidon.webserver.Handler;
 import io.helidon.webserver.RequestHeaders;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -314,11 +315,7 @@ public final class MetricsSupport implements Service {
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Registry app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
         // register the metric registry and factory to be available to all
-        rules.any((req, res) -> {
-            req.context().register(app);
-            req.context().register(rf);
-            req.next();
-        });
+        rules.any(new MetricsContextHandler(app, rf));
 
         rules.anyOf(CollectionsHelper.listOf(Http.Method.GET, Http.Method.OPTIONS),
                     JsonSupport.create());
@@ -490,6 +487,24 @@ public final class MetricsSupport implements Service {
                 this.context = "/" + path;
             }
             return this;
+        }
+    }
+
+    // this class is created for cleaner tracing of web server handlers
+    private static final class MetricsContextHandler implements Handler {
+        private final Registry appRegistry;
+        private final RegistryFactory registryFactory;
+
+        private MetricsContextHandler(Registry appRegistry, RegistryFactory registryFactory) {
+            this.appRegistry = appRegistry;
+            this.registryFactory = registryFactory;
+        }
+
+        @Override
+        public void accept(ServerRequest req, ServerResponse res) {
+            req.context().register(appRegistry);
+            req.context().register(registryFactory);
+            req.next();
         }
     }
 }
