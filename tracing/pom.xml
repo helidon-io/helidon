@@ -36,5 +36,7 @@
         <module>zipkin</module>
         <module>tests</module>
         <module>jaeger</module>
+<!--        <module>webserver</module>-->
+        <module>config</module>
     </modules>
 </project>
