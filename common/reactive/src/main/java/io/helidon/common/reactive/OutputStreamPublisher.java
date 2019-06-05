@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutionException;
 @SuppressWarnings("WeakerAccess")
 public class OutputStreamPublisher extends OutputStream implements Flow.Publisher<ByteBuffer> {
 
+    private static final byte[] FLUSH_BUFFER = new byte[0];
+
     private final SingleSubscriberHolder<ByteBuffer> subscriber = new SingleSubscriberHolder<>();
     private final Object invocationLock = new Object();
 
@@ -70,6 +72,16 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     @Override
     public void close() throws IOException {
         complete();
+    }
+
+    /**
+     * Send empty buffer as an indication of a user-requested flush.
+     *
+     * @throws IOException If an I/O occurs.
+     */
+    @Override
+    public void flush() throws IOException {
+        publish(FLUSH_BUFFER, 0, 0);
     }
 
     private void publish(byte[] buffer, int offset, int length) throws IOException {

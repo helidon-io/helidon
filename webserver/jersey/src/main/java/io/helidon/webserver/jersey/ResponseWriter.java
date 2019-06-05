@@ -18,6 +18,7 @@ package io.helidon.webserver.jersey;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -135,12 +136,9 @@ class ResponseWriter implements ContainerResponseWriter {
             res.headers().put(entry.getKey(), entry.getValue());
         }
 
-        // in case of SSE every response chunk needs to be flushed
-        boolean doFlush = MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType());
-
         res.send(ReactiveStreamsAdapter.publisherToFlow(
                     ReactiveStreamsAdapter.publisherFromFlow(publisher)
-                        .map(byteBuffer -> DataChunk.create(doFlush, byteBuffer))));
+                        .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer))));
 
         return publisher;
     }
@@ -182,5 +180,19 @@ class ResponseWriter implements ContainerResponseWriter {
     public boolean enableResponseBuffering() {
         // Jersey should not try to do the buffering
         return false;
+    }
+
+    /**
+     * Flush buffer if using SSE or if an empty buffer is received for writing. See
+     * {@link OutputStreamPublisher#flush()}. Manual flushing is required to support
+     * {@link javax.ws.rs.core.StreamingOutput} in MP.
+     *
+     * @param context The container response.
+     * @param byteBuffer The byte buffer to write.
+     * @return Outcome of test.
+     */
+    private static boolean doFlush(ContainerResponse context, ByteBuffer byteBuffer) {
+        return MediaType.SERVER_SENT_EVENTS_TYPE.isCompatible(context.getMediaType())
+                || byteBuffer.hasArray() && byteBuffer.array().length == 0;
     }
 }
