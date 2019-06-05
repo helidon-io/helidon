@@ -45,7 +45,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -56,12 +55,11 @@ import io.helidon.security.SecurityLevel;
 import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
+import io.helidon.security.integration.common.ResponseTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.internal.SecurityAuditEvent;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;
@@ -160,7 +158,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     @Override
     protected void processSecurity(ContainerRequestContext request,
                                    FilterContext filterContext,
-                                   Span securitySpan,
+                                   SecurityTracing tracing,
                                    SecurityContext securityContext) {
 
         // if we use pre-matching authentication, skip this step
@@ -168,7 +166,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             /*
              * Authentication
              */
-            authenticate(filterContext, securitySpan, securityContext);
+            authenticate(filterContext, securityContext, tracing.atnTracing());
             LOGGER.finest(() -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
             // authentication failed
             if (filterContext.isShouldFinish()) {
@@ -183,7 +181,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             /*
              * Authorization
              */
-            authorize(filterContext, securitySpan, securityContext);
+            authorize(filterContext, securityContext, tracing.atzTracing());
 
             LOGGER.finest(() -> "Filter completed (after authorization)");
         }
@@ -234,8 +232,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             }
         }
 
-        SpanContext requestSpan = securityContext.tracingSpan();
-        Span span = startNewSpan(requestSpan, "security:response");
+        ResponseTracing responseTracing = SecurityTracing.get().responseTracing();
 
         try {
             if (methodSecurity.isAudited()) {
@@ -274,11 +271,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                         .subscribe(new SubscriberOutputStream(originalStream, outputStreamPublisher::signalCloseComplete));
             }
         } finally {
-            finishSpan(span, CollectionsHelper.listOf());
-            if ((Boolean) requestContext.getProperty(SecurityPreMatchingFilter.PROP_CLOSE_PARENT_SPAN)) {
-                finishSpan((Span) requestContext.getProperty(SecurityPreMatchingFilter.PROP_PARENT_SPAN),
-                           CollectionsHelper.listOf());
-            }
+            responseTracing.finish();
         }
     }
 
@@ -302,18 +295,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
         context.setMethodSecurity(getMethodSecurity(definitionMethod, uriInfo));
         context.setResourceName(definitionMethod.getDeclaringClass().getSimpleName());
-        context.setMethod(requestContext.getMethod());
-        context.setHeaders(HttpUtil.toSimpleMap(requestContext.getHeaders()));
-        context.setTargetUri(requestContext.getUriInfo().getRequestUri());
-        context.setResourcePath(context.getTargetUri().getPath());
 
-        context.setJerseyRequest((ContainerRequest) requestContext);
-
-        // now extract headers
-        featureConfig().getQueryParamHandlers()
-                .forEach(handler -> handler.extract(uriInfo, context.getHeaders()));
-
-        return context;
+        return configureContext(context, requestContext, uriInfo);
     }
 
     @Override

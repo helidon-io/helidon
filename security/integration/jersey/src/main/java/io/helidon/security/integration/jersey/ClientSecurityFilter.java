@@ -16,9 +16,9 @@
 
 package io.helidon.security.integration.jersey;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,13 +29,16 @@ import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import io.helidon.common.OptionalHelper;
+import io.helidon.common.context.Contexts;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
-
-import io.opentracing.Span;
+import io.helidon.security.SecurityResponse;
+import io.helidon.security.integration.common.OutboundTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 
 /**
  * JAX-RS client filter propagating current context principal.
@@ -56,7 +59,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
     }
 
     @Override
-    public void filter(ClientRequestContext requestContext) throws IOException {
+    public void filter(ClientRequestContext requestContext) {
         try {
             doFilter(requestContext);
         } catch (Throwable e) {
@@ -66,34 +69,32 @@ public class ClientSecurityFilter implements ClientRequestFilter {
         }
     }
 
-    private void doFilter(ClientRequestContext requestContext) throws IOException {
+    private void doFilter(ClientRequestContext requestContext) {
         //Try to have a look for @AuthenticatedClient annotation on client (if constructed as such) and use explicit provider
         // from there
 
         // first try to find the context on request configuration
-        SecurityContext context = resolveProperty(requestContext, ClientSecurityFeature.PROPERTY_CONTEXT);
+        OptionalHelper.from(findContext(requestContext))
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)))
+                .ifPresentOrElse(securityContext -> outboundSecurity(requestContext, securityContext),
+                                 () -> LOGGER.finest("Security not propagated, as security context is not available "
+                                                             + "neither in context, nor as the property \""
+                                                             + ClientSecurityFeature.PROPERTY_CONTEXT + "\" on request"));
+    }
 
-        if (null == context) {
-            LOGGER.finest("Security not propagated, as the property \""
-                                  + ClientSecurityFeature.PROPERTY_CONTEXT + "\" is not defined on request");
-            return;
-        }
-
-        Span span = context.tracer()
-                .buildSpan("security:outbound")
-                .asChildOf(context.tracingSpan())
-                .start();
+    private void outboundSecurity(ClientRequestContext requestContext, SecurityContext securityContext) {
+        OutboundTracing tracing = SecurityTracing.get().outboundTracing();
 
         String explicitProvider = (String) requestContext.getProperty(ClientSecurityFeature.PROPERTY_PROVIDER);
 
         try {
-            SecurityEnvironment.Builder outboundEnv = context.env().derive();
+            SecurityEnvironment.Builder outboundEnv = securityContext.env().derive();
             outboundEnv.method(requestContext.getMethod())
                     .path(requestContext.getUri().getPath())
                     .targetUri(requestContext.getUri())
-                    .headers(HttpUtil.toSimpleMap(requestContext.getStringHeaders()));
+                    .headers(requestContext.getStringHeaders());
 
-            EndpointConfig.Builder outboundEp = context.endpointConfig().derive();
+            EndpointConfig.Builder outboundEp = securityContext.endpointConfig().derive();
 
             for (String name : requestContext.getConfiguration().getPropertyNames()) {
                 outboundEp.addAtribute(name, requestContext.getConfiguration().getProperty(name));
@@ -103,20 +104,23 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                 outboundEp.addAtribute(name, requestContext.getProperty(name));
             }
 
-            OutboundSecurityClientBuilder clientBuilder = context.outboundClientBuilder()
+            OutboundSecurityClientBuilder clientBuilder = securityContext.outboundClientBuilder()
                     .outboundEnvironment(outboundEnv)
+                    .tracingSpan(tracing.findParent().orElse(null))
+                    .tracingSpan(tracing.findParentSpan().orElse(null))
                     .outboundEndpointConfig(outboundEp)
                     .explicitProvider(explicitProvider);
 
             OutboundSecurityResponse providerResponse = clientBuilder.buildAndGet();
-
-            switch (providerResponse.status()) {
+            SecurityResponse.SecurityStatus status = providerResponse.status();
+            tracing.logStatus(status);
+            switch (status) {
             case FAILURE:
             case FAILURE_FINISH:
-                HttpUtil.traceError(span,
-                                    providerResponse.throwable().orElse(null),
-                                    providerResponse.description()
-                                            .orElse(providerResponse.status().toString()));
+                OptionalHelper.from(providerResponse.throwable())
+                        .ifPresentOrElse(tracing::error,
+                                         () -> tracing.error(providerResponse.description().orElse("Failed")));
+
                 break;
             case ABSTAIN:
             case SUCCESS:
@@ -125,7 +129,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                 break;
             }
             // TODO check response status - maybe entity was updated?
-            // see MIC-6785
+            // see MIC-6785;
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
@@ -141,24 +145,18 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                     hdrs.add(entry.getKey(), value);
                 }
             }
-            span.finish();
-        } catch (SecurityException e) {
-            HttpUtil.traceError(span, e, null);
-
-            throw new IOException("Security principal propagation error!", e);
+            tracing.finish();
         } catch (Exception e) {
-            HttpUtil.traceError(span, e, null);
-
+            tracing.error(e);
             throw e;
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T resolveProperty(ClientRequestContext requestContext, final String property) {
-        Object value = requestContext.getProperty(property);
+    private Optional<SecurityContext> findContext(ClientRequestContext requestContext) {
+        Object value = requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
         if (null == value) {
-            value = requestContext.getConfiguration().getProperty(property);
+            value = requestContext.getConfiguration().getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
         }
-        return (T) value;
+        return Optional.ofNullable((SecurityContext) value);
     }
 }

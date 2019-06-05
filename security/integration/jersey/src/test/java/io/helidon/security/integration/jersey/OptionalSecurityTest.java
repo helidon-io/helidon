@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ class OptionalSecurityTest {
         /*
          * The actual tested method
          */
-        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
+        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, null);
 
         assertThat(filterContext.isShouldFinish(), is(false));
         assertThat(secuContext.user(), is(Optional.empty()));
@@ -144,7 +144,7 @@ class OptionalSecurityTest {
         /*
          * The actual tested method
          */
-        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
+        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, null);
 
         assertThat(filterContext.isShouldFinish(), is(true));
         assertThat(secuContext.user(), is(Optional.empty()));
