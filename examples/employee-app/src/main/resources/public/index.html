@@ -17,18 +17,18 @@ limitations under the License.
 <meta charset="utf-8" />
 <head>
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"
-	integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
-	crossorigin="anonymous"></script>
+    integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+    crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"
-	integrity="sha256-xNjb53/rY+WmG+4L6tTl9m6PpqknWZvRt0rO1SRnJzw="
-	crossorigin="anonymous"></script>
+    integrity="sha256-xNjb53/rY+WmG+4L6tTl9m6PpqknWZvRt0rO1SRnJzw="
+    crossorigin="anonymous"></script>
 <link
-	href="https://code.jquery.com/ui/1.11.4/themes/cupertino/jquery-ui.css"
-	rel="stylesheet">
+    href="https://code.jquery.com/ui/1.11.4/themes/cupertino/jquery-ui.css"
+    rel="stylesheet">
 <link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
-	crossorigin="anonymous">
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+    crossorigin="anonymous">
 <script src="EmployeeController.js"></script>
 
 
@@ -226,125 +226,146 @@ li a:hover {
 </head>
 
 <body onload="loadEmployees()">
-	<h1>Cloud Employee App</h1>
-	<ul>
-		<li><a href="#" onclick="loadEmployees()">Home</a></li>
-		<li><a href="#" onclick="showEmployeeForm()">New Employee</a></li>
-	</ul>
-	<nav>
-		<div class="click-element animate-show" id="home">
+    <h1>Cloud Employee App</h1>
+    <ul>
+        <li><a href="#" onclick="loadEmployees()">Home</a></li>
+        <li><a href="#" onclick="showEmployeeForm()">New
+                Employee</a></li>
+    </ul>
+    <nav>
+        <div class="click-element animate-show" id="home">
 
-			<h2>People</h2>
-			<br>
-			<form>
+            <h2>People</h2>
+            <br>
+            <form>
 
-				<div class="col-xs-3">
-					<input class="form-control " type="text" id="searchText">
-				</div>
-				<div class="col-xs-2">
-					<select id="searchType" class="form-control">
-						<option value="lastname">By last name</option>
-						<option value="department">By department</option>
-						<option value="title">By title</option>
-					</select>
-				</div>
-				<div class="col-xs-1">
-					<button class="btn btn-success" id="searchButton" type="button">
-						<span class="glyphicon glyphicon-search"></span> Search
-					</button>
-				</div>
-			</form>
+                <div class="col-xs-3">
+                    <input class="form-control " type="text"
+                        id="searchText">
+                </div>
+                <div class="col-xs-2">
+                    <select id="searchType" class="form-control">
+                        <option value="lastname">By last name</option>
+                        <option value="department">By
+                            department</option>
+                        <option value="title">By title</option>
+                    </select>
+                </div>
+                <div class="col-xs-1">
+                    <button class="btn btn-success" id="searchButton"
+                        type="button">
+                        <span class="glyphicon glyphicon-search"></span>
+                        Search
+                    </button>
+                </div>
+            </form>
 
-		</div>
-	</nav>
-	<div id="people" class="container">LOADING...</div>
-	<div id="notFound" class="alert alert-info col-sm-7"></div>
-	<div id="detail"></div>
-	<br><br>
-	<div class="col-sm-5 col-md-offset-2" id="employeeForm"
-		style="display: none">
-		<div class="panel panel-info " class="click-element animate-show">
-			<div class="panel-heading">
-				<h3 class="panel-title">
-					<div style="padding: 10px">
-						<span id="formTitle">Add New Employee</span>
-						<button class="btn btn-primary" id="deleteButton" type="button"
-							style="float: right; position: relative; bottom: 9px;">
-							<span class="glyphicon glyphicon-trash"></span> Delete
-						</button>
-					</div>
-				</h3>
-			</div>
-			<br>
-			<br>
-			<div class="panel-body">
-				<form class="form-horizontal" name="form" novalidate>
-					<input type="text" id="id" value="" style="display: none;">
-					<div class="photos">
-						<img src="nopic.png" style="width: 120px; height: 120px"></img>
-					</div>
+        </div>
+    </nav>
+    <div id="people" class="container">LOADING...</div>
+    <div id="notFound" class="alert alert-info col-sm-7"></div>
+    <div id="detail"></div>
+    <br>
+    <br>
+    <div class="col-sm-5 col-md-offset-2" id="employeeForm"
+        style="display: none">
+        <div class="panel panel-info "
+            class="click-element animate-show">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <div style="padding: 10px">
+                        <span id="formTitle">Add New Employee</span>
+                        <button class="btn btn-primary"
+                            id="deleteButton" type="button"
+                            style="float: right; position: relative; bottom: 9px;">
+                            <span class="glyphicon glyphicon-trash"></span>
+                            Delete
+                        </button>
+                    </div>
+                </h3>
+            </div>
+            
+            <div class="panel-body">
+                <form class="form-horizontal" name="form" novalidate>
+                    <input type="text" id="id" value=""
+                        style="display: none;">
+                    <div class="photos">
+                        <img src="nopic.png"
+                            style="width: 120px; height: 120px"></img>
+                    </div>
 
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="firstName">First
-							Name:</label>
-						<div class="col-xs-5">
-							<input type="text" id="firstName" name="firstName" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="lastName">Last
-							Name:</label>
-						<div class="col-xs-5">
-							<input type="text" id="lastName" name="lastName" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="email">Email:</label>
-						<div class="col-xs-5">
-							<input type="text" id="email" name="email" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="phone">Phone:</label>
-						<div class="col-xs-5">
-							<input type="text" id="phone" name="phone" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="birthDate">Birthdate:</label>
-						<div class="col-xs-5">
-							<input type="text" id="birthDate" name="birthDate" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="title">Title:</label>
-						<div class="col-xs-5">
-							<input type="text" id="title" name="title" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="control-label col-xs-3" for="department">Department:</label>
-						<div class="col-xs-5">
-							<input type="text" id="department" name="department" value=""
-								class="form-control" required>
-						</div>
-					</div>
-					<br> <br>
-					<div style="text-align: center;">
-						<input type="button" tabindex="-1" class="btn btn-default"
-							value="Cancel" onclick="loadEmployees()"> <input
-							type="button" tabindex="-1" class="btn btn-success" value="Save"
-							onclick="save()">
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="firstName">First Name:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="firstName"
+                                name="firstName" value=""
+                                class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="lastName">Last Name:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="lastName"
+                                name="lastName" value=""
+                                class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="email">Email:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="email" name="email"
+                                value="" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="phone">Phone:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="phone" name="phone"
+                                value="" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="birthDate">Birthdate:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="birthDate"
+                                name="birthDate" value=""
+                                class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="title">Title:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="title" name="title"
+                                value="" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-xs-3"
+                            for="department">Department:</label>
+                        <div class="col-xs-5">
+                            <input type="text" id="department"
+                                name="department" value=""
+                                class="form-control" required>
+                        </div>
+                    </div>
+                    <br> <br>
+                    <div style="text-align: center;">
+                        <input type="button" tabindex="-1"
+                            class="btn btn-default" value="Cancel"
+                            onclick="loadEmployees()"> <input
+                            type="button" tabindex="-1"
+                            class="btn btn-success" value="Save"
+                            onclick="save()">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

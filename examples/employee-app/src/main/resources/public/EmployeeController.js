@@ -15,189 +15,188 @@
  */
 var server = "/";
 
+
 $(function() {
-	$("#searchButton").button().on(
-			"click",
-			function() {
-				var searchTerm = $("#searchText").val().trim();
-				if (searchTerm != "") {
-					$("#people").show();
-					$("#people").html("SEARCHING...");
-					$.ajax(
-							{
-								url : server + "employees/"
-										+ $("#searchType").val() + "/"
-										+ encodeURIComponent(searchTerm),
-								method : "GET"
-							}).done(
-							function(data) {
-								$("#people").empty();
-								$("#people").hide();
-								if (data.length == 0) {
-									$("#people").html("");
-									$("#notFound").show();
-									$("#notFound").text("No people found matching your search criteria");
-								} else {
-									data.forEach(function(employee) {
-										var item = $(peopleTemplate
-												.render(employee));
-										item.on("click", function() {
-											var detailItem = $(detailTemplate
-													.render(employee));
-											$("#home").hide();
-											$("#detail").empty();
-											$("#notFound").hide();
-											$("#detail").append(detailItem);											
-											$("#people").hide(
-													400,
-													"swing",
-													function() {
-														$("#detail").show(400,
-																"swing")
-													});
-										});
-										$("#people").append(item);
-									});
-								}
-								$("#people").show(400, "swing");
-							});
-				} else {
-					loadEmployees();
-				}
-			});
-	$("#searchText").on("keyup", function(e) {
-		if (e.keyCode == 13) {
-			$("#searchButton").trigger("click");
-		}
-	});
+    $("#searchButton").button().on(
+        "click",
+        function() {
+            var searchTerm = $("#searchText").val().trim();
+            if (searchTerm != "") {
+                $("#people").show();
+                $("#people").html("SEARCHING...");
+                $.ajax({
+                    url: server + "employees/" +
+                        $("#searchType").val() + "/" +
+                        encodeURIComponent(searchTerm),
+                    method: "GET"
+                }).done(
+                    function(data) {
+                        $("#people").empty();
+                        $("#people").hide();
+                        if (data.length == 0) {
+                            $("#people").html("");
+                            $("#notFound").show();
+                            $("#notFound").html("No people found matching your search criteria");
+                        } else {
+                            $("#notFound").hide();
+                            data.forEach(function(employee) {
+                                var item = $(peopleTemplate
+                                    .render(employee));
+                                item.on("click", function() {
+                                    var detailItem = $(detailTemplate
+                                        .render(employee));
+                                    $("#home").hide();
+                                    $("#detail").empty();                                   
+                                    $("#notFound").hide();
+                                    $("#detail").append(detailItem);
+                                    $("#people").hide(
+                                        400,
+                                        "swing",
+                                        function() {
+                                            $("#detail").show(400,
+                                                "swing")
+                                        });
+                                });
+                                $("#people").append(item);
+                            });
+                        }
+                        $("#people").show(400, "swing");
+                    });
+            } else {
+                loadEmployees();
+            }
+        });
+    $("#searchText").on("keyup", function(e) {
+        if (e.keyCode == 13) {
+            $("#searchButton").trigger("click");
+        }
+    });
 });
 
 function showEmployeeForm() {
-	$("#notFound").hide();
-	$("#editForm").hide();
-	$("#deleteButton").hide();
-	$("#employeeForm").show();
-	$("#formTitle").text("Add Employee");
-	$("#home").hide();
-	$("#people").hide();
+    $("#notFound").hide();
+    $("#editForm").hide();
+    $("#deleteButton").hide();
+    $("#employeeForm").show();
+    $("#formTitle").text("Add Employee");
+    $("#home").hide();
+    $("#people").hide();
 }
 
 function loadEmployees() {
-	$("#searchText").val("");
-	$("#employeeForm").hide();
-	$("#editForm").hide();
-	$("#home").show();
-	$("#people").show();
-	$("#people").html("LOADING...");
-	$.ajax({
-		dataType : "json",
-		url : server + "employees",
-		method : "GET"
-	}).done(function(data) {
-		$("#notFound").hide();
-		$("#people").hide();
-		$("#people").empty();
-		data.forEach(function(employee) {
-			var item = $(peopleTemplate.render(employee));
-			item.on("click", function() {
-				var detailItem = $(detailTemplate.render(employee));
-				$("#detail").empty();
-				$("#home").hide();
-				$("#people").hide(400, "swing", function() {
-					$("#detail").show(400, "swing")
-				});
-			});
-			$("#people").append(item);
-		})
-		$("#people").show(400, "swing");
-	});
+    $("#notFound").hide();
+    $("#searchText").val("");
+    $("#employeeForm").hide();
+    $("#editForm").hide();
+    $("#home").show();
+    $("#people").show();
+    $("#people").html("LOADING...");
+    $.ajax({
+        dataType: "json",
+        url: server + "employees",
+        method: "GET"
+    }).done(function(data) {
+        $("#people").hide();
+        $("#people").empty();
+        data.forEach(function(employee) {
+            var item = $(peopleTemplate.render(employee));
+            item.on("click", function() {
+                var detailItem = $(detailTemplate.render(employee));
+                $("#detail").empty();
+                $("#home").hide();
+                $("#detail").append(detailItem);
+                $("#people").hide(400, "swing", function() {
+                    $("#detail").show(400, "swing")
+                });
+            });
+            $("#people").append(item);
+        })
+        $("#people").show(400, "swing");
+    });
 }
 
 function save() {
-	var employee = {
-		id : "",
-		firstName : $("#firstName").val(),
-		lastName : $("#lastName").val(),
-		email : $("#email").val(),
-		phone : $("#phone").val(),
-		birthDate : $("#birthDate").val(),
-		title : $("#title").val(),
-		department : $("#department").val()
-	};
-	$.ajax({
-		url : server + "employees",
-		method : "POST",
-		data : JSON.stringify(employee)
-	}).done(function(data) {
-		$("#detail").hide();
-		$("#firstName").val("");
-		$("#lastName").val("");
-		$("#email").val("");
-		$("#phone").val("");
-		$("#birthDate").val("");
-		$("#title").val("");
-		$("#department").val("");
-		loadEmployees();
-	});
-	
+    var employee = {
+        id: "",
+        firstName: $("#firstName").val(),
+        lastName: $("#lastName").val(),
+        email: $("#email").val(),
+        phone: $("#phone").val(),
+        birthDate: $("#birthDate").val(),
+        title: $("#title").val(),
+        department: $("#department").val()
+    };
+    $.ajax({
+        url: server + "employees",
+        method: "POST",
+        data: JSON.stringify(employee)
+    }).done(function(data) {
+        $("#detail").hide();
+        $("#firstName").val("");
+        $("#lastName").val("");
+        $("#email").val("");
+        $("#phone").val("");
+        $("#birthDate").val("");
+        $("#title").val("");
+        $("#department").val("");
+        loadEmployees();
+    });
+
 }
 
-function updateEmployee(){
-	var employee = {
-			id : $("#editId").val(),
-			firstName : $("#editFirstName").val(),
-			lastName : $("#editLastName").val(),
-			email : $("#editEmail").val(),
-			phone : $("#editPhone").val(),
-			birthDate : $("#editBirthDate").val(),
-			title : $("#editTitle").val(),
-			department : $("#editDepartment").val()
-		};
-		$("#detail").html("UPDATING...");
-		$.ajax({
-			url : server + "employees/" + employee.id,
-			method : "PUT",
-			data : JSON.stringify(employee)
-		}).done(function(data) {
-			$("#detail").hide();
-			loadEmployees();
-		});
+function updateEmployee() {
+    var employee = {
+        id: $("#editId").val(),
+        firstName: $("#editFirstName").val(),
+        lastName: $("#editLastName").val(),
+        email: $("#editEmail").val(),
+        phone: $("#editPhone").val(),
+        birthDate: $("#editBirthDate").val(),
+        title: $("#editTitle").val(),
+        department: $("#editDepartment").val()
+    };
+    $("#detail").html("UPDATING...");
+    $.ajax({
+        url: server + "employees/" + employee.id,
+        method: "PUT",
+        data: JSON.stringify(employee)
+    }).done(function(data) {
+        $("#detail").hide();
+        loadEmployees();
+    });
 }
 
 function deleteEmployee() {
-	var employee = {
-		firstName : $("#editFirstName").val(),
-		lastName : $("#editLastName").val(),
-		id : $("#editId").val()
-	};
-	$('<div></div>').dialog(
-			{
-				modal : true,
-				title : "Confirm Delete",
-				open : function() {
-					var markup = 'Are you sure you want to delete '
-							+ employee.firstName + ' ' + employee.lastName
-							+ " employee?";
-					$(this).html(markup);
-				},
-				buttons : {
-					Ok : function() {
-						$("#detail").html("DELETING...");
-						$(this).dialog("close");
-						$.ajax({
-							url : server + "employees/" + employee.id,
-							method : "DELETE"
-						}).done(function(data) {
-							$("#detail").hide();
-							loadEmployees();
-						});
-					},
-					Cancel : function() {
-						$(this).dialog("close");
-					}
-				}
-			});
+    var employee = {
+        firstName: $("#editFirstName").val(),
+        lastName: $("#editLastName").val(),
+        id: $("#editId").val()
+    };
+    $('<div></div>').dialog({
+        modal: true,
+        title: "Confirm Delete",
+        open: function() {
+            var markup = 'Are you sure you want to delete ' +
+                employee.firstName + ' ' + employee.lastName +
+                " employee?";
+            $(this).html(markup);
+        },
+        buttons: {
+            Ok: function() {
+                $("#detail").html("DELETING...");
+                $(this).dialog("close");
+                $.ajax({
+                    url: server + "employees/" + employee.id,
+                    method: "DELETE"
+                }).done(function(data) {
+                    $("#detail").hide();
+                    loadEmployees();
+                });
+            },
+            Cancel: function() {
+                $(this).dialog("close");
+            }
+        }
+    });
 
 }
-
-

@@ -20,79 +20,95 @@ import java.util.List;
 
 import io.helidon.config.Config;
 
- /* Interface for Data Access Objects */
+/**
+ * Interface for Data Access Objects
+ *
+ */
 public interface EmployeeRepository {
 
-	public static EmployeeRepository create(String driverType, Config config) {
+    public static EmployeeRepository create(String driverType, Config config) {
         switch (driverType) {
-            case "Array":
-                return new EmployeeRepositoryImpl();
-            case "Oracle":
-                return new EmployeeRepositoryImplDB(config);
-            default:
-                // Array is default
-                return new EmployeeRepositoryImpl();
+        case "Array":
+            return new EmployeeRepositoryImpl();
+        case "Oracle":
+            return new EmployeeRepositoryImplDB(config);
+        default:
+            // Array is default
+            return new EmployeeRepositoryImpl();
         }
 
     }
+
     /**
-     * Returns the list of the employees 
+     * Returns the list of the employees
+     * 
      * @return The collection of all the employee objects
      */
     public List<Employee> getAll();
 
     /**
      * Returns the list of the employees that match with the specified lastName
+     * 
      * @param lastName
-     * @return The collection of the employee objects that match with the specified lastName
+     * @return The collection of the employee objects that match with the specified
+     *         lastName
      */
     public List<Employee> getByLastName(String lastName);
 
     /**
      * Returns the list of the employees that match with the specified title
+     * 
      * @param title
-     * @return The collection of the employee objects that match with the specified title
+     * @return The collection of the employee objects that match with the specified
+     *         title
      */
     public List<Employee> getByTitle(String title);
 
     /**
      * Returns the list of the employees that match with the specified department
+     * 
      * @param department
-     * @return The collection of the employee objects that match with the specified department
+     * @return The collection of the employee objects that match with the specified
+     *         department
      */
     public List<Employee> getByDepartment(String department);
 
     /**
      * Add a new employee
+     * 
      * @param employee
      * @return the employee object including the ID generated
      */
     public Employee save(Employee employee); // Add new employee
-    
+
     /**
      * Update an existing employee
+     * 
      * @param updatedEmployee The employee object with the values to update
-     * @param id The employee ID 
+     * @param id              The employee ID
      * @return
      */
     public Employee update(Employee updatedEmployee, String id);
 
     /**
      * Delete an employee by ID
-     * @param id The employee ID 
+     * 
+     * @param id The employee ID
      */
     public void deleteById(String id);
 
     /**
      * Get an employee by ID
-     * @param id The employee ID 
+     * 
+     * @param id The employee ID
      * @return The employee object if the employee is found
      */
     public Employee getById(String id);
-    
+
     /**
      * Search an employee by ID
-     * @param id The employee ID 
+     * 
+     * @param id The employee ID
      * @return true if the employee is found or false if no match is found.
      */
     public boolean isIdFound(String id);

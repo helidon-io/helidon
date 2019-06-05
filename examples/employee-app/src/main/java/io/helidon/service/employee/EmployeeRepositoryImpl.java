@@ -16,37 +16,43 @@
 package io.helidon.service.employee;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.UUID;
-
-/* EmployeeRepositoryImpl
-    Note: The strings id, name, and other search strings are validated before 
-    being passed to the methods in this class.
-*/
-
-public class EmployeeRepositoryImpl implements EmployeeRepository {
+/**
+ * Implementation of the {@link EmployeeRepository}. This implementation uses a
+ * mock database written with in-memory ArrayList classes.
+ * 
+ * The strings id, name, and other search strings are validated before being
+ * passed to the methods in this class.
+ *
+ */
+public final class EmployeeRepositoryImpl implements EmployeeRepository {
 
     private final CopyOnWriteArrayList<Employee> eList = new CopyOnWriteArrayList<Employee>();
-    
+
+    /**
+     * To load the initial data, parses the content of <code>employee.json</code>
+     * file located in the <code>resources</code> directory to a list of Employee
+     * objects.
+     */
     public EmployeeRepositoryImpl() {
-    	JsonbConfig config = new JsonbConfig().withFormatting(Boolean.TRUE);
+        JsonbConfig config = new JsonbConfig().withFormatting(Boolean.TRUE);
 
-    	Jsonb jsonb = JsonbBuilder.create(config);
+        Jsonb jsonb = JsonbBuilder.create(config);
 
-		eList.addAll(jsonb.fromJson(EmployeeRepositoryImpl.class.getResourceAsStream("/employees.json"), new CopyOnWriteArrayList<Employee>(){}.getClass().getGenericSuperclass()));
-	}
-    
+        eList.addAll(jsonb.fromJson(EmployeeRepositoryImpl.class.getResourceAsStream("/employees.json"),
+                new CopyOnWriteArrayList<Employee>() {
+                }.getClass().getGenericSuperclass()));
+    }
+
     @Override
     public List<Employee> getByLastName(String name) {
-        List<Employee> matchList
-            = eList.stream()
-                .filter((e) -> (e.getLastName().contains(name)))
+        List<Employee> matchList = eList.stream().filter((e) -> (e.getLastName().contains(name)))
                 .collect(Collectors.toList());
 
         return matchList;
@@ -54,9 +60,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
 
     @Override
     public List<Employee> getByTitle(String title) {
-        List<Employee> matchList
-            = eList.stream()
-                .filter((e) -> (e.getTitle().contains(title)))
+        List<Employee> matchList = eList.stream().filter((e) -> (e.getTitle().contains(title)))
                 .collect(Collectors.toList());
 
         return matchList;
@@ -64,9 +68,7 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
 
     @Override
     public List<Employee> getByDepartment(String department) {
-        List<Employee> matchList
-            = eList.stream()
-                .filter((e) -> (e.getDepartment().contains(department)))
+        List<Employee> matchList = eList.stream().filter((e) -> (e.getDepartment().contains(department)))
                 .collect(Collectors.toList());
 
         return matchList;
@@ -76,67 +78,43 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     public List<Employee> getAll() {
         return eList;
     }
-    
+
     @Override
     public Employee getById(String id) {
         Employee match;
-
-        match = eList.stream()
-            .filter(e -> e.getId().equals(id))
-            .findFirst().get();
-
+        match = eList.stream().filter(e -> e.getId().equals(id)).findFirst().get();
         return match;
     }
 
     @Override
     public Employee save(Employee employee) {
-        
-        /* Using a UUID for ID when auto generated. Test data starts at 100 */       
-        Employee nextEmployee
-            = Employee.of(null, employee.getFirstName(), employee.getLastName(),
-                employee.getEmail(), employee.getPhone(),
-                employee.getBirthDate(), employee.getTitle(), employee.getDepartment());
-
+        Employee nextEmployee = Employee.of(null, employee.getFirstName(), employee.getLastName(), employee.getEmail(),
+                employee.getPhone(), employee.getBirthDate(), employee.getTitle(), employee.getDepartment());
         eList.add(nextEmployee);
         return nextEmployee;
     }
 
     @Override
     public Employee update(Employee updatedEmployee, String id) {
-    	deleteById(id);
-    	Employee e = Employee.of(id, 
-    			updatedEmployee.getFirstName(), 
-    			updatedEmployee.getLastName(), 
-    			updatedEmployee.getEmail(), 
-    			updatedEmployee.getPhone(), 
-    			updatedEmployee.getBirthDate(),
-    			updatedEmployee.getTitle(), 
-    			updatedEmployee.getDepartment());
-    	eList.add(e);
-        return e;       
+        deleteById(id);
+        Employee e = Employee.of(id, updatedEmployee.getFirstName(), updatedEmployee.getLastName(),
+                updatedEmployee.getEmail(), updatedEmployee.getPhone(), updatedEmployee.getBirthDate(),
+                updatedEmployee.getTitle(), updatedEmployee.getDepartment());
+        eList.add(e);
+        return e;
     }
 
     @Override
     public void deleteById(String id) {
         int matchIndex;
-
-        matchIndex = eList.stream()
-            .filter(e -> e.getId().equals(id))
-            .findFirst()
-            .map(e -> eList.indexOf(e))
-            .get();
-
-            eList.remove(matchIndex);
+        matchIndex = eList.stream().filter(e -> e.getId().equals(id)).findFirst().map(e -> eList.indexOf(e)).get();
+        eList.remove(matchIndex);
     }
-    
+
     @Override
     public boolean isIdFound(String id) {
         Employee match = null;
-
-        match = eList.stream()
-            .filter(e -> e.getId().equals(id))
-            .findFirst().orElse(match);
-
+        match = eList.stream().filter(e -> e.getId().equals(id)).findFirst().orElse(match);
         return (match != null);
     }
 

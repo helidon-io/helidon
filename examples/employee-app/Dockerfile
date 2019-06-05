@@ -22,8 +22,8 @@ WORKDIR /helidon
 # Create a first layer to cache the "Maven World" in the local repository.
 # Incremental docker builds will always resume after that, unless you update
 # the pom
-ADD pom.xml .
 ADD settings.xml /root/.m2/settings.xml
+ADD pom.xml .
 RUN mvn package -DskipTests
 
 # Do the Maven build!

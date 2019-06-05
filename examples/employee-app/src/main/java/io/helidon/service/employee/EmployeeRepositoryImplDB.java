@@ -25,25 +25,35 @@ import java.util.List;
 import io.helidon.config.Config;
 import oracle.jdbc.pool.OracleDataSource;
 
-public class EmployeeRepositoryImplDB implements EmployeeRepository {
+/**
+ * Implementation of the {@link EmployeeRepository}. This implementation uses an
+ * Oracle database to persist the Employee objects.
+ *
+ */
+public final class EmployeeRepositoryImplDB implements EmployeeRepository {
 
     private Connection conn;
 
+    /**
+     * Creates the database connection using the parameters specified in the
+     * <code>application.yaml</code> file located in the <code>resources</code> directory.
+     * 
+     * @param config Represents the application configuration.
+     */
     public EmployeeRepositoryImplDB(Config config) {
         String url = "jdbc:oracle:thin:@";
         String driver = "oracle.jdbc.driver.OracleDriver";
-        
-    	String dbUserName = config.get("app.user").asString().orElse("sys as SYSDBA");
-        String dbUserPassword =  config.get("app.password").asString().orElse("password");
+
+        String dbUserName = config.get("app.user").asString().orElse("sys as SYSDBA");
+        String dbUserPassword = config.get("app.password").asString().orElse("password");
         String dbHostURL = config.get("app.hosturl").asString().orElse("localhost:1521/xe");
-		
+
         try {
-            // Note: 5/20 Added .getDecl because of deprecation in Java 9
             Class.forName(driver).getDeclaredConstructor().newInstance();
         } catch (Exception sqle) {
             sqle.getMessage();
         }
-        
+
         try {
             OracleDataSource ods = new OracleDataSource();
             ods.setURL(url + dbHostURL);
@@ -54,7 +64,8 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
             e.printStackTrace();
             e.getMessage();
         }
-	}
+    }
+
     @Override
     public List<Employee> getAll() {
         String queryStr = "SELECT * FROM EMPLOYEE";
@@ -86,10 +97,10 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
     @Override
     public Employee save(Employee employee) {
         String insertTableSQL = "INSERT INTO EMPLOYEE "
-            + "(ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) "
-            + "VALUES(EMPLOYEE_SEQ.NEXTVAL,?,?,?,?,?,?,?)";
+                + "(ID, FIRSTNAME, LASTNAME, EMAIL, PHONE, BIRTHDATE, TITLE, DEPARTMENT) "
+                + "VALUES(EMPLOYEE_SEQ.NEXTVAL,?,?,?,?,?,?,?)";
 
-        try ( PreparedStatement preparedStatement = this.conn.prepareStatement(insertTableSQL)) {
+        try (PreparedStatement preparedStatement = this.conn.prepareStatement(insertTableSQL)) {
 
             preparedStatement.setString(1, employee.getFirstName());
             preparedStatement.setString(2, employee.getLastName());
@@ -113,7 +124,7 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
     @Override
     public void deleteById(String id) {
         String deleteRowSQL = "DELETE FROM EMPLOYEE WHERE ID=?";
-        try ( PreparedStatement preparedStatement = this.conn.prepareStatement(deleteRowSQL)) {
+        try (PreparedStatement preparedStatement = this.conn.prepareStatement(deleteRowSQL)) {
             preparedStatement.setInt(1, Integer.parseInt(id));
             preparedStatement.executeUpdate();
 
@@ -138,10 +149,16 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
 
     }
 
-    public List<Employee> query(String sqlQueryStr, Object value) {
+    /**
+     * Execute the <code>select</code> query specified in the parameters. 
+     * @param sqlQueryStr Contains the <code>select</code> query
+     * @param value Contains the value of the variable of the <code>select</code>.
+     * @return
+     */
+    private List<Employee> query(String sqlQueryStr, Object value) {
 
         List<Employee> resultList = new ArrayList<>();
-        try ( PreparedStatement stmt = conn.prepareStatement(sqlQueryStr)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sqlQueryStr)) {
             if (value != null) {
                 if (value instanceof String) {
                     stmt.setString(1, value + "%");
@@ -152,8 +169,8 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 resultList.add(Employee.of(rs.getString("ID"), rs.getString("FIRSTNAME"), rs.getString("LASTNAME"),
-                    rs.getString("EMAIL"), rs.getString("PHONE"), rs.getString("BIRTHDATE"), rs.getString("TITLE"),
-                    rs.getString("DEPARTMENT")));
+                        rs.getString("EMAIL"), rs.getString("PHONE"), rs.getString("BIRTHDATE"), rs.getString("TITLE"),
+                        rs.getString("DEPARTMENT")));
             }
         } catch (SQLException e) {
             System.out.println("SQL Query Error: " + e.getMessage());
@@ -166,8 +183,7 @@ public class EmployeeRepositoryImplDB implements EmployeeRepository {
     @Override
     public Employee update(Employee updatedEmployee, String id) {
         String updateTableSQL = "UPDATE EMPLOYEE SET FIRSTNAME=?, LASTNAME=?, EMAIL=?, PHONE=?, BIRTHDATE=?, TITLE=?, DEPARTMENT=?  WHERE ID=?";
-        try ( PreparedStatement preparedStatement = this.conn
-            .prepareStatement(updateTableSQL);) {
+        try (PreparedStatement preparedStatement = this.conn.prepareStatement(updateTableSQL);) {
             preparedStatement.setString(1, updatedEmployee.getFirstName());
             preparedStatement.setString(2, updatedEmployee.getLastName());
             preparedStatement.setString(3, updatedEmployee.getEmail());

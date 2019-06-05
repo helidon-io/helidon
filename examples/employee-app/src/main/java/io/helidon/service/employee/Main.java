@@ -17,21 +17,20 @@
 package io.helidon.service.employee;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
+import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.metrics.MetricsSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.StaticContentSupport;
 import io.helidon.webserver.WebServer;
-import io.helidon.media.jsonb.server.JsonBindingSupport;
 
 /**
- * Simple Hello World rest application.
+ * Simple Employee rest application.
  */
 public final class Main {
 

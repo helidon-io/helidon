@@ -68,12 +68,22 @@ public class EmployeeService implements Service {
        
     }
 
+    /**
+     * Gets all the aployees
+     * @param request
+     * @param response
+     */
     private void getAll(final ServerRequest request, final ServerResponse response) {
     	LOGGER.fine("getAll");
     	List<Employee> allEmployees = this.employees.getAll();    	
         response.send(allEmployees);
     }
 
+    /**
+     * Gets the employees by the last name specified in the parameter
+     * @param request
+     * @param response
+     */
     private void getByLastName(final ServerRequest request, final ServerResponse response) {
     	LOGGER.fine("getByLastName");
         // Invalid query strings handled in isValidQueryStr. Keeping DRY
@@ -82,6 +92,11 @@ public class EmployeeService implements Service {
         }
     }
 
+    /**
+     * Gets the employees by the title specified in the parameter
+     * @param request
+     * @param response
+     */
     private void getByTitle(final ServerRequest request, final ServerResponse response) {
     	LOGGER.fine("getByTitle");
         if (isValidQueryStr(response, request.path().param("name"))){
@@ -90,6 +105,11 @@ public class EmployeeService implements Service {
         }
     }
 
+    /**
+     * Gets the employees by the department specified in the parameter
+     * @param request
+     * @param response
+     */
     private void getByDepartment(final ServerRequest request, final ServerResponse response) {
     	LOGGER.fine("getByDepartment");
         if (isValidQueryStr(response, request.path().param("name"))){
@@ -98,6 +118,11 @@ public class EmployeeService implements Service {
         }
     }
 
+    /**
+     * Gets the employees by the ID specified in the parameter
+     * @param request
+     * @param response
+     */
     private void getEmployeeById(ServerRequest request, ServerResponse response) {
     	LOGGER.fine("getEmployeeById");
         // If invalid, response handled in isValidId. Keeping DRY
@@ -107,7 +132,12 @@ public class EmployeeService implements Service {
         }        
     }
 
-    /* This is add/create */
+    
+    /**
+     * Saves a new employee
+     * @param request
+     * @param response
+     */
     private void save(ServerRequest request, ServerResponse response) {   	
     	LOGGER.fine("save");
         request.content().as(Employee.class)
@@ -119,6 +149,11 @@ public class EmployeeService implements Service {
             );
     }
 
+    /**
+     * Updates an existing employee
+     * @param request
+     * @param response
+     */
     private void update(ServerRequest request, ServerResponse response) { 
     	LOGGER.fine("update");
         if (isValidId(response, request.path().param("id"))){
@@ -134,6 +169,11 @@ public class EmployeeService implements Service {
 
     }
     
+    /**
+     *Deletes an existing employee
+     * @param request
+     * @param response
+     */
     private void delete(final ServerRequest request, final ServerResponse response) {
     	LOGGER.fine("delete");
         if (isValidId(response, request.path().param("id"))){
@@ -142,6 +182,12 @@ public class EmployeeService implements Service {
         }
     }
     
+    /**
+     * Validates the parameter 
+     * @param response
+     * @param nameStr
+     * @return
+     */
     private boolean isValidQueryStr(ServerResponse response, String nameStr){
 		Map<String, String> errorMessage = new HashMap<>();   
         if (nameStr == null || nameStr.isEmpty() || nameStr.length() > 100){
@@ -152,6 +198,12 @@ public class EmployeeService implements Service {
 
     }
     
+    /**
+     * Validates if the ID of the employee exists
+     * @param response
+     * @param idStr
+     * @return
+     */
     private boolean isValidId(ServerResponse response, String idStr){
         Map<String, String> errorMessage = new HashMap<>();        
         if (idStr == null || idStr.isEmpty()){

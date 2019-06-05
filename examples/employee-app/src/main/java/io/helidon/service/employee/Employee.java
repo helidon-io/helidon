@@ -20,6 +20,14 @@ import java.util.UUID;
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbProperty;
 
+/**
+ * Represents an employee 
+ *
+ */
+/**
+ * @author luperalt
+ *
+ */
 public final class Employee {
 
     private final String id;
@@ -31,10 +39,19 @@ public final class Employee {
     private final String title;
     private final String department;
 
-
-    private Employee(String id, String firstName, String lastName, 
-        String email, String phone, String birthDate,
-        String title, String department) {
+    /**
+     * Creates a new Employee
+     * @param id The employee ID. 
+     * @param firstName The employee first name.
+     * @param lastName The employee lastName.
+     * @param email The employee email.
+     * @param phone The employee phone.
+     * @param birthDate The employee birthDatee.
+     * @param title The employee title.
+     * @param department The employee department.
+     */
+    private Employee(String id, String firstName, String lastName, String email, String phone, String birthDate,
+            String title, String department) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -45,60 +62,98 @@ public final class Employee {
         this.department = department;
     }
 
+    /**
+     * Creates a new employee. This method helps to parse the json parameters in the requests.
+     * @param id The employee ID. If the employee ID is null or empty generates a new ID.
+     * @param firstName The employee first name.
+     * @param lastName The employee lastName.
+     * @param email The employee email.
+     * @param phone The employee phone.
+     * @param birthDate The employee birthDatee.
+     * @param title The employee title.
+     * @param department The employee department.
+     * @return
+     */
     @JsonbCreator
-    public static Employee of(@JsonbProperty("id") String id,
-    		@JsonbProperty("firstName") String firstName,
-            @JsonbProperty("lastName") String lastName,
-            @JsonbProperty("email") String email,
-            @JsonbProperty("phone") String phone,
-            @JsonbProperty("birthDate") String birthDate,
-            @JsonbProperty("title") String title,
-            @JsonbProperty("department") String department) {
-	    	if (id == null || id.trim().equals("")) {
-	    		id = UUID.randomUUID().toString();
-	    	}
-            Employee e = new Employee(id, firstName, 
-                lastName, email, phone, birthDate, title, department);
+    public static Employee of(@JsonbProperty("id") String id, @JsonbProperty("firstName") String firstName,
+            @JsonbProperty("lastName") String lastName, @JsonbProperty("email") String email,
+            @JsonbProperty("phone") String phone, @JsonbProperty("birthDate") String birthDate,
+            @JsonbProperty("title") String title, @JsonbProperty("department") String department) {
+        if (id == null || id.trim().equals("")) {
+            id = UUID.randomUUID().toString();
+        }
+        Employee e = new Employee(id, firstName, lastName, email, phone, birthDate, title, department);
         return e;
     }
 
+    /**
+     * Returns the employee ID
+     * @return
+     */
     public String getId() {
         return this.id;
     }
 
+    /**
+     * Returns the employee first name
+     * @return
+     */
     public String getFirstName() {
         return this.firstName;
     }
-
+    
+    /**
+     * Returns the employee last name
+     * @return
+     */
     public String getLastName() {
         return this.lastName;
     }
 
+    /**
+     * Returns the employee e-mail
+     * @return
+     */
     public String getEmail() {
         return this.email;
     }
 
+    /**
+     * Returns the employee phone
+     * @return
+     */
     public String getPhone() {
         return this.phone;
     }
 
+    /**
+     * Returns the employee birthdate
+     * @return
+     */
     public String getBirthDate() {
         return this.birthDate;
     }
 
+    /**
+     * Returns the employee title
+     * @return
+     */
     public String getTitle() {
         return this.title;
     }
 
+    /**
+     * Returns the employee department
+     * @return
+     */
     public String getDepartment() {
         return this.department;
-    }    
-   
+    }
 
-	@Override
+    @Override
     public String toString() {
         return "ID: " + id + " First Name: " + firstName + " Last Name: " + lastName + " EMail: " + email + " Phone: "
-            + phone + " Birth Date: " + birthDate + " Title: " + title + " Department: " + department;
+                + phone + " Birth Date: " + birthDate + " Title: " + title + " Department: " + department;
     }
 
 }
