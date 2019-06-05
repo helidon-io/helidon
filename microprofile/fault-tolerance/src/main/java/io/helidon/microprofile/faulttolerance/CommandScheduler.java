@@ -116,7 +116,7 @@ public class CommandScheduler implements Scheduler {
                     FaultToleranceCommand command = unwrapped.getCommand();
                     BulkheadHelper bulkheadHelper = command.getBulkheadHelper();
                     if (bulkheadHelper != null && !bulkheadHelper.isInvocationRunning(command)) {
-                        delegate.cancel(true);      // overridden
+                        return delegate.cancel(true);      // overridden
                     }
                 }
                 return delegate.cancel(mayInterruptIfRunning);
