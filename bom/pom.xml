@@ -183,6 +183,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
+                <artifactId>helidon-security-integration-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-grpc</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -355,6 +360,18 @@
                 <!-- to add tracer builder -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <!-- basic tracing configuration -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <!-- webserver support for advanced configuration -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-webserver</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
