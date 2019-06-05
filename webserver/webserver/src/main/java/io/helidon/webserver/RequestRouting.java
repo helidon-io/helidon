@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -28,9 +29,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
 import io.helidon.common.http.Http;
+import io.helidon.tracing.config.TracedConfig;
+import io.helidon.tracing.config.TracedConfigUtil;
+import io.helidon.tracing.config.TracedSpan;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -46,6 +51,8 @@ import io.opentracing.util.GlobalTracer;
 class RequestRouting implements Routing {
 
     private static final Logger LOGGER = Logger.getLogger(RequestRouting.class.getName());
+    private static final String TRACING_SPAN_HTTP_REQUEST = "HTTP Request";
+
     private final RouteList routes;
     private final List<ErrorHandlerRecord<?>> errorHandlers;
     private final List<Consumer<WebServer>> newWebServerCallbacks;
@@ -67,39 +74,49 @@ class RequestRouting implements Routing {
     public void route(BareRequest bareRequest, BareResponse bareResponse) {
         try {
             WebServer webServer = bareRequest.webServer();
-            Span span = createRequestSpan(tracer(webServer), bareRequest);
-            RoutedResponse response = new RoutedResponse(webServer, bareResponse, span.context());
-            response.whenSent()
-                    .thenRun(() -> {
-                        Http.ResponseStatus httpStatus = response.status();
-                        if (httpStatus != null) {
-                            int statusCode = httpStatus.code();
-                            Tags.HTTP_STATUS.set(span, statusCode);
-                            if (statusCode >= 400) {
-                                Tags.ERROR.set(span, true);
-                                span.log(CollectionsHelper.mapOf("event", "error",
-                                                "message", "Response HTTP status: " + statusCode,
-                                                "error.kind", statusCode < 500 ? "ClientError" : "ServerError"));
-                            }
-                        }
-                        span.finish();
-                    })
-                    .exceptionally(t -> {
-                        Tags.ERROR.set(span, true);
-                        span.log(CollectionsHelper.mapOf("event", "error",
-                                        "error.object", t));
-                        span.finish();
-                        return null;
-                    });
-
+            RoutedResponse response = new RoutedResponse(webServer, bareResponse);
             // Jersey needs the raw path (not decoded) so we get that too
             String path = canonicalize(bareRequest.uri().normalize().getPath());
             String rawPath = canonicalize(bareRequest.uri().normalize().getRawPath());
 
             Crawler crawler = new Crawler(routes, path, rawPath, bareRequest.method());
-            RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers, span);
-            // only register the span context once on the top level request, as others are cloned from it
-            nextRequests.context().register(span.context());
+            RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers);
+
+            // TracingSupport is not enabled, we have to do it here
+            //TODO remove for version 2 - tracing should be only enabled through TracingSupport
+            if (!webServer.context().get(ServerRequest.class, TracedConfig.class).isPresent()) {
+                Span span = createRequestSpan(webServer.context(), tracer(webServer), bareRequest);
+                if (null != span) {
+                    response.whenSent()
+                            .thenRun(() -> {
+                                Http.ResponseStatus httpStatus = response.status();
+                                if (httpStatus != null) {
+                                    int statusCode = httpStatus.code();
+                                    Tags.HTTP_STATUS.set(span, statusCode);
+                                    if (statusCode >= 400) {
+                                        Tags.ERROR.set(span, true);
+                                        span.log(CollectionsHelper.mapOf("event", "error",
+                                                                         "message", "Response HTTP status: " + statusCode,
+                                                                         "error.kind", statusCode < 500
+                                                                                 ? "ClientError"
+                                                                                 : "ServerError"));
+                                    }
+                                }
+                                span.finish();
+                            })
+                            .exceptionally(t -> {
+                                Tags.ERROR.set(span, true);
+                                span.log(CollectionsHelper.mapOf("event", "error",
+                                                                 "error.object", t));
+                                span.finish();
+                                return null;
+                            });
+                    // only register the span context once on the top level request, as others are cloned from it
+                    nextRequests.context().register(span);
+                    nextRequests.context().register(span.context());
+                }
+            }
+
             Contexts.runInContext(nextRequests.context(), (Runnable) nextRequests::next);
         } catch (Error | RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
@@ -127,26 +144,41 @@ class RequestRouting implements Routing {
         return result == null ? GlobalTracer.get() : result;
     }
 
-    private Span createRequestSpan(Tracer tracer, BareRequest request) {
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan("HTTP Request")
-                .withTag(Tags.COMPONENT.getKey(), "helidon-webserver")
-                .withTag(Tags.HTTP_METHOD.getKey(), request.method().name())
-                .withTag(Tags.HTTP_URL.getKey(), request.uri().toString());
+    /**
+     * @deprecated Use TracingSupport to enable webserver tracing
+     */
+    @Deprecated
+    private Span createRequestSpan(Context context, Tracer tracer, BareRequest request) {
+        TracedSpan spanConfig = context.get(TracedConfig.class)
+                .orElse(TracedConfig.ENABLED)
+                .spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_SPAN_HTTP_REQUEST)
+                .orElse(TracedSpan.ENABLED);
 
-        Map<String, String> headersMap = request.headers()
-                                                .entrySet()
-                                                .stream()
-                                                .filter(entry -> !entry.getValue().isEmpty())
-                                                .collect(Collectors.toMap(Map.Entry::getKey,
-                                                                          entry -> entry.getValue().get(0)));
-        SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+        String spanName = spanConfig.newName().orElse(TRACING_SPAN_HTTP_REQUEST);
 
-        if (spanContext != null) {
-            spanBuilder.asChildOf(spanContext);
+        if (spanConfig.enabled().orElse(true)) {
+            Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
+                    .withTag(Tags.COMPONENT.getKey(), "helidon-webserver")
+                    .withTag(Tags.HTTP_METHOD.getKey(), request.method().name())
+                    .withTag(Tags.HTTP_URL.getKey(), request.uri().toString());
+
+            Map<String, String> headersMap = request.headers()
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> !entry.getValue().isEmpty())
+                    .collect(Collectors.toMap(Map.Entry::getKey,
+                                              entry -> entry.getValue().get(0)));
+            SpanContext spanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
+
+            if (spanContext != null) {
+                spanBuilder.asChildOf(spanContext);
+            }
+
+            // cannot use startActive, as it conflicts with the thread model we use
+            return spanBuilder.start();
+        } else {
+            return null;
         }
-
-        // cannot use startActive, as it conflicts with the thread model we use
-        return spanBuilder.start();
     }
 
     /**
@@ -274,7 +306,6 @@ class RequestRouting implements Routing {
         private final LinkedList<ErrorHandlerRecord<? extends Throwable>> errorHandlers;
         private final Path path;
         private final RoutedResponse response;
-        private final Span requestSpan;
 
         private final AtomicBoolean nexted = new AtomicBoolean(false);
 
@@ -286,20 +317,17 @@ class RequestRouting implements Routing {
          * @param webServer     the relevant server
          * @param crawler       a crawler to use for {@code next} method implementation
          * @param errorHandlers a list of error handlers
-         * @param requestSpan   a span related to the whole request processing
          */
         RoutedRequest(BareRequest req,
                       RoutedResponse response,
                       WebServer webServer,
                       Crawler crawler,
-                      List<ErrorHandlerRecord<?>> errorHandlers,
-                      Span requestSpan) {
+                      List<ErrorHandlerRecord<?>> errorHandlers) {
             super(req, webServer);
             this.crawler = crawler;
             this.errorHandlers = new LinkedList<>(errorHandlers);
             this.path = null;
             this.response = response;
-            this.requestSpan = requestSpan;
         }
 
         /**
@@ -319,17 +347,16 @@ class RequestRouting implements Routing {
             this.response = response;
             this.path = path;
             this.errorHandlers = new LinkedList<>(errorHandlers);
-            this.requestSpan = request.requestSpan;
         }
 
         @Override
         public Span span() {
-            return requestSpan;
+            return context().get(Span.class).orElse(null);
         }
 
         @Override
         public SpanContext spanContext() {
-            return requestSpan.context();
+            return context().get(SpanContext.class).orElse(null);
         }
 
         /**
@@ -353,7 +380,14 @@ class RequestRouting implements Routing {
                     RoutedResponse nextResponse = new RoutedResponse(response);
                     RoutedRequest nextRequest = new RoutedRequest(this, nextResponse, nextItem.path, errorHandlers);
                     LOGGER.finest(() -> "(reqID: " + requestId() + ") Routing next: " + nextItem.path);
-                    requestSpan.log(nextItem.handlerRoute.diagnosticEvent());
+                    Span span = span();
+                    if (null != span) {
+                        TracedSpan spanConfig = TracedConfigUtil.spanConfig("web-server", "HTTP Request");
+                        if (spanConfig.logEnabled("handler.class")) {
+                            span.log(nextItem.handlerRoute.diagnosticEvent());
+                        }
+                    }
+
                     nextItem.handlerRoute
                             .handler()
                             .accept(nextRequest, nextResponse);
@@ -380,9 +414,12 @@ class RequestRouting implements Routing {
             for (ErrorHandlerRecord<?> record = errorHandlers.pollFirst(); record != null; record = errorHandlers.pollFirst()) {
                 if (record.exceptionClass.isAssignableFrom(t.getClass())) {
                     ErrorRoutedRequest nextErrorRequest = new ErrorRoutedRequest(errorHandlers, t);
-                    requestSpan.log(CollectionsHelper.mapOf("event", "error-handler",
-                                           "handler.class", record.errorHandler.getClass().getName(),
-                                           "handled.error.message", t.toString()));
+                    Span span = span();
+                    if (null != span) {
+                        span.log(CollectionsHelper.mapOf("event", "error-handler",
+                                                                "handler.class", record.errorHandler.getClass().getName(),
+                                                                "handled.error.message", t.toString()));
+                    }
                     try {
                         // there's no way to avoid this cast
                         ((ErrorHandler<Throwable>) record.errorHandler).accept(nextErrorRequest, response, t);
@@ -405,9 +442,12 @@ class RequestRouting implements Routing {
         }
 
         private void defaultHandler(Throwable t) {
-            requestSpan.log(CollectionsHelper.mapOf("event", "error-handler",
-                                   "handler.class", "DEFAULT-ERROR-HANDLER",
-                                   "handled.error.message", t.toString()));
+            Span span = span();
+            if (null != span) {
+                span.log(CollectionsHelper.mapOf("event", "error-handler",
+                                                        "handler.class", "DEFAULT-ERROR-HANDLER",
+                                                        "handled.error.message", t.toString()));
+            }
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
@@ -469,21 +509,18 @@ class RequestRouting implements Routing {
 
     private static class RoutedResponse extends Response {
 
-        private final SpanContext requestSpanContext;
-
-        RoutedResponse(WebServer webServer, BareResponse bareResponse, SpanContext requestSpanContext) {
+        RoutedResponse(WebServer webServer, BareResponse bareResponse) {
             super(webServer, bareResponse);
-            this.requestSpanContext = requestSpanContext;
         }
 
         RoutedResponse(RoutedResponse response) {
             super(response);
-            this.requestSpanContext = response.requestSpanContext;
         }
 
         @Override
-        SpanContext spanContext() {
-            return requestSpanContext;
+        Optional<SpanContext> spanContext() {
+            return Contexts.context()
+                    .flatMap(ctx -> ctx.get(SpanContext.class));
         }
     }
 

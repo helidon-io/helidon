@@ -39,6 +39,8 @@ import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.media.common.ContentWriters;
+import io.helidon.tracing.config.TracedConfigUtil;
+import io.helidon.tracing.config.TracedSpan;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -50,6 +52,7 @@ import reactor.core.publisher.Mono;
  * The basic implementation of {@link ServerResponse}.
  */
 abstract class Response implements ServerResponse {
+    private static final String TRACING_CONTENT_WRITE = "content-write";
 
     private final WebServer webServer;
     private final BareResponse bareResponse;
@@ -59,7 +62,7 @@ abstract class Response implements ServerResponse {
 
     // Content related
     private final SendLockSupport sendLockSupport;
-    private final ArrayList<Writer> writers;
+    private final ArrayList<Writer<?>> writers;
     private final ArrayList<Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>>> filters;
 
     /**
@@ -98,9 +101,9 @@ abstract class Response implements ServerResponse {
      * <p>
      * {@code SpanContext} is a tracing component from <a href="http://opentracing.io">opentracing.io</a> standard.
      *
-     * @return the related span context
+     * @return the related span context or empty if not enabled
      */
-    abstract SpanContext spanContext();
+    abstract Optional<SpanContext> spanContext();
 
     @Override
     public WebServer webServer() {
@@ -137,15 +140,29 @@ abstract class Response implements ServerResponse {
         return result == null ? GlobalTracer.get() : result;
     }
 
+
     private <T> Span createWriteSpan(T obj) {
-        Tracer.SpanBuilder spanBuilder = tracer().buildSpan("content-write");
-        if (spanContext() != null) {
-            spanBuilder.asChildOf(spanContext());
+        Optional<SpanContext> parentSpan = spanContext();
+        if (!parentSpan.isPresent()) {
+            // we only trace write span if there is a parent (parent is either webserver HTTP Request span, or inherited span
+            // from request
+            return null;
         }
-        if (obj != null) {
-            spanBuilder.withTag("response.type", obj.getClass().getName());
+
+        TracedSpan spanConfig = TracedConfigUtil.spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_CONTENT_WRITE);
+
+        if (spanConfig.enabled().orElse(true)) {
+            String spanName = spanConfig.newName().orElse(TRACING_CONTENT_WRITE);
+            Tracer.SpanBuilder spanBuilder = tracer().buildSpan(spanName)
+                .asChildOf(parentSpan.get());
+
+            if (obj != null) {
+                spanBuilder.withTag("response.type", obj.getClass().getName());
+            }
+            return spanBuilder.start();
         }
-        return spanBuilder.start();
+
+        return null;
     }
 
     @Override
@@ -164,7 +181,9 @@ abstract class Response implements ServerResponse {
             }, content == null);
             return whenSent();
         } catch (RuntimeException | Error e) {
-            writeSpan.finish();
+            if (null != writeSpan) {
+                writeSpan.finish();
+            }
             throw e;
         }
     }
@@ -183,7 +202,9 @@ abstract class Response implements ServerResponse {
             }, content == null);
             return whenSent();
         } catch (RuntimeException | Error e) {
-            writeSpan.finish();
+            if (null != writeSpan) {
+                writeSpan.finish();
+            }
             throw e;
         }
     }
@@ -202,7 +223,7 @@ abstract class Response implements ServerResponse {
         // Try to get a publisher from registered writers
         synchronized (sendLockSupport) {
             for (int i = writers.size() - 1; i >= 0; i--) {
-                Writer<T> writer = writers.get(i);
+                Writer<T> writer = (Writer<T>) writers.get(i);
                 if (writer.accept(content)) {
                     return writer.function.apply(content);
                 }

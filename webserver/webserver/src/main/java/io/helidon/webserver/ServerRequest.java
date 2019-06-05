@@ -135,7 +135,7 @@ public interface ServerRequest extends HttpRequest {
      * <p>
      * {@code SpanContext} is a tracing component from <a href="http://opentracing.io">opentracing.io</a> standard.
      *
-     * @return the related span context
+     * @return the related span context, may be null if not enabled
      */
     SpanContext spanContext();
 }

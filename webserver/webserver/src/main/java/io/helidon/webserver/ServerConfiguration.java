@@ -31,6 +31,7 @@ import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.tracing.config.TracedConfig;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -220,6 +221,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
         private Context context;
+        private TracedConfig tracedConfig = TracedConfig.ENABLED;
 
         private Builder() {
         }
@@ -444,6 +446,22 @@ public interface ServerConfiguration extends SocketConfiguration {
             return this;
         }
 
+        /**
+         * Configure tracing for this webserver. This configuration is overall configuration of each traced
+         * component and traced spans.
+         * <p>
+         * To configure tracing differently for routes (a combination of a path and method(s)), use
+         * {@code helidon-tracing-webserver} module.
+         *
+         * @param rootConfig Root configuration of traced config that will be used unless overridden in context.
+         * @return updated builder instance
+         * @see #context(io.helidon.common.context.Context)
+         */
+        public Builder tracingConfiguration(TracedConfig rootConfig) {
+            this.tracedConfig = rootConfig;
+            return this;
+        }
+
         private InetAddress string2InetAddress(String address) {
             try {
                 return InetAddress.getByName(address);
@@ -494,6 +512,12 @@ public interface ServerConfiguration extends SocketConfiguration {
                 experimental = experimentalBuilder.build();
             }
 
+            // tracing (by default expected under web server configuration
+            Config tracingConfig = config.get("tracing");
+            if (tracingConfig.exists()) {
+                tracingConfiguration(TracedConfig.create(tracingConfig));
+            }
+
             return this;
         }
 
@@ -539,6 +563,10 @@ public interface ServerConfiguration extends SocketConfiguration {
 
             if (!context.get(Tracer.class).isPresent()) {
                 context.register(tracer);
+            }
+
+            if (!context.get(TracedConfig.class).isPresent()) {
+                context.register(tracedConfig);
             }
 
             if (workers <= 0) {
