@@ -34,193 +34,193 @@ limitations under the License.
 
 <style>
 html body {
-	font-family: Arial, Helvetica, sans-serif
+    font-family: Arial, Helvetica, sans-serif
 }
 
 label, input {
-	display: block;
-	font-size: 80%;
+    display: block;
+    font-size: 80%;
 }
 
 input.text {
-	margin-bottom: 12px;
-	width: 95%;
-	padding: .4em;
+    margin-bottom: 12px;
+    width: 95%;
+    padding: .4em;
 }
 
 fieldset {
-	padding: 0;
-	border: 0;
-	margin-top: 25px;
-	font-size: 75%;
+    padding: 0;
+    border: 0;
+    margin-top: 25px;
+    font-size: 75%;
 }
 
 .container {
-	width: 90%;
-	margin: auto;
-	display: flex;
-	flex-wrap: wrap;
+    width: 90%;
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .peopleContent {
-	flex-grow: 1;
+    flex-grow: 1;
 }
 
 .portrait {
-	width: 120px;
+    width: 120px;
 }
 
 .peopleItem {
-	width: 350px;
-	border: 1px solid #777777;
-	background: #FAFAFA;
-	margin: 3px;
-	padding: 2px;
-	display: flex;
+    width: 350px;
+    border: 1px solid #777777;
+    background: #FAFAFA;
+    margin: 3px;
+    padding: 2px;
+    display: flex;
 }
 
 .peopleTitle {
-	width: 100%;
-	background: #FAFAFA;
-	margin: 3px;
-	padding: 2px;
-	display: flex;
+    width: 100%;
+    background: #FAFAFA;
+    margin: 3px;
+    padding: 2px;
+    display: flex;
 }
 
 #editDialog {
-	display: none;
+    display: none;
 }
 
 #addDialog {
-	display: none;
+    display: none;
 }
 
 ul {
-	list-style-type: none;
-	margin: 0;
-	padding: 0;
-	overflow: hidden;
-	background-color: #333;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #333;
 }
 
 li {
-	float: left;
+    float: left;
 }
 
 li a {
-	display: block;
-	color: white;
-	text-align: center;
-	padding: 14px 16px;
-	text-decoration: none;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
 }
 
 /* Change the link color to #111 (black) on hover */
 li a:hover {
-	background-color: #111;
+    background-color: #111;
 }
 </style>
 
 <script id="peopleTemplate">
-	var peopleTemplate = {};
-	peopleTemplate.render = function(obj) {
+    var peopleTemplate = {};
+    peopleTemplate.render = function(obj) {
 
-		return "<div class=\"row\"> "
-				+ "<div class=\"peopleItem col-sm-3\""+
-		"	style=\"cursor: pointer\">	"
-				+ "	<div class=\"photos\">"
-				+ "		<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
-				+ "	</div>" + "	<div class=\"peopleContent\">" + "		<h4>"
-				+ obj.firstName + " " + obj.lastName + "</h4>" + "		"
-				+ obj.title + "<br> <small>" + obj.department + "</small>"
-				+ "	</div>" + "	</div>" + "	</div>";
-	}
+        return "<div class=\"row\"> "
+                + "<div class=\"peopleItem col-sm-3\""+
+        "    style=\"cursor: pointer\">    "
+                + "    <div class=\"photos\">"
+                + "        <img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
+                + "    </div>" + "    <div class=\"peopleContent\">" + "        <h4>"
+                + obj.firstName + " " + obj.lastName + "</h4>" + "        "
+                + obj.title + "<br> <small>" + obj.department + "</small>"
+                + "    </div>" + "    </div>" + "    </div>";
+    }
 </script>
 <script id="detailTemplate">
-	var detailTemplate = {};
-	detailTemplate.render = function(obj) {
+    var detailTemplate = {};
+    detailTemplate.render = function(obj) {
 
-		return "<br><br><div id =\"editForm\" class=\"col-sm-5 col-md-offset-2\">"
-				+ "	<div class=\"panel panel-info\" class=\"click-element animate-show\">"
-				+ "		<div class=\"panel-heading\">"
-				+ "			<h3 class=\"panel-title\">"
-				+ "				<div id=\"formTitle\" ng-model=\"formTitle\" style=\"padding: 10px\">"
-				+ "					Update Employee"
-				+ "					<button class=\"btn btn-primary\" id=\"delete\" type=\"button\""
-				+ "						onclick=\"deleteEmployee()\" "
-				+ "						style=\"float: right; position: relative; bottom: 9px;\">"
-				+ "						<span class=\"glyphicon glyphicon-trash\"></span> Delete"
-				+ "					</button>"
-				+ "				</div>"
-				+ "			</h3>"
-				+ "		</div>"
-				+ "		<div class=\"panel-body\">"
-				+ "			<form class=\"form-horizontal\" name=\"form\" novalidate"+
-"				>"
-				+ "				<input type=\"text\" id=\"editId\" ng-model=\"editId\" value=\""+obj.id+"\""+
-"					style=\"display: none;\">"
-				+ "				<div class=\"photos\">"
-				+ "					<img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editFirstName\">First"
-				+ "						Name:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editFirstName\" name=\"editFirstName\""+
-"							value=\""+obj.firstName+"\" class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"lastName\">Last"
-				+ "						Name:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editLastName\" name=\"editLastName\""+
-"							 value=\""+obj.lastName+"\"  class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editEmail\">Email:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editEmail\" name=\"editEmail\" value=\""+obj.email+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editPhone\">Phone:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editPhone\" name=\"editPhone\" value=\""+obj.phone+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editBirthDate\">Birthdate:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editBirthDate\" name=\"editBirthDate\""+
-"							 value=\""+obj.birthDate+"\" class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editTitle\">Title:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editTitle\" name=\"editTitle\" value=\""+obj.title+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<div class=\"form-group\">"
-				+ "					<label class=\"control-label col-xs-3\" for=\"editDepartment\">Department:</label>"
-				+ "					<div class=\"col-xs-5\">"
-				+ "						<input type=\"text\" id=\"editDepartment\" name=\"editDepartment\" value=\""+obj.department+"\""+
-"							 class=\"form-control\" required>"
-				+ "					</div>"
-				+ "				</div>"
-				+ "				<br>"
-				+ "				<br>"
-				+ "				<div style=\"text-align: center;\">"
-				+ "					<input type=\"button\" tabindex=\"-1\" class=\"btn btn-default\""
-				+ "						value=\"Cancel\" onclick=\"loadEmployees()\"> <input id=\"saveButton\""
-				+ "						type=\"button\" tabindex=\"-1\" class=\"btn btn-success\" value=\"Save\" onclick=\"updateEmployee()\">"
-				+ "				</div>";
-	}
+        return "<br><br><div id =\"editForm\" class=\"col-sm-5 col-md-offset-2\">"
+                + "    <div class=\"panel panel-info\" class=\"click-element animate-show\">"
+                + "        <div class=\"panel-heading\">"
+                + "            <h3 class=\"panel-title\">"
+                + "                <div id=\"formTitle\" ng-model=\"formTitle\" style=\"padding: 10px\">"
+                + "                    Update Employee"
+                + "                    <button class=\"btn btn-primary\" id=\"delete\" type=\"button\""
+                + "                        onclick=\"deleteEmployee()\" "
+                + "                        style=\"float: right; position: relative; bottom: 9px;\">"
+                + "                        <span class=\"glyphicon glyphicon-trash\"></span> Delete"
+                + "                    </button>"
+                + "                </div>"
+                + "            </h3>"
+                + "        </div>"
+                + "        <div class=\"panel-body\">"
+                + "            <form class=\"form-horizontal\" name=\"form\" novalidate"+
+"                >"
+                + "                <input type=\"text\" id=\"editId\" ng-model=\"editId\" value=\""+obj.id+"\""+
+"                    style=\"display: none;\">"
+                + "                <div class=\"photos\">"
+                + "                    <img src=\"nopic.png\" style=\"width: 120px; height: 120px\"></img>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"editFirstName\">First"
+                + "                        Name:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editFirstName\" name=\"editFirstName\""+
+"                            value=\""+obj.firstName+"\" class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"lastName\">Last"
+                + "                        Name:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editLastName\" name=\"editLastName\""+
+"                             value=\""+obj.lastName+"\"  class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"editEmail\">Email:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editEmail\" name=\"editEmail\" value=\""+obj.email+"\""+
+"                             class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"editPhone\">Phone:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editPhone\" name=\"editPhone\" value=\""+obj.phone+"\""+
+"                             class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"editBirthDate\">Birthdate:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editBirthDate\" name=\"editBirthDate\""+
+"                             value=\""+obj.birthDate+"\" class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"editTitle\">Title:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editTitle\" name=\"editTitle\" value=\""+obj.title+"\""+
+"                             class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <div class=\"form-group\">"
+                + "                    <label class=\"control-label col-xs-3\" for=\"editDepartment\">Department:</label>"
+                + "                    <div class=\"col-xs-5\">"
+                + "                        <input type=\"text\" id=\"editDepartment\" name=\"editDepartment\" value=\""+obj.department+"\""+
+"                             class=\"form-control\" required>"
+                + "                    </div>"
+                + "                </div>"
+                + "                <br>"
+                + "                <br>"
+                + "                <div style=\"text-align: center;\">"
+                + "                    <input type=\"button\" tabindex=\"-1\" class=\"btn btn-default\""
+                + "                        value=\"Cancel\" onclick=\"loadEmployees()\"> <input id=\"saveButton\""
+                + "                        type=\"button\" tabindex=\"-1\" class=\"btn btn-success\" value=\"Save\" onclick=\"updateEmployee()\">"
+                + "                </div>";
+    }
 </script>
 
 </head>
