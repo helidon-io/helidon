@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import io.helidon.security.spi.SecurityProvider;
 
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 
 /**
  * Fluent API to build a security request.
@@ -40,6 +41,7 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     private Entity responseEntity;
     private Entity requestEntity;
     private Span tracingSpan;
+    private SpanContext tracingSpanContext;
 
     @SuppressWarnings("unchecked")
     SecurityRequestBuilder(SecurityContext context) {
@@ -109,9 +111,26 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
      * @return updated builder instance
      * @see io.opentracing.util.GlobalTracer#get()
      * @see io.opentracing.Tracer#buildSpan(String)
+     * @deprecated to be removed in 2.0, now needed for backward compatibility
      */
+    @Deprecated
     public T tracingSpan(Span span) {
         this.tracingSpan = span;
+        return myInstance;
+    }
+
+    /**
+     * Tracing span to support Open tracing. Provider developer can add additional spans as children of this span
+     * to trace their progress.
+     *
+     * @param spanContext span of current security request (e.g. authentication, authorization or outbound, or any parent if
+     *                    these are not traced)
+     * @return updated builder instance
+     * @see io.opentracing.util.GlobalTracer#get()
+     * @see io.opentracing.Tracer#buildSpan(String)
+     */
+    public T tracingSpan(SpanContext spanContext) {
+        this.tracingSpanContext = spanContext;
         return myInstance;
     }
 
@@ -179,6 +198,7 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
         private final Entity responseEntity;
         private final Entity requestEntity;
         private final Span tracingSpan;
+        private final Optional<SpanContext> tracingSpanContext;
         private final Map<String, Supplier<Object>> resources = new HashMap<>();
 
         private SecurityRequestImpl(SecurityRequestBuilder<?> builder) {
@@ -187,6 +207,7 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
             this.responseEntity = builder.responseEntity;
             this.requestEntity = builder.requestEntity;
             this.tracingSpan = builder.tracingSpan;
+            this.tracingSpanContext = Optional.ofNullable(builder.tracingSpanContext);
             this.resources.putAll(builder.resources);
         }
 
@@ -208,6 +229,11 @@ public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
         @Override
         public Span tracingSpan() {
             return tracingSpan;
+        }
+
+        @Override
+        public Optional<SpanContext> tracingSpanContext() {
+            return tracingSpanContext;
         }
 
         public Map<String, Supplier<Object>> resources() {
