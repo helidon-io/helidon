@@ -33,6 +33,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Contexts;
+import io.helidon.tracing.config.TracedConfigUtil;
+import io.helidon.tracing.config.TracedSpan;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.tracing.spi.TracerProvider;
 
@@ -118,7 +120,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String X_REQUEST_ID = "x-request-id";
 
-    private static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
+    static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
 
     private static final List<String> PROPAGATED_HEADERS = listOf(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
@@ -153,15 +155,24 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
             return;
         }
 
+        // also we may configure tracing through other means
+        TracedSpan spanConfig = TracedConfigUtil.spanConfig("jax-rs", SPAN_OPERATION_NAME);
+        if (!spanConfig.enabled().orElse(true)) {
+            return;
+        }
+
         Optional<SpanContext> parentSpan = findParentSpan(requestContext, tracingContext);
         Tracer tracer = findTracer(requestContext, tracingContext);
         Map<String, List<String>> inboundHeaders = findInboundHeaders(tracingContext);
 
         // create a new span for this jersey client request
-        Span currentSpan = createSpan(requestContext, tracer, parentSpan);
+        Span currentSpan = createSpan(requestContext, tracer, parentSpan, spanConfig.newName().orElse(SPAN_OPERATION_NAME));
 
         // register it so we can close the span on response
         requestContext.setProperty(SPAN_PROPERTY_NAME, currentSpan);
+        // and also register it with Context, so we can close the span in case of an exception that does not hit the
+        // response filter
+        Contexts.context().ifPresent(ctx -> ctx.register(SPAN_PROPERTY_NAME, currentSpan));
 
         // propagate tracing headers, so remote service can use currentSpan as its parent
         Map<String, List<String>> tracingHeaders = tracingHeaders(tracer, currentSpan);
@@ -268,8 +279,12 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                                                                        .listOf(entry.getValue()))));
     }
 
-    private Span createSpan(ClientRequestContext requestContext, Tracer tracer, Optional<SpanContext> parentSpan) {
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(SPAN_OPERATION_NAME)
+    private Span createSpan(ClientRequestContext requestContext,
+                            Tracer tracer,
+                            Optional<SpanContext> parentSpan,
+                            String spanName) {
+
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
                 .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
                 .withTag(Tags.HTTP_URL.getKey(), requestContext.getUri().toString());
 
