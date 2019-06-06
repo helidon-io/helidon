@@ -167,8 +167,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * <p>By default, the context is extracted from the headers using token handlers for
      * {@link Builder#idcsTenantTokenHandler(TokenHandler) tenant} and
      * {@link Builder#idcsAppNameTokenHandler(TokenHandler) app}.
+     * @param subject Subject that is being mapped
      * @param request ProviderRequest context that is being mapped.
-     * @return Optional with the context, empty if the context is not present in the requerst.
+     * @return Optional with the context, empty if the context is not present in the request.
      */
     protected Optional<IdcsMtContext> extractIdcsMtContext(Subject subject, ProviderRequest request) {
         return idcsTenantTokenHandler.extractToken(request.env().headers())
