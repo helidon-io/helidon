@@ -69,7 +69,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-1.2</artifactId>
+            <artifactId>helidon-microprofile-2.2</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -80,12 +80,6 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-binding</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.openapi</groupId>
-            <artifactId>helidon-microprofile-openapi</artifactId>
-            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
