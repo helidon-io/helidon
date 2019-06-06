@@ -42,15 +42,13 @@ function search (){
         loadEmployees();
     }
 }
-$("#searchButton").button().on(
-    "click",
-    function() {
-        
+
+$(function() {   
+    $("#searchText").on("keyup", function(e) {
+        if (e.keyCode == 13) {
+            search ();
+        }
     });
-$("#searchText").on("keyup", function(e) {
-    if (e.keyCode == 13) {
-        $("#searchButton").trigger("click");
-    }
 });
 
 function showResults(data){
@@ -69,8 +67,7 @@ function showResults(data){
                 400,
                 "swing",
                 function() {
-                    $("#detail").show(400,
-                        "swing")
+                    $("#detail").show()
                 });
         });
         $("#people").append(item);

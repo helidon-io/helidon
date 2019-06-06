@@ -19,7 +19,9 @@ import java.util.UUID;
 
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbProperty;
-/**Represents an employee. */
+/**
+ * Represents an employee. 
+ */
 public final class Employee {
 
     private final String id;
