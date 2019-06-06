@@ -51,7 +51,7 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
         try {
             Class.forName(driver).getDeclaredConstructor().newInstance();
         } catch (Exception sqle) {
-            sqle.getMessage();
+            sqle.printStackTrace();
         }
 
         try {
@@ -62,7 +62,6 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
             conn = ods.getConnection();
         } catch (SQLException e) {
             e.printStackTrace();
-            e.getMessage();
         }
     }
 
@@ -172,6 +171,7 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
                         rs.getString("EMAIL"), rs.getString("PHONE"), rs.getString("BIRTHDATE"), rs.getString("TITLE"),
                         rs.getString("DEPARTMENT")));
             }
+            rs.close();
         } catch (SQLException e) {
             System.out.println("SQL Query Error: " + e.getMessage());
         } catch (Exception e) {

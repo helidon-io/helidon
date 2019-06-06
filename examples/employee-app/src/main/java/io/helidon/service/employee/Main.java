@@ -17,6 +17,7 @@
 package io.helidon.service.employee;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
@@ -57,7 +58,9 @@ public final class Main {
     static WebServer startServer() throws IOException {
 
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(Main.class.getResourceAsStream("/logging.properties"));
+        try (InputStream logFile = Main.class.getResourceAsStream("/logging.properties")) {
+            LogManager.getLogManager().readConfiguration(logFile);
+        }
 
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
