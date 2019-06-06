@@ -20,7 +20,7 @@ import java.util.UUID;
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbProperty;
 /**
- * Represents an employee. 
+ * Represents an employee.
  */
 public final class Employee {
 
@@ -42,6 +42,7 @@ public final class Employee {
      * @param birthDate The employee birthDatee.
      * @param title The employee title.
      * @param department The employee department.*/
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private Employee(String id, String firstName, String lastName, String email, String phone, String birthDate,
             String title, String department) {
         this.id = id;
@@ -67,6 +68,7 @@ public final class Employee {
      * @return A new employee object
      */
     @JsonbCreator
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public static Employee of(@JsonbProperty("id") String id, @JsonbProperty("firstName") String firstName,
             @JsonbProperty("lastName") String lastName, @JsonbProperty("email") String email,
             @JsonbProperty("phone") String phone, @JsonbProperty("birthDate") String birthDate,

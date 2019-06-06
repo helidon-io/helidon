@@ -38,6 +38,7 @@ jaxb.index
 src/main/proto/
 src/test/resources/keystore/
 conf/secrets/
+.dockerignore
 empty_file
 /_plantuml-config.txt
 copyright-exclude.txt
