@@ -17,6 +17,7 @@ package io.helidon.service.employee;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -46,9 +47,8 @@ public final class EmployeeRepositoryImpl implements EmployeeRepository {
 
         Jsonb jsonb = JsonbBuilder.create(config);
         try (InputStream jsonFile = EmployeeRepositoryImpl.class.getResourceAsStream("/employees.json")) {
-            eList.addAll(jsonb.fromJson(jsonFile,
-                    new CopyOnWriteArrayList<Employee>() {
-                    }.getClass().getGenericSuperclass()));
+            Employee employees [] = jsonb.fromJson(jsonFile,Employee[].class);
+            eList.addAll(Arrays.asList(employees));
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
