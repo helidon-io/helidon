@@ -258,7 +258,7 @@ public class OpenAPISupport implements Service {
      * Each {@code OpenAPIMediaType} stands for a single format (e.g., yaml,
      * json). That said, each can map to multiple file types (e.g., yml and
      * yaml) and multiple actual media types (the proposed OpenAPI media type
-     * vnd.oai.openapi and application/x-yaml).
+     * vnd.oai.openapi and various other YAML types proposed or in use).
      */
     private enum OpenAPIMediaTypes {
 
@@ -270,7 +270,9 @@ public class OpenAPISupport implements Service {
                 new MediaType[]{MediaType.APPLICATION_OPENAPI_YAML,
                                 MediaType.APPLICATION_X_YAML,
                                 MediaType.APPLICATION_YAML,
-                                MediaType.TEXT_PLAIN},
+                                MediaType.TEXT_PLAIN,
+                                MediaType.TEXT_X_YAML,
+                                MediaType.TEXT_YAML},
                 "yaml", "yml");
 
         private static final OpenAPIMediaTypes DEFAULT_TYPE = YAML;

@@ -100,14 +100,24 @@ public final class MediaType implements AcceptPredicate<MediaType> {
     public static final MediaType APPLICATION_OPENAPI_JSON = createMediaType("application", "vnd.oai.openapi+json");
 
     /**
-     * A {@link MediaType} constant representing "x" YAML.
+     * A {@link MediaType} constant representing "x" YAML as application.
      */
     public static final MediaType APPLICATION_X_YAML = createMediaType("application", "x-yaml");
 
     /**
-     * A {@link MediaType} constant representing registered YAML. (It is not actually registered.)
+     * A {@link MediaType} constant representing pseudo-registered YAML. (It is not actually registered.)
      */
     public static final MediaType APPLICATION_YAML = createMediaType("application", "yaml");
+
+    /**
+     * A {@link MediaType} constant representing "x" YAML as text.
+     */
+    public static final MediaType TEXT_X_YAML = createMediaType("text", "x-yaml");
+
+    /**
+     * A {@link MediaType} constant representing pseudo-registered YAML as text.
+     */
+    public static final MediaType TEXT_YAML = createMediaType("text", "yaml");
 
     private static final MediaType APPLICATION_JAVASCRIPT = createMediaType("application", "javascript");
 
