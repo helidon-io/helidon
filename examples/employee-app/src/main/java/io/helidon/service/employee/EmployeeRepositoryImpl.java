@@ -47,7 +47,7 @@ public final class EmployeeRepositoryImpl implements EmployeeRepository {
 
         Jsonb jsonb = JsonbBuilder.create(config);
         try (InputStream jsonFile = EmployeeRepositoryImpl.class.getResourceAsStream("/employees.json")) {
-            Employee employees [] = jsonb.fromJson(jsonFile,Employee[].class);
+            Employee[] employees = jsonb.fromJson(jsonFile, Employee[].class);
             eList.addAll(Arrays.asList(employees));
         } catch (IOException e) {
             // TODO Auto-generated catch block

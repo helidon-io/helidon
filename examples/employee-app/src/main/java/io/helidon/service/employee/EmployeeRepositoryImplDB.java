@@ -108,9 +108,8 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
             preparedStatement.setString(5, employee.getBirthDate());
             preparedStatement.setString(6, employee.getTitle());
             preparedStatement.setString(7, employee.getDepartment());
-
             preparedStatement.executeUpdate();
-
+            preparedStatement.close();
         } catch (SQLException e) {
             System.out.println("SQL Add Error: " + e.getMessage());
 
@@ -126,7 +125,7 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
         try (PreparedStatement preparedStatement = this.conn.prepareStatement(deleteRowSQL)) {
             preparedStatement.setInt(1, Integer.parseInt(id));
             preparedStatement.executeUpdate();
-
+            preparedStatement.close();
         } catch (SQLException e) {
             System.out.println("SQL Delete Error: " + e.getMessage());
         } catch (Exception e) {
@@ -145,7 +144,6 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
         } else {
             return null;
         }
-
     }
 
     /**
@@ -193,9 +191,8 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
             preparedStatement.setString(6, updatedEmployee.getTitle());
             preparedStatement.setString(7, updatedEmployee.getDepartment());
             preparedStatement.setInt(8, Integer.parseInt(id));
-
             preparedStatement.executeUpdate();
-
+            preparedStatement.close();
         } catch (SQLException e) {
             System.out.println("SQL Update Error: " + e.getMessage());
 
