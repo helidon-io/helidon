@@ -170,6 +170,7 @@ public final class EmployeeRepositoryImplDB implements EmployeeRepository {
                         rs.getString("DEPARTMENT")));
             }
             rs.close();
+            stmt.close();
         } catch (SQLException e) {
             System.out.println("SQL Query Error: " + e.getMessage());
         } catch (Exception e) {
