@@ -269,6 +269,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.microprofile.bundles</groupId>
+                <artifactId>helidon-microprofile-2.2</artifactId>
+                <version>${project.version{</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile</groupId>
                 <artifactId>helidon-microprofile-security</artifactId>
                 <version>${project.version}</version>
