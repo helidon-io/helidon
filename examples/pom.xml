@@ -47,7 +47,6 @@
         <module>health</module>
         <module>grpc</module>
         <module>openapi</module>
-        <module>employee-app</module>
     </modules>
 
     <build>
@@ -69,6 +68,7 @@
             <id>integrations</id>
             <modules>
                 <module>integrations</module>
+                <module>employee-app</module>
             </modules>
         </profile>
     </profiles>

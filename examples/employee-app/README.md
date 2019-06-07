@@ -38,7 +38,6 @@ Follow these steps:
 - Create an OTN account
 - Update your settings.xml as documented
  https://docs.oracle.com/middleware/1213/core/MAVEN/config_maven_repo.htm#MAVEN9016[here]
- 
 
 ## Build
 
