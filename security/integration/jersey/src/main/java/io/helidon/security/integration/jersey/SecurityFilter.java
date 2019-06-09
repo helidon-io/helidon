@@ -571,6 +571,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return application;
     }
 
+    // unit test method
+    List<AnnotationAnalyzer> analyzers() {
+        return this.analyzers;
+    }
+
     private static final class PathVisitor extends AbstractResourceModelVisitor {
         private final List<Invocable> list = new LinkedList<>();
 
