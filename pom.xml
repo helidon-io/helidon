@@ -284,6 +284,7 @@
         <module>openapi</module>
         <module>jersey</module>
         <module>webclient</module>
+        <module>dbclient</module>
     </modules>
 
     <build>
