@@ -130,8 +130,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         HelidonServiceLoader.builder(ServiceLoader.load(AnnotationAnalyzer.class))
                 .build()
                 .forEach(analyzers::add);
-        ServiceLoader.load(AnnotationAnalyzer.class)
-                .forEach(analyzers::add);
     }
 
     /**
@@ -571,6 +569,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         return application;
+    }
+
+    // unit test method
+    List<AnnotationAnalyzer> analyzers() {
+        return this.analyzers;
     }
 
     private static final class PathVisitor extends AbstractResourceModelVisitor {
