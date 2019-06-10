@@ -116,8 +116,9 @@ class JdbcStatementGet implements DbStatement<JdbcStatementGet, CompletionStage<
                     public void onNext(DbRow dbRow) {
                         if (done.get()) {
                             subscription.cancel();
-                            result.completeExceptionally(new DbClientException("Result of get statement " + query.name() + " returned "
-                                                                                 + "more than one row."));
+                            result.completeExceptionally(new DbClientException("Result of get statement " + query
+                                    .name() + " returned "
+                                                                                       + "more than one row."));
                             cancelled.set(true);
                         } else {
                             theRow.set(dbRow);
