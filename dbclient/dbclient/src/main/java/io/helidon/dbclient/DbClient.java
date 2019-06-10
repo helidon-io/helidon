@@ -26,10 +26,10 @@ import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.dbclient.spi.DbInterceptorProvider;
-import io.helidon.dbclient.spi.DbMapperProvider;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;
+import io.helidon.dbclient.spi.DbInterceptorProvider;
+import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
  * Helidon database client.
