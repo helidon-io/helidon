@@ -33,7 +33,8 @@ final class DbClientProviderLoader {
     private static final DbClientProvider FIRST;
 
     static {
-        HelidonServiceLoader<DbClientProvider> serviceLoader = HelidonServiceLoader.builder(ServiceLoader.load(DbClientProvider.class))
+        HelidonServiceLoader<DbClientProvider> serviceLoader = HelidonServiceLoader
+                .builder(ServiceLoader.load(DbClientProvider.class))
                 .build();
 
         List<DbClientProvider> sources = serviceLoader.asList();

@@ -27,8 +27,8 @@ import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.common.InterceptorSupport;
-import io.helidon.dbclient.spi.DbMapperProvider;
 import io.helidon.dbclient.spi.DbClientProviderBuilder;
+import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
  * Builder for mongoDB database.
