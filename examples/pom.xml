@@ -46,7 +46,7 @@
         <module>quickstarts</module>
         <module>health</module>
         <module>grpc</module>
-        <module>db</module>
+        <module>dbclient</module>
     </modules>
 
     <build>
