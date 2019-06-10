@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.server.GrpcRouting;
@@ -509,6 +510,8 @@ public final class GrpcSecurity
                     .env(env)
                     .endpointConfig(ec)
                     .build();
+
+            Contexts.context().ifPresent(ctx -> ctx.register(context));
 
             grpcContext = Context.current().withValue(SECURITY_CONTEXT, context);
         } else {

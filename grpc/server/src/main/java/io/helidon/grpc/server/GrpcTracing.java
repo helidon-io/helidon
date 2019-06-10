@@ -53,7 +53,7 @@ public class GrpcTracing
      * @param tracer        the Open Tracing {@link Tracer}
      * @param tracingConfig the tracing configuration
      */
-    public GrpcTracing(Tracer tracer, TracingConfiguration tracingConfig) {
+    GrpcTracing(Tracer tracer, TracingConfiguration tracingConfig) {
         this.tracer = tracer;
         operationNameConstructor = tracingConfig.operationNameConstructor();
         streaming = tracingConfig.isStreaming();
@@ -103,10 +103,25 @@ public class GrpcTracing
             }
         }
 
-        Context ctxWithSpan = Context.current().withValue(OpenTracingContextKey.getKey(), span);
+        Context grpcContext = Context.current();
+
+        updateContext(ContextKeys.HELIDON_CONTEXT.get(grpcContext), span);
+        io.helidon.common.context.Contexts.context().ifPresent(ctx -> updateContext(ctx, span));
+
+        Context ctxWithSpan = grpcContext.withValue(OpenTracingContextKey.getKey(), span);
         ServerCall.Listener<ReqT> listenerWithContext = Contexts.interceptCall(ctxWithSpan, call, headers, next);
 
         return new TracingListener<>(listenerWithContext, span);
+    }
+
+    private void updateContext(io.helidon.common.context.Context context, Span span) {
+        if (context != null) {
+            if (!context.get(Tracer.class).isPresent()) {
+                context.register(tracer);
+            }
+
+            context.register(span.context());
+        }
     }
 
     private void addMetadata(Metadata headers, Span span) {

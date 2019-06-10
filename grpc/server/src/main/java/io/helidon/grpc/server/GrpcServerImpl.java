@@ -32,20 +32,30 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.http.ContextualRegistry;
 import io.helidon.common.pki.KeyConfig;
+import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.BindableService;
+import io.grpc.Context;
+import io.grpc.Contexts;
 import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
@@ -63,6 +73,8 @@ import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.ThreadPerTaskExecutor;
 import org.eclipse.microprofile.health.HealthCheck;
 
 import static java.lang.String.format;
@@ -116,6 +128,8 @@ public class GrpcServerImpl implements GrpcServer {
      */
     private Map<String, ServiceDescriptor> services = new ConcurrentHashMap<>();
 
+    private final ContextualRegistry contextualRegistry;
+
     // ---- constructors ----------------------------------------------------
 
     /**
@@ -125,6 +139,8 @@ public class GrpcServerImpl implements GrpcServer {
      */
     GrpcServerImpl(GrpcServerConfiguration config) {
         this.config = config;
+        this.contextualRegistry = ContextualRegistry.create(config.context());
+
     }
 
     // ---- GrpcServer interface --------------------------------------------
@@ -214,6 +230,11 @@ public class GrpcServerImpl implements GrpcServer {
     }
 
     @Override
+    public ContextualRegistry context() {
+        return contextualRegistry;
+    }
+
+    @Override
     public CompletionStage<GrpcServer> whenShutdown() {
         return shutdownFuture;
     }
@@ -270,7 +291,10 @@ public class GrpcServerImpl implements GrpcServer {
             LOGGER.log(Level.FINE, () -> "Using NIO transport");
             channelType = NioServerSocketChannel.class;
             boss = new NioEventLoopGroup(1);
-            workers = workersCount <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(workersCount);
+            Executor executor = new ThreadPerTaskExecutor(new ContextAwareThreadFactory(NioEventLoopGroup.class));
+            workers = workersCount <= 0
+                    ? new NioEventLoopGroup(0, executor)
+                    : new NioEventLoopGroup(workersCount, executor);
         }
 
         return builder
@@ -284,10 +308,13 @@ public class GrpcServerImpl implements GrpcServer {
      *
      * @param serviceDescriptor  the service to deploy
      * @param globalInterceptors the global {@link io.grpc.ServerInterceptor}s to wrap all services with
-     * @throws NullPointerException if {@code serviceDescriptor} is {@code null}
+     * @throws NullPointerException if any of the parameters is {@code null}
      */
     public void deploy(ServiceDescriptor serviceDescriptor, PriorityBag<ServerInterceptor> globalInterceptors) {
         Objects.requireNonNull(serviceDescriptor);
+        Objects.requireNonNull(globalInterceptors);
+
+        globalInterceptors.add(new ContextAwareServerInterceptor());
 
         String serverName = config.name();
         BindableService service = serviceDescriptor.bindableService(globalInterceptors);
@@ -438,5 +465,40 @@ public class GrpcServerImpl implements GrpcServer {
         }
 
         return aCerts;
+    }
+
+    /**
+     * A {@link ServerInterceptor} that will set the Helidon {@link io.helidon.common.context.Context}
+     * into the gRPC {@link io.grpc.Context}.
+     */
+    @Priority(InterceptorPriorities.CONTEXT - 1)
+    private class ContextAwareServerInterceptor
+            implements ServerInterceptor {
+
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                     Metadata headers,
+                                                                     ServerCallHandler<ReqT, RespT> next) {
+
+            Context context = Context.current().withValue(ContextKeys.HELIDON_CONTEXT, context());
+            return Contexts.interceptCall(context, call, headers, next);
+        }
+    }
+
+    /**
+     * An extension to {@link DefaultThreadFactory} that ensures threads have
+     * a {@link io.helidon.common.context.Context} set.
+     */
+    private class ContextAwareThreadFactory
+            extends DefaultThreadFactory {
+
+        private ContextAwareThreadFactory(Class<?> poolType) {
+            super(poolType);
+        }
+
+        @Override
+        public Thread newThread(Runnable runnable) {
+            return super.newThread(() -> io.helidon.common.context.Contexts.runInContext(context(), runnable));
+        }
     }
 }
