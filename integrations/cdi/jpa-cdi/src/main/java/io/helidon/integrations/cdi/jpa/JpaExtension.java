@@ -611,6 +611,12 @@ public class JpaExtension implements Extension {
             @SuppressWarnings("deprecation")
             final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
             assert xmlInputFactory != null;
+
+            // See
+            // https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.md#xmlinputfactory-a-stax-parser
+            xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+            xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
+
             final Unmarshaller unmarshaller =
                 JAXBContext.newInstance(Persistence.class.getPackage().getName()).createUnmarshaller();
             assert unmarshaller != null;
