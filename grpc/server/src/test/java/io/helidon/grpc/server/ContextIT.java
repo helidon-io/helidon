@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 
@@ -67,24 +68,28 @@ public class ContextIT {
 
     @Test
     public void shouldObtainValueFromContextForThread() {
+        Context context = grpcServer.context();
         TestValue value = new TestValue("Foo");
-        grpcServer.context().register(value);
+        context.register(value);
 
         Echo.EchoResponse response = EchoServiceGrpc.newBlockingStub(channel)
                 .echo(Echo.EchoRequest.newBuilder().setMessage("thread").build());
 
         assertThat(response.getMessage(), is("Foo"));
+        assertThat(context.get(TestValue.class).orElse(null), is(sameInstance(value)));
     }
 
     @Test
     public void shouldObtainValueFromContextForRequest() {
+        Context context = grpcServer.context();
         TestValue value = new TestValue("Bar");
-        grpcServer.context().register(value);
+        context.register(value);
 
         Echo.EchoResponse response = EchoServiceGrpc.newBlockingStub(channel)
                 .echo(Echo.EchoRequest.newBuilder().setMessage("request").build());
 
         assertThat(response.getMessage(), is("Bar"));
+        assertThat(context.get(TestValue.class).orElse(null), is(sameInstance(value)));
     }
 
 
@@ -127,25 +132,24 @@ public class ContextIT {
         }
 
         public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {
-            TestValue value;
+            TestValue value = null;
 
+            Optional<Context> optional;
             if ("thread".equalsIgnoreCase(request.getMessage())) {
-                value = getValue(Contexts.context());
+                optional = Contexts.context();
             } else {
-                value = getValue(Optional.ofNullable(ContextKeys.HELIDON_CONTEXT.get()));
+                optional = Optional.ofNullable(ContextKeys.HELIDON_CONTEXT.get());
+            }
+
+            if (optional.isPresent()) {
+                Context context = optional.get();
+                value = context.get(TestValue.class).orElse(null);
+
+                context.register(new TestValue("Updated"));
             }
 
             Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(String.valueOf(value)).build();
             complete(observer, response);
-        }
-
-        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-        private TestValue getValue(Optional<Context> optional) {
-            return optional.map(ctx -> ctx.get(TestValue.class))
-                    .filter(Optional::isPresent)
-                    .orElse(Optional.empty())
-                    .orElse(null);
-
         }
     }
 
@@ -153,7 +157,7 @@ public class ContextIT {
     /**
      * A test value to register with the {@link io.helidon.common.http.ContextualRegistry}.
      */
-    private class TestValue {
+    private static class TestValue {
         private final String value;
 
         private TestValue(String value) {

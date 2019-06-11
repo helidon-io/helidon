@@ -479,8 +479,9 @@ public class GrpcServerImpl implements GrpcServer {
                                                                      Metadata headers,
                                                                      ServerCallHandler<ReqT, RespT> next) {
 
-            io.grpc.Context context = io.grpc.Context.current().withValue(ContextKeys.HELIDON_CONTEXT, context());
-            return io.grpc.Contexts.interceptCall(context, call, headers, next);
+            Context context = Context.create(context());
+            io.grpc.Context grpcContext = io.grpc.Context.current().withValue(ContextKeys.HELIDON_CONTEXT, context);
+            return io.grpc.Contexts.interceptCall(grpcContext, call, headers, next);
         }
     }
 
@@ -497,7 +498,10 @@ public class GrpcServerImpl implements GrpcServer {
 
         @Override
         public Thread newThread(Runnable runnable) {
-            return super.newThread(() -> Contexts.runInContext(context(), runnable));
+            return super.newThread(() -> {
+                Context context = Context.create(context());
+                Contexts.runInContext(context, runnable);
+            });
         }
     }
 }
