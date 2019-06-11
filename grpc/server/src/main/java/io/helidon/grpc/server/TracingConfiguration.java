@@ -94,13 +94,31 @@ public class TracingConfiguration {
     }
 
     /**
+     * Create a builder of {@link TracingConfiguration} instances.
+     *
+     * @return a builder of {@link TracingConfiguration} instances.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Create a default {@link TracingConfiguration} instances.
+     *
+     * @return a default {@link TracingConfiguration} instances.
+     */
+    public static TracingConfiguration create() {
+        return builder().build();
+    }
+
+    /**
      * Builds the configuration of a tracer.
      */
     public static class Builder {
         /**
          * Creates a Builder with default configuration.
          */
-        public Builder() {
+        Builder() {
             operationNameConstructor = OperationNameConstructor.DEFAULT;
             streaming = false;
             verbose = false;

@@ -16,6 +16,7 @@
 
 package io.helidon.grpc.core;
 
+import io.grpc.Context;
 import io.grpc.Metadata;
 
 /**
@@ -27,6 +28,13 @@ public final class ContextKeys {
      */
     public static final Metadata.Key<String> AUTHORIZATION =
             Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER);
+
+    /**
+     * The gRPC context key to use to obtain the Helidon {@link io.helidon.common.context.Context}
+     * from the gRPC {@link Context}.
+     */
+    public static final Context.Key<io.helidon.common.context.Context> HELIDON_CONTEXT =
+            Context.key(io.helidon.common.context.Context.class.getCanonicalName());
 
     /**
      * Private constructor for utility class.

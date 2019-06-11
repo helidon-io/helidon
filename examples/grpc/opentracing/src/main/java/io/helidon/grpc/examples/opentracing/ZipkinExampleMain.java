@@ -54,7 +54,7 @@ public class ZipkinExampleMain {
 
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
 
-        TracingConfiguration tracingConfig = new TracingConfiguration.Builder()
+        TracingConfiguration tracingConfig = TracingConfiguration.builder()
                 .withStreaming()
                 .withVerbosity()
                 .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,

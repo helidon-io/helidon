@@ -17,6 +17,7 @@ package io.helidon.grpc.server;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 
 import io.opentracing.Tracer;
@@ -54,6 +55,12 @@ public interface GrpcServerConfiguration {
      * @return the server port
      */
     int port();
+
+    /**
+     * The top level {@link io.helidon.common.context.Context} to be used by the server.
+     * @return a context instance with registered application scoped instances
+     */
+    Context context();
 
     /**
      * Determine whether use native transport if possible.
@@ -153,6 +160,8 @@ public interface GrpcServerConfiguration {
 
         private SslConfiguration sslConfig = null;
 
+        private Context context;
+
         private Builder() {
         }
 
@@ -179,7 +188,7 @@ public interface GrpcServerConfiguration {
          * @return an updated builder
          */
         public Builder name(String name) {
-            this.name = name;
+            this.name = name == null ? null : name.trim();
             return this;
         }
 
@@ -193,6 +202,16 @@ public interface GrpcServerConfiguration {
          */
         public Builder port(int port) {
             this.port = port < 0 ? 0 : port;
+            return this;
+        }
+
+        /**
+         * Configure the application scoped context to be used as a parent for webserver request contexts.
+         * @param context top level context
+         * @return an updated builder
+         */
+        public Builder context(Context context) {
+            this.context = context;
             return this;
         }
 
@@ -255,15 +274,69 @@ public interface GrpcServerConfiguration {
             return this;
         }
 
+        String name() {
+            return name;
+        }
+
+        int port() {
+            return port;
+        }
+
+        public Context context() {
+            return context;
+        }
+
+        Tracer tracer() {
+            return tracer;
+        }
+
+        TracingConfiguration tracingConfig() {
+            return tracingConfig;
+        }
+
+        SslConfiguration sslConfig() {
+            return sslConfig;
+        }
+
+        boolean useNativeTransport() {
+            return useNativeTransport;
+        }
+
+        int workers() {
+            return workers;
+        }
+
         @Override
         public GrpcServerConfiguration build() {
-            return new GrpcServerBasicConfig(name,
-                                             port,
-                                             workers,
-                                             useNativeTransport,
-                                             tracer,
-                                             tracingConfig,
-                                             sslConfig);
+            if (name == null || name.isEmpty()) {
+                name = DEFAULT_NAME;
+            }
+
+            if (port < 0) {
+                port = 0;
+            }
+
+            if (context == null) {
+                context = Context.create();
+            }
+
+            if (tracer == null) {
+                tracer = GlobalTracer.get();
+            }
+
+            if (tracingConfig == null) {
+                tracingConfig = TracingConfiguration.create();
+            }
+
+            if (!context.get(Tracer.class).isPresent()) {
+                context.register(tracer);
+            }
+
+            if (workers <= 0) {
+                workers = DEFAULT_WORKER_COUNT;
+            }
+
+            return new GrpcServerBasicConfig(this);
         }
     }
 }
