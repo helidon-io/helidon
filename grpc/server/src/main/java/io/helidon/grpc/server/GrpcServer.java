@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.context.Context;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.ServerInterceptor;
@@ -51,7 +51,7 @@ public interface GrpcServer {
      *
      * @return a server context
      */
-    ContextualRegistry context();
+    Context context();
 
     /**
      * Starts the server. Has no effect if server is running.

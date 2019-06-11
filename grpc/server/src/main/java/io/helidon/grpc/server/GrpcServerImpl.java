@@ -40,15 +40,14 @@ import javax.annotation.Priority;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
 
 import io.grpc.BindableService;
-import io.grpc.Context;
-import io.grpc.Contexts;
 import io.grpc.HandlerRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
@@ -128,7 +127,7 @@ public class GrpcServerImpl implements GrpcServer {
      */
     private Map<String, ServiceDescriptor> services = new ConcurrentHashMap<>();
 
-    private final ContextualRegistry contextualRegistry;
+    private final Context context;
 
     // ---- constructors ----------------------------------------------------
 
@@ -139,7 +138,7 @@ public class GrpcServerImpl implements GrpcServer {
      */
     GrpcServerImpl(GrpcServerConfiguration config) {
         this.config = config;
-        this.contextualRegistry = ContextualRegistry.create(config.context());
+        this.context = config.context();
 
     }
 
@@ -230,8 +229,8 @@ public class GrpcServerImpl implements GrpcServer {
     }
 
     @Override
-    public ContextualRegistry context() {
-        return contextualRegistry;
+    public Context context() {
+        return context;
     }
 
     @Override
@@ -480,8 +479,8 @@ public class GrpcServerImpl implements GrpcServer {
                                                                      Metadata headers,
                                                                      ServerCallHandler<ReqT, RespT> next) {
 
-            Context context = Context.current().withValue(ContextKeys.HELIDON_CONTEXT, context());
-            return Contexts.interceptCall(context, call, headers, next);
+            io.grpc.Context context = io.grpc.Context.current().withValue(ContextKeys.HELIDON_CONTEXT, context());
+            return io.grpc.Contexts.interceptCall(context, call, headers, next);
         }
     }
 
@@ -498,7 +497,7 @@ public class GrpcServerImpl implements GrpcServer {
 
         @Override
         public Thread newThread(Runnable runnable) {
-            return super.newThread(() -> io.helidon.common.context.Contexts.runInContext(context(), runnable));
+            return super.newThread(() -> Contexts.runInContext(context(), runnable));
         }
     }
 }
