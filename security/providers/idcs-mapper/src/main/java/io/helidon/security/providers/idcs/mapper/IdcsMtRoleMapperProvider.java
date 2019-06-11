@@ -143,13 +143,13 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
         // double cache
         List<Grant> serverGrants = cache.computeValue(cacheKey,
-                () -> computeGrants(idcsMtContext.getTenantId(), idcsMtContext.getAppId(), subject))
+                () -> computeGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject))
                 .orElseGet(CollectionsHelper::listOf);
 
         List<Grant> grants = new LinkedList<>(serverGrants);
 
         // additional grants may not be cached (leave this decision to overriding class)
-        addAdditionalGrants(idcsMtContext.getTenantId(), idcsMtContext.getAppId(), subject)
+        addAdditionalGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject)
                 .map(grants::addAll);
 
         return buildSubject(subject, grants);
@@ -480,7 +480,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return tenant id of the cache record
          */
         protected String idcsTenantId() {
-            return idcsMtContext.getTenantId();
+            return idcsMtContext.tenantId();
         }
 
         /**
@@ -498,7 +498,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return application id of the cache record
          */
         protected String idcsAppName() {
-            return idcsMtContext.getAppId();
+            return idcsMtContext.appId();
         }
 
         /**
@@ -506,8 +506,8 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          *
          * @return IDCS multitenancy context of the cache record
          */
-        protected String idcsMtContext() {
-            return idcsAppName();
+        protected IdcsMtContext idcsMtContext() {
+            return idcsMtContext;
         }
 
         @Override

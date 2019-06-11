@@ -39,7 +39,7 @@ public final class IdcsMtContext {
      * IDCS Tenancy ID.
      * @return idcs tenancy ID
      */
-    public String getTenantId() {
+    public String tenantId() {
         return tenantId;
     }
 
@@ -47,7 +47,7 @@ public final class IdcsMtContext {
      * IDCS Application ID.
      * @return idcs application ID
      */
-    public String getAppId() {
+    public String appId() {
         return appId;
     }
 
