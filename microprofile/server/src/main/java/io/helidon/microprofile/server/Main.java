@@ -95,9 +95,7 @@ public final class Main {
             InputStream resourceStream = Main.class.getResourceAsStream("/" + LOGGING_FILE);
             if (null != resourceStream) {
                 logConfigStream = new BufferedInputStream(resourceStream);
-                if (null != logConfigStream) {
-                    source = "classpath: /" + LOGGING_FILE;
-                }
+                source = "classpath: /" + LOGGING_FILE;
             } else {
               logConfigStream = null;
             }
