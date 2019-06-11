@@ -36,11 +36,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 
 /**
- * The PlainTest.
+ * Tests transfer encoding and optimizations.
  */
-public class EncodingTest {
+public class TransferEncodingTest {
 
-    private static final Logger LOGGER = Logger.getLogger(EncodingTest.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TransferEncodingTest.class.getName());
 
     private static WebServer webServer;
 
@@ -55,9 +55,20 @@ public class EncodingTest {
         webServer = WebServer.create(
                 ServerConfiguration.builder().port(port).build(),
                 Routing.builder()
-                        .get("/foo", (req, res) -> res.send("It works!"))
-                        .get("/foo/{bar}", (req, res) -> res.send(req.path().param("bar")))
-                        .any(Handler.create(String.class, (req, res, entity) -> res.send("Oops " + entity)))
+                        .get("/length", (req, res) -> {
+                            String payload = "It works!";
+                            res.headers().add("content-length", String.valueOf(payload.length()));
+                            res.send(payload);
+                        })
+                        .get("/chunked", (req, res) -> {
+                            String payload = "It works!";
+                            res.headers().add("transfer-encoding", "chunked");
+                            res.send(payload);
+                        })
+                        .get("/optimized", (req, res) -> {
+                            String payload = "It works!";
+                            res.send(payload);
+                        })
                         .build())
                 .start()
                 .toCompletableFuture()
@@ -67,29 +78,42 @@ public class EncodingTest {
     }
 
     /**
-     * Test path decoding and matching.
+     * Test content length.
      *
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEncodedUrl() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/f%6F%6F", Http.Method.GET, null, webServer);
+    public void testContentLength() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/length", Http.Method.GET, null, webServer);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         Map<String, String> headers = cutHeaders(s);
-        assertThat(headers, hasEntry("connection", "keep-alive"));
+        assertThat(headers, hasEntry("content-length", "9"));
     }
 
     /**
-     * Test path decoding with params and matching.
+     * Test chunked encoding.
      *
      * @throws Exception If an error occurs.
      */
     @Test
-    public void testEncodedUrlParams() throws Exception {
-        String s = SocketHttpClient.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null, webServer);
-        assertThat(cutPayloadAndCheckHeadersFormat(s), is("bar"));
+    public void testChunkedEncoding() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/chunked", Http.Method.GET, null, webServer);
+        assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
         Map<String, String> headers = cutHeaders(s);
-        assertThat(headers, hasEntry("connection", "keep-alive"));
+        assertThat(headers, hasEntry("transfer-encoding", "chunked"));
+    }
+
+    /**
+     * Test optimized or content length in this case.
+     *
+     * @throws Exception If an error occurs.
+     */
+    @Test
+    public void testOptimized() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/optimized", Http.Method.GET, null, webServer);
+        assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, hasEntry("content-length", "9"));
     }
 
     private Map<String, String> cutHeaders(String response) {

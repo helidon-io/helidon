@@ -170,13 +170,25 @@ public class SocketHttpClient implements AutoCloseable {
         StringBuilder sb = new StringBuilder();
         String t;
         boolean ending = false;
+        int contentLength = -1;
         while ((t = br.readLine()) != null) {
 
             LOGGER.finest("Received: " + t);
 
+            if (t.toLowerCase().startsWith("content-length")) {
+                int k = t.indexOf(':');
+                contentLength = Integer.parseInt(t.substring(k + 1).trim());
+            }
+
             sb.append(t)
               .append("\n");
 
+            if ("".equalsIgnoreCase(t) && contentLength >= 0) {
+                char[] content = new char[contentLength];
+                br.read(content);
+                sb.append(content);
+                break;
+            }
             if (ending && "".equalsIgnoreCase(t)) {
                 break;
             }

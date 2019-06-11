@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,11 +64,12 @@ public class ServerFileReader implements Flow.Publisher<DataChunk> {
                             return;
                         }
                         if (bytes > 0) {
-                            buffer.rewind();
                             LOGGER.info(buffer.toString());
+                            buffer.flip();
                             s.onNext(DataChunk.create(buffer));
                             n--;
                         }
+                        buffer.rewind();
                     }
                 } catch (IOException e) {
                     s.onError(e);

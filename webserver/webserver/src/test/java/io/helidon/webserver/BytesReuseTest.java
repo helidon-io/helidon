@@ -96,6 +96,7 @@ public class BytesReuseTest {
                                                 }
                                                 return chunk;
                                             })));
+                            res.headers().add("Transfer-Encoding", "chunked");
                             req.next();
                         })
                         .post("/subscriber", (req, res) -> {
