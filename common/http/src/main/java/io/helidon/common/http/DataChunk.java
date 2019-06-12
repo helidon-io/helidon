@@ -74,11 +74,11 @@ public interface DataChunk {
      *
      * @param flush a signal that chunk should be written and flushed from any cache if possible
      * @param data  a data chunk. Should not be reused until {@code releaseCallback} is used
-     * @param immutable indicates underlying buffer is not reused
+     * @param readOnly indicates underlying buffer is not reused
      * @return a reusable data chunk with no release callback
      */
-    static DataChunk create(boolean flush, ByteBuffer data, boolean immutable) {
-        return create(flush, data, Utils.EMPTY_RUNNABLE, immutable);
+    static DataChunk create(boolean flush, ByteBuffer data, boolean readOnly) {
+        return create(flush, data, Utils.EMPTY_RUNNABLE, readOnly);
     }
 
     /**
@@ -99,13 +99,12 @@ public interface DataChunk {
      * @param flush           a signal that chunk should be written and flushed from any cache if possible
      * @param data            a data chunk. Should not be reused until {@code releaseCallback} is used
      * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
-     * @param immutable       indicates underlying buffer is not reused
+     * @param readOnly       indicates underlying buffer is not reused
      * @return a reusable data chunk with a release callback
      */
-    static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback, boolean immutable) {
+    static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback, boolean readOnly) {
         return new DataChunk() {
             private boolean isReleased = false;
-            private boolean isImmutable = immutable;
 
             @Override
             public ByteBuffer data() {
@@ -129,8 +128,8 @@ public interface DataChunk {
             }
 
             @Override
-            public boolean isImmutable() {
-                return isImmutable;
+            public boolean isReadOnly() {
+                return readOnly;
             }
         };
     }
@@ -247,7 +246,7 @@ public interface DataChunk {
      *
      * @return Immutability outcome.
      */
-    default boolean isImmutable() {
+    default boolean isReadOnly() {
         return false;
     }
 }
