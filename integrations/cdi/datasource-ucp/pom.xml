@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@
         <artifactId>helidon-integrations-cdi-project</artifactId>
         <version>1.1.2-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-    <name>Helidon CDI Integrations HikariCP DataSource</name>
+    <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
+    <name>Helidon CDI Integrations UCP DataSource</name>
 
     <properties>
         <!-- maven-javadoc-plugin property -->
@@ -34,13 +34,7 @@
     </properties>
 
     <dependencies>
-      <!-- Compile-scoped dependencies. -->
-        <dependency>
-            <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-datasource</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
+        <!-- Compile-scoped dependencies. -->
         <dependency>
             <groupId>io.helidon.serviceconfiguration</groupId>
             <artifactId>helidon-serviceconfiguration-config-source</artifactId>
@@ -48,15 +42,21 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-hikaricp</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-datasource</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
+            <groupId>com.oracle.jdbc</groupId>
+            <artifactId>ucp</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.oracle.jdbc</groupId>
+                    <artifactId>ojdbc10</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -77,20 +77,6 @@
         </dependency>
 
         <!-- Runtime-scoped dependencies. -->
-        <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-hikaricp-accs</artifactId>
-            <scope>runtime</scope>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.serviceconfiguration</groupId>
-            <artifactId>helidon-serviceconfiguration-hikaricp-localhost</artifactId>
-            <version>${project.version}</version>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
