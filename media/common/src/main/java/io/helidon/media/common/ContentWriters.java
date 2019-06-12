@@ -158,7 +158,7 @@ public final class ContentWriters {
             } else {
                 bs = bytes;
             }
-            DataChunk chunk = DataChunk.create(false, ByteBuffer.wrap(bs));
+            DataChunk chunk = DataChunk.create(false, ByteBuffer.wrap(bs), true);
             return ReactiveStreamsAdapter.publisherToFlow(Mono.just(chunk));
         }
     }
@@ -195,7 +195,7 @@ public final class ContentWriters {
             if (s == null || s.length() == 0) {
                 return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
             }
-            DataChunk chunk = DataChunk.create(false, charset.encode(s.toString()));
+            DataChunk chunk = DataChunk.create(false, charset.encode(s.toString()), true);
             return ReactiveStreamsAdapter.publisherToFlow(Mono.just(chunk));
         }
     }
@@ -220,7 +220,7 @@ public final class ContentWriters {
             if (buffer == null || buffer.size() == 0) {
                 return ReactiveStreamsAdapter.publisherToFlow(Mono.empty());
             }
-            final DataChunk chunk = DataChunk.create(false, buffer.encode(charset));
+            final DataChunk chunk = DataChunk.create(false, buffer.encode(charset), true);
             return ReactiveStreamsAdapter.publisherToFlow(Mono.just(chunk));
         }
     }

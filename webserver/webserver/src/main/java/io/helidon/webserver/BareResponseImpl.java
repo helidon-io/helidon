@@ -75,6 +75,9 @@ class BareResponseImpl implements BareResponse {
     private final GenericFutureListener<? extends Future<? super Void>> channelClosedListener;
 
     private volatile Flow.Subscription subscription;
+    private volatile DataChunk firstChunk;
+    private volatile DefaultHttpResponse response;
+    private volatile boolean lengthOptimization;
 
     /**
      * @param ctx the channel handler context
@@ -130,7 +133,7 @@ class BareResponseImpl implements BareResponse {
             throw new IllegalStateException("Status and headers were already sent");
         }
 
-        DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, valueOf(status.code()));
+        response = new DefaultHttpResponse(HTTP_1_1, valueOf(status.code()));
         for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             response.headers().add(headerEntry.getKey(), headerEntry.getValue());
         }
@@ -140,24 +143,25 @@ class BareResponseImpl implements BareResponse {
                 .filter(header -> header.startsWith(HTTP_2_HEADER_PREFIX))
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
+        // Set chunked if length not set, may switch to length later
+        boolean lengthSet = HttpUtil.isContentLengthSet(response);
+        if (!lengthSet) {
+            lengthOptimization = status.code() == Http.Status.OK_200.code()
+                    && !HttpUtil.isTransferEncodingChunked(response);
+            HttpUtil.setTransferEncodingChunked(response, true);
+        }
+
+        // Add keep alive header as per:
+        // http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
         if (keepAlive) {
-            if (status.code() != Http.Status.NO_CONTENT_204.code()) {
-                HttpUtil.setTransferEncodingChunked(response, true);
-            }
-            // Add keep alive header as per:
-            // - http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Connection
             response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
         }
 
-        LOGGER.finest(() -> log("Writing headers: " + status));
-        ctx.writeAndFlush(response)
-                .addListener(future -> {
-                    if (future.isSuccess()) {
-                        headersFuture.complete(this);
-                    }
-                })
-                .addListener(completeOnFailureListener("An exception occurred when writing headers."))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+        // Content length optimization attempt
+        if (!lengthOptimization) {
+            LOGGER.finest(() -> log("Writing headers: " + status));
+            initWriteResponse();
+        }
     }
 
     /**
@@ -209,7 +213,21 @@ class BareResponseImpl implements BareResponse {
         }
     }
 
+    /**
+     * Write last HTTP content. If length optimization is active and a first chunk is cached,
+     * switch content encoding and write response.
+     *
+     * @param throwable A throwable.
+     * @param closeAction Close action listener.
+     */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
+        if (lengthOptimization) {
+            if (firstChunk != null) {
+                HttpUtil.setTransferEncodingChunked(response, false);
+                HttpUtil.setContentLength(response, firstChunk.data().limit());
+            }
+            initWriteResponse();
+        }
         ctx.writeAndFlush(LAST_HTTP_CONTENT)
                 .addListener(completeOnFailureListener("An exception occurred when writing last http content."))
                 .addListener(completeOnSuccessListener(throwable))
@@ -245,7 +263,42 @@ class BareResponseImpl implements BareResponse {
             throw new IllegalStateException("Response is already closed!");
         }
         if (data != null) {
+            if (lengthOptimization) {
+                if (firstChunk == null) {
+                    firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                    return;
+                }
+                initWriteResponse();
+            }
+            sendData(data);
+        }
+    }
 
+    /**
+     * Initiates write of response and sends first chunk if available.
+     *
+     * @return Future of response or first chunk.
+     */
+    private ChannelFuture initWriteResponse() {
+        ChannelFuture cf = ctx.write(response)
+                .addListener(future -> {
+                    if (future.isSuccess()) {
+                        headersFuture.complete(this);
+                    }
+                })
+                .addListener(completeOnFailureListener("An exception occurred when writing headers."))
+                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+        response = null;
+        if (firstChunk != null) {
+            cf = sendData(firstChunk);
+            firstChunk.release();
+            firstChunk = null;
+        }
+        lengthOptimization = false;
+        return cf;
+    }
+
+    private ChannelFuture sendData(DataChunk data) {
             LOGGER.finest(() -> log("Sending data chunk"));
 
             DefaultHttpContent httpContent = new DefaultHttpContent(Unpooled.wrappedBuffer(data.data()));
@@ -259,15 +312,13 @@ class BareResponseImpl implements BareResponse {
                 channelFuture = ctx.write(httpContent);
             }
 
-            channelFuture
+            return channelFuture
                     .addListener(future -> {
                         data.release();
                         LOGGER.finest(() -> log("Data chunk sent with result: " + future.isSuccess()));
                     })
                     .addListener(completeOnFailureListener("Failure when sending a content!"))
                     .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-
-        }
     }
 
     private String log(String s) {

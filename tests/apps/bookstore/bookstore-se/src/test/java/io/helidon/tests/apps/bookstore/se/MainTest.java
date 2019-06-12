@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 public class MainTest {
 
     private static WebServer webServer;
@@ -70,6 +72,7 @@ public class MainTest {
 
         conn = getURLConnection("GET","/books");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
+        Assertions.assertNotNull(conn.getHeaderField("content-length"));
 
         conn = getURLConnection("POST","/books");
         writeJsonContent(conn, json);
@@ -81,16 +84,17 @@ public class MainTest {
         JsonObject jsonObject = jsonReader.readObject();
         Assertions.assertEquals("123456", jsonObject.getString("isbn"),
                 "Checking if correct ISBN");
+        Assertions.assertNotNull(conn.getHeaderField("content-length"));
 
         conn = getURLConnection("GET","/books/0000");
         Assertions.assertEquals(404, conn.getResponseCode(), "HTTP response GET bad ISBN");
 
         conn = getURLConnection("GET","/books");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response list books");
+        Assertions.assertNotNull(conn.getHeaderField("content-length"));
 
         conn = getURLConnection("DELETE","/books/123456");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response delete book");
-
     }
 
     private HttpURLConnection getURLConnection(String method, String path) throws Exception {

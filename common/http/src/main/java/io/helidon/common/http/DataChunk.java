@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,19 @@ public interface DataChunk {
      * @return a reusable data chunk with no release callback
      */
     static DataChunk create(boolean flush, ByteBuffer data) {
-        return create(flush, data, Utils.EMPTY_RUNNABLE);
+        return create(flush, data, Utils.EMPTY_RUNNABLE, false);
+    }
+
+    /**
+     * Creates a reusable data chunk.
+     *
+     * @param flush a signal that chunk should be written and flushed from any cache if possible
+     * @param data  a data chunk. Should not be reused until {@code releaseCallback} is used
+     * @param readOnly indicates underlying buffer is not reused
+     * @return a reusable data chunk with no release callback
+     */
+    static DataChunk create(boolean flush, ByteBuffer data, boolean readOnly) {
+        return create(flush, data, Utils.EMPTY_RUNNABLE, readOnly);
     }
 
     /**
@@ -78,6 +90,19 @@ public interface DataChunk {
      * @return a reusable data chunk with a release callback
      */
     static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback) {
+        return create(flush, data, releaseCallback, false);
+    }
+
+    /**
+     * Creates a reusable data chunk.
+     *
+     * @param flush           a signal that chunk should be written and flushed from any cache if possible
+     * @param data            a data chunk. Should not be reused until {@code releaseCallback} is used
+     * @param releaseCallback a callback which is called when this chunk is completely processed and instance is free for reuse
+     * @param readOnly       indicates underlying buffer is not reused
+     * @return a reusable data chunk with a release callback
+     */
+    static DataChunk create(boolean flush, ByteBuffer data, Runnable releaseCallback, boolean readOnly) {
         return new DataChunk() {
             private boolean isReleased = false;
 
@@ -100,6 +125,11 @@ public interface DataChunk {
             @Override
             public boolean isReleased() {
                 return isReleased;
+            }
+
+            @Override
+            public boolean isReadOnly() {
+                return readOnly;
             }
         };
     }
@@ -192,6 +222,31 @@ public interface DataChunk {
      * @return {@code true} if it is requested to flush all caches after this chunk is written, defaults to {@code false}.
      */
     default boolean flush() {
+        return false;
+    }
+
+    /**
+     * Makes a copy of this data chunk including its underlying {@link ByteBuffer}. This
+     * may be necessary for caching in case {@link ByteBuffer#rewind()} is called to
+     * reuse a byte buffer. Note that only the actual bytes used in the data chunk are
+     * copied, the resulting data chunk's capacity may be less than the original.
+     *
+     * @return A copy of this data chunk.
+     */
+    default DataChunk duplicate() {
+        byte[] bytes = new byte[data().limit()];
+        DataChunk dup = DataChunk.create(data().get(bytes));
+        dup.data().position(0);
+        return dup;
+    }
+
+    /**
+     * Returns {@code true} if the underlying byte buffer of this chunk is read
+     * only or {@code false} otherwise.
+     *
+     * @return Immutability outcome.
+     */
+    default boolean isReadOnly() {
         return false;
     }
 }

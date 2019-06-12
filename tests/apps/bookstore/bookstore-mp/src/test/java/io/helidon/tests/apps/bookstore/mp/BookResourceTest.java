@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class BookResourceTest {
 
@@ -53,6 +54,7 @@ class BookResourceTest {
                 .request()
                 .post(Entity.json(getBookAsJson()));
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(1);
 
@@ -60,6 +62,7 @@ class BookResourceTest {
                 .request()
                 .get();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(1);
 
@@ -67,6 +70,7 @@ class BookResourceTest {
                 .request()
                 .put(Entity.json(getBookAsJson()));
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(1);
 
@@ -74,6 +78,7 @@ class BookResourceTest {
                 .request()
                 .delete();
         assertEquals(Response.Status.OK.getStatusCode(), res.getStatus());
+        assertNotNull(res.getHeaderString("content-length"));
 
         assertBookStoreSize(0);
     }

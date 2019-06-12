@@ -106,7 +106,6 @@ class MainTest {
         runJsonFunctionalTest("mp", "");
     }
 
-
     @Test
     void basicTestMetricsHealthSE() throws Exception {
         runMetricsAndHealthTest("se", "jsonp");

@@ -128,8 +128,6 @@ class ResponseWriter implements ContainerResponseWriter {
 
         if (contentLength >= 0) {
             res.headers().put(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
-        } else {
-            res.headers().put(Http.Header.TRANSFER_ENCODING, "chunked");
         }
 
         for (Map.Entry<String, List<String>> entry : context.getStringHeaders().entrySet()) {

@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -59,11 +60,16 @@ public class PlainTest {
     private static void startServer(int port) throws Exception {
         webServer = WebServer.create(
                 ServerConfiguration.builder().port(port).build(),
-                Routing.builder()
+                Routing.builder().any((req, res) -> {
+                            res.headers().add(Http.Header.TRANSFER_ENCODING, "chunked");
+                            req.next();
+                       })
                        .any("/exception", (req, res) -> {
                            throw new RuntimeException("my always thrown exception");
                        })
-                       .get("/", (req, res) -> res.send("It works!"))
+                       .get("/", (req, res) -> {
+                           res.send("It works!");
+                       })
                        .post("/unconsumed", (req, res) -> res.send("Payload not consumed!"))
                        .any("/deferred", (req, res) -> ForkJoinPool.commonPool().submit(() -> {
                            Thread.yield();
@@ -326,7 +332,7 @@ public class PlainTest {
             s.request(Http.Method.GET, "/", null, CollectionsHelper.listOf("Connection: close"));
 
             // assert
-            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("It works!\n"));
+            assertThat(cutPayloadAndCheckHeadersFormat(s.receive()), is("9\nIt works!\n0\n\n"));
             SocketHttpClient.assertConnectionIsClosed(s);
         }
     }
@@ -341,7 +347,7 @@ public class PlainTest {
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("4\nabcd\n0\n\n"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, not(IsMapContaining.hasKey("connection")));
-        assertThat(headers, hasEntry(Http.Header.TRANSFER_ENCODING, "chunked"));
+        assertThat(headers, hasEntry(Http.Header.TRANSFER_ENCODING.toLowerCase(), "chunked"));
     }
 
     @Test
@@ -351,7 +357,7 @@ public class PlainTest {
                                                    null,
                                                    CollectionsHelper.listOf("Connection: close"),
                                                    webServer);
-        assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!\n"));
+        assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
         Map<String, String> headers = cutHeaders(s);
         assertThat(headers, not(IsMapContaining.hasKey("connection")));
     }
