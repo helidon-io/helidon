@@ -265,7 +265,7 @@ class BareResponseImpl implements BareResponse {
         if (data != null) {
             if (lengthOptimization) {
                 if (firstChunk == null) {
-                    firstChunk = data.isImmutable() ? data : data.duplicate();      // cache first chunk
+                    firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
                     return;
                 }
                 initWriteResponse();
