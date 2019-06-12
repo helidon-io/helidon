@@ -18,7 +18,9 @@ package io.helidon.webserver.jersey;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -27,11 +29,13 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
 import io.helidon.common.InputStreamHelper;
@@ -212,4 +216,20 @@ public class JerseyExampleResource {
     	throw new WebApplicationException(Response.status(404).entity("Not Found").build());
     }
 
+    @GET
+    @Path("/streamingOutput")
+    @Produces("application/stream+json")
+    public StreamingOutput getHelloOutputStream() {
+        return out -> {
+                try {
+                    out.write(("{ value: \"first\" }\n").getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                    Thread.sleep(500);     // wait before sending next chunk
+                    out.write(("{ value: \"second\" }\n").getBytes(StandardCharsets.UTF_8));
+                    out.flush();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+        };
+    }
 }

@@ -17,6 +17,7 @@
 package io.helidon.webserver.jersey;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -296,6 +297,23 @@ public class JerseySupportTest {
                 .get();
 
         doAssert(response, "abc;");
+    }
+
+    @Test
+    public void streamingOutput() throws IOException {
+        Response response = webTarget.path("jersey/first/streamingOutput")
+                .request()
+                .get();
+        assertEquals(Response.Status.Family.SUCCESSFUL, response.getStatusInfo().getFamily(),
+                "Unexpected error: " + response.getStatus());
+        try (InputStream is = response.readEntity(InputStream.class)) {
+            byte[] buffer = new byte[32];
+            int n = is.read(buffer);        // should read only first chunk
+            assertEquals(new String(buffer, 0, n), "{ value: \"first\" }\n");
+            while ((n = is.read(buffer)) > 0) {
+                // consume rest of stream
+            }
+        }
     }
 
     static StringBuilder longData(int bytes) {
