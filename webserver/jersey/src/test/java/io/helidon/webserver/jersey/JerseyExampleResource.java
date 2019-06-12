@@ -224,9 +224,7 @@ public class JerseyExampleResource {
                 try {
                     out.write(("{ value: \"first\" }\n").getBytes(StandardCharsets.UTF_8));
                     out.flush();
-
-                    Thread.sleep(2000);     // wait before sending next chunk
-
+                    Thread.sleep(500);     // wait before sending next chunk
                     out.write(("{ value: \"second\" }\n").getBytes(StandardCharsets.UTF_8));
                     out.flush();
                 } catch (Exception e) {
