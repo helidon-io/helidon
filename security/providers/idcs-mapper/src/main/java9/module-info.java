@@ -27,6 +27,9 @@ module io.helidon.security.providers.idcs.mapper {
     requires io.helidon.security.util;
     requires java.logging;
 
+    requires jersey.client;
+    requires java.ws.rs;
+
     exports io.helidon.security.providers.idcs.mapper;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderService;
