@@ -16,13 +16,17 @@
 
 package io.helidon.webserver;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -30,7 +34,13 @@ import java.util.stream.Collectors;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.AlreadyCompletedException;
+import io.helidon.common.http.Content;
+import io.helidon.common.http.ContextualRegistry;
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.MediaType;
+import io.helidon.common.http.Parameters;
+import io.helidon.common.reactive.Flow;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -100,11 +110,221 @@ class RequestRouting implements Routing {
             RoutedRequest nextRequests = new RoutedRequest(bareRequest, response, webServer, crawler, errorHandlers, span);
             // only register the span context once on the top level request, as others are cloned from it
             nextRequests.context().register(span.context());
-            Contexts.runInContext(nextRequests.context(), (Runnable) nextRequests::next);
+
+            // we must execute system services
+            Contexts.runInContext(nextRequests.context(), () -> {
+                List<SystemService> systemServices = webServer.configuration().systemServices();
+                if (!systemServices.isEmpty()) {
+                    ServerRequest systemRequest = systemRequest(nextRequests);
+                    ServerResponse systemResponse = systemResponse(response);
+                    for (SystemService service : systemServices) {
+                        service.handle(systemRequest, systemResponse);
+                    }
+                }
+                nextRequests.next();
+            });
         } catch (Error | RuntimeException e) {
             LOGGER.log(Level.SEVERE, "Unexpected error occurred during routing!", e);
             throw e;
         }
+    }
+
+    private ServerResponse systemResponse(RoutedResponse response) {
+        return new ServerResponse() {
+            @Override
+            public WebServer webServer() {
+                return response.webServer();
+            }
+
+            @Override
+            public Http.ResponseStatus status() {
+                return response.status();
+            }
+
+            @Override
+            public ServerResponse status(Http.ResponseStatus status) throws AlreadyCompletedException, NullPointerException {
+                response.status(status);
+                return this;
+            }
+
+            @Override
+            public ResponseHeaders headers() {
+                return response.headers();
+            }
+
+            @Override
+            public <T> CompletionStage<ServerResponse> send(T content) {
+                throw new IllegalStateException("System services cannot complete the response");
+            }
+
+            @Override
+            public CompletionStage<ServerResponse> send(Flow.Publisher<DataChunk> content) {
+                throw new IllegalStateException("System services cannot complete the response");
+            }
+
+            @Override
+            public CompletionStage<ServerResponse> send() {
+                throw new IllegalStateException("System services cannot complete the response");
+            }
+
+            @Override
+            public <T> ServerResponse registerWriter(Class<T> type, Function<T, Flow.Publisher<DataChunk>> function) {
+                response.registerWriter(type, function);
+                return this;
+            }
+
+            @Override
+            public <T> ServerResponse registerWriter(Class<T> type,
+                                                     MediaType contentType,
+                                                     Function<? extends T, Flow.Publisher<DataChunk>> function) {
+                response.registerWriter(type, contentType, function);
+                return this;
+            }
+
+            @Override
+            public <T> ServerResponse registerWriter(Predicate<?> accept, Function<T, Flow.Publisher<DataChunk>> function) {
+                response.registerWriter(accept, function);
+                return this;
+            }
+
+            @Override
+            public <T> ServerResponse registerWriter(Predicate<?> accept,
+                                                     MediaType contentType,
+                                                     Function<T, Flow.Publisher<DataChunk>> function) {
+                response.registerWriter(accept, contentType, function);
+                return this;
+            }
+
+            @Override
+            public ServerResponse registerFilter(Function<Flow.Publisher<DataChunk>, Flow.Publisher<DataChunk>> function) {
+                response.registerFilter(function);
+                return this;
+            }
+
+            @Override
+            public CompletionStage<ServerResponse> whenSent() {
+                return response.whenSent().thenApply(origRes -> this);
+            }
+
+            @Override
+            public long requestId() {
+                return response.requestId();
+            }
+        };
+    }
+
+    private ServerRequest systemRequest(RoutedRequest req) {
+        URI normalizedUri = req.uri().normalize();
+        String path = canonicalize(normalizedUri.getPath());
+        String rawPath = canonicalize(normalizedUri.getRawPath());
+        Request.Path pathObject = Request.Path.create(null, path, rawPath, CollectionsHelper.mapOf());
+
+        return new ServerRequest() {
+            @Override
+            public void next() {
+                throw new IllegalStateException("Next cannot be called on system services");
+            }
+
+            @Override
+            public void next(Throwable t) {
+                throw new IllegalStateException("Next cannot be called on system services", t);
+            }
+
+            @Override
+            public WebServer webServer() {
+                return req.webServer();
+            }
+
+            @Override
+            public ContextualRegistry context() {
+                return req.context();
+            }
+
+            @Override
+            public String localAddress() {
+                return req.localAddress();
+            }
+
+            @Override
+            public int localPort() {
+                return req.localPort();
+            }
+
+            @Override
+            public String remoteAddress() {
+                return req.remoteAddress();
+            }
+
+            @Override
+            public int remotePort() {
+                return req.remotePort();
+            }
+
+            @Override
+            public boolean isSecure() {
+                return req.isSecure();
+            }
+
+            @Override
+            public RequestHeaders headers() {
+                return req.headers();
+            }
+
+            @Override
+            public Content content() {
+                return req.content();
+            }
+
+            @Override
+            public long requestId() {
+                return req.requestId();
+            }
+
+            @Override
+            public Span span() {
+                return req.span();
+            }
+
+            @Override
+            public SpanContext spanContext() {
+                return req.spanContext();
+            }
+
+            @Override
+            public Http.RequestMethod method() {
+                return req.method();
+            }
+
+            @Override
+            public Http.Version version() {
+                return req.version();
+            }
+
+            @Override
+            public URI uri() {
+                return req.uri();
+            }
+
+            @Override
+            public String query() {
+                return req.query();
+            }
+
+            @Override
+            public Parameters queryParams() {
+                return req.queryParams();
+            }
+
+            @Override
+            public Path path() {
+                return pathObject;
+            }
+
+            @Override
+            public String fragment() {
+                return req.fragment();
+            }
+        };
     }
 
     private static String canonicalize(String p) {

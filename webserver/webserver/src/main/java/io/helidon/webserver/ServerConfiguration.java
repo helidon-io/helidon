@@ -19,18 +19,25 @@ package io.helidon.webserver;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
 import javax.net.ssl.SSLContext;
 
 import io.helidon.common.CollectionsHelper;
+import io.helidon.common.Prioritized;
 import io.helidon.common.context.Context;
+import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
+import io.helidon.webserver.spi.SystemServiceProvider;
 
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -181,6 +188,13 @@ public interface ServerConfiguration extends SocketConfiguration {
     ExperimentalConfiguration experimental();
 
     /**
+     * System services to be called by the server.
+     *
+     * @return system services
+     */
+    List<SystemService> systemServices();
+
+    /**
      * Creates new instance with defaults from external configuration source.
      *
      * @param config the externalized configuration
@@ -213,6 +227,11 @@ public interface ServerConfiguration extends SocketConfiguration {
      * A {@link ServerConfiguration} builder.
      */
     final class Builder implements io.helidon.common.Builder<ServerConfiguration> {
+        private final HelidonServiceLoader.Builder<SystemServiceProvider> systemServices = HelidonServiceLoader
+                .builder(ServiceLoader.load(SystemServiceProvider.class));
+
+        private boolean useSystemServiceLoader = false;
+        private final List<SystemService> explicitSystemServices = new LinkedList();
 
         private final SocketConfiguration.Builder defaultSocketBuilder = SocketConfiguration.builder();
         private final Map<String, SocketConfiguration> sockets = new HashMap<>();
@@ -220,6 +239,7 @@ public interface ServerConfiguration extends SocketConfiguration {
         private Tracer tracer;
         private ExperimentalConfiguration experimental;
         private Context context;
+        private Config config;
 
         private Builder() {
         }
@@ -256,6 +276,49 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         public Builder port(int port) {
             defaultSocketBuilder.port(port);
+            return this;
+        }
+
+        /**
+         * Register a {@link io.helidon.webserver.SystemService} to be used by all
+         * routings in the WebServer.
+         * The order of registration is significant. Services are invoked in the
+         * order of registration.
+         * In case the {@link #useSystemServiceLoader(boolean)} is used, all
+         * {@link io.helidon.webserver.spi.SystemServiceProvider}
+         * services will be loaded using {@link HelidonServiceLoader} and order of
+         * services is based on their priority defined either by {@link io.helidon.common.Prioritized},
+         *  or by {@link javax.annotation.Priority}.
+         *
+         * @param service system service to register
+         * @return an updated builder
+         */
+        public Builder register(SystemService service) {
+            this.systemServices.addService(new SystemServiceProvider() {
+                @Override
+                public SystemService create(Config config) {
+                    return service;
+                }
+
+                @Override
+                public String name() {
+                    return service.getClass().getName();
+                }
+            }, findPriority(service));
+            this.explicitSystemServices.add(service);
+            return this;
+        }
+
+        /**
+         * When system services are loaded from {@link io.helidon.common.serviceloader.HelidonServiceLoader},
+         *  all services are ordered by priority.
+         * This changes behavior of {@link #register(SystemService)}.
+         *
+         * @param useSystemServices {@code true} to load system services using a Java service loader, defaults to {@code false}
+         * @return an updated builder
+         */
+        public Builder useSystemServiceLoader(boolean useSystemServices) {
+            this.useSystemServiceLoader = useSystemServices;
             return this;
         }
 
@@ -408,7 +471,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * default protocols
          * @return an updated builder
          */
-        public Builder enabledSSlProtocols(String... protocols){
+        public Builder enabledSSlProtocols(String... protocols) {
             this.defaultSocketBuilder.enabledSSlProtocols(protocols);
             return this;
         }
@@ -419,7 +482,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          *  the default protocols
          * @return an updated builder
          */
-        public Builder enabledSSlProtocols(List<String> protocols){
+        public Builder enabledSSlProtocols(List<String> protocols) {
             this.defaultSocketBuilder.enabledSSlProtocols(protocols);
             return this;
         }
@@ -464,6 +527,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return an updated builder
          */
         public Builder config(Config config) {
+            this.config = config;
             if (config == null) {
                 return this;
             }
@@ -529,6 +593,21 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public ServerConfiguration build() {
+            if (null == config) {
+                config = Config.empty();
+            }
+
+            if (useSystemServiceLoader) {
+                Config servicesConfig = config.get("system-services");
+
+                this.explicitSystemServices.clear();
+                this.explicitSystemServices.addAll(systemServices.build()
+                                                           .asList()
+                                                           .stream()
+                                                           .map(provider -> provider.create(servicesConfig.get(provider.name())))
+                                                           .collect(Collectors.toList()));
+            }
+
             if (null == tracer) {
                 tracer = GlobalTracer.get();
             }
@@ -575,6 +654,22 @@ public interface ServerConfiguration extends SocketConfiguration {
 
         Context context() {
             return context;
+        }
+
+        private static int findPriority(Object o) {
+            if (o instanceof Prioritized) {
+                return ((Prioritized) o).priority();
+            }
+            Priority prio = o.getClass().getAnnotation(Priority.class);
+            if (null == prio) {
+                return Prioritized.DEFAULT_PRIORITY;
+            }
+            return prio.value();
+
+        }
+
+        List<SystemService> systemServices() {
+            return explicitSystemServices;
         }
     }
 }

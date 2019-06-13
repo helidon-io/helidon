@@ -300,6 +300,7 @@ public interface WebServer {
          */
         @Override
         public WebServer build() {
+            configuration = (null == configuration) ? ServerBasicConfig.DEFAULT_CONFIGURATION : configuration;
 
             String unpairedRoutings =
                     routings.keySet()
@@ -310,10 +311,7 @@ public interface WebServer {
                 throw new IllegalStateException("No server socket configuration found for named routings: " + unpairedRoutings);
             }
 
-            WebServer result = new NettyWebServer(configuration == null
-                                                          ? ServerBasicConfig.DEFAULT_CONFIGURATION
-                                                          : configuration,
-                                                  defaultRouting, routings);
+            WebServer result = new NettyWebServer(configuration, defaultRouting, routings);
             if (defaultRouting instanceof RequestRouting) {
                 ((RequestRouting) defaultRouting).fireNewWebServer(result);
             }

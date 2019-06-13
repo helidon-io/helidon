@@ -143,7 +143,7 @@ class NettyWebServer implements WebServer {
     @Override
     public synchronized CompletionStage<WebServer> start() {
         if (!started) {
-
+            initializeSystemServices();
             channelsUpFuture.thenAccept(startFuture::complete)
                             .exceptionally(throwable -> {
                                 if (channels.isEmpty()) {
@@ -234,6 +234,10 @@ class NettyWebServer implements WebServer {
             LOGGER.fine(() -> "All channels startup routine initiated: " + bootstrapsSize);
         }
         return startFuture;
+    }
+
+    private void initializeSystemServices() {
+        configuration.systemServices().forEach(service -> service.updateApplicationContext(context()));
     }
 
     private WebServer startFailureHandler(Throwable throwable) {

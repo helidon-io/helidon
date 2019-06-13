@@ -1,0 +1,71 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+:description: Helidon Reactive Webserver Access Log
+:keywords: helidon, webserver, system service, extension
+
+= WebServer System Services
+
+System services are extensions of a WebServer that can:
+
+1. Register instances to the application `io.helidon.common.context.Context`
+2. Intercept the request and response without terminating it
+
+A system service can be configured explicitly:
+
+[source,java]
+.Example reading configuration and registering a system service
+----
+ServerConfiguration.builder(config.get("server"))
+                .register(AccessLogSystemService.create())
+                .build();
+----
+
+== Using Service Loader to load System Services
+System services can also be loaded from classpath using the Java service loader mechanism:
+
+[source,java]
+.Example reading configuration and loading system services from classpath
+----
+ServerConfiguration.builder(config.get("server"))
+                .useSystemServiceLoader(true)
+                .build();
+----
+
+Note that system loader has to be explicitly enabled, otherwise the services are not loaded.
+
+The order of services (even the ones registered explicitly) is based on the
+service priority, defined either by annotation `@Priority` or by implementing
+interface `Prioritized`.
+
+Service loader uses the class `io.helidon.webserver.spi.SystemServiceProvider` that
+supports additional configuration of system services.
+
+The configuration is expected under the config node provided to `ServerConfiguration.Builder`
+   under node `system-services`, key of the specific service is defined in that service provider.
+
+[source,yaml]
+.Example configuration of system services when using a Java service loader
+----
+server:
+  system-services:
+    access-log:
+        fromat: "common"
+----
+
+

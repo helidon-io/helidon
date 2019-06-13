@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,6 +42,7 @@ class ServerBasicConfig implements ServerConfiguration {
     private final Map<String, SocketConfiguration> socketConfigs;
     private final ExperimentalConfiguration experimental;
     private final Context context;
+    private final List<SystemService> systemServices;
 
     /**
      * Creates new instance.
@@ -53,6 +55,7 @@ class ServerBasicConfig implements ServerConfiguration {
         this.tracer = builder.tracer();
         this.experimental = builder.experimental();
         this.context = builder.context();
+        this.systemServices = Collections.unmodifiableList(builder.systemServices());
 
         HashMap<String, SocketConfiguration> map = new HashMap<>(builder.sockets());
         map.put(ServerConfiguration.DEFAULT_SOCKET_NAME, this.socketConfig);
@@ -117,6 +120,11 @@ class ServerBasicConfig implements ServerConfiguration {
     @Override
     public Context context() {
         return context;
+    }
+
+    @Override
+    public List<SystemService> systemServices() {
+        return systemServices;
     }
 
     static class SocketConfig implements SocketConfiguration {

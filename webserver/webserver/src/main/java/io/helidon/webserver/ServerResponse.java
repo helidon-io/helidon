@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -239,4 +240,13 @@ public interface ServerResponse {
      * @return a unique correlation ID associated with this response and its request
      */
     long requestId();
+
+    /**
+     * The number of bytes actually sent within this response entity.
+     * @return number of bytes sent for responses with entity, 0 for responses without entity,
+     *  or empty in case this response was not yet sent
+     */
+    default Optional<Long> entitySize() {
+        return Optional.empty();
+    }
 }
