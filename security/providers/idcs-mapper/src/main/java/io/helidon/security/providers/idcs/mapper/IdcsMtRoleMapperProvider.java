@@ -127,32 +127,29 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                               ProviderRequest request,
                               AuthenticationResponse previousResponse) {
 
-        Optional<String> maybeIdcsTenantId = idcsTenantTokenHandler.extractToken(request.env().headers());
-        Optional<String> maybeIdcsAppName = idcsAppNameTokenHandler.extractToken(request.env().headers());
+        Optional<IdcsMtContext> maybeIdcsMtContext = extractIdcsMtContext(subject, request);
 
-        if (!maybeIdcsAppName.isPresent() || !maybeIdcsTenantId.isPresent()) {
-            LOGGER.finest(() -> "Missing multitenant information TENANT: "
-                    + maybeIdcsTenantId
-                    + ", APP_NAME: "
-                    + maybeIdcsAppName
+        if (!maybeIdcsMtContext.isPresent()) {
+            LOGGER.finest(() -> "Missing multitenant information IDCS CONTEXT: "
+                    + maybeIdcsMtContext
                     + ", subject: "
                     + subject);
             return subject;
         }
 
-        String idcsAppName = maybeIdcsAppName.get();
-        String idcsTenantId = maybeIdcsTenantId.get();
+        IdcsMtContext idcsMtContext = maybeIdcsMtContext.get();
         String name = subject.principal().getName();
-        MtCacheKey cacheKey = new MtCacheKey(idcsTenantId, idcsAppName, name);
+        MtCacheKey cacheKey = new MtCacheKey(idcsMtContext, name);
 
         // double cache
-        List<Grant> serverGrants = cache.computeValue(cacheKey, () -> computeGrants(idcsTenantId, idcsAppName, subject))
+        List<Grant> serverGrants = cache.computeValue(cacheKey,
+                () -> computeGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject))
                 .orElseGet(CollectionsHelper::listOf);
 
         List<Grant> grants = new LinkedList<>(serverGrants);
 
         // additional grants may not be cached (leave this decision to overriding class)
-        addAdditionalGrants(idcsTenantId, idcsAppName, subject)
+        addAdditionalGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject)
                 .map(grants::addAll);
 
         return buildSubject(subject, grants);
@@ -162,6 +159,22 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         return getGrantsFromServer(idcsTenantId, idcsAppName, subject)
                 .map(grants -> Collections.unmodifiableList(new LinkedList<>(grants)));
 
+    }
+
+    /**
+     * Extract IDCS multitenancy context form the the request.
+     *
+     * <p>By default, the context is extracted from the headers using token handlers for
+     * {@link Builder#idcsTenantTokenHandler(TokenHandler) tenant} and
+     * {@link Builder#idcsAppNameTokenHandler(TokenHandler) app}.
+     * @param subject Subject that is being mapped
+     * @param request ProviderRequest context that is being mapped.
+     * @return Optional with the context, empty if the context is not present in the request.
+     */
+    protected Optional<IdcsMtContext> extractIdcsMtContext(Subject subject, ProviderRequest request) {
+        return idcsTenantTokenHandler.extractToken(request.env().headers())
+                .flatMap(tenant -> idcsAppNameTokenHandler.extractToken(request.env().headers())
+                        .map(app -> new IdcsMtContext(tenant, app)));
     }
 
     /**
@@ -430,24 +443,34 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * Suitable for use in maps and sets.
      */
     public static class MtCacheKey {
-        private final String idcsTenantId;
-        private final String idcsAppName;
+        private final IdcsMtContext idcsMtContext;
         private final String username;
 
         /**
          * New (immutable) cache key.
          *
-         * @param idcsTenantId IDCS stenant ID
+         * @param idcsTenantId IDCS tenant ID
          * @param idcsAppName  IDCS application name
          * @param username     username
          */
         protected MtCacheKey(String idcsTenantId, String idcsAppName, String username) {
-            Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory");
-            Objects.requireNonNull(idcsAppName, "IDCS App id is mandatory");
+            this(new IdcsMtContext(
+                    Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory"),
+                    Objects.requireNonNull(idcsAppName, "IDCS App id is mandatory")),
+                    username);
+        }
+
+        /**
+         * New (immutable) cache key.
+         *
+         * @param idcsMtContext IDCS multitenancy context
+         * @param username     username
+         */
+        protected MtCacheKey(IdcsMtContext idcsMtContext, String username) {
+            Objects.requireNonNull(idcsMtContext, "IDCS Multitenancy Context is mandatory");
             Objects.requireNonNull(username, "username is mandatory");
 
-            this.idcsTenantId = idcsTenantId;
-            this.idcsAppName = idcsAppName;
+            this.idcsMtContext = idcsMtContext;
             this.username = username;
         }
 
@@ -457,7 +480,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return tenant id of the cache record
          */
         protected String idcsTenantId() {
-            return idcsTenantId;
+            return idcsMtContext.tenantId();
         }
 
         /**
@@ -475,7 +498,16 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          * @return application id of the cache record
          */
         protected String idcsAppName() {
-            return idcsAppName;
+            return idcsMtContext.appId();
+        }
+
+        /**
+         * IDCS Multitenancy context.
+         *
+         * @return IDCS multitenancy context of the cache record
+         */
+        protected IdcsMtContext idcsMtContext() {
+            return idcsMtContext;
         }
 
         @Override
@@ -487,14 +519,13 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                 return false;
             }
             MtCacheKey cacheKey = (MtCacheKey) o;
-            return idcsTenantId.equals(cacheKey.idcsTenantId)
-                    && idcsAppName.equals(cacheKey.idcsAppName)
+            return idcsMtContext.equals(cacheKey.idcsMtContext)
                     && username.equals(cacheKey.username);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(idcsTenantId, idcsAppName, username);
+            return Objects.hash(idcsMtContext, username);
         }
     }
 }
