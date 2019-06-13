@@ -25,7 +25,7 @@ module io.helidon.metrics {
     requires java.management;
     requires io.helidon.webserver;
     requires io.helidon.media.jsonp.server;
-    requires org.glassfish.java.json;
+    requires java.json;
 
     exports io.helidon.metrics;
 }

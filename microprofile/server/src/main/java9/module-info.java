@@ -27,7 +27,7 @@ module io.helidon.microprofile.server {
     requires transitive cdi.api;
     requires transitive java.ws.rs;
     requires transitive jersey.server;
-    requires transitive org.glassfish.java.json;
+    requires transitive java.json;
     // needed by jersey
     requires transitive java.activation;
 
