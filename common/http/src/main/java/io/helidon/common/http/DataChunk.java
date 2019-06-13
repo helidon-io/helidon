@@ -249,4 +249,14 @@ public interface DataChunk {
     default boolean isReadOnly() {
         return false;
     }
+
+    /**
+     * An empty data chunk with a flush flag can be used to force a connection
+     * flush. This method determines if this chunk is used for that purpose.
+     *
+     * @return Outcome of test.
+     */
+    default boolean isFlushChunk() {
+        return flush() && data().limit() == 0;
+    }
 }
