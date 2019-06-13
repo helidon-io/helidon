@@ -136,7 +136,7 @@ class ResponseWriter implements ContainerResponseWriter {
 
         res.send(ReactiveStreamsAdapter.publisherToFlow(
                     ReactiveStreamsAdapter.publisherFromFlow(publisher)
-                        .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer))));
+                        .map(byteBuffer -> DataChunk.create(doFlush(context, byteBuffer), byteBuffer, true))));
 
         return publisher;
     }

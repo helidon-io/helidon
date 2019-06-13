@@ -263,6 +263,10 @@ class BareResponseImpl implements BareResponse {
             throw new IllegalStateException("Response is already closed!");
         }
         if (data != null) {
+            if (data.isFlushChunk()) {
+                ctx.flush();
+                return;
+            }
             if (lengthOptimization) {
                 if (firstChunk == null) {
                     firstChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
