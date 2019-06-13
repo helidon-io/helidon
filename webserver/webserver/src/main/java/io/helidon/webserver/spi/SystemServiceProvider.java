@@ -19,10 +19,21 @@ import io.helidon.config.Config;
 import io.helidon.webserver.SystemService;
 
 /**
- * TODO hypothetical user manual to see how this would be used.
+ * A Java service loader provider that exposes a {@link SystemService} to WebServer.
  */
 public interface SystemServiceProvider {
+    /**
+     * Create a system service from configuration.
+     *
+     * @param config configuration located on the configuration node as defined by {@link #name()}
+     * @return a new system service instance
+     */
     SystemService create(Config config);
+
+    /**
+     * Name of this system service, also used to locate configuration node in server configuration.
+     * @return name of this service to be used as a key in configuration
+     */
     String name();
 
 }

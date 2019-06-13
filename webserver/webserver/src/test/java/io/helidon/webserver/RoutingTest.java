@@ -115,7 +115,10 @@ public class RoutingTest {
         BareRequest bareRequestMock = Mockito.mock(BareRequest.class);
         Mockito.doReturn(URI.create("http://0.0.0.0:1234/" + path)).when(bareRequestMock).uri();
         Mockito.doReturn(method).when(bareRequestMock).method();
-        Mockito.doReturn(Mockito.mock(WebServer.class)).when(bareRequestMock).webServer();
+
+        WebServer webServer = Mockito.mock(WebServer.class);
+        Mockito.doReturn(ServerConfiguration.builder().build()).when(webServer).configuration();
+        Mockito.doReturn(webServer).when(bareRequestMock).webServer();
         return bareRequestMock;
     }
 
