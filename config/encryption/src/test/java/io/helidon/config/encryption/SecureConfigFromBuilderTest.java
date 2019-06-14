@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -47,7 +48,7 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
                                    .masterPassword("myMasterPasswordForEncryption".toCharArray())
                                    .privateKey(keyConfig)
                                    .buildProvider())
-                .build();
+                .build().get("current");
 
         configRequiresEncryption = Config.builder()
                 .disableFilterServices()
@@ -56,7 +57,7 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
                                    .masterPassword("myMasterPasswordForEncryption".toCharArray())
                                    .privateKey(keyConfig)
                                    .buildProvider())
-                .build();
+                .build().get("current");
 
         assertThat("We must have the correct configuration file", config.get("pwd1").type().isLeaf());
         assertThat("We must have the correct configuration file", configRequiresEncryption.get("pwd1").type().isLeaf());
@@ -70,5 +71,10 @@ public class SecureConfigFromBuilderTest extends AbstractSecureConfigTest {
     @Override
     Config getConfigRequiresEncryption() {
         return configRequiresEncryption;
+    }
+
+    @Test
+    public void testWrongSymmetric() {
+        testPassword(getConfig(), "pwd9", "${GCM=not really encrypted}");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -47,9 +48,12 @@ public final class EncryptionUtil {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int SALT_LENGTH = 16;
+    private static final int NONCE_LENGTH = 12; //(Also called IV) Needs to be 12 when using GCM!
     private static final int SEED_LENGTH = 16;
     private static final int HASH_ITERATIONS = 10000;
-    private static final int KEY_LENGTH = 128;
+    private static final int KEY_LENGTH_LEGACY = 128;
+    private static final int KEY_LENGTH = 256;
+    private static final int AUTHENTICATION_TAG_LENGTH = 128;
 
     private EncryptionUtil() {
         throw new IllegalStateException("Utility class");
@@ -92,6 +96,9 @@ public final class EncryptionUtil {
     public static String encryptRsa(Key key, String secret) throws ConfigEncryptionException {
         Objects.requireNonNull(key, "Key must be provided for encryption");
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
+        if (secret.getBytes(StandardCharsets.UTF_8).length > 245) {
+            throw new ConfigEncryptionException("Secret value is too large. Maximum of 245 bytes is allowed.");
+        }
 
         try {
             Cipher cipher = Cipher.getInstance("RSA");
@@ -104,7 +111,7 @@ public final class EncryptionUtil {
     }
 
     /**
-     * Encrypt using AES, salted and seeded.
+     * Encrypt using AES with GCM method, key is derived from password with random salt.
      *
      * @param masterPassword master password
      * @param secret         secret to encrypt
@@ -116,36 +123,31 @@ public final class EncryptionUtil {
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
 
         byte[] salt = SECURE_RANDOM.generateSeed(SALT_LENGTH);
-
-        Cipher cipher = cipher(masterPassword, salt, Cipher.ENCRYPT_MODE);
-
-        // get bytes to encrypt (seed + original message)
-        byte[] seed = SECURE_RANDOM.generateSeed(SEED_LENGTH);
+        byte[] nonce = SECURE_RANDOM.generateSeed(NONCE_LENGTH);
         byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
-        byte[] bytesToEncrypt = new byte[secretBytes.length + seed.length];
-        System.arraycopy(seed, 0, bytesToEncrypt, 0, seed.length);
-        System.arraycopy(secretBytes, 0, bytesToEncrypt, seed.length, secretBytes.length);
 
+        Cipher cipher = cipher(masterPassword, salt, nonce, Cipher.ENCRYPT_MODE);
         // encrypt
         byte[] encryptedMessageBytes;
         try {
-            encryptedMessageBytes = cipher.doFinal(bytesToEncrypt);
+            encryptedMessageBytes = cipher.doFinal(secretBytes);
         } catch (Exception e) {
             throw new ConfigEncryptionException("Failed to encrypt", e);
         }
 
-        // get bytes to base64 (salt + encrypted message)
-        byte[] bytesToEncode = new byte[encryptedMessageBytes.length + salt.length];
+        // get bytes to base64 (salt + nonce + encrypted message)
+        byte[] bytesToEncode = new byte[encryptedMessageBytes.length + salt.length + nonce.length];
         System.arraycopy(salt, 0, bytesToEncode, 0, salt.length);
-        System.arraycopy(encryptedMessageBytes, 0, bytesToEncode, seed.length, encryptedMessageBytes.length);
+        System.arraycopy(nonce, 0, bytesToEncode, salt.length, nonce.length);
+        System.arraycopy(encryptedMessageBytes, 0, bytesToEncode, nonce.length + salt.length, encryptedMessageBytes.length);
 
         return Base64.getEncoder().encodeToString(bytesToEncode);
     }
 
-    private static Cipher cipher(char[] masterPassword, byte[] salt, int cipherMode) throws ConfigEncryptionException {
+    private static Cipher cipherLegacy(char[] masterPassword, byte[] salt, int cipherMode) throws ConfigEncryptionException {
         try {
             SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
+            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH_LEGACY);
             SecretKeySpec spec = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(cipherMode, spec, new IvParameterSpec(salt));
@@ -153,6 +155,59 @@ public final class EncryptionUtil {
             return cipher;
         } catch (Exception e) {
             throw new ConfigEncryptionException("Failed to prepare a cipher instance", e);
+        }
+    }
+
+    private static Cipher cipher(char[] masterPassword, byte[] salt, byte[] nonce, int cipherMode)
+            throws ConfigEncryptionException {
+        try {
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
+            SecretKeySpec spec = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(cipherMode, spec, new GCMParameterSpec(AUTHENTICATION_TAG_LENGTH, nonce));
+
+            return cipher;
+        } catch (Exception e) {
+            throw new ConfigEncryptionException("Failed to prepare a cipher instance", e);
+        }
+    }
+
+    /**
+     *
+     *
+     * @param masterPassword  master password
+     * @param encryptedBase64 encrypted secret, base64 encoded
+     * @return Decrypted secret
+     */
+    static String decryptAesLegacy(char[] masterPassword, String encryptedBase64) {
+        Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
+        Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
+
+        try {
+            // decode base64
+            byte[] decodedBytes = Base64.getDecoder().decode(encryptedBase64);
+
+            // extract salt and encrypted bytes
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] encryptedBytes = new byte[decodedBytes.length - SALT_LENGTH];
+
+            System.arraycopy(decodedBytes, 0, salt, 0, SALT_LENGTH);
+            System.arraycopy(decodedBytes, SALT_LENGTH, encryptedBytes, 0, encryptedBytes.length);
+
+            // get cipher
+            Cipher cipher = cipherLegacy(masterPassword, salt, Cipher.DECRYPT_MODE);
+
+            // bytes with seed
+            byte[] decryptedBytes;
+            decryptedBytes = cipher.doFinal(encryptedBytes);
+            byte[] originalBytes = new byte[decryptedBytes.length - SEED_LENGTH];
+            System.arraycopy(decryptedBytes, SEED_LENGTH, originalBytes, 0, originalBytes.length);
+
+            return new String(originalBytes, StandardCharsets.UTF_8);
+        } catch (Throwable e) {
+            throw new ConfigEncryptionException("Failed to decrypt value using AES. Returning clear text value as is: "
+                                                        + encryptedBase64, e);
         }
     }
 
@@ -176,19 +231,21 @@ public final class EncryptionUtil {
 
             // extract salt and encrypted bytes
             byte[] salt = new byte[SALT_LENGTH];
-            byte[] encryptedBytes = new byte[decodedBytes.length - SALT_LENGTH];
+            byte[] nonce = new byte[NONCE_LENGTH];
+            byte[] encryptedBytes = new byte[decodedBytes.length - SALT_LENGTH - NONCE_LENGTH];
 
             System.arraycopy(decodedBytes, 0, salt, 0, SALT_LENGTH);
-            System.arraycopy(decodedBytes, SALT_LENGTH, encryptedBytes, 0, encryptedBytes.length);
+            System.arraycopy(decodedBytes, SALT_LENGTH, nonce, 0, NONCE_LENGTH);
+            System.arraycopy(decodedBytes, SALT_LENGTH + NONCE_LENGTH, encryptedBytes, 0, encryptedBytes.length);
 
             // get cipher
-            Cipher cipher = cipher(masterPassword, salt, Cipher.DECRYPT_MODE);
+            Cipher cipher = cipher(masterPassword, salt, nonce, Cipher.DECRYPT_MODE);
 
             // bytes with seed
             byte[] decryptedBytes;
             decryptedBytes = cipher.doFinal(encryptedBytes);
-            byte[] originalBytes = new byte[decryptedBytes.length - SEED_LENGTH];
-            System.arraycopy(decryptedBytes, SEED_LENGTH, originalBytes, 0, originalBytes.length);
+            byte[] originalBytes = new byte[decryptedBytes.length];
+            System.arraycopy(decryptedBytes, 0, originalBytes, 0, originalBytes.length);
 
             return new String(originalBytes, StandardCharsets.UTF_8);
         } catch (Throwable e) {

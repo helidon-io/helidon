@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.2] - 2019-06-14
 
 ### Notes
 
@@ -21,6 +21,7 @@ MicroProfile Fault Tolerance now passes all TCKs.
 
 - WebServer: Content-length optimization [773](https://github.com/oracle/helidon/pull/773) [783](https://github.com/oracle/helidon/pull/783)
 - WebServer: JAX-RS: Fixes support for application calls to flush() when using StreamingOutput. [758](https://github.com/oracle/helidon/pull/758)
+- Security: Encryption changed to GCM method
 - CDI Extension: JPA: disable DTDs and external entities [774](https://github.com/oracle/helidon/pull/774)
 - OpenAPI: Expand openapi mediatypes [766](https://github.com/oracle/helidon/pull/766)
 - Security: Remove unneeded dependency on JAXB [779](https://github.com/oracle/helidon/pull/779)
@@ -348,7 +349,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.1.1...HEAD
+[1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/oracle/helidon/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/oracle/helidon/compare/1.0.3...1.1.0
 [1.0.3]: https://github.com/oracle/helidon/compare/1.0.2...1.0.3
