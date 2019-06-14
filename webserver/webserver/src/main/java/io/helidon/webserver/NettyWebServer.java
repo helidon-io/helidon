@@ -45,6 +45,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
@@ -108,9 +110,22 @@ class NettyWebServer implements WebServer {
                 } else {
                     protocols = soConfig.enabledSslProtocols().toArray(new String[0]);
                 }
+
+                // Enable ALPN for application protocol negotiation with HTTP/2
+                // Needs JDK >= 9 or Jetty’s ALPN boot library
+                ApplicationProtocolConfig appProtocolConfig = null;
+                if (configuration.isHttp2Enabled()) {
+                    appProtocolConfig = new ApplicationProtocolConfig(
+                            ApplicationProtocolConfig.Protocol.ALPN,
+                            ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                            ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                            ApplicationProtocolNames.HTTP_2,
+                            ApplicationProtocolNames.HTTP_1_1);
+                }
+
                 sslContext = new JdkSslContext(
                         soConfig.ssl(), false, null,
-                        IdentityCipherSuiteFilter.INSTANCE, null,
+                        IdentityCipherSuiteFilter.INSTANCE, appProtocolConfig,
                         ClientAuth.NONE, protocols, false);
             }
 
