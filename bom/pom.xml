@@ -430,8 +430,33 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-ucp-accs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-ucp-localhost</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.serviceconfiguration</groupId>
+                <artifactId>helidon-serviceconfiguration-ucp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-datasource</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
