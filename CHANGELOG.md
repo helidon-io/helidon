@@ -9,9 +9,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Notes
 
+This is a bug fix release. It includes improved support for setting Content-Length on server responses, and
+MicroProfile Fault Tolerance now passes all TCKs.
+
 ### Improvements
 
+- MicroProfile: Create Helidon MP 2.2 bundle: [765](https://github.com/oracle/helidon/pull/765)
+- Fault Tolerance: Completed support for async bulkheads [755](https://github.com/oracle/helidon/pull/755)
+
 ### Fixes
+
+- WebServer: Content-length optimization [773](https://github.com/oracle/helidon/pull/773) [783](https://github.com/oracle/helidon/pull/783)
+- WebServer: JAX-RS: Fixes support for application calls to flush() when using StreamingOutput. [758](https://github.com/oracle/helidon/pull/758)
+- CDI Extension: JPA: disable DTDs and external entities [774](https://github.com/oracle/helidon/pull/774)
+- OpenAPI: Expand openapi mediatypes [766](https://github.com/oracle/helidon/pull/766)
+- Security: Remove unneeded dependency on JAXB [779](https://github.com/oracle/helidon/pull/779)
+- Security: Make IdcsMtRoleMapperProvider more flexible [761](https://github.com/oracle/helidon/pull/761)
+- gRPC Server: propagate context [769](https://github.com/oracle/helidon/pull/769)
+- Examples: Add employee-app example [747](https://github.com/oracle/helidon/pull/747)
+- Testing: Added Unit Tests to increase code coverage [660](https://github.com/oracle/helidon/pull/660)
 
 ## [1.1.1] - 2019-05-23
 
