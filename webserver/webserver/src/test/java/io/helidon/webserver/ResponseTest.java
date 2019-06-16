@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
@@ -31,6 +32,7 @@ import io.helidon.common.reactive.ReactiveStreamsAdapter;
 
 import io.opentracing.SpanContext;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import reactor.core.publisher.Mono;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -54,12 +56,14 @@ public class ResponseTest {
         StringBuffer sb = new StringBuffer();
         NoOpBareResponse br = new NoOpBareResponse(sb);
         // Close all
-        Response response = new ResponseImpl(null, br);
+        WebServer webServer = Mockito.mock(WebServer.class);
+        Mockito.doReturn(ServerConfiguration.builder().build()).when(webServer).configuration();
+        Response response = new ResponseImpl(webServer, br);
         close(response);
         assertThat(sb.toString(), is("h200c"));
         // Close first headers and then al
         sb.setLength(0);
-        response = new ResponseImpl(null, br);
+        response = new ResponseImpl(webServer, br);
         response.status(300);
         response.headers().send().toCompletableFuture().get();
         assertThat(sb.toString(), is("h300"));
@@ -236,7 +240,7 @@ public class ResponseTest {
     static class ResponseImpl extends Response {
 
         public ResponseImpl(WebServer webServer, BareResponse bareResponse) {
-            super(webServer, bareResponse);
+            super(webServer, bareResponse, new AtomicReference<>(), new AtomicReference<>());
         }
 
         @Override

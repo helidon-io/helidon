@@ -24,7 +24,10 @@
 System services are extensions of a WebServer that can:
 
 1. Register instances to the application `io.helidon.common.context.Context`
-2. Intercept the request and response without terminating it
+2. Intercept the request - register readers and writers
+3. Intercept the response - update response headers
+4. System services cannot terminate processing and send a response
+
 
 A system service can be configured explicitly:
 
@@ -65,7 +68,7 @@ The configuration is expected under the config node provided to `ServerConfigura
 server:
   system-services:
     access-log:
-        fromat: "common"
+        format: "common"
 ----
 
 

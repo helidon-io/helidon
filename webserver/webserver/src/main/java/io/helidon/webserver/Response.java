@@ -26,9 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -37,6 +39,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.FlowUtil;
 import io.helidon.common.reactive.ReactiveStreamsAdapter;
 import io.helidon.media.common.ContentWriters;
 
@@ -56,6 +59,8 @@ abstract class Response implements ServerResponse {
     private final HashResponseHeaders headers;
 
     private final CompletionStage<ServerResponse> completionStage;
+    private final AtomicReference<ServerRequest> systemRequestRef;
+    private final AtomicReference<ServerResponse> systemResponseRef;
 
     // Content related
     private final SendLockSupport sendLockSupport;
@@ -64,15 +69,21 @@ abstract class Response implements ServerResponse {
 
     /**
      * Creates new instance.
-     *
-     * @param webServer a web server.
+     *  @param webServer a web server.
      * @param bareResponse an implementation of the response SPI.
+     * @param systemRequestRef
+     * @param systemResponseRef
      */
-    Response(WebServer webServer, BareResponse bareResponse) {
+    Response(WebServer webServer,
+             BareResponse bareResponse,
+             AtomicReference<ServerRequest> systemRequestRef,
+             AtomicReference<ServerResponse> systemResponseRef) {
         this.webServer = webServer;
         this.bareResponse = bareResponse;
         this.headers = new HashResponseHeaders(bareResponse);
         this.completionStage = bareResponse.whenCompleted().thenApply(a -> this);
+        this.systemRequestRef = systemRequestRef;
+        this.systemResponseRef = systemResponseRef;
         this.sendLockSupport = new SendLockSupport();
         this.writers = new ArrayList<>();
         this.filters = new ArrayList<>();
@@ -91,6 +102,8 @@ abstract class Response implements ServerResponse {
         this.sendLockSupport = response.sendLockSupport;
         this.writers = response.writers;
         this.filters = response.filters;
+        this.systemRequestRef = response.systemRequestRef;
+        this.systemResponseRef = response.systemResponseRef;
     }
 
     /**
@@ -150,16 +163,25 @@ abstract class Response implements ServerResponse {
 
     @Override
     public <T> CompletionStage<ServerResponse> send(T content) {
+        Flow.Publisher<DataChunk> publisher = createPublisherUsingWriter(content);
+        if (publisher == null) {
+            throw new IllegalArgumentException("Cannot write! No registered writer for '"
+                                                       + content.getClass().getName() + "'.");
+        }
+        return send(publisher);
+    }
+
+    @Override
+    public CompletionStage<ServerResponse> send(Flow.Publisher<DataChunk> content) {
         Span writeSpan = createWriteSpan(content);
         try {
+            Flow.Publisher<DataChunk> publisher = (content == null) ? FlowUtil.emptyPublisher() : content;
+
+            invokeSystemServices();
+
             sendLockSupport.execute(() -> {
-                Flow.Publisher<DataChunk> publisher = createPublisherUsingWriter(content);
-                if (publisher == null) {
-                    throw new IllegalArgumentException("Cannot write! No registered writer for '"
-                                                               + content.getClass().toString() + "'.");
-                }
                 Flow.Publisher<DataChunk> p = applyFilters(publisher, writeSpan);
-                sendLockSupport.contentSend = true;
+                sendLockSupport.sent();
                 p.subscribe(bareResponse);
             }, content == null);
             return whenSent();
@@ -169,22 +191,11 @@ abstract class Response implements ServerResponse {
         }
     }
 
-    @Override
-    public CompletionStage<ServerResponse> send(Flow.Publisher<DataChunk> content) {
-        Span writeSpan = createWriteSpan(content);
-        try {
-            Flow.Publisher<DataChunk> publisher = (content == null)
-                    ? ReactiveStreamsAdapter.publisherToFlow(Mono.empty())
-                    : content;
-            sendLockSupport.execute(() -> {
-                Flow.Publisher<DataChunk> p = applyFilters(publisher, writeSpan);
-                sendLockSupport.contentSend = true;
-                p.subscribe(bareResponse);
-            }, content == null);
-            return whenSent();
-        } catch (RuntimeException | Error e) {
-            writeSpan.finish();
-            throw e;
+    void invokeSystemServices() {
+        // before we actually start sending the response, we need to execute system services
+        List<SystemService> systemServices = webServer.configuration().systemServices();
+        if (!systemServices.isEmpty()) {
+            systemServices.forEach(svc -> svc.processResponse(systemRequestRef.get(), systemResponseRef.get()));
         }
     }
 
@@ -357,11 +368,11 @@ abstract class Response implements ServerResponse {
 
     private static class SendLockSupport {
 
-        private boolean contentSend = false;
+        private boolean contentSent = false;
 
         private synchronized void execute(Runnable runnable, boolean silentSendStatus) {
             // test effective close
-            if (contentSend) {
+            if (contentSent) {
                 if (silentSendStatus) {
                     return;
                 } else {
@@ -369,6 +380,10 @@ abstract class Response implements ServerResponse {
                 }
             }
             runnable.run();
+        }
+
+        private synchronized void sent() {
+            this.contentSent = true;
         }
     }
 }

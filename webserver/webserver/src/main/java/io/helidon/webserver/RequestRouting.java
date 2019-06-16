@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -76,9 +77,12 @@ class RequestRouting implements Routing {
     @Override
     public void route(BareRequest bareRequest, BareResponse bareResponse) {
         try {
+            AtomicReference<ServerRequest> systemRequest = new AtomicReference<>();
+            AtomicReference<ServerResponse> systemResponse = new AtomicReference<>();
+
             WebServer webServer = bareRequest.webServer();
             Span span = createRequestSpan(tracer(webServer), bareRequest);
-            RoutedResponse response = new RoutedResponse(webServer, bareResponse, span.context());
+            RoutedResponse response = new RoutedResponse(webServer, bareResponse, span.context(), systemRequest, systemResponse);
             response.whenSent()
                     .thenRun(() -> {
                         Http.ResponseStatus httpStatus = response.status();
@@ -115,10 +119,12 @@ class RequestRouting implements Routing {
             Contexts.runInContext(nextRequests.context(), () -> {
                 List<SystemService> systemServices = webServer.configuration().systemServices();
                 if (!systemServices.isEmpty()) {
-                    ServerRequest systemRequest = systemRequest(nextRequests);
-                    ServerResponse systemResponse = systemResponse(response);
+                    ServerRequest req = systemRequest(nextRequests);
+                    ServerResponse res = systemResponse(response);
+                    systemRequest.set(req);
+                    systemResponse.set(res);
                     for (SystemService service : systemServices) {
-                        service.handle(systemRequest, systemResponse);
+                        service.processRequest(req, res);
                     }
                 }
                 nextRequests.next();
@@ -129,7 +135,7 @@ class RequestRouting implements Routing {
         }
     }
 
-    private ServerResponse systemResponse(RoutedResponse response) {
+    static ServerResponse systemResponse(Response response) {
         return new ServerResponse() {
             @Override
             public WebServer webServer() {
@@ -213,7 +219,7 @@ class RequestRouting implements Routing {
         };
     }
 
-    private ServerRequest systemRequest(RoutedRequest req) {
+    static ServerRequest systemRequest(Request req) {
         URI normalizedUri = req.uri().normalize();
         String path = canonicalize(normalizedUri.getPath());
         String rawPath = canonicalize(normalizedUri.getRawPath());
@@ -691,8 +697,13 @@ class RequestRouting implements Routing {
 
         private final SpanContext requestSpanContext;
 
-        RoutedResponse(WebServer webServer, BareResponse bareResponse, SpanContext requestSpanContext) {
-            super(webServer, bareResponse);
+        // AtomicReference is used because the request and response are created after the constructor is called
+        RoutedResponse(WebServer webServer,
+                       BareResponse bareResponse,
+                       SpanContext requestSpanContext,
+                       AtomicReference<ServerRequest> systemRequestRef,
+                       AtomicReference<ServerResponse> systemResponseRef) {
+            super(webServer, bareResponse, systemRequestRef, systemResponseRef);
             this.requestSpanContext = requestSpanContext;
         }
 

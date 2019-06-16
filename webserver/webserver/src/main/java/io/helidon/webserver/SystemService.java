@@ -22,9 +22,9 @@ import io.helidon.common.context.Context;
  * and that provides either application wide configuration through
  * {@link #updateApplicationContext(io.helidon.common.context.Context)},
  * or request specific configuration through
- * {@link #handle(io.helidon.webserver.ServerRequest, io.helidon.webserver.ServerResponse)}.
+ * {@link #processRequest(ServerRequest, ServerResponse)}.
  *
- * The system service cannot invoke {@link io.helidon.webserver.ServerRequest#next()}, not
+ * The system service can invoke neither {@link io.helidon.webserver.ServerRequest#next()} nor
  * any of the {@link io.helidon.webserver.ServerResponse#send()} methods.
  * Invocation of such methods will throw an {@link java.lang.UnsupportedOperationException}.
  */
@@ -40,11 +40,32 @@ public interface SystemService {
     }
 
     /**
-     * Handle a per-request configuration.
+     * Handle a per-request configuration. This method is called before routing methods are invoked.
+     * <p>
+     * Attempt to call {@link io.helidon.webserver.ServerRequest#next()} or any of the
+     * {@link io.helidon.webserver.ServerResponse#send()} methods will result in an
+     * {@link java.lang.UnsupportedOperationException}.
+     * <p>
+     * Behavior when the entity content is read by a system service is undefined.
      *
      * @param request to read headers, register readers etc.
      * @param response to write headers, register writers etc.
      */
-    default void handle(ServerRequest request, ServerResponse response) {
+    default void processRequest(ServerRequest request, ServerResponse response) {
+    }
+
+    /**
+     * This method allows modification of the response. This method is called after the routing method
+     * invoked any of the {@code send} methods, but before the entity is actually written.
+     * The {@link ServerResponse#headers()} can be still modified.
+     * <p>
+     * Attempt to call {@link io.helidon.webserver.ServerRequest#next()} or any of the
+     * {@link io.helidon.webserver.ServerResponse#send()} methods will result in an
+     * {@link java.lang.UnsupportedOperationException}.
+     *
+     * @param request to read headers
+     * @param response to write headers, register writers etc.
+     */
+    default void processResponse(ServerRequest request, ServerResponse response) {
     }
 }
