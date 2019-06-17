@@ -34,10 +34,11 @@
     <name>Helidon gRPC Project</name>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>core</module>
-        <module>server</module>
-        <module>client</module>
-        <module>metrics</module>
-    </modules>
+  <modules>
+    <module>io.grpc</module>
+    <module>core</module>
+    <module>server</module>
+    <module>client</module>
+    <module>metrics</module>
+  </modules>
 </project>
