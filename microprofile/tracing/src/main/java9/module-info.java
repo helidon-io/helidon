@@ -26,7 +26,6 @@ module io.helidon.microprofile.tracing {
     requires opentracing.api;
 
     requires cdi.api;
-    requires jakarta.inject;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.common;
