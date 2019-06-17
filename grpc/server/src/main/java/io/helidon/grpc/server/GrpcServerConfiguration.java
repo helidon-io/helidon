@@ -295,7 +295,7 @@ public interface GrpcServerConfiguration {
             return tracingConfig;
         }
 
-        SslConfiguration sslConfig() {
+        GrpcSslDescriptor sslConfig() {
             return sslConfig;
         }
 

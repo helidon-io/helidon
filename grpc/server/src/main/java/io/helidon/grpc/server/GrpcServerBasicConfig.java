@@ -16,9 +16,8 @@
 
 package io.helidon.grpc.server;
 
-import io.helidon.grpc.core.GrpcSslDescriptor;
-
 import io.helidon.common.context.Context;
+import io.helidon.grpc.core.GrpcSslDescriptor;
 
 import io.opentracing.Tracer;
 
