@@ -34,7 +34,13 @@
     </properties>
 
     <dependencies>
-        <!-- Compile-scoped dependencies. -->
+      <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-datasource</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.serviceconfiguration</groupId>
             <artifactId>helidon-serviceconfiguration-config-source</artifactId>

@@ -32,7 +32,9 @@
     <name>Helidon CDI Integrations</name>
 
     <modules>
+        <module>datasource</module>
         <module>datasource-hikaricp</module>
+        <module>datasource-ucp</module>
         <module>eclipselink-cdi</module>
         <module>jedis-cdi</module>
         <module>jpa-cdi</module>

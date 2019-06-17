@@ -29,42 +29,86 @@ security.config:
     # Password of keystore
     keystore-passphrase: "j4c"
 
-# Secret in clear text - for non-prod environments, this is enough. Intentionally wrapped as password to protect for prod.
-pwd1: "${CLEAR=known_password}"
-# A reference to another property (and maybe in the future to a key in a "wallet" service)
-pwd2: "${ALIAS=pwd1}"
-# Public key encrypted secret (can only be decrypted by private key)
-pwd3: "${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}"
-# "master" password encrypted password
-pwd4: "${AES=YbaZGjQfwOv0htF2nmRYaOMYp0+qY/IRQUlWHfRKeTw6Q2uy33Rp8ZhTwv0oDywE}"
+rsa:
+  # Public key encrypted secret (can only be decrypted by private key)
+  pwd3: "${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}"
+  # empty string
+  pwd5: "${RSA=vjjRO06oe/odWcPiJ9SpFkzjGmb4wLs8gRWTI4zJibi9Sa33nz9OMgDJrmeXv2/zKZGzvK4ihnyA4L70mu/nHnSFQ1ryTDJvrjsj0+Tt00bp1tk5h5xqYKVX54jmmC4jPe5qXcNrfIh9zVTBuVKWzv8dlE08zo/b0Qs/YaEin79ACQ645Fib0xolWeVIWwcMotRIVuez9yVYHSbC8Esc8qMVLTzXOswe0Sx9L/KwIScSw18ef/w98IGD0dfSD+xuMs/T2gYJDqyEHOPfF6t9d26851g/+a3WhZgglV7iQzg30e55v3uEF+GmsxMKLD38FAQRnQj2QYlDvCzOuRcA4Q==}"
+  # wrong encryption
+  pwd10: "${RSA=not really encrypted}"
 
-# empty string
-pwd5: "${RSA=vjjRO06oe/odWcPiJ9SpFkzjGmb4wLs8gRWTI4zJibi9Sa33nz9OMgDJrmeXv2/zKZGzvK4ihnyA4L70mu/nHnSFQ1ryTDJvrjsj0+Tt00bp1tk5h5xqYKVX54jmmC4jPe5qXcNrfIh9zVTBuVKWzv8dlE08zo/b0Qs/YaEin79ACQ645Fib0xolWeVIWwcMotRIVuez9yVYHSbC8Esc8qMVLTzXOswe0Sx9L/KwIScSw18ef/w98IGD0dfSD+xuMs/T2gYJDqyEHOPfF6t9d26851g/+a3WhZgglV7iQzg30e55v3uEF+GmsxMKLD38FAQRnQj2QYlDvCzOuRcA4Q==}"
-pwd6: "${AES=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}"
-# encrypted alias
-pwd7: "${ALIAS=pwd3}"
-# missing alias
-pwd8: "${ALIAS=missing}"
-# wrong encryption
-pwd9: "${AES=not really encrypted}"
-pwd10: "${RSA=not really encrypted}"
+  passwords: [
+    "${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}"
+  ]
 
-pwd11: "${ALIAS=pwd2}"
-pwd12: "${ALIAS=pwd11}"
+legacy:
+  # Secret in clear text - for non-prod environments, this is enough. Intentionally wrapped as password to protect for prod.
+  pwd1: "${CLEAR=known_password}"
+  # A reference to another property (and maybe in the future to a key in a "wallet" service)
+  pwd2: "${ALIAS=legacy.pwd1}"
+ # "master" password encrypted password
+  pwd4: "${AES=YbaZGjQfwOv0htF2nmRYaOMYp0+qY/IRQUlWHfRKeTw6Q2uy33Rp8ZhTwv0oDywE}"
 
-passwords: [
-    "${RSA=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==}",
+  # empty string
+  pwd6: "${AES=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}"
+  # encrypted alias
+  pwd7: "${ALIAS=legacy.pwd4}"
+  # missing alias
+  pwd8: "${ALIAS=missing}"
+  # wrong encryption
+  pwd9: "${AES=not really encrypted}"
+
+  pwd11: "${ALIAS=legacy.pwd2}"
+  pwd12: "${ALIAS=legacy.pwd11}"
+
+  passwords: [
     "${AES=LrbVVJOnn82fjl9ioV0pIDnYDhoNZp21KIEIjX8nTadlnlM8VQu2XXjJv8MFfHgm}",
     "${AES=xAzTBAstoNzvq2qk7szFGreIEfdxNx4OkIuLZHMUO/+p2441Sd4DkdmqgFKv0zNx}"
-]
+  ]
 
-objects: [
-    {
-        pwd: "${AES=gMTQIU+zcu9UPkGY8IKpYoVV2sxPna4O6rtlgKXtkqspSyxbLJMiu+VgqZq7okMX}"
-    },
-    {
-        pwd: "${AES=DalgBVpVjvbqNgC+jCM5AmMG0rr4BlTf0XQbJVs85ukch/PsF8reJ1NqGHF1GqgN}"
-    }
-]
+  objects: [
+  {
+    pwd: "${AES=gMTQIU+zcu9UPkGY8IKpYoVV2sxPna4O6rtlgKXtkqspSyxbLJMiu+VgqZq7okMX}"
+  },
+  {
+    pwd: "${AES=DalgBVpVjvbqNgC+jCM5AmMG0rr4BlTf0XQbJVs85ukch/PsF8reJ1NqGHF1GqgN}"
+  }
+  ]
 
-customEnc: "${URGH=argh}"
+  customEnc: "${URGH=argh}"
+
+current:
+  # Secret in clear text - for non-prod environments, this is enough. Intentionally wrapped as password to protect for prod.
+  pwd1: "${CLEAR=known_password}"
+  # A reference to another property (and maybe in the future to a key in a "wallet" service)
+  pwd2: "${ALIAS=current.pwd1}"
+  # "master" password encrypted password
+  pwd4: "${GCM=bQPPs+e2i4Sry7xB3MJWUPCnGWzx69Rgs6kskDIq8LRSJFonZ1NDlLhVhZBhtwpVdNlDa9qQSw==}"
+
+  # empty string
+  pwd6: "${GCM=p5GPxwagVVPyM3E7BvEy798rmQJojLuu957jvEZrqOKuJKeiCXyU7jONvU4=}"
+  # encrypted alias
+  pwd7: "${ALIAS=current.pwd4}"
+  # missing alias
+  pwd8: "${ALIAS=missing}"
+  # wrong encryption
+  pwd9: "${GCM=not really encrypted}"
+
+  pwd11: "${ALIAS=current.pwd2}"
+  pwd12: "${ALIAS=current.pwd11}"
+
+  passwords: [
+      "${GCM=O8vR1wYqWKDXSoLiHeo1WebiWfHd+H3bGm0AsmtmZt415KgqMqS6Q9HPSkmpVe6fX1YA6l9pIA==}",
+      "${GCM=dEdVNy4X7+8ySuWPf6lSlAghJhB5qGxsyrSdRGG0PFEwTHJNxNGOFuVNhaU=}"
+  ]
+
+  objects: [
+      {
+          pwd: "${GCM=t0ttpS+BhIwnsFhi3yklv6t+uPdMTbA8BxRhbMIM4Xtbo7O0E/khK1CNXH5lR2eyakBOlrB/PA==}"
+      },
+      {
+          pwd: "${GCM=diobI2etFbaU+R++fToPEoAwkoAdfYNu6rlIvkVTqpjs0ZhLzbaqTQK6EdI=}"
+      }
+  ]
+
+  customEnc: "${URGH=argh}"

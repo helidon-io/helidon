@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,20 +88,6 @@ abstract class AbstractSecureConfigTest {
     }
 
     @Test
-    public void testWrongSymmetric() {
-        testPassword(getConfig(), "pwd9", "${AES=not really encrypted}");
-        testPassword(getConfig(), "pwd10", "${RSA=not really encrypted}");
-    }
-
-    @Test
-    public void testAsymmetric() {
-        testPassword(getConfig(), "pwd3", TEST_STRING);
-        testPassword(getConfig(), "pwd5", "");
-        testPassword(getConfigRequiresEncryption(), "pwd3", TEST_STRING);
-        testPassword(getConfigRequiresEncryption(), "pwd5", "");
-    }
-
-    @Test
     public void testPasswordArray() {
         ConfigValue<List<String>> passwordsOpt = getConfig().get("passwords")
                 .asList(String.class);
@@ -109,8 +95,8 @@ abstract class AbstractSecureConfigTest {
         assertThat("Passwords must be present", passwordsOpt.isPresent());
 
         List<String> passwords = passwordsOpt.get();
-        assertThat(passwords, hasSize(3));
-        assertThat(passwords, contains(TEST_STRING, TEST_STRING, ""));
+        assertThat(passwords, hasSize(2));
+        assertThat(passwords, contains(TEST_STRING, ""));
     }
 
     @Test

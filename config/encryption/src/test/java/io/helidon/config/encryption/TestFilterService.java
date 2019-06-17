@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class TestFilterService {
     @Test
     void testFiltering() {
-        Config config = Config.create();
+        Config config = Config.create().get("current");
 
-        String value = config.get("pwd3").asString().get();
+        String value = config.get("pwd4").asString().get();
 
         assertThat(value, is(AbstractSecureConfigTest.TEST_STRING));
     }
