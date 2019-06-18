@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
     static final String DIGEST_PREFIX = "digest ";
+    private static final int SALT_LENGTH = 16;
+    private static final int AES_NONCE_LENGTH = 12;
     private static final Logger LOGGER = Logger.getLogger(HttpDigestAuthProvider.class.getName());
     private final List<HttpDigest.Qop> digestQopOptions = new LinkedList<>();
     private final UserStore userStore;
@@ -99,17 +101,20 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
 
     static String nonce(long timeInMillis, Random random, char[] serverSecret) {
         // nonce is:  encrypt(salt(random(16bytes)) + timestamp (currentTimeInMillis))
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[SALT_LENGTH];
         random.nextBytes(salt);
+        byte[] aesNonce = new byte[AES_NONCE_LENGTH];
+        random.nextBytes(aesNonce);
         byte[] timestamp = HttpAuthUtil.toBytes(timeInMillis);
 
-        Cipher cipher = HttpAuthUtil.cipher(serverSecret, salt, Cipher.ENCRYPT_MODE);
+        Cipher cipher = HttpAuthUtil.cipher(serverSecret, salt, aesNonce, Cipher.ENCRYPT_MODE);
         try {
             timestamp = cipher.doFinal(timestamp);
 
-            byte[] result = new byte[salt.length + timestamp.length];
+            byte[] result = new byte[salt.length + aesNonce.length + timestamp.length];
             System.arraycopy(salt, 0, result, 0, salt.length);
-            System.arraycopy(timestamp, 0, result, salt.length, timestamp.length);
+            System.arraycopy(aesNonce, 0, result, salt.length, aesNonce.length);
+            System.arraycopy(timestamp, 0, result, aesNonce.length + salt.length, timestamp.length);
 
             return Base64.getEncoder().encodeToString(result);
         } catch (Exception e) {
@@ -157,12 +162,17 @@ public final class HttpDigestAuthProvider extends SynchronousProvider implements
         if (bytes.length < 17) {
             return fail("Invalid nonce length");
         }
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[SALT_LENGTH];
+        byte[] aesNonce = new byte[AES_NONCE_LENGTH];
+        byte[] encryptedBytes = new byte[bytes.length - SALT_LENGTH - AES_NONCE_LENGTH];
+
         System.arraycopy(bytes, 0, salt, 0, salt.length);
-        Cipher cipher = HttpAuthUtil.cipher(digestServerSecret, salt, Cipher.DECRYPT_MODE);
+        System.arraycopy(bytes, SALT_LENGTH, aesNonce, 0, aesNonce.length);
+        System.arraycopy(bytes, SALT_LENGTH + AES_NONCE_LENGTH, encryptedBytes, 0, encryptedBytes.length);
+        Cipher cipher = HttpAuthUtil.cipher(digestServerSecret, salt, aesNonce, Cipher.DECRYPT_MODE);
 
         try {
-            byte[] timestampBytes = cipher.doFinal(bytes, salt.length, bytes.length - salt.length);
+            byte[] timestampBytes = cipher.doFinal(encryptedBytes);
             long nonceTimestamp = HttpAuthUtil.toLong(timestampBytes, 0, timestampBytes.length);
             //validate nonce
             if ((System.currentTimeMillis() - nonceTimestamp) > digestNonceTimeoutMillis) {

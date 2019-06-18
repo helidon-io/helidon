@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -55,13 +55,13 @@ final class HttpAuthUtil {
         return b;
     }
 
-    static Cipher cipher(char[] masterPassword, byte[] salt, int cipherMode) throws HttpAuthException {
+    static Cipher cipher(char[] masterPassword, byte[] salt, byte[] nonce, int cipherMode) throws HttpAuthException {
         try {
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, 10000, 128);
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, 10000, 256);
             SecretKeySpec spec = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(cipherMode, spec, new IvParameterSpec(salt));
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(cipherMode, spec, new GCMParameterSpec(128, nonce));
 
             return cipher;
         } catch (Exception e) {

@@ -38,6 +38,9 @@
         <module>serviceconfiguration-hikaricp</module>
         <module>serviceconfiguration-hikaricp-accs</module>
         <module>serviceconfiguration-hikaricp-localhost</module>
+        <module>serviceconfiguration-ucp</module>
+        <module>serviceconfiguration-ucp-accs</module>
+        <module>serviceconfiguration-ucp-localhost</module>
         <module>serviceconfiguration-system-kubernetes</module>
         <module>serviceconfiguration-system-oracle-accs</module>
     </modules>
