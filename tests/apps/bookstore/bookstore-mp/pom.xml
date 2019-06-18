@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.apps.bookstore</groupId>
         <artifactId>helidon-tests-apps-bookstore-project</artifactId>
-        <version>1.1.2-SNAPSHOT</version>
+        <version>1.1.3-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.apps.bookstore.bookstore-mp</groupId>
