@@ -17,8 +17,11 @@
 package io.helidon.tests.apps.bookstore.se;
 
 import java.io.IOException;
+import java.security.PrivateKey;
 import java.util.logging.LogManager;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.KeyConfig;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
 import io.helidon.health.checks.HealthChecks;
@@ -26,7 +29,10 @@ import io.helidon.media.jackson.server.JacksonSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.media.jsonp.server.JsonSupport;
 import io.helidon.metrics.MetricsSupport;
+import io.helidon.webserver.ExperimentalConfiguration;
+import io.helidon.webserver.Http2Configuration;
 import io.helidon.webserver.Routing;
+import io.helidon.webserver.SSLContextBuilder;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
@@ -66,6 +72,18 @@ public final class Main {
      * @throws IOException if there are problems reading logging properties
      */
     static WebServer startServer() throws IOException {
+        return startServer(false, false);
+    }
+
+    /**
+     * Start the server.
+     *
+     * @param ssl Enable ssl support.
+     * @param http2 Enable http2 support.
+     * @return the created {@link WebServer} instance
+     * @throws IOException if there are problems reading logging properties
+     */
+    static WebServer startServer(boolean ssl, boolean http2) throws IOException {
         // load logging configuration
         LogManager.getLogManager().readConfiguration(
                 Main.class.getResourceAsStream("/logging.properties"));
@@ -73,11 +91,37 @@ public final class Main {
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        // Get webserver config from the "server" section of application.yaml
-        ServerConfiguration serverConfig =
-                ServerConfiguration.create(config.get("server"));
+        // Build server config based on params
+        ServerConfiguration.Builder configBuilder = ServerConfiguration.builder(config.get("server"));
+        if (ssl) {
+            /*
+                    return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
+                                      .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
+                                      .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
+                                      .trustConfig(KeyConfig.create(sslConfig.get("trust")))
+                                      .build();
 
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+                                      # ssl:
+#    private-key:
+#      keystore-resource-path: "certificate.p12"
+#      keystore-passphrase: "helidon"
+             */
+
+            configBuilder.ssl(
+                    SSLContextBuilder.create(
+                            KeyConfig.keystoreBuilder()
+                                    .keystore(Resource.create("certificate.p12"))
+                                    .keystorePassphrase("helidon".toCharArray())
+                                    .build())
+                            .build());
+        }
+        if (http2) {
+            configBuilder.experimental(
+                    ExperimentalConfiguration.builder()
+                            .http2(Http2Configuration.builder().enable(true).build()).build());
+        }
+
+        WebServer server = WebServer.create(configBuilder.build(), createRouting(config));
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + SERVICE_PATH));
@@ -116,9 +160,9 @@ public final class Main {
         }
 
         return builder.register(health)                   // Health at "/health"
-                      .register(MetricsSupport.create())  // Metrics at "/metrics"
-                      .register(SERVICE_PATH, new BookService(config))
-                      .build();
+                .register(MetricsSupport.create())  // Metrics at "/metrics"
+                .register(SERVICE_PATH, new BookService(config))
+                .build();
     }
 
     static JsonLibrary getJsonLibrary(Config config) {

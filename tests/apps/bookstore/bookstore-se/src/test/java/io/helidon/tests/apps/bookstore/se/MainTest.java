@@ -25,8 +25,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.helidon.webserver.WebServer;
@@ -35,34 +33,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 public class MainTest {
 
     private static WebServer webServer;
 
     @BeforeAll
-    public static void startTheServer() throws Exception {
-        webServer = Main.startServer();
-
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
-
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
-            }
-        }
+    public static void startServer() throws Exception {
+        webServer = TestServer.start(false, false);
     }
 
     @AfterAll
     public static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                     .toCompletableFuture()
-                     .get(10, TimeUnit.SECONDS);
-        }
+        TestServer.stop(webServer);
     }
 
     @Test
@@ -70,15 +52,15 @@ public class MainTest {
         HttpURLConnection conn;
         String json = getBookAsJson();
 
-        conn = getURLConnection("GET","/books");
+        conn = TestServer.openConnection(webServer, "GET","/books");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
         Assertions.assertNotNull(conn.getHeaderField("content-length"));
 
-        conn = getURLConnection("POST","/books");
+        conn = TestServer.openConnection(webServer, "POST","/books");
         writeJsonContent(conn, json);
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response POST");
 
-        conn = getURLConnection("GET","/books/123456");
+        conn = TestServer.openConnection(webServer, "GET","/books/123456");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response GET good ISBN");
         JsonReader jsonReader = Json.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
@@ -86,24 +68,15 @@ public class MainTest {
                 "Checking if correct ISBN");
         Assertions.assertNotNull(conn.getHeaderField("content-length"));
 
-        conn = getURLConnection("GET","/books/0000");
+        conn = TestServer.openConnection(webServer, "GET","/books/0000");
         Assertions.assertEquals(404, conn.getResponseCode(), "HTTP response GET bad ISBN");
 
-        conn = getURLConnection("GET","/books");
+        conn = TestServer.openConnection(webServer, "GET","/books");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response list books");
         Assertions.assertNotNull(conn.getHeaderField("content-length"));
 
-        conn = getURLConnection("DELETE","/books/123456");
+        conn = TestServer.openConnection(webServer, "DELETE","/books/123456");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response delete book");
-    }
-
-    private HttpURLConnection getURLConnection(String method, String path) throws Exception {
-        URL url = new URL("http://localhost:" + webServer.port() + path);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
     }
 
     private String getBookAsJson() {

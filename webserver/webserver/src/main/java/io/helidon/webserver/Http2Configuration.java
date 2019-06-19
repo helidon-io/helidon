@@ -42,6 +42,15 @@ public interface Http2Configuration {
     int maxContentLength();
 
     /**
+     * Create a new fluent API builder.
+     *
+     * @return a new builder instance.
+     */
+    static Http2Configuration.Builder builder() {
+        return new Http2Configuration.Builder();
+    }
+
+    /**
      * Builder for {@link Http2Configuration}.
      */
     final class Builder implements io.helidon.common.Builder<Http2Configuration> {
