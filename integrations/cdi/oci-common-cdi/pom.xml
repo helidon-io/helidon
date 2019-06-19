@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.1.3-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
-    <name>Helidon CDI Integrations OCI Object Storage</name>
+    <artifactId>helidon-integrations-cdi-oci-common</artifactId>
+    <name>Helidon CDI Integrations OCI Common</name>
 
     <properties>
         <!-- maven-javadoc-plugin property -->
         <show>package</show>
-        <oci.objectstorage.compartmentId/>
-        <oci.objectstorage.namespaceName/>
-        <oci.objectstorage.region/>
+        <oci.common.compartmentId/>
+        <oci.common.namespaceName/>
+        <oci.common.region/>
     </properties>
 
     <build>
@@ -42,9 +42,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <oci.objectstorage.compartmentId>${oci.objectstorage.compartmentId}</oci.objectstorage.compartmentId>
-                        <oci.objectstorage.namespaceName>${oci.objectstorage.namespaceName}</oci.objectstorage.namespaceName>
-                        <oci.objectstorage.region>${oci.objectstorage.region}</oci.objectstorage.region>
+                        <oci.common.compartmentId>${oci.common.compartmentId}</oci.common.compartmentId>
+                        <oci.common.namespaceName>${oci.common.namespaceName}</oci.common.namespaceName>
+                        <oci.common.region>${oci.common.region}</oci.common.region>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -55,15 +55,8 @@
         <!-- Compile-scoped dependencies. -->
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
-            <artifactId>oci-java-sdk-objectstorage</artifactId>
+            <artifactId>oci-java-sdk-common</artifactId>
             <scope>compile</scope>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>helidon-integrations-cdi-oci-common</artifactId>
-            <scope>compile</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>

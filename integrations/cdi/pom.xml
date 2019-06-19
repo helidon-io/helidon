@@ -42,6 +42,8 @@
         <module>jpa-weld</module> <!-- Deprecated and slated for eventual removal. -->
         <module>jta-cdi</module>
         <module>jta-weld</module>
+        <module>oci-common-cdi</module>
         <module>oci-objectstorage-cdi</module>
+        <module>oci-streaming-cdi</module>
     </modules>
 </project>

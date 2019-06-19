@@ -27,12 +27,15 @@ import javax.enterprise.inject.AmbiguousResolutionException;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.ProcessManagedBean;
 import javax.enterprise.inject.spi.ProcessProducerField;
 import javax.enterprise.inject.spi.ProcessProducerMethod;
+
+import io.helidon.integrations.cdi.oci.common.MicroProfileConfigAuthenticationDetailsProvider;
 
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.ObjectStorage;
@@ -312,7 +315,7 @@ public class OCIObjectStorageExtension implements Extension {
                     assert bean != null;
                     builder = (ObjectStorageClient.Builder) beanManager.getReference(bean,
                                                                                      ObjectStorageClient.Builder.class,
-                                                                                     beanManager.createCreationalContext(bean));
+                                                                                     cc);
                   }
                   assert builder != null;
 
@@ -326,13 +329,23 @@ public class OCIObjectStorageExtension implements Extension {
                     authProvider =
                       (AuthenticationDetailsProvider) beanManager.getReference(bean,
                                                                                AuthenticationDetailsProvider.class,
-                                                                               beanManager.createCreationalContext(bean));
+                                                                               cc);
                   }
                   assert authProvider != null;
                   final ObjectStorage objectStorage = builder.build(authProvider);
                   assert objectStorage != null;
-                  objectStorage.setRegion(config.getValue("oci.objectstorage.region", String.class)); // hack
+                  objectStorage.setRegion(config.getOptionalValue("oci.objectstorage.region", String.class)
+                                          .orElse(config.getValue("oci.region", String.class)));
                   return objectStorage;
+                })
+              .destroyWith((objectStorage, cc) -> {
+                  try {
+                    objectStorage.close();
+                  } catch (final RuntimeException runtimeException) {
+                    throw runtimeException;
+                  } catch (final Exception exception) {
+                    throw new DeploymentException(exception.getMessage(), exception);
+                  }
                 });
           }
         }

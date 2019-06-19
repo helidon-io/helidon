@@ -158,7 +158,9 @@
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.39.Final</version.lib.netty>
         <version.netty.tcnative>2.0.25.Final</version.netty.tcnative>
-        <version.lib.oci-java-sdk-objectstorage>1.5.2</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci-java-sdk-common>1.5.9</version.lib.oci-java-sdk-common>
+        <version.lib.oci-java-sdk-objectstorage>1.5.9</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci-java-sdk-streaming>1.5.9</version.lib.oci-java-sdk-streaming>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.0.12</version.lib.opentracing.grpc>
@@ -281,7 +283,7 @@
                     <configuration>
                         <source>8</source>
                         <links>
-                            <link>http://docs.jboss.org/cdi/api/${version.lib.cdi-api}</link>
+                            <link>https://docs.jboss.org/cdi/api/${version.lib.cdi-api}/</link>
                             <link>http://javax-inject.github.io/javax-inject/api/</link>
                             <link>https://fasterxml.github.io/jackson-annotations/javadoc/2.9/</link>
                             <link>https://fasterxml.github.io/jackson-core/javadoc/2.9/</link>
@@ -307,6 +309,7 @@
                             <link>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</link>
                             <link>http://narayana.io/docs/api/</link>
                             <link>https://www.eclipse.org/eclipselink/api/2.7/</link>
+                            <link>https://docs.cloud.oracle.com/iaas/tools/java/latest/</link>
                         </links>
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
@@ -1235,9 +1238,19 @@
             </dependency>
             <dependency>
                 <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-common</artifactId>
+                <version>${version.lib.oci-java-sdk-common}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
                 <artifactId>oci-java-sdk-objectstorage</artifactId>
                 <version>${version.lib.oci-java-sdk-objectstorage}</version>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.oci.sdk</groupId>
+                <artifactId>oci-java-sdk-streaming</artifactId>
+                <version>${version.lib.oci-java-sdk-streaming}</version>
             </dependency>
             <dependency>
                 <groupId>com.zaxxer</groupId>
