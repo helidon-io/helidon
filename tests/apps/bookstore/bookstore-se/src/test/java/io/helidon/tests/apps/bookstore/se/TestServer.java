@@ -19,7 +19,6 @@ package io.helidon.tests.apps.bookstore.se;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +47,18 @@ import org.junit.jupiter.api.Assertions;
 class TestServer {
 
     static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
+
+    private static X509TrustManager TRUST_MANAGER = new X509TrustManager() {
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+
+        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+        }
+
+        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+        }
+    };
 
     static WebServer start(boolean ssl, boolean http2) throws Exception {
         WebServer webServer = Main.startServer(ssl, http2);
@@ -84,21 +95,9 @@ class TestServer {
     }
 
     static SSLContext setupSSLTrust() throws Exception {
-        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
-
-            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-            }
-
-            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-            }
-        }};
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, trustAllCerts, new SecureRandom());
+        sslContext.init(null, new TrustManager[] { TRUST_MANAGER }, new SecureRandom());
         return sslContext;
-
     }
 
     static Request.Builder newRequestBuilder(WebServer webServer, String path, boolean ssl) throws Exception {
@@ -131,7 +130,7 @@ class TestServer {
                 .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1));
         if (ssl) {
             SSLContext sslContext = setupSSLTrust();
-            clientBuilder.sslSocketFactory(sslContext.getSocketFactory());
+            clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), TRUST_MANAGER);
             clientBuilder.hostnameVerifier((host, session) -> host.equals("localhost"));
         }
         return clientBuilder.build();

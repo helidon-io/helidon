@@ -28,6 +28,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
 
@@ -51,6 +53,7 @@ public class Http2SslTest {
     }
 
     @Test
+    @DisabledOnJre(JRE.JAVA_8)
     public void testHelloWorldHtt2Ssl() throws Exception {
         Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
 
@@ -85,7 +88,6 @@ public class Http2SslTest {
         try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
             Assertions.assertEquals(getNoBookRes.code(), 404);
             Assertions.assertEquals(getNoBookRes.protocol(), Protocol.HTTP_2);
-
         }
     }
 }
