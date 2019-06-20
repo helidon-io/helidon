@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * Access log support for Helidon WebServer
+ * Access log support for Helidon WebServer.
  *
  * @see io.helidon.webserver.accesslog.AccessLogSupport
  */
