@@ -362,6 +362,20 @@ public class PlainTest {
         assertThat(headers, not(IsMapContaining.hasKey("connection")));
     }
 
+    @Test
+    public void testBadURL() throws Exception {
+        String s = SocketHttpClient.sendAndReceive("/?p=|",
+                Http.Method.GET,
+                null,
+                CollectionsHelper.listOf("Connection: close"),
+                webServer);
+        assertThat(s, containsString("400 Bad Request"));
+        Map<String, String> headers = cutHeaders(s);
+        assertThat(headers, IsMapContaining.hasKey("content-type"));
+        assertThat(headers, IsMapContaining.hasKey("content-length"));
+    }
+
+
     private Map<String, String> cutHeaders(String response) {
         assertThat(response, notNullValue());
         int index = response.indexOf("\n\n");
