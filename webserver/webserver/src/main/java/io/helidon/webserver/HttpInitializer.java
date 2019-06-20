@@ -116,7 +116,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            LOGGER.info("Event Triggered: " + evt);
+            LOGGER.finer(() -> "Event Triggered: " + evt);
             ctx.fireUserEventTriggered(evt);
         }
     }

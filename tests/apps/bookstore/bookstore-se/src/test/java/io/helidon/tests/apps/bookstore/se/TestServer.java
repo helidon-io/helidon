@@ -16,23 +16,38 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.net.HttpURLConnection;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import io.helidon.webserver.WebServer;
+
+import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+
 import org.junit.jupiter.api.Assertions;
 
 /**
  * Utility class to start the Helidon server with options.
  */
 class TestServer {
+
+    static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
     static WebServer start(boolean ssl, boolean http2) throws Exception {
         WebServer webServer = Main.startServer(ssl, http2);
@@ -58,27 +73,20 @@ class TestServer {
         }
     }
 
-    static HttpURLConnection openConnection(WebServer webServer, String method, String path) throws Exception {
-        return openConnection(webServer, method, path, false);
-    }
-
-    static HttpURLConnection openConnection(WebServer webServer, String method, String path, boolean ssl)
-            throws Exception {
-        URL url = new URL((ssl ? "https" : "http") + "://localhost:" + webServer.port() + path);
-        if (ssl) {
-            setupSSLTrust();
+    static String getBookAsJson() throws Exception {
+        try (InputStream is = TestServer.class.getClassLoader().getResourceAsStream("book.json")) {
+            if (is != null) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                return reader.lines().collect(Collectors.joining(System.lineSeparator()));
+            }
+            throw new RuntimeException("Unable to find resource book.json");
         }
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(method);
-        conn.setRequestProperty("Accept", "application/json");
-        System.out.println("Connecting: " + method + " " + url);
-        return conn;
     }
 
-    static void setupSSLTrust() throws Exception {
+    static SSLContext setupSSLTrust() throws Exception {
         TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() {
-                return null;
+                return new X509Certificate[0];
             }
 
             public void checkClientTrusted(X509Certificate[] certs, String authType) {
@@ -87,9 +95,45 @@ class TestServer {
             public void checkServerTrusted(X509Certificate[] certs, String authType) {
             }
         }};
-        SSLContext sc = SSLContext.getInstance("TLS");
-        sc.init(null, trustAllCerts, new SecureRandom());
-        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-        HttpsURLConnection.setDefaultHostnameVerifier((host, session) -> host.equals("localhost"));
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, trustAllCerts, new SecureRandom());
+        return sslContext;
+
+    }
+
+    static Request.Builder newRequestBuilder(WebServer webServer, String path, boolean ssl) throws Exception {
+        URL url = new URL((ssl ? "https" : "http") + "://localhost:" + webServer.port() + path);
+        return new Request.Builder().url(url);
+    }
+
+    static class LoggingInterceptor implements Interceptor {
+        @Override
+        public Response intercept(Interceptor.Chain chain) throws IOException {
+            Request request = chain.request();
+
+            long t1 = System.nanoTime();
+            System.out.println(String.format("Sending request %s on %s%n%s",
+                    request.url(), chain.connection(), request.headers()));
+
+            Response response = chain.proceed(request);
+
+            long t2 = System.nanoTime();
+            System.out.println(String.format("Received response for %s in %.1fms%nProtocol is %s%n%s",
+                    response.request().url(), (t2 - t1) / 1e6d, response.protocol(), response.headers()));
+
+            return response;
+        }
+    }
+
+    static OkHttpClient newOkHttpClient(boolean ssl) throws Exception {
+        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+                .addNetworkInterceptor(new LoggingInterceptor())
+                .protocols(Arrays.asList(Protocol.HTTP_2, Protocol.HTTP_1_1));
+        if (ssl) {
+            SSLContext sslContext = setupSSLTrust();
+            clientBuilder.sslSocketFactory(sslContext.getSocketFactory());
+            clientBuilder.hostnameVerifier((host, session) -> host.equals("localhost"));
+        }
+        return clientBuilder.build();
     }
 }

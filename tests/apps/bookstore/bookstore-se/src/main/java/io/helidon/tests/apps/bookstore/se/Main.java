@@ -94,19 +94,6 @@ public final class Main {
         // Build server config based on params
         ServerConfiguration.Builder configBuilder = ServerConfiguration.builder(config.get("server"));
         if (ssl) {
-            /*
-                    return new SSLContextBuilder().privateKeyConfig(KeyConfig.create(sslConfig.get("private-key")))
-                                      .sessionCacheSize(sslConfig.get("session-cache-size").asInt().orElse(0))
-                                      .sessionTimeout(sslConfig.get("session-timeout").asInt().orElse(0))
-                                      .trustConfig(KeyConfig.create(sslConfig.get("trust")))
-                                      .build();
-
-                                      # ssl:
-#    private-key:
-#      keystore-resource-path: "certificate.p12"
-#      keystore-passphrase: "helidon"
-             */
-
             configBuilder.ssl(
                     SSLContextBuilder.create(
                             KeyConfig.keystoreBuilder()
@@ -124,7 +111,10 @@ public final class Main {
         WebServer server = WebServer.create(configBuilder.build(), createRouting(config));
 
         // Start the server and print some info.
-        server.start().thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + SERVICE_PATH));
+        server.start().thenAccept(ws -> {
+            String url = (ssl ? "https" : "http") + "://localhost:" + ws.port() + SERVICE_PATH;
+            System.out.println("WEB server is up! " + url + " [ssl=" + ssl + ", http2=" + http2 + "]");
+        });
 
         // Server threads are not daemon. NO need to block. Just react.
         server.whenShutdown().thenRun(()
