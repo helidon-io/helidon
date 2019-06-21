@@ -363,6 +363,12 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <!-- basic tracing configuration -->
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <!-- to add Zipkin support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-zipkin</artifactId>
