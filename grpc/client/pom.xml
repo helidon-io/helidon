@@ -31,9 +31,6 @@
     <artifactId>helidon-grpc-client</artifactId>
     <name>Helidon gRPC Client</name>
 
-    <artifactId>helidon-grpc-client</artifactId>
-    <name>Helidon gRPC Client</name>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
