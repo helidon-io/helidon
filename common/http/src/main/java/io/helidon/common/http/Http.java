@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -717,295 +717,295 @@ public final class Http {
     public static final class Header {
 
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Content-Types that are acceptedTypes for the response.
          */
         public static final String ACCEPT = "Accept";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Character sets that are acceptedTypes.
          */
         public static final String ACCEPT_CHARSET = "Accept-Charset";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * List of acceptedTypes encodings.
          */
         public static final String ACCEPT_ENCODING = "Accept-Encoding";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * List of acceptedTypes human languages for response.
          */
         public static final String ACCEPT_LANGUAGE = "Accept-Language";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Acceptable version in time.
          */
         public static final String ACCEPT_DATETIME = "Accept-Datetime";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Authentication credentials for HTTP authentication.
          */
         public static final String AUTHORIZATION = "Authorization";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * An HTTP cookie previously sent by the server with {@value SET_COOKIE}.
          */
         public static final String COOKIE = "Cookie";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Indicates that particular server behaviors are required by the client.
          */
         public static final String EXPECT = "Expect";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Disclose original information of a client connecting to a web server through an HTTP proxy.
          */
         public static final String FORWARDED = "Forwarded";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The email address of the user making the request.
          */
         public static final String FROM = "From";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The domain name of the server (for virtual hosting), and the TCP port number on which the server is listening.
          * The port number may be omitted if the port is the standard port for the service requested.
          */
         public static final String HOST = "Host";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Only perform the action if the client supplied entity matches the same entity on the server. This is mainly
          * for methods like PUT to only update a resource if it has not been modified since the user last updated it.
          */
         public static final String IF_MATCH = "If-Match";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Allows a 304 Not Modified to be returned if content is unchanged.
          */
         public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Allows a 304 Not Modified to be returned if content is unchanged, based on {@link #ETAG}.
          */
         public static final String IF_NONE_MATCH = "If-None-Match";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * If the entity is unchanged, send me the part(s) that I am missing; otherwise, send me the entire new entity.
          */
         public static final String IF_RANGE = "If-Range";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Only send the response if the entity has not been modified since a specific time.
          */
         public static final String IF_UNMODIFIED_SINCE = "If-Unmodified-Since";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Limit the number of times the message can be forwarded through proxies or gateways.
          */
         public static final String MAX_FORWARDS = "Max-Forwards";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Initiates a request for cross-origin resource sharing (asks server for an {@code 'Access-Control-Allow-Origin'}
          * response field).
          */
         public static final String ORIGIN = "Origin";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Request only part of an entity. Bytes are numbered from 0.
          */
         public static final String RANGE = "Range";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * This is the address of the previous web page from which a link to the currently requested page was followed.
          * (The word <i>referrer</i> has been misspelled in the RFC as well as in most implementations to the point that it has
          * become standard usage and is considered correct terminology.)
          */
         public static final String REFERER = "Referer";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The transfer encodings the user agent is willing to acceptedTypes: the same values as for the response header field
          * {@code Transfer-Encoding} can be used, plus the <i>trailers</i> value (related to the <i>chunked</i> transfer method)
          * to notify the server it expects to receive additional fields in the trailer after the last, zero-sized, chunk.
          */
         public static final String TE = "TE";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The user agent string of the user agent.
          */
         public static final String USER_AGENT = "User-Agent";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Informs the server of proxies through which the request was sent.
          */
         public static final String VIA = "Via";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Specifies which patch document formats this server supports.
          */
         public static final String ACCEPT_PATCH = "Accept-Patch";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * What partial content range types this server supports via byte serving.
          */
         public static final String ACCEPT_RANGES = "Accept-Ranges";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The age the object has been in a proxy cache in seconds.
          */
         public static final String AGE = "Age";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Valid actions for a specified resource. To be used for a 405 Method not allowed.
          */
         public static final String ALLOW = "Allow";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * A server uses <i>Alt-Svc</i> header (meaning Alternative Services) to indicate that its resources can also be
          * accessed at a different network location (host or port) or using a different protocol.
          */
         public static final String ALT_SVC = "Alt-Svc";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Tells all caching mechanisms from server to client whether they may cache this object. It is measured in seconds.
          */
         public static final String CACHE_CONTROL = "Cache-Control";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Control options for the current connection and list of hop-by-hop response fields.
          */
         public static final String CONNECTION = "Connection";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * An opportunity to raise a <i>File Download</i> dialogue box for a known MIME type with binary format or suggest
          * a filename for dynamic content. Quotes are necessary with special characters.
          */
         public static final String CONTENT_DISPOSITION = "Content-Disposition";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The type of encoding used on the data.
          */
         public static final String CONTENT_ENCODING = "Content-Encoding";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The natural language or languages of the intended audience for the enclosed content.
          */
         public static final String CONTENT_LANGUAGE = "Content-Language";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The length of the response body in octets.
          */
         public static final String CONTENT_LENGTH = "Content-Length";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * An alternate location for the returned data.
          */
         public static final String CONTENT_LOCATION = "aa";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Where in a full body message this partial message belongs.
          */
         public static final String CONTENT_RANGE = "Content-Range";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The MIME type of this content.
          */
         public static final String CONTENT_TYPE = "Content-Type";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The date and time that the message was sent (in <i>HTTP-date</i> format as defined by RFC 7231).
          */
         public static final String DATE = "Date";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * An identifier for a specific version of a resource, often a message digest.
          */
         public static final String ETAG = "ETag";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Gives the date/time after which the response is considered stale (in <i>HTTP-date</i> format as defined by RFC 7231)
          */
         public static final String EXPIRES = "Expires";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The last modified date for the requested object (in <i>HTTP-date</i> format as defined by RFC 7231)
          */
         public static final String LAST_MODIFIED = "Last-Modified";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Used to express a typed relationship with another resource, where the relation type is defined by RFC 5988.
          */
         public static final String LINK = "Link";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Used in redirection, or whenRequest a new resource has been created.
          */
         public static final String LOCATION = "Location";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Implementation-specific fields that may have various effects anywhere along the request-response chain.
          */
         public static final String PRAGMA = "Pragma";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * HTTP Public Key Pinning, announces hash of website's authentic TLS certificate.
          */
         public static final String PUBLIC_KEY_PINS = "Public-Key-Pins";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * If an entity is temporarily unavailable, this instructs the client to try again later. Value could be a specified
          * period of time (in seconds) or an HTTP-date.
          */
         public static final String RETRY_AFTER = "Retry-After";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * A name for the server.
          */
         public static final String SERVER = "Server";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * An HTTP cookie set directive.
          */
         public static final String SET_COOKIE = "Set-Cookie";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * A HSTS Policy informing the HTTP client how long to cache the HTTPS only policy and whether this applies to subdomains.
          */
         public static final String STRICT_TRANSPORT_SECURITY = "Strict-Transport-Security";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The Trailer general field value indicates that the given set of header fields is present in the trailer of
          * a message encoded with chunked transfer coding.
          */
         public static final String TRAILER = "Trailer";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * The form of encoding used to safely transfer the entity to the user. Currently defined methods are:
          * {@code chunked, compress, deflate, gzip, identity}.
          */
         public static final String TRANSFER_ENCODING = "Transfer-Encoding";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Tracking Status Value, value suggested to be sent in response to a DNT(do-not-track).
          */
         public static final String TSV = "TSV";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Ask to upgrade to another protocol.
          */
         public static final String UPGRADE = "Upgrade";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Tells downstream proxies how to match future request headers to decide whether the cached response can be used rather
          * than requesting a fresh one from the origin server.
          */
         public static final String VARY = "Vary";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * A general warning about possible problems with the entity body.
          */
         public static final String WARNING = "Warning";
         /**
-         * The <tt>{@value}</tt> header name.
+         * The <code>{@value}</code> header name.
          * Indicates the authentication scheme that should be used to access the requested entity.
          */
         public static final String WWW_AUTHENTICATE = "WWW-Authenticate";

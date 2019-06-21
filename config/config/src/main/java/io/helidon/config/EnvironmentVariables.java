@@ -51,6 +51,7 @@ import static java.util.Collections.unmodifiableMap;
  * and reduce the chances of inadvertent mappings, a verbose mapping is used: {@code "_dash_"} substrings (upper and lower case)
  * are first replaced by {@code '-'}. See {@link #expand()} for the aliases produced.
  * <p>
+ *
  */
 public class EnvironmentVariables {
     private static final Pattern DASH_PATTERN = Pattern.compile("_dash_|_DASH_");
