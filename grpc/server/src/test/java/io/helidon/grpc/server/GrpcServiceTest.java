@@ -28,8 +28,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import com.oracle.bedrock.testsupport.deferred.Eventually;
 import org.junit.jupiter.api.Test;
 
+import static com.oracle.bedrock.deferred.DeferredHelper.invoking;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -474,7 +476,7 @@ public class GrpcServiceTest {
         consumer.accept("Two");
         consumer.accept("Three");
 
-        observer.awaitCount(3);
+        Eventually.assertThat(invoking(this).valueCount(observer), is(3));
 
         future.complete(null);
 
@@ -497,7 +499,8 @@ public class GrpcServiceTest {
         consumer.accept("One");
         consumer.accept("Two");
         consumer.accept("Three");
-        observer.awaitCount(3);
+
+        Eventually.assertThat(invoking(this).valueCount(observer), is(3));
 
         future.complete(null);
 
@@ -510,6 +513,11 @@ public class GrpcServiceTest {
         assertThat(observer.values(), containsInAnyOrder("One", "Two", "Three"));
     }
 
+    // must be public - used in Eventually.assertThat
+    public int valueCount(TestStreamObserver<?> observer) {
+        List<?> values = observer.values();
+        return values == null ? 0 : values.size();
+    }
 
     private class GrpcServiceStub
             implements GrpcService {

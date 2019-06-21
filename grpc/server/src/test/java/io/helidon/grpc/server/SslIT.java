@@ -28,6 +28,7 @@ import javax.net.ssl.SSLException;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.grpc.core.GrpcSslDescriptor;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
 
@@ -92,7 +93,7 @@ public class SslIT {
     private static int port2WaySSL;
 
     /**
-     * Port used for 2waySSL using config-ssl.conf
+     * Port used for 2waySSL using config-ssl.yaml
      */
     private static int port2WaySSLConfig;
 
@@ -283,15 +284,15 @@ public class SslIT {
      * @throws Exception in case of an error
      */
     private static GrpcServer startGrpcServer(int nPort, boolean mutual, boolean useConfig ) throws Exception {
-        SslConfiguration sslConfig;
+        GrpcSslDescriptor sslConfig;
         String name = "grpc.server";
         if (useConfig) {
             name = name + 1;
             Config config = Config.builder().sources(ConfigSources.classpath("config-ssl.conf")).build();
-            sslConfig = config.get("grpcserver.ssl").as(SslConfiguration::create).get();
+            sslConfig = config.get("grpcserver.ssl").as(GrpcSslDescriptor::create).get();
         } else if (mutual) {
             name = name + 2;
-             sslConfig = SslConfiguration.builder()
+             sslConfig = GrpcSslDescriptor.builder()
                         .jdkSSL(false)
                         .tlsCert(tlsCert)
                         .tlsKey(tlsKey)
@@ -299,7 +300,7 @@ public class SslIT {
                         .build();
         } else {
             name = name + 3;
-            sslConfig = SslConfiguration.builder()
+            sslConfig = GrpcSslDescriptor.builder()
                         .jdkSSL(false)
                         .tlsCert(tlsCert)
                         .tlsKey(tlsKey)
@@ -312,11 +313,15 @@ public class SslIT {
 
         GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().name(name).port(nPort).sslConfig(sslConfig).build();
 
-        GrpcServer grpcServer = GrpcServer.create(serverConfig, routing)
-                        .start()
-                        .toCompletableFuture()
-                        .get(10, TimeUnit.SECONDS);
-
+        GrpcServer grpcServer ;
+        try {
+            grpcServer = GrpcServer.create(serverConfig, routing)
+                    .start()
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
 
        LOGGER.info("Started gRPC server at: localhost:" + grpcServer.port());
 

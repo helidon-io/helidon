@@ -49,7 +49,7 @@ Here is the code for a minimalist gRPC application that runs on a default port (
     static class HelloService implements GrpcService { <5>
         @Override
         public void update(ServiceDescriptor.Rules rules) {
-            rules.unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello World!"))); // <6>
+            rules.unary("SayHello", ((request, responseObserver) -> complete(responseObserver, "Hello " + request))); // <6>
         }
     }
 ----
@@ -70,7 +70,7 @@ response marshalling, as well as how you can configure custom marshallers, later
 The <<about/04_managing-dependencies.adoc, Getting Started>> page describes how you
 should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.grpc</groupId>

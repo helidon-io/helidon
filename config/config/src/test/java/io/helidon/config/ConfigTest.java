@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static io.helidon.config.Config.Type.LIST;
 import static io.helidon.config.Config.Type.OBJECT;
 import static io.helidon.config.Config.Type.VALUE;
-import static io.helidon.config.ConfigSources.create;
 import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_NAME;
 import static io.helidon.config.spi.ConfigSourceTest.TEST_ENV_VAR_VALUE;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -600,7 +599,7 @@ public class ConfigTest {
     @Test
     public void testComplexNodesWithSimpleValues() {
         /*
-        This method uses variants of the methods for creating test configs and 
+        This method uses variants of the methods for creating test configs and
         objects to assign values to the complex nodes (object- and list-type)
         and make sure the values are as expected.
          */
@@ -632,7 +631,7 @@ public class ConfigTest {
         return createTestConfigBuilder(maxLevels)
                 .build();
     }
-    
+
     public static Config createTestConfig(int maxLevels, String valueQualifier) {
         return createTestConfigBuilder(maxLevels, valueQualifier)
                 .build();
@@ -664,7 +663,7 @@ public class ConfigTest {
         return createTestObjectBuilder(level, maxLevels)
                 .build();
     }
-    
+
     private static ObjectNode createTestObject(
             int level, int maxLevels, String valueQualifier) {
         if (maxLevels < level) {
@@ -727,7 +726,7 @@ public class ConfigTest {
                 .value(LIST_VALUE_PREFIX + valueQualifier)
                 .build();
     }
-    
+
     private static ListNode.Builder createTestListBuilder(int level, int maxLevels) {
         return ListNode.builder()
                 .addValue("string value " + level)
