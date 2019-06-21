@@ -17,7 +17,6 @@
 package io.helidon.tests.apps.bookstore.se;
 
 import java.io.IOException;
-import java.security.PrivateKey;
 import java.util.logging.LogManager;
 
 import io.helidon.common.configurable.Resource;
@@ -147,6 +146,8 @@ public final class Main {
             case JACKSON:
                 builder.register(JacksonSupport.create());
                 break;
+            default:
+                throw new RuntimeException("Unknown JSON library " + jsonLibrary);
         }
 
         return builder.register(health)                   // Health at "/health"
