@@ -408,8 +408,7 @@ public interface ServerConfiguration extends SocketConfiguration {
          * @return updated builder
          */
         public Builder tracer(Supplier<? extends Tracer> tracerBuilder) {
-            this.tracer = tracerBuilder != null ? tracerBuilder.get() : null;
-            return this;
+            return tracer(tracerBuilder.get());
         }
 
         /**
@@ -539,16 +538,18 @@ public interface ServerConfiguration extends SocketConfiguration {
          */
         @Override
         public ServerConfiguration build() {
-            if (null == tracer) {
-                tracer = GlobalTracer.get();
-            }
-
             if (null == context) {
                 context = Context.create();
             }
 
-            if (!context.get(Tracer.class).isPresent()) {
-                context.register(tracer);
+            Optional<Tracer> maybeTracer = context.get(Tracer.class);
+
+            if (null == this.tracer) {
+                this.tracer = maybeTracer.orElseGet(GlobalTracer::get);
+            }
+
+            if (!maybeTracer.isPresent()) {
+                context.register(this.tracer);
             }
 
             if (workers <= 0) {
@@ -558,7 +559,6 @@ public interface ServerConfiguration extends SocketConfiguration {
             if (null == experimental) {
                 experimental = ExperimentalConfiguration.builder().build();
             }
-
 
             return new ServerBasicConfig(this);
         }

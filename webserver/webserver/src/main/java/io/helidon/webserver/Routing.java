@@ -75,6 +75,15 @@ public interface Routing {
      * @see Builder
      */
     interface Rules {
+        /**
+         * Configuration of tracing for this routing.
+         * The configuration may control whether to log specific components,
+         *  spans and span logs, either globally, or for a specific path and method combinations.
+         *
+         * @param tracingConfiguration WebServer tracing configuration
+         * @return Updated routing configuration
+         */
+        Rules register(TracingConfiguration tracingConfiguration);
 
         /**
          * Registers builder consumer. It enables to separate complex routing definitions to dedicated classes.
@@ -392,6 +401,7 @@ public interface Routing {
 
         private final RouteListRoutingRules delegate = new RouteListRoutingRules();
         private final List<RequestRouting.ErrorHandlerRecord<?>> errorHandlerRecords = new ArrayList<>();
+        private boolean tracingRegistered;
 
         /**
          * Creates new instance.
@@ -400,6 +410,13 @@ public interface Routing {
         }
 
         // --------------- ROUTING API
+
+        @Override
+        public Builder register(TracingConfiguration tracingConfiguration) {
+            this.tracingRegistered = true;
+            delegate.register(tracingConfiguration);
+            return this;
+        }
 
         @Override
         public Builder register(Supplier<? extends Service>... serviceBuilders) {
@@ -623,6 +640,9 @@ public interface Routing {
          * @return a new instance
          */
         public Routing build() {
+            if (!tracingRegistered) {
+                register(TracingConfiguration.create());
+            }
             RouteListRoutingRules.Aggregation aggregate = delegate.aggregate();
             return new RequestRouting(aggregate.routeList(), errorHandlerRecords, aggregate.newWebServerCallbacks());
         }

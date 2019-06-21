@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -240,8 +241,8 @@ public class ResponseTest {
         }
 
         @Override
-        SpanContext spanContext() {
-            return null;
+        Optional<SpanContext> spanContext() {
+            return Optional.empty();
         }
     }
 
