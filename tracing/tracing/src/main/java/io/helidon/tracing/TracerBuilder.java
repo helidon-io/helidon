@@ -260,6 +260,15 @@ public interface TracerBuilder<T extends TracerBuilder> extends Builder<Tracer> 
     T enabled(boolean enabled);
 
     /**
+     * When enabled, the created instance is also registered as a global tracer.
+     * When set to {@code true} method {@link #build()} will have the same result as {@link #buildAndRegister()}.
+     *
+     * @param global whether to register this tracer as a global tracer once built
+     * @return updated builder instance
+     */
+    T registerGlobal(boolean global);
+
+    /**
      * Build a tracer instance from this builder.
      *
      * @return tracer

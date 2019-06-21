@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import brave.Tracing;
 import brave.opentracing.BraveTracer;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
+import io.opentracing.util.GlobalTracer;
 import zipkin2.Span;
 import zipkin2.codec.BytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
@@ -123,6 +124,7 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
     private Sender sender;
     private String userInfo;
     private boolean enabled = DEFAULT_ENABLED;
+    private boolean global = true;
 
     private ZipkinTracerBuilder() {
     }
@@ -234,6 +236,12 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
     }
 
     @Override
+    public ZipkinTracerBuilder registerGlobal(boolean global) {
+        this.global = global;
+        return this;
+    }
+
+    @Override
     public ZipkinTracerBuilder config(Config config) {
         config.get("service").asString().ifPresent(this::serviceName);
         config.get("protocol").asString().ifPresent(this::collectorProtocol);
@@ -264,6 +272,8 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
                     });
                 });
 
+        config.get("global").asBoolean().ifPresent(this::registerGlobal);
+
         return this;
     }
 
@@ -278,32 +288,53 @@ public final class ZipkinTracerBuilder implements TracerBuilder<ZipkinTracerBuil
                                "Service name must be defined, either programmatically or in "
                                        + "configuration using key \"service\"");
 
-        if (!enabled) {
-            LOGGER.info("Zipkin Tracer is explicitly disabled.");
-            return NoopTracerFactory.create();
-        }
+        Tracer result;
 
-        Sender buildSender = (this.sender == null) ? createSender() : this.sender;
+        if (enabled) {
+            Sender buildSender = (this.sender == null) ? createSender() : this.sender;
 
-        Reporter<Span> reporter = AsyncReporter.builder(buildSender)
-                .build(version.encoder());
+            Reporter<Span> reporter = AsyncReporter.builder(buildSender)
+                    .build(version.encoder());
 
-        // Now, create a Brave tracing component with the service name you want to see in Zipkin.
-        //   (the dependency is io.zipkin.brave:brave)
-        Tracing braveTracing = Tracing.newBuilder()
-                .localServiceName(serviceName)
-                .spanReporter(reporter)
-                .build();
+            // Now, create a Brave tracing component with the service name you want to see in Zipkin.
+            //   (the dependency is io.zipkin.brave:brave)
+            Tracing braveTracing = Tracing.newBuilder()
+                    .localServiceName(serviceName)
+                    .spanReporter(reporter)
+                    .build();
 
-        if (null == sender) {
-            LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + createEndpoint());
+            if (null == sender) {
+                LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' configured with: " + createEndpoint());
+            } else {
+                LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
+            }
+
+            // use this to create an OpenTracing Tracer
+            result = new ZipkinTracer(BraveTracer.create(braveTracing), new LinkedList<>(tags));
         } else {
-            LOGGER.info(() -> "Creating Zipkin Tracer for '" + serviceName + "' with explicit sender: " + sender);
+            LOGGER.info("Zipkin Tracer is explicitly disabled.");
+            result = NoopTracerFactory.create();
         }
 
-        // use this to create an OpenTracing Tracer
-        return new ZipkinTracer(BraveTracer.create(braveTracing), new LinkedList<>(tags));
+        if (global) {
+            GlobalTracer.register(result);
+        }
+
+        return result;
     }
+
+    @Override
+    public Tracer buildAndRegister() {
+        if (global) {
+            return build();
+        }
+
+        Tracer result = build();
+        GlobalTracer.register(result);
+
+        return result;
+    }
+
 
     /**
      * Version of Zipkin API to use.
