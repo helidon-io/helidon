@@ -183,7 +183,7 @@ public class StaticFrontPageResource {
                 + "\n"
                 + "<h2>Resources</h2><br/>\n"
                 + "\n"
-                + "<h3><a name=\"idm169977346064\">./translator</a></h3>\n"
+                + "<h3><a id=\"idm169977346064\">./translator</a></h3>\n"
                 + "\n"
                 + "<p/><h5>Methods</h5>\n"
                 + "\n"

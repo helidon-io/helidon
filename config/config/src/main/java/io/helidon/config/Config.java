@@ -52,7 +52,8 @@ import io.helidon.config.spi.OverrideSource;
  * implementing interfaces defined in the SPI, by explicitly constructing the
  * {@link Builder} which assembles the {@code Config}, and by using other
  * classes provided by the config system that influence loading.
- * <table summary="Some Config SPI Interfaces">
+ * <table>
+ * <caption><b>Some Config SPI Interfaces</b></caption>
  * <tr>
  * <th>Class.Method</th>
  * <th>Application-implemented Interface</th>
@@ -231,7 +232,7 @@ import io.helidon.config.spi.OverrideSource;
  * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
  * static "create(Config)" method etc.
  *
- * <h2><a name="multipleSources">Handling Multiple Configuration
+ * <h2><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h2>
  * A {@code Config} instance, including the default {@code Config} returned by
  * {@link #create}, might be associated with multiple {@link ConfigSource}s. The

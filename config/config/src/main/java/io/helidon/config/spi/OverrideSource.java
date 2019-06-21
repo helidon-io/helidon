@@ -61,7 +61,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
     /**
      * Group of config override settings.
      * <p>
-     * <a name="wildcardSupport">{@code OverrideData} supports</a> the {@code *}
+     * <a id="wildcardSupport">{@code OverrideData} supports</a> the {@code *}
      * wildcard character which represents one or more regex word characters:
      * [a-zA-Z_0-9]. In particular the {@link #create(java.io.Reader)} and
      * {@link #createFromWildcards} static factory methods deal with pairs of

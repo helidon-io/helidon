@@ -74,7 +74,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * {@code environment-variables} (which do not support {@code properties}
      * settings).
      * <table>
-     * <caption>Predefined Configuration Source Types</caption>
+     * <caption><b>Predefined Configuration Source Types</b></caption>
      * <tr>
      * <th>Source Type</th>
      * <th>Further Information</th>
@@ -190,7 +190,7 @@ public interface ConfigSource extends Source<ObjectNode>, Supplier<ConfigSource>
      * It also shows the built-in {@code retry-policy} type {@code repeat}. See
      * {@link RetryPolicy#create(Config) RetryPolicy} for more information.
      *
-     * <h2><a name="customSourcesAndTypes">Custom Sources and Source
+     * <h2><a id="customSourcesAndTypes">Custom Sources and Source
      * Types</a></h2>
      * <h3>Custom Configuration Sources</h3>
      * The application can define a custom config source using {@code class}
