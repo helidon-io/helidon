@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,8 @@
  * The {@link io.helidon.config.Config#type()} method
  * returns an enum value {@link io.helidon.config.Config.Type} that tells how the
  * program should interpret the content of the node.
- * <table summary="Config Node Types">
+ * <table>
+ * <caption><b>Config Node Types</b></caption>
  * <tr>
  * <th>Type</th>
  * <th>Meaning</th>

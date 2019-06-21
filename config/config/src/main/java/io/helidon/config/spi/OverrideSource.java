@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public interface OverrideSource extends Source<OverrideSource.OverrideData>, Sup
     /**
      * Group of config override settings.
      * <p>
-     * <a name="wildcardSupport">{@code OverrideData} supports</a> the {@code *}
+     * <a id="wildcardSupport">{@code OverrideData} supports</a> the {@code *}
      * wildcard character which represents one or more regex word characters:
      * [a-zA-Z_0-9]. In particular the {@link #create(java.io.Reader)} and
      * {@link #createFromWildcards} static factory methods deal with pairs of

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples.webserver</groupId>
         <artifactId>helidon-examples-webserver-project</artifactId>
-        <version>1.1.2-SNAPSHOT</version>
+        <version>1.1.3-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-examples-webserver-translator-frontend</artifactId>
     <name>Helidon WebServer Examples Translator Frontend</name>
