@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
-import javax.inject.Provider;
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.RuntimeType;
@@ -32,13 +31,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.UriInfo;
 
+import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.integration.common.SecurityTracing;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.util.collection.Ref;
-import org.glassfish.jersey.server.ContainerRequest;
 
 /**
  * Security context must be created before resource method is matched, so it is available for injection into resource classes.
@@ -49,17 +47,10 @@ import org.glassfish.jersey.server.ContainerRequest;
 class SecurityPreMatchingFilter extends SecurityFilterCommon implements ContainerRequestFilter {
     private static final Logger LOGGER = Logger.getLogger(SecurityPreMatchingFilter.class.getName());
 
-    static final String PROP_CLOSE_PARENT_SPAN = "io.helidon.security.jersey.SecurityFilter.closeParent";
-    static final String PROP_PARENT_SPAN = "io.helidon.security.jersey.SecurityFilter.parentSpan";
-
     private static final AtomicInteger CONTEXT_COUNTER = new AtomicInteger();
-
 
     @Context
     private InjectionManager injectionManager;
-
-    @Context
-    private Provider<SpanContext> parentSpanContextProvider;
 
     @Context
     private ExecutorService executorService;
@@ -67,28 +58,18 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
     @Context
     private UriInfo uriInfo;
 
-
-
     @Override
     public void filter(ContainerRequestContext request) {
-        boolean closeParentSpan = false;
-        SpanContext requestSpanContext = parentSpanContextProvider.get();
-
-        if (null == requestSpanContext) {
-            closeParentSpan = true;
-            Span requestSpan = security().tracer().buildSpan("security-parent").start();
-            request.setProperty(PROP_PARENT_SPAN, requestSpan);
-            requestSpanContext = requestSpan.context();
-        }
-
-        request.setProperty(PROP_CLOSE_PARENT_SPAN, closeParentSpan);
+        SecurityTracing tracing = SecurityTracing.get();
 
         // create a new security context
         SecurityContext securityContext = security()
                 .contextBuilder(Integer.toString(CONTEXT_COUNTER.incrementAndGet(), Character.MAX_RADIX))
-                .tracingSpan(requestSpanContext)
+                .tracingSpan(tracing.findParent().orElse(null))
                 .executorService(executorService)
                 .build();
+
+        Contexts.context().ifPresent(ctx -> ctx.register(securityContext));
 
         injectionManager.<Ref<SecurityContext>>getInstance((new GenericType<Ref<SecurityContext>>() { }).getType())
                 .set(securityContext);
@@ -100,12 +81,12 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
 
     @Override
     protected void processSecurity(ContainerRequestContext request,
-                                   SecurityFilter.FilterContext filterContext,
-                                   Span securitySpan,
+                                   FilterContext filterContext,
+                                   SecurityTracing tracing,
                                    SecurityContext securityContext) {
 
         // when I reach this point, I am sure we should at least authenticate in prematching filter
-        authenticate(filterContext, securitySpan, securityContext);
+        authenticate(filterContext, securityContext, tracing.atnTracing());
 
         LOGGER.finest(() -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
 
@@ -118,7 +99,7 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
 
         if (featureConfig().shouldUsePrematchingAuthorization()) {
             LOGGER.finest(() -> "Using pre-matching authorization");
-            authorize(filterContext, securitySpan, securityContext);
+            authorize(filterContext, securityContext, tracing.atzTracing());
         }
 
         LOGGER.finest(() -> "Filter completed (after authorization)");
@@ -135,18 +116,8 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
         methodDef.setRequiresAuthorization(featureConfig().shouldUsePrematchingAuthorization());
         context.setMethodSecurity(methodDef);
         context.setResourceName("jax-rs");
-        context.setMethod(requestContext.getMethod());
-        context.setHeaders(HttpUtil.toSimpleMap(requestContext.getHeaders()));
-        context.setTargetUri(requestContext.getUriInfo().getRequestUri());
-        context.setResourcePath(context.getTargetUri().getPath());
 
-        context.setJerseyRequest((ContainerRequest) requestContext);
-
-        // now extract headers
-        featureConfig().getQueryParamHandlers()
-                .forEach(handler -> handler.extract(uriInfo, context.getHeaders()));
-
-        return context;
+        return configureContext(context, requestContext, uriInfo);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.integration.common.SecurityTracing;
 
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -66,6 +67,7 @@ class OptionalSecurityTest {
     private static ResourceConfig serverConfig;
     private static ResourceInfo resourceInfo;
     private static UriInfo uriInfo;
+    private static SecurityTracing tracing;
 
     @BeforeAll
     static void init() {
@@ -86,8 +88,6 @@ class OptionalSecurityTest {
         uriInfo = mock(UriInfo.class);
         when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
 
-
-
         AuthenticationResponse atr = AuthenticationResponse.builder()
                 .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                 .statusCode(301)
@@ -95,6 +95,8 @@ class OptionalSecurityTest {
 
         clientBuilder = mock(SecurityClientBuilder.class);
         when(clientBuilder.buildAndGet()).thenReturn(atr);
+
+        tracing = SecurityTracing.get();
     }
 
     @Test
@@ -118,7 +120,7 @@ class OptionalSecurityTest {
         /*
          * The actual tested method
          */
-        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
+        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
 
         assertThat(filterContext.isShouldFinish(), is(false));
         assertThat(secuContext.user(), is(Optional.empty()));
@@ -144,7 +146,7 @@ class OptionalSecurityTest {
         /*
          * The actual tested method
          */
-        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity);
+        secuFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
 
         assertThat(filterContext.isShouldFinish(), is(true));
         assertThat(secuContext.user(), is(Optional.empty()));
