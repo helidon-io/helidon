@@ -443,8 +443,8 @@ class RequestRouting implements Routing {
         }
 
         @Override
-        protected Tracer tracer() {
-            return RequestRouting.tracer(webServer());
+        public Tracer tracer() {
+            return TracingConfiguration.tracer(webServer());
         }
 
         private class ErrorRoutedRequest extends RoutedRequest {
