@@ -32,6 +32,7 @@ module io.helidon.tracing.jersey.client {
     requires opentracing.util;
 
     requires io.helidon.tracing;
+    requires io.helidon.tracing.config;
     requires io.helidon.common;
     requires io.helidon.common.context;
 
