@@ -39,9 +39,7 @@ public final class LoggingTestUtils {
     public static void initializeLogging() {
         if (System.getProperty("java.util.logging.config.file") == null) {
             try (InputStream stream = LoggingTestUtils.class.getResourceAsStream("/logging-test.properties")) {
-                if (null != stream) {
-                    LogManager.getLogManager().readConfiguration(stream);
-                }
+                LogManager.getLogManager().readConfiguration(stream);
             } catch (IOException e) {
                 // ignored for now
             }
