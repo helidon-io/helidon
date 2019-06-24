@@ -183,7 +183,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.failsafe>1.1.0</version.lib.failsafe>
         <version.lib.yasson>1.0.3</version.lib.yasson>
-        <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
+        <version.lib.okhttp3>3.13.1</version.lib.okhttp3>
         <!--
         !Version statement! - end
         -->
