@@ -71,7 +71,7 @@ public final class GitConfigSourceBuilder
     private static final String URI_KEY = "uri";
     private static final String BRANCH_KEY = "branch";
     private static final String DIRECTORY_KEY = "directory";
-    private static final String USER = "user";
+    private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
     private final String path;
     private URI uri;
@@ -146,7 +146,7 @@ public final class GitConfigSourceBuilder
         metaConfig.get(DIRECTORY_KEY).as(Path.class)
                 .ifPresent(this::directory);
 
-        metaConfig.get(USER).as(String.class)
+        metaConfig.get(USERNAME).as(String.class)
                 .ifPresent(user -> {
                     String password = metaConfig.get(PASSWORD).as(String.class).orElse(null);
                     this.credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
