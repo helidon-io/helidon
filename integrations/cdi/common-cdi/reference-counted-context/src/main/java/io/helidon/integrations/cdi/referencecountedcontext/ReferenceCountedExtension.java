@@ -75,71 +75,37 @@ public class ReferenceCountedExtension implements Extension {
 
     private <T> void ensureManagedBeanDisposalsDecrementReferenceCounts(@Observes final ProcessInjectionTarget<T> event,
                                                                         final BeanManager beanManager) {
-        if (event != null) {
-            final InjectionTarget<T> delegate = event.getInjectionTarget();
-            if (delegate != null) {
-                final Producer<T> referenceCountingProducer = this.createReferenceCountingProducer(delegate, beanManager);
-                assert referenceCountingProducer != null;
-                event.setInjectionTarget(new DelegatingInjectionTarget<T>(delegate) {
-                        @Override
-                        public T produce(final CreationalContext<T> cc) {
-                            // Note that the referenceCountingProducer
-                            // is *also* backed by delegate so we
-                            // deliberately do not call
-                            // super.produce(cc).
-                            return referenceCountingProducer.produce(cc);
-                        }
+        final InjectionTarget<T> delegate = event.getInjectionTarget();
+        final Producer<T> referenceCountingProducer = this.createReferenceCountingProducer(delegate, beanManager);
+        assert referenceCountingProducer != null;
+        event.setInjectionTarget(new DelegatingInjectionTarget<T>(delegate) {
+                @Override
+                public T produce(final CreationalContext<T> cc) {
+                    return referenceCountingProducer.produce(cc);
+                }
 
-                        // Workaround for
-                        // https://issues.jboss.org/browse/WELD-2580.
-                        // Because a custom InjectionTarget's
-                        // dispose(Object) method is (wrongly) never
-                        // called, we need to use preDestroy(Object)
-                        // for that purpose instead.  So first we make
-                        // sure the delegate's preDestroy(Object)
-                        // method is called, then in addition we call
-                        // our referenceCountingProducer's
-                        // dispose(Object) method.
-                        @Override
-                        public void preDestroy(final T instance) {
-                            super.preDestroy(instance);
-                            referenceCountingProducer.dispose(instance);
-                        }
-
-                        @Override
-                        public void dispose(final T instance) {
-                            // Because of
-                            // https://issues.jboss.org/browse/WELD-2580,
-                            // deliberately do nothing, not even
-                            // anything superclass-related.  We
-                            // already did it in #preDestroy(Object).
-                        }
-                    });
-            }
-        }
+                @Override
+                public void dispose(final T instance) {
+                    referenceCountingProducer.dispose(instance);
+                }
+            });
     }
 
     private <T> void trackReferenceCountedTypes(@Observes final ProcessBean<T> event) {
-        if (event != null) {
-            final BeanAttributes<?> bean = event.getBean();
-            final Class<? extends Annotation> scope = bean.getScope();
-            if (ReferenceCounted.class.isAssignableFrom(scope)) {
-                this.referenceCountedBeanTypes.addAll(bean.getTypes());
-            }
+        final BeanAttributes<?> bean = event.getBean();
+        final Class<? extends Annotation> scope = bean.getScope();
+        if (ReferenceCounted.class.isAssignableFrom(scope)) {
+            this.referenceCountedBeanTypes.addAll(bean.getTypes());
         }
     }
 
     private <T, X> void ensureProducersDecrementReferenceCounts(@Observes final ProcessProducer<T, X> event,
                                                                 final BeanManager beanManager) {
-        if (event != null) {
-            event.setProducer(this.createReferenceCountingProducer(event.getProducer(), beanManager));
-        }
+        event.setProducer(this.createReferenceCountingProducer(event.getProducer(), beanManager));
     }
 
     private void installReferenceCountedContext(@Observes final AfterBeanDiscovery event) {
-        if (event != null) {
-            event.addContext(new ReferenceCountedContext());
-        }
+        event.addContext(new ReferenceCountedContext());
     }
 
 
@@ -164,7 +130,7 @@ public class ReferenceCountedExtension implements Extension {
                         referenceCountedInjectionPoints = new HashSet<>();
                         final Set<InjectionPoint> delegateInjectionPoints = this.getInjectionPoints();
                         assert delegateInjectionPoints != null;
-                        if (delegateInjectionPoints.isEmpty()) {
+                        if (!delegateInjectionPoints.isEmpty()) {
                             for (final InjectionPoint delegateInjectionPoint : delegateInjectionPoints) {
                                 if (delegateInjectionPoint != null) {
                                     final Type type = delegateInjectionPoint.getType();
