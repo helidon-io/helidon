@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import io.helidon.config.spi.AbstractParsableConfigSource;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.PollingStrategy;
+
+import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 /**
  * Git ConfigSource builder.
@@ -68,10 +71,13 @@ public final class GitConfigSourceBuilder
     private static final String URI_KEY = "uri";
     private static final String BRANCH_KEY = "branch";
     private static final String DIRECTORY_KEY = "directory";
+    private static final String USERNAME = "username";
+    private static final String PASSWORD = "password";
     private final String path;
     private URI uri;
     private String branch = "master";
     private Path directory;
+    private CredentialsProvider credentialsProvider;
 
     private GitConfigSourceBuilder(String path) {
         super(GitEndpoint.class);
@@ -79,6 +85,7 @@ public final class GitConfigSourceBuilder
         Objects.requireNonNull(path, "path cannot be null");
 
         this.path = path;
+        this.credentialsProvider = CredentialsProvider.getDefault();
     }
 
     /**
@@ -139,12 +146,18 @@ public final class GitConfigSourceBuilder
         metaConfig.get(DIRECTORY_KEY).as(Path.class)
                 .ifPresent(this::directory);
 
+        metaConfig.get(USERNAME).as(String.class)
+                .ifPresent(user -> {
+                    String password = metaConfig.get(PASSWORD).as(String.class).orElse(null);
+                    this.credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
+                });
+
         return super.init(metaConfig);
     }
 
     @Override
     protected GitEndpoint target() {
-        return new GitEndpoint(uri, branch, directory, path);
+        return new GitEndpoint(uri, branch, directory, path, credentialsProvider);
     }
 
     /**
@@ -180,6 +193,30 @@ public final class GitConfigSourceBuilder
         return this;
     }
 
+    /**
+     * Sets user and password to the repository.
+     *
+     * @param user user to the repository
+     * @param password password to the repository
+     * @return this builder
+     */
+    public GitConfigSourceBuilder credentials(String user, String password) {
+        Objects.requireNonNull(user);
+        this.credentialsProvider = new UsernamePasswordCredentialsProvider(user, password);
+        return this;
+    }
+
+    /**
+     * Sets new {@link CredentialsProvider} which should be used by application.
+     *
+     * @param credentialsProvider credentials provider
+     * @return this builder
+     */
+    public GitConfigSourceBuilder credentialsProvider(CredentialsProvider credentialsProvider) {
+        this.credentialsProvider = credentialsProvider;
+        return this;
+    }
+
     PollingStrategy pollingStrategyInternal() { //just for testing purposes
         return super.pollingStrategy();
     }
@@ -200,20 +237,26 @@ public final class GitConfigSourceBuilder
         private final String branch;
         private final Path directory;
         private final String path;
+        private final CredentialsProvider credentialsProvider;
 
         /**
          * Creates a descriptor.
-         *
          * @param uri       a remote git repository uri
          * @param branch    a git branch
          * @param directory a local git directory
          * @param path      a relative path to the configuration file
+         * @param credentialsProvider a credentials provider
          */
-        public GitEndpoint(URI uri, String branch, Path directory, String path) {
+        public GitEndpoint(URI uri,
+                           String branch,
+                           Path directory,
+                           String path,
+                           CredentialsProvider credentialsProvider) {
             this.uri = uri;
             this.branch = branch;
             this.path = path;
             this.directory = directory;
+            this.credentialsProvider = credentialsProvider;
         }
 
         /**
@@ -250,6 +293,15 @@ public final class GitConfigSourceBuilder
          */
         public String path() {
             return path;
+        }
+
+        /**
+         * Returns an instance of {@link CredentialsProvider}.
+         *
+         * @return credentials provider instance
+         */
+        public CredentialsProvider credentialsProvider() {
+            return credentialsProvider;
         }
     }
 }
