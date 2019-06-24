@@ -17,6 +17,7 @@ package io.helidon.integrations.cdi.referencecountedcontext;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -68,12 +69,12 @@ public class ReferenceCountedExtension implements Extension {
 
 
     /*
-     * Observer methods.
+     * Observer methods in processing order.
      */
 
 
-    private <T> void ensureManagedBeanDisposalsDecrementReferenceCounts(@Observes final ProcessInjectionTarget<T> event,
-                                                                        final BeanManager beanManager) {
+    private <T> void ensureManagedBeanOriginatedDisposalsDecrementReferenceCounts(@Observes final ProcessInjectionTarget<T> event,
+                                                                                  final BeanManager beanManager) {
         final InjectionTarget<T> delegate = event.getInjectionTarget();
         event.setInjectionTarget(new DelegatingInjectionTarget<T>(delegate,
                                                                   this.createReferenceCountingProducer(delegate, beanManager)));
@@ -86,8 +87,8 @@ public class ReferenceCountedExtension implements Extension {
         }
     }
 
-    private <T, X> void ensureProducersDecrementReferenceCounts(@Observes final ProcessProducer<T, X> event,
-                                                                final BeanManager beanManager) {
+    private <T, X> void ensureProducerOriginatedDisposalDecrementReferenceCounts(@Observes final ProcessProducer<T, X> event,
+                                                                                 final BeanManager beanManager) {
         event.setProducer(this.createReferenceCountingProducer(event.getProducer(), beanManager));
     }
 
@@ -111,9 +112,11 @@ public class ReferenceCountedExtension implements Extension {
                 public T produce(final CreationalContext<T> cc) {
                     Set<InjectionPoint> referenceCountedInjectionPoints = this.referenceCountedInjectionPoints;
                     if (referenceCountedInjectionPoints == null) {
-                        referenceCountedInjectionPoints = new HashSet<>();
                         final Set<InjectionPoint> delegateInjectionPoints = this.getInjectionPoints();
-                        if (!delegateInjectionPoints.isEmpty()) {
+                        if (delegateInjectionPoints.isEmpty()) {
+                            referenceCountedInjectionPoints = Collections.emptySet();
+                        } else {
+                            referenceCountedInjectionPoints = new HashSet<>();
                             for (final InjectionPoint delegateInjectionPoint : delegateInjectionPoints) {
                                 if (referenceCountedBeanTypes.contains(delegateInjectionPoint.getType())) {
                                     referenceCountedInjectionPoints.add(delegateInjectionPoint);
@@ -128,9 +131,7 @@ public class ReferenceCountedExtension implements Extension {
                 @Override
                 public void dispose(final T instance) {
                     final Set<InjectionPoint> referenceCountedInjectionPoints = this.referenceCountedInjectionPoints;
-                    assert referenceCountedInjectionPoints != null;
                     for (final InjectionPoint injectionPoint : referenceCountedInjectionPoints) {
-                        assert injectionPoint != null;
                         final Set<Annotation> qualifiers = injectionPoint.getQualifiers();
                         final Set<Bean<?>> beans;
                         if (qualifiers == null || qualifiers.isEmpty()) {
@@ -157,7 +158,6 @@ public class ReferenceCountedExtension implements Extension {
                     super.dispose(instance);
                 }
             };
-
         return returnValue;
     }
 
