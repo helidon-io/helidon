@@ -43,6 +43,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-access-log</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics-prometheus</artifactId>
                 <version>${project.version}</version>
