@@ -19,6 +19,7 @@ import java.util.Objects;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.InjectionTarget;
+import javax.enterprise.inject.spi.Producer;
 
 /**
  * An {@link InjectionTarget} that forwards all method calls to an
@@ -28,9 +29,13 @@ class DelegatingInjectionTarget<T> extends DelegatingProducer<T> implements Inje
 
     private final InjectionTarget<T> delegate;
 
-    DelegatingInjectionTarget(final InjectionTarget<T> injectionTarget) {
-        super(Objects.requireNonNull(injectionTarget));
-        this.delegate = injectionTarget;
+    DelegatingInjectionTarget(final InjectionTarget<T> delegate) {
+        this(delegate, delegate);
+    }
+
+    DelegatingInjectionTarget(final InjectionTarget<T> injectionTargetFacade, final Producer<T> delegate) {
+        super(Objects.requireNonNull(delegate));
+        this.delegate = injectionTargetFacade;
     }
 
     @Override

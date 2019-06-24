@@ -18,7 +18,6 @@ package io.helidon.integrations.cdi.referencecountedcontext;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.enterprise.context.spi.CreationalContext;
@@ -76,25 +75,13 @@ public class ReferenceCountedExtension implements Extension {
     private <T> void ensureManagedBeanDisposalsDecrementReferenceCounts(@Observes final ProcessInjectionTarget<T> event,
                                                                         final BeanManager beanManager) {
         final InjectionTarget<T> delegate = event.getInjectionTarget();
-        final Producer<T> referenceCountingProducer = this.createReferenceCountingProducer(delegate, beanManager);
-        assert referenceCountingProducer != null;
-        event.setInjectionTarget(new DelegatingInjectionTarget<T>(delegate) {
-                @Override
-                public T produce(final CreationalContext<T> cc) {
-                    return referenceCountingProducer.produce(cc);
-                }
-
-                @Override
-                public void dispose(final T instance) {
-                    referenceCountingProducer.dispose(instance);
-                }
-            });
+        event.setInjectionTarget(new DelegatingInjectionTarget<T>(delegate,
+                                                                  this.createReferenceCountingProducer(delegate, beanManager)));
     }
 
     private <T> void trackReferenceCountedTypes(@Observes final ProcessBean<T> event) {
         final BeanAttributes<?> bean = event.getBean();
-        final Class<? extends Annotation> scope = bean.getScope();
-        if (ReferenceCounted.class.isAssignableFrom(scope)) {
+        if (ReferenceCounted.class.isAssignableFrom(bean.getScope())) {
             this.referenceCountedBeanTypes.addAll(bean.getTypes());
         }
     }
@@ -116,9 +103,6 @@ public class ReferenceCountedExtension implements Extension {
 
     private <T> Producer<T> createReferenceCountingProducer(final Producer<T> delegate,
                                                             final BeanManager beanManager) {
-        Objects.requireNonNull(delegate);
-        Objects.requireNonNull(beanManager);
-
         final Producer<T> returnValue = new DelegatingProducer<T>(delegate) {
 
                 private volatile Set<InjectionPoint> referenceCountedInjectionPoints;
@@ -129,16 +113,10 @@ public class ReferenceCountedExtension implements Extension {
                     if (referenceCountedInjectionPoints == null) {
                         referenceCountedInjectionPoints = new HashSet<>();
                         final Set<InjectionPoint> delegateInjectionPoints = this.getInjectionPoints();
-                        assert delegateInjectionPoints != null;
                         if (!delegateInjectionPoints.isEmpty()) {
                             for (final InjectionPoint delegateInjectionPoint : delegateInjectionPoints) {
-                                if (delegateInjectionPoint != null) {
-                                    final Type type = delegateInjectionPoint.getType();
-                                    assert type != null;
-                                    final Set<Annotation> qualifiers = delegateInjectionPoint.getQualifiers();
-                                    if (referenceCountedBeanTypes.contains(type)) {
-                                        referenceCountedInjectionPoints.add(delegateInjectionPoint);
-                                    }
+                                if (referenceCountedBeanTypes.contains(delegateInjectionPoint.getType())) {
+                                    referenceCountedInjectionPoints.add(delegateInjectionPoint);
                                 }
                             }
                         }
