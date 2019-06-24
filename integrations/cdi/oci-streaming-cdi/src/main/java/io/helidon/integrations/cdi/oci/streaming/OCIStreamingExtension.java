@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -59,7 +60,7 @@ public class OCIStreamingExtension implements Extension {
         this.streamQualifiers = new HashSet<>();
     }
 
-    private void discoverStreamInjectionPoints(@Observes final ProcessBean<?> event) {
+    private <T> void discoverStreamInjectionPoints(@Observes final ProcessBean<T> event) {
         assert event != null;
         final Bean<?> bean = event.getBean();
         if (bean != null) {
@@ -160,14 +161,19 @@ public class OCIStreamingExtension implements Extension {
     }
 
     private static Set<Annotation> extractRelevantQualifiers(final InjectionPoint injectionPoint) {
-        return extractRelevantQualifiers(injectionPoint, injectionPoint.getType(), new HashSet<>());
+        return extractRelevantQualifiers(injectionPoint::getQualifiers,
+                                         injectionPoint.getType(),
+                                         Stream.class,
+                                         new HashSet<>());
     }
 
-    private static Set<Annotation> extractRelevantQualifiers(final InjectionPoint injectionPoint, Type type, Set<Type> seen) {
-        Objects.requireNonNull(injectionPoint);
-        if (type == null) {
-            type = injectionPoint.getType();
-        }
+    private static Set<Annotation> extractRelevantQualifiers(final Supplier<? extends Set<Annotation>> qualifiersSupplier,
+                                                             final Type type,
+                                                             final Class<?> testClass,
+                                                             Set<Type> seen) {
+        Objects.requireNonNull(qualifiersSupplier);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(testClass);
         if (seen == null) {
             seen = new HashSet<>();
         }
@@ -175,20 +181,25 @@ public class OCIStreamingExtension implements Extension {
         if (!seen.contains(type)) {
             seen.add(type);
             if (type instanceof Class) {
-                if (Stream.class.isAssignableFrom((Class<?>) type)) {
-                    returnValue = injectionPoint.getQualifiers();
+                if (testClass.isAssignableFrom((Class<?>) type)) {
+                    returnValue = qualifiersSupplier.get();
                 }
             } else if (type instanceof ParameterizedType) {
                 final ParameterizedType parameterizedType = (ParameterizedType) type;
                 final Type rawType = parameterizedType.getRawType();
                 if (rawType instanceof Class) {
                     final Class<?> rawClass = (Class<?>) rawType;
-                    final Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                    if (actualTypeArguments != null && actualTypeArguments.length == 1) {
-                        if (Provider.class.isAssignableFrom(rawClass)) {
-                            // e.g. Provider<Frob>, Provider<? extends
-                            // Blatz>, Instance<Groo>, etc.
-                            returnValue = extractRelevantQualifiers(injectionPoint, actualTypeArguments[0], seen); // RECURSIVE
+                    if (Provider.class.isAssignableFrom(rawClass)) {
+                        final Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                        if (actualTypeArguments != null && actualTypeArguments.length == 1) {
+                            // e.g. Provider<Frob>, Provider<?
+                            // extends Blatz>, Instance<Groo>,
+                            // etc.
+                            returnValue =
+                                extractRelevantQualifiers(qualifiersSupplier,
+                                                          actualTypeArguments[0],
+                                                          testClass,
+                                                          seen); // RECURSIVE
                         }
                     }
                 }
@@ -199,7 +210,14 @@ public class OCIStreamingExtension implements Extension {
                     final int length = upperBounds.length;
                     if (length > 0) {
                         for (int i = 0; i < length && returnValue == null; i++) {
-                            returnValue = extractRelevantQualifiers(injectionPoint, upperBounds[i], seen); // RECURSIVE
+                            returnValue =
+                                extractRelevantQualifiers(qualifiersSupplier,
+                                                          upperBounds[i],
+                                                          testClass,
+                                                          seen); // RECURSIVE
+                            if (returnValue != null) {
+                                break;
+                            }
                         }
                     }
                 }
