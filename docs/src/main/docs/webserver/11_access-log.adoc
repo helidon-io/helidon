@@ -45,7 +45,7 @@ The order of registration is significant - make sure `AccessLogSupport` is regis
 
 == Configuring Access Log in a configuration file
 
-Access log can be configured (also all options defined here can be set up using a builder).
+Access log can be configured as follows:
 
 [source, yaml]
 .Access Log configuration file
@@ -56,6 +56,8 @@ server:
     format: "%h %l %u %t %r %s %b %{Referer}i"
 ----
 
+All options shown above are also available programmatically when using builder.
+
 == Configuration options
 
 The following configuration options can be defined:
@@ -63,11 +65,11 @@ The following configuration options can be defined:
 |===
 |Config key     |Default value      |Builder method     |Description
 
-|`enabled`      |`true`             |`enabled(boolean)`          |When this option is set to `false`, the access logging will be disabled
+|`enabled`      |`true`             |`enabled(boolean)`          |When this option is set to `false`, access logging will be disabled
 |`logger-name`  |`io.helidon.webserver.AccessLog` |`loggerName(String)` |Name of the logger to use when writing log entries
 |`format`       |`helidon`          |`helidonLogFormat()`, `commonLogFormat()`, `add(AccessLogEntry entry)` |Configuration of access log output,
-                                                        when `helidon` is defined, the Helidon log format (see bellow) is used,
-                                                        can be configured to explicitly define log entries (see bellow as well)
+                                                        when `helidon` is defined, the Helidon log format (see below) is used.
+                                                        Can be configured to explicitly define log entries (see below as well)
 
 |===
 
@@ -86,7 +88,7 @@ The following log entries are supported in Helidon:
 |%t                 |`TimestampLogEntry`            |The current timestamp
 |%r                 |`RequestLineLogEntry`          |The request line (method, path and HTTP version)
 |%s                 |`StatusLogEntry`               |The HTTP status returned to the client
-|%b                 |`SizeLogEntry`                 |The response entity size
+|%b                 |`SizeLogEntry`                 |The response entity size (if available)
 |%D                 |`TimeTakenLogEntry`            |The time taken in microseconds
 |%T                 |`TimeTakenLogEntry`            |The time taken in seconds
 |%{`header-name`}i  |`HeaderLogEntry`               |Value of a header (can have multiple such specification to write
@@ -149,7 +151,7 @@ Access log example:
 == Configuring Access Log with Java util logging
 
 To support a separate file for Access log entries, Helidon provides a custom
-log handler, tha extends the `FileHandler`.
+log handler, that extends the `FileHandler`.
 
 To log to a file `access.log` with appending records after restart, you can use the
  following configuration in `logging.properties`:
