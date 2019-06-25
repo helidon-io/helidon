@@ -1,0 +1,71 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+:adoc-dir: {guides-dir}
+
+= Skaffold Build and Deploy Pipeline
+:description: Helidon Skaffold Guide
+:keywords: helidon, guide, oracle, skaffold
+:skaffold-url: https://github.com/GoogleContainerTools/skaffold
+
+Create a local development pipeline that will automatically build a Docker image of your Helidon application, and deploy the image  to a Kubernetes cluster <<getting-started/06_kubernetes.adoc,installed on on your desktop>>.
+
+== What You Need
+
+|===
+|About 10 minutes
+| <<about/03_prerequisites.adoc,Helidon prerequisites>>
+|A Helidon project created from the quickstart Maven archetype. See
+ <<guides/02_quickstart-se.adoc,quickstart Maven archetype>>.
+|===
+
+== Download and Install Skaffold
+
+Skaffold is a command line tool used for local continuous development of Kubernetes applications. Skaffold can be used to automate the workflow for building your application image, pushing it to a repository, and deploying it to a Kubernetes cluster. Skaffold can watch your code for changes with skaffold dev and then kick off the build, push, deploy process automatically when you save your code.
+
+Follow the instructions on the link:{skaffold-url}[Skaffold GitHub page] to install the latest release of Skaffold on your system. The installation will create a `/.skaffold` folder in your home directory to store configuration information.
+
+== Bypass the Image Registry 
+
+When using a local Kubernetes cluster you can bypass the image push step with the command `skaffold config set --global local-cluster true`. Skaffold will use your current Kubernetes context to determine the cluster on which your application will be deployed. To find your context run: `kubectl config current-context`. Make sure to use your local Kubernetes cluster. 
+
+== Deploy Your Application
+
+Create a `skaffold.yaml` in the directory containing your `Dockerfile`, `/src`, and `app.yaml`. Add the following content to your `skaffold.yaml`:
+
+[source,bash]
+----
+apiVersion: skaffold/v1beta2
+kind: Config
+build:
+  artifacts:
+  - image: quickstart-se
+
+deploy:
+  kubectl:
+    manifests:
+      - app.yaml
+----
+
+In this case `image` is the name of the image created <<02_quickstart-se.adoc#build-a-docker-image,in the Build a Docker Image>> step of the quickstarts. `app.yaml` is the Kubernetes manifest used to build the image created by the Dockerfile. For additional `skaffold.yaml` examples, refer to the link:{skaffold-url}[Skaffold GitHub page]. 
+
+Run `skaffold dev` to build and deploy the application every time a change is made to your code. This will run the `Dockerfile` in the directory to build an image of the application and will deploy the `app.yaml` manifest file referenced in `skaffold.yaml`. Exiting from `skaffold dev` will delete your pod. Skaffold also provides the option to build and deploy the application only once with the `skaffold run` command. When deploying this way, the application can be deleted with `skaffold delete`. 
+
+== More Information  
+
+Skaffold makes it easy to build, push, and deploy using a variety of tools by means of a pluggable architecture and also allows you to easily switch between these configurations with the profiles feature. Skaffold gives you options to use the tool you prefer in each stage of the build, push, deploy process. There are many build options (Dockerfile locally, Dockerfile in-cluster with Kaniko, Dockerfile on the cloud, Jib Maven/Gradle locally, etc.), deploy options (`kubectl`, Helm, Kustomize), and many optional image tag policies. This pluggability makes it possible to match the tools used in your production deployment pipeline.
+
