@@ -40,7 +40,7 @@ repositories {
 dependencies {
     compile "io.helidon:helidon-bom:${project.helidonversion}"
     compile 'io.helidon.microprofile.bundles:helidon-microprofile-1.2'
-    compile 'org.glassfish.jersey.media:jersey-media-json-binding:2.29-RC1'
+    compile 'org.glassfish.jersey.media:jersey-media-json-binding:2.29'
     runtime 'org.jboss:jandex:2.0.4.Final'
     runtime 'javax.activation:javax.activation-api:1.2.0'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
