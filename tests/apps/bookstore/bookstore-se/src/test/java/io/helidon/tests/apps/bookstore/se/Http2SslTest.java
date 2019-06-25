@@ -90,4 +90,23 @@ public class Http2SslTest {
             Assertions.assertEquals(getNoBookRes.protocol(), Protocol.HTTP_2);
         }
     }
+
+    @Test
+    @DisabledOnJre(JRE.JAVA_8)
+    public void testHelloWorldHtt2SslPostFirst() throws Exception {
+        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
+        Request postBook = builder.post(
+                RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
+        try (Response postBookRes = client.newCall(postBook).execute()) {
+            Assertions.assertEquals(postBookRes.code(), 200);
+            Assertions.assertEquals(postBookRes.protocol(), Protocol.HTTP_2);
+        }
+
+        builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
+        Request deleteBook = builder.delete().build();
+        try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
+            Assertions.assertEquals(deleteBookRes.code(), 200);
+            Assertions.assertEquals(deleteBookRes.protocol(), Protocol.HTTP_2);
+        }
+    }
 }
