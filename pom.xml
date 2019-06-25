@@ -135,7 +135,7 @@
         <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
         <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>2.9.0</version.lib.jedis>
-        <version.lib.jersey>2.29-RC1</version.lib.jersey>
+        <version.lib.jersey>2.29</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
         <version.lib.jmh>1.19</version.lib.jmh>
         <version.lib.jsonb-api>1.0.1</version.lib.jsonb-api>
@@ -1781,17 +1781,4 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/staging</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>

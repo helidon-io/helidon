@@ -48,7 +48,7 @@
         <version.lib.helidon>${project.version}</version.lib.helidon>
 
         <version.lib.cassandra>3.4.0</version.lib.cassandra>
-        <version.lib.jersey>2.29-RC1</version.lib.jersey>
+        <version.lib.jersey>2.29</version.lib.jersey>
         <version.lib.jackson>2.9.5</version.lib.jackson>
         <version.lib.guava>16.0.1</version.lib.guava>
 
