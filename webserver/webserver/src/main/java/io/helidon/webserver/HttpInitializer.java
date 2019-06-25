@@ -90,7 +90,8 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                     .maxContentLength(http2Config.maxContentLength()).build();
             HttpServerUpgradeHandler upgradeHandler = new HttpServerUpgradeHandler(sourceCodec,
                     protocol -> AsciiString.contentEquals(Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME, protocol)
-                            ? new Http2ServerUpgradeCodec(helidonHandler) : null);
+                            ? new Http2ServerUpgradeCodec(helidonHandler) : null,
+                    http2Config.maxContentLength());
 
             CleartextHttp2ServerUpgradeHandler cleartextHttp2ServerUpgradeHandler =
                     new CleartextHttp2ServerUpgradeHandler(sourceCodec, upgradeHandler, helidonHandler);
