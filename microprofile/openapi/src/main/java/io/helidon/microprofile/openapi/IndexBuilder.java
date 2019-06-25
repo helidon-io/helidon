@@ -101,12 +101,11 @@ public class IndexBuilder implements Extension {
 
     private IndexView existingIndexFileReader() throws IOException {
         try (InputStream jandexIS = getClass().getResourceAsStream(INDEX_PATH)) {
-            if (jandexIS == null) {
-                throw new IllegalArgumentException("Attempted to read from previously-located index file "
-                        + INDEX_PATH + " but the file cannot be found");
-            }
             LOGGER.log(Level.FINE, "Using Jandex index at {0}", INDEX_PATH);
             return new IndexReader(jandexIS).read();
+        } catch (IOException ex) {
+            throw new IOException("Attempted to read from previously-located index file "
+                    + INDEX_PATH + " but the file cannot be found", ex);
         }
     }
 
@@ -114,12 +113,11 @@ public class IndexBuilder implements Extension {
         Indexer indexer = new Indexer();
         for (Class<?> c : annotatedTypes) {
             try (InputStream is = contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
-                if (is == null) {
-                    throw new IllegalArgumentException("Cannot load bytecode from class "
-                            + c.getName() + " at " + resourceNameForClass(c)
-                            + " for annotation processing");
-                }
                 indexer.index(is);
+            } catch (IOException ex) {
+                throw new IOException("Cannot load bytecode from class "
+                        + c.getName() + " at " + resourceNameForClass(c)
+                        + " for annotation processing", ex);
             }
         }
 

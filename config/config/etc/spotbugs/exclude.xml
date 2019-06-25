@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
@@ -15,14 +16,17 @@
     limitations under the License.
 
 -->
-<body>
-  <p>Provides classes and interfaces for auto-discovering
-     configuration for
-     the <a href="https://docs.oracle.com/en/database/oracle/oracle-database/12.2/jjucp/toc.htm"
-     target="_parent">Oracle Universal Connection Pool</a>
-     <a href="https://docs.oracle.com/en/cloud/paas/app-container-cloud/csjse/exploring-application-deployments-page.html#GUID-843F7013-B6FA-45E0-A9D3-29A0EFD53E11"
-     target="_parent">when running on the Oracle Application Container
-     Cloud Service</a> system.</p>
 
-    @see io.helidon.service.configuration.ucp.accs.UCPServiceConfigurationACCSProvider
-</body>
+<FindBugsFilter
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="https://github.com/spotbugs/filter/3.0.0"
+        xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+    <Match>
+        <!-- False positive. See https://github.com/spotbugs/spotbugs/issues/756 -->
+        <Class name="io.helidon.config.internal.PropertiesConfigParser"/>
+        <Method name="parse"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    </Match>
+
+</FindBugsFilter>
