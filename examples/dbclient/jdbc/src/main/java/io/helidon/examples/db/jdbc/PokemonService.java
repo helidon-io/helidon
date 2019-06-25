@@ -74,8 +74,27 @@ public class PokemonService implements Service {
                 .get("/{name}", this::getPokemon)
                 // delete one
                 .delete("/{name}", this::deletePokemon)
+                // example of transactional API (local transaction only!)
+                .put("/transactional", Handler.create(Pokemon.class, this::transactional))
                 // update one (TODO this is intentionally wrong - should use JSON request, just to make it simple we use path)
                 .put("/{name}/type/{type}", this::updatePokemonType);
+    }
+
+    private void transactional(ServerRequest request, ServerResponse response, Pokemon pokemon) {
+        dbClient.inTransaction(exec -> exec
+                .createNamedGet("select-for-update")
+                .namedParam(pokemon)
+                .execute()
+        .thenAccept(maybeRow -> {
+            maybeRow.ifPresent(dbRow -> {
+                // process update
+                exec.createNamedUpdate("update")
+                        .namedParam(pokemon)
+                        .execute()
+                        .thenAccept(count -> response.send("Updated " + count + " records"));
+            });
+        }));
+
     }
 
     /**
