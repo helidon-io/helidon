@@ -33,6 +33,10 @@
         Configuration Core module.
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>javax.annotation</groupId>

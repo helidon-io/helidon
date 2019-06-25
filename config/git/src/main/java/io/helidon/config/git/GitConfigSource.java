@@ -146,6 +146,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
                 }
             } else if (uri != null) {
                 CloneCommand cloneCommand = Git.cloneRepository()
+                        .setCredentialsProvider(endpoint.credentialsProvider())
                         .setURI(uri.toASCIIString())
                         .setBranchesToClone(singleton("refs/heads/" + branch))
                         .setBranch("refs/heads/" + branch)
@@ -163,6 +164,7 @@ public class GitConfigSource extends AbstractParsableConfigSource<byte[]> {
     private void pull() throws GitAPIException {
         Git git = recordGit(Git.wrap(repository));
         PullCommand pull = git.pull()
+                .setCredentialsProvider(endpoint.credentialsProvider())
                 .setRebase(true);
         PullResult result = pull.call();
 

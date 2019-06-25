@@ -74,7 +74,7 @@ public class ClientTracingInterceptor
      * @param streaming                flag indicating whether to trace streaming calls
      * @param verbose                  flag to indicate verbose logging to spans
      * @param tracedAttributes         the set of request attributes to add to the span
-     * @param activeSpanSource         the spurce of the active span
+     * @param activeSpanSource         the source of the active span
      */
     private ClientTracingInterceptor(Tracer tracer,
                                      OperationNameConstructor operationNameConstructor,

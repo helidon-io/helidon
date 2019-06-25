@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,35 +24,35 @@ import java.util.Map;
  * <p>Matched URI path is always <b>decoded</b>, <b>{@link java.net.URI#normalize() normalized}</b> and
  * with <b>removed single ended slash</b> (if any).
  *
- * <h3><a name="pattern">Web Server Path Pattern</a></h3>
+ * <h3><a id="pattern">Web Server Path Pattern</a></h3>
  * While user can implement this interface to implement any specific needs the primary construction method is
  * {@link #create(String)} factory method. The method accepts <i>Web Server Path Pattern</i> format.
  *
- * <table border="0" cellpadding="1" cellspacing="0"
- *  summary="Web Server path pattern description">
+ * <table>
+ * <caption><b>Web Server path pattern description</b></caption>
  *
- * <tr align="left">
- * <th align="left" id="construct">Construct Example</th>
- * <th align="left" id="description">Description</th>
+ * <tr>
+ * <th id="construct">Construct Example</th>
+ * <th id="description">Description</th>
  * </tr>
  *
- * <tr><td valign="top" headers="construct">{@code /foo/bar/b,a+z}</td>
+ * <tr><td headers="construct">{@code /foo/bar/b,a+z}</td>
  *     <td headers="description">Exact canonical path match. (Including decoded characters.)</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo/{var}}</td>
+ * <tr><td headers="construct">{@code /foo/{var}}</td>
  *     <td headers="description">Named regular expression segment.
  *         Name is <i>var</i> and regexp segment is {@code ([^/]+)}. Use {@link Result#param(String)} method to get value
  *         of the segment.</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo/{}}</td>
+ * <tr><td headers="construct">{@code /foo/{}}</td>
  *     <td headers="description">Nameless regular expression segment. Regexp segment is {@code ([^/]+)}</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo/{var:\d+}}</td>
+ * <tr><td headers="construct">{@code /foo/{var:\d+}}</td>
  *     <td headers="description">Named regular expression segment with specified expression.</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo/{:\d+}}</td>
+ * <tr><td headers="construct">{@code /foo/{:\d+}}</td>
  *     <td headers="description">Nameless regular expression segment with specified expression.</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo/{+var}}</td>
+ * <tr><td headers="construct">{@code /foo/{+var}}</td>
  *     <td headers="description">A convenience shortcut for {@code /foo/{var:.+}}.</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo/{+}}</td>
+ * <tr><td headers="construct">{@code /foo/{+}}</td>
  *     <td headers="description">A convenience shortcut for {@code /foo/{:.+}}.</td></tr>
- * <tr><td valign="top" headers="construct">{@code /foo[/bar]}</td>
+ * <tr><td headers="construct">{@code /foo[/bar]}</td>
  *     <td headers="description">A optional section. Translated to regexp: {@code /foo(/bar)?}</td></tr>
  * </table>
  */
