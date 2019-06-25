@@ -42,7 +42,7 @@ public interface DbClient {
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> T inTransaction(Function<DbExecute, T> executor);
+    <T> void inTransaction(Function<DbExecute, T> executor);
 
     /**
      * Execute database statement.
