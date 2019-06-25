@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,10 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;;
-
 import io.helidon.webserver.WebServer;
 
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -31,18 +28,23 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
 
-public class MainTest {
+/**
+ * Tests SSL/TLS with HTTP 2 upgrades.
+ */
+public class Http2SslTest {
 
     private static WebServer webServer;
     private static OkHttpClient client;
 
     @BeforeAll
     public static void startServer() throws Exception {
-        webServer = TestServer.start(false, false);
-        client = TestServer.newOkHttpClient(false);
+        webServer = TestServer.start(true, true);
+        client = TestServer.newOkHttpClient(true);
     }
 
     @AfterAll
@@ -51,42 +53,41 @@ public class MainTest {
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", false);
+    @DisabledOnJre(JRE.JAVA_8)
+    public void testHelloWorldHtt2Ssl() throws Exception {
+        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
 
         Request getBooks = builder.build();
         try (Response getBooksRes = client.newCall(getBooks).execute()) {
             Assertions.assertEquals(getBooksRes.code(), 200);
-            Assertions.assertNotNull(getBooksRes.header("content-length"));
-            String body = getBooksRes.body().string();
-            Assertions.assertEquals(body, "[]");
+            Assertions.assertEquals(getBooksRes.protocol(), Protocol.HTTP_2);
         }
 
         Request postBook = builder.post(
                 RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
         try (Response postBookRes = client.newCall(postBook).execute()) {
             Assertions.assertEquals(postBookRes.code(), 200);
+            Assertions.assertEquals(postBookRes.protocol(), Protocol.HTTP_2);
         }
 
-        builder = TestServer.newRequestBuilder(webServer, "/books/123456", false);
+        builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
         Request getBook = builder.build();
         try (Response getBookRes = client.newCall(getBook).execute()) {
             Assertions.assertEquals(getBookRes.code(), 200);
-            Assertions.assertNotNull(getBookRes.header("content-length"));
-            JsonReader jsonReader = Json.createReader(getBookRes.body().byteStream());
-            JsonObject jsonObject = jsonReader.readObject();
-            Assertions.assertEquals("123456", jsonObject.getString("isbn"),
-                    "Checking if correct ISBN");
+            Assertions.assertEquals(getBookRes.protocol(), Protocol.HTTP_2);
         }
 
         Request deleteBook = builder.delete().build();
         try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
             Assertions.assertEquals(deleteBookRes.code(), 200);
+            Assertions.assertEquals(deleteBookRes.protocol(), Protocol.HTTP_2);
+
         }
 
         Request getNoBook = builder.build();
         try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
             Assertions.assertEquals(getNoBookRes.code(), 404);
+            Assertions.assertEquals(getNoBookRes.protocol(), Protocol.HTTP_2);
         }
     }
 }

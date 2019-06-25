@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,15 @@ public interface Http2Configuration {
      * @return Max HTTP/2 buffer size.
      */
     int maxContentLength();
+
+    /**
+     * Create a new fluent API builder.
+     *
+     * @return a new builder instance.
+     */
+    static Http2Configuration.Builder builder() {
+        return new Http2Configuration.Builder();
+    }
 
     /**
      * Builder for {@link Http2Configuration}.

@@ -81,8 +81,9 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Set up HTTP/2 pipeline if feature is enabled
-        ExperimentalConfiguration experimental = webServer.configuration().experimental();
-        if (experimental != null && experimental.http2() != null && experimental.http2().enable()) {
+        ServerConfiguration serverConfig = webServer.configuration();
+        if (serverConfig.isHttp2Enabled()) {
+            ExperimentalConfiguration experimental = serverConfig.experimental();
             Http2Configuration http2Config = experimental.http2();
             HttpServerCodec sourceCodec = new HttpServerCodec();
             HelidonConnectionHandler helidonHandler = new HelidonHttp2ConnectionHandlerBuilder()
@@ -115,7 +116,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
     private static final class HelidonEventLogger extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-            LOGGER.info("Event Triggered: " + evt);
+            LOGGER.finer(() -> "Event Triggered: " + evt);
             ctx.fireUserEventTriggered(evt);
         }
     }

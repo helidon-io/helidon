@@ -181,6 +181,16 @@ public interface ServerConfiguration extends SocketConfiguration {
     ExperimentalConfiguration experimental();
 
     /**
+     * Checks if HTTP/2 is enabled in config.
+     *
+     * @return Outcome of test.
+     */
+    default boolean isHttp2Enabled() {
+        ExperimentalConfiguration experimental = experimental();
+        return experimental != null && experimental.http2() != null && experimental.http2().enable();
+    }
+
+    /**
      * Creates new instance with defaults from external configuration source.
      *
      * @param config the externalized configuration

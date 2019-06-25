@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,6 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;;
-
 import io.helidon.webserver.WebServer;
 
 import okhttp3.OkHttpClient;
@@ -34,15 +30,18 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
 
-public class MainTest {
+/**
+ * Tests SSL/TLS with HTTP 1.1.
+ */
+public class SslTest {
 
     private static WebServer webServer;
     private static OkHttpClient client;
 
     @BeforeAll
     public static void startServer() throws Exception {
-        webServer = TestServer.start(false, false);
-        client = TestServer.newOkHttpClient(false);
+        webServer = TestServer.start(true, false);
+        client = TestServer.newOkHttpClient(true);
     }
 
     @AfterAll
@@ -51,15 +50,12 @@ public class MainTest {
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", false);
+    public void testHelloWorldSsl() throws Exception {
+        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
 
         Request getBooks = builder.build();
         try (Response getBooksRes = client.newCall(getBooks).execute()) {
             Assertions.assertEquals(getBooksRes.code(), 200);
-            Assertions.assertNotNull(getBooksRes.header("content-length"));
-            String body = getBooksRes.body().string();
-            Assertions.assertEquals(body, "[]");
         }
 
         Request postBook = builder.post(
@@ -68,15 +64,10 @@ public class MainTest {
             Assertions.assertEquals(postBookRes.code(), 200);
         }
 
-        builder = TestServer.newRequestBuilder(webServer, "/books/123456", false);
+        builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
         Request getBook = builder.build();
         try (Response getBookRes = client.newCall(getBook).execute()) {
             Assertions.assertEquals(getBookRes.code(), 200);
-            Assertions.assertNotNull(getBookRes.header("content-length"));
-            JsonReader jsonReader = Json.createReader(getBookRes.body().byteStream());
-            JsonObject jsonObject = jsonReader.readObject();
-            Assertions.assertEquals("123456", jsonObject.getString("isbn"),
-                    "Checking if correct ISBN");
         }
 
         Request deleteBook = builder.delete().build();
