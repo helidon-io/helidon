@@ -69,8 +69,8 @@ class AuthorMapper {
      * @return Updated author
      */
     private static Author updateAuthor(Author author, JsonObject jo) {
-        if (!jo.isNull(FIRST)) author.setFirst(jo.getString(FIRST));
-        if (!jo.isNull(LAST)) author.setLast(jo.getString(LAST));
+        if (jo.containsKey(FIRST)) author.setFirst(jo.getString(FIRST));
+        if (jo.containsKey(LAST)) author.setLast(jo.getString(LAST));
         return author;
     }
 
