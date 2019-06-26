@@ -21,7 +21,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
 import io.helidon.tracing.config.ComponentTracingConfig;
-import io.helidon.tracing.config.EnvTracingConfig;
+import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
 
 import io.opentracing.Span;
@@ -83,8 +83,8 @@ public final class SecurityTracing extends CommonTracing {
     }
 
     private static SecurityTracing createTracing(Optional<Context> context) {
-        ComponentTracingConfig componentConfig = context.flatMap(ctx -> ctx.get(EnvTracingConfig.class))
-                .orElse(EnvTracingConfig.ENABLED)
+        ComponentTracingConfig componentConfig = context.flatMap(ctx -> ctx.get(TracingConfig.class))
+                .orElse(TracingConfig.ENABLED)
                 .component(COMPONENT);
 
         Optional<SpanContext> parentSpanContext = context.flatMap(ctx -> ctx.get(SpanContext.class));

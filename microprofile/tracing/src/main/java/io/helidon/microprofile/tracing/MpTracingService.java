@@ -22,7 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.server.spi.MpService;
 import io.helidon.microprofile.server.spi.MpServiceContext;
 import io.helidon.tracing.TracerBuilder;
-import io.helidon.webserver.TracingConfiguration;
+import io.helidon.webserver.WebTracingConfig;
 
 import io.opentracing.Tracer;
 
@@ -44,7 +44,7 @@ public class MpTracingService implements MpService {
 
         // register as global tracer
         context.serverRoutingBuilder()
-                .register(TracingConfiguration.create(tracingConfig));
+                .register(WebTracingConfig.create(tracingConfig));
 
         context.applications()
                 .forEach(app -> app.register(MpTracingFilter.class));

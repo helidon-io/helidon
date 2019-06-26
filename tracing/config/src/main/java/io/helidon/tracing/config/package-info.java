@@ -16,6 +16,6 @@
 /**
  * Configuration for traced components, spans and logs.
  *
- * @see io.helidon.tracing.config.EnvTracingConfig
+ * @see io.helidon.tracing.config.TracingConfig
  */
 package io.helidon.tracing.config;

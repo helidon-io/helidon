@@ -86,7 +86,7 @@ public interface GrpcServerConfiguration {
      *
      * @return a tracing configuration.
      */
-    TracingConfiguration tracingConfig();
+    GrpcTracingConfig tracingConfig();
 
     /**
      * Returns a count of threads in s pool used to tryProcess gRPC requests.
@@ -155,7 +155,7 @@ public interface GrpcServerConfiguration {
 
         private Tracer tracer;
 
-        private TracingConfiguration tracingConfig;
+        private GrpcTracingConfig tracingConfig;
 
         private int workers;
 
@@ -244,7 +244,7 @@ public interface GrpcServerConfiguration {
          * @param tracingConfig the tracing configuration to set
          * @return an updated builder
          */
-        public Builder tracingConfig(TracingConfiguration tracingConfig) {
+        public Builder tracingConfig(GrpcTracingConfig tracingConfig) {
             this.tracingConfig = tracingConfig;
             return this;
         }
@@ -291,7 +291,7 @@ public interface GrpcServerConfiguration {
             return tracer;
         }
 
-        TracingConfiguration tracingConfig() {
+        GrpcTracingConfig tracingConfig() {
             return tracingConfig;
         }
 
@@ -326,7 +326,7 @@ public interface GrpcServerConfiguration {
             }
 
             if (tracingConfig == null) {
-                tracingConfig = TracingConfiguration.create();
+                tracingConfig = GrpcTracingConfig.create();
             }
 
             if (!context.get(Tracer.class).isPresent()) {

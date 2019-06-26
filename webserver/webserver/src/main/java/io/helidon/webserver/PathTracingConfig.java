@@ -19,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.config.Config;
-import io.helidon.tracing.config.EnvTracingConfig;
+import io.helidon.tracing.config.TracingConfig;
 
 /**
  * Traced system configuration for web server for a specific path.
@@ -63,7 +63,7 @@ public interface PathTracingConfig {
      *
      * @return traced system configuration
      */
-    EnvTracingConfig tracedConfig();
+    TracingConfig tracedConfig();
 
     /**
      * Fluent API builder for {@link PathTracingConfig}.
@@ -71,7 +71,7 @@ public interface PathTracingConfig {
     final class Builder implements io.helidon.common.Builder<PathTracingConfig> {
         private final List<String> methods = new LinkedList<>();
         private String path;
-        private EnvTracingConfig tracedConfig;
+        private TracingConfig tracedConfig;
 
         private Builder() {
         }
@@ -81,7 +81,7 @@ public interface PathTracingConfig {
             // immutable
             final String finalPath = path;
             final List<String> finalMethods = new LinkedList<>(methods);
-            final EnvTracingConfig finalEnvTracingConfig = tracedConfig;
+            final TracingConfig finalTracingConfig = tracedConfig;
 
             return new PathTracingConfig() {
                 @Override
@@ -95,13 +95,13 @@ public interface PathTracingConfig {
                 }
 
                 @Override
-                public EnvTracingConfig tracedConfig() {
-                    return finalEnvTracingConfig;
+                public TracingConfig tracedConfig() {
+                    return finalTracingConfig;
                 }
 
                 @Override
                 public String toString() {
-                    return path + "(" + finalMethods + "): " + finalEnvTracingConfig;
+                    return path + "(" + finalMethods + "): " + finalTracingConfig;
                 }
             };
         }
@@ -118,7 +118,7 @@ public interface PathTracingConfig {
             if (null != methods) {
                 methods(methods);
             }
-            tracingConfig(EnvTracingConfig.create(config));
+            tracingConfig(TracingConfig.create(config));
 
             return this;
         }
@@ -162,7 +162,7 @@ public interface PathTracingConfig {
          * @param tracedConfig configuration of components, spans and span logs
          * @return updated builder instance
          */
-        public Builder tracingConfig(EnvTracingConfig tracedConfig) {
+        public Builder tracingConfig(TracingConfig tracedConfig) {
             this.tracedConfig = tracedConfig;
             return this;
         }

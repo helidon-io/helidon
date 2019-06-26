@@ -162,6 +162,16 @@ public class GrpcServerConfigurationTest {
 
     @Test
     public void shouldSetTracingConfiguration() {
+        GrpcTracingConfig tracingConfig = mock(GrpcTracingConfig.class);
+        GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
+                .tracingConfig(tracingConfig)
+                .build();
+
+        assertThat(configuration.tracingConfig(), is(sameInstance(tracingConfig)));
+    }
+
+    @Test
+    public void shouldSetTracingConfigurationOldConfig() {
         TracingConfiguration tracingConfig = mock(TracingConfiguration.class);
         GrpcServerConfiguration configuration = GrpcServerConfiguration.builder()
                 .tracingConfig(tracingConfig)

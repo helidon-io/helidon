@@ -26,7 +26,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.tracing.config.EnvTracingConfig;
+import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
@@ -40,16 +40,16 @@ import io.opentracing.util.GlobalTracer;
 
 /**
  * Tracing configuration for webserver.
- * Tracing configuration has two components - an overall (application wide) {@link io.helidon.tracing.config.EnvTracingConfig}
+ * Tracing configuration has two components - an overall (application wide) {@link io.helidon.tracing.config.TracingConfig}
  *  and a path specific {@link PathTracingConfig}.
  */
-public abstract class TracingConfiguration {
+public abstract class WebTracingConfig {
     /**
      * Environment tracing configuration.
      *
      * @return tracing configuration for all components in this environment
      */
-    abstract EnvTracingConfig envConfig();
+    abstract TracingConfig envConfig();
 
     /**
      * Path specific tracing configurations.
@@ -61,19 +61,19 @@ public abstract class TracingConfiguration {
     /**
      * Create a tracing configuration that is enabled for all paths and spans (that are enabled by default).
      *
-     * @return tracing configuration to register with {@link Routing.Builder#register(TracingConfiguration)}
+     * @return tracing configuration to register with {@link Routing.Builder#register(WebTracingConfig)}
      */
-    public static TracingConfiguration create() {
-        return create(EnvTracingConfig.ENABLED);
+    public static WebTracingConfig create() {
+        return create(TracingConfig.ENABLED);
     }
 
     /**
-     * Create a new tracing support base on {@link io.helidon.tracing.config.EnvTracingConfig}.
+     * Create a new tracing support base on {@link io.helidon.tracing.config.TracingConfig}.
      *
      * @param configuration traced system configuration
      * @return a new tracing support to register with web server routing
      */
-    public static TracingConfiguration create(EnvTracingConfig configuration) {
+    public static WebTracingConfig create(TracingConfig configuration) {
         return builder().envConfig(configuration).build();
     }
 
@@ -83,7 +83,7 @@ public abstract class TracingConfiguration {
      * @param config to base this support on
      * @return a new tracing support to register with web server routing
      */
-    public static TracingConfiguration create(Config config) {
+    public static WebTracingConfig create(Config config) {
         return builder().config(config).build();
     }
 
@@ -117,7 +117,7 @@ public abstract class TracingConfiguration {
                         .map(Http.RequestMethod::create)
                         .collect(Collectors.toList());
 
-                EnvTracingConfig wrappedPath = path.tracedConfig();
+                TracingConfig wrappedPath = path.tracedConfig();
                 if (methods.isEmpty()) {
                     rules.any(path.path(), new TracingConfigHandler(wrappedPath));
                 } else {
@@ -130,20 +130,20 @@ public abstract class TracingConfiguration {
     }
 
     /**
-     * A fluent API builder for {@link io.helidon.webserver.TracingConfiguration}.
+     * A fluent API builder for {@link WebTracingConfig}.
      */
-    public static class Builder implements io.helidon.common.Builder<TracingConfiguration> {
+    public static class Builder implements io.helidon.common.Builder<WebTracingConfig> {
         private final List<PathTracingConfig> pathTracingConfigs = new LinkedList<>();
-        private EnvTracingConfig tracedConfig = EnvTracingConfig.ENABLED;
+        private TracingConfig tracedConfig = TracingConfig.ENABLED;
 
         @Override
-        public TracingConfiguration build() {
-            final EnvTracingConfig envConfig = this.tracedConfig;
+        public WebTracingConfig build() {
+            final TracingConfig envConfig = this.tracedConfig;
             final List<PathTracingConfig> pathConfigs = new LinkedList<>(this.pathTracingConfigs);
 
-            return new TracingConfiguration() {
+            return new WebTracingConfig() {
                 @Override
-                public EnvTracingConfig envConfig() {
+                public TracingConfig envConfig() {
                     return envConfig;
                 }
 
@@ -171,7 +171,7 @@ public abstract class TracingConfiguration {
          * @param tracingConfig default web server tracing configuration
          * @return updated builder instance
          */
-        public Builder envConfig(EnvTracingConfig tracingConfig) {
+        public Builder envConfig(TracingConfig tracingConfig) {
             this.tracedConfig = tracingConfig;
             return this;
         }
@@ -184,7 +184,7 @@ public abstract class TracingConfiguration {
          */
         public Builder config(Config config) {
             // read the overall configuration
-            envConfig(EnvTracingConfig.create(config));
+            envConfig(TracingConfig.create(config));
 
             // and then the paths
             Config allPaths = config.get("paths");
@@ -201,17 +201,17 @@ public abstract class TracingConfiguration {
 
     // this class exists so tracing of handler in webserver shows nice class name and not a lambda
     private static final class TracingConfigHandler implements Handler {
-        private final EnvTracingConfig pathSpecific;
+        private final TracingConfig pathSpecific;
 
-        private TracingConfigHandler(EnvTracingConfig pathSpecific) {
+        private TracingConfigHandler(TracingConfig pathSpecific) {
             this.pathSpecific = pathSpecific;
         }
 
         @Override
         public void accept(ServerRequest req, ServerResponse res) {
-            Optional<EnvTracingConfig> existing = req.context().get(EnvTracingConfig.class);
+            Optional<TracingConfig> existing = req.context().get(TracingConfig.class);
             if (existing.isPresent()) {
-                req.context().register(EnvTracingConfig.merge(existing.get(), pathSpecific));
+                req.context().register(TracingConfig.merge(existing.get(), pathSpecific));
             } else {
                 req.context().register(pathSpecific);
             }
@@ -253,6 +253,7 @@ public abstract class TracingConfiguration {
             if (null != inboundSpanContext) {
                 // register as parent span
                 context.register(inboundSpanContext);
+                context.register(ServerRequest.class, inboundSpanContext);
             }
 
             if (!spanConfig.enabled()) {
@@ -275,7 +276,9 @@ public abstract class TracingConfiguration {
 
             // TODO remove the next single line for version 2.0 - we should only expose SpanContext
             context.register(span);
+            context.register(ServerRequest.class, span);
             context.register(span.context());
+            context.register(ServerRequest.class, span.context());
 
             res.whenSent()
                     .thenRun(() -> {

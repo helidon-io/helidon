@@ -21,7 +21,7 @@ import io.helidon.common.context.Contexts;
  * Utility to get the current tracing configuration.
  * The tracing configuration must be registered in current {@link io.helidon.common.context.Context}.
  * This can be achieved either through configuration of the global context and registering it with a server component,
- * or by using a server specific approach, such as {@code Routing.Builder#register(TracingConfiguration)}.
+ * or by using a server specific approach, such as {@code Routing.Builder#register(WebTracingConfig)}.
  */
 public final class TracingConfigUtil {
     private TracingConfigUtil() {
@@ -36,7 +36,7 @@ public final class TracingConfigUtil {
      */
     public static SpanTracingConfig spanConfig(String component, String spanName) {
         return Contexts.context()
-                .flatMap(ctx -> ctx.get(EnvTracingConfig.class))
+                .flatMap(ctx -> ctx.get(TracingConfig.class))
                 .map(tracedConfig -> tracedConfig.spanConfig(component, spanName))
                 .orElse(SpanTracingConfig.ENABLED);
     }
@@ -51,7 +51,7 @@ public final class TracingConfigUtil {
      */
     public static SpanTracingConfig spanConfig(String component, String spanName, boolean defaultEnabled) {
         return Contexts.context()
-                .flatMap(ctx -> ctx.get(EnvTracingConfig.class))
+                .flatMap(ctx -> ctx.get(TracingConfig.class))
                 .map(traceableEnvironment -> traceableEnvironment.component(component, defaultEnabled))
                 .map(traceableComponent -> traceableComponent.span(spanName, defaultEnabled))
                 .orElseGet(() -> defaultEnabled ? SpanTracingConfig.ENABLED : SpanTracingConfig.DISABLED);

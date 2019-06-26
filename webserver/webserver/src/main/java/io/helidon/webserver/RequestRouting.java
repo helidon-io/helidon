@@ -261,12 +261,12 @@ class RequestRouting implements Routing {
 
         @Override
         public Span span() {
-            return context().get(Span.class).orElse(null);
+            return context().get(ServerRequest.class, Span.class).orElse(null);
         }
 
         @Override
         public SpanContext spanContext() {
-            return context().get(SpanContext.class).orElse(null);
+            return context().get(ServerRequest.class, SpanContext.class).orElse(null);
         }
 
         /**
@@ -394,7 +394,7 @@ class RequestRouting implements Routing {
 
         @Override
         public Tracer tracer() {
-            return TracingConfiguration.tracer(webServer());
+            return WebTracingConfig.tracer(webServer());
         }
 
         private class ErrorRoutedRequest extends RoutedRequest {

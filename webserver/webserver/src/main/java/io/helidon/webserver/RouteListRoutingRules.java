@@ -111,18 +111,14 @@ class RouteListRoutingRules implements Routing.Rules {
     }
 
     @Override
-    public RouteListRoutingRules register(TracingConfiguration tracingConfiguration) {
-        onNewWebServer(ws -> ws.context().register(tracingConfiguration.envConfig()));
+    public RouteListRoutingRules register(WebTracingConfig webTracingConfig) {
+        onNewWebServer(ws -> ws.context().register(webTracingConfig.envConfig()));
 
-        Service[] services = {tracingConfiguration.service()};
+        Service[] services = {webTracingConfig.service()};
         Record record = new Record(null, services);
 
         // need tracing service to be the very first one, as it must start the span before other handlers are invoked
-        if (records.isEmpty()) {
-            records.add(record);
-        } else {
-            records.add(0, record);
-        }
+        records.add(0, record);
 
         return this;
     }

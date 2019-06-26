@@ -95,6 +95,10 @@ import static io.helidon.common.CollectionsHelper.listOf;
  */
 public class ClientTracingFilter implements ClientRequestFilter, ClientResponseFilter {
     /**
+     * Name of tracing component used to retrieve tracing configuration.
+     */
+    public static final String JAX_RS_TRACING_COMPONENT = "jax-rs";
+    /**
      * The {@link Tracer} property name.
      */
     public static final String TRACER_PROPERTY_NAME = "io.helidon.tracing.tracer";
@@ -156,7 +160,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         }
 
         // also we may configure tracing through other means
-        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig("jax-rs", SPAN_OPERATION_NAME);
+        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(JAX_RS_TRACING_COMPONENT, SPAN_OPERATION_NAME);
         if (!spanConfig.enabled()) {
             return;
         }
@@ -244,6 +248,9 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                 .from(property(requestContext, SpanContext.class, CURRENT_SPAN_CONTEXT_PROPERTY_NAME))
                 // from injected span context
                 .or(() -> tracingContext.map(TracingContext::parentSpan))
+                // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
+                // then look for overall span context
                 .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)))
                 .asOptional();
     }

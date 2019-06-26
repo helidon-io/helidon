@@ -140,7 +140,7 @@ abstract class Response implements ServerResponse {
 
         if (spanConfig.enabled()) {
             String spanName = spanConfig.newName().orElse(TRACING_CONTENT_WRITE);
-            Tracer.SpanBuilder spanBuilder = TracingConfiguration.tracer(webServer()).buildSpan(spanName)
+            Tracer.SpanBuilder spanBuilder = WebTracingConfig.tracer(webServer()).buildSpan(spanName)
                 .asChildOf(parentSpan.get());
 
             if (obj != null) {

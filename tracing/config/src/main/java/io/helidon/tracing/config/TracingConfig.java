@@ -28,23 +28,23 @@ import io.helidon.config.Config;
  * @see #create(io.helidon.config.Config)
  * @see #builder()
  */
-public abstract class EnvTracingConfig extends Traceable {
+public abstract class TracingConfig extends Traceable {
     /**
      * Traced config that is enabled for all components, spans and logs.
      */
-    public static final EnvTracingConfig ENABLED = EnvTracingConfig.builder().build();
+    public static final TracingConfig ENABLED = TracingConfig.builder().build();
     /**
      * Traced conifg that is disabled for all components, spans and logs.
      */
-    public static final EnvTracingConfig DISABLED = EnvTracingConfig.builder().enabled(false).build();
+    public static final TracingConfig DISABLED = TracingConfig.builder().enabled(false).build();
 
     /**
      * A new traced configuration.
      *
-     * @param name name of this environment, when created using {@link EnvTracingConfig.Builder},
+     * @param name name of this environment, when created using {@link TracingConfig.Builder},
      *             the name is {@code helidon}
      */
-    protected EnvTracingConfig(String name) {
+    protected TracingConfig(String name) {
         super(name);
     }
 
@@ -89,7 +89,7 @@ public abstract class EnvTracingConfig extends Traceable {
      * @param config configuration of tracing
      * @return tracing configuration
      */
-    public static EnvTracingConfig create(Config config) {
+    public static TracingConfig create(Config config) {
         return builder().config(config).build();
     }
 
@@ -110,8 +110,8 @@ public abstract class EnvTracingConfig extends Traceable {
      * @param newer newer (more significant) instance to merge
      * @return a new configuration combining odler and newer
      */
-    public static EnvTracingConfig merge(EnvTracingConfig older, EnvTracingConfig newer) {
-        return new EnvTracingConfig(newer.name()) {
+    public static TracingConfig merge(TracingConfig older, TracingConfig newer) {
+        return new TracingConfig(newer.name()) {
             @Override
             public Optional<ComponentTracingConfig> getComponent(String componentName) {
                 Optional<ComponentTracingConfig> newerComponent = newer.getComponent(componentName);
@@ -154,9 +154,9 @@ public abstract class EnvTracingConfig extends Traceable {
     }
 
     /**
-     * Fluent API builder for {@link EnvTracingConfig}.
+     * Fluent API builder for {@link TracingConfig}.
      */
-    public static final class Builder implements io.helidon.common.Builder<EnvTracingConfig> {
+    public static final class Builder implements io.helidon.common.Builder<TracingConfig> {
         private final Map<String, ComponentTracingConfig> components = new HashMap<>();
         private Optional<Boolean> enabled = Optional.empty();
 
@@ -164,12 +164,12 @@ public abstract class EnvTracingConfig extends Traceable {
         }
 
         @Override
-        public EnvTracingConfig build() {
+        public TracingConfig build() {
             // immutability
             final Map<String, ComponentTracingConfig> finalComponents = new HashMap<>(components);
             final Optional<Boolean> finalEnabled = enabled;
 
-            return new EnvTracingConfig("helidon") {
+            return new TracingConfig("helidon") {
                 @Override
                 public Optional<ComponentTracingConfig> getComponent(String componentName) {
                     return Optional.ofNullable(finalComponents.get(componentName));

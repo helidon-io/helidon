@@ -53,7 +53,7 @@ public class GrpcTracing
      * @param tracer        the Open Tracing {@link Tracer}
      * @param tracingConfig the tracing configuration
      */
-    GrpcTracing(Tracer tracer, TracingConfiguration tracingConfig) {
+    GrpcTracing(Tracer tracer, GrpcTracingConfig tracingConfig) {
         this.tracer = tracer;
         operationNameConstructor = tracingConfig.operationNameConstructor();
         streaming = tracingConfig.isStreaming();

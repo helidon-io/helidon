@@ -28,7 +28,9 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
+import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
+import io.helidon.webserver.ServerRequest;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -56,12 +58,13 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         Context context = Contexts.context().orElseThrow(() -> new IllegalStateException("Context must be available in Jersey"));
 
         String spanName = spanName(requestContext);
-        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig("jax-rs", spanName);
+        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(ClientTracingFilter.JAX_RS_TRACING_COMPONENT, spanName);
 
         if (spanConfig.enabled()) {
             spanName = spanConfig.newName().orElse(spanName);
             Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
-            SpanContext parentSpan = context.get(SpanContext.class).orElse(null);
+            SpanContext parentSpan = context.get(ServerRequest.class, SpanContext.class)
+                    .orElseGet(() -> context.get(SpanContext.class).orElse(null));
 
             Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
                     .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
@@ -78,6 +81,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             Span span = spanBuilder.start();
 
             requestContext.setProperty(SPAN_PROPERTY, span);
+            context.register(ClientTracingFilter.class, span.context());
 
             if (!context.get(TracingContext.class).isPresent()) {
                 context.register(TracingContext.create(tracer, requestContext.getHeaders()));

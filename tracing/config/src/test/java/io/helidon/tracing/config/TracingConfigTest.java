@@ -28,9 +28,9 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link EnvTracingConfig}.
+ * Unit test for {@link TracingConfig}.
  */
-class EnvTracingConfigTest {
+class TracingConfigTest {
     private static final Optional<?> EMPTY = Optional.empty();
     private static Config config;
 
@@ -41,12 +41,12 @@ class EnvTracingConfigTest {
 
     @Test
     void testDisabledConfig() {
-        testDisabled(EnvTracingConfig.create(config.get("unit1.tracing")));
+        testDisabled(TracingConfig.create(config.get("unit1.tracing")));
     }
 
     @Test
     void testDisabledBuilder() {
-        testDisabled(EnvTracingConfig.builder()
+        testDisabled(TracingConfig.builder()
                              .enabled(false)
                              .addComponent(ComponentTracingConfig.builder("web-server")
                                      .enabled(true)
@@ -58,12 +58,12 @@ class EnvTracingConfigTest {
                              .build());
     }
 
-    void testDisabled(EnvTracingConfig envTracingConfig) {
+    void testDisabled(TracingConfig tracingConfig) {
 
         // make sure everything is disabled
-        assertThat(envTracingConfig.enabled(), is(false));
+        assertThat(tracingConfig.enabled(), is(false));
 
-        ComponentTracingConfig ws = envTracingConfig.component("web-server");
+        ComponentTracingConfig ws = tracingConfig.component("web-server");
         assertThat(ws.enabled(), is(false));
 
         SpanTracingConfig spanTracingConfig = ws.span("HTTP Request");
@@ -76,7 +76,7 @@ class EnvTracingConfigTest {
         assertThat(log.enabled(), is(false));
 
         // if disabled, than all under it should be disabled (even if not defined in config)
-        ws = envTracingConfig.component("not-defined");
+        ws = tracingConfig.component("not-defined");
         assertThat(ws.enabled(), is(false));
 
         spanTracingConfig = ws.span("also-undefined");
@@ -85,10 +85,10 @@ class EnvTracingConfigTest {
 
     @Test
     void testMerge() {
-        EnvTracingConfig older = EnvTracingConfig.create(config.get("unit3.tracing-older"));
-        EnvTracingConfig newer = EnvTracingConfig.create(config.get("unit3.tracing-newer"));
+        TracingConfig older = TracingConfig.create(config.get("unit3.tracing-older"));
+        TracingConfig newer = TracingConfig.create(config.get("unit3.tracing-newer"));
 
-        EnvTracingConfig merged = EnvTracingConfig.merge(older, newer);
+        TracingConfig merged = TracingConfig.merge(older, newer);
 
         // always enabled
         assertThat(older.enabled(), is(true));
@@ -138,10 +138,10 @@ class EnvTracingConfigTest {
     @Test
     void testEnabled() {
         Config unitConfig = config.get("unit2.tracing");
-        EnvTracingConfig envTracingConfig = EnvTracingConfig.create(unitConfig);
+        TracingConfig tracingConfig = TracingConfig.create(unitConfig);
 
-        assertThat(envTracingConfig.enabled(), is(true));
-        Optional<ComponentTracingConfig> component = envTracingConfig.getComponent("web-server");
+        assertThat(tracingConfig.enabled(), is(true));
+        Optional<ComponentTracingConfig> component = tracingConfig.getComponent("web-server");
         assertThat(component, not(EMPTY));
         ComponentTracingConfig ws = component.get();
         assertThat(ws.enabled(), is(true));
@@ -177,11 +177,11 @@ class EnvTracingConfigTest {
         assertThat(span, is(EMPTY));
 
         // if tracing enabled, return empty if undefined
-        component = envTracingConfig.getComponent("not-defined");
+        component = tracingConfig.getComponent("not-defined");
         assertThat(component, is(EMPTY));
 
         // if component disabled, than all under it should be disabled (even if not defined in config)
-        component = envTracingConfig.getComponent("security");
+        component = tracingConfig.getComponent("security");
         assertThat(component, not(EMPTY));
         ws = component.get();
         assertThat(ws.enabled(), is(false));

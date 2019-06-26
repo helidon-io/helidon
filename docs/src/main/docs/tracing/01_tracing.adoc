@@ -75,7 +75,7 @@ http://10.0.0.18:9411/api/v2/spans
 
 .Configuring Tracing Attributes
 ----
-TracingConfiguration tracingConfig = new TracingConfiguration.Builder()
+GrpcTracingConfig tracingConfig = new GrpcTracingConfig.Builder()
                 .withStreaming()
                 .withVerbosity()
                 .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,
@@ -197,7 +197,7 @@ There are also tags that are set by Helidon components. These are not configurab
 Each component and its spans can be configured using Config.
 The traced configuration has the following layers:
 
-- `EnvTracingConfig` - the overall configuration of traced components of Helidon
+- `TracingConfig` - the overall configuration of traced components of Helidon
 - `ComponentTracingConfig` - a component of Helidon that traces spans (such as `web-server`, `security`, `jax-rs`)
 - `SpanTracingConfig` - a single traced span within a component (such as `security:atn`)
 - `SpanLogTracingConfig` - a single log event on a span (such as `security.user` in span `security:atn`)
@@ -213,7 +213,7 @@ Builder approach, example that disables a single span log event:
 [source,java]
 .Configure tracing using a builder
 ----
-EnvTracingConfig.builder()
+TracingConfig.builder()
      .addComponent(ComponentTracingConfig.builder("web-server")
              .addSpan(SpanTracingConfig.builder("HTTP Request")
                      .addSpanLog(SpanLogTracingConfig.builder("content-write").enabled(false).build())
@@ -241,7 +241,7 @@ tracing:
 [source,java]
 .Use the configuration in web server
 ----
-routing.register(TracingConfiguration.create(config.get("tracing")));
+routing.register(WebTracingConfig.create(config.get("tracing")));
 ----
 
 ==== Path based configuration in Helidon Web Server
@@ -275,16 +275,16 @@ tracing:
 [source,java]
 .Configuration with Web Server
 ----
-routingBuilder.register(TracingConfiguration.create(config.get("tracing"));
+routingBuilder.register(WebTracingConfig.create(config.get("tracing"));
 ----
 
 [source,java]
 .Configuration with Web Server using a builder
 ----
-routingBuilder.register(TracingConfiguration.builder()
+routingBuilder.register(WebTracingConfig.builder()
     .addPathConfig(PathTracingConfig.builder()
         .path("/metrics")
-        .tracingConfig(EnvTracingConfig.DISABLED)
+        .tracingConfig(TracingConfig.DISABLED)
         .build();
     .build());
 ----
