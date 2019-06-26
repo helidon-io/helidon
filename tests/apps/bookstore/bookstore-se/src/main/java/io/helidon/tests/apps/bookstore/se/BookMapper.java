@@ -89,15 +89,15 @@ class BookMapper {
      * @return Updated book
      */
     private static Book updateBook(Book book, JsonObject jo) {
-        if (!jo.isNull(ISBN)) book.setIsbn(jo.getString(ISBN));
-        if (!jo.isNull(TITLE)) book.setTitle(jo.getString(TITLE));
-        if (!jo.isNull(DESCRIPTION)) book.setDescription(jo.getString(DESCRIPTION));
-        if (!jo.isNull(SUMMARY)) book.setSummary(jo.getString(SUMMARY));
-        if (!jo.isNull(GENRE)) book.setGenre(jo.getString(GENRE));
-        if (!jo.isNull(CATEGORY)) book.setCategory(jo.getString(CATEGORY));
-        if (!jo.isNull(PUBLISHER)) book.setPublisher(jo.getString(PUBLISHER));
-        if (!jo.isNull(COPYRIGHT)) book.setCopyright(jo.getString(COPYRIGHT));
-        if (!jo.isNull(AUTHORS)) book.setAuthors(AuthorMapper.decode(jo.getJsonArray(AUTHORS)));
+        if (jo.containsKey(ISBN)) book.setIsbn(jo.getString(ISBN));
+        if (jo.containsKey(TITLE)) book.setTitle(jo.getString(TITLE));
+        if (jo.containsKey(DESCRIPTION)) book.setDescription(jo.getString(DESCRIPTION));
+        if (jo.containsKey(SUMMARY)) book.setSummary(jo.getString(SUMMARY));
+        if (jo.containsKey(GENRE)) book.setGenre(jo.getString(GENRE));
+        if (jo.containsKey(CATEGORY)) book.setCategory(jo.getString(CATEGORY));
+        if (jo.containsKey(PUBLISHER)) book.setPublisher(jo.getString(PUBLISHER));
+        if (jo.containsKey(COPYRIGHT)) book.setCopyright(jo.getString(COPYRIGHT));
+        if (jo.containsKey(AUTHORS)) book.setAuthors(AuthorMapper.decode(jo.getJsonArray(AUTHORS)));
         return book;
     }
 }
