@@ -40,4 +40,9 @@
         <module>server</module>
         <module>jsonp</module>
     </modules>
+
+    <properties>
+        <!-- these modules do not contain source code -->
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
 </project>
