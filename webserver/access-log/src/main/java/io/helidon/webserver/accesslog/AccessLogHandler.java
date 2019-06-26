@@ -45,7 +45,7 @@ public class AccessLogHandler extends FileHandler {
      * <p>
      * @exception IOException if there are IO problems opening the files.
      * @exception SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control"))</tt>.
+     *             the caller does not have <code>LoggingPermission("control"))</code>.
      * @exception NullPointerException if pattern property is an empty String.
      */
     public AccessLogHandler() throws IOException, SecurityException {
