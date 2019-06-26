@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,13 @@
  */
 
 /**
- * JSON-P support common classes.
- *
- * @see io.helidon.media.jsonp.common.JsonProcessing
+ * Jersey client.
  */
-module io.helidon.media.jsonp.common {
+module io.helidon.jersey.client {
+    requires transitive java.ws.rs;
+    requires transitive jersey.common;
+    requires transitive jersey.client;
 
-    requires io.helidon.common;
-    requires io.helidon.common.http;
-    requires io.helidon.common.reactive;
-    requires io.helidon.media.common;
-    requires transitive org.glassfish.java.json;
-    
-    exports io.helidon.media.jsonp.common;
+    requires transitive java.annotation;
+    requires transitive javax.inject;
 }

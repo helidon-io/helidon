@@ -29,7 +29,7 @@ module io.helidon.microprofile.health {
     requires cdi.api;
     requires javax.inject;
     requires java.ws.rs;
-    requires java.json;
+    requires org.glassfish.java.json;
     requires microprofile.config.api;
     requires microprofile.health.api;
 

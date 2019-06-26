@@ -81,13 +81,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
+            <artifactId>javax.json</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -24,7 +24,7 @@ module io.helidon.health {
     requires transitive microprofile.health.api;
     requires io.helidon.webserver;
     requires io.helidon.media.jsonp.server;
-    requires java.json;
+    requires org.glassfish.java.json;
 
     exports io.helidon.health;
 }

@@ -44,7 +44,7 @@
         </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
+            <artifactId>javax.json</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
