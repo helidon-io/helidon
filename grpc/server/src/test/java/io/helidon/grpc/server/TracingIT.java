@@ -49,6 +49,7 @@ import services.EchoService;
 import zipkin2.Span;
 import zipkin2.junit.ZipkinRule;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.not;
@@ -119,11 +120,11 @@ public class TracingIT {
 
         String sTraces = listTraces.toString();
 
-        assertThat("The traces should include method name", sTraces.contains("grpc.method_name"));
-        assertThat("The traces should include Echo method", sTraces.contains("EchoService/Echo"));
+        assertThat("The traces should include method name", sTraces, containsString("grpc.method_name"));
+        assertThat("The traces should include Echo method", sTraces, containsString("EchoService/Echo"));
 
-        assertThat("Tha traces should include headers", sTraces.contains("grpc.headers"));
-        assertThat("Tha traces should include attributes", sTraces.contains("grpc.call_attributes"));
+        assertThat("Tha traces should include headers", sTraces, containsString("grpc.headers"));
+        assertThat("Tha traces should include attributes", sTraces, containsString("grpc.call_attributes"));
     }
 
     @Test
