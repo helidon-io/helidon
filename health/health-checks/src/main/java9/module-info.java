@@ -22,11 +22,11 @@ module io.helidon.health.checks {
     requires java.management;
 
     requires static cdi.api;
-    requires javax.inject;
+    requires static javax.inject;
 
     requires io.helidon.common;
     requires io.helidon.health;
-    requires microprofile.config.api;
+    requires static microprofile.config.api;
     requires microprofile.health.api;
 
     exports io.helidon.health.checks;

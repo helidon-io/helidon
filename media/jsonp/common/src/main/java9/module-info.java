@@ -25,7 +25,7 @@ module io.helidon.media.jsonp.common {
     requires io.helidon.common.http;
     requires io.helidon.common.reactive;
     requires io.helidon.media.common;
-    requires transitive org.glassfish.java.json;
+    requires transitive java.json;
     
     exports io.helidon.media.jsonp.common;
 }
