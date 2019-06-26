@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ readonly LOG_FILE=$(mktemp -t XXXcheckstyle-log)
 
 readonly RESULT_FILE=$(mktemp -t XXXcheckstyle-result)
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 

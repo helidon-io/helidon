@@ -115,9 +115,9 @@ readonly PREPARE_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/set-version.s
 # Hooks for deployment work
 readonly PERFORM_HOOKS=( ${WS_DIR}/examples/quickstarts/archetypes/deploy-archetypes.sh )
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-if [ "${WERCKER}" = "true" ] ; then
+if [ "${WERCKER}" = "true" -o "${GITLAB}" = "true" ] ; then
   apt-get update && apt-get -y install graphviz
 fi
 
