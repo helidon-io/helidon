@@ -27,7 +27,7 @@ import io.opentracing.contrib.grpc.OperationNameConstructor;
  * @deprecated use {@link io.helidon.grpc.server.GrpcTracingConfig}
  */
 @Deprecated
-public final class TracingConfiguration extends GrpcTracingConfig {
+public class TracingConfiguration extends GrpcTracingConfig {
     private TracingConfiguration(OperationNameConstructor operationNameConstructor,
                                  Set<ServerRequestAttribute> tracedAttributes,
                                  boolean streaming,

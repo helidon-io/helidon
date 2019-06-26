@@ -24,8 +24,8 @@ import io.helidon.grpc.examples.common.StringService;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
-import io.helidon.grpc.server.ServerRequestAttribute;
 import io.helidon.grpc.server.GrpcTracingConfig;
+import io.helidon.grpc.server.ServerRequestAttribute;
 import io.helidon.tracing.TracerBuilder;
 
 import io.opentracing.Tracer;

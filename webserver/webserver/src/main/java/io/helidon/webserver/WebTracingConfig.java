@@ -26,8 +26,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
 import io.opentracing.Span;

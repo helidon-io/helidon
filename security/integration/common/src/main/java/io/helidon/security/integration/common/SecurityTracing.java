@@ -21,8 +21,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
 import io.helidon.tracing.config.ComponentTracingConfig;
-import io.helidon.tracing.config.TracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.config.TracingConfig;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
