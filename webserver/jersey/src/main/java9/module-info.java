@@ -22,9 +22,7 @@ module io.helidon.webserver.jersey {
     requires transitive io.helidon.webserver;
     requires transitive java.ws.rs;
     requires transitive opentracing.api;
-    requires transitive jersey.common;
-    requires transitive jersey.server;
-    requires transitive javax.inject;
+    requires transitive io.helidon.jersey.server;
 
     requires io.helidon.common.context;
     requires reactor.core;

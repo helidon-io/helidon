@@ -135,7 +135,7 @@
         <version.lib.jaxrs-api>2.1</version.lib.jaxrs-api>
         <version.lib.jboss-transaction-spi>7.6.0.Final</version.lib.jboss-transaction-spi>
         <version.lib.jedis>2.9.0</version.lib.jedis>
-        <version.lib.jersey>2.26</version.lib.jersey>
+        <version.lib.jersey>2.29</version.lib.jersey>
         <version.lib.jgit>4.9.0.201710071750-r</version.lib.jgit>
         <version.lib.jmh>1.19</version.lib.jmh>
         <version.lib.jsonb-api>1.0.1</version.lib.jsonb-api>
@@ -241,6 +241,7 @@
         <module>health</module>
         <module>grpc</module>
         <module>openapi</module>
+        <module>jersey</module>
     </modules>
 
     <build>
@@ -288,7 +289,7 @@
                             <link>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin}</link>
                             <link>https://static.javadoc.io/jakarta.json.bind/jakarta.json.bind-api/${version.lib.jsonb-api}</link>
                             <link>https://static.javadoc.io/jakarta.persistence/jakarta.persistence-api/${version.lib.jakarta-persistence-api}</link>
-                            <link>https://static.javadoc.io/javax.json/javax.json-api/${version.lib.jsonp-api}</link>
+                            <link>https://static.javadoc.io/javax.json/jakarta.json-api/${version.lib.jsonp-api}</link>
                             <link>https://static.javadoc.io/javax.json.bind/javax.json.bind-api/${version.lib.jsonb-api}</link>
                             <link>https://static.javadoc.io/javax.persistence/javax.persistence-api/${version.lib.persistence-api}</link>
                             <link>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</link>
@@ -654,6 +655,28 @@
                 <version>${version.lib.jackson}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${version.lib.jersey}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${version.lib.jersey}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.hk2.external</groupId>
+                        <artifactId>jakarta.inject</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <!-- Explicitly force jackson-annotations to use proper version; bom doesn't -->

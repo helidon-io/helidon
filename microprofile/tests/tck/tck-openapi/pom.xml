@@ -70,8 +70,8 @@
             <version>${version.lib.microprofile-openapi-api}</version>
         </dependency>
         <dependency>
-            <groupId>javax.json</groupId>
-            <artifactId>javax.json-api</artifactId>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

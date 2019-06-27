@@ -109,5 +109,10 @@
             <artifactId>javax.activation-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

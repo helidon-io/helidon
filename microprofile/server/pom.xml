@@ -43,17 +43,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <!--
-            Needed by jersey in Java 9
-            Added as a dependency to correctly run tests (without the long exception
-            from hk2). If you run application on Java 9, you need to add this dependency
-            in compile scope to prevent the error messages.
-            -->
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
         </dependency>
@@ -94,16 +83,17 @@
             <!-- Jersey integration with Weld -->
             <groupId>org.glassfish.jersey.ext.cdi</groupId>
             <artifactId>jersey-weld2-se</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish.jersey.core</groupId>
+                    <artifactId>jersey-server</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <!-- Jersey injection - needed for Jersey itself -->
-            <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-hk2</artifactId>
-        </dependency>
-        <dependency>
-            <!-- Jersey support for JSON-P -->
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-processing</artifactId>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-media-jsonp</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>

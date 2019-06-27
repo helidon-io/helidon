@@ -23,13 +23,11 @@ module io.helidon.microprofile.server {
     requires transitive io.helidon.webserver;
     requires transitive io.helidon.webserver.jersey;
     requires transitive io.helidon.common.context;
+    requires transitive io.helidon.jersey.server;
 
     requires transitive cdi.api;
     requires transitive java.ws.rs;
-    requires transitive jersey.server;
     requires transitive org.glassfish.java.json;
-    // needed by jersey
-    requires transitive java.activation;
 
     requires java.logging;
     requires io.helidon.common.serviceloader;

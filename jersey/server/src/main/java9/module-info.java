@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,14 @@
  */
 
 /**
- * Tracing integration with Jersey.
+ * Jersey server.
  */
-module io.helidon.tracing.jersey {
-    requires java.logging;
-    requires java.annotation;
+module io.helidon.jersey.server {
+    requires transitive java.ws.rs;
+    requires transitive jersey.common;
+    requires transitive jersey.server;
 
-    requires java.ws.rs;
-    requires jersey.server;
-    requires opentracing.api;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.webserver;
-    requires transitive io.helidon.tracing.jersey.client;
-
-    exports io.helidon.tracing.jersey;
+    requires transitive javax.inject;
+    requires transitive java.activation;
+    requires transitive java.annotation;
 }
