@@ -23,6 +23,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.tracing.config.ComponentTracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfig;
+import io.helidon.tracing.config.TracingConfigUtil;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -217,7 +218,14 @@ public final class SecurityTracing extends CommonTracing {
             return outboundTracing;
         }
 
-        Optional<Span> outboundSpan = newSpan(atnSpanConfig, SPAN_OUTBOUND, parentSpanContext());
+        // outbound tracing should be based on current outbound span
+        Optional<SpanContext> parentOptional = Contexts.context()
+                .flatMap(ctx -> ctx.get(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, SpanContext.class));
+        if (!parentOptional.isPresent()) {
+            parentOptional = parentSpanContext();
+        }
+
+        Optional<Span> outboundSpan = newSpan(atnSpanConfig, SPAN_OUTBOUND, parentOptional);
         this.outboundTracing = new OutboundTracing(parentSpanContext(),
                                                    parentSpan(),
                                                    span(),

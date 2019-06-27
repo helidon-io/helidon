@@ -174,9 +174,11 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
 
         // register it so we can close the span on response
         requestContext.setProperty(SPAN_PROPERTY_NAME, currentSpan);
+
         // and also register it with Context, so we can close the span in case of an exception that does not hit the
         // response filter
         Contexts.context().ifPresent(ctx -> ctx.register(SPAN_PROPERTY_NAME, currentSpan));
+        Contexts.context().ifPresent(ctx -> ctx.register(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, currentSpan.context()));
 
         // propagate tracing headers, so remote service can use currentSpan as its parent
         Map<String, List<String>> tracingHeaders = tracingHeaders(tracer, currentSpan);

@@ -24,6 +24,11 @@ import io.helidon.common.context.Contexts;
  * or by using a server specific approach, such as {@code Routing.Builder#register(WebTracingConfig)}.
  */
 public final class TracingConfigUtil {
+    /**
+     * Qualifier for outbound {@code io.opentracing.SpanContext} as registered with {@link io.helidon.common.context.Context}.
+     */
+    public static final Object OUTBOUND_SPAN_QUALIFIER = OutboundSpanQualifier.class;
+
     private TracingConfigUtil() {
     }
 
@@ -55,5 +60,8 @@ public final class TracingConfigUtil {
                 .map(traceableEnvironment -> traceableEnvironment.component(component, defaultEnabled))
                 .map(traceableComponent -> traceableComponent.span(spanName, defaultEnabled))
                 .orElseGet(() -> defaultEnabled ? SpanTracingConfig.ENABLED : SpanTracingConfig.DISABLED);
+    }
+
+    private static final class OutboundSpanQualifier {
     }
 }
