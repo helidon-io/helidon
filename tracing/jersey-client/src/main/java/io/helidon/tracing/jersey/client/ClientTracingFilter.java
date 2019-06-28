@@ -33,6 +33,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.context.Contexts;
+import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.config.TracingConfigUtil;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.tracing.spi.TracerProvider;
 
@@ -93,6 +95,10 @@ import static io.helidon.common.CollectionsHelper.listOf;
  */
 public class ClientTracingFilter implements ClientRequestFilter, ClientResponseFilter {
     /**
+     * Name of tracing component used to retrieve tracing configuration.
+     */
+    public static final String JAX_RS_TRACING_COMPONENT = "jax-rs";
+    /**
      * The {@link Tracer} property name.
      */
     public static final String TRACER_PROPERTY_NAME = "io.helidon.tracing.tracer";
@@ -118,7 +124,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String X_REQUEST_ID = "x-request-id";
 
-    private static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
+    static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
 
     private static final List<String> PROPAGATED_HEADERS = listOf(X_REQUEST_ID, X_OT_SPAN_CONTEXT);
     private static final int HTTP_STATUS_ERROR_THRESHOLD = 400;
@@ -153,15 +159,26 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
             return;
         }
 
+        // also we may configure tracing through other means
+        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(JAX_RS_TRACING_COMPONENT, SPAN_OPERATION_NAME);
+        if (!spanConfig.enabled()) {
+            return;
+        }
+
         Optional<SpanContext> parentSpan = findParentSpan(requestContext, tracingContext);
         Tracer tracer = findTracer(requestContext, tracingContext);
         Map<String, List<String>> inboundHeaders = findInboundHeaders(tracingContext);
 
         // create a new span for this jersey client request
-        Span currentSpan = createSpan(requestContext, tracer, parentSpan);
+        Span currentSpan = createSpan(requestContext, tracer, parentSpan, spanConfig.newName().orElse(SPAN_OPERATION_NAME));
 
         // register it so we can close the span on response
         requestContext.setProperty(SPAN_PROPERTY_NAME, currentSpan);
+
+        // and also register it with Context, so we can close the span in case of an exception that does not hit the
+        // response filter
+        Contexts.context().ifPresent(ctx -> ctx.register(SPAN_PROPERTY_NAME, currentSpan));
+        Contexts.context().ifPresent(ctx -> ctx.register(TracingConfigUtil.OUTBOUND_SPAN_QUALIFIER, currentSpan.context()));
 
         // propagate tracing headers, so remote service can use currentSpan as its parent
         Map<String, List<String>> tracingHeaders = tracingHeaders(tracer, currentSpan);
@@ -233,6 +250,10 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                 .from(property(requestContext, SpanContext.class, CURRENT_SPAN_CONTEXT_PROPERTY_NAME))
                 // from injected span context
                 .or(() -> tracingContext.map(TracingContext::parentSpan))
+                // first look for "our" span context (e.g. one registered by a component that is aware that we exist)
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(ClientTracingFilter.class, SpanContext.class)))
+                // then look for overall span context
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SpanContext.class)))
                 .asOptional();
     }
 
@@ -240,6 +261,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                               Optional<TracingContext> tracingContext) {
         return OptionalHelper.from(property(requestContext, Tracer.class, TRACER_PROPERTY_NAME))
                 .or(() -> tracingContext.map(TracingContext::tracer))
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)))
                 .asOptional()
                 .orElseGet(GlobalTracer::get);
     }
@@ -268,8 +290,12 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                                                                        .listOf(entry.getValue()))));
     }
 
-    private Span createSpan(ClientRequestContext requestContext, Tracer tracer, Optional<SpanContext> parentSpan) {
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(SPAN_OPERATION_NAME)
+    private Span createSpan(ClientRequestContext requestContext,
+                            Tracer tracer,
+                            Optional<SpanContext> parentSpan,
+                            String spanName) {
+
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
                 .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
                 .withTag(Tags.HTTP_URL.getKey(), requestContext.getUri().toString());
 

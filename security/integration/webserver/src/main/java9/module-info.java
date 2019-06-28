@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ module io.helidon.security.integration.webserver {
     requires transitive io.helidon.security;
     requires transitive io.helidon.security.util;
     requires io.helidon.webserver;
+    requires io.helidon.security.integration.common;
 
     exports io.helidon.security.integration.webserver;
 }

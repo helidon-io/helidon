@@ -32,6 +32,7 @@ import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapInjectAdapter;
+import io.opentracing.util.GlobalTracer;
 
 /**
  * TODO javadoc.
@@ -94,8 +95,15 @@ public class TestTracerProvider implements TracerProvider {
         }
 
         @Override
+        public TestTracerBuilder registerGlobal(boolean global) {
+            return this;
+        }
+
+        @Override
         public Tracer build() {
-            return new TestTracer();
+            Tracer tracer = new TestTracer();
+            GlobalTracer.register(tracer);
+            return tracer;
         }
     }
 

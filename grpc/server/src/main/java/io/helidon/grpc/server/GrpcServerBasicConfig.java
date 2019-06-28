@@ -35,7 +35,7 @@ public class GrpcServerBasicConfig
 
     private final Tracer tracer;
 
-    private final TracingConfiguration tracingConfig;
+    private final GrpcTracingConfig tracingConfig;
 
     private final int workers;
 
@@ -108,7 +108,7 @@ public class GrpcServerBasicConfig
     }
 
     @Override
-    public TracingConfiguration tracingConfig() {
+    public GrpcTracingConfig tracingConfig() {
         return tracingConfig;
     }
 

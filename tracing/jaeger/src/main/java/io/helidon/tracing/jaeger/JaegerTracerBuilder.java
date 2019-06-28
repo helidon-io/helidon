@@ -31,6 +31,7 @@ import io.helidon.tracing.TracerBuilder;
 import io.jaegertracing.Configuration;
 import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
+import io.opentracing.util.GlobalTracer;
 
 /**
  * The JaegerTracerBuilder is a convenience builder for {@link io.opentracing.Tracer} to use with Jaeger.
@@ -172,7 +173,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     private Number samplerParam;
     private String samplerManager;
     private boolean enabled = DEFAULT_ENABLED;
-
+    private boolean global = true;
 
     private JaegerTracerBuilder() {
     }
@@ -269,6 +270,12 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
         return this;
     }
 
+    @Override
+    public JaegerTracerBuilder registerGlobal(boolean global) {
+        this.global = global;
+        return this;
+    }
+
     /**
      * Configure username and password for basic authentication.
      *
@@ -343,6 +350,9 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
                         this.addTracerTag(node.key().name(), node.asInt().get());
                     });
                 });
+
+
+        config.get("global").asBoolean().ifPresent(this::registerGlobal);
 
         return this;
     }
@@ -437,12 +447,32 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
                                "Service name must be defined, either programmatically or in "
                                        + "configuration using key \"service\"");
 
-        if (!enabled) {
+        Tracer result;
+
+        if (enabled) {
+            result = jaegerConfig().getTracer();
+        } else {
             LOGGER.info("Jaeger Tracer is explicitly disabled.");
-            return NoopTracerFactory.create();
+            result = NoopTracerFactory.create();
         }
 
-        return jaegerConfig().getTracer();
+        if (global) {
+            GlobalTracer.register(result);
+        }
+
+        return result;
+    }
+
+    @Override
+    public Tracer buildAndRegister() {
+        if (global) {
+            return build();
+        }
+
+        Tracer result = build();
+        GlobalTracer.register(result);
+
+        return result;
     }
 
     Configuration jaegerConfig() {

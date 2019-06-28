@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Support for handling {@link io.helidon.common.context.Context} across thread boundaries.
  */
 public final class Contexts {
-    static final ThreadLocal<Stack<Context>> REGISTRY = ThreadLocal.withInitial(Stack::new);
+    private static final ThreadLocal<Stack<Context>> REGISTRY = ThreadLocal.withInitial(Stack::new);
 
     private Contexts() {
     }
@@ -45,7 +45,7 @@ public final class Contexts {
     /**
      * Get context registry associated with current thread.
      *
-     * @return context that is associated with current thread or an empty context if none is
+     * @return context that is associated with current thread or empty if none is
      */
     public static Optional<Context> context() {
         Stack<Context> contextStack = REGISTRY.get();

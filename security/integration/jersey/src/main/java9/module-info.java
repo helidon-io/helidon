@@ -27,6 +27,9 @@ module io.helidon.security.integration.jersey {
     requires transitive io.helidon.security.util;
     requires transitive io.helidon.common.serviceloader;
     requires transitive java.ws.rs;
+
+    requires io.helidon.common.context;
+    requires io.helidon.security.integration.common;
     requires jersey.common;
     requires jersey.server;
     requires jersey.client;

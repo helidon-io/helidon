@@ -44,7 +44,7 @@ public class RequestTestStub extends Request {
     }
 
     @Override
-    protected Tracer tracer() {
+    public Tracer tracer() {
         return GlobalTracer.get();
     }
 

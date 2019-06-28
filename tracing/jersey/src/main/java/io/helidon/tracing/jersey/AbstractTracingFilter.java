@@ -26,7 +26,11 @@ import javax.ws.rs.container.PreMatching;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.config.TracingConfigUtil;
+import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
+import io.helidon.webserver.ServerRequest;
 
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
@@ -53,37 +57,49 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
         Context context = Contexts.context().orElseThrow(() -> new IllegalStateException("Context must be available in Jersey"));
 
-        Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
-        SpanContext parentSpan = context.get(SpanContext.class).orElse(null);
+        String spanName = spanName(requestContext);
+        SpanTracingConfig spanConfig = TracingConfigUtil.spanConfig(ClientTracingFilter.JAX_RS_TRACING_COMPONENT, spanName);
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName(requestContext))
-                .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
-                .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
-                .withTag(Tags.HTTP_URL.getKey(), requestContext.getUriInfo().getRequestUri().toString())
-                .withTag(Tags.COMPONENT.getKey(), "jaxrs");
+        if (spanConfig.enabled()) {
+            spanName = spanConfig.newName().orElse(spanName);
+            Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
+            SpanContext parentSpan = context.get(ServerRequest.class, SpanContext.class)
+                    .orElseGet(() -> context.get(SpanContext.class).orElse(null));
 
-        if (null != parentSpan) {
-            spanBuilder.asChildOf(parentSpan);
+            Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
+                    .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
+                    .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
+                    .withTag(Tags.HTTP_URL.getKey(), requestContext.getUriInfo().getRequestUri().toString())
+                    .withTag(Tags.COMPONENT.getKey(), "jaxrs");
+
+            if (null != parentSpan) {
+                spanBuilder.asChildOf(parentSpan);
+            }
+
+            configureSpan(spanBuilder);
+
+            Span span = spanBuilder.start();
+
+            requestContext.setProperty(SPAN_PROPERTY, span);
+            context.register(ClientTracingFilter.class, span.context());
+
+            if (!context.get(TracingContext.class).isPresent()) {
+                context.register(TracingContext.create(tracer, requestContext.getHeaders()));
+            }
+
+            context.get(TracingContext.class).ifPresent(tctx -> tctx.parentSpan(span.context()));
+            if (null == parentSpan) {
+                // register current span as the parent span for other (unless already exists)
+                context.register(span.context());
+            }
         }
-
-        configureSpan(spanBuilder);
-
-        Span span = spanBuilder.start();
-
-        requestContext.setProperty(SPAN_PROPERTY, span);
-
-        if (!context.get(TracingContext.class).isPresent()) {
-            context.register(TracingContext.create(tracer, requestContext.getHeaders()));
-        }
-
-        context.get(TracingContext.class).ifPresent(tctx -> tctx.parentSpan(span.context()));
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         Span span = (Span) requestContext.getProperty(SPAN_PROPERTY);
         if (span == null) {
-            return; // unknown state
+            return; // not tracing
         }
 
         switch (responseContext.getStatusInfo().getFamily()) {

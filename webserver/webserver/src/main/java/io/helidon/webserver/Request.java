@@ -46,8 +46,11 @@ import io.helidon.common.http.Parameters;
 import io.helidon.common.http.Reader;
 import io.helidon.common.reactive.Flow;
 import io.helidon.media.common.ContentReaders;
+import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.config.TracingConfigUtil;
 
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.tag.Tags;
 
@@ -55,6 +58,7 @@ import io.opentracing.tag.Tags;
  * The basic abstract implementation of {@link ServerRequest}.
  */
 abstract class Request implements ServerRequest {
+    private static final String TRACING_CONTENT_READ_NAME = "content-read";
 
     /**
      * The default charset to use in case that no charset or no mime-type is defined in the content type header.
@@ -110,8 +114,6 @@ abstract class Request implements ServerRequest {
                       .map(Charset::forName)
                       .orElse(DEFAULT_CHARSET);
     }
-
-    protected abstract Tracer tracer();
 
     @Override
     public WebServer webServer() {
@@ -301,15 +303,21 @@ abstract class Request implements ServerRequest {
                 readersLock.readLock().unlock();
             }
             // Close span
-            result.thenRun(readSpan::finish)
-                  .exceptionally(t -> {
-                      finishSpanWithError(readSpan, t);
-                      return null;
-                  });
+            if (null != readSpan) {
+                result.thenRun(readSpan::finish)
+                        .exceptionally(t -> {
+                            finishSpanWithError(readSpan, t);
+                            return null;
+                        });
+            }
             return result;
         }
 
         private void finishSpanWithError(Span readSpan, Throwable t) {
+            if (null == readSpan) {
+                // tracing of reads disabled
+                return;
+            }
             Tags.ERROR.set(readSpan, Boolean.TRUE);
             readSpan.log(CollectionsHelper.mapOf("event", "error",
                                                  "error.kind", "Exception",
@@ -319,14 +327,29 @@ abstract class Request implements ServerRequest {
         }
 
         private <T> Span createReadSpan(Class<T> type) {
-            Tracer.SpanBuilder spanBuilder = tracer().buildSpan("content-read");
-            if (span() != null) {
-                spanBuilder.asChildOf(span());
+            // only create this span if we have a parent span
+            SpanContext parentSpan = spanContext();
+            if (null == parentSpan) {
+                return null;
             }
-            if (type != null) {
-                spanBuilder.withTag("requested.type", type.getName());
+
+            SpanTracingConfig spanConfig = TracingConfigUtil
+                    .spanConfig(NettyWebServer.TRACING_COMPONENT, TRACING_CONTENT_READ_NAME);
+
+            String spanName = spanConfig.newName().orElse(TRACING_CONTENT_READ_NAME);
+
+            if (spanConfig.enabled()) {
+                // only create a real span if enabled
+                Tracer.SpanBuilder spanBuilder = tracer().buildSpan(spanName);
+                spanBuilder.asChildOf(parentSpan);
+
+                if (type != null) {
+                    spanBuilder.withTag("requested.type", type.getName());
+                }
+                return spanBuilder.start();
+            } else {
+                return null;
             }
-            return spanBuilder.start();
         }
 
         @SuppressWarnings("unchecked")
@@ -377,7 +400,10 @@ abstract class Request implements ServerRequest {
                         try {
                             subscriber.onComplete();
                         } finally {
-                            readSpan.finish();
+                            if (null != readSpan) {
+                                // tracing disabled
+                                readSpan.finish();
+                            }
                         }
                     }
                 });

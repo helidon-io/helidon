@@ -56,6 +56,7 @@ import io.netty.util.concurrent.Future;
  * The Netty based WebServer implementation.
  */
 class NettyWebServer implements WebServer {
+    static final String TRACING_COMPONENT = "web-server";
 
     private static final Logger LOGGER = Logger.getLogger(NettyWebServer.class.getName());
 

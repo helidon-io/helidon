@@ -163,7 +163,7 @@ public class TracingIT {
                 .collectorUri(URI.create(zipkin.httpUrl() + "/api/v2/spans"))
                 .build();
 
-        TracingConfiguration tracingConfig = TracingConfiguration.builder()
+        GrpcTracingConfig tracingConfig = GrpcTracingConfig.builder()
                 .withStreaming()
                 .withVerbosity()
                 .withTracedAttributes(ServerRequestAttribute.CALL_ATTRIBUTES,

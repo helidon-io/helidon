@@ -18,7 +18,6 @@ package io.helidon.security.integration.jersey;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -27,6 +26,7 @@ import java.util.logging.Logger;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.reactive.Flow;
@@ -40,10 +40,10 @@ import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
+import io.helidon.security.integration.common.AtnTracing;
+import io.helidon.security.integration.common.AtzTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 
-import io.opentracing.Span;
-import io.opentracing.SpanContext;
-import io.opentracing.Tracer;
 import org.glassfish.jersey.server.ContainerRequest;
 
 /**
@@ -68,35 +68,15 @@ abstract class SecurityFilterCommon {
         this.featureConfig = featureConfig;
     }
 
-    protected Span startSecuritySpan(SecurityContext securityContext) {
-        Span securitySpan = startNewSpan(securityContext.tracingSpan(), "security");
-        securitySpan.log(CollectionsHelper.mapOf("securityId", securityContext.id()));
-        return securitySpan;
-    }
-
-    protected void finishSpan(Span span, List<String> logs) {
-        if (null == span) {
-            return;
-        }
-        logs.forEach(span::log);
-        span.finish();
-    }
-
-    protected Span startNewSpan(SpanContext parentSpan, String name) {
-        Tracer.SpanBuilder spanBuilder = security.tracer().buildSpan(name);
-        spanBuilder.asChildOf(parentSpan);
-
-        return spanBuilder.start();
-    }
-
     protected void doFilter(ContainerRequestContext request, SecurityContext securityContext) {
-        Span securitySpan = startSecuritySpan(securityContext);
+        SecurityTracing tracing = SecurityTracing.get();
+        tracing.securityContext(securityContext);
 
         SecurityFilter.FilterContext filterContext = initRequestFiltering(request);
 
         if (filterContext.isShouldFinish()) {
             // 404
-            finishSpan(securitySpan, CollectionsHelper.listOf());
+            tracing.finish();
             return;
         }
 
@@ -137,20 +117,19 @@ abstract class SecurityFilterCommon {
                                                                  filterContext.getMethodSecurity(),
                                                                  "https".equals(filterContext.getTargetUri().getScheme())));
 
-            processSecurity(request, filterContext, securitySpan, securityContext);
+            processSecurity(request, filterContext, tracing, securityContext);
         } finally {
             if (filterContext.isTraceSuccess()) {
-                finishSpan(securitySpan, CollectionsHelper.listOf());
+                tracing.logProceed();
+                tracing.finish();
             } else {
-                // failed
-                HttpUtil.traceError(securitySpan, null, "aborted");
+                tracing.logDeny();
+                tracing.error("aborted");
             }
         }
     }
 
-    protected void authenticate(SecurityFilter.FilterContext context, Span securitySpan, SecurityContext securityContext) {
-        Span atnSpan = startNewSpan(securitySpan.context(), "security:atn");
-
+    protected void authenticate(SecurityFilter.FilterContext context, SecurityContext securityContext, AtnTracing atnTracing) {
         try {
             SecurityDefinition methodSecurity = context.getMethodSecurity();
 
@@ -161,22 +140,29 @@ abstract class SecurityFilterCommon {
                         .optional(methodSecurity.authenticationOptional())
                         .requestMessage(toRequestMessage(context))
                         .responseMessage(context.getResponseMessage())
-                        .tracingSpan(atnSpan);
+                        .tracingSpan(atnTracing.findParent().orElse(null))
+                        // backward compatibility - remove in 2.0
+                        .tracingSpan(atnTracing.findParentSpan().orElse(null));
 
                 clientBuilder.explicitProvider(methodSecurity.getAuthenticator());
-                processAuthentication(context, clientBuilder, methodSecurity);
+                processAuthentication(context, clientBuilder, methodSecurity, atnTracing);
             }
         } finally {
             if (context.isTraceSuccess()) {
-                List<String> logs = new LinkedList<>();
                 securityContext.user()
-                        .ifPresent(user -> logs.add("security.user: " + user.principal().getName()));
-                securityContext.service()
-                        .ifPresent(service -> logs.add("security.service: " + service.principal().getName()));
+                        .ifPresent(atnTracing::logUser);
 
-                finishSpan(atnSpan, logs);
+                securityContext.service()
+                        .ifPresent(atnTracing::logService);
+
+                atnTracing.finish();
             } else {
-                HttpUtil.traceError(atnSpan, context.getTraceThrowable(), context.getTraceDescription());
+                Throwable ctxThrowable = context.getTraceThrowable();
+                if (null == ctxThrowable) {
+                    atnTracing.error(context.getTraceDescription());
+                } else {
+                    atnTracing.error(ctxThrowable);
+                }
             }
         }
     }
@@ -208,13 +194,15 @@ abstract class SecurityFilterCommon {
         };
     }
 
-    protected void processAuthentication(SecurityFilter.FilterContext context,
+    protected void processAuthentication(FilterContext context,
                                          SecurityClientBuilder<AuthenticationResponse> clientBuilder,
-                                         SecurityDefinition methodSecurity) {
+                                         SecurityDefinition methodSecurity, AtnTracing atnTracing) {
 
         AuthenticationResponse response = clientBuilder.buildAndGet();
 
         SecurityResponse.SecurityStatus responseStatus = response.status();
+
+        atnTracing.logStatus(responseStatus);
 
         switch (responseStatus) {
         case SUCCESS:
@@ -280,30 +268,39 @@ abstract class SecurityFilterCommon {
 
     protected abstract Logger logger();
 
-    protected void authorize(SecurityFilter.FilterContext context, Span securitySpan, SecurityContext securityContext) {
+    protected void authorize(FilterContext context,
+                             SecurityContext securityContext,
+                             AtzTracing atzTracing) {
         if (context.getMethodSecurity().isAtzExplicit()) {
             // authorization is explicitly done by user, we MUST skip it here
             context.setExplicitAtz(true);
             return;
         }
-        Span atzSpan = startNewSpan(securitySpan.context(), "security:atz");
 
         try {
             //now authorize (also authorize anonymous requests, as we may have a path-based authorization that allows public
             // access
             if (context.getMethodSecurity().requiresAuthorization()) {
                 SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
-                        .tracingSpan(atzSpan)
+                        // TODO remove in 2.0 - backward compatibility until then
+                        .tracingSpan(atzTracing.findParentSpan().orElse(null))
+                        .tracingSpan(atzTracing.findParent().orElse(null))
                         .explicitProvider(context.getMethodSecurity().getAuthorizer());
 
                 processAuthorization(context, clientBuilder);
             }
         } finally {
-            if (!context.isTraceSuccess()) {
-                HttpUtil.traceError(atzSpan, context.getTraceThrowable(), context.getTraceDescription());
+            if (context.isTraceSuccess()) {
+                atzTracing.finish();
             } else {
-                finishSpan(atzSpan, CollectionsHelper.listOf());
+                Throwable throwable = context.getTraceThrowable();
+                if (null == throwable) {
+                    atzTracing.error(context.getTraceDescription());
+                } else {
+                    atzTracing.error(throwable);
+                }
             }
+
         }
     }
 
@@ -391,6 +388,23 @@ abstract class SecurityFilterCommon {
         }
     }
 
+    protected FilterContext configureContext(FilterContext context,
+                                             ContainerRequestContext requestContext,
+                                             UriInfo uriInfo) {
+        context.setMethod(requestContext.getMethod());
+        context.setHeaders(requestContext.getHeaders());
+        context.setTargetUri(requestContext.getUriInfo().getRequestUri());
+        context.setResourcePath(context.getTargetUri().getPath());
+
+        context.setJerseyRequest((ContainerRequest) requestContext);
+
+        // now extract headers
+        featureConfig().getQueryParamHandlers()
+                .forEach(handler -> handler.extract(uriInfo, context.getHeaders()));
+
+        return context;
+    }
+
     protected Security security() {
         return security;
     }
@@ -400,8 +414,8 @@ abstract class SecurityFilterCommon {
     }
 
     protected abstract void processSecurity(ContainerRequestContext request,
-                                            SecurityFilter.FilterContext context,
-                                            Span securitySpan,
+                                            FilterContext context,
+                                            SecurityTracing tracing,
                                             SecurityContext securityContext);
 
     protected abstract SecurityFilter.FilterContext initRequestFiltering(ContainerRequestContext requestContext);
