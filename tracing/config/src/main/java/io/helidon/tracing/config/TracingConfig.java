@@ -23,7 +23,8 @@ import io.helidon.common.OptionalHelper;
 import io.helidon.config.Config;
 
 /**
- * Configuration of traced environment.
+ * Tracing configuration that contains traced components (such as WebServer, Security) and their traced spans and span logs.
+ * Spans can be renamed through configuration, components, spans and span logs may be disabled through this configuration.
  *
  * @see #create(io.helidon.config.Config)
  * @see #builder()
@@ -41,7 +42,7 @@ public abstract class TracingConfig extends Traceable {
     /**
      * A new traced configuration.
      *
-     * @param name name of this environment, when created using {@link TracingConfig.Builder},
+     * @param name name of this configuration, when created using {@link TracingConfig.Builder},
      *             the name is {@code helidon}
      */
     protected TracingConfig(String name) {

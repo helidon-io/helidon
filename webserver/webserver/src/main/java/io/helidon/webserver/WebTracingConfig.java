@@ -45,9 +45,11 @@ import io.opentracing.util.GlobalTracer;
  */
 public abstract class WebTracingConfig {
     /**
-     * Environment tracing configuration.
+     * Tracing configuration.
+     * This is the configuration set up for the whole server. There can also be a path specific configuration available
+     * through {@link #pathConfigs()}.
      *
-     * @return tracing configuration for all components in this environment
+     * @return tracing configuration for all components
      */
     abstract TracingConfig envConfig();
 

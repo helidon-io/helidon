@@ -17,7 +17,7 @@
 /**
  * Tracing configuration for traced components.
  *
- * @see io.helidon.tracing.config.TraceableEnvironment
+ * @see io.helidon.tracing.config.TracingConfig
  */
 module io.helidon.tracing.config {
     requires transitive io.helidon.common;

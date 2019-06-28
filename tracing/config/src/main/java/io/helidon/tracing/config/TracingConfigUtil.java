@@ -57,8 +57,8 @@ public final class TracingConfigUtil {
     public static SpanTracingConfig spanConfig(String component, String spanName, boolean defaultEnabled) {
         return Contexts.context()
                 .flatMap(ctx -> ctx.get(TracingConfig.class))
-                .map(traceableEnvironment -> traceableEnvironment.component(component, defaultEnabled))
-                .map(traceableComponent -> traceableComponent.span(spanName, defaultEnabled))
+                .map(tracingConfig -> tracingConfig.component(component, defaultEnabled))
+                .map(tracingComponent -> tracingComponent.span(spanName, defaultEnabled))
                 .orElseGet(() -> defaultEnabled ? SpanTracingConfig.ENABLED : SpanTracingConfig.DISABLED);
     }
 
