@@ -119,17 +119,17 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (requestContext != null) {
                                 requestContext.responseCompleted(true);
                             }
-                            /*
-                             * Cleanup for these queues is done in HttpInitializer. However,
-                             * it may take a while for the event loop on the channel to
-                             * execute that code. If the handler has already consumed
-                             * all the data when this code is executed, we can cleanup
-                             * here and reduce the number of queues we track. This is
-                             * especially useful when keep-alive is enabled.
-                             */
+
+                            // Cleanup for these queues is done in HttpInitializer, but
+                            // we try to do it here if possible to reduce memory usage,
+                            // especially for keep-alive connections
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
+
+                            // Enable auto-read only after response has been completed
+                            // to avoid a race condition with the next response
+                            ctx.channel().config().setAutoRead(true);
                         });
             if (HttpUtil.is100ContinueExpected(request)) {
                 send100Continue(ctx);
@@ -171,10 +171,6 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             if (msg instanceof LastHttpContent) {
                 requestContext.publisher().complete();
                 requestContext = null; // just to be sure that current http req/res session doesn't interfere with other ones
-
-                // with the last http request content, the tcp connection has to become 'autoReadable'
-                // so that next http request can be obtained
-                ctx.channel().config().setAutoRead(true);
             } else if (!content.isReadable()) {
                 // this is here to handle the case when the content is not readable but we didn't
                 // exceptionally complete the publisher and close the connection
