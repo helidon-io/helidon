@@ -39,7 +39,7 @@ readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 readonly RESULT_FILE=$(mktemp -t XXXcopyright-result)
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
 die(){ echo "${1}" ; exit 1 ;}
 

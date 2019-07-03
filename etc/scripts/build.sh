@@ -37,9 +37,9 @@ fi
 # Path to the root of the workspace
 readonly WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
-source ${WS_DIR}/etc/scripts/wercker-env.sh
+source ${WS_DIR}/etc/scripts/pipeline-env.sh
 
-if [ "${WERCKER}" = "true" ] ; then
+if [ "${WERCKER}" = "true" -o "${GITLAB}" = "true" ] ; then
   apt-get update && apt-get -y install graphviz
 fi
 
@@ -47,6 +47,7 @@ inject_credentials
 
 mvn -f ${WS_DIR}/pom.xml \
     clean install -e \
+    -B \
     -Pexamples,integrations,spotbugs,adoc-check,javadoc,docs,sources,ossrh-releases,tck,tests
 
 examples/quickstarts/archetypes/test-archetypes.sh
