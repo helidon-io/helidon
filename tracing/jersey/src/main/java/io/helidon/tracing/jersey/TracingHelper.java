@@ -18,6 +18,7 @@ package io.helidon.tracing.jersey;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
+import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 
 import org.glassfish.jersey.server.ExtendedUriInfo;
@@ -62,12 +63,32 @@ public class TracingHelper {
      * @return name of span to use
      */
     public static String httpPathMethodName(ContainerRequestContext requestContext) {
-        String path = requestContext.getUriInfo().getPath();
-        if (!path.startsWith("/")) {
-            path = "/" + path;
+        Method m = getDefinitionMethod(requestContext);
+        // TODO maybe use UriBuilder
+        Path methodPath = m.getAnnotation(Path.class);
+        Path resourcePath = m.getDeclaringClass().getAnnotation(Path.class);
+
+        StringBuilder fullPath = new StringBuilder();
+        fullPath.append(requestContext.getMethod().toUpperCase());
+        fullPath.append(":");
+
+        if (null != resourcePath) {
+            String resourcePathS = resourcePath.value();
+            if (!resourcePathS.startsWith("/")) {
+                fullPath.append("/");
+            }
+            fullPath.append(resourcePath.value());
         }
-        return requestContext.getMethod()
-                + ":" + path;
+        if (null != methodPath) {
+            String methodPathS = methodPath.value();
+
+            if ((fullPath.length() != 0) && (fullPath.charAt(fullPath.length() - 1) != '/') && !methodPathS.startsWith("/")) {
+                fullPath.append("/");
+            }
+            fullPath.append(methodPath.value());
+        }
+
+        return fullPath.toString();
     }
 
     /**

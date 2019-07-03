@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
-  Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,10 +14,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
+<suite name="microprofile-opentracing-TCK" verbose="2" configfailurepolicy="continue">
 
-<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://xmlns.jcp.org/xml/ns/javaee"
-        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
-                           http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
-        bean-discovery-mode="annotated">
-</beans>
+    <test name="microprofile-opentracing 1.0 TCK">
+        <packages>
+            <package name="org.eclipse.microprofile.opentracing.tck.*"/>
+        </packages>
+    </test>
+
+</suite>

@@ -32,10 +32,15 @@
     <description>
         Support for distributed tracing in Helidon MP
         and
-        (TODO) implementation of Microprofile Opentracing specification.
+        implementation of Microprofile Opentracing specification.
     </description>
 
     <dependencies>
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-jersey</artifactId>
@@ -45,6 +50,10 @@
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.opentracing</groupId>
+            <artifactId>microprofile-opentracing-api</artifactId>
         </dependency>
         <dependency>
             <!-- Jersey on java 9 -->
@@ -63,6 +72,11 @@
             <artifactId>internal-test-libs</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.rest.client</groupId>
+            <artifactId>microprofile-rest-client-api</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

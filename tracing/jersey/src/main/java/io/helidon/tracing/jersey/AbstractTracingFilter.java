@@ -15,6 +15,8 @@
  */
 package io.helidon.tracing.jersey;
 
+import java.net.URI;
+
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -32,6 +34,7 @@ import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.webserver.ServerRequest;
 
+import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
@@ -48,6 +51,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
      * Name of the property the created span is stored in on request filter.
      */
     protected static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
+    protected static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -69,7 +73,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
                     .withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER)
                     .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
-                    .withTag(Tags.HTTP_URL.getKey(), requestContext.getUriInfo().getRequestUri().toString())
+                    .withTag(Tags.HTTP_URL.getKey(), url(requestContext))
                     .withTag(Tags.COMPONENT.getKey(), "jaxrs");
 
             if (null != parentSpan) {
@@ -79,8 +83,10 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
             configureSpan(spanBuilder);
 
             Span span = spanBuilder.start();
+            Scope spanScope = tracer.scopeManager().activate(span, false);
 
             requestContext.setProperty(SPAN_PROPERTY, span);
+            requestContext.setProperty(SPAN_SCOPE_PROPERTY, spanScope);
             context.register(ClientTracingFilter.class, span.context());
 
             if (!context.get(TracingContext.class).isPresent()) {
@@ -95,10 +101,25 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         }
     }
 
+    protected String url(ContainerRequestContext requestContext) {
+        String hostHeader = requestContext.getHeaderString("host");
+        URI requestUri = requestContext.getUriInfo().getRequestUri();
+
+        if (null != hostHeader) {
+            // let us use host header instead of local interface
+            return requestUri.getScheme()
+                    + "://"
+                    + hostHeader
+                    + requestUri.getPath();
+        }
+
+        return requestUri.toString();
+    }
+
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         Span span = (Span) requestContext.getProperty(SPAN_PROPERTY);
-        if (span == null) {
+        if (null == span) {
             return; // not tracing
         }
 
@@ -121,6 +142,11 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         Tags.HTTP_STATUS.set(span, responseContext.getStatus());
 
         span.finish();
+
+        Scope spanScope = (Scope) requestContext.getProperty(SPAN_SCOPE_PROPERTY);
+        if (null != spanScope) {
+            spanScope.close();
+        }
     }
 
     /**

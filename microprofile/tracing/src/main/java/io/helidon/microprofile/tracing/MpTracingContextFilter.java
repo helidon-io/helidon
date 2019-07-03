@@ -17,7 +17,6 @@ package io.helidon.microprofile.tracing;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.RuntimeType;
@@ -27,12 +26,13 @@ import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.Context;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
 import io.helidon.webserver.ServerRequest;
 
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * Automatically registered filter that stores
@@ -49,8 +49,7 @@ public class MpTracingContextFilter implements ContainerRequestFilter {
     @Context
     private Provider<ServerRequest> request;
 
-    @Inject
-    private Config config;
+    private final Config config = ConfigProvider.getConfig();
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -59,7 +58,7 @@ public class MpTracingContextFilter implements ContainerRequestFilter {
         Tracer tracer = serverRequest.tracer();
         SpanContext parentSpan = serverRequest.spanContext();
 
-        boolean clientEnabled = config.get("tracing.client.enabled").asBoolean().orElse(true);
+        boolean clientEnabled = config.getOptionalValue("tracing.client.enabled", Boolean.class).orElse(true);
         TracingContext tracingContext = TracingContext.create(tracer, serverRequest.headers().toMap(), clientEnabled);
         tracingContext.parentSpan(parentSpan);
 
