@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Improvements
 
+- WebServer: Access log support [800](https://github.com/oracle/helidon/pull/800)
 - WebServer: Support for HTTP/2 negotiation with TLS/APLN [807](https://github.com/oracle/helidon/pull/807)
 - Config: credentials support added to git config [810](https://github.com/oracle/helidon/pull/801)
 - Early Access: support for the Oracle Universal Connection Pool [777](https://github.com/oracle/helidon/pull/777)
