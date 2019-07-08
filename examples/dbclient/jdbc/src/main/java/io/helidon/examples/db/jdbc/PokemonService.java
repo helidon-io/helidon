@@ -80,23 +80,6 @@ public class PokemonService implements Service {
                 .put("/{name}/type/{type}", this::updatePokemonType);
     }
 
-    private void transactional(ServerRequest request, ServerResponse response, Pokemon pokemon) {
-        dbClient.inTransaction(exec -> exec
-                .createNamedGet("select-for-update")
-                .namedParam(pokemon)
-                .execute()
-        .thenAccept(maybeRow -> {
-            maybeRow.ifPresent(dbRow -> {
-                // process update
-                exec.createNamedUpdate("update")
-                        .namedParam(pokemon)
-                        .execute()
-                        .thenAccept(count -> response.send("Updated " + count + " records"));
-            });
-        }));
-
-    }
-
     /**
      * Insert new pokemon with specified name.
      *
@@ -161,7 +144,8 @@ public class PokemonService implements Service {
     }
 
     /**
-     * Delete pokemon with specified name (key).
+     * Update a pokemon.
+     * Uses a transaction.
      *
      * @param request  the server request
      * @param response the server response
@@ -177,6 +161,30 @@ public class PokemonService implements Service {
                 .execute())
                 .thenAccept(count -> response.send("Updated: " + count + " values"))
                 .exceptionally(throwable -> sendError(throwable, response));
+    }
+
+    private void transactional(ServerRequest request, ServerResponse response, Pokemon pokemon) {
+
+        dbClient.inTransaction(tx -> tx
+                .createNamedGet("select-for-update")
+                .namedParam(pokemon)
+                .execute())
+                .
+
+        dbClient.inTransaction(exec -> exec
+                .createNamedGet("select-for-update")
+                .namedParam(pokemon)
+                .execute()
+                .thenAccept(maybeRow -> {
+                    maybeRow.ifPresent(dbRow -> {
+                        // process update
+                        exec.createNamedUpdate("update")
+                                .namedParam(pokemon)
+                                .execute()
+                                .thenAccept(count -> response.send("Updated " + count + " records"));
+                    });
+                }));
+
     }
 
     /**
