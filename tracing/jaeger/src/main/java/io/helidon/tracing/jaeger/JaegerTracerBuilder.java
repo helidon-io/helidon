@@ -646,7 +646,7 @@ public final class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuil
     }
 
     enum SamplerType {
-        CONSTANT("constant"),
+        CONSTANT("const"),
         PROBABILISTIC("probabilistic"),
         RATE_LIMITING("ratelimiting"),
         REMOTE("remote");
