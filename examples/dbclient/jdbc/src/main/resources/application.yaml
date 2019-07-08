@@ -67,6 +67,7 @@ db:
     select-by-type: "SELECT * FROM pokemons WHERE type = ?"
     select-one: "SELECT * FROM pokemons WHERE name = ?"
     select-all: "SELECT * FROM pokemons"
+    select-for-update: "SELECT * FROM pokemons WHERE name = :name for UPDATE"
     update: "UPDATE pokemons SET type = :type WHERE name = :name"
     delete: "DELETE FROM pokemons WHERE name = ?"
     # delete-all: "DELETE FROM pokemons"
