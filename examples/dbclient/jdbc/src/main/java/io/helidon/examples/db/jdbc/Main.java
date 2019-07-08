@@ -73,7 +73,10 @@ public final class Main {
                         .tracer(TracerBuilder.create(config.get("tracing")).buildAndRegister())
                         .build();
 
-        WebServer server = WebServer.create(serverConfig, createRouting(config));
+        // Prepare routing for the server
+        Routing routing = createRouting(config);
+
+        WebServer server = WebServer.create(serverConfig, routing);
 
         // Start the server and print some info.
         server.start().thenAccept(ws -> {
