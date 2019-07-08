@@ -114,7 +114,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      * If set to false, tracing will be disabled.
      * If set to true, tracing will depend on overall configuration.
      */
-    public static final String ENABLED_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-enabled";;
+    public static final String ENABLED_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-enabled";
     /**
      * The {@link SpanContext} property name.
      */

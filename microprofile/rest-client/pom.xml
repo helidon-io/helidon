@@ -30,6 +30,11 @@
     <artifactId>helidon-microprofile-rest-client</artifactId>
     <name>Helidon Microprofile Rest Client</name>
 
+    <properties>
+        <!-- this module does not contain any source code -->
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.glassfish.jersey.ext.microprofile</groupId>

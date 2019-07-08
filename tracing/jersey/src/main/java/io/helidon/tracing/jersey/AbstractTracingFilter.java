@@ -47,11 +47,9 @@ import io.opentracing.util.GlobalTracer;
 @ConstrainedTo(RuntimeType.SERVER)
 @PreMatching
 public abstract class AbstractTracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
-    /**
-     * Name of the property the created span is stored in on request filter.
-     */
-    protected static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
-    protected static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
+
+    private static final String SPAN_PROPERTY = AbstractTracingFilter.class.getName() + ".span";
+    private static final String SPAN_SCOPE_PROPERTY = AbstractTracingFilter.class.getName() + ".spanScope";
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -101,6 +99,13 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
         }
     }
 
+    /**
+     * Resolves host name based on the "host" header. If this header is not set, then
+     * {@link URI#toString()} is called.
+     *
+     * @param requestContext request context
+     * @return resolved url
+     */
     protected String url(ContainerRequestContext requestContext) {
         String hostHeader = requestContext.getHeaderString("host");
         URI requestUri = requestContext.getUriInfo().getRequestUri();
