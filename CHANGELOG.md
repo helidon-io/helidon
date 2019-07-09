@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] 
+
+### Notes
+
+### Improvements
+
+- WebServer: Access log support [800](https://github.com/oracle/helidon/pull/800)
+- WebServer: Support for HTTP/2 negotiation with TLS/APLN [807](https://github.com/oracle/helidon/pull/807)
+- Config: credentials support added to git config [810](https://github.com/oracle/helidon/pull/801)
+- Early Access: support for the Oracle Universal Connection Pool [777](https://github.com/oracle/helidon/pull/777)
+
+### Fixes
+
+- WebServer: Return a 400 response for a request with an invalid URL [796](https://github.com/oracle/helidon/pull/796)
+- WebServer: Changes to content length optimization to handle flushes [783](https://github.com/oracle/helidon/pull/783)
+- WebServer: Refine content length support [795](https://github.com/oracle/helidon/pull/795)
+- Update jackson databind to 2.9.9 [797](https://github.com/oracle/helidon/pull/797)
+- Enable Netty autoread only after completing a response [823](https://github.com/oracle/helidon/pull/823)
+- Tracing: add Tracing configuration module [809](https://github.com/oracle/helidon/pull/809)
+- Tracing: Fix constant sampler name for Jaeger [828](https://github.com/oracle/helidon/pull/828)
+
 ## [1.1.2] - 2019-06-14
 
 ### Notes
@@ -349,6 +370,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[Unreleased]: https://github.com/oracle/helidon/compare/1.1.2...HEAD
 [1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/oracle/helidon/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/oracle/helidon/compare/1.0.3...1.1.0
