@@ -194,8 +194,8 @@ final class InvokedResourceImpl implements InvokedResource {
                 return false;
             }
             ClassAnnotationKey that = (ClassAnnotationKey) o;
-            return annotationClass.equals(that.annotationClass) &&
-                    handlingClass.equals(that.handlingClass);
+            return annotationClass.equals(that.annotationClass)
+                    && handlingClass.equals(that.handlingClass);
         }
 
         @Override
@@ -230,10 +230,10 @@ final class InvokedResourceImpl implements InvokedResource {
                 return false;
             }
             MethodAnnotationKey that = (MethodAnnotationKey) o;
-            return annotationClass.equals(that.annotationClass) &&
-                    definitionClass.equals(that.definitionClass) &&
-                    handlingClass.equals(that.handlingClass) &&
-                    handlingMethod.equals(that.handlingMethod);
+            return annotationClass.equals(that.annotationClass)
+                    && definitionClass.equals(that.definitionClass)
+                    && handlingClass.equals(that.handlingClass)
+                    && handlingMethod.equals(that.handlingMethod);
         }
 
         @Override
