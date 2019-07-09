@@ -186,7 +186,7 @@ final class ReferenceCountedContext implements AlterableContext {
             final Map<Contextual<?>, Instance<?>> instances = ALL_INSTANCES.get().get(this);
             assert instances != null;
             @SuppressWarnings("unchecked")
-                final Instance<T> temp = (Instance<T>) instances.get(bean);
+            final Instance<T> temp = (Instance<T>) instances.get(bean);
             Instance<T> instance = temp;
             if (instance == null) {
                 if (maybeCreate) {

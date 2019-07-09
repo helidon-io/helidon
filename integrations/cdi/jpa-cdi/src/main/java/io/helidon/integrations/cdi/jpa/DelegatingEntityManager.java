@@ -37,28 +37,119 @@ import javax.persistence.metamodel.Metamodel;
  * A partial {@link EntityManager} implementation that forwards all
  * calls to an underlying {@link EntityManager}.
  */
-public abstract class DelegatingEntityManager implements EntityManager {
+abstract class DelegatingEntityManager implements EntityManager {
+
+
+    /*
+     * Instance fields.
+     */
+
+
+    /**
+     * The {@link EntityManager} to which all operations will be
+     * forwarded if it is non-{@code null}.
+     *
+     * @see #DelegatingEntityManager(EntityManager)
+     *
+     * @see #delegate()
+     *
+     * @see #acquireDelegate()
+     */
+    private final EntityManager delegate;
+
+
+    /*
+     * Constructors.
+     */
+
 
     /**
      * Creates a new {@link DelegatingEntityManager}.
+     *
+     * @see #delegate()
      */
-    protected DelegatingEntityManager() {
-        super();
+    DelegatingEntityManager() {
+        this(null);
     }
+
+    /**
+     * Creates a new {@link DelegatingEntityManager}.
+     *
+     * @param delegate the {@link EntityManager} to which all
+     * operations may be forwarded (but see the {@link #delegate()}
+     * method); may be {@code null} in which case the {@link
+     * #acquireDelegate()} method will be used to supply a delegate
+     * for each method call
+     *
+     * @see #delegate()
+     *
+     * @see #acquireDelegate()
+     */
+    DelegatingEntityManager(final EntityManager delegate) {
+        super();
+        this.delegate = delegate;
+    }
+
+
+    /*
+     * Instance methods.
+     */
+
 
     /**
      * Returns the {@link EntityManager} to which a method invocation
      * should be forwarded.
      *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>This method will call the {@link #acquireDelegate()} method
+     * if a {@code null} delegate {@link EntityManager} was
+     * {@linkplain #DelegatingEntityManager(EntityManager) supplied at
+     * construction time}.</p>
+     *
+     * @return an {@link EntityManager}; never {@code null}
+     *
+     * @exception javax.persistence.PersistenceException if an error
+     * occurs
+     *
+     * @see #acquireDelegate()
+     *
+     * @see #DelegatingEntityManager(EntityManager)
+     */
+    protected final EntityManager delegate() {
+        final EntityManager returnValue;
+        if (this.delegate == null) {
+            returnValue = this.acquireDelegate();
+        } else {
+            returnValue = this.delegate;
+        }
+        return returnValue;
+    }
+
+    /**
+     * Returns an {@link EntityManager} to which all operations will
+     * be forwarded.
+     *
      * <p>Implementations of this method must not return {@code
      * null}.</p>
      *
-     * <p>This method is called for every invocation of every method
-     * on this class so should be fast.</p>
+     * <p>This method is called by the {@link #delegate()} method and
+     * potentially on every method invocation of instances of this
+     * class so implementations of it must be fast.</p>
      *
-     * @return an {@link EntityManager}; never {@code null}
+     * <p>Implementations of this method must not call the {@link
+     * #delegate()} method.</p>
+     *
+     * @return a non-{@code null} {@link EntityManager}
+     *
+     * @exception javax.persistence.PersistenceException if an error
+     * occurs
+     *
+     * @see #delegate()
+     *
+     * @see #DelegatingEntityManager(EntityManager)
      */
-    protected abstract EntityManager delegate();
+    protected abstract EntityManager acquireDelegate();
 
     @Override
     public void persist(final Object entity) {
@@ -119,12 +210,15 @@ public abstract class DelegatingEntityManager implements EntityManager {
     }
 
     @Override
-    public void lock(final Object entity, final LockModeType lockMode) {
+    public void lock(final Object entity,
+                     final LockModeType lockMode) {
         this.delegate().lock(entity, lockMode);
     }
 
     @Override
-    public void lock(final Object entity, final LockModeType lockMode, final Map<String, Object> properties) {
+    public void lock(final Object entity,
+                     final LockModeType lockMode,
+                     final Map<String, Object> properties) {
         this.delegate().lock(entity, lockMode, properties);
     }
 
@@ -134,17 +228,21 @@ public abstract class DelegatingEntityManager implements EntityManager {
     }
 
     @Override
-    public void refresh(final Object entity, final Map<String, Object> properties) {
+    public void refresh(final Object entity,
+                        final Map<String, Object> properties) {
         this.delegate().refresh(entity, properties);
     }
 
     @Override
-    public void refresh(final Object entity, final LockModeType lockMode) {
+    public void refresh(final Object entity,
+                        final LockModeType lockMode) {
         this.delegate().refresh(entity, lockMode);
     }
 
     @Override
-    public void refresh(final Object entity, final LockModeType lockMode, final Map<String, Object> properties) {
+    public void refresh(final Object entity,
+                        final LockModeType lockMode,
+                        final Map<String, Object> properties) {
         this.delegate().refresh(entity, lockMode, properties);
     }
 

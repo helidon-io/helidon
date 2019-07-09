@@ -35,6 +35,9 @@ import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.enterprise.inject.spi.ProcessProducer;
 import javax.enterprise.inject.spi.Producer;
 
+import io.helidon.integrations.cdi.delegates.DelegatingInjectionTarget;
+import io.helidon.integrations.cdi.delegates.DelegatingProducer;
+
 /**
  * An {@link Extension} that installs and manages a {@link
  * ReferenceCountedContext}.

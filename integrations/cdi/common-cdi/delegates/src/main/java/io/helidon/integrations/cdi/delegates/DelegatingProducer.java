@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.referencecountedcontext;
+package io.helidon.integrations.cdi.delegates;
 
 import java.util.Objects;
 import java.util.Set;
@@ -22,12 +22,28 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.Producer;
 
-class DelegatingProducer<T> implements Producer<T> {
+/**
+ * A {@link Producer} implementation that forwards all operations to
+ * another {@link Producer}.
+ *
+ * @param <T> the type of produced object
+ */
+public class DelegatingProducer<T> implements Producer<T> {
 
     private final Producer<T> delegate;
 
-    DelegatingProducer(final Producer<T> producer) {
-        this.delegate = Objects.requireNonNull(producer);
+    /**
+     * Creates a new {@link DelegatingProducer}.
+     *
+     * @param delegate the {@link Producer} to which all operations
+     * will be forwarded; must not be {@code null}
+     *
+     * @exception NullPointerException if {@code delegate} is {@code
+     * null}
+     */
+    public DelegatingProducer(final Producer<T> delegate) {
+        super();
+        this.delegate = Objects.requireNonNull(delegate);
     }
 
     @Override
