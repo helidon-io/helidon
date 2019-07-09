@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * Tracing integration with Jersey.
+ * Utilities for Jersey handling.
  */
-module io.helidon.tracing.jersey {
-    requires java.logging;
-    requires java.annotation;
-
-    requires java.ws.rs;
-    requires jersey.server;
-    requires opentracing.api;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.jersey.common;
-    requires io.helidon.webserver;
-    requires transitive io.helidon.tracing.jersey.client;
-
-    exports io.helidon.tracing.jersey;
-}
+package io.helidon.jersey.common;

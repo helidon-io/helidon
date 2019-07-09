@@ -110,7 +110,31 @@ public class TestTracerProvider implements TracerProvider {
     static class TestTracer implements Tracer {
         @Override
         public ScopeManager scopeManager() {
-            return null;
+            return new ScopeManager() {
+                private Scope active;
+                @Override
+                public Scope activate(Span span, boolean finishSpanOnClose) {
+                    active = new Scope() {
+                        @Override
+                        public void close() {
+                            if (finishSpanOnClose) {
+                                span.finish();
+                            }
+                        }
+
+                        @Override
+                        public Span span() {
+                            return span;
+                        }
+                    };
+                    return active;
+                }
+
+                @Override
+                public Scope active() {
+                    return active;
+                }
+            };
         }
 
         @Override

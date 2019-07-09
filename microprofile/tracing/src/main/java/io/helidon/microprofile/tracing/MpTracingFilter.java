@@ -15,31 +15,28 @@
  */
 package io.helidon.microprofile.tracing;
 
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.ConstrainedTo;
-import javax.ws.rs.Path;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 
+import io.helidon.jersey.common.InvokedResource;
 import io.helidon.tracing.jersey.AbstractTracingFilter;
 
 import io.opentracing.Tracer;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.opentracing.Traced;
-import org.glassfish.jersey.server.ExtendedUriInfo;
-import org.glassfish.jersey.server.model.Invocable;
-import org.glassfish.jersey.server.model.ResourceMethod;
 
 /**
  * Adds tracing of Jersey calls using a post-matching filter.
@@ -49,6 +46,8 @@ import org.glassfish.jersey.server.model.ResourceMethod;
 @Priority(Integer.MIN_VALUE + 5)
 @ApplicationScoped
 public class MpTracingFilter extends AbstractTracingFilter {
+    private static final Pattern LOCALHOST_PATTERN = Pattern.compile("127.0.0.1", Pattern.LITERAL);
+
     @Context
     private ResourceInfo resourceInfo;
 
@@ -76,7 +75,8 @@ public class MpTracingFilter extends AbstractTracingFilter {
         if (skipPatternFunction.apply(addForwardSlash(context.getUriInfo().getPath()))) {
             return false;
         }
-        return findTraced(context)
+        return InvokedResource.create(context)
+                .findAnnotation(Traced.class)
                 .map(Traced::value)
                 .orElseGet(utils::tracingEnabled);
     }
@@ -95,7 +95,8 @@ public class MpTracingFilter extends AbstractTracingFilter {
 
     @Override
     protected String spanName(ContainerRequestContext context) {
-        return findTraced(context)
+        return InvokedResource.create(context)
+                .findAnnotation(Traced.class)
                 .map(Traced::operationName)
                 .filter(str -> !str.isEmpty())
                 .orElseGet(() -> utils.operationName(context));
@@ -123,7 +124,7 @@ public class MpTracingFilter extends AbstractTracingFilter {
 
             if (hostHeader.contains("127.0.0.1")) {
                 // TODO this is a bug in TCK tests, that expect localhost even though IP is sent
-                hostHeader = hostHeader.replace("127.0.0.1", "localhost");
+                hostHeader = LOCALHOST_PATTERN.matcher(hostHeader).replaceAll(Matcher.quoteReplacement("localhost"));
             }
 
             // let us use host header instead of local interface
@@ -135,63 +136,5 @@ public class MpTracingFilter extends AbstractTracingFilter {
         }
 
         return requestUri.toString();
-    }
-
-    private Optional<Traced> findTraced(ContainerRequestContext requestContext) {
-        Class<?> definitionClass = getDefinitionClass(resourceInfo.getResourceClass());
-        ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
-        Method definitionMethod = getDefinitionMethod(requestContext, uriInfo);
-
-        if (definitionMethod == null) {
-            return Optional.empty();
-        }
-
-        Traced annotation = definitionMethod.getAnnotation(Traced.class);
-        if (null != annotation) {
-            return Optional.of(annotation);
-        }
-
-        return Optional.ofNullable(definitionClass.getAnnotation(Traced.class));
-    }
-
-    private Method getDefinitionMethod(ContainerRequestContext requestContext, ExtendedUriInfo uriInfo) {
-        ResourceMethod matchedResourceMethod = uriInfo.getMatchedResourceMethod();
-        Invocable invocable = matchedResourceMethod.getInvocable();
-        return invocable.getDefinitionMethod();
-    }
-
-    // taken from org.glassfish.jersey.server.model.internal.ModelHelper#getAnnotatedResourceClass
-    private Class<?> getDefinitionClass(Class<?> resourceClass) {
-        Class<?> foundInterface = null;
-
-        // traverse the class hierarchy to find the annotation
-        // According to specification, annotation in the super-classes must take precedence over annotation in the
-        // implemented interfaces
-        Class<?> cls = resourceClass;
-        do {
-            if (cls.isAnnotationPresent(Path.class)) {
-                return cls;
-            }
-
-            // if no annotation found on the class currently traversed, check for annotation in the interfaces on this
-            // level - if not already previously found
-            if (foundInterface == null) {
-                for (final Class<?> i : cls.getInterfaces()) {
-                    if (i.isAnnotationPresent(Path.class)) {
-                        // store the interface reference in case no annotation will be found in the super-classes
-                        foundInterface = i;
-                        break;
-                    }
-                }
-            }
-
-            cls = cls.getSuperclass();
-        } while (cls != null);
-
-        if (foundInterface != null) {
-            return foundInterface;
-        }
-
-        return resourceClass;
     }
 }

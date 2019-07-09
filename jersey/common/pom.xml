@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -18,35 +18,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.tracing</groupId>
-        <artifactId>helidon-tracing-project</artifactId>
+        <artifactId>helidon-jersey-project</artifactId>
+        <groupId>io.helidon.jersey</groupId>
         <version>1.1.3-SNAPSHOT</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-tracing-jersey</artifactId>
-    <name>Helidon Tracing Jersey</name>
-
-    <description>
-        Support for distributed tracing in Jersey server.
-    </description>
+    <artifactId>helidon-jersey-common</artifactId>
+    <name>Helidon Jersey Common</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-jersey-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-common</artifactId>
+            <artifactId>helidon-jersey-server</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -54,16 +41,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-server</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

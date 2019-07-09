@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,14 +88,14 @@ public class TracingTest {
 
         // make sure that the operation is as expected (e.g. correctly propagated)
         String headerValue = (String) response.getHeaders().getFirst("X-FRONT-X-TEST-TRACER-OPERATION");
-        assertThat(headerValue, is(ClientTracingFilter.SPAN_OPERATION_NAME));
+        assertThat(headerValue, is("GET"));
         headerValue = (String) response.getHeaders().getFirst("X-FRONT-" + X_REQUEST_ID);
         assertThat(headerValue, is(xRequestId));
         headerValue = (String) response.getHeaders().getFirst("X-FRONT-" + X_OT_SPAN_CONTEXT);
         assertThat(headerValue, is(xOtSpanContext));
 
         headerValue = (String) response.getHeaders().getFirst("X-HELLO-X-TEST-TRACER-OPERATION");
-        assertThat(headerValue, is(ClientTracingFilter.SPAN_OPERATION_NAME));
+        assertThat(headerValue, is("GET"));
         headerValue = (String) response.getHeaders().getFirst("X-HELLO-" + X_REQUEST_ID);
         assertThat(headerValue, is(xRequestId));
         headerValue = (String) response.getHeaders().getFirst("X-HELLO-" + X_OT_SPAN_CONTEXT);

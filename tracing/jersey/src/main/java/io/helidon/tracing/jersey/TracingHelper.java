@@ -16,19 +16,18 @@
 package io.helidon.tracing.jersey;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 
-import org.glassfish.jersey.server.ExtendedUriInfo;
-import org.glassfish.jersey.server.model.Invocable;
-import org.glassfish.jersey.server.model.ResourceMethod;
+import io.helidon.jersey.common.InvokedResource;
 
 /**
  * Utilities for tracing in helidon.
  */
-public class TracingHelper {
+public final class TracingHelper {
     private final Function<ContainerRequestContext, String> nameFunction;
 
     private TracingHelper(Function<ContainerRequestContext, String> nameFunction) {
@@ -63,29 +62,35 @@ public class TracingHelper {
      * @return name of span to use
      */
     public static String httpPathMethodName(ContainerRequestContext requestContext) {
-        Method m = getDefinitionMethod(requestContext);
-        Path methodPath = m.getAnnotation(Path.class);
-        Path resourcePath = m.getDeclaringClass().getAnnotation(Path.class);
+        InvokedResource invokedResource = InvokedResource.create(requestContext);
+        Optional<Method> method = invokedResource.definitionMethod();
+
+        if (!method.isPresent()) {
+            return requestContext.getMethod().toUpperCase() + ":" + requestContext.getUriInfo().getPath();
+        }
 
         StringBuilder fullPath = new StringBuilder();
         fullPath.append(requestContext.getMethod().toUpperCase());
         fullPath.append(":");
 
-        if (null != resourcePath) {
-            String resourcePathS = resourcePath.value();
-            if (!resourcePathS.startsWith("/")) {
-                fullPath.append("/");
-            }
-            fullPath.append(resourcePath.value());
-        }
-        if (null != methodPath) {
-            String methodPathS = methodPath.value();
+        Optional<Path> classPathAnnotation = invokedResource.findClassAnnotation(Path.class);
+        classPathAnnotation.map(Path::value)
+                .ifPresent(resourcePath -> {
+                    if (!resourcePath.startsWith("/")) {
+                        fullPath.append("/");
+                    }
+                    fullPath.append(resourcePath);
+                });
 
-            if ((fullPath.length() != 0) && (fullPath.charAt(fullPath.length() - 1) != '/') && !methodPathS.startsWith("/")) {
-                fullPath.append("/");
-            }
-            fullPath.append(methodPath.value());
-        }
+        Optional<Path> methodPathAnnotation = invokedResource.findMethodAnnotation(Path.class);
+        methodPathAnnotation.map(Path::value)
+                .ifPresent(methodPath -> {
+                    if ((fullPath.length() != 0) && (fullPath.charAt(fullPath.length() - 1) != '/')
+                            && !methodPath.startsWith("/")) {
+                        fullPath.append("/");
+                    }
+                    fullPath.append(methodPath);
+                });
 
         return fullPath.toString();
     }
@@ -97,25 +102,12 @@ public class TracingHelper {
      * @return name of span to use
      */
     public static String classMethodName(ContainerRequestContext requestContext) {
-        Method m = getDefinitionMethod(requestContext);
-
-        return requestContext.getMethod()
-                + ":" + m.getDeclaringClass().getName()
-                + "." + m.getName();
-    }
-
-    /**
-     * The term 'definition method' used by the Jersey model means the method that contains JAX-RS/Jersey annotations.
-     */
-    static Method getDefinitionMethod(ContainerRequestContext requestContext) {
-        if (!(requestContext.getUriInfo() instanceof ExtendedUriInfo)) {
-            throw new IllegalStateException("Could not get Extended Uri Info. Incompatible version of Jersey?");
-        }
-
-        ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
-        ResourceMethod matchedResourceMethod = uriInfo.getMatchedResourceMethod();
-        Invocable invocable = matchedResourceMethod.getInvocable();
-        return invocable.getDefinitionMethod();
+        return InvokedResource.create(requestContext)
+                .definitionMethod()
+                .map(m -> requestContext.getMethod().toUpperCase()
+                        + ":" + m.getDeclaringClass().getName()
+                        + "." + m.getName())
+                .orElseGet(() -> requestContext.getMethod().toUpperCase() + ":404");
     }
 
     /**

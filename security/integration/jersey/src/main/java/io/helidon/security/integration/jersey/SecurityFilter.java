@@ -39,15 +39,14 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
+import io.helidon.jersey.common.InvokedResource;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -85,12 +84,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     private ServerConfig serverConfig;
 
     @Context
-    private ResourceInfo resourceInfo;
-
-    @Context
-    private UriInfo uriInfo;
-
-    @Context
     private SecurityContext securityContext;
 
     // The filter is in singleton scope, so caching in an instance field is OK
@@ -110,15 +103,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     SecurityFilter(FeatureConfig featureConfig,
                    Security security,
                    ServerConfig serverConfig,
-                   ResourceInfo resourceInfo,
-                   UriInfo uriInfo,
                    SecurityContext securityContext) {
 
         super(security, featureConfig);
 
         this.serverConfig = serverConfig;
-        this.resourceInfo = resourceInfo;
-        this.uriInfo = uriInfo;
         this.securityContext = securityContext;
 
         loadAnalyzers();
@@ -276,25 +265,23 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     @Override
     protected FilterContext initRequestFiltering(ContainerRequestContext requestContext) {
         FilterContext context = new FilterContext();
+        InvokedResource invokedResource = InvokedResource.create(requestContext);
 
-        if (!(requestContext.getUriInfo() instanceof ExtendedUriInfo)) {
-            throw new IllegalStateException("Could not get Extended Uri Info. Incompatible version of Jersey?");
-        }
+        return invokedResource
+                .definitionMethod()
+                .map(definitionMethod -> {
+                    context.setMethodSecurity(getMethodSecurity(invokedResource,
+                                                                definitionMethod,
+                                                                (ExtendedUriInfo) requestContext.getUriInfo()));
+                    context.setResourceName(definitionMethod.getDeclaringClass().getSimpleName());
 
-        ExtendedUriInfo uriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
-
-        Method definitionMethod = getDefinitionMethod(requestContext, uriInfo);
-
-        if (definitionMethod == null) {
-            // this will end in 404, just let it on
-            context.setShouldFinish(true);
-            return context;
-        }
-
-        context.setMethodSecurity(getMethodSecurity(definitionMethod, uriInfo));
-        context.setResourceName(definitionMethod.getDeclaringClass().getSimpleName());
-
-        return configureContext(context, requestContext, uriInfo);
+                    return configureContext(context, requestContext, requestContext.getUriInfo());
+                })
+                .orElseGet(() -> {
+                    // this will end in 404, just let it on
+                    context.setShouldFinish(true);
+                    return context;
+                });
     }
 
     @Override
@@ -343,7 +330,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return definition;
     }
 
-    private SecurityDefinition getMethodSecurity(Method definitionMethod, ExtendedUriInfo uriInfo) {
+    private SecurityDefinition getMethodSecurity(InvokedResource invokedResource,
+                                                 Method definitionMethod,
+                                                 ExtendedUriInfo uriInfo) {
         // Check cache
 
         // Jersey model 'definition method' is the method that contains JAX-RS/Jersey annotations. JAX-RS does not support
@@ -351,7 +340,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         // and abstract classes implemented by the definition method.
 
         // Jersey model does not have a 'definition class', so we have to find it from a handler class
-        Class<?> definitionClass = getDefinitionClass(resourceInfo.getResourceClass());
+        Class<?> definitionClass = invokedResource.definitionClass()
+                .orElseThrow(() -> new SecurityException("Got definition method, cannot get definition class"));
 
         if (definitionClass.getAnnotation(Path.class) == null) {
             // this is a sub-resource
@@ -482,50 +472,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         for (Annotation annotation : annotations) {
             addToMap(annotation.annotationType(), customAnnotsMap, annotation);
         }
-    }
-
-    /**
-     * The term 'definition method' used by the Jersey model means the method that contains JAX-RS/Jersey annotations.
-     */
-    private Method getDefinitionMethod(ContainerRequestContext requestContext, ExtendedUriInfo uriInfo) {
-        ResourceMethod matchedResourceMethod = uriInfo.getMatchedResourceMethod();
-        Invocable invocable = matchedResourceMethod.getInvocable();
-        return invocable.getDefinitionMethod();
-    }
-
-    // taken from org.glassfish.jersey.server.model.internal.ModelHelper#getAnnotatedResourceClass
-    private Class<?> getDefinitionClass(Class<?> resourceClass) {
-        Class<?> foundInterface = null;
-
-        // traverse the class hierarchy to find the annotation
-        // According to specification, annotation in the super-classes must take precedence over annotation in the
-        // implemented interfaces
-        Class<?> cls = resourceClass;
-        do {
-            if (cls.isAnnotationPresent(Path.class)) {
-                return cls;
-            }
-
-            // if no annotation found on the class currently traversed, check for annotation in the interfaces on this
-            // level - if not already previously found
-            if (foundInterface == null) {
-                for (final Class<?> i : cls.getInterfaces()) {
-                    if (i.isAnnotationPresent(Path.class)) {
-                        // store the interface reference in case no annotation will be found in the super-classes
-                        foundInterface = i;
-                        break;
-                    }
-                }
-            }
-
-            cls = cls.getSuperclass();
-        } while (cls != null);
-
-        if (foundInterface != null) {
-            return foundInterface;
-        }
-
-        return resourceClass;
     }
 
     private Application getOriginalApplication() {

@@ -75,7 +75,8 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * Inbound HTTP headers are resolved from JAX-RS server.
  *
  * <p>
- * For each client call, a new {@link Span} with operation name {@value #SPAN_OPERATION_NAME} is created based
+ * For each client call, a new {@link Span} with operation name generated from HTTP method and resource method
+ * and class is created based
  * on the resolved {@link Tracer} and an optional parent {@link Span}. The span information is also
  * propagated to the outbound request using HTTP headers injected by tracer.
  * <p>
@@ -120,9 +121,9 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String CURRENT_SPAN_CONTEXT_PROPERTY_NAME = "io.helidon.tracing.span-context";
     /**
-     * Operation name of a span created for outbound calls.
+     * Name of the configuration of a span created for outbound calls.
      */
-    public static final String SPAN_OPERATION_NAME = "jersey-client-call";
+    private static final String SPAN_OPERATION_NAME = "jersey-client-call";
     /*
      * Known headers to be propagated from inbound request
      */
