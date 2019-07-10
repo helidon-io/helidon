@@ -17,7 +17,6 @@
 package io.helidon.common.context;
 
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 

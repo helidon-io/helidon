@@ -311,9 +311,9 @@ public interface WebServer {
             }
 
             WebServer result = new NettyWebServer(configuration == null
-                                                          // this is happening once per microservice, no need to store in a constant
-                                                          // also the configuration creates instances of context etc. that should
-                                                          // not be initialized unless needed
+                                                          // this is happening once per microservice, no need to store in
+                                                          // a constant; also the configuration creates instances of context etc.
+                                                          // that should not be initialized unless needed
                                                           ? ServerConfiguration.builder().build()
                                                           : configuration,
                                                   defaultRouting, routings);
