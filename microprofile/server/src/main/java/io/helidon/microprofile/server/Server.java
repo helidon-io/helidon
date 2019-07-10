@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -146,6 +147,8 @@ public interface Server {
      * Builder to build {@link Server} instance.
      */
     final class Builder {
+        // there should only be one
+        private static final AtomicInteger MP_SERVER_COUNTER = new AtomicInteger(1);
         private static final Logger LOGGER = Logger.getLogger(Builder.class.getName());
         private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.builder");
 
@@ -184,9 +187,14 @@ public interface Server {
          */
         public Server build() {
             if (null == parentContext) {
-                serverContext = Context.create();
+                serverContext = Context.builder()
+                        .id("mp-" + MP_SERVER_COUNTER.getAndIncrement())
+                        .build();
             } else {
-                serverContext = Context.create(parentContext);
+                serverContext = Context.builder()
+                        .parent(parentContext)
+                        .id(parentContext.id() + ":mp-" + MP_SERVER_COUNTER.getAndIncrement())
+                        .build();
             }
 
             // now run the build within context already
@@ -206,9 +214,9 @@ public interface Server {
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
-                                                                 .name("server")
-                                                                 .config(config.helidonConfig().get("server.executor-service"))
-                                                                 .build();
+                        .name("server")
+                        .config(config.helidonConfig().get("server.executor-service"))
+                        .build();
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");

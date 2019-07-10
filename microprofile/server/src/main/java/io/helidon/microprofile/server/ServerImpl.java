@@ -87,6 +87,7 @@ public class ServerImpl implements Server {
 
         Routing.Builder routingBuilder = Routing.builder();
         Config serverConfig = config.get("server");
+
         ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder(serverConfig)
                 .context(this.context)
                 .port(builder.port())

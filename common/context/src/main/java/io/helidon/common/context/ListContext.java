@@ -106,8 +106,8 @@ class ListContext implements Context {
         }
     }
 
-    AtomicLong contextCounter() {
-        return contextCounter;
+    long nextChildId() {
+        return contextCounter.getAndUpdate(operand -> (operand == Long.MAX_VALUE) ? 1 : (operand + 1));
     }
 
     private interface RegisteredItem<T> {

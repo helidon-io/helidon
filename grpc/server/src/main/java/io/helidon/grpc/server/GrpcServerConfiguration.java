@@ -15,6 +15,7 @@
  */
 package io.helidon.grpc.server;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
@@ -147,6 +148,8 @@ public interface GrpcServerConfiguration {
      * A {@link GrpcServerConfiguration} builder.
      */
     final class Builder implements io.helidon.common.Builder<GrpcServerConfiguration> {
+        private static final AtomicInteger GRPC_SERVER_COUNTER = new AtomicInteger(1);
+
         private String name = DEFAULT_NAME;
 
         private int port = DEFAULT_PORT;
@@ -318,7 +321,9 @@ public interface GrpcServerConfiguration {
             }
 
             if (context == null) {
-                context = Context.create();
+                context = Context.builder()
+                        .id("grpc-" + GRPC_SERVER_COUNTER.getAndIncrement())
+                        .build();
             }
 
             if (tracer == null) {
