@@ -49,7 +49,7 @@ public class MpTracingRestClientListener implements RestClientListener {
 
         builder.register(REST_CLIENT_FILTER, Priorities.AUTHENTICATION - 300);
         builder.register(FILTER, Priorities.AUTHENTICATION - 250);
-        builder.executorService(MpTracingClientRegistrar.EXECUTOR_SERVICE.get());
+
         if (!opName.isEmpty()) {
             builder.property(ClientTracingFilter.SPAN_NAME_PROPERTY_NAME, opName);
         }

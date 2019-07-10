@@ -28,14 +28,24 @@
 
     <groupId>io.helidon.microprofile.rest-client</groupId>
     <artifactId>helidon-microprofile-rest-client</artifactId>
+
     <name>Helidon Microprofile Rest Client</name>
 
-    <properties>
-        <!-- this module does not contain any source code -->
-        <spotbugs.skip>true</spotbugs.skip>
-    </properties>
+    <description>
+        Extension for Jersey implementation of MicroProfile Rest Client
+    </description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.ext.microprofile</groupId>
             <artifactId>jersey-mp-rest-client</artifactId>

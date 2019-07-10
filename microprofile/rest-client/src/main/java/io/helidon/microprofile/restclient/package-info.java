@@ -13,16 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * MP Rest clienr.
+ * Helidon specific extension to the rest client implementation from Jersey.
  */
-module io.helidon.microprofile.restclient {
-    requires java.logging;
-    requires transitive microprofile.rest.client.api;
-    requires io.helidon.common.context;
-    requires jersey.mp.rest.client;
-
-    provides org.eclipse.microprofile.rest.client.spi.RestClientListener
-            with io.helidon.microprofile.restclient.MpRestClientListener;
-}
+package io.helidon.microprofile.restclient;

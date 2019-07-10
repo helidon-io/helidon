@@ -38,6 +38,7 @@
         <module>tck-jwt-auth</module>
         <module>tck-openapi</module>
         <module>tck-opentracing</module>
+        <module>tck-rest-client</module>
     </modules>
 
     <dependencies>

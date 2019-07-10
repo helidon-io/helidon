@@ -40,6 +40,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean deleteTmp = true;
     private boolean addResourcesToApps = false;
     private boolean replaceConfigSourcesWithMp = false;
+    private boolean useRelativePath = false;
 
     public String getApp() {
         return appClassName;
@@ -71,6 +72,14 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setDeleteTmp(boolean b) {
         this.deleteTmp = b;
+    }
+
+    public boolean getUseRelativePath() {
+        return useRelativePath;
+    }
+
+    public void setUseRelativePath(boolean b) {
+        this.useRelativePath = b;
     }
 
     public boolean getAddResourcesToApps() {

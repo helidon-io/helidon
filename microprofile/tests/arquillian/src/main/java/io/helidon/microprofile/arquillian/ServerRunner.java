@@ -76,6 +76,7 @@ class ServerRunner {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void handleClasses(ClassLoader classLoader,
                                Set<String> classNames,
                                Server.Builder builder,
