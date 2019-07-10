@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Version;
+import io.helidon.common.context.Context;
 import io.helidon.common.http.ContextualRegistry;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -93,7 +94,14 @@ class NettyWebServer implements WebServer {
         LOGGER.info(() -> "Version: " + Version.VERSION);
         this.bossGroup = new NioEventLoopGroup(sockets.size());
         this.workerGroup = config.workersCount() <= 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(config.workersCount());
-        this.contextualRegistry = ContextualRegistry.create(config.context());
+        // the contextual registry needs to be created as a different type is expected. Once we remove ContextualRegistry
+        // we can simply use the one from config
+        Context context = config.context();
+        if (context instanceof ContextualRegistry) {
+            this.contextualRegistry = (ContextualRegistry) context;
+        } else {
+            this.contextualRegistry = ContextualRegistry.create(config.context());
+        }
         this.configuration = config;
 
         for (Map.Entry<String, SocketConfiguration> entry : sockets) {
