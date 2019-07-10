@@ -1069,6 +1069,11 @@
                 <version>${version.lib.microprofile-rest-client}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.microprofile.rest.client</groupId>
+                <artifactId>microprofile-rest-client-tck</artifactId>
+                <version>${version.lib.microprofile-rest-client}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.netflix.hystrix</groupId>
                 <artifactId>hystrix-core</artifactId>
                 <version>${version.lib.hystrix}</version>
