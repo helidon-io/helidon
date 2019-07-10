@@ -43,10 +43,6 @@ public class MpTracingRestClientFilter implements ClientRequestFilter {
 
         Traced traced = invokedMethod.getAnnotation(Traced.class);
 
-        if (null == traced) {
-            return;
-        }
-
         boolean enabled;
         String opName;
 
