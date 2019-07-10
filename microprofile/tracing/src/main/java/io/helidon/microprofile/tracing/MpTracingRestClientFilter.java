@@ -42,17 +42,15 @@ public class MpTracingRestClientFilter implements ClientRequestFilter {
         }
 
         Traced traced = invokedMethod.getAnnotation(Traced.class);
+        if (null == traced) {
+            return;
+        }
 
         boolean enabled;
         String opName;
 
-        if (null != traced) {
-            enabled = traced.value();
-            opName = traced.operationName();
-        } else {
-            enabled = true;
-            opName = "";
-        }
+        enabled = traced.value();
+        opName = traced.operationName();
 
         if (!opName.isEmpty()) {
             requestContext.setProperty(ClientTracingFilter.SPAN_NAME_PROPERTY_NAME, opName);
