@@ -168,6 +168,9 @@ public class JpaExtension implements Extension {
      */
     private final Set<Set<Annotation>> allQualifiers;
 
+    private final boolean annotationRewritingEnabled;
+
+
     /*
      * Constructors.
      */
@@ -178,6 +181,7 @@ public class JpaExtension implements Extension {
      */
     public JpaExtension() {
         super();
+        this.annotationRewritingEnabled = Boolean.getBoolean("jpaAnnotationRewritingEnabled");
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
         this.allQualifiers = new HashSet<>();
@@ -548,32 +552,36 @@ public class JpaExtension implements Extension {
      * "fred") private EntityManager em;} to
      * {@code @Inject @Named("fred") @Synchronized @JPATransactionScoped
      * private EntityManager em;}.
+     *
+     * @param event the {@link ProcessAnnotatedType} container
+     * lifecycle event being observed; must not be {@code null}
      */
-    private <T> void processTypesWithPersistenceContextAnnotations(@Observes
-                                                                   @WithAnnotations(PersistenceContext.class)
-                                                                   final ProcessAnnotatedType<T> event) {
-
-        event.configureAnnotatedType()
-            .filterFields(f -> f.isAnnotationPresent(PersistenceContext.class)
-                          && !f.isAnnotationPresent(Inject.class))
-            .forEach(fc -> {
-                    final PersistenceContext pc = fc.getAnnotated().getAnnotation(PersistenceContext.class);
-                    assert pc != null;
-                    fc.remove(a -> a == pc);
-                    fc.add(InjectLiteral.INSTANCE);
-                    fc.add(ContainerManaged.Literal.INSTANCE);
-                    if (PersistenceContextType.EXTENDED.equals(pc.type())) {
-                        fc.add(Extended.Literal.INSTANCE);
-                    } else {
-                        fc.add(JPATransactionScoped.Literal.INSTANCE);
-                    }
-                    if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
-                        fc.add(Unsynchronized.Literal.INSTANCE);
-                    } else {
-                        fc.add(Synchronized.Literal.INSTANCE);
-                    }
-                    fc.add(NamedLiteral.of(pc.unitName().trim()));
-                });
+    private <T> void rewriteJpaAnnotations(@Observes
+                                           @WithAnnotations(PersistenceContext.class)
+                                           final ProcessAnnotatedType<T> event) {
+        if (this.annotationRewritingEnabled) {
+            event.configureAnnotatedType()
+                .filterFields(f -> f.isAnnotationPresent(PersistenceContext.class)
+                              && !f.isAnnotationPresent(Inject.class))
+                .forEach(fc -> {
+                        final PersistenceContext pc = fc.getAnnotated().getAnnotation(PersistenceContext.class);
+                        assert pc != null;
+                        fc.remove(a -> a == pc);
+                        fc.add(InjectLiteral.INSTANCE);
+                        fc.add(ContainerManaged.Literal.INSTANCE);
+                        if (PersistenceContextType.EXTENDED.equals(pc.type())) {
+                            fc.add(Extended.Literal.INSTANCE);
+                        } else {
+                            fc.add(JPATransactionScoped.Literal.INSTANCE);
+                        }
+                        if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
+                            fc.add(Unsynchronized.Literal.INSTANCE);
+                        } else {
+                            fc.add(Synchronized.Literal.INSTANCE);
+                        }
+                        fc.add(NamedLiteral.of(pc.unitName().trim()));
+                    });
+        }
     }
 
     private <R> void installSpecialProducer(@Observes final ProcessProducer<?, R> event) {
@@ -646,9 +654,8 @@ public class JpaExtension implements Extension {
         }
     }
 
-    // Revisit: non-private for the moment only
-    static void addContainerManagedEntityManagerFactory(final BeanConfigurator<EntityManagerFactory> beanConfigurator,
-                                                        final Set<Annotation> suppliedQualifiers) {
+    private static void addContainerManagedEntityManagerFactory(final BeanConfigurator<EntityManagerFactory> beanConfigurator,
+                                                                final Set<Annotation> suppliedQualifiers) {
         Objects.requireNonNull(beanConfigurator);
         Objects.requireNonNull(suppliedQualifiers);
 
@@ -662,18 +669,14 @@ public class JpaExtension implements Extension {
             .disposeWith((emf, instance) -> emf.close());
     }
 
-    // Revisit: non-private for the moment only
-    static void addCDITransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
-                                                     final Set<Annotation> suppliedQualifiers) {
+    private static void addCDITransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
+                                                             final Set<Annotation> suppliedQualifiers) {
         Objects.requireNonNull(beanConfigurator);
         Objects.requireNonNull(suppliedQualifiers);
 
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
         qualifiers.remove(ContainerManaged.Literal.INSTANCE);
         qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
-
-        // Adds an EntityManager that is not wrapped in any way and is in
-        // CDI's TransactionScoped scope.  Used as a delegate only.
 
         beanConfigurator.addType(EntityManager.class)
             .scope(javax.transaction.TransactionScoped.class)
@@ -697,8 +700,7 @@ public class JpaExtension implements Extension {
                 });
     }
 
-    // Revisit: non-private for the moment only
-    static boolean inTransaction(final Instance<? extends Transaction> instanceTransaction) throws SystemException {
+    private static boolean inTransaction(final Instance<? extends Transaction> instanceTransaction) throws SystemException {
         final boolean returnValue;
         if (instanceTransaction == null || instanceTransaction.isUnsatisfied()) {
             returnValue = false;
@@ -709,8 +711,7 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    // Revisit: non-private for the moment only
-    static void addJPATransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
+    private static void addJPATransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
                                                              final Set<Annotation> suppliedQualifiers) {
         Objects.requireNonNull(beanConfigurator);
         Objects.requireNonNull(suppliedQualifiers);
@@ -1100,9 +1101,8 @@ public class JpaExtension implements Extension {
         }
     }
 
-    // Revisit: non-private for the moment only
-    static EntityManagerFactory produceContainerManagedEntityManagerFactory(final Instance<Object> instance,
-                                                                            final Set<Annotation> qualifiers) {
+    private static EntityManagerFactory produceContainerManagedEntityManagerFactory(final Instance<Object> instance,
+                                                                                    final Set<Annotation> qualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "produceContainerManagedEntityManagerFactory";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1137,9 +1137,8 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    // Revisit: non-private for the moment only
-    static PersistenceUnitInfo getPersistenceUnitInfo(final Instance<Object> instance,
-                                                      final Set<Annotation> suppliedQualifiers) {
+    private static PersistenceUnitInfo getPersistenceUnitInfo(final Instance<Object> instance,
+                                                              final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "getPersistenceUnitInfo";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1154,16 +1153,16 @@ public class JpaExtension implements Extension {
         assert puInstance != null;
         if (puInstance.isUnsatisfied()) {
             // We didn't find any PersistenceUnitInfo named, for
-            // example, "fred".  So let's remove Named qualifiers and
-            // see what we get.
+            // example, @Bork @Named("fred").  So let's remove @Named
+            // qualifiers and see what we get.
             qualifiers.removeIf(q -> q instanceof Named);
             puInstance = instance.select(PersistenceUnitInfo.class,
                                          qualifiers.toArray(new Annotation[qualifiers.size()]));
             assert puInstance != null;
             // Revisit: suppose someone has asked
             // for @Bork @Named("fred").  We "fell back" to
-            // just @Bork.  Should we fall back to @Default, period?
-            // Or @Any, and look for size-of-1?
+            // just @Bork.  Should we fall back to nothing (@Default),
+            // period?  Or @Any, and look for size-of-1?
         }
         final PersistenceUnitInfo returnValue = puInstance.get();
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1172,10 +1171,9 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    // Revisit: non-private for the moment only
-    static PersistenceProvider getPersistenceProvider(final Instance<Object> instance,
-                                                      final Set<Annotation> qualifiers,
-                                                      final PersistenceUnitInfo persistenceUnitInfo)
+    private static PersistenceProvider getPersistenceProvider(final Instance<Object> instance,
+                                                              final Set<Annotation> qualifiers,
+                                                              final PersistenceUnitInfo persistenceUnitInfo)
         throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "getPersistenceProvider";
