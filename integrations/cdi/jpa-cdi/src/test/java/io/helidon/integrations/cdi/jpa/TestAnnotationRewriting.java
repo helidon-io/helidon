@@ -15,6 +15,7 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
+import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
@@ -23,6 +24,9 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+
+import io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
+import io.helidon.integrations.jta.cdi.NarayanaExtension;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +38,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ApplicationScoped
-class TestAnnotationRewriting {
+@DataSourceDefinition(
+    name = "test",
+    className = "org.h2.jdbcx.JdbcDataSource",
+    url = "jdbc:h2:mem:test",
+    serverName = "",
+    properties = {
+        "user=sa"
+    }
+)
+final class TestAnnotationRewriting {
 
     @PersistenceContext(unitName = "fred")
     private EntityManager em;
@@ -47,9 +60,8 @@ class TestAnnotationRewriting {
     
     @BeforeEach
     void startCdiContainer() {
+        System.setProperty("jpaAnnotationRewritingEnabled", "true");
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
-            .disableDiscovery()
-            .addExtensions(JpaExtension.class)
             .addBeanClasses(this.getClass());
         assertNotNull(initializer);
         this.cdiContainer = initializer.initialize();
@@ -64,10 +76,10 @@ class TestAnnotationRewriting {
 
     private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) {
         assertNotNull(event);
-        em.toString();
+        assertNotNull(this.em);
+        assertTrue(this.em.isOpen());
     }
 
-    @Disabled // things are still rough and rocky
     @Test
     void testAnnotationRewriting() {
 

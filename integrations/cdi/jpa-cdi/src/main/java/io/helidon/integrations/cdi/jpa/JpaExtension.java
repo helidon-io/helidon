@@ -81,9 +81,6 @@ import javax.persistence.spi.PersistenceProviderResolver;
 import javax.persistence.spi.PersistenceProviderResolverHolder;
 import javax.persistence.spi.PersistenceUnitInfo;
 import javax.persistence.spi.PersistenceUnitTransactionType;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -96,6 +93,7 @@ import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvide
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 
 import static javax.interceptor.Interceptor.Priority.LIBRARY_AFTER;
+import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * A {@linkplain Extension portable extension} normally instantiated
@@ -103,6 +101,12 @@ import static javax.interceptor.Interceptor.Priority.LIBRARY_AFTER;
  * infrastructure} that integrates the provider-independent parts of
  * <a href="https://javaee.github.io/tutorial/partpersist.html#BNBPY"
  * target="_parent">JPA</a> into CDI.
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>As with all CDI portable extensions, instances of this class are
+ * <strong>not</strong> safe for concurrent use by multiple
+ * threads.</p>
  *
  * @see PersistenceUnitInfoBean
  */
@@ -126,6 +130,7 @@ public class JpaExtension implements Extension {
      * Instance fields.
      */
 
+    private boolean transactionsSupported;
 
     /**
      * A {@link Map} of {@link PersistenceUnitInfoBean} instances that
@@ -185,6 +190,10 @@ public class JpaExtension implements Extension {
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
         this.allQualifiers = new HashSet<>();
+        // We start by presuming that transactions are supported.  See
+        // the #divineTransactionSupport(ProcessAnnotatedType) method
+        // where this decision might be reversed.
+        this.transactionsSupported = true;
     }
 
 
@@ -192,6 +201,68 @@ public class JpaExtension implements Extension {
      * Instance methods.
      */
 
+
+    private void divineTransactionSupport(@Observes
+                                          @Priority(LIBRARY_BEFORE)
+                                          final ProcessAnnotatedType<NoTransactionSupport> event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "divineTransactionSupport";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+        // If we receive an event of this type, then beans.xml
+        // exclusions have fired such that it has been determined that
+        // JTA is not loadable.
+        this.transactionsSupported = false;
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    /**
+     * Converts something like {@code @PersistenceContext(unitName =
+     * "fred") private EntityManager em;} to
+     * {@code @Inject @Named("fred") @Synchronized @JPATransactionScoped
+     * private EntityManager em;}.
+     *
+     * @param event the {@link ProcessAnnotatedType} container
+     * lifecycle event being observed; must not be {@code null}
+     */
+    private <T> void rewriteJpaAnnotations(@Observes
+                                           @WithAnnotations(PersistenceContext.class)
+                                           final ProcessAnnotatedType<T> event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "rewriteJpaAnnotations";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+        if (this.annotationRewritingEnabled) {
+            event.configureAnnotatedType()
+                .filterFields(f -> f.isAnnotationPresent(PersistenceContext.class)
+                              && !f.isAnnotationPresent(Inject.class))
+                .forEach(fc -> {
+                        final PersistenceContext pc = fc.getAnnotated().getAnnotation(PersistenceContext.class);
+                        assert pc != null;
+                        fc.remove(a -> a == pc);
+                        fc.add(InjectLiteral.INSTANCE);
+                        fc.add(ContainerManaged.Literal.INSTANCE);
+                        if (PersistenceContextType.EXTENDED.equals(pc.type())) {
+                            fc.add(Extended.Literal.INSTANCE);
+                        } else {
+                            fc.add(JPATransactionScoped.Literal.INSTANCE);
+                        }
+                        if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
+                            fc.add(Unsynchronized.Literal.INSTANCE);
+                        } else {
+                            fc.add(Synchronized.Literal.INSTANCE);
+                        }
+                        fc.add(NamedLiteral.of(pc.unitName().trim()));
+                    });
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
 
     /**
      * Looks for type-level {@link PersistenceContext} annotations
@@ -448,6 +519,52 @@ public class JpaExtension implements Extension {
         }
     }
 
+    private <X extends EntityManager> void processEntityManagerInjectionPoint(@Observes final ProcessInjectionPoint<?, X> event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "processEntityManagerInjectionPoint";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+        this.allQualifiers.add(event.getInjectionPoint().getQualifiers());
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private <R> void installSpecialProducer(@Observes final ProcessProducer<?, R> event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "installSpecialProducer";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+        final Producer<R> producer = event.getProducer();
+        final Collection<?> keys = getKeys(producer);
+        if (keys != null && !keys.isEmpty()) {
+            event.setProducer(new EntityManagerReferencingProducer<>(producer, keys));
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private <T> void installSpecialInjectionTarget(@Observes final ProcessInjectionTarget<T> event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "installSpecialInjectionTarget";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+        final InjectionTarget<T> injectionTarget = event.getInjectionTarget();
+        final Collection<?> keys = getKeys(injectionTarget);
+        if (keys != null && !keys.isEmpty()) {
+            event.setInjectionTarget(new DelegatingInjectionTarget<>(injectionTarget,
+                                                                     new EntityManagerReferencingProducer<>(injectionTarget,
+                                                                                                            keys)));
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
     /**
      * Converts {@code META-INF/persistence.xml} resources into {@link
      * PersistenceUnitInfo} objects and takes into account any other
@@ -536,73 +653,25 @@ public class JpaExtension implements Extension {
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
         this.implicitPersistenceUnits.clear();
 
-        // Now add synthetic beans to support any true CDI injection
-        // points that reference EntityManagers.  Note that by
-        // default @PersistenceContext-annotated fields are not "true"
-        // CDI injection points.
-        this.addEntityManagerBeans(event);
+        // Add synthetic beans to support true JPA container-managed
+        // EntityManagers.  By definition, this means that JTA must be
+        // present (see JPA section 7.5: "A container-managed entity
+        // manager must be a JTA entity manager.").
+        if (this.transactionsSupported) {
+            this.addContainerManagedEntityManagerBeans(event, beanManager);
+        }
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
         }
     }
 
-    /**
-     * Converts something like {@code @PersistenceContext(unitName =
-     * "fred") private EntityManager em;} to
-     * {@code @Inject @Named("fred") @Synchronized @JPATransactionScoped
-     * private EntityManager em;}.
-     *
-     * @param event the {@link ProcessAnnotatedType} container
-     * lifecycle event being observed; must not be {@code null}
-     */
-    private <T> void rewriteJpaAnnotations(@Observes
-                                           @WithAnnotations(PersistenceContext.class)
-                                           final ProcessAnnotatedType<T> event) {
-        if (this.annotationRewritingEnabled) {
-            event.configureAnnotatedType()
-                .filterFields(f -> f.isAnnotationPresent(PersistenceContext.class)
-                              && !f.isAnnotationPresent(Inject.class))
-                .forEach(fc -> {
-                        final PersistenceContext pc = fc.getAnnotated().getAnnotation(PersistenceContext.class);
-                        assert pc != null;
-                        fc.remove(a -> a == pc);
-                        fc.add(InjectLiteral.INSTANCE);
-                        fc.add(ContainerManaged.Literal.INSTANCE);
-                        if (PersistenceContextType.EXTENDED.equals(pc.type())) {
-                            fc.add(Extended.Literal.INSTANCE);
-                        } else {
-                            fc.add(JPATransactionScoped.Literal.INSTANCE);
-                        }
-                        if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
-                            fc.add(Unsynchronized.Literal.INSTANCE);
-                        } else {
-                            fc.add(Synchronized.Literal.INSTANCE);
-                        }
-                        fc.add(NamedLiteral.of(pc.unitName().trim()));
-                    });
-        }
-    }
-
-    private <R> void installSpecialProducer(@Observes final ProcessProducer<?, R> event) {
-        final Producer<R> producer = event.getProducer();
-        final Collection<?> keys = getKeys(producer);
-        if (keys != null && !keys.isEmpty()) {
-            event.setProducer(new EntityManagerReferencingProducer<>(producer, keys));
-        }
-    }
-
-    private <T> void installSpecialInjectionTarget(@Observes final ProcessInjectionTarget<T> event) {
-        final InjectionTarget<T> injectionTarget = event.getInjectionTarget();
-        final Collection<?> keys = getKeys(injectionTarget);
-        if (keys != null && !keys.isEmpty()) {
-            event.setInjectionTarget(new DelegatingInjectionTarget<>(injectionTarget,
-                                                                     new EntityManagerReferencingProducer<>(injectionTarget,
-                                                                                                            keys)));
-        }
-    }
-
     private static Collection<?> getKeys(final Producer<?> producer) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "getKeys";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, producer);
+        }
         final Set<InjectionPoint> injectionPoints = producer.getInjectionPoints();
         final Set<Object> keys = new HashSet<>();
         for (final InjectionPoint injectionPoint : injectionPoints) {
@@ -624,9 +693,10 @@ public class JpaExtension implements Extension {
                         }
                     }
                     if (jpaTransactionScoped && named != null) {
-                        // Because of processing the annotated type stuff
-                        // above, we have converted all PersistenceContext
-                        // annotations into sequences like:
+                        // Because of processing the annotated type
+                        // stuff above, we have converted
+                        // all @PersistenceContext annotations into
+                        // sequences like:
                         //   @Inject
                         //   @ContainerManaged
                         //   @Named("fred")
@@ -638,165 +708,187 @@ public class JpaExtension implements Extension {
                 }
             }
         }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, keys);
+        }
         return keys;
     }
 
-    private <T, X extends EntityManager> void processEntityManagerInjectionPoint(@Observes
-                                                                                 final ProcessInjectionPoint<T, X> event) {
-        this.allQualifiers.add(event.getInjectionPoint().getQualifiers());
-    }
-
-    private void addEntityManagerBeans(final AfterBeanDiscovery event) {
-        for (final Set<Annotation> qualifiers : this.allQualifiers) {
-            addContainerManagedEntityManagerFactory(event.addBean(), qualifiers);
-            addCDITransactionScopedEntityManager(event.addBean(), qualifiers);
-            addJPATransactionScopedEntityManager(event.addBean(), qualifiers);
+    private void addContainerManagedEntityManagerBeans(final AfterBeanDiscovery event, final BeanManager beanManager) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "addContainerManagedEntityManagerFactory";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, beanManager});
+        }
+        if (this.transactionsSupported) {
+            for (final Set<Annotation> qualifiers : this.allQualifiers) {
+                addContainerManagedEntityManagerFactory(event.addBean(), qualifiers);
+                addCDITransactionScopedEntityManager(event.addBean(), qualifiers);
+                addJPATransactionScopedEntityManager(event.addBean(), qualifiers);
+            }
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
         }
     }
 
-    private static void addContainerManagedEntityManagerFactory(final BeanConfigurator<EntityManagerFactory> beanConfigurator,
-                                                                final Set<Annotation> suppliedQualifiers) {
-        Objects.requireNonNull(beanConfigurator);
-        Objects.requireNonNull(suppliedQualifiers);
-
-        final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
-        qualifiers.add(ContainerManaged.Literal.INSTANCE);
-
-        beanConfigurator.addType(EntityManagerFactory.class)
-            .scope(ApplicationScoped.class)
-            .addQualifiers(qualifiers)
-            .produceWith(instance -> produceContainerManagedEntityManagerFactory(instance, qualifiers))
-            .disposeWith((emf, instance) -> emf.close());
-    }
-
-    private static void addCDITransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
-                                                             final Set<Annotation> suppliedQualifiers) {
-        Objects.requireNonNull(beanConfigurator);
-        Objects.requireNonNull(suppliedQualifiers);
-
-        final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
-        qualifiers.remove(ContainerManaged.Literal.INSTANCE);
-        qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
-
-        beanConfigurator.addType(EntityManager.class)
-            .scope(javax.transaction.TransactionScoped.class)
-            .addQualifiers(qualifiers)
-            .produceWith(instance -> {
-                final Set<Annotation> emfQualifiers = new HashSet<>(qualifiers);
-                emfQualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
-                emfQualifiers.add(ContainerManaged.Literal.INSTANCE);
-                final EntityManagerFactory emf =
-                    instance.select(EntityManagerFactory.class,
-                                    emfQualifiers.toArray(new Annotation[emfQualifiers.size()])).get();
-                // Revisit: get properties and pass them too
-                if (emfQualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
-                    return emf.createEntityManager(SynchronizationType.UNSYNCHRONIZED);
-                } else {
-                    return emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
-                }
-            })
-            .disposeWith((em, instance) -> {
-                    em.close();
-                });
-    }
-
-    private static boolean inTransaction(final Instance<? extends Transaction> instanceTransaction) throws SystemException {
-        final boolean returnValue;
-        if (instanceTransaction == null || instanceTransaction.isUnsatisfied()) {
-            returnValue = false;
-        } else {
-            final Transaction transaction = instanceTransaction.get();
-            returnValue = transaction != null && transaction.getStatus() == Status.STATUS_ACTIVE;
+    private void addContainerManagedEntityManagerFactory(final BeanConfigurator<EntityManagerFactory> beanConfigurator,
+                                                         final Set<Annotation> suppliedQualifiers) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "addContainerManagedEntityManagerFactory";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers});
         }
-        return returnValue;
-    }
-
-    private static void addJPATransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
-                                                             final Set<Annotation> suppliedQualifiers) {
         Objects.requireNonNull(beanConfigurator);
         Objects.requireNonNull(suppliedQualifiers);
+        if (this.transactionsSupported) {
+            final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+            qualifiers.add(ContainerManaged.Literal.INSTANCE);
+            beanConfigurator.addType(EntityManagerFactory.class)
+                .scope(ApplicationScoped.class)
+                .addQualifiers(qualifiers)
+                .produceWith(instance -> produceContainerManagedEntityManagerFactory(instance, qualifiers))
+                .disposeWith((emf, instance) -> emf.close());
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
 
-        beanConfigurator.addType(EntityManager.class)
-            .scope(Dependent.class)
-            .addQualifiers(suppliedQualifiers)
-            .addQualifiers(ContainerManaged.Literal.INSTANCE)
-            .addQualifiers(JPATransactionScoped.Literal.INSTANCE)
-            .produceWith(instance -> {
-
-                // Get an Instance that can give us a @Default
-                // Transaction.  We deliberately do not use
-                // qualifiers.  It will be in TransactionScoped scope.
-                final Instance<Transaction> instanceTransaction = instance.select(Transaction.class);
-
-                // Get an Instance that can give us
-                // a @CDITransactionScoped @ContainerManaged
-                // EntityManager.  It will be in
-                // JTA's @TransactionScoped CDI scope.  We don't need
-                // (or want) @Any or @JPATransactionScoped in our
-                // selection criteria.
-                final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
-                qualifiers.remove(Any.Literal.INSTANCE);
-                qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
-                qualifiers.add(ContainerManaged.Literal.INSTANCE);
-                qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
-                final Instance<EntityManager> instanceCdiTransactionScopedEntityManager =
-                    instance.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
-
-                // Get an Instance that can give us
-                // a @ContainerManaged EntityManagerFactory.  We don't
-                // want @Any, @JPATransactionScoped
-                // or @CDITransactionScoped in our selection criteria.
-                // The EntityManagerFactory will be
-                // in @ApplicationScoped scope, or it better be,
-                // anyway.
-                qualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
-                final Instance<EntityManagerFactory> instanceEmf =
-                    instance.select(EntityManagerFactory.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
-
-                // Is this synchronized or not?
-                final SynchronizationType synchronizationType;
-                if (qualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
-                    synchronizationType = SynchronizationType.UNSYNCHRONIZED;
-                } else {
-                    synchronizationType = SynchronizationType.SYNCHRONIZED;
-                }
-
-                // Create the actual EntityManager that will be
-                // produced.  It itself will be in @Dependent scope
-                // but its delegate may be something else.
-                return new DelegatingEntityManager() {
-                    @Override
-                    protected EntityManager acquireDelegate() {
-                        final EntityManager returnValue;
-                        boolean inTransaction;
-                        try {
-                            inTransaction = JpaExtension.inTransaction(instanceTransaction);
-                        } catch (final SystemException systemException) {
-                            throw new CreationException(systemException.getMessage(), systemException);
-                        }
-                        if (inTransaction) {
-                            returnValue = instanceCdiTransactionScopedEntityManager.get();
+    private void addCDITransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
+                                                      final Set<Annotation> suppliedQualifiers) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "addCDITransactionScopedEntityManager";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers});
+        }
+        Objects.requireNonNull(beanConfigurator);
+        Objects.requireNonNull(suppliedQualifiers);
+        if (this.transactionsSupported) {
+            final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+            qualifiers.remove(ContainerManaged.Literal.INSTANCE);
+            qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+            beanConfigurator.addType(EntityManager.class)
+                .scope(javax.transaction.TransactionScoped.class)
+                .addQualifiers(qualifiers)
+                .produceWith(instance -> {
+                        final Set<Annotation> emfQualifiers = new HashSet<>(qualifiers);
+                        emfQualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
+                        emfQualifiers.add(ContainerManaged.Literal.INSTANCE);
+                        final EntityManagerFactory emf =
+                            instance.select(EntityManagerFactory.class,
+                                            emfQualifiers.toArray(new Annotation[emfQualifiers.size()])).get();
+                        // Revisit: get properties and pass them too
+                        if (emfQualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
+                            return emf.createEntityManager(SynchronizationType.UNSYNCHRONIZED);
                         } else {
-                            returnValue =
-                                new NonTransactionalTransactionScopedEntityManager(instanceEmf.get()
-                                                                                   .createEntityManager(synchronizationType),
-                                                                                   this);
+                            return emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
                         }
-                        return returnValue;
-                    }
+                    })
+                .disposeWith((em, instance) -> {
+                        em.close();
+                    });
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
 
-                    @Override
-                    public void close() {
-                        // Revisit: Wildfly allows end users to close
-                        // UNSYNCHRONIZED container-managed
-                        // EntityManagers:
-                        // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/UnsynchronizedEntityManagerWrapper.java#L75-L78
-                        // I don't know why.  Glassfish does not:
-                        // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L752-L761
-                        throw new IllegalStateException();
-                    }
-                };
-            }); // deliberately no disposeWith()
+    private void addJPATransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
+                                                      final Set<Annotation> suppliedQualifiers) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "addJPATransactionScopedEntityManager";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers});
+        }
+
+        Objects.requireNonNull(beanConfigurator);
+        Objects.requireNonNull(suppliedQualifiers);
+        if (this.transactionsSupported) {
+            beanConfigurator.addType(EntityManager.class)
+                .scope(Dependent.class)
+                .addQualifiers(suppliedQualifiers)
+                .addQualifiers(ContainerManaged.Literal.INSTANCE)
+                .addQualifiers(JPATransactionScoped.Literal.INSTANCE)
+                .produceWith(instance -> {
+                        final TransactionSupport transactionSupport = instance.select(TransactionSupport.class).get();
+                        assert transactionSupport != null;
+                        assert transactionSupport.isActive();
+
+                        // Get an Instance that can give us
+                        // a @CDITransactionScoped @ContainerManaged
+                        // EntityManager.  It will be in
+                        // JTA's @TransactionScoped CDI scope.  We don't need
+                        // (or want) @Any or @JPATransactionScoped in our
+                        // selection criteria.
+                        final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+                        qualifiers.remove(Any.Literal.INSTANCE);
+                        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+                        qualifiers.add(ContainerManaged.Literal.INSTANCE);
+                        qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+                        final Instance<EntityManager> instanceCdiTransactionScopedEntityManager =
+                            instance.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
+
+                        // Get an Instance that can give us
+                        // a @ContainerManaged EntityManagerFactory.  We don't
+                        // want @Any, @JPATransactionScoped
+                        // or @CDITransactionScoped in our selection criteria.
+                        // The EntityManagerFactory will be
+                        // in @ApplicationScoped scope, or it better be,
+                        // anyway.
+                        qualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
+                        final Instance<EntityManagerFactory> instanceEmf =
+                            instance.select(EntityManagerFactory.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
+
+                        // Is this synchronized or not?
+                        final SynchronizationType syncType;
+                        if (qualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
+                            syncType = SynchronizationType.UNSYNCHRONIZED;
+                        } else {
+                            // We are only going to use syncType for
+                            // non-transactional EntityManagers (see below).
+                            // In such cases, if it is not UNSYNCHRONIZED, it
+                            // must be null (not SYNCHRONIZED).
+                            syncType = null;
+                        }
+
+                        // Create the actual EntityManager that will be
+                        // produced.  It itself will be in @Dependent scope
+                        // but its delegate may be something else.
+                        return new DelegatingEntityManager() {
+                            @Override
+                            protected EntityManager acquireDelegate() {
+                                final EntityManager returnValue;
+                                if (transactionSupport.inTransaction()) {
+                                    returnValue = instanceCdiTransactionScopedEntityManager.get();
+                                } else {
+                                    final EntityManagerFactory emf = instanceEmf.get();
+                                    assert emf != null;
+                                    // Revisit: need to supply properties somehow
+                                    @SuppressWarnings("rawtypes") // the API requires it sadly
+                                        final Map properties = new HashMap();
+                                    final EntityManager delegate = emf.createEntityManager(syncType, properties);
+                                    returnValue = new NonTransactionalTransactionScopedEntityManager(delegate, this);
+                                }
+                                return returnValue;
+                            }
+
+                            @Override
+                            public void close() {
+                                // Revisit: Wildfly allows end users to close
+                                // UNSYNCHRONIZED container-managed
+                                // EntityManagers:
+                                // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/UnsynchronizedEntityManagerWrapper.java#L75-L78
+                                // I don't know why.  Glassfish does not:
+                                // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L752-L761
+                                throw new IllegalStateException();
+                            }
+                        };
+                    }); // deliberately no disposeWith()
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
     }
 
     private static Collection<? extends PersistenceProvider> addPersistenceProviderBeans(final AfterBeanDiscovery event) {
@@ -890,19 +982,20 @@ public class JpaExtension implements Extension {
             //
             // Note that XMLInputFactory is NOT deprecated in JDK 8:
             //   https://docs.oracle.com/javase/8/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory--
-            // ...but IS deprecated in JDK 9:
+            //   ...but IS deprecated in JDK 9:
             //   https://docs.oracle.com/javase/9/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory--
-            // ...with an incorrect claim that it was deprecated since
-            // JDK 1.7.  In JDK 7 it actually was *not* deprecated:
+            //   ...with an incorrect claim that it was deprecated
+            //   since JDK 1.7.  In JDK 7 it actually was *not*
+            //   deprecated:
             //   https://docs.oracle.com/javase/7/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory()
-            // ...and now in JDK 10 it is NO LONGER deprecated:
+            //   ...and now in JDK 10 it is NO LONGER deprecated:
             //   https://docs.oracle.com/javase/10/docs/api/javax/xml/stream/XMLInputFactory.html#newFactory()
-            // ...nor in JDK 11:
+            //   ...nor in JDK 11:
             //   https://docs.oracle.com/en/java/javase/11/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory()
-            // ...nor in JDK 12:
+            //   ...nor in JDK 12:
             //   https://docs.oracle.com/en/java/javase/12/docs/api/java.xml/javax/xml/stream/XMLInputFactory.html#newFactory()
-            // So we suppress deprecation warnings since deprecation
-            // in JDK 9 appears to have been a mistake.
+            //   So we suppress deprecation warnings since deprecation
+            //   in JDK 9 appears to have been a mistake.
             @SuppressWarnings("deprecation")
             final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
             assert xmlInputFactory != null;
@@ -1101,8 +1194,8 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private static EntityManagerFactory produceContainerManagedEntityManagerFactory(final Instance<Object> instance,
-                                                                                    final Set<Annotation> qualifiers) {
+    private EntityManagerFactory produceContainerManagedEntityManagerFactory(final Instance<Object> instance,
+                                                                             final Set<Annotation> qualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "produceContainerManagedEntityManagerFactory";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1110,6 +1203,9 @@ public class JpaExtension implements Extension {
         }
         Objects.requireNonNull(instance);
         Objects.requireNonNull(qualifiers);
+        if (!this.transactionsSupported) {
+            throw new IllegalStateException();
+        }
 
         final Set<Annotation> puQualifiers = new HashSet<>(qualifiers);
         puQualifiers.remove(ContainerManaged.Literal.INSTANCE);
@@ -1148,8 +1244,21 @@ public class JpaExtension implements Extension {
         Objects.requireNonNull(suppliedQualifiers);
 
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
-        Instance<PersistenceUnitInfo> puInstance = instance.select(PersistenceUnitInfo.class,
-                                                                   qualifiers.toArray(new Annotation[qualifiers.size()]));
+        qualifiers.remove(Synchronized.Literal.INSTANCE);
+        qualifiers.remove(Unsynchronized.Literal.INSTANCE);
+        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(Extended.Literal.INSTANCE);
+        // Revisit: for now; might be useful to qualify persistence
+        // unit infos with their name
+        // qualifiers.removeIf(q -> q instanceof Named);
+
+        Instance<PersistenceUnitInfo> puInstance;
+        if (qualifiers.isEmpty()) {
+            puInstance = instance.select(PersistenceUnitInfo.class);
+        } else {
+            puInstance = instance.select(PersistenceUnitInfo.class,
+                                         qualifiers.toArray(new Annotation[qualifiers.size()]));
+        }
         assert puInstance != null;
         if (puInstance.isUnsatisfied()) {
             // We didn't find any PersistenceUnitInfo named, for
@@ -1172,17 +1281,24 @@ public class JpaExtension implements Extension {
     }
 
     private static PersistenceProvider getPersistenceProvider(final Instance<Object> instance,
-                                                              final Set<Annotation> qualifiers,
+                                                              final Set<Annotation> suppliedQualifiers,
                                                               final PersistenceUnitInfo persistenceUnitInfo)
         throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "getPersistenceProvider";
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, new Object[] {instance, qualifiers, persistenceUnitInfo});
+            LOGGER.entering(cn, mn, new Object[] {instance, suppliedQualifiers, persistenceUnitInfo});
         }
         Objects.requireNonNull(instance);
-        Objects.requireNonNull(qualifiers);
+        Objects.requireNonNull(suppliedQualifiers);
         Objects.requireNonNull(persistenceUnitInfo);
+
+        final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+        qualifiers.remove(Synchronized.Literal.INSTANCE);
+        qualifiers.remove(Unsynchronized.Literal.INSTANCE);
+        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(Extended.Literal.INSTANCE);
+        qualifiers.removeIf(q -> q instanceof Named);
 
         final PersistenceProvider returnValue;
         final String providerClassName = persistenceUnitInfo.getPersistenceProviderClassName();
@@ -1193,7 +1309,8 @@ public class JpaExtension implements Extension {
             returnValue =
                 (PersistenceProvider) instance.select(Class.forName(providerClassName,
                                                                     true,
-                                                                    Thread.currentThread().getContextClassLoader())).get();
+                                                                    Thread.currentThread().getContextClassLoader()),
+                                                      qualifiers.toArray(new Annotation[qualifiers.size()])).get();
         }
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
