@@ -39,6 +39,6 @@ public class UrlResourceProvider implements ResourceProvider {
 
     @Override
     public boolean canProvide(Class<?> type) {
-        return type.isAssignableFrom(URL.class);
+        return URL.class.isAssignableFrom(type);
     }
 }
