@@ -62,7 +62,6 @@
         <dependency>
             <groupId>org.eclipse.microprofile.health</groupId>
             <artifactId>microprofile-health-tck</artifactId>
-            <version>${version.lib.microprofile-health-api}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

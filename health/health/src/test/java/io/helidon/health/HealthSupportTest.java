@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.health;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,6 +25,7 @@ import java.util.stream.Stream;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 
+import io.helidon.common.CollectionsHelper;
 import io.helidon.common.http.Http;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -120,7 +122,7 @@ class HealthSupportTest {
                 .addIncluded(includedHealthChecks)
                 .build();
 
-        HealthSupport.HealthResponse response = support.callHealthChecks();
+        HealthSupport.HealthResponse response = support.callHealthChecks(allChecks);
 
         // Test the JSON
         final JsonObject json = response.json();
@@ -136,7 +138,7 @@ class HealthSupportTest {
         HealthSupport support = HealthSupport.builder()
                 .build();
 
-        HealthSupport.HealthResponse response = support.callHealthChecks();
+        HealthSupport.HealthResponse response = support.callHealthChecks(Collections.emptyList());
 
         assertThat(response.status(), is(Http.Status.OK_200));
 
@@ -149,13 +151,14 @@ class HealthSupportTest {
 
     @Test
     void checksAreSortedByName() {
+        List<HealthCheck> checks = CollectionsHelper.listOf(new GoodHealthCheck("g"),
+                                                            new GoodHealthCheck("a"),
+                                                            new GoodHealthCheck("v"));
         HealthSupport support = HealthSupport.builder()
-                .add(new GoodHealthCheck("g"))
-                .add(new GoodHealthCheck("a"))
-                .add(new GoodHealthCheck("v"))
+                .add(checks)
                 .build();
 
-        HealthSupport.HealthResponse response = support.callHealthChecks();
+        HealthSupport.HealthResponse response = support.callHealthChecks(checks);
 
         // Test the JSON
         final JsonObject json = response.json();
@@ -171,7 +174,7 @@ class HealthSupportTest {
                 .add(goodChecks)
                 .build();
 
-        HealthSupport.HealthResponse response = support.callHealthChecks();
+        HealthSupport.HealthResponse response = support.callHealthChecks(goodChecks);
 
         assertThat(response.status(), is(Http.Status.OK_200));
 
@@ -189,7 +192,7 @@ class HealthSupportTest {
                 .add(badChecks)
                 .build();
 
-        HealthSupport.HealthResponse response = support.callHealthChecks();
+        HealthSupport.HealthResponse response = support.callHealthChecks(badChecks);
 
         assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
 
@@ -207,7 +210,7 @@ class HealthSupportTest {
                 .add(brokenChecks)
                 .build();
 
-        HealthSupport.HealthResponse response = support.callHealthChecks();
+        HealthSupport.HealthResponse response = support.callHealthChecks(brokenChecks);
 
         assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
 

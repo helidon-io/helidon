@@ -20,6 +20,8 @@ import java.lang.annotation.Annotation;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
+import javax.enterprise.inject.se.SeContainer;
+
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.health.HealthSupport;
@@ -28,29 +30,60 @@ import io.helidon.microprofile.server.spi.MpServiceContext;
 
 import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.Liveness;
+import org.eclipse.microprofile.health.Readiness;
 
 /**
  * Helidon Microprofile Server extension for Health checks.
  */
 public class HealthMpService implements MpService {
+    private static final Health HEALTH_LITERAL = new Health() {
+        @Override
+        public Class<? extends Annotation> annotationType() {
+            return Health.class;
+        }
+    };
+
+    private static final Readiness READINESS_LITERAL = new Readiness() {
+        @Override
+        public Class<? extends Annotation> annotationType() {
+            return Readiness.class;
+        }
+    };
+
+    private static final Liveness LIVENESS_LITERAL = new Liveness() {
+        @Override
+        public Class<? extends Annotation> annotationType() {
+            return Liveness.class;
+        }
+    };
+
     @Override
     public void configure(MpServiceContext mpServiceContext) {
         Config healthConfig = mpServiceContext.helidonConfig().get("health");
         HealthSupport.Builder builder = HealthSupport.builder()
                 .config(healthConfig);
 
-        mpServiceContext.cdiContainer()
-                .select(HealthCheck.class, new Health() {
-                    @Override
-                    public Class<? extends Annotation> annotationType() {
-                        return Health.class;
-                    }
-                })
+        SeContainer cdiContainer = mpServiceContext.cdiContainer();
+
+        cdiContainer.select(HealthCheck.class, HEALTH_LITERAL)
                 .stream()
                 .forEach(builder::add);
 
+        cdiContainer.select(HealthCheck.class, LIVENESS_LITERAL)
+                .stream()
+                .forEach(builder::addLiveness);
+
+        cdiContainer.select(HealthCheck.class, READINESS_LITERAL)
+                .stream()
+                .forEach(builder::addReadiness);
+
         HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class))
-                .forEach(healthCheckProvider -> builder.add(healthCheckProvider.healthChecks()));
+                .forEach(healthCheckProvider -> {
+                    builder.add(healthCheckProvider.healthChecks());
+                    healthCheckProvider.livenessChecks().forEach(builder::addLiveness);
+                    healthCheckProvider.readinessChecks().forEach(builder::addReadiness);
+                });
 
         healthConfig.get("routing")
                 .asString()
