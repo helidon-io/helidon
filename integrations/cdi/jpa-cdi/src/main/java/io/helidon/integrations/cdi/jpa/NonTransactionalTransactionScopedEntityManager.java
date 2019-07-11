@@ -60,9 +60,13 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
 
 
     /**
-     * Throws a {@link PersistenceException} when invoked.
+     * Throws a {@link PersistenceException} when invoked, because it
+     * will never be invoked in the normal course of events.
      *
-     * @return a non-{@code null} {@link EntityManager}
+     * @return a non-{@code null} {@link EntityManager}, but this will
+     * never happen
+     *
+     * @exception PersistenceException when invoked
      */
     @Override
     protected EntityManager acquireDelegate() {
