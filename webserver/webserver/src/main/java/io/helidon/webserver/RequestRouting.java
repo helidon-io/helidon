@@ -361,6 +361,8 @@ class RequestRouting implements Routing {
             try {
                 if (t instanceof HttpException) {
                     response.status(((HttpException) t).status());
+                } else if (t.getCause() instanceof HttpException) {
+                    response.status(((HttpException) t.getCause()).status());
                 } else {
                     LOGGER.log(t instanceof Error ? Level.SEVERE : Level.WARNING,
                                "Default error handler: Unhandled exception encountered.",

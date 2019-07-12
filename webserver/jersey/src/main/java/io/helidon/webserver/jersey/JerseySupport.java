@@ -37,7 +37,7 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.SecurityContext;
 
-import io.helidon.common.configurable.ServerThreadPoolSupplier;
+import io.helidon.webserver.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -135,7 +135,7 @@ public class JerseySupport implements Service {
         if (DEFAULT_THREAD_POOL.get() == null) {
             Config executorConfig = Config.create().get("server.executor-service");
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
-                                            .name("server")
+                                            .name("jersey")
                                             .config(executorConfig)
                                             .build()
                                             .get());

@@ -38,12 +38,12 @@ import javax.enterprise.inject.spi.CDI;
 import javax.ws.rs.core.Application;
 
 import io.helidon.common.CollectionsHelper;
-import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.spi.MpService;
+import io.helidon.webserver.ServerThreadPoolSupplier;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -214,9 +214,9 @@ public interface Server {
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
-                        .name("server")
-                        .config(config.helidonConfig().get("server.executor-service"))
-                        .build();
+                                                                 .name("jersey")
+                                                                 .config(config.helidonConfig().get("server.executor-service"))
+                                                                 .build();
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");

@@ -61,7 +61,12 @@
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-grpc</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative</artifactId>
+            <classifier>${os.detected.classifier}</classifier>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-server</artifactId>

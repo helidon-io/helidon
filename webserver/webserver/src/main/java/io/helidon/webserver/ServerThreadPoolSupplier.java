@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.common.configurable;
+package io.helidon.webserver;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
 
+import io.helidon.common.configurable.ThreadPool;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
+
+import static io.helidon.common.http.Http.Status.SERVICE_UNAVAILABLE_503;
 
 /**
  * Supplier of a custom thread pool with defaults appropriate for a thread-per-request server.
@@ -28,8 +33,18 @@ import io.helidon.config.Config;
 public final class ServerThreadPoolSupplier implements Supplier<ExecutorService> {
 
     private static final int MINIMUM_CORES = 2;
-    private static final int DEFAULT_THREADS_PER_CORE = 8;
-    private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
+    private static final int DEFAULT_MIN_THREADS_PER_CORE = 2;
+    private static final int DEFAULT_MAX_THREADS_PER_CORE = 8;
+    private static final int DEFAULT_QUEUE_CAPACITY = 8192;
+    private static final int DEFAULT_GROWTH_RATE = 20;
+    private static final int DEFAULT_GROWTH_THRESHOLD = 100;
+
+    private static final ThreadPool.RejectionPolicy DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionPolicy() {
+        @Override
+        protected void throwException(Runnable task, ThreadPoolExecutor executor) {
+            throw new HttpException(SERVICE_UNAVAILABLE_503.reasonPhrase(), SERVICE_UNAVAILABLE_503);
+        }
+    };
 
     private final ThreadPoolSupplier supplier;
 
@@ -52,16 +67,16 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
         // Set defaults appropriate to a thread-per-request model, based on the number of cores.
 
         final int cores = Math.max(Runtime.getRuntime().availableProcessors(), MINIMUM_CORES);
-        final int corePoolSize = cores * DEFAULT_THREADS_PER_CORE;
-
-        // Since the ExecutorService only adds threads above the corePoolSize when the queue is full, setting
-        // maxPoolSize > corePoolSize with a large queue is meaningless unless under extreme load. To ensure
-        // we can actually use the max under normal load, use corePoolSize as maxPoolSize by default.
+        final int minPoolSize = DEFAULT_MIN_THREADS_PER_CORE * cores;
+        final int maxPoolSize = DEFAULT_MAX_THREADS_PER_CORE * cores;
 
         return ThreadPoolSupplier.builder()
-                                 .corePoolSize(corePoolSize)
-                                 .maxPoolSize(corePoolSize)
-                                 .queueCapacity(DEFAULT_QUEUE_CAPACITY);
+                                 .corePoolSize(minPoolSize)
+                                 .maxPoolSize(maxPoolSize)
+                                 .queueCapacity(DEFAULT_QUEUE_CAPACITY)
+                                 .growthThreshold(DEFAULT_GROWTH_THRESHOLD)
+                                 .growthRate(DEFAULT_GROWTH_RATE)
+                                 .rejectionHandler(DEFAULT_REJECTION_POLICY);
     }
 
     /**

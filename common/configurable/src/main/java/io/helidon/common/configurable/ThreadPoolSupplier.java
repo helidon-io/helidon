@@ -17,8 +17,6 @@
 package io.helidon.common.configurable;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +30,7 @@ import io.helidon.config.Config;
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
+    private static final ThreadPool.RejectionPolicy DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionPolicy();
     private static final AtomicInteger DEFAULT_NAME_COUNTER = new AtomicInteger();
     private static final int DEFAULT_CORE_POOL_SIZE = 10;
     private static final int DEFAULT_MAX_POOL_SIZE = 50;
@@ -41,6 +40,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private static final String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
     private static final boolean DEFAULT_PRESTART = true;
     private static final String DEFAULT_POOL_NAME_PREFIX = "helidon-thread-pool-";
+    private static final int DEFAULT_GROWTH_RATE = 0; // Maintain JDK pool behavior when max > core
+    private static final int DEFAULT_GROWTH_THRESHOLD = 1000;
 
     private final int corePoolSize;
     private final int maxPoolSize;
@@ -50,6 +51,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final String threadNamePrefix;
     private final boolean prestart;
     private final String name;
+    private final int growthThreshold;
+    private final int growthRate;
+    private final ThreadPool.RejectionPolicy rejectionPolicy;
     private volatile ExecutorService instance;
 
     private ThreadPoolSupplier(Builder builder) {
@@ -61,6 +65,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.threadNamePrefix = builder.threadNamePrefix;
         this.prestart = builder.prestart;
         this.name = builder.name == null ? DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet() : builder.name;
+        this.growthThreshold = builder.growthThreshold;
+        this.growthRate = builder.growthRate;
+        this.rejectionPolicy = builder.rejectionPolicy == null ? DEFAULT_REJECTION_POLICY : builder.rejectionPolicy;
     }
 
     /**
@@ -80,7 +87,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      */
     public static ThreadPoolSupplier create(Config config) {
         return builder().config(config)
-                .build();
+                        .build();
     }
 
     /**
@@ -93,25 +100,16 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     }
 
     ThreadPool getThreadPool() {
-        ThreadPool result;
-        result = new ThreadPool(name,
-                                corePoolSize,
-                                maxPoolSize,
-                                keepAliveMinutes,
-                                TimeUnit.MINUTES,
-                                new LinkedBlockingQueue<>(queueCapacity),
-                                queueCapacity, new ThreadFactory() {
-            private final AtomicInteger threadCount = new AtomicInteger();
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(null,
-                                      r,
-                                      threadNamePrefix + threadCount.incrementAndGet());
-                t.setDaemon(isDaemon);
-                return t;
-            }
-        });
+        ThreadPool result = ThreadPool.create(name,
+                                              corePoolSize,
+                                              maxPoolSize,
+                                              growthThreshold,
+                                              growthRate,
+                                              keepAliveMinutes,
+                                              queueCapacity,
+                                              threadNamePrefix,
+                                              isDaemon,
+                                              rejectionPolicy);
         if (prestart) {
             result.prestartAllCoreThreads();
         }
@@ -137,6 +135,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private boolean isDaemon = DEFAULT_IS_DAEMON;
         private String threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX;
         private boolean prestart = DEFAULT_PRESTART;
+        private int growthThreshold = DEFAULT_GROWTH_THRESHOLD;
+        private int growthRate = DEFAULT_GROWTH_RATE;
+        private ThreadPool.RejectionPolicy rejectionPolicy = DEFAULT_REJECTION_POLICY;
         private String name;
 
         private Builder() {
@@ -144,6 +145,13 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
 
         @Override
         public ThreadPoolSupplier build() {
+            if (name == null) {
+                name = DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet();
+            }
+            if (rejectionPolicy == null) {
+                rejectionPolicy = DEFAULT_REJECTION_POLICY;
+            }
+
             return new ThreadPoolSupplier(this);
         }
 
@@ -214,6 +222,48 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         }
 
         /**
+         * The queue size above which pool growth will be considered if the pool is not fixed size.
+         *
+         * @param growthThreshold the growth threshold
+         * @return updated builder instance
+         */
+        public Builder growthThreshold(int growthThreshold) {
+            this.growthThreshold = growthThreshold;
+            return this;
+        }
+
+        /**
+         * The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100. The
+         * rate applies only when all of the following are true:
+         * <ul>
+         * <li>the pool size is below the maximum, and</li>
+         * <li>there are no idle threads, and</li>
+         * <li>the number of tasks in the queue exceeds the {@code growthThreshold}, and</li>
+         * <li>the queue size is constant or increasing</li>
+         * </ul>
+         * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
+         * tasks.
+         *
+         * @param growthRate the growth rate
+         * @return updated builder instance
+         */
+        public Builder growthRate(int growthRate) {
+            this.growthRate = growthRate;
+            return this;
+        }
+
+        /**
+         * Rejection policy of the thread pool executor.
+         *
+         * @param rejectionPolicy the rejection policy
+         * @return updated builder instance
+         */
+        public Builder rejectionHandler(ThreadPool.RejectionPolicy rejectionPolicy) {
+            this.rejectionPolicy = rejectionPolicy;
+            return this;
+        }
+
+        /**
          * Name prefix for threads in this thread pool executor.
          *
          * @param threadNamePrefix prefix of a thread name
@@ -246,6 +296,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * <li>is-daemon</li>
          * <li>thread-name-prefix</li>
          * <li>should-prestart</li>
+         * <li>growth-threshold</li>
+         * <li>growth-rate</li>
          * </ul>
          *
          * @param config config located on the key of executor-service
@@ -259,9 +311,9 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             config.get("is-daemon").asBoolean().ifPresent(this::daemon);
             config.get("thread-name-prefix").asString().ifPresent(this::threadNamePrefix);
             config.get("should-prestart").asBoolean().ifPresent(this::prestart);
-
+            config.get("growth-threshold").asInt().ifPresent(this::growthThreshold);
+            config.get("growth-rate").asInt().ifPresent(this::growthRate);
             return this;
         }
     }
-
 }
