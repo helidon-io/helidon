@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.health;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.microprofile.health.HealthCheck;
@@ -31,7 +32,27 @@ public interface HealthCheckProvider {
     /**
      * Return the provided {@link org.eclipse.microprofile.health.HealthCheck}s.
      *
-     * @return  the {@link org.eclipse.microprofile.health.HealthCheck}s
+     * @return the {@link org.eclipse.microprofile.health.HealthCheck}s
+     * @deprecated in the new versions of MP Health, we use either {@link #readinessChecks()} or {@link #livenessChecks()}
      */
+    @Deprecated
     List<HealthCheck> healthChecks();
+
+    /**
+     * Return the provided readiness {@link org.eclipse.microprofile.health.HealthCheck}s.
+     *
+     * @return the {@link org.eclipse.microprofile.health.HealthCheck}s
+     */
+    default List<HealthCheck> readinessChecks() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Return the provided liveness {@link org.eclipse.microprofile.health.HealthCheck}s.
+     *
+     * @return the {@link org.eclipse.microprofile.health.HealthCheck}s
+     */
+    default List<HealthCheck> livenessChecks() {
+        return Collections.emptyList();
+    }
 }
