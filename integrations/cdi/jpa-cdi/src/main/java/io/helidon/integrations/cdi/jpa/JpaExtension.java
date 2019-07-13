@@ -367,11 +367,21 @@ public class JpaExtension implements Extension {
             && m.isAnnotationPresent(PersistenceContext.class)
             && !m.isAnnotationPresent(Inject.class)) {
             final List<AnnotatedParameter<T>> parameters = m.getParameters();
-            if (parameters != null && parameters.size() == 1) {
-                final Annotated soleParameter = parameters.get(0);
-                assert soleParameter != null;
-                final Type parameterType = soleParameter.getBaseType();
-                returnValue = parameterType instanceof Class && EntityManager.class.isAssignableFrom((Class<?>) parameterType);
+            if (parameters != null && !parameters.isEmpty()) {
+                boolean temp = false;
+                for (final Annotated parameter : parameters) {
+                    assert parameter != null;
+                    final Type type = parameter.getBaseType();
+                    if (type instanceof Class && EntityManager.class.isAssignableFrom((Class<?>) type)) {
+                        if (temp) {
+                            temp = false;
+                            break;
+                        } else {
+                            temp = true;
+                        }
+                    }
+                }
+                returnValue = temp;
             } else {
                 returnValue = false;
             }
@@ -395,30 +405,37 @@ public class JpaExtension implements Extension {
         Objects.requireNonNull(mc);
         final PersistenceContext pc = mc.getAnnotated().getAnnotation(PersistenceContext.class);
         assert pc != null;
-        mc.remove(a -> a == pc);
-        mc.add(InjectLiteral.INSTANCE);
+        boolean observerMethod = false;
         final List<AnnotatedParameterConfigurator<T>> parameters = mc.params();
-        if (parameters != null && parameters.size() == 1) {
-            final AnnotatedParameterConfigurator<T> apc = parameters.get(0);
-            if (apc != null) {
-                final Annotated parameter = apc.getAnnotated();
-                assert parameter != null;
-                final Type parameterType = parameter.getBaseType();
-                if (parameterType instanceof Class && EntityManager.class.isAssignableFrom((Class<?>) parameterType)) {
-                    apc.add(ContainerManaged.Literal.INSTANCE);
-                    if (PersistenceContextType.EXTENDED.equals(pc.type())) {
-                        apc.add(Extended.Literal.INSTANCE);
-                    } else {
-                        apc.add(JPATransactionScoped.Literal.INSTANCE);
+        if (parameters != null && !parameters.isEmpty()) {
+            for (final AnnotatedParameterConfigurator<T> apc : parameters) {
+                if (apc != null) {
+                    final Annotated parameter = apc.getAnnotated();
+                    assert parameter != null;
+                    if (!observerMethod) {
+                        observerMethod = parameter.isAnnotationPresent(Observes.class);
                     }
-                    if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
-                        apc.add(Unsynchronized.Literal.INSTANCE);
-                    } else {
-                        apc.add(Synchronized.Literal.INSTANCE);
+                    final Type parameterType = parameter.getBaseType();
+                    if (parameterType instanceof Class && EntityManager.class.isAssignableFrom((Class<?>) parameterType)) {
+                        apc.add(ContainerManaged.Literal.INSTANCE);
+                        if (PersistenceContextType.EXTENDED.equals(pc.type())) {
+                            apc.add(Extended.Literal.INSTANCE);
+                        } else {
+                            apc.add(JPATransactionScoped.Literal.INSTANCE);
+                        }
+                        if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
+                            apc.add(Unsynchronized.Literal.INSTANCE);
+                        } else {
+                            apc.add(Synchronized.Literal.INSTANCE);
+                        }
+                        apc.add(NamedLiteral.of(pc.unitName().trim()));
                     }
-                    apc.add(NamedLiteral.of(pc.unitName().trim()));
                 }
             }
+        }
+        mc.remove(a -> a == pc);
+        if (!observerMethod) {
+            mc.add(InjectLiteral.INSTANCE);
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -703,7 +720,7 @@ public class JpaExtension implements Extension {
         }
 
         final Producer<R> producer = event.getProducer();
-        final Collection<?> keys = getPersistenceUnitNamesReferencedBy(producer);
+        final Set<?> keys = getPersistenceUnitNamesReferencedBy(producer);
         if (keys != null && !keys.isEmpty()) {
             event.setProducer(new EntityManagerReferencingProducer<>(producer, keys));
         }
@@ -721,7 +738,7 @@ public class JpaExtension implements Extension {
         }
 
         final InjectionTarget<T> injectionTarget = event.getInjectionTarget();
-        final Collection<?> keys = getPersistenceUnitNamesReferencedBy(injectionTarget);
+        final Set<?> keys = getPersistenceUnitNamesReferencedBy(injectionTarget);
         if (keys != null && !keys.isEmpty()) {
             event.setInjectionTarget(new DelegatingInjectionTarget<>(injectionTarget,
                                                                      new EntityManagerReferencingProducer<>(injectionTarget,
@@ -841,15 +858,34 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private static Collection<?> getPersistenceUnitNamesReferencedBy(final Producer<?> producer) {
+    /**
+     * Returns a deliberately opaque {@link Set} representing
+     * the persistence <em>units</em> referenced by the bean
+     * represented by the supplied {@link Producer}.
+     *
+     * @param producer the {@link Producer} in question; must not be {@code null}
+     *
+     * @return a non-{@code null}, {@linkplain
+     * Collections#unmodifiableSet(Set) unmodifiable} {@link Set} of
+     * persistence unit identifiers
+     *
+     * @exception NullPointerException if {@code producer} is {@code
+     * null}
+     *
+     * @see
+     * EntityManagerReferencingProducer#EntityManagerReferencingProducer(Producer,
+     * Set)
+     */
+    private static Set<?> getPersistenceUnitNamesReferencedBy(final Producer<?> producer) {
         final String cn = JpaExtension.class.getName();
         final String mn = "getPersistenceUnitNamesReferencedBy";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, producer);
         }
 
-        final Set<InjectionPoint> injectionPoints = producer.getInjectionPoints();
+        Objects.requireNonNull(producer);
         final Set<Object> keys = new HashSet<>();
+        final Set<InjectionPoint> injectionPoints = producer.getInjectionPoints();
         for (final InjectionPoint injectionPoint : injectionPoints) {
             final Type type = injectionPoint.getType();
             if (type instanceof Class && EntityManager.class.isAssignableFrom((Class<?>) type)) {
@@ -859,13 +895,9 @@ public class JpaExtension implements Extension {
                     Named named = null;
                     for (final Annotation qualifier : qualifiers) {
                         if (qualifier instanceof Named) {
-                            if (named == null) {
-                                named = (Named) qualifier;
-                            }
+                            named = (Named) qualifier;
                         } else if (qualifier instanceof JPATransactionScoped) {
-                            if (!jpaTransactionScoped) {
-                                jpaTransactionScoped = true;
-                            }
+                            jpaTransactionScoped = true;
                         }
                     }
                     if (jpaTransactionScoped && named != null) {
@@ -885,10 +917,11 @@ public class JpaExtension implements Extension {
             }
         }
 
+        final Set<?> returnValue = Collections.unmodifiableSet(keys);
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn, keys);
+            LOGGER.exiting(cn, mn, returnValue);
         }
-        return keys;
+        return returnValue;
     }
 
     private void addContainerManagedEntityManagerBeans(final AfterBeanDiscovery event, final BeanManager beanManager) {

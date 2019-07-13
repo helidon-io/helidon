@@ -75,8 +75,11 @@ final class TestAnnotationRewriting {
         }
     }
 
-    private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) {
+    @PersistenceContext(unitName = "fred")
+    private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
+                           final EntityManager fred) {
         assertNotNull(event);
+        assertNotNull(fred);
         assertNotNull(this.em);
         assertTrue(this.em.isOpen());
         assertFalse(this.em.isJoinedToTransaction());

@@ -15,7 +15,7 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
-import java.util.Collection;
+import java.util.Set;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Producer;
@@ -24,9 +24,9 @@ import io.helidon.integrations.cdi.delegates.DelegatingProducer;
 
 final class EntityManagerReferencingProducer<T> extends DelegatingProducer<T> {
 
-    private final Collection<?> keys;
+    private final Set<?> keys;
 
-    EntityManagerReferencingProducer(final Producer<T> delegate, final Collection<?> keys) {
+    EntityManagerReferencingProducer(final Producer<T> delegate, final Set<?> keys) {
         super(delegate);
         this.keys = keys;
     }
