@@ -31,12 +31,11 @@ final class NonTransactionalTransactionScopedEntityManagerReferences {
         super();
     }
 
-    static void put(final Object key, final EntityManager entityManager) {
+    static void putIfAbsent(final Object key, final EntityManager entityManager) {
         final Map<Object, EntityManagerWithReferenceCount> map = ENTITY_MANAGERS.get();
-        map.put(key,
-                new EntityManagerWithReferenceCount(entityManager,
-                                                    () -> map.remove(key))
-                );
+        map.putIfAbsent(key,
+                        new EntityManagerWithReferenceCount(entityManager,
+                                                            () -> map.remove(key)));
     }
 
     static void incrementReferenceCount(final Object key) {
@@ -75,15 +74,9 @@ final class NonTransactionalTransactionScopedEntityManagerReferences {
 
         private EntityManagerWithReferenceCount(final EntityManager entityManager,
                                                 final Runnable destroyer) {
-            this(entityManager, new AtomicInteger(), destroyer);
-        }
-
-        private EntityManagerWithReferenceCount(final EntityManager entityManager,
-                                                final AtomicInteger referenceCount,
-                                                final Runnable destroyer) {
             super();
             this.entityManager = Objects.requireNonNull(entityManager);
-            this.referenceCount = referenceCount == null ? new AtomicInteger() : referenceCount;
+            this.referenceCount = new AtomicInteger(1);
             this.destroyer = Objects.requireNonNull(destroyer);
         }
 

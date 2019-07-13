@@ -50,7 +50,7 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
      */
     NonTransactionalTransactionScopedEntityManager(final EntityManager delegate, final Object key) {
         super(Objects.requireNonNull(delegate));
-        NonTransactionalTransactionScopedEntityManagerReferences.put(key, this);
+        NonTransactionalTransactionScopedEntityManagerReferences.putIfAbsent(key, this);
     }
 
 
