@@ -699,7 +699,7 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private <X extends EntityManager> void processEntityManagerInjectionPoint(@Observes final ProcessInjectionPoint<?, X> event) {
+    private <T extends EntityManager> void processEntityManagerInjectionPoint(@Observes final ProcessInjectionPoint<?, T> event) {
         final String cn = JpaExtension.class.getName();
         final String mn = "processEntityManagerInjectionPoint";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -713,14 +713,14 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private <R> void installSpecialProducer(@Observes final ProcessProducer<?, R> event) {
+    private <T> void installSpecialProducer(@Observes final ProcessProducer<?, T> event) {
         final String cn = JpaExtension.class.getName();
         final String mn = "installSpecialProducer";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
         }
 
-        final Producer<R> producer = event.getProducer();
+        final Producer<T> producer = event.getProducer();
         final Set<?> keys = getPersistenceUnitNamesReferencedBy(producer);
         if (keys != null && !keys.isEmpty()) {
             event.setProducer(new EntityManagerReferencingProducer<>(producer, keys));
@@ -751,13 +751,14 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private <T, X> void installSpecialNotifier(@Observes final ProcessObserverMethod<T, X> event,
-                                               final BeanManager beanManager) {
+    private <T> void installSpecialNotifier(@Observes final ProcessObserverMethod<T, ?> event,
+                                        final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
         final String mn = "installSpecialNotifier";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
+
         final Set<InjectionPoint> observerMethodInjectionPoints = getInjectionPoints(event.getAnnotatedMethod(), beanManager);
         final Set<?> keys = getPersistenceUnitNamesReferencedBy(observerMethodInjectionPoints);
         if (keys != null && !keys.isEmpty()) {
@@ -862,9 +863,6 @@ public class JpaExtension implements Extension {
             this.processImplicitPersistenceUnits(event, providers);
         }
 
-        this.unlistedManagedClassesByPersistenceUnitNames.clear();
-        this.implicitPersistenceUnits.clear();
-
         // Add synthetic beans to support true JPA container-managed
         // EntityManagers.  By definition, this means that JTA must be
         // present (see JPA section 7.5: "A container-managed entity
@@ -872,6 +870,12 @@ public class JpaExtension implements Extension {
         if (this.transactionsSupported) {
             this.addContainerManagedEntityManagerBeans(event, beanManager);
         }
+
+        // Clear out no-longer-needed-or-used collections to save
+        // memory.
+        this.unlistedManagedClassesByPersistenceUnitNames.clear();
+        this.implicitPersistenceUnits.clear();
+        this.allQualifiers.clear();
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
