@@ -66,7 +66,7 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
         SecurityContext securityContext = security()
                 .contextBuilder(Integer.toString(CONTEXT_COUNTER.incrementAndGet(), Character.MAX_RADIX))
                 .tracingSpan(tracing.findParent().orElse(null))
-                .executorService(executorService)
+                .executorService(Contexts.wrap(executorService))
                 .build();
 
         Contexts.context().ifPresent(ctx -> ctx.register(securityContext));
