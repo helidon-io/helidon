@@ -101,6 +101,7 @@ import javax.xml.stream.XMLStreamReader;
 import io.helidon.integrations.cdi.delegates.DelegatingInjectionTarget;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
+import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCounted;
 
 import static javax.interceptor.Interceptor.Priority.LIBRARY_AFTER;
 import static javax.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
@@ -1043,6 +1044,7 @@ public class JpaExtension implements Extension {
                 addContainerManagedEntityManagerFactory(event.addBean(), qualifiers);
                 addCDITransactionScopedEntityManager(event.addBean(), qualifiers);
                 addJPATransactionScopedEntityManager(event.addBean(), qualifiers);
+                addExtendedEntityManager(event.addBean(), qualifiers);
             }
         }
 
@@ -1172,40 +1174,13 @@ public class JpaExtension implements Extension {
             beanConfigurator.addType(EntityManager.class)
                 .scope(scope)
                 .addQualifiers(qualifiers)
-                .produceWith(instance -> produceCDITransactionScopedEntityManager(instance, suppliedQualifiers))
+                .produceWith(instance -> produceEntityManager(instance, suppliedQualifiers))
                 .disposeWith((em, instance) -> em.close());
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
         }
-    }
-
-    private static EntityManager produceCDITransactionScopedEntityManager(final Instance<Object> instance,
-                                                                          final Set<Annotation> suppliedQualifiers) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "produceCDITransactionScopedEntityManager";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, new Object[] {instance, suppliedQualifiers});
-        }
-
-        Objects.requireNonNull(instance);
-        Objects.requireNonNull(suppliedQualifiers);
-
-        final EntityManagerFactory emf = getContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
-        assert emf != null;
-        final EntityManager returnValue;
-        // Revisit: get properties and pass them too
-        if (suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
-            returnValue = emf.createEntityManager(SynchronizationType.UNSYNCHRONIZED);
-        } else {
-            returnValue = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
-        }
-
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn, returnValue);
-        }
-        return returnValue;
     }
 
     private void addJPATransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
@@ -1326,6 +1301,35 @@ public class JpaExtension implements Extension {
             LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
+    }
+
+    private void addExtendedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
+                                          final Set<Annotation> suppliedQualifiers) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "addExtendedEntityManager";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers});
+        }
+
+        Objects.requireNonNull(beanConfigurator);
+        Objects.requireNonNull(suppliedQualifiers);
+
+        final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+        qualifiers.add(Extended.Literal.INSTANCE);
+        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
+
+        if (this.transactionsSupported) {
+            beanConfigurator.addType(EntityManager.class)
+                .scope(ReferenceCounted.class)
+                .qualifiers(qualifiers)
+                .produceWith(instance -> produceEntityManager(instance, suppliedQualifiers));
+                // deliberately no disposeWith()
+        }
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
     }
 
     /**
@@ -1708,10 +1712,27 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    private EntityManager produceExtendedEntityManager(final Instance<Object> instance,
-                                                       final Set<Annotation> suppliedQualifiers) {
+    /**
+     * Returns an {@link EntityManager} for use either as an
+     * <em>extended</em> {@link EntityManager} or as a
+     * JTA-transaction-scoped delegate {@link EntityManager} to be
+     * used by a {@link DelegatingEntityManager} as created by the
+     * {@link #produceJPATransactionScopedEntityManager(Instance,
+     * Set)} method.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @param instance an {@link Instance} of {@link Object}s; must
+     * not be {@code null}
+     *
+     * @param suppliedQualifiers a {@link Set} of qualifier {@link
+     * Annotation} instances; must not be {@code null}; not mutated by
+     * this method
+     */
+    private EntityManager produceEntityManager(final Instance<Object> instance,
+                                               final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "produceExtendedEntityManager";
+        final String mn = "produceEntityManager";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {instance, suppliedQualifiers});
         }
@@ -1730,6 +1751,7 @@ public class JpaExtension implements Extension {
         } else {
             syncType = null;
         }
+        // Revisit: need to deal with properties here
         @SuppressWarnings("rawtypes")
         final Map properties = new HashMap<String, Object>();
         final EntityManager returnValue = emf.createEntityManager(syncType, properties);

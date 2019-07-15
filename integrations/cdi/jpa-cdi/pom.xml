@@ -32,7 +32,7 @@
     <properties>
       <doclint>-syntax</doclint>
     </properties>
-    
+
     <dependencies>
         <!-- Test-scoped dependencies. -->
         <dependency>
@@ -121,6 +121,13 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -140,11 +147,11 @@
                             <schemas>
                                 <schema>
                                     <dependencyResource>
-  			                                <groupId>jakarta.persistence</groupId>
-			                                  <artifactId>jakarta.persistence-api</artifactId>
-			                                  <resource>javax/persistence/persistence_2_2.xsd</resource>
-		                                </dependencyResource>
-	                              </schema>
+                                        <groupId>jakarta.persistence</groupId>
+                                        <artifactId>jakarta.persistence-api</artifactId>
+                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
+                                    </dependencyResource>
+                                </schema>
                             </schemas>
                             <strict>false</strict>
                         </configuration>
