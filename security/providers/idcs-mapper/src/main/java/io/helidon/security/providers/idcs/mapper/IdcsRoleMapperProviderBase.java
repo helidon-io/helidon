@@ -79,7 +79,10 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * Json key for token to be retrieved from IDCS response when requesting application token.
      */
     protected static final String ACCESS_TOKEN_KEY = "access_token";
-
+    /**
+     * Property sent with JAX-RS requests to override parent span context in outbound calls.
+     * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
+     */
     protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);

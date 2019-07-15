@@ -236,6 +236,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * Gets token from cache or from server.
      *
      * @param idcsTenantId id of tenant
+     * @param tracing Role mapping tracing instance to correctly trace outbound calls
      * @return the token to be used to authenticate this service
      */
     protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
