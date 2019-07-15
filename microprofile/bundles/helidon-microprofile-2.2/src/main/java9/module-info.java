@@ -25,6 +25,9 @@ module io.helidon.microprofile.v2_2 {
     requires transitive io.helidon.microprofile.metrics;
     requires transitive io.helidon.microprofile.faulttolerance;
     requires transitive io.helidon.microprofile.jwt.auth.cdi;
+    requires transitive io.helidon.microprofile.tracing;
+    requires transitive io.helidon.microprofile.restclient;
+    requires transitive io.helidon.microprofile.openapi;
 
     requires io.helidon.health.checks;
 }

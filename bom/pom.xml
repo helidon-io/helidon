@@ -409,6 +409,13 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- REST Client -->
+            <dependency>
+                <groupId>io.helidon.microprofile.rest-client</groupId>
+                <artifactId>helidon-microprofile-rest-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- integrations -->
             <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>

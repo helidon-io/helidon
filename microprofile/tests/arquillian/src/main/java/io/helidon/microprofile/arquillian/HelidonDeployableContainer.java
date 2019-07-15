@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -123,7 +124,11 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
 
         try {
             // Create the temporary deployment directory.
-            context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
+            if (containerConfig.getUseRelativePath()) {
+                context.deployDir = Paths.get("target/helidon-arquillian-test");
+            } else {
+                context.deployDir = Files.createTempDirectory("helidon-arquillian-test");
+            }
             LOGGER.info("Running Arquillian tests in directory: " + context.deployDir.toAbsolutePath());
 
             // Copy the archive into deployDir. Save off the class names for all classes included in the

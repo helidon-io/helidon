@@ -25,14 +25,19 @@ module io.helidon.microprofile.tracing {
     requires jersey.common;
     requires opentracing.api;
 
-    requires cdi.api;
-    requires javax.inject;
+    requires static cdi.api;
+    requires static javax.inject;
+    requires static javax.interceptor.api;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.common;
     requires io.helidon.webserver;
+    requires io.helidon.jersey.common;
     requires transitive io.helidon.tracing;
     requires transitive io.helidon.tracing.jersey;
+
+    requires transitive microprofile.opentracing.api;
+    requires microprofile.rest.client.api;
 
     exports io.helidon.microprofile.tracing;
 
