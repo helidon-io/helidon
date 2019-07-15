@@ -41,6 +41,7 @@ security:
       proxy-host: "${ALIAS=security.properties.proxy-host}"
       frontend-uri: "${ALIAS=security.properties.frontend-uri}"
   - idcs-role-mapper:
+      multitenant: false
       oidc-config:
         # we must repeat IDCS configuration, as in this case
         # IDCS serves both as open ID connect authenticator and
