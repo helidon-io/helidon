@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
 import io.helidon.config.Config;
+import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.glassfish.jersey.server.ResourceConfig;
@@ -46,14 +47,18 @@ class ServerRunner {
         if (null == path) {
             return null;
         }
-        return path.value();
+        String value = path.value();
+        return value.startsWith("/") ? value : "/" + value;
     }
 
     void start(Config config, HelidonContainerConfiguration containerConfig, Set<String> classNames, ClassLoader cl) {
         //cl.getResources("beans.xml")
         Server.Builder builder = Server.builder()
                 .port(containerConfig.getPort())
-                .config(config);
+                .config(MpConfig.builder()
+                                .config(config)
+                                .addDiscoveredSources()
+                                .build());
 
         handleClasses(cl, classNames, builder, containerConfig.getAddResourcesToApps());
 
@@ -71,6 +76,7 @@ class ServerRunner {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void handleClasses(ClassLoader classLoader,
                                Set<String> classNames,
                                Server.Builder builder,
@@ -87,7 +93,7 @@ class ServerRunner {
                 if (Application.class.isAssignableFrom(c)) {
                     LOGGER.finest(() -> "Adding application class: " + c.getName());
                     applicationClasses.add(c);
-                } else if (c.isAnnotationPresent(Path.class)) {
+                } else if (c.isAnnotationPresent(Path.class) && !c.isInterface()) {
                     LOGGER.finest(() -> "Adding resource class: " + c.getName());
                     resourceClasses.add(c);
                 } else {

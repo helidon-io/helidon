@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.jersey.client;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,6 +25,8 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
+import javax.annotation.Priority;
+import javax.ws.rs.Priorities;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
@@ -72,7 +75,8 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * Inbound HTTP headers are resolved from JAX-RS server.
  *
  * <p>
- * For each client call, a new {@link Span} with operation name {@value #SPAN_OPERATION_NAME} is created based
+ * For each client call, a new {@link Span} with operation name generated from HTTP method and resource method
+ * and class is created based
  * on the resolved {@link Tracer} and an optional parent {@link Span}. The span information is also
  * propagated to the outbound request using HTTP headers injected by tracer.
  * <p>
@@ -93,6 +97,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
  *   .get();
  * </pre>
  */
+@Priority(Priorities.AUTHENTICATION - 250)
 public class ClientTracingFilter implements ClientRequestFilter, ClientResponseFilter {
     /**
      * Name of tracing component used to retrieve tracing configuration.
@@ -103,13 +108,22 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     public static final String TRACER_PROPERTY_NAME = "io.helidon.tracing.tracer";
     /**
+     * Override name of the span created for client call.
+     */
+    public static final String SPAN_NAME_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-name";
+    /**
+     * If set to false, tracing will be disabled.
+     * If set to true, tracing will depend on overall configuration.
+     */
+    public static final String ENABLED_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span-enabled";
+    /**
      * The {@link SpanContext} property name.
      */
     public static final String CURRENT_SPAN_CONTEXT_PROPERTY_NAME = "io.helidon.tracing.span-context";
     /**
-     * Operation name of a span created for outbound calls.
+     * Name of the configuration of a span created for outbound calls.
      */
-    public static final String SPAN_OPERATION_NAME = "jersey-client-call";
+    private static final String SPAN_OPERATION_NAME = "jersey-client-call";
     /*
      * Known headers to be propagated from inbound request
      */
@@ -123,6 +137,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      * when using helidon-microprofile-tracing module.
      */
     public static final String X_REQUEST_ID = "x-request-id";
+
 
     static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
 
@@ -155,7 +170,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         Optional<TracingContext> tracingContext = Contexts.context().flatMap(ctx -> ctx.get(TracingContext.class));
 
         // maybe we are disabled
-        if (tracingDisabled(tracingContext)) {
+        if (tracingDisabled(requestContext, tracingContext)) {
             return;
         }
 
@@ -168,9 +183,13 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         Optional<SpanContext> parentSpan = findParentSpan(requestContext, tracingContext);
         Tracer tracer = findTracer(requestContext, tracingContext);
         Map<String, List<String>> inboundHeaders = findInboundHeaders(tracingContext);
+        String spanName = findSpanName(requestContext, spanConfig);
 
         // create a new span for this jersey client request
-        Span currentSpan = createSpan(requestContext, tracer, parentSpan, spanConfig.newName().orElse(SPAN_OPERATION_NAME));
+        Span currentSpan = createSpan(requestContext,
+                                      tracer,
+                                      parentSpan,
+                                      spanName);
 
         // register it so we can close the span on response
         requestContext.setProperty(SPAN_PROPERTY_NAME, currentSpan);
@@ -199,7 +218,12 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
         outboundHeaders.forEach((key, value) -> headers.put(key, new ArrayList<>(value)));
     }
 
-    private boolean tracingDisabled(Optional<TracingContext> tracingContext) {
+    private boolean tracingDisabled(ClientRequestContext requestContext,
+                                    Optional<TracingContext> tracingContext) {
+        Optional<Boolean> enabled = property(requestContext, Boolean.class, ENABLED_PROPERTY_NAME);
+        if (enabled.isPresent() && !enabled.get()) {
+            return true;
+        }
         return tracingContext.map(TracingContext::traceClient)
                 .map(value -> !value) // invert, as configuration says enabled, we are interested in disabled
                 .orElse(false); // by default enabled
@@ -257,6 +281,13 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                 .asOptional();
     }
 
+    private String findSpanName(ClientRequestContext requestContext, SpanTracingConfig spanConfig) {
+        return OptionalHelper.from(property(requestContext, String.class, SPAN_NAME_PROPERTY_NAME))
+                .or(spanConfig::newName)
+                .asOptional()
+                .orElseGet(() -> requestContext.getMethod().toUpperCase());
+    }
+
     private Tracer findTracer(ClientRequestContext requestContext,
                               Optional<TracingContext> tracingContext) {
         return OptionalHelper.from(property(requestContext, Tracer.class, TRACER_PROPERTY_NAME))
@@ -295,13 +326,32 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
                             Optional<SpanContext> parentSpan,
                             String spanName) {
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName)
-                .withTag(Tags.HTTP_METHOD.getKey(), requestContext.getMethod())
-                .withTag(Tags.HTTP_URL.getKey(), requestContext.getUri().toString());
+        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName);
 
         parentSpan.ifPresent(spanBuilder::asChildOf);
 
-        return spanBuilder.start();
+        Span span = spanBuilder.start();
+
+        Tags.COMPONENT.set(span, "jaxrs");
+        Tags.HTTP_METHOD.set(span, requestContext.getMethod());
+        Tags.HTTP_URL.set(span, url(requestContext.getUri()));
+        Tags.SPAN_KIND.set(span, Tags.SPAN_KIND_CLIENT);
+
+        return span;
+    }
+
+    private String url(URI uri) {
+        String host = uri.getHost();
+        host = host.replace("127.0.0.1", "localhost");
+        String query = uri.getQuery();
+        if (null == query) {
+            query = "";
+        } else {
+            if (!query.isEmpty()) {
+                query = "?" + query;
+            }
+        }
+        return uri.getScheme() + "://" + host + ":" + uri.getPort() + uri.getPath() + query;
     }
 
 }

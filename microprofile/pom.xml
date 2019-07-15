@@ -44,5 +44,6 @@
         <module>jwt-auth</module>
         <module>tracing</module>
         <module>openapi</module>
+        <module>rest-client</module>
     </modules>
 </project>

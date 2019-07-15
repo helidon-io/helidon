@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tracing;
-
-import io.helidon.tracing.jersey.TracingFilter;
-
 /**
- * Unit test for {@link TracingFilter}.
+ * Eclipse Microprofile Tracing implementation for helidon microprofile.
  */
-class TracingFilterTest {
+module io.helidon.jersey.common {
+    requires java.logging;
+    requires java.annotation;
 
+    requires io.helidon.common;
+
+    requires java.ws.rs;
+    requires jersey.common;
+    requires jersey.server;
+
+    exports io.helidon.jersey.common;
 }

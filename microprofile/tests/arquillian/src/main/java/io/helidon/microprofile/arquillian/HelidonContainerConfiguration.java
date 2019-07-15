@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
     private boolean deleteTmp = true;
     private boolean addResourcesToApps = false;
     private boolean replaceConfigSourcesWithMp = false;
+    private boolean useRelativePath = false;
 
     public String getApp() {
         return appClassName;
@@ -71,6 +72,14 @@ public class HelidonContainerConfiguration implements ContainerConfiguration {
 
     public void setDeleteTmp(boolean b) {
         this.deleteTmp = b;
+    }
+
+    public boolean getUseRelativePath() {
+        return useRelativePath;
+    }
+
+    public void setUseRelativePath(boolean b) {
+        this.useRelativePath = b;
     }
 
     public boolean getAddResourcesToApps() {
