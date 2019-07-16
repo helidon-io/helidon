@@ -27,7 +27,7 @@ import io.helidon.webserver.WebTracingConfig;
 import io.opentracing.Tracer;
 
 /**
- * Extension of microprofile to add support for tracing.
+ * Extension of MicroProfile to add support for tracing.
  */
 @Priority(10)
 public class MpTracingService implements MpService {
