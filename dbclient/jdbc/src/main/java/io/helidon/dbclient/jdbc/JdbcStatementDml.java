@@ -15,31 +15,18 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutorService;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbInterceptorContext;
-import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.DbStatementDml;
 
-class JdbcStatementDml extends JdbcStatement<JdbcStatementDml, CompletionStage<Long>> {
+class JdbcStatementDml extends JdbcStatement<DbStatementDml, Long> implements DbStatementDml {
 
-    private final ExecutorService executorService;
-
-    JdbcStatementDml(DbStatementType dbStatementType,
-                     ConnectionPool config,
-                     ExecutorService executorService,
-                     String statementName,
-                     String statement,
-                     DbMapperManager dbMapperManager,
-                     MapperManager mapperManager, InterceptorSupport interceptors) {
-        super(dbStatementType, config, statementName, statement, dbMapperManager, mapperManager, executorService, interceptors);
-        this.executorService = executorService;
+    JdbcStatementDml(JdbcExecuteContext executeContext,
+                     JdbcStatementContext statementContext) {
+        super(executeContext, statementContext);
     }
 
     @Override
@@ -55,20 +42,22 @@ class JdbcStatementDml extends JdbcStatement<JdbcStatementDml, CompletionStage<L
         });
 
         return dbContextFuture.thenCompose(dbContext -> {
-            executorService.submit(() -> {
-                try (Connection connection = connection()) {
-                    PreparedStatement preparedStatement = build(connection, dbContext);
-                    long count = preparedStatement.executeLargeUpdate();
-                    statementFuture.complete(null);
-                    queryFuture.complete(count);
-                    preparedStatement.close();
-                } catch (Exception e) {
-                    statementFuture.completeExceptionally(e);
-                    queryFuture.completeExceptionally(e);
-                }
+            return connection().thenCompose(connection -> {
+                executorService().submit(() -> {
+                    try {
+                        PreparedStatement preparedStatement = build(connection, dbContext);
+                        long count = preparedStatement.executeLargeUpdate();
+                        statementFuture.complete(null);
+                        queryFuture.complete(count);
+                        preparedStatement.close();
+                    } catch (Exception e) {
+                        statementFuture.completeExceptionally(e);
+                        queryFuture.completeExceptionally(e);
+                    }
+                });
+                // the query future is reused, as it completes with the number of updated records
+                return queryFuture;
             });
-            // the query future is reused, as it completes with the number of updated records
-            return queryFuture;
         });
     }
 }

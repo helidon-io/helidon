@@ -52,7 +52,7 @@ public interface DbExecute {
      * @param statement the query statement
      * @return database statement that can process query returning multiple rows
      */
-    DbStatement<?, DbRowResult<DbRow>> createNamedQuery(String statementName, String statement);
+    DbStatementQuery createNamedQuery(String statementName, String statement);
 
     /**
      * Create a database query using a statement defined in the configuration file.
@@ -60,7 +60,7 @@ public interface DbExecute {
      * @param statementName the name of the configuration node with statement
      * @return database statement that can process query returning multiple rows
      */
-    DbStatement<?, DbRowResult<DbRow>> createNamedQuery(String statementName);
+    DbStatementQuery createNamedQuery(String statementName);
 
     /**
      * Create a database query using a statement passed as an argument.
@@ -68,7 +68,7 @@ public interface DbExecute {
      * @param statement the query statement to be executed
      * @return database statement that can process the query returning multiple rows
      */
-    DbStatement<?, DbRowResult<DbRow>> createQuery(String statement);
+    DbStatementQuery createQuery(String statement);
 
     /**
      * Create and execute a database query using a statement defined in the configuration file.
@@ -77,7 +77,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return database query execution result which can contain multiple rows
      */
-    default DbRowResult<DbRow> namedQuery(String statementName, Object... parameters) {
+    default CompletionStage<DbRows<DbRow>> namedQuery(String statementName, Object... parameters) {
         return createNamedQuery(statementName).params(parameters).execute();
     }
 
@@ -88,7 +88,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return database query execution result which can contain multiple rows
      */
-    default DbRowResult<DbRow> query(String statement, Object... parameters) {
+    default CompletionStage<DbRows<DbRow>> query(String statement, Object... parameters) {
         return createQuery(statement).params(parameters).execute();
     }
 
@@ -103,7 +103,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can process query returning a single row
      */
-    DbStatement<?, CompletionStage<Optional<DbRow>>> createNamedGet(String statementName, String statement);
+    DbStatementGet createNamedGet(String statementName, String statement);
 
     /**
      * Create a database query returning a single row using a statement defined in the configuration file.
@@ -111,7 +111,7 @@ public interface DbExecute {
      * @param statementName the name of the configuration node with statement
      * @return database statement that can process query returning a single row
      */
-    DbStatement<?, CompletionStage<Optional<DbRow>>> createNamedGet(String statementName);
+    DbStatementGet createNamedGet(String statementName);
 
     /**
      * Create a database query returning a single row using a statement passed as an argument.
@@ -119,7 +119,7 @@ public interface DbExecute {
      * @param statement the query statement to be executed
      * @return database statement that can process query returning a single row
      */
-    DbStatement<?, CompletionStage<Optional<DbRow>>> createGet(String statement);
+    DbStatementGet createGet(String statement);
 
     /**
      * Create and execute a database query using a statement defined in the configuration file.
@@ -154,7 +154,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can insert data
      */
-    default DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName, String statement) {
+    default DbStatementDml createNamedInsert(String statementName, String statement) {
         return createNamedDmlStatement(statementName, statement);
     }
 
@@ -164,7 +164,7 @@ public interface DbExecute {
      * @param statementName the name of the statement
      * @return database statement that can insert data
      */
-    DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName);
+    DbStatementDml createNamedInsert(String statementName);
 
     /**
      * Create an insert statement using a statement text.
@@ -172,7 +172,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can insert data
      */
-    DbStatement<?, CompletionStage<Long>> createInsert(String statement);
+    DbStatementDml createInsert(String statement);
 
     /**
      * Create and execute insert statement using a statement defined in the configuration file.
@@ -207,7 +207,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can update data
      */
-    default DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName, String statement) {
+    default DbStatementDml createNamedUpdate(String statementName, String statement) {
         return createNamedDmlStatement(statementName, statement);
     }
 
@@ -217,7 +217,7 @@ public interface DbExecute {
      * @param statementName the name of the statement
      * @return database statement that can update data
      */
-    DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName);
+    DbStatementDml createNamedUpdate(String statementName);
 
     /**
      * Create an update statement using a statement text.
@@ -225,7 +225,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can update data
      */
-    DbStatement<?, CompletionStage<Long>> createUpdate(String statement);
+    DbStatementDml createUpdate(String statement);
 
     /**
      * Create and execute update statement using a statement defined in the configuration file.
@@ -260,7 +260,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can delete data
      */
-    default DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName, String statement) {
+    default DbStatementDml createNamedDelete(String statementName, String statement) {
         return createNamedDmlStatement(statementName, statement);
     }
 
@@ -270,7 +270,7 @@ public interface DbExecute {
      * @param statementName the name of the statement
      * @return database statement that can delete data
      */
-    DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName);
+    DbStatementDml createNamedDelete(String statementName);
 
     /**
      * Create a delete statement using a statement text.
@@ -278,7 +278,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return database statement that can delete data
      */
-    DbStatement<?, CompletionStage<Long>> createDelete(String statement);
+    DbStatementDml createDelete(String statement);
 
     /**
      * Create and execute delete statement using a statement defined in the configuration file.
@@ -313,7 +313,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return data modification statement
      */
-    DbStatement<?, CompletionStage<Long>> createNamedDmlStatement(String statementName, String statement);
+    DbStatementDml createNamedDmlStatement(String statementName, String statement);
 
     /**
      * Create a data modification statement using a statement defined in the configuration file.
@@ -321,7 +321,7 @@ public interface DbExecute {
      * @param statementName the name of the configuration node with statement
      * @return data modification statement
      */
-    DbStatement<?, CompletionStage<Long>> createNamedDmlStatement(String statementName);
+    DbStatementDml createNamedDmlStatement(String statementName);
 
     /**
      * Create a data modification statement using a statement passed as an argument.
@@ -329,7 +329,7 @@ public interface DbExecute {
      * @param statement the data modification statement to be executed
      * @return data modification statement
      */
-    DbStatement<?, CompletionStage<Long>> createDmlStatement(String statement);
+    DbStatementDml createDmlStatement(String statement);
 
     /**
      * Create and execute a data modification statement using a statement defined in the configuration file.
@@ -364,7 +364,7 @@ public interface DbExecute {
      * @param statement the statement text
      * @return generic database statement that can return any result
      */
-    DbStatement<?, DbResult> createNamedStatement(String statementName, String statement);
+    DbStatementGeneric createNamedStatement(String statementName, String statement);
 
     /**
      * Create a generic database statement using a statement defined in the configuration file.
@@ -372,7 +372,7 @@ public interface DbExecute {
      * @param statementName the name of the configuration node with statement
      * @return generic database statement that can return any result
      */
-    DbStatement<?, DbResult> createNamedStatement(String statementName);
+    DbStatementGeneric createNamedStatement(String statementName);
 
     /**
      * Create a generic database statement using a statement passed as an argument.
@@ -380,7 +380,7 @@ public interface DbExecute {
      * @param statement the statement to be executed
      * @return generic database statement that can return any result
      */
-    DbStatement<?, DbResult> createStatement(String statement);
+    DbStatementGeneric createStatement(String statement);
 
     /**
      * Create and execute common statement using a statement defined in the configuration file.
@@ -389,7 +389,7 @@ public interface DbExecute {
      * @param parameters    query parameters to set
      * @return generic statement execution result
      */
-    default DbResult namedStatement(String statementName, Object... parameters) {
+    default CompletionStage<DbResult> namedStatement(String statementName, Object... parameters) {
         return createNamedStatement(statementName).params(parameters).execute();
     }
 
@@ -400,7 +400,7 @@ public interface DbExecute {
      * @param parameters query parameters to set
      * @return generic statement execution result
      */
-    default DbResult statement(String statement, Object... parameters) {
+    default CompletionStage<DbResult> statement(String statement, Object... parameters) {
         return createStatement(statement).params(parameters).execute();
     }
 

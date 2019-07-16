@@ -24,6 +24,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatements;
+import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.InterceptorSupport;
 
 import com.mongodb.ConnectionString;
@@ -58,12 +59,12 @@ public class MongoDbClient implements DbClient {
     }
 
     @Override
-    public <T> T inTransaction(Function<DbExecute, T> executor) {
+    public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
         return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
     }
 
     @Override
-    public <T> T execute(Function<DbExecute, T> executor) {
+    public <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor) {
         return executor.apply(new MongoDbExecute(db, statements, dbMapperManager, mapperManager, interceptors));
     }
 

@@ -16,13 +16,13 @@
 
 package io.helidon.examples.db.jdbc;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.JsonObject;
 
-import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
@@ -104,8 +104,7 @@ public class PokemonService implements Service {
     private void insertPokemonSimple(ServerRequest request, ServerResponse response) {
         // Test Pokemon POJO mapper
         Pokemon pokemon = new Pokemon(request.path().param("name"), request.path().param("type"));
-        LOGGER.log(Level.INFO,
-                   String.format("Running insertPokemonSimple for name=%s type=%s", pokemon.getName(), pokemon.getType()));
+
         dbClient.execute(exec -> exec
                 .createNamedInsert("insert2")
                 .namedParam(pokemon)
@@ -121,12 +120,16 @@ public class PokemonService implements Service {
      * @param response server response
      */
     private void getPokemon(ServerRequest request, ServerResponse response) {
-        dbClient.execute(exec -> exec.namedGet("select-one", request.path().param("name")))
-                .thenAccept(maybeRow -> OptionalHelper.from(maybeRow)
-                        .ifPresentOrElse(row -> sendRow(row, response),
-                                         () -> sendNotFound(response, "Pokemon "
-                                                 + request.path().param("name")
-                                                 + " not found")))
+        String pokemonName = request.path().param("name");
+
+        dbClient.execute(exec -> exec.namedGet("select-one", pokemonName))
+                .thenAccept(maybeRow -> {
+                    if (maybeRow.isPresent()) {
+                        sendRow(maybeRow.get(), response);
+                    } else {
+                        sendNotFound(response, "Pokemon " + pokemonName + " not found");
+                    }
+                })
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -137,9 +140,8 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        //db.execute(exec -> exec.query("select-all", "SELECT * FROM TABLE"));
         dbClient.execute(exec -> exec.namedQuery("select-all"))
-                .consume(response::send)
+                .thenAccept(response::send)
                 .exceptionally(throwable -> sendError(throwable, response));
     }
 
@@ -153,7 +155,7 @@ public class PokemonService implements Service {
     private void updatePokemonType(ServerRequest request, ServerResponse response) {
         final String name = request.path().param("name");
         final String type = request.path().param("type");
-        LOGGER.log(Level.INFO, "Running updatePokemonType for {0}", name);
+
         dbClient.execute(exec -> exec
                 .createNamedUpdate("update")
                 .addParam("name", name)
@@ -168,22 +170,11 @@ public class PokemonService implements Service {
         dbClient.inTransaction(tx -> tx
                 .createNamedGet("select-for-update")
                 .namedParam(pokemon)
-                .execute())
-                .
-
-        dbClient.inTransaction(exec -> exec
-                .createNamedGet("select-for-update")
-                .namedParam(pokemon)
                 .execute()
-                .thenAccept(maybeRow -> {
-                    maybeRow.ifPresent(dbRow -> {
-                        // process update
-                        exec.createNamedUpdate("update")
-                                .namedParam(pokemon)
-                                .execute()
-                                .thenAccept(count -> response.send("Updated " + count + " records"));
-                    });
-                }));
+                .thenCompose(maybeRow -> maybeRow.map(dbRow -> tx.createNamedUpdate("update")
+                        .namedParam(pokemon).execute())
+                        .orElseGet(() -> CompletableFuture.completedFuture(0L)))
+        ).thenAccept(count -> response.send("Updated " + count + " records"));
 
     }
 
@@ -194,7 +185,6 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void deleteAllPokemons(ServerRequest request, ServerResponse response) {
-        LOGGER.info("Running deleteAllPokemons");
         dbClient.execute(exec -> exec
                 // this is to show how ad-hoc statements can be executed (and their naming in Tracing and Metrics)
                 .createDelete("DELETE FROM pokemons")
@@ -211,7 +201,7 @@ public class PokemonService implements Service {
      */
     private void deletePokemon(ServerRequest request, ServerResponse response) {
         final String name = request.path().param("name");
-        LOGGER.log(Level.INFO, "Running deletePokemon for {0}", name);
+
         dbClient.execute(exec -> exec.namedDelete("delete", name))
                 .thenAccept(count -> response.send("Deleted: " + count + " values"))
                 .exceptionally(throwable -> sendError(throwable, response));

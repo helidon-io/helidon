@@ -19,14 +19,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.dbclient.DbExecute;
-import io.helidon.dbclient.DbResult;
-import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRowResult;
-import io.helidon.dbclient.DbStatement;
+import io.helidon.dbclient.DbStatementDml;
+import io.helidon.dbclient.DbStatementGeneric;
+import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
 
@@ -57,72 +55,72 @@ public abstract class AbstractDbExecute implements DbExecute {
     }
 
     @Override
-    public DbStatement<?, DbRowResult<DbRow>> createNamedQuery(String statementName) {
+    public DbStatementQuery createNamedQuery(String statementName) {
         return createNamedQuery(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, DbRowResult<DbRow>> createQuery(String statement) {
+    public DbStatementQuery createQuery(String statement) {
         return createNamedQuery(generateName(DbStatementType.QUERY, statement), statement);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Optional<DbRow>>> createNamedGet(String statementName) {
+    public DbStatementGet createNamedGet(String statementName) {
         return createNamedGet(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Optional<DbRow>>> createGet(String statement) {
+    public DbStatementGet createGet(String statement) {
         return createNamedGet(generateName(DbStatementType.GET, statement), statement);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName) {
+    public DbStatementDml createNamedInsert(String statementName) {
         return createNamedInsert(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createInsert(String statement) {
+    public DbStatementDml createInsert(String statement) {
         return createNamedInsert(generateName(DbStatementType.INSERT, statement), statement);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName) {
+    public DbStatementDml createNamedUpdate(String statementName) {
         return createNamedUpdate(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createUpdate(String statement) {
+    public DbStatementDml createUpdate(String statement) {
         return createNamedUpdate(generateName(DbStatementType.UPDATE, statement), statement);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName) {
+    public DbStatementDml createNamedDelete(String statementName) {
         return createNamedDelete(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createDelete(String statement) {
+    public DbStatementDml createDelete(String statement) {
         return createNamedDelete(generateName(DbStatementType.DELETE, statement), statement);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedDmlStatement(String statementName) {
+    public DbStatementDml createNamedDmlStatement(String statementName) {
         return createNamedDmlStatement(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createDmlStatement(String statement) {
+    public DbStatementDml createDmlStatement(String statement) {
         return createNamedDmlStatement(generateName(DbStatementType.DML, statement), statement);
     }
 
     @Override
-    public DbStatement<?, DbResult> createNamedStatement(String statementName) {
+    public DbStatementGeneric createNamedStatement(String statementName) {
         return createNamedStatement(statementName, statementText(statementName));
     }
 
     @Override
-    public DbStatement<?, DbResult> createStatement(String statement) {
+    public DbStatementGeneric createStatement(String statement) {
         return createNamedStatement(generateName(DbStatementType.UNKNOWN, statement), statement);
     }
 

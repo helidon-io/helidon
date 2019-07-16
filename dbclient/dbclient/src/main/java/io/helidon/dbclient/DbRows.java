@@ -17,7 +17,6 @@ package io.helidon.dbclient;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
@@ -28,7 +27,7 @@ import io.helidon.common.reactive.Flow;
  *
  * @param <T> type of the result, starts as {@link io.helidon.dbclient.DbRow}
  */
-public interface DbRowResult<T> {
+public interface DbRows<T> {
     /**
      * Map this row result using a mapping function.
      *
@@ -36,7 +35,7 @@ public interface DbRowResult<T> {
      * @param <U>    new type of the row result
      * @return row result of the correct type
      */
-    <U> DbRowResult<U> map(Function<T, U> mapper);
+    <U> DbRows<U> map(Function<T, U> mapper);
 
     /**
      * Map this row result using a configured {@link io.helidon.common.mapper.Mapper} that can
@@ -50,7 +49,7 @@ public interface DbRowResult<T> {
      * @param <U>  new type of the row result
      * @return row result of the correct type
      */
-    <U> DbRowResult<U> map(Class<U> type);
+    <U> DbRows<U> map(Class<U> type);
 
     /**
      * Map this row result using a configured {@link io.helidon.common.mapper.Mapper} that can
@@ -63,7 +62,7 @@ public interface DbRowResult<T> {
      * @param <U>  new type of the row result
      * @return row result of the target type
      */
-    <U> DbRowResult<U> map(GenericType<U> type);
+    <U> DbRows<U> map(GenericType<U> type);
 
     /**
      * Get this result as a publisher of rows mapped to the correct type.
@@ -78,12 +77,4 @@ public interface DbRowResult<T> {
      * @return future with the list
      */
     CompletionStage<List<T>> collect();
-
-    /**
-     * Provide a possibility to consume this row result to support fluent API.
-     *
-     * @param consumer consumer of this result
-     * @return completion stage that completes when the query is finished
-     */
-    CompletionStage<Void> consume(Consumer<DbRowResult<T>> consumer);
 }

@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  * <p>
  * This class represents a future of two possible types - either a DML result returning the
  * number of changed rows (objects - depending on database type), or a query result returning the
- * {@link io.helidon.dbclient.DbRowResult}.
+ * {@link DbRows}.
  * <p>
  * One of the consumers on this interface is called as soon as it is known what type of statement was
  * executed - for SQL this would be when we finish execution of the prepared statement.
@@ -42,14 +42,14 @@ public interface DbResult {
     DbResult whenDml(Consumer<Long> consumer);
 
     /**
-     * For query statements, {@link io.helidon.dbclient.DbRowResult} is provided as soon as the statement completes.
+     * For query statements, {@link DbRows} is provided as soon as the statement completes.
      * For example in SQL, this would be the time we get the ResultSet from the database. Nevertheless the
-     * rows may not be read ({@link io.helidon.dbclient.DbRowResult} itself represents a future of rows)
+     * rows may not be read ({@link DbRows} itself represents a future of rows)
      *
      * @param consumer consumer that eventually processes the query result
      * @return DbResult to continue with processing a possible dml result
      */
-    DbResult whenRs(Consumer<DbRowResult<DbRow>> consumer);
+    DbResult whenRs(Consumer<DbRows<DbRow>> consumer);
 
     /**
      * In case any exception occurs during processing, the handler is invoked.
@@ -67,7 +67,7 @@ public interface DbResult {
      * In case the exception occurs after the identification of statement type, such as when
      * processing a result set of a query, only the {@link #exceptionFuture()}
      * completes. Exceptions that occur during processing of result set are handled by
-     * methods in the {@link io.helidon.dbclient.DbRowResult}.
+     * methods in the {@link DbRows}.
      *
      * @return future for the DML result
      */
@@ -81,11 +81,11 @@ public interface DbResult {
      * In case the exception occurs after the identification of statement type, such as when
      * processing a result set of a query, only the {@link #exceptionFuture()}
      * completes. Exceptions that occur during processing of result set are handled by
-     * methods in the {@link io.helidon.dbclient.DbRowResult}.
+     * methods in the {@link DbRows}.
      *
      * @return future for the query result
      */
-    CompletionStage<DbRowResult<DbRow>> rsFuture();
+    CompletionStage<DbRows<DbRow>> rsFuture();
 
     /**
      * This future completes if (and only if) the statement finished with an exception, either
