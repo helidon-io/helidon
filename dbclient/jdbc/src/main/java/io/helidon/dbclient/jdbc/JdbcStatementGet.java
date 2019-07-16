@@ -20,41 +20,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Flow;
 import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbStatement;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.DbRows;
+import io.helidon.dbclient.DbStatementGet;
 
 /**
  * A JDBC get implementation.
  */
-class JdbcStatementGet implements DbStatement<JdbcStatementGet, CompletionStage<Optional<DbRow>>> {
+class JdbcStatementGet implements DbStatementGet {
     private final JdbcStatementQuery query;
 
-    JdbcStatementGet(ConnectionPool connectionPool,
-                     ExecutorService executorService,
-                     String statementName,
-                     String statement,
-                     DbMapperManager dbMapperMananger,
-                     MapperManager mapperManager,
-                     InterceptorSupport interceptors) {
+    JdbcStatementGet(JdbcExecuteContext executeContext,
+                     JdbcStatementContext statementContext) {
 
-        this.query = new JdbcStatementQuery(DbStatementType.GET,
-                                            connectionPool,
-                                            executorService,
-                                            statementName,
-                                            statement,
-                                            dbMapperMananger,
-                                            mapperManager,
-                                            interceptors);
+        this.query = new JdbcStatementQuery(executeContext,
+                                            statementContext);
     }
 
     @Override
@@ -70,13 +55,13 @@ class JdbcStatementGet implements DbStatement<JdbcStatementGet, CompletionStage<
     }
 
     @Override
-    public <T> JdbcStatementGet namedParam(T parameters) {
+    public JdbcStatementGet namedParam(Object parameters) {
         query.namedParam(parameters);
         return this;
     }
 
     @Override
-    public <T> JdbcStatementGet indexedParam(T parameters) {
+    public JdbcStatementGet indexedParam(Object parameters) {
         query.indexedParam(parameters);
         return this;
     }
@@ -98,50 +83,57 @@ class JdbcStatementGet implements DbStatement<JdbcStatementGet, CompletionStage<
         CompletableFuture<Optional<DbRow>> result = new CompletableFuture<>();
 
         query.execute()
-                .publisher()
-                .subscribe(new Flow.Subscriber<DbRow>() {
-                    private Flow.Subscription subscription;
-                    private final AtomicBoolean done = new AtomicBoolean(false);
-                    // defense against bad publisher - if I receive complete after cancelled...
-                    private final AtomicBoolean cancelled = new AtomicBoolean(false);
-                    private final AtomicReference<DbRow> theRow = new AtomicReference<>();
+                .thenApply(DbRows::publisher)
+                .thenAccept(publisher -> {
+                    publisher.subscribe(new Flow.Subscriber<DbRow>() {
+                        private Flow.Subscription subscription;
+                        private final AtomicBoolean done = new AtomicBoolean(false);
+                        // defense against bad publisher - if I receive complete after cancelled...
+                        private final AtomicBoolean cancelled = new AtomicBoolean(false);
+                        private final AtomicReference<DbRow> theRow = new AtomicReference<>();
 
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        this.subscription = subscription;
-                        subscription.request(2);
-                    }
-
-                    @Override
-                    public void onNext(DbRow dbRow) {
-                        if (done.get()) {
-                            subscription.cancel();
-                            result.completeExceptionally(new DbClientException("Result of get statement " + query
-                                    .name() + " returned "
-                                                                                       + "more than one row."));
-                            cancelled.set(true);
-                        } else {
-                            theRow.set(dbRow);
-                            done.set(true);
+                        @Override
+                        public void onSubscribe(Flow.Subscription subscription) {
+                            this.subscription = subscription;
+                            subscription.request(2);
                         }
-                    }
 
-                    @Override
-                    public void onError(Throwable throwable) {
-                        if (cancelled.get()) {
-                            return;
+                        @Override
+                        public void onNext(DbRow dbRow) {
+                            if (done.get()) {
+                                subscription.cancel();
+                                result.completeExceptionally(new DbClientException("Result of get statement " + query
+                                        .name() + " returned "
+                                                                                           + "more than one row."));
+                                cancelled.set(true);
+                            } else {
+                                theRow.set(dbRow);
+                                done.set(true);
+                            }
                         }
-                        result.completeExceptionally(throwable);
-                    }
 
-                    @Override
-                    public void onComplete() {
-                        if (cancelled.get()) {
-                            return;
+                        @Override
+                        public void onError(Throwable throwable) {
+                            if (cancelled.get()) {
+                                return;
+                            }
+                            result.completeExceptionally(throwable);
                         }
-                        result.complete(Optional.ofNullable(theRow.get()));
-                    }
+
+                        @Override
+                        public void onComplete() {
+                            if (cancelled.get()) {
+                                return;
+                            }
+                            result.complete(Optional.ofNullable(theRow.get()));
+                        }
+                    });
+                })
+                .exceptionally(throwable -> {
+                    result.completeExceptionally(throwable);
+                    return null;
                 });
+
         return result;
     }
 }

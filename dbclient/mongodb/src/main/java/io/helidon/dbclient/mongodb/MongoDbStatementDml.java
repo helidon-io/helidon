@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
+import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.InterceptorSupport;
 
@@ -38,7 +39,7 @@ import org.reactivestreams.Subscription;
 /**
  * DML statement for mongoDB.
  */
-public class MongoDbStatementDml extends MongoDbStatement<MongoDbStatementDml, CompletionStage<Long>> {
+public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml, Long> implements DbStatementDml {
 
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementDml.class.getName());
     private DbStatementType dbStatementType;

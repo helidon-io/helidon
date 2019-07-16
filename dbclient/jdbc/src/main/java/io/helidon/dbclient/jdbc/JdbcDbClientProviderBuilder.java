@@ -204,7 +204,7 @@ public final class JdbcDbClientProviderBuilder implements DbClientProviderBuilde
         return interceptors.build();
     }
 
-    DbMapperManager dbMapperMananger() {
+    DbMapperManager dbMapperManager() {
         return dbMapperManager;
     }
 

@@ -42,7 +42,7 @@ public interface DbClient {
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> T inTransaction(Function<DbTransaction, T> executor);
+    <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor);
 
     /**
      * Execute database statement.
@@ -51,7 +51,7 @@ public interface DbClient {
      * @param executor database statement executor, see {@link DbExecute}
      * @return statement execution result
      */
-    <T> T execute(Function<DbExecute, T> executor);
+    <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor);
 
     /**
      * Pings the database, completes when DB is up and ready, completes exceptionally if not.

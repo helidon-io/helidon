@@ -15,22 +15,28 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.util.Optional;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbResult;
-import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRowResult;
-import io.helidon.dbclient.DbStatement;
+import io.helidon.dbclient.DbStatementDml;
+import io.helidon.dbclient.DbStatementGeneric;
+import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
+import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.AbstractDbExecute;
 import io.helidon.dbclient.common.InterceptorSupport;
 
@@ -38,16 +44,10 @@ import io.helidon.dbclient.common.InterceptorSupport;
  * Helidon DB implementation for JDBC drivers.
  */
 class JdbcDbClient implements DbClient {
-
-    /**
-     * Local logger instance.
-     */
-    private static final Logger LOGGER = Logger.getLogger(JdbcDbClient.class.getName());
-
     private final ExecutorService executorService;
     private final ConnectionPool connectionPool;
     private final DbStatements statements;
-    private final DbMapperManager dbMapperMananger;
+    private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
     private final InterceptorSupport interceptors;
 
@@ -55,19 +55,65 @@ class JdbcDbClient implements DbClient {
         this.executorService = builder.executorService();
         this.connectionPool = builder.connectionPool();
         this.statements = builder.statements();
-        this.dbMapperMananger = builder.dbMapperMananger();
+        this.dbMapperManager = builder.dbMapperManager();
         this.mapperManager = builder.mapperManager();
         this.interceptors = builder.interceptors();
     }
 
     @Override
-    public <T> T inTransaction(Function<DbExecute, T> executor) {
-        return executor.apply(new JdbcExecute(executorService, statements, interceptors));
+    public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
+        CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
+                .thenApply(conn -> {
+                    try {
+                        conn.setAutoCommit(false);
+                    } catch (SQLException e) {
+                        throw new DbClientException("Failed to set autocommit to false", e);
+                    }
+                    return conn;
+                });
+
+        JdbcExecute execute = new JdbcExecute(statements,
+                                              executorService,
+                                              interceptors,
+                                              connectionPool.dbType(),
+                                              connection,
+                                              dbMapperManager,
+                                              mapperManager);
+
+        execute.whenComplete(success -> {
+            if (success) {
+                execute.doCommit();
+            } else {
+                execute.doRollback();
+            }
+        });
+
+        return executor.apply(execute);
     }
 
     @Override
-    public <T> T execute(Function<DbExecute, T> executor) {
-        return executor.apply(new JdbcExecute(executorService, statements, interceptors));
+    public <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor) {
+        CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
+                .thenApply(conn -> {
+                    try {
+                        conn.setAutoCommit(true);
+                    } catch (SQLException e) {
+                        throw new DbClientException("Failed to set autocommit to true", e);
+                    }
+                    return conn;
+                });
+
+        JdbcExecute execute = new JdbcExecute(statements,
+                                              executorService,
+                                              interceptors,
+                                              connectionPool.dbType(),
+                                              connection,
+                                              dbMapperManager,
+                                              mapperManager);
+
+        execute.whenComplete(success -> execute.doClose());
+
+        return executor.apply(execute);
     }
 
     @Override
@@ -83,98 +129,121 @@ class JdbcDbClient implements DbClient {
         return connectionPool.dbType();
     }
 
-    private class JdbcExecute extends AbstractDbExecute implements DbExecute {
-        private final ExecutorService executorService;
-        private final InterceptorSupport interceptors;
+    private static class JdbcExecute extends AbstractDbExecute implements DbTransaction {
+        private final JdbcExecuteContext context;
+        private volatile boolean setRollbackOnly = false;
 
-        JdbcExecute(ExecutorService executorService,
-                    DbStatements statements,
-                    InterceptorSupport interceptors) {
+        JdbcExecute(DbStatements statements,
+                    ExecutorService executorService,
+                    InterceptorSupport interceptors,
+                    String dbType,
+                    CompletionStage<Connection> connection,
+                    DbMapperManager dbMapperManager,
+                    MapperManager mapperManager) {
             super(statements);
-            this.executorService = executorService;
-            this.interceptors = interceptors;
+
+            this.context = JdbcExecuteContext.create(executorService,
+                                                     interceptors,
+                                                     dbType,
+                                                     connection,
+                                                     dbMapperManager,
+                                                     mapperManager);
         }
 
         @Override
-        public DbStatement<?, DbRowResult<DbRow>> createNamedQuery(String statementName, String statement) {
-            return new JdbcStatementQuery(DbStatementType.QUERY,
-                                          connectionPool,
-                                          executorService,
-                                          statementName,
-                                          statement,
-                                          dbMapperMananger,
-                                          mapperManager,
-                                          interceptors);
+        public DbStatementQuery createNamedQuery(String statementName, String statement) {
+            return new JdbcStatementQuery(context,
+                                          JdbcStatementContext.create(DbStatementType.QUERY, statementName, statement));
+
         }
 
         @Override
-        public DbStatement<?, CompletionStage<Optional<DbRow>>> createNamedGet(String statementName, String statement) {
-            return new JdbcStatementGet(connectionPool,
-                                        executorService,
-                                        statementName,
-                                        statement,
-                                        dbMapperMananger,
-                                        mapperManager,
-                                        interceptors);
+        public DbStatementGet createNamedGet(String statementName, String statement) {
+            return new JdbcStatementGet(context,
+                                        JdbcStatementContext.create(DbStatementType.GET, statementName, statement));
         }
 
         @Override
-        public DbStatement<?, CompletionStage<Long>> createNamedDmlStatement(String statementName, String statement) {
-            return new JdbcStatementDml(DbStatementType.DML,
-                                        connectionPool,
-                                        executorService,
-                                        statementName,
-                                        statement,
-                                        dbMapperMananger,
-                                        mapperManager,
-                                        interceptors);
+        public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
+            return new JdbcStatementDml(context,
+                                        JdbcStatementContext.create(DbStatementType.DML, statementName, statement));
         }
 
         @Override
-        public DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName, String statement) {
-            return new JdbcStatementDml(DbStatementType.INSERT,
-                                        connectionPool,
-                                        executorService,
-                                        statementName,
-                                        statement,
-                                        dbMapperMananger,
-                                        mapperManager,
-                                        interceptors);
+        public DbStatementDml createNamedInsert(String statementName, String statement) {
+            return new JdbcStatementDml(context,
+                                        JdbcStatementContext.create(DbStatementType.INSERT, statementName, statement));
         }
 
         @Override
-        public DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName, String statement) {
-            return new JdbcStatementDml(DbStatementType.UPDATE,
-                                        connectionPool,
-                                        executorService,
-                                        statementName,
-                                        statement,
-                                        dbMapperMananger,
-                                        mapperManager,
-                                        interceptors);
+        public DbStatementDml createNamedUpdate(String statementName, String statement) {
+            return new JdbcStatementDml(context,
+                                        JdbcStatementContext.create(DbStatementType.UPDATE, statementName, statement));
         }
 
         @Override
-        public DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName, String statement) {
-            return new JdbcStatementDml(DbStatementType.DELETE,
-                                        connectionPool,
-                                        executorService,
-                                        statementName,
-                                        statement,
-                                        dbMapperMananger,
-                                        mapperManager,
-                                        interceptors);
+        public DbStatementDml createNamedDelete(String statementName, String statement) {
+            return new JdbcStatementDml(context,
+                                        JdbcStatementContext.create(DbStatementType.DELETE, statementName, statement));
         }
 
         @Override
-        public DbStatement<?, DbResult> createNamedStatement(String statementName, String statement) {
-            return new JdbcStatementGeneric(connectionPool,
-                                            executorService,
-                                            statementName,
-                                            statement,
-                                            dbMapperMananger,
-                                            mapperManager,
-                                            interceptors);
+        public DbStatementGeneric createNamedStatement(String statementName, String statement) {
+            return new JdbcStatementGeneric(context,
+                                            JdbcStatementContext.create(DbStatementType.UNKNOWN, statementName, statement));
+        }
+
+        @Override
+        public void rollback() {
+            setRollbackOnly = true;
+        }
+
+        private void doRollback() {
+            context.connection()
+                    .thenApply(conn -> {
+                        try {
+                            conn.rollback();
+                            conn.close();
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to rollback a transaction, or close a connection", e);
+                        }
+
+                        return conn;
+                    });
+        }
+
+        private void doCommit() {
+            if (setRollbackOnly) {
+                doRollback();
+                return;
+            }
+            context.connection()
+                    .thenApply(conn -> {
+                        try {
+                            conn.commit();
+                            conn.close();
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to commit a transaction, or close a connection", e);
+                        }
+                        return conn;
+                    });
+        }
+
+        private void doClose() {
+            context.connection()
+                    .thenApply(conn -> {
+                        try {
+                            conn.close();
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to close a connection", e);
+                        }
+                        return conn;
+                    });
+        }
+
+        public void whenComplete(Consumer<Boolean> completionConsumer) {
+            List<CompletionStage> connectionConsumers = new LinkedList<>();
+
         }
     }
 }

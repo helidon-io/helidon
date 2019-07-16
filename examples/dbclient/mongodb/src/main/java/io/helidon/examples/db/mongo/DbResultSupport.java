@@ -31,7 +31,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.dbclient.DbResult;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRowResult;
+import io.helidon.dbclient.DbRows;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
@@ -40,7 +40,7 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 /**
- * Support to write {@link io.helidon.dbclient.DbRowResult} directly to webserver.
+ * Support to write {@link io.helidon.dbclient.DbRows} directly to webserver.
  * This result support creates an array of json objects and writes them to the response entity.
  */
 public class DbResultSupport implements Service, Handler {
@@ -64,7 +64,7 @@ public class DbResultSupport implements Service, Handler {
 
     @Override
     public void accept(ServerRequest serverRequest, ServerResponse serverResponse) {
-        serverResponse.registerWriter(DbRowResult.class, DbResultSupport::writer);
+        serverResponse.registerWriter(DbRows.class, DbResultSupport::writer);
         serverResponse.registerWriter(DbResult.class, DbResultWriter::new);
         serverRequest.next();
     }
@@ -76,7 +76,7 @@ public class DbResultSupport implements Service, Handler {
 
     private class DbResultWriter implements Flow.Publisher<DataChunk> {
         private final CompletableFuture<Long> dml = new CompletableFuture<>();
-        private final CompletableFuture<DbRowResult<DbRow>> query = new CompletableFuture<>();
+        private final CompletableFuture<DbRows<DbRow>> query = new CompletableFuture<>();
 
         private DbResultWriter(DbResult dbResult) {
             dbResult
@@ -107,11 +107,11 @@ public class DbResultSupport implements Service, Handler {
 
     // server send streaming
     // json streaming & data type
-    private static Flow.Publisher<DataChunk> writer(DbRowResult<DbRow> dbRowResult) {
+    private static Flow.Publisher<DataChunk> writer(DbRows<DbRow> dbRows) {
         return new Flow.Publisher<DataChunk>() {
             @Override
             public void subscribe(Flow.Subscriber<? super DataChunk> subscriber) {
-                dbRowResult.publisher().subscribe(new Flow.Subscriber<DbRow>() {
+                dbRows.publisher().subscribe(new Flow.Subscriber<DbRow>() {
                     private Flow.Subscription subscription;
                     private volatile boolean first = true;
 

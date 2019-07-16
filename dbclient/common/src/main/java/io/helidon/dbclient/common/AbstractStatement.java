@@ -71,7 +71,7 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
     }
 
     @Override
-    public R execute() {
+    public CompletionStage<R> execute() {
         CompletableFuture<Long> queryFuture = new CompletableFuture<>();
         CompletableFuture<Void> statementFuture = new CompletableFuture<>();
 
@@ -121,9 +121,9 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
      *                      otherwise complete same as statementFuture
      * @return result of this db statement.
      */
-    protected abstract R doExecute(CompletionStage<DbInterceptorContext> dbContext,
-                                   CompletableFuture<Void> statementFuture,
-                                   CompletableFuture<Long> queryFuture);
+    protected abstract CompletionStage<R> doExecute(CompletionStage<DbInterceptorContext> dbContext,
+                                                    CompletableFuture<Void> statementFuture,
+                                                    CompletableFuture<Long> queryFuture);
 
     /**
      * Type of this database to use in interceptor context.
@@ -150,14 +150,14 @@ public abstract class AbstractStatement<S extends DbStatement<S, R>, R> implemen
     }
 
     @Override
-    public <T> S namedParam(T parameters) {
+    public S namedParam(Object parameters) {
         initParameters(ParamType.NAMED);
         this.parameters.namedParam(parameters);
         return me();
     }
 
     @Override
-    public <T> S indexedParam(T parameters) {
+    public S indexedParam(Object parameters) {
         initParameters(ParamType.INDEXED);
         this.parameters.indexedParam(parameters);
         return me();
