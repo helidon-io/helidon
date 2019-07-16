@@ -21,17 +21,15 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbInterceptorContext;
-import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.common.AbstractStatement;
-import io.helidon.dbclient.common.InterceptorSupport;
 
 /**
  * Common JDBC statement builder.
@@ -39,34 +37,25 @@ import io.helidon.dbclient.common.InterceptorSupport;
  * @param <S> subclass of this class
  * @param <R> Statement execution result type
  */
-abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends AbstractStatement<S, R> {
+abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
 
     private static final Logger LOGGER = Logger.getLogger(JdbcStatement.class.getName());
 
-    private final String dbType;
-    private final ConnectionPool connectionPool;
     private final ExecutorService executorService;
+    private final String dbType;
+    private final CompletionStage<Connection> connection;
 
-    JdbcStatement(
-            DbStatementType dbStatementType,
-            ConnectionPool connectionPool,
-            String statementName,
-            String statement,
-            DbMapperManager dbMapperManager,
-            MapperManager mapperManager,
-            ExecutorService executorService,
-            InterceptorSupport interceptors) {
+    JdbcStatement(JdbcExecuteContext executeContext, JdbcStatementContext statementContext) {
+        super(statementContext.statementType(),
+              statementContext.statementName(),
+              statementContext.statement(),
+              executeContext.dbMapperManager(),
+              executeContext.mapperManager(),
+              executeContext.interceptors());
 
-        super(dbStatementType,
-              statementName,
-              statement,
-              dbMapperManager,
-              mapperManager,
-              interceptors);
-
-        this.dbType = connectionPool.dbType();
-        this.connectionPool = connectionPool;
-        this.executorService = executorService;
+        this.dbType = executeContext.dbType();
+        this.connection = executeContext.connection();
+        this.executorService = executeContext.executorService();
     }
 
     PreparedStatement build(Connection conn, DbInterceptorContext dbContext) {
@@ -114,8 +103,8 @@ abstract class JdbcStatement<S extends JdbcStatement<S, R>, R> extends AbstractS
         return dbType;
     }
 
-    Connection connection() {
-        return connectionPool.connection();
+    CompletionStage<Connection> connection() {
+        return connection;
     }
 
     ExecutorService executorService() {

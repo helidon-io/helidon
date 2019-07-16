@@ -13,23 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.spi;
+package io.helidon.dbclient;
 
 /**
- * Java Service loader interface that provides drivers for a database (or a set of databases).
+ * A database statement that has unknown type (query or DML).
  */
-public interface DbClientProvider {
-    /**
-     * Name of this provider. This is used to find correct provider when using configuration only approach.
-     *
-     * @return provider name (such as {@code jdbc} or {@code mongo}
-     */
-    String name();
-
-    /**
-     * The implementation should provide its implementation of the {@link DbClientProviderBuilder}.
-     *
-     * @return a new builder instance
-     */
-    DbClientProviderBuilder<?> builder();
+public interface DbStatementGeneric extends DbStatement<DbStatementGeneric, DbResult> {
 }
