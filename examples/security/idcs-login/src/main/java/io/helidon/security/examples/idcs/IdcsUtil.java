@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
@@ -41,6 +42,7 @@ public class IdcsUtil {
     static WebServer startIt(Supplier<? extends Routing> routing) throws UnknownHostException {
         WebServer server = WebServer.create(ServerConfiguration.builder()
                                                     .port(PORT)
+                                                    .tracer(TracerBuilder.create("idcs-example").buildAndRegister())
                                                     .bindAddress(InetAddress.getByName("localhost")),
                                             routing);
 

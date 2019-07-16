@@ -29,6 +29,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
@@ -39,6 +40,8 @@ import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityException;
 import io.helidon.security.Subject;
+import io.helidon.security.integration.common.RoleMapTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
@@ -143,7 +146,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
 
         // double cache
         List<Grant> serverGrants = cache.computeValue(cacheKey,
-                () -> computeGrants(idcsMtContext.tenantId(), idcsMtContext.appId(), subject))
+                                                      () -> computeGrants(idcsMtContext.tenantId(),
+                                                                          idcsMtContext.appId(),
+                                                                          subject))
                 .orElseGet(CollectionsHelper::listOf);
 
         List<Grant> grants = new LinkedList<>(serverGrants);
@@ -201,7 +206,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
-        return getAppToken(idcsTenantId).flatMap(appToken -> {
+        RoleMapTracing tracing = SecurityTracing.get().roleMapTracing("idcs");
+
+        return getAppToken(idcsTenantId, tracing).flatMap(appToken -> {
             JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
                     .add("mappingAttributeValue", subjectName)
                     .add("subjectType", subjectType)
@@ -212,8 +219,12 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
 
-            Response groupResponse = multitenantEndpoints.assertEndpoint(idcsTenantId)
-                    .request()
+            Invocation.Builder reqBuilder = multitenantEndpoints.assertEndpoint(idcsTenantId).request();
+
+            tracing.findParent()
+                    .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
+
+            Response groupResponse = reqBuilder
                     .header("Authorization", "Bearer " + appToken)
                     .post(Entity.json(requestBuilder.build()));
 
@@ -225,12 +236,13 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * Gets token from cache or from server.
      *
      * @param idcsTenantId id of tenant
+     * @param tracing Role mapping tracing instance to correctly trace outbound calls
      * @return the token to be used to authenticate this service
      */
-    protected Optional<String> getAppToken(String idcsTenantId) {
+    protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
         return tokenCache.computeIfAbsent(idcsTenantId, key -> new AppToken(multitenantEndpoints.tokenEndpoint(idcsTenantId)))
-                .getToken();
+                .getToken(tracing);
     }
 
     /**
@@ -455,9 +467,9 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
          */
         protected MtCacheKey(String idcsTenantId, String idcsAppName, String username) {
             this(new IdcsMtContext(
-                    Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory"),
-                    Objects.requireNonNull(idcsAppName, "IDCS App id is mandatory")),
-                    username);
+                         Objects.requireNonNull(idcsTenantId, "IDCS Tenant id is mandatory"),
+                         Objects.requireNonNull(idcsAppName, "IDCS App id is mandatory")),
+                 username);
         }
 
         /**

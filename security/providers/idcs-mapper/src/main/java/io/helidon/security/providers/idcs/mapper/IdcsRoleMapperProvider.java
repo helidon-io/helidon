@@ -25,6 +25,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
@@ -33,6 +34,8 @@ import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Subject;
+import io.helidon.security.integration.common.RoleMapTracing;
+import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
@@ -100,7 +103,6 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         List<? extends Grant> grants = roleCache.computeValue(username, () -> computeGrants(subject))
                 .orElseGet(LinkedList::new);
 
-
         List<Grant> result = addAdditionalGrants(subject)
                 .map(newGrants -> {
                     List<Grant> newList = new LinkedList<>(grants);
@@ -125,7 +127,6 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         getGrantsFromServer(subject)
                 .map(result::addAll);
 
-
         return (result.isEmpty() ? Optional.empty() : Optional.of(result));
     }
 
@@ -149,7 +150,9 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
         String subjectName = subject.principal().getName();
         String subjectType = (String) subject.principal().abacAttribute("sub_type").orElse(defaultIdcsSubjectType());
 
-        return appToken.getToken().flatMap(appToken -> {
+        RoleMapTracing tracing = SecurityTracing.get().roleMapTracing("idcs");
+
+        return appToken.getToken(tracing).flatMap(appToken -> {
             JsonObjectBuilder requestBuilder = JSON.createObjectBuilder()
                     .add("mappingAttributeValue", subjectName)
                     .add("subjectType", subjectType)
@@ -159,12 +162,22 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
             arrayBuilder.add("urn:ietf:params:scim:schemas:oracle:idcs:Asserter");
             requestBuilder.add("schemas", arrayBuilder);
 
-            Response groupResponse = assertEndpoint
-                    .request()
-                    .header("Authorization", "Bearer " + appToken)
-                    .post(Entity.json(requestBuilder.build()));
+            try {
+                Invocation.Builder reqBuilder = assertEndpoint.request();
+                tracing.findParent()
+                        .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
 
-            return processServerResponse(groupResponse, subjectName);
+                Response groupResponse = reqBuilder
+                        .header("Authorization", "Bearer " + appToken)
+                        .post(Entity.json(requestBuilder.build()));
+
+                return processServerResponse(groupResponse, subjectName);
+            } catch (Exception e) {
+                tracing.error(e);
+                throw e;
+            } finally {
+                tracing.finish();
+            }
         });
     }
 

@@ -39,10 +39,13 @@ public final class SecurityTracing extends CommonTracing {
     private static final String SPAN_RESPONSE = "security:response";
     private static final String SPAN_AUTHENTICATION = "security:atn";
     private static final String SPAN_AUTHORIZATION = "security:atz";
+    private static final String SPAN_ROLE_MAP_PREFIX = "security:rm:";
     private static final String SPAN_TAG_SECURITY_CONTEXT = "security.id";
     private static final String LOG_STATUS = "status";
     private static final String STATUS_PROCEED = "PROCEED";
     private static final String STATUS_DENY = "DENY";
+
+    private final ComponentTracingConfig tracedConfig;
 
     private final SpanTracingConfig atnSpanConfig;
     private final SpanTracingConfig atzSpanConfig;
@@ -64,6 +67,7 @@ public final class SecurityTracing extends CommonTracing {
               securitySpan,
               tracedConfig.span(SPAN_SECURITY));
 
+        this.tracedConfig = tracedConfig;
         this.atnSpanConfig = tracedConfig.span(SPAN_AUTHENTICATION);
         this.atzSpanConfig = tracedConfig.span(SPAN_AUTHORIZATION);
         this.outboundSpanConfig = tracedConfig.span(SPAN_OUTBOUND);
@@ -188,6 +192,26 @@ public final class SecurityTracing extends CommonTracing {
                                          atnSpanConfig);
 
         return atnTracing;
+    }
+
+    /**
+     * Create a tracing pan for a role mapper.
+     *
+     * @param id role mapper identification (such as {@code idcs})
+     * @return role mapper tracing (each invocation creates a new instance)
+     */
+    public RoleMapTracing roleMapTracing(String id) {
+        AtnTracing atn = atnTracing();
+
+        String spanName = SPAN_ROLE_MAP_PREFIX + id;
+        SpanTracingConfig rmTracingConfig = tracedConfig.span(SPAN_ROLE_MAP_PREFIX + id);
+
+        Optional<Span> atnSpan = newSpan(rmTracingConfig, spanName, atn.findParent());
+        return new RoleMapTracing(parentSpanContext(),
+                                  parentSpan(),
+                                  span(),
+                                  atnSpan,
+                                  atnSpanConfig);
     }
 
     /**
