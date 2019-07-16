@@ -92,12 +92,12 @@ public class ThreadPool extends ThreadPoolExecutor {
      * <ul>
      * <li>the pool size is below the maximum, and</li>
      * <li>there are no idle threads, and</li>
-     * <li>the number of tasks in the queue exceeds the {@code growthThreshold}, and</li>
-     * <li>the queue size is constant or increasing</li>
+     * <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
      * </ul>
      * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted tasks.
-     * @param keepAliveMinutes When the number of threads is greater than the core, this is the maximum time that excess idle
+     * @param keepAliveTime When the number of threads is greater than the core, this is the maximum time that excess idle
      * threads will wait for new tasks before terminating.
+     * @param keepAliveTimeUnits The units for {@code keepAliveTime}.
      * @param workQueueCapacity The capacity of the work queue.
      * @param threadNamePrefix The name prefix to use when a new thread is created.
      * @param useDaemonThreads {@code true} if created threads should be set as daemon.
@@ -120,7 +120,8 @@ public class ThreadPool extends ThreadPoolExecutor {
                              int maxPoolSize,
                              int growthThreshold,
                              int growthRate,
-                             long keepAliveMinutes,
+                             long keepAliveTime,
+                             TimeUnit keepAliveTimeUnits,
                              int workQueueCapacity,
                              String threadNamePrefix,
                              boolean useDaemonThreads,
@@ -139,8 +140,8 @@ public class ThreadPool extends ThreadPoolExecutor {
             throw new IllegalArgumentException("growthRate < 0");
         } else if (growthRate > MAX_GROW_RATE) {
             throw new IllegalArgumentException("growthRate > 100");
-        } else if (keepAliveMinutes < 1) {
-            throw new IllegalArgumentException("keepAliveMinutes < 1");
+        } else if (keepAliveTime < 1) {
+            throw new IllegalArgumentException("keepAliveTime < 1");
         } else if (workQueueCapacity < 1) {
             throw new IllegalArgumentException("workQueueCapacity < 1");
         } else if (threadNamePrefix == null || threadNamePrefix.isEmpty()) {
@@ -152,16 +153,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         final WorkQueue queue = createQueue(workQueueCapacity, corePoolSize, maxPoolSize, growthThreshold, growthRate);
         final Factory threadFactory = new Factory(name, threadNamePrefix, useDaemonThreads);
         return new ThreadPool(name, corePoolSize, maxPoolSize, growthThreshold, growthRate,
-                              keepAliveMinutes, threadFactory, queue, rejectionPolicy);
-    }
-
-    private static WorkQueue createQueue(int capacity, int corePoolSize, int maxPoolSize, int growthThreshold, int growthRate) {
-        if (maxPoolSize == corePoolSize || growthRate == 0) {
-            return new WorkQueue(capacity);
-        } else {
-            final Predicate<ThreadPool> growthPolicy = new RateLimitGrowth(growthThreshold, growthRate);
-            return new DynamicPoolQueue(growthPolicy, capacity, maxPoolSize);
-        }
+                              keepAliveTime, keepAliveTimeUnits, threadFactory, queue, rejectionPolicy);
     }
 
     private ThreadPool(String name,
@@ -170,10 +162,11 @@ public class ThreadPool extends ThreadPoolExecutor {
                        int growthThreshold,
                        int growthRate,
                        long keepAliveTime,
+                       TimeUnit keepAliveTimeUnit,
                        Factory threadFactory,
                        WorkQueue queue,
                        RejectionPolicy rejectionPolicy) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.MINUTES, queue, threadFactory, rejectionPolicy);
+        super(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, queue, threadFactory, rejectionPolicy);
         this.name = name;
         this.queue = queue;
         this.growthThreshold = growthThreshold;
@@ -433,16 +426,25 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
+    private static WorkQueue createQueue(int capacity, int corePoolSize, int maxPoolSize, int growthThreshold, int growthRate) {
+        if (maxPoolSize == corePoolSize || growthRate == 0) {
+            return new WorkQueue(capacity);
+        } else {
+            final Predicate<ThreadPool> growthPolicy = new RateLimitGrowth(growthThreshold, growthRate);
+            return new DynamicPoolWorkQueue(growthPolicy, capacity, maxPoolSize);
+        }
+    }
+
     private static class WorkQueue extends LinkedBlockingQueue<Runnable> {
         private final int capacity;
-        private final LongAdder totalQueueSizes;
+        private final LongAdder totalSize;
         private final AtomicInteger totalTasks;
         private final AtomicInteger peakSize;
 
         WorkQueue(int capacity) {
             super(capacity);
             this.capacity = capacity;
-            this.totalQueueSizes = new LongAdder();
+            this.totalSize = new LongAdder();
             this.totalTasks = new AtomicInteger();
             this.peakSize = new AtomicInteger();
         }
@@ -462,7 +464,7 @@ public class ThreadPool extends ThreadPoolExecutor {
                 if (queueSize > peakSize.get()) {
                     peakSize.set(queueSize);
                 }
-                totalQueueSizes.add(queueSize);
+                totalSize.add(queueSize);
                 totalTasks.incrementAndGet();
                 return true;
             } else {
@@ -485,7 +487,7 @@ public class ThreadPool extends ThreadPoolExecutor {
          * @return The size.
          */
         public float getAverageSize() {
-            final float totalSize = totalQueueSizes.sum();
+            final float totalSize = this.totalSize.sum();
             if (totalSize == 0) {
                 return 0.0f;
             } else {
@@ -503,14 +505,14 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
-    private static final class DynamicPoolQueue extends WorkQueue {
+    private static final class DynamicPoolWorkQueue extends WorkQueue {
         private final Predicate<ThreadPool> growthPolicy;
         private final int maxPoolSize;
         // We can't make this final because it is a circular dependency, but we set it during the construction of
         // the pool itself and therefore don't have to worry about concurrent access.
         private ThreadPool pool;
 
-        DynamicPoolQueue(Predicate<ThreadPool> growthPolicy, int capacity, int maxPoolSize) {
+        DynamicPoolWorkQueue(Predicate<ThreadPool> growthPolicy, int capacity, int maxPoolSize) {
             super(capacity);
             this.maxPoolSize = maxPoolSize;
             this.growthPolicy = growthPolicy;
@@ -566,13 +568,11 @@ public class ThreadPool extends ThreadPoolExecutor {
     }
 
     private static class RateLimitGrowth implements Predicate<ThreadPool> {
-        private final AtomicInteger lastQueueSize;
         private final int queueThreshold;
         private final boolean alwaysRate;
         private final float rate;
 
         RateLimitGrowth(int queueThreshold, int growthRate) {
-            this.lastQueueSize = new AtomicInteger();
             this.queueThreshold = queueThreshold;
             this.alwaysRate = growthRate == 100;
             this.rate = growthRate / 100f;
@@ -583,39 +583,29 @@ public class ThreadPool extends ThreadPoolExecutor {
             final WorkQueue queue = pool.getQueue();
             final int queueSize = queue.size();
 
-            // Is the queue above the threshold or will it be if we add another task?
+            // Is the queue above the threshold?
 
-            if (queueSize >= queueThreshold) {
+            if (queueSize > queueThreshold) {
 
-                // Yes. Is it at or above the previous size?
+                // Yes. Should we grow?
+                // Note that this random number generator is quite fast, and on average is faster than or equivalent to
+                // alternatives such as a counter (which does not provide even distribution) or System.nanoTime().
 
-                if (queueSize >= lastQueueSize.getAndSet(queueSize)) {
+                if (alwaysRate || ThreadLocalRandom.current().nextFloat() < rate) {
 
-                    // Yes. Should we grow?
-                    // Note that this random number generator is quite fast, and on average is faster than or equivalent to
-                    // alternatives such as a counter (which does not provide even distribution) or System.nanoTime().
+                    // Yep
 
-                    if (alwaysRate || ThreadLocalRandom.current().nextFloat() < rate) {
+                    Event.add(Event.Type.ADD, pool, queue);
+                    return true;
 
-                        // Yep
-
-                        Event.add(Event.Type.ADD, pool, queue);
-                        return true;
-
-                    } else {
-
-                        // No, so don't grow yet
-
-                        Event.add(Event.Type.WAIT, pool, queue);
-                        return false;
-                    }
                 } else {
 
-                    // Queue is draining, don't grow
+                    // No, so don't grow yet
 
-                    Event.add(Event.Type.DRAIN, pool, queue);
+                    Event.add(Event.Type.WAIT, pool, queue);
                     return false;
                 }
+
             } else {
 
                 // Queue is below the threshold, don't grow
@@ -645,7 +635,6 @@ public class ThreadPool extends ThreadPoolExecutor {
             IDLE,
             MAX,
             BELOW,
-            DRAIN,
             ADD,
             WAIT,
             GC
