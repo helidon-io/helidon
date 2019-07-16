@@ -15,10 +15,11 @@
  */
 
 /**
- * Microprofile access log extension.
+ * MicroProfile access log extension.
  */
 module io.helidon.microprofile.accesslog {
 
+    requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
 
     exports io.helidon.microprofile.accesslog;
