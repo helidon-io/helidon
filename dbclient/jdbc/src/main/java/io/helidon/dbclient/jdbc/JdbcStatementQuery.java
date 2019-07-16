@@ -34,109 +34,79 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.Flow;
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRowResult;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.InterceptorSupport;
+import io.helidon.dbclient.DbRows;
+import io.helidon.dbclient.DbStatementQuery;
 
 /**
  * Implementation of query.
  */
-class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<DbRow>> {
+class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
     private static final Logger LOGGER = Logger.getLogger(JdbcStatementQuery.class.getName());
 
-    JdbcStatementQuery(DbStatementType dbStatementType,
-                       ConnectionPool connectionPool,
-                       ExecutorService executorService,
-                       String statementName,
-                       String statement,
-                       DbMapperManager dbMapperMananger,
-                       MapperManager mapperManager,
-                       InterceptorSupport interceptors) {
-        super(dbStatementType,
-              connectionPool,
-              statementName,
-              statement,
-              dbMapperMananger,
-              mapperManager,
-              executorService,
-              interceptors);
+    JdbcStatementQuery(JdbcExecuteContext executeContext,
+                       JdbcStatementContext statementContext) {
+        super(executeContext, statementContext);
     }
 
     @Override
-    protected DbRowResult<DbRow> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
-                                           CompletableFuture<Void> statementFuture,
-                                           CompletableFuture<Long> queryFuture) {
-        CompletableFuture<ResultWithConn> resultSetFuture = new CompletableFuture<>();
-        resultSetFuture.thenAccept(rs -> statementFuture.complete(null))
-                .exceptionally(throwable -> {
-                    statementFuture.completeExceptionally(throwable);
-                    return null;
-                });
+    protected CompletionStage<DbRows<DbRow>> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
+                                                       CompletableFuture<Void> statementFuture,
+                                                       CompletableFuture<Long> queryFuture) {
 
-        dbContextFuture.thenAccept(dbContext -> {
-            executorService().submit(() -> {
-                Connection conn = null;
+        return dbContextFuture.thenCompose(interceptorContext -> {
+            return connection().thenApply(conn -> {
+                PreparedStatement statement = super.build(conn, interceptorContext);
                 try {
-                    conn = connection();
-                    PreparedStatement statement = super.build(conn, dbContext);
                     ResultSet rs = statement.executeQuery();
-                    // at this moment we have a DbRowResult
-                    resultSetFuture.complete(new ResultWithConn(rs, conn));
-                } catch (Exception e) {
-                    try {
-                        if (null != conn) {
-                            conn.close();
-                        }
-                    } catch (SQLException ex) {
-                        LOGGER.log(Level.WARNING, "Failed to close a connection", ex);
-                    }
-                    resultSetFuture.completeExceptionally(e);
+                    // at this moment we have a DbRows
+                    statementFuture.complete(null);
+                    return processResultSet(executorService(),
+                                            dbMapperManager(),
+                                            mapperManager(),
+                                            queryFuture,
+                                            rs);
+                } catch (SQLException e) {
+                    throw new DbClientException("Failed to execute query", e);
                 }
             });
         }).exceptionally(throwable -> {
-            resultSetFuture.completeExceptionally(throwable);
+            statementFuture.completeExceptionally(throwable);
             return null;
         });
-
-        return processResultSet(queryFuture,
-                                resultSetFuture,
-                                executorService(),
-                                dbMapperManager(),
-                                mapperManager());
     }
 
-    static DbRowResult<DbRow> processResultSet(
-            CompletableFuture<Long> queryFuture,
-            CompletableFuture<ResultWithConn> resultSetFuture,
+    static DbRows<DbRow> processResultSet(
             ExecutorService executorService,
             DbMapperManager dbMapperManager,
-            MapperManager mapperManager) {
+            MapperManager mapperManager,
+            CompletableFuture<Long> queryFuture,
+            ResultSet resultSet) {
 
-        return new DbRowResult<DbRow>() {
+        return new DbRows<DbRow>() {
             private final AtomicBoolean resultRequested = new AtomicBoolean();
 
             @Override
-            public <U> DbRowResult<U> map(Function<DbRow, U> mapper) {
+            public <U> DbRows<U> map(Function<DbRow, U> mapper) {
                 throw new UnsupportedOperationException("TODO in later release");
             }
 
             @Override
-            public <U> DbRowResult<U> map(Class<U> type) {
+            public <U> DbRows<U> map(Class<U> type) {
                 throw new UnsupportedOperationException("TODO in later release");
             }
 
             @Override
-            public <U> DbRowResult<U> map(GenericType<U> type) {
+            public <U> DbRows<U> map(GenericType<U> type) {
                 throw new UnsupportedOperationException("TODO in later release");
             }
 
@@ -154,7 +124,7 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
 
             private Flow.Publisher<DbRow> toPublisher() {
                 return new RowPublisher(executorService,
-                                        resultSetFuture,
+                                        resultSet,
                                         queryFuture,
                                         dbMapperManager,
                                         mapperManager);
@@ -193,13 +163,6 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
                     throw new IllegalStateException("Result has already been requested");
                 }
                 resultRequested.set(true);
-            }
-
-            @Override
-            public CompletionStage<Void> consume(Consumer<DbRowResult<DbRow>> consumer) {
-                consumer.accept(this);
-                return queryFuture.thenRun(() -> {
-                });
             }
         };
     }
@@ -262,19 +225,19 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
 
     private static final class RowPublisher implements Flow.Publisher<DbRow> {
         private final ExecutorService executorService;
-        private final CompletableFuture<ResultWithConn> resultSetFuture;
+        private final ResultSet rs;
         private final CompletableFuture<Long> queryFuture;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
 
         private RowPublisher(ExecutorService executorService,
-                             CompletableFuture<ResultWithConn> resultSetFuture,
+                             ResultSet rs,
                              CompletableFuture<Long> queryFuture,
                              DbMapperManager dbMapperManager,
                              MapperManager mapperManager) {
 
             this.executorService = executorService;
-            this.resultSetFuture = resultSetFuture;
+            this.rs = rs;
             this.queryFuture = queryFuture;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
@@ -285,75 +248,73 @@ class JdbcStatementQuery extends JdbcStatement<JdbcStatementQuery, DbRowResult<D
             LinkedBlockingQueue<Long> requestQueue = new LinkedBlockingQueue<>();
             AtomicBoolean cancelled = new AtomicBoolean();
 
-            resultSetFuture.thenAccept(resultWithConn -> {
-                // we have executed the statement, we can correctly subscribe
-                subscriber.onSubscribe(new Flow.Subscription() {
-                    @Override
-                    public void request(long n) {
-                        // add the requested number to the queue
-                        requestQueue.add(n);
-                    }
+            // we have executed the statement, we can correctly subscribe
+            subscriber.onSubscribe(new Flow.Subscription() {
+                @Override
+                public void request(long n) {
+                    // add the requested number to the queue
+                    requestQueue.add(n);
+                }
 
-                    @Override
-                    public void cancel() {
-                        cancelled.set(true);
-                        requestQueue.clear();
-                    }
-                });
-
-                // and now we can process the data from the database
-                executorService.submit(() -> {
-                    //now we have a subscriber, we can handle the processing of result set
-                    try (Connection conn = resultWithConn.connection) {
-                        try (ResultSet rs = resultWithConn.resultSet) {
-                            Map<Long, DbColumn> metadata = createMetadata(rs);
-                            long count = 0;
-
-                            // now we only want to process next record if it was requested
-                            while (!cancelled.get()) {
-                                Long nextElement;
-                                try {
-                                    nextElement = requestQueue.poll(10, TimeUnit.MINUTES);
-                                } catch (InterruptedException e) {
-                                    LOGGER.severe("Interrupted while polling for requests, terminating DB read");
-                                    subscriber.onError(e);
-                                    break;
-                                }
-                                if (nextElement == null) {
-                                    LOGGER.severe("No data requested for 10 minutes, terminating DB read");
-                                    subscriber.onError(new TimeoutException("No data requested in 10 minutes"));
-                                    break;
-                                }
-                                for (long i = 0; i < nextElement; i++) {
-                                    if (rs.next()) {
-                                        DbRow dbRow = createDbRow(rs, metadata, dbMapperManager, mapperManager);
-                                        subscriber.onNext(dbRow);
-                                        count++;
-                                    } else {
-                                        queryFuture.complete(count);
-                                        subscriber.onComplete();
-                                        return;
-                                    }
-                                }
-                            }
-
-                            if (cancelled.get()) {
-                                queryFuture
-                                        .completeExceptionally(new CancellationException("Processing cancelled by subscriber"));
-                            }
-                        }
-                    } catch (Exception e) {
-                        // if anything fails, just fail
-                        queryFuture.completeExceptionally(e);
-                        subscriber.onError(e);
-                    }
-                });
-            }).exceptionally(throwable -> {
-                queryFuture.completeExceptionally(throwable);
-                executorService.submit(() -> subscriber.onError(throwable));
-                return null;
+                @Override
+                public void cancel() {
+                    cancelled.set(true);
+                    requestQueue.clear();
+                }
             });
 
+            /*
+            TODO
+            TODO Connection is now closed in JdbcExecute - that is wrong - here we need connection much later
+            TODO Need to device some way to notify that we have finished our work with the connection (CountdownLatch equiv?)
+            TODO
+             */
+
+            // and now we can process the data from the database
+            executorService.submit(() -> {
+                //now we have a subscriber, we can handle the processing of result set
+
+                try (ResultSet rs = this.rs) {
+                    Map<Long, DbColumn> metadata = createMetadata(rs);
+                    long count = 0;
+
+                    // now we only want to process next record if it was requested
+                    while (!cancelled.get()) {
+                        Long nextElement;
+                        try {
+                            nextElement = requestQueue.poll(10, TimeUnit.MINUTES);
+                        } catch (InterruptedException e) {
+                            LOGGER.severe("Interrupted while polling for requests, terminating DB read");
+                            subscriber.onError(e);
+                            break;
+                        }
+                        if (nextElement == null) {
+                            LOGGER.severe("No data requested for 10 minutes, terminating DB read");
+                            subscriber.onError(new TimeoutException("No data requested in 10 minutes"));
+                            break;
+                        }
+                        for (long i = 0; i < nextElement; i++) {
+                            if (rs.next()) {
+                                DbRow dbRow = createDbRow(rs, metadata, dbMapperManager, mapperManager);
+                                subscriber.onNext(dbRow);
+                                count++;
+                            } else {
+                                queryFuture.complete(count);
+                                subscriber.onComplete();
+                                return;
+                            }
+                        }
+                    }
+
+                    if (cancelled.get()) {
+                        queryFuture
+                                .completeExceptionally(new CancellationException("Processing cancelled by subscriber"));
+                    }
+                } catch (SQLException e) {
+                    queryFuture.completeExceptionally(e);
+                    subscriber.onError(e);
+                }
+            });
         }
 
         private DbRow createDbRow(ResultSet rs,

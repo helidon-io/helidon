@@ -74,7 +74,7 @@ public final class Main {
         // Get webserver config from the "server" section of application.yaml
         ServerConfiguration serverConfig =
                 ServerConfiguration.builder(config.get("server"))
-                        .tracer(TracerBuilder.create("db-poc").buildAndRegister())
+                        .tracer(TracerBuilder.create("mongo-db").buildAndRegister())
                         .build();
 
         WebServer server = WebServer.create(serverConfig, createRouting(config));

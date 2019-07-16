@@ -15,15 +15,15 @@
  */
 package io.helidon.dbclient.mongodb;
 
-import java.util.concurrent.CompletionStage;
-
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbMapperManager;
-import io.helidon.dbclient.DbResult;
-import io.helidon.dbclient.DbStatement;
+import io.helidon.dbclient.DbStatementDml;
+import io.helidon.dbclient.DbStatementGeneric;
+import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
+import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.AbstractDbExecute;
 import io.helidon.dbclient.common.InterceptorSupport;
 
@@ -32,7 +32,7 @@ import com.mongodb.reactivestreams.client.MongoDatabase;
 /**
  * Execute implementation for MongoDB.
  */
-public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
+public class MongoDbExecute extends AbstractDbExecute implements DbTransaction {
 
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
@@ -52,7 +52,7 @@ public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
     }
 
     @Override
-    public MongoDbStatementQuery createNamedQuery(String statementName, String statement) {
+    public DbStatementQuery createNamedQuery(String statementName, String statement) {
         return new MongoDbStatementQuery(DbStatementType.QUERY,
                                          db,
                                          statementName,
@@ -63,36 +63,41 @@ public class MongoDbExecute extends AbstractDbExecute implements DbExecute {
     }
 
     @Override
-    public MongoDbStatementGet createNamedGet(String statementName, String statement) {
+    public DbStatementGet createNamedGet(String statementName, String statement) {
         return new MongoDbStatementGet(db, statementName, statement, dbMapperManager, mapperManager, interceptors);
     }
 
     @Override
-    public MongoDbStatementDml createNamedDmlStatement(String statementName, String statement) {
+    public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
         return new MongoDbStatementDml(DbStatementType.DML, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedInsert(String statementName, String statement) {
+    public DbStatementDml createNamedInsert(String statementName, String statement) {
         return new MongoDbStatementDml(DbStatementType.INSERT, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedUpdate(String statementName, String statement) {
+    public DbStatementDml createNamedUpdate(String statementName, String statement) {
         return new MongoDbStatementDml(DbStatementType.UPDATE, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
-    public DbStatement<?, CompletionStage<Long>> createNamedDelete(String statementName, String statement) {
+    public DbStatementDml createNamedDelete(String statementName, String statement) {
         return new MongoDbStatementDml(DbStatementType.DELETE, db, statementName, statement, dbMapperManager, mapperManager,
                                        interceptors);
     }
 
     @Override
-    public DbStatement<?, DbResult> createNamedStatement(String statementName, String statement) {
+    public DbStatementGeneric createNamedStatement(String statementName, String statement) {
         throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public void rollback() {
+
     }
 }

@@ -36,7 +36,8 @@ import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbRowResult;
+import io.helidon.dbclient.DbRows;
+import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.InterceptorSupport;
 import io.helidon.dbclient.common.MappingProcessor;
@@ -50,7 +51,7 @@ import org.reactivestreams.Subscription;
 /**
  * Implementation of a query.
  */
-class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRowResult<DbRow>> {
+class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, DbRows<DbRow>> implements DbStatementQuery {
     private static final Logger LOGGER = Logger.getLogger(MongoDbStatementQuery.class.getName());
 
     MongoDbStatementQuery(DbStatementType dbStatementType,
@@ -70,9 +71,9 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
     }
 
     @Override
-    protected DbRowResult<DbRow> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
-                                           CompletableFuture<Void> statementFuture,
-                                           CompletableFuture<Long> queryFuture) {
+    protected CompletionStage<DbRows<DbRow>> doExecute(CompletionStage<DbInterceptorContext> dbContextFuture,
+                                                       CompletableFuture<Void> statementFuture,
+                                                       CompletableFuture<Long> queryFuture) {
 
         dbContextFuture.exceptionally(throwable -> {
             statementFuture.completeExceptionally(throwable);
@@ -93,22 +94,22 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
         return executeQuery(mongoStmtFuture, statementFuture, queryFuture);
     }
 
-    public DbRowResult<DbRow> executeQuery(CompletionStage<MongoStatement> stmtFuture,
-                                           CompletableFuture<Void> statementFuture,
-                                           CompletableFuture<Long> queryFuture) {
+    public CompletionStage<DbRows<DbRow>> executeQuery(CompletionStage<MongoStatement> stmtFuture,
+                                                       CompletableFuture<Void> statementFuture,
+                                                       CompletableFuture<Long> queryFuture) {
 
-        CompletionStage<FindPublisher<Document>> publisherFuture = stmtFuture.thenApply(mongoStmt -> {
+        return stmtFuture.thenApply(mongoStmt -> {
             MongoCollection<Document> mc = db().getCollection(mongoStmt.getCollection());
             Document query = mongoStmt.getQuery();
             return mc.find((query != null) ? query : EMPTY);
+        }).thenApply(mongoPublisher -> {
+            return new MongoDbRows<>(mongoPublisher,
+                                     dbMapperManager(),
+                                     mapperManager(),
+                                     DbRow.class,
+                                     statementFuture,
+                                     queryFuture);
         });
-
-        return new MongoDbRowResult<>(publisherFuture,
-                                      dbMapperManager(),
-                                      mapperManager(),
-                                      DbRow.class,
-                                      statementFuture,
-                                      queryFuture);
     }
 
     private static class Row implements DbRow {
@@ -238,14 +239,14 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
     }
 
     private static final class QueryProcessor
-            implements org.reactivestreams.Subscriber<Document>, io.helidon.common.reactive.Flow.Publisher<DbRow> {
+            implements org.reactivestreams.Subscriber<Document>, Flow.Publisher<DbRow> {
 
         private final AtomicLong count = new AtomicLong();
         private final CompletableFuture<Long> queryFuture;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
         private final CompletableFuture<Void> statementFuture;
-        private io.helidon.common.reactive.Flow.Subscriber<? super DbRow> subscriber;
+        private Flow.Subscriber<? super DbRow> subscriber;
         private Subscription subscription;
 
         private QueryProcessor(DbMapperManager dbMapperManager,
@@ -293,32 +294,32 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
         }
 
         @Override
-        public void subscribe(io.helidon.common.reactive.Flow.Subscriber<? super DbRow> subscriber) {
+        public void subscribe(Flow.Subscriber<? super DbRow> subscriber) {
             this.subscriber = subscriber;
             //TODO this MUST use flow control (e.g. only request what our subscriber requested)
             this.subscription.request(Long.MAX_VALUE);
         }
     }
 
-    private static final class MongoDbRowResult<T> implements DbRowResult<T> {
+    private static final class MongoDbRows<T> implements DbRows<T> {
         private final AtomicBoolean resultRequested = new AtomicBoolean();
-        private final CompletionStage<FindPublisher<Document>> documentFindPublisherFuture;
+        private final FindPublisher<Document> documentFindPublisher;
         private final DbMapperManager dbMapperManager;
         private final MapperManager mapperManager;
         private final CompletableFuture<Long> queryFuture;
         private final GenericType<T> currentType;
         private final Function<?, T> resultMapper;
-        private final MongoDbRowResult<?> parent;
+        private final MongoDbRows<?> parent;
         private final CompletableFuture<Void> statementFuture;
 
-        private MongoDbRowResult(CompletionStage<FindPublisher<Document>> documentFindPublisherFuture,
-                                 DbMapperManager dbMapperManager,
-                                 MapperManager mapperManager,
-                                 Class<T> initialType,
-                                 CompletableFuture<Void> statementFuture,
-                                 CompletableFuture<Long> queryFuture) {
+        private MongoDbRows(FindPublisher<Document> documentFindPublisher,
+                            DbMapperManager dbMapperManager,
+                            MapperManager mapperManager,
+                            Class<T> initialType,
+                            CompletableFuture<Void> statementFuture,
+                            CompletableFuture<Long> queryFuture) {
+            this.documentFindPublisher = documentFindPublisher;
 
-            this.documentFindPublisherFuture = documentFindPublisherFuture;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
             this.statementFuture = statementFuture;
@@ -328,15 +329,15 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
             this.parent = null;
         }
 
-        private MongoDbRowResult(CompletionStage<FindPublisher<Document>> documentFindPublisherFuture,
-                                 DbMapperManager dbMapperManager,
-                                 MapperManager mapperManager,
-                                 CompletableFuture<Void> statementFuture,
-                                 CompletableFuture<Long> queryFuture,
-                                 GenericType<T> nextType,
-                                 Function<?, T> resultMapper,
-                                 MongoDbRowResult<?> parent) {
-            this.documentFindPublisherFuture = documentFindPublisherFuture;
+        private MongoDbRows(FindPublisher<Document> documentFindPublisher,
+                            DbMapperManager dbMapperManager,
+                            MapperManager mapperManager,
+                            CompletableFuture<Void> statementFuture,
+                            CompletableFuture<Long> queryFuture,
+                            GenericType<T> nextType,
+                            Function<?, T> resultMapper,
+                            MongoDbRows<?> parent) {
+            this.documentFindPublisher = documentFindPublisher;
             this.dbMapperManager = dbMapperManager;
             this.mapperManager = mapperManager;
             this.statementFuture = statementFuture;
@@ -347,24 +348,24 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
         }
 
         @Override
-        public <U> DbRowResult<U> map(Function<T, U> mapper) {
-            return new MongoDbRowResult<>(documentFindPublisherFuture,
-                                          dbMapperManager,
-                                          mapperManager,
-                                          statementFuture,
-                                          queryFuture,
-                                          null,
-                                          mapper,
-                                          this);
+        public <U> DbRows<U> map(Function<T, U> mapper) {
+            return new MongoDbRows<>(documentFindPublisher,
+                                     dbMapperManager,
+                                     mapperManager,
+                                     statementFuture,
+                                     queryFuture,
+                                     null,
+                                     mapper,
+                                     this);
         }
 
         @Override
-        public <U> DbRowResult<U> map(Class<U> type) {
+        public <U> DbRows<U> map(Class<U> type) {
             return map(GenericType.create(type));
         }
 
         @Override
-        public <U> DbRowResult<U> map(GenericType<U> type) {
+        public <U> DbRows<U> map(GenericType<U> type) {
             GenericType<T> currentType = this.currentType;
 
             Function<T, U> theMapper;
@@ -375,8 +376,8 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                                        type);
             } else if (currentType.equals(DbMapperManager.TYPE_DB_ROW)) {
                 // maybe we want the same type
-                if (type.equals(DbMapperManager.TYPE_DB_ROW)){
-                    return (DbRowResult<U>) this;
+                if (type.equals(DbMapperManager.TYPE_DB_ROW)) {
+                    return (DbRows<U>) this;
                 }
                 // try to find mapper in db mapper manager
                 theMapper = value -> {
@@ -400,25 +401,25 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
                                                        currentType,
                                                        type);
             }
-            return new MongoDbRowResult<>(documentFindPublisherFuture,
-                                          dbMapperManager,
-                                          mapperManager,
-                                          statementFuture,
-                                          queryFuture,
-                                          type,
-                                          theMapper,
-                                          this);
+            return new MongoDbRows<>(documentFindPublisher,
+                                     dbMapperManager,
+                                     mapperManager,
+                                     statementFuture,
+                                     queryFuture,
+                                     type,
+                                     theMapper,
+                                     this);
         }
 
         @Override
-        public io.helidon.common.reactive.Flow.Publisher<T> publisher() {
+        public Flow.Publisher<T> publisher() {
             checkResult();
 
             return toPublisher();
         }
 
         @SuppressWarnings("unchecked")
-        private io.helidon.common.reactive.Flow.Publisher<T> toPublisher() {
+        private Flow.Publisher<T> toPublisher() {
             // if parent is null, this is the DbRow type
             if (null == parent) {
                 return (Flow.Publisher<T>) toDbPublisher();
@@ -466,21 +467,14 @@ class MongoDbStatementQuery extends MongoDbStatement<MongoDbStatementQuery, DbRo
             return result;
         }
 
-        private io.helidon.common.reactive.Flow.Publisher<DbRow> toDbPublisher() {
+        private Flow.Publisher<DbRow> toDbPublisher() {
             QueryProcessor qp = new QueryProcessor(dbMapperManager,
                                                    mapperManager,
                                                    statementFuture,
                                                    queryFuture);
-            documentFindPublisherFuture.thenAccept(publisher -> publisher.subscribe(qp));
+            documentFindPublisher.subscribe(qp);
 
             return qp;
-        }
-
-        @Override
-        public CompletionStage<Void> consume(Consumer<DbRowResult<T>> consumer) {
-            consumer.accept(this);
-            return queryFuture.thenRun(() -> {
-            });
         }
 
         private void checkResult() {

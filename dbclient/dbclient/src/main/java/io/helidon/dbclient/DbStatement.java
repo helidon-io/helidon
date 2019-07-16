@@ -18,6 +18,7 @@ package io.helidon.dbclient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Database statement that can process parameters.
@@ -52,10 +53,9 @@ public interface DbStatement<D extends DbStatement<D, R>, R> {
      * The statement must use indexed parameters and configure them by order in the provided array.
      *
      * @param parameters ordered parameters to set on this statement
-     * @param <T>        type of the array
      * @return updated db statement
      */
-    default <T> D params(T... parameters) {
+    default D params(Object... parameters) {
         return params(Arrays.asList(parameters));
     }
 
@@ -73,20 +73,18 @@ public interface DbStatement<D extends DbStatement<D, R>, R> {
      * The statement must use named parameters and configure them from the map provided by mapper.
      *
      * @param parameters {@link Object} instance containing parameters
-     * @param <T>        type of the parameters
      * @return updated db statement
      */
-    <T> D namedParam(T parameters);
+    D namedParam(Object parameters);
 
     /**
      * Configure parameters using {@link Object} instance with registered mapper.
      * The statement must use indexed parameters and configure them by order in the array provided by mapper.
      *
      * @param parameters {@link Object} instance containing parameters
-     * @param <T>        type of the parameters
      * @return updated db statement
      */
-    <T> D indexedParam(T parameters);
+    D indexedParam(Object parameters);
 
     /**
      * Add next parameter to the list of ordered parameters (e.g. the ones that use {@code ?} in SQL).
@@ -109,7 +107,8 @@ public interface DbStatement<D extends DbStatement<D, R>, R> {
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.
      *
-     * @return The future with result of this statement.
+     * @return The future with result of this statement, as soon as the statement is executed; note that for queries
+     *  this is before the results are actually obtained from the database
      */
-    R execute();
+    CompletionStage<R> execute();
 }

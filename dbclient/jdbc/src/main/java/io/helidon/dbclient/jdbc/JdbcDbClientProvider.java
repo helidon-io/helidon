@@ -27,7 +27,6 @@ public class JdbcDbClientProvider implements DbClientProvider {
         return JDBC_DB_TYPE;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public JdbcDbClientProviderBuilder builder() {
         return new JdbcDbClientProviderBuilder();

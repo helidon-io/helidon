@@ -24,6 +24,7 @@ import javax.json.JsonReaderFactory;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbMapperManager;
+import io.helidon.dbclient.DbStatement;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.common.AbstractStatement;
 import io.helidon.dbclient.common.InterceptorSupport;
@@ -37,7 +38,7 @@ import org.bson.Document;
  * @param <S> MongoDB statement type
  * @param <R> Statement execution result type
  */
-public abstract class MongoDbStatement<S extends MongoDbStatement<S, R>, R> extends AbstractStatement<S, R> {
+public abstract class MongoDbStatement<S extends DbStatement<S, R>, R> extends AbstractStatement<S, R> {
 
     /**
      * Empty JSON object.

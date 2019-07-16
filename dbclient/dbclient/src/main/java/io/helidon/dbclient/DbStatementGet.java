@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.spi;
+package io.helidon.dbclient;
+
+import java.util.Optional;
 
 /**
- * Java Service loader interface that provides drivers for a database (or a set of databases).
+ * Database statement that queries the database and returns a single row if present, or an empty optional.
+ * In case the statement returns more than one rows, the future returned by {@link #execute()} will end in
+ * {@link java.util.concurrent.CompletionStage#exceptionally(java.util.function.Function)}.
  */
-public interface DbClientProvider {
-    /**
-     * Name of this provider. This is used to find correct provider when using configuration only approach.
-     *
-     * @return provider name (such as {@code jdbc} or {@code mongo}
-     */
-    String name();
-
-    /**
-     * The implementation should provide its implementation of the {@link DbClientProviderBuilder}.
-     *
-     * @return a new builder instance
-     */
-    DbClientProviderBuilder<?> builder();
+public interface DbStatementGet extends DbStatement<DbStatementGet, Optional<DbRow>> {
 }

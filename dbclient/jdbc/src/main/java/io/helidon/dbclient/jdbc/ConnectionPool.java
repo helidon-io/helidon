@@ -75,7 +75,8 @@ public interface ConnectionPool {
 
     /**
      * Return a connection from the pool.
-     * The call to {@link java.sql.Connection#close()} will return that connection to the pool.
+     * The call to {@link java.sql.Connection#close()} should return that connection to the pool.
+     * The connection pool should handle capacity issues and timeouts using unchecked exceptions thrown by this method.
      *
      * @return a connection read to execute statements
      */
