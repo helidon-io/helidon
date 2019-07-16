@@ -106,6 +106,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
                                               growthThreshold,
                                               growthRate,
                                               keepAliveMinutes,
+                                              TimeUnit.MINUTES,
                                               queueCapacity,
                                               threadNamePrefix,
                                               isDaemon,
@@ -238,8 +239,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * <ul>
          * <li>the pool size is below the maximum, and</li>
          * <li>there are no idle threads, and</li>
-         * <li>the number of tasks in the queue exceeds the {@code growthThreshold}, and</li>
-         * <li>the queue size is constant or increasing</li>
+         * <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
          * </ul>
          * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
          * tasks.

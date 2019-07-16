@@ -18,19 +18,28 @@ package io.helidon.common.configurable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import org.awaitility.core.ConditionTimeoutException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -39,6 +48,22 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ThreadPoolTest {
 
     private static int MAX_WAIT_SECONDS = Integer.parseInt(System.getProperty("thread.pool.test.max.wait", "10"));
+    private final List<Task> tasks = new ArrayList<>();
+    private ThreadPool pool;
+
+    @AfterEach
+    void shutdown() throws Exception {
+        if (pool != null) {
+
+            // Unblock all tasks and shutdown
+
+            tasks.forEach(Task::finish);
+            tasks.clear();
+            pool.shutdown();
+            assertThat(pool.awaitTermination(MAX_WAIT_SECONDS, SECONDS), is(true));
+            pool = null;
+        }
+    }
 
     @Test
     void testNullName() {
@@ -48,6 +73,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -63,6 +89,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -78,6 +105,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -93,6 +121,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -108,6 +137,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -123,6 +153,7 @@ class ThreadPoolTest {
                                                       -1,
                                                       20,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -138,6 +169,7 @@ class ThreadPoolTest {
                                                       10,
                                                       -1,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -153,6 +185,7 @@ class ThreadPoolTest {
                                                       10,
                                                       101,
                                                       2,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
@@ -161,18 +194,19 @@ class ThreadPoolTest {
     }
 
     @Test
-    void testKeepAliveMinutesLessThanOne() {
+    void testKeepAliveTimeLessThanOne() {
         assertIllegalArgument(() -> ThreadPool.create("test",
                                                       10,
                                                       10,
                                                       10,
                                                       20,
                                                       0,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "test-thread",
                                                       true,
                                                       new ThreadPool.RejectionPolicy()
-        ), "keepAliveMinutes < 1");
+        ), "keepAliveTime < 1");
     }
 
     @Test
@@ -183,6 +217,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       1,
+                                                      TimeUnit.MINUTES,
                                                       0,
                                                       "test-thread",
                                                       true,
@@ -198,6 +233,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       1,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       null,
                                                       true,
@@ -213,6 +249,7 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       1,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "",
                                                       true,
@@ -228,11 +265,27 @@ class ThreadPoolTest {
                                                       10,
                                                       20,
                                                       1,
+                                                      TimeUnit.MINUTES,
                                                       1000,
                                                       "helidon",
                                                       true,
                                                       null
         ), "rejectionPolicy is null");
+    }
+
+    @Test
+    void testRateFunction() {
+        for (int rate = 1; rate <= 100; rate ++) {
+            assertRandomRate(rate, 1000000);
+        }
+    }
+
+    private static void assertRandomRate(int growthRate, int sampleSize) {
+        float average = sampleRateFunction(growthRate, sampleSize, new Random(growthRate));
+        float minAcceptable = growthRate * 0.9F;
+        float maxAcceptable = growthRate * 1.1F;
+        assertThat(average, is(greaterThanOrEqualTo(minAcceptable)));
+        assertThat(average, is(lessThanOrEqualTo(maxAcceptable)));
     }
 
     @Test
@@ -242,101 +295,130 @@ class ThreadPoolTest {
         int growthThreshold = 10;
         int growthRate = 100;
         int expectedActiveThreads;
-        ThreadPool pool = newPool(coreSize, maxSize, growthThreshold, growthRate);
-        List<Task> tasks = new ArrayList<>();
+        CountDownLatch awaitRunning;
+        pool = newPool(coreSize, maxSize, growthThreshold, growthRate);
 
         // Add coreSize blocked tasks to consume all threads
 
-        addTasks(coreSize, pool, true, tasks);
+        awaitRunning = addTasks(coreSize);
         expectedActiveThreads = coreSize;
-        assertActiveThreads(pool, expectedActiveThreads);
+        waitUntilActiveThreadsIs(expectedActiveThreads, awaitRunning);
         assertThat(pool.getPoolSize(), is(coreSize));
         assertThat(pool.getQueueSize(), is(0));
 
-        // Add growthThreshold tasks to fill the queue to the threshold
+        // Add growthThreshold + 1 tasks to fill the queue to just above the threshold
+        // and make sure the pool has not grown
 
-        addTasks(growthThreshold, pool, true, tasks);
-        assertActiveThreads(pool, expectedActiveThreads);
+        addTasks(growthThreshold + 1);
         assertThat(pool.getPoolSize(), is(coreSize));
-        assertThat(pool.getQueueSize(), is(growthThreshold));
+        assertThat(pool.getQueueSize(), is(growthThreshold + 1));
 
         // Add 1 task at a time and the pool should grow by one thread each time since
         // we have a 100% rate. Repeat to grow to max size.
 
         for (int i = coreSize; i < maxSize; i++) {
-            addTasks(1, pool, true, tasks);
+            addTasks(1);
             expectedActiveThreads++;
-            assertActiveThreads(pool, expectedActiveThreads);
-            assertThat(pool.getPoolSize(), is(expectedActiveThreads));
+            waitUntilActiveThreadsIs(expectedActiveThreads);
         }
 
-        // Ensure that pool size is maxed out and that the queue is still at the threshold
+        // Ensure that pool size is at max and that the queue is still just above the threshold
 
         assertThat(pool.getPoolSize(), is(maxSize));
-        assertThat(pool.getQueueSize(), is(growthThreshold));
+        assertThat(pool.getQueueSize(), is(growthThreshold + 1));
 
-        // Unblock all tasks and shutdown
+        // Let tasks run until we empty the queue
 
-        tasks.forEach(Task::unblock);
-        assertActiveThreads(pool, 0);
-        pool.shutdown();
+        while (!tasks.isEmpty()) {
+            tasks.remove(0).finish();
+        }
+        waitUntil(() -> pool.getQueueSize() == 0);
+
+        // Wait for idle threads to be reaped until we reach coreSize again
+
+        waitUntil(() -> pool.getPoolSize() == coreSize);
+
+        // Consume the core threads
+
+        awaitRunning = addTasks(coreSize);
+        waitUntilActiveThreadsIs(coreSize, awaitRunning);
+
+        // Fill the queue again
+
+        addTasks(growthThreshold + 1);
+        assertThat(pool.getPoolSize(), is(coreSize));
+        assertThat(pool.getQueueSize(), is(growthThreshold + 1));
+
+        // Add 1 task and ensure that we grow 1 thread
+
+        addTasks(1);
+        waitUntilActiveThreadsIs(coreSize + 1);
     }
 
     @Test
-    void testRejection() throws Exception {
-        List<Task> tasks = new ArrayList<>();
+    void testRejection() {
         ThreadPool.RejectionPolicy rejectionPolicy = new ThreadPool.RejectionPolicy();
-        ThreadPool pool = ThreadPool.create("test",
-                                            1,
-                                            1,
-                                            10,
-                                            20,
-                                            1,
-                                            1,
-                                            "reject",
-                                            true,
-                                            rejectionPolicy);
+        pool = ThreadPool.create("test",
+                                 1,
+                                 1,
+                                 10,
+                                 20,
+                                 1,
+                                 TimeUnit.MINUTES,
+                                 1,
+                                 "reject",
+                                 true,
+                                 rejectionPolicy);
 
         // Consume the one thread in the pool and fill the queue
 
-        addTasks(2, pool, true, tasks);
+        addTasks(2);
 
         // Ensure that another task is rejected with the expected exception
 
         try {
             assertThat(rejectionPolicy.getRejectionCount(), is(0));
-            pool.submit(new Task(true));
+            pool.submit(new Task());
             fail("should have failed");
         } catch (RejectedExecutionException e) {
             assertThat(rejectionPolicy.getRejectionCount(), is(1));
         }
-
-        // Unblock all tasks and shutdown
-
-        tasks.forEach(Task::unblock);
-        assertActiveThreads(pool, 0);
-        pool.shutdown();
     }
 
-    private static void assertActiveThreads(ThreadPool pool, int expectedActive) throws Exception {
-        final long startTime = System.currentTimeMillis();
-        final long endTime = startTime + (MAX_WAIT_SECONDS * 1000L);
-        do {
-            if (pool.getActiveThreads() == expectedActive) {
-                return;
-            }
-            Thread.sleep(200L);
-        } while (System.currentTimeMillis() <= endTime);
-        fail("expected " + expectedActive + " active threads, but only " + pool.getActiveThreads() + " reached in "
-             + MAX_WAIT_SECONDS + " seconds");
-    }
-
-    private static void addTasks(int count, ThreadPool pool, boolean blocked, List<Task> tasks) {
+    private CountDownLatch addTasks(int count) {
+        final CountDownLatch awaitRunning = new CountDownLatch(count);
         IntStream.range(0, count).forEach(n -> {
-            Task task = new Task(blocked);
+            Task task = new Task(awaitRunning);
             pool.execute(task);
             tasks.add(task);
         });
+        return awaitRunning;
+    }
+
+    private void waitUntil(Callable<Boolean> condition) {
+        await().atMost(MAX_WAIT_SECONDS, SECONDS).until(condition);
+    }
+
+    private void waitUntil(Callable<Boolean> condition, Supplier<String> failureMessage) {
+        try {
+            waitUntil(condition);
+        } catch (ConditionTimeoutException e) {
+            fail(failureMessage);
+        }
+    }
+
+    private void waitUntilActiveThreadsIs(int expectedActive) {
+        waitUntil(() -> pool.getPoolSize() == expectedActive,
+                  () -> "expected " + expectedActive + " active threads, but only " + pool.getActiveThreads()
+                        + " after " + MAX_WAIT_SECONDS + " seconds");
+    }
+
+    private void waitUntilActiveThreadsIs(int expectedActive, CountDownLatch awaitRunning) throws Exception {
+        awaitRunning.await(MAX_WAIT_SECONDS, SECONDS);
+        if (pool.getActiveThreads() != expectedActive) {
+            fail("expected " + expectedActive + " active threads, but only " + pool.getActiveThreads() + " after "
+                 + MAX_WAIT_SECONDS + " seconds");
+        }
     }
 
     private static ThreadPool newPool(int coreSize, int maxSize, int growthThreshold, int growthRate) {
@@ -346,35 +428,13 @@ class ThreadPoolTest {
                                  growthThreshold,
                                  growthRate,
                                  1,
+                                 SECONDS,
                                  100,
                                  "helidon",
                                  true,
                                  new ThreadPool.RejectionPolicy()
         );
     }
-
-
-    static class Task implements Runnable {
-        private final CountDownLatch latch;
-
-        Task(final boolean block) {
-            this.latch = new CountDownLatch(block ? 1 : 0);
-        }
-
-        void unblock() {
-            latch.countDown();
-        }
-
-        @Override
-        public void run() {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
 
     static void assertIllegalArgument(Executable executable, String expectedFailureMessage) {
         try {
@@ -387,26 +447,62 @@ class ThreadPoolTest {
         }
     }
 
-    private static void main() {
-        final int sampleSize = 10000000;
-        for (int rate = 2; rate < 100; rate += 5) {
-            collect("random", rate, sampleSize, new Random(rate));
-            collect("counter", rate, sampleSize, new Counter(rate));
-            collect("random1", rate, sampleSize, RANDOM_INT);
-            collect("nanoTime", rate, sampleSize, NANO_TIME);
+    static class Task implements Runnable {
+        private final CountDownLatch running;
+        private final CountDownLatch finish;
+
+        Task() {
+            this(new CountDownLatch(0));
+        }
+
+        Task(final CountDownLatch running) {
+            this.running = running;
+            this.finish = new CountDownLatch(1);
+        }
+
+        void finish() {
+            finish.countDown();
+        }
+
+        @Override
+        public void run() {
+            try {
+                running.countDown();
+                finish.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    private static void collect(String algorithm, int growthRate, int sampleSize, Function<Integer, Boolean> function) {
-        final long startTime = System.nanoTime();
+    // Test different rate functions.
+    public static void main() {
+        final int sampleSize = 10000000;
+        for (int rate = 2; rate < 100; rate += 5) {
+            sampleRateFunction("random", rate, sampleSize, new Random(rate));
+            sampleRateFunction("counter", rate, sampleSize, new Counter(rate));
+            sampleRateFunction("random1", rate, sampleSize, RANDOM_INT);
+            sampleRateFunction("nanoTime", rate, sampleSize, NANO_TIME);
+        }
+    }
+
+    private static float sampleRateFunction(int growthRate, int sampleSize, Function<Integer, Boolean> function) {
         int growthCount = 0;
         for (int i = 0; i < sampleSize; i++) {
             if (function.apply(growthRate)) {
                 growthCount++;
             }
         }
+        return ((float) growthCount / (float) sampleSize) * 100;
+    }
+
+    private static void sampleRateFunction(String algorithm,
+                                           int growthRate,
+                                           int sampleSize,
+                                           Function<Integer, Boolean> function) {
+        final long startTime = System.nanoTime();
+        final float growthPercent = sampleRateFunction(growthRate, sampleSize, function);
         final long elapsedTime = System.nanoTime() - startTime;
-        final float growthPercent = ((float) growthCount / (float) sampleSize) * 100;
         System.out.println(String.format("%8s: requested %d, actual %.2f in %d ns", algorithm, growthRate, growthPercent,
                                          elapsedTime));
     }

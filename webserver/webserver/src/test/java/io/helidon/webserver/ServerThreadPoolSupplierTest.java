@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 
 import org.junit.jupiter.api.Test;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -66,28 +67,29 @@ class ServerThreadPoolSupplierTest {
             assertThat(e.getLocalizedMessage(), containsString("Service Unavailable"));
         }
 
-        tasks.forEach(Task::unblock);
+        tasks.forEach(Task::finish);
         pool.shutdown();
+        assertThat(pool.awaitTermination(10, SECONDS), is(true));
     }
 
     static class Task implements Runnable {
         private final CountDownLatch running;
-        private final CountDownLatch complete;
+        private final CountDownLatch finish;
 
         Task() {
             this.running = new CountDownLatch(1);
-            this.complete = new CountDownLatch(1);
+            this.finish = new CountDownLatch(1);
         }
 
-        void unblock() {
-            complete.countDown();
+        void finish() {
+            finish.countDown();
         }
 
         @Override
         public void run() {
             try {
                 running.countDown();
-                complete.await();
+                finish.await();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
