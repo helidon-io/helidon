@@ -18,6 +18,7 @@
  * MicroProfile access log extension.
  */
 module io.helidon.microprofile.accesslog {
+    requires java.annotation;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
