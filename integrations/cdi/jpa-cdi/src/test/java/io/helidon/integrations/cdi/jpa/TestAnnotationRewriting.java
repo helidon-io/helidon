@@ -15,8 +15,13 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
+import java.lang.annotation.Annotation;
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
@@ -24,6 +29,8 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.TransactionRequiredException;
+import javax.transaction.Transactional;
 
 import io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
 import io.helidon.integrations.jta.cdi.NarayanaExtension;
@@ -37,18 +44,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@ApplicationScoped
+@Dependent
 @DataSourceDefinition(
     name = "test",
     className = "org.h2.jdbcx.JdbcDataSource",
-    url = "jdbc:h2:mem:test",
+    url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
     serverName = "",
     properties = {
         "user=sa"
     }
 )
-final class TestAnnotationRewriting {
+class TestAnnotationRewriting {
 
     @PersistenceContext(unitName = "fred")
     private EntityManager em;
@@ -76,8 +84,8 @@ final class TestAnnotationRewriting {
     }
 
     @PersistenceContext(unitName = "fred")
-    private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event,
-                           final EntityManager fred) {
+    private void testAnnotationRewriting(@Observes @Initialized(ApplicationScoped.class) final Object event,
+                                         final EntityManager fred) {
         assertNotNull(event);
         assertNotNull(fred);
         assertNotNull(this.em);
@@ -87,7 +95,49 @@ final class TestAnnotationRewriting {
 
     @Test
     void testAnnotationRewriting() {
+        
+    }
 
+    @Test
+    void testNonTransactionalEntityManager() {
+        final Set<Annotation> qualifiers = new HashSet<>();
+        qualifiers.add(ContainerManaged.Literal.INSTANCE);
+        qualifiers.add(JPATransactionScoped.Literal.INSTANCE);
+        final EntityManager entityManager = this.cdiContainer.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()])).get();
+        assertTrue(entityManager instanceof DelegatingEntityManager);
+        assertTrue(entityManager.isOpen());
+        assertFalse(entityManager.isJoinedToTransaction());
+        try {
+            entityManager.persist(new Object());
+            fail("A TransactionRequiredException should have been thrown");
+        } catch (final TransactionRequiredException expected) {
+
+        }
+        try {
+            entityManager.close();
+            fail("Closed EntityManager; should not have been able to");
+        } catch (final IllegalStateException expected) {
+
+        }
+    }
+
+    @Test
+    void testTransactionalEntityManager() {
+        final TestAnnotationRewriting testInstance = this.cdiContainer.select(TestAnnotationRewriting.class).get();
+        assertNotNull(testInstance);
+        testInstance.testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod();
+    }
+    
+    @Transactional
+    void testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod() {
+        assertNotNull(this.em);
+        assertTrue(this.em.isJoinedToTransaction());
+        try {
+            this.em.close();
+            fail("Closed EntityManager; should not have been able to");
+        } catch (final IllegalStateException expected) {
+
+        }
     }
     
 }
