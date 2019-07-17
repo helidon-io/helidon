@@ -25,7 +25,7 @@ module io.helidon.security.integration.grpc {
     requires transitive io.helidon.grpc.core;
     requires static io.helidon.grpc.server;
     requires transitive io.helidon.security;
-    requires io.helidon.webserver;
-
+    requires transitive io.helidon.security.integration.common;
     requires java.logging;
+    requires io.helidon.webserver;
 }

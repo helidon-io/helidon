@@ -20,9 +20,9 @@
 module io.helidon.grpc.core {
     exports io.helidon.grpc.core;
 
-    requires io.helidon.config;
-    requires io.helidon.config.objectmapping;
-    requires io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.config.objectmapping;
+    requires transitive io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.common.http;
 
