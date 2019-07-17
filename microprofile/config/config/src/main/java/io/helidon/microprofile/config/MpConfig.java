@@ -73,12 +73,13 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
         this.mpConfigSources = mpConfigSources;
 
         this.propertyNames =
-                Stream.concat(mpConfigSources.stream()
-                                      .flatMap(cs -> cs.getPropertyNames().stream()),
-                              config.traverse(Config::isLeaf)
-                                      .map(Config::key)
-                                      .map(Config.Key::toString))
-                        .collect(Collectors.toSet());
+            Stream.concat(mpConfigSources.stream()
+                              .flatMap(cs -> cs.getPropertyNames().stream()),
+                          config.traverse()
+                              .filter(Config::isLeaf)
+                              .map(Config::key)
+                              .map(Config.Key::toString))
+                .collect(Collectors.toSet());
 
         this.converters = converters;
         this.helidonConverter = new AtomicReference<>();
