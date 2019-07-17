@@ -45,5 +45,6 @@
         <module>tracing</module>
         <module>openapi</module>
         <module>rest-client</module>
+        <module>access-log</module>
     </modules>
 </project>
