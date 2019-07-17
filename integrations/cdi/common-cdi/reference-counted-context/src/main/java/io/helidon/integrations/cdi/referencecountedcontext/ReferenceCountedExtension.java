@@ -16,16 +16,13 @@
 package io.helidon.integrations.cdi.referencecountedcontext;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanAttributes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
@@ -54,7 +51,7 @@ public class ReferenceCountedExtension implements Extension {
      */
 
 
-    private final Set<Type> referenceCountedBeanTypes;
+    private final Set<Bean<?>> referenceCountedBeans;
 
 
     /*
@@ -67,7 +64,7 @@ public class ReferenceCountedExtension implements Extension {
      */
     public ReferenceCountedExtension() {
         super();
-        this.referenceCountedBeanTypes = new HashSet<>();
+        this.referenceCountedBeans = new HashSet<>();
     }
 
 
@@ -76,6 +73,7 @@ public class ReferenceCountedExtension implements Extension {
      */
 
 
+    // Of note: this will not be fired for synthetic beans.
     private <T> void ensureManagedBeanOriginatedDisposalsDecrementReferenceCounts(@Observes final ProcessInjectionTarget<T> event,
                                                                                   final BeanManager beanManager) {
         final InjectionTarget<T> delegate = event.getInjectionTarget();
@@ -84,12 +82,13 @@ public class ReferenceCountedExtension implements Extension {
     }
 
     private <T> void trackReferenceCountedTypes(@Observes final ProcessBean<T> event) {
-        final BeanAttributes<?> bean = event.getBean();
+        final Bean<?> bean = event.getBean();
         if (ReferenceCounted.class.isAssignableFrom(bean.getScope())) {
-            this.referenceCountedBeanTypes.addAll(bean.getTypes());
+            this.referenceCountedBeans.add(bean);
         }
     }
 
+    // Of note: this will not be fired for synthetic beans.
     private <T, X> void ensureProducerOriginatedDisposalDecrementReferenceCounts(@Observes final ProcessProducer<T, X> event,
                                                                                  final BeanManager beanManager) {
         event.setProducer(this.createReferenceCountingProducer(event.getProducer(), beanManager));
@@ -112,30 +111,38 @@ public class ReferenceCountedExtension implements Extension {
                 private volatile Set<InjectionPoint> referenceCountedInjectionPoints;
 
                 @Override
-                public T produce(final CreationalContext<T> cc) {
+                public void dispose(final T instance) {
                     Set<InjectionPoint> referenceCountedInjectionPoints = this.referenceCountedInjectionPoints;
                     if (referenceCountedInjectionPoints == null) {
-                        final Set<InjectionPoint> delegateInjectionPoints = this.getInjectionPoints();
-                        if (delegateInjectionPoints.isEmpty()) {
+                        final Set<? extends InjectionPoint> injectionPoints = this.getInjectionPoints();
+                        if (injectionPoints.isEmpty()) {
                             referenceCountedInjectionPoints = Collections.emptySet();
                         } else {
                             referenceCountedInjectionPoints = new HashSet<>();
-                            for (final InjectionPoint delegateInjectionPoint : delegateInjectionPoints) {
-                                if (referenceCountedBeanTypes.contains(delegateInjectionPoint.getType())) {
-                                    referenceCountedInjectionPoints.add(delegateInjectionPoint);
+                            for (final InjectionPoint injectionPoint : injectionPoints) {
+                                final Set<? extends Annotation> qualifiers = injectionPoint.getQualifiers();
+                                final Set<Bean<?>> beans;
+                                if (qualifiers == null || qualifiers.isEmpty()) {
+                                    beans = beanManager.getBeans(injectionPoint.getType());
+                                } else {
+                                    beans = beanManager.getBeans(injectionPoint.getType(),
+                                                                 qualifiers.toArray(new Annotation[qualifiers.size()]));
+                                }
+                                assert beans != null;
+                                assert beans.size() == 1;
+                                final Bean<?> bean = beanManager.resolve(beans);
+                                assert bean != null;
+                                if (referenceCountedBeans.contains(bean)) {
+                                    assert ReferenceCounted.class.equals(bean.getScope())
+                                        : "Unexpected scope: " + bean.getScope() + "; bean: " + bean;
+                                    referenceCountedInjectionPoints.add(injectionPoint);
                                 }
                             }
                         }
                         this.referenceCountedInjectionPoints = referenceCountedInjectionPoints;
                     }
-                    return super.produce(cc);
-                }
-
-                @Override
-                public void dispose(final T instance) {
-                    final Set<InjectionPoint> referenceCountedInjectionPoints = this.referenceCountedInjectionPoints;
                     for (final InjectionPoint injectionPoint : referenceCountedInjectionPoints) {
-                        final Set<Annotation> qualifiers = injectionPoint.getQualifiers();
+                        final Set<? extends Annotation> qualifiers = injectionPoint.getQualifiers();
                         final Set<Bean<?>> beans;
                         if (qualifiers == null || qualifiers.isEmpty()) {
                             beans = beanManager.getBeans(injectionPoint.getType());
@@ -143,18 +150,13 @@ public class ReferenceCountedExtension implements Extension {
                             beans = beanManager.getBeans(injectionPoint.getType(),
                                                          qualifiers.toArray(new Annotation[qualifiers.size()]));
                         }
-                        // Long before this is ever called the
-                        // container will have validated this
-                        // injection point, so we know that there will
-                        // be exactly one bean, and its scope will be
-                        // ReferenceCounted.
                         assert beans != null;
                         assert beans.size() == 1;
                         final Bean<?> bean = beanManager.resolve(beans);
                         assert bean != null;
-                        assert ReferenceCounted.class.equals(bean.getScope());
-                        final ReferenceCountedContext context =
-                            (ReferenceCountedContext) beanManager.getContext(ReferenceCounted.class);
+                        assert ReferenceCounted.class.equals(bean.getScope())
+                            : "Unexpected scope: " + bean.getScope() + "; bean: " + bean;
+                        final ReferenceCountedContext context = ReferenceCountedContext.getInstanceFrom(beanManager);
                         assert context != null;
                         context.decrementReferenceCount(bean);
                     }

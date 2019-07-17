@@ -17,6 +17,7 @@ package io.helidon.integrations.cdi.jpa;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.ContextNotActiveException;
+import javax.enterprise.context.spi.Context;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -39,19 +40,35 @@ final class JTATransactionSupport implements TransactionSupport {
     }
 
     @Override
+    public Context getContext() {
+        final Context returnValue;
+        if (this.beanManagerProvider == null) {
+            returnValue = null;
+        } else {
+            final BeanManager beanManager = this.beanManagerProvider.get();
+            if (beanManager == null) {
+                returnValue = null;
+            } else {
+                Context temp = null;
+                try {
+                    temp = beanManager.getContext(TransactionScoped.class);
+                } catch (final ContextNotActiveException contextNotActiveException) {
+                    temp = null;
+                } finally {
+                    returnValue = temp;
+                }
+            }
+        }
+        return returnValue;
+    }
+
+    @Override
     public boolean inTransaction() {
         final boolean returnValue;
         if (this.beanManagerProvider == null) {
             returnValue = false;
         } else {
-            boolean temp = true;
-            try {
-                this.beanManagerProvider.get().getContext(TransactionScoped.class);
-            } catch (final ContextNotActiveException contextNotActiveException) {
-                temp = false;
-            } finally {
-                returnValue = temp;
-            }
+            returnValue = this.getContext() != null;
         }
         return returnValue;
     }

@@ -15,9 +15,15 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
+import javax.enterprise.context.spi.Context;
+
 interface TransactionSupport {
 
   boolean isActive();
+
+  default Context getContext() {
+    return null;
+  }
 
   boolean inTransaction();
 

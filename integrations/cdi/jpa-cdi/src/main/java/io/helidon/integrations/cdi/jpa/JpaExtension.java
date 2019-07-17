@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
+import javax.enterprise.context.spi.Context;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
@@ -210,6 +211,8 @@ public class JpaExtension implements Extension {
      */
     private final Set<Set<Annotation>> allQualifiers;
 
+    private final Set<Set<Annotation>> cdiTransactionScopedEntityManagerQualifiers;
+
     /**
      * Set to {@code true} if a System property named {@code
      * jpaAnnotationRewritingEnabled} is {@link
@@ -238,6 +241,7 @@ public class JpaExtension implements Extension {
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
         this.allQualifiers = new HashSet<>();
+        this.cdiTransactionScopedEntityManagerQualifiers = new HashSet<>();
         // We start by presuming that JTA transactions can be
         // supported.  See the
         // #divineTransactionSupport(ProcessAnnotatedType) method
@@ -897,6 +901,7 @@ public class JpaExtension implements Extension {
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
         this.implicitPersistenceUnits.clear();
         this.allQualifiers.clear();
+        this.cdiTransactionScopedEntityManagerQualifiers.clear();
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1034,17 +1039,32 @@ public class JpaExtension implements Extension {
 
     private void addContainerManagedEntityManagerBeans(final AfterBeanDiscovery event, final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addContainerManagedEntityManagerFactory";
+        final String mn = "addContainerManagedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
 
         if (this.transactionsSupported) {
+            final Set<Named> persistenceUnitNameds = new HashSet<>();
             for (final Set<Annotation> qualifiers : this.allQualifiers) {
-                addContainerManagedEntityManagerFactory(event.addBean(), qualifiers);
-                addCDITransactionScopedEntityManager(event.addBean(), qualifiers);
-                addJPATransactionScopedEntityManager(event.addBean(), qualifiers);
-                addExtendedEntityManager(event.addBean(), qualifiers);
+                assert qualifiers != null;
+                Named persistenceUnitNamed = null;
+                for (final Annotation qualifier : qualifiers) {
+                    if (qualifier instanceof Named) {
+                        persistenceUnitNamed = (Named) qualifier;
+                        break;
+                    }
+                }
+                if (persistenceUnitNamed != null && !persistenceUnitNameds.contains(persistenceUnitNamed)) {
+                    persistenceUnitNameds.add(persistenceUnitNamed);
+                    addContainerManagedEntityManagerFactory(event.addBean(), qualifiers);
+                }
+                addCDITransactionScopedEntityManager(event, qualifiers);
+                if (qualifiers.contains(Extended.Literal.INSTANCE)) {
+                    addExtendedEntityManager(event.addBean(), qualifiers, beanManager);
+                } else {
+                    addJPATransactionScopedEntityManager(event.addBean(), qualifiers);
+                }
             }
         }
 
@@ -1065,6 +1085,7 @@ public class JpaExtension implements Extension {
         Objects.requireNonNull(suppliedQualifiers);
         if (this.transactionsSupported) {
             final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+            qualifiers.removeAll(JPA_CDI_QUALIFIERS);
             qualifiers.add(ContainerManaged.Literal.INSTANCE);
             beanConfigurator.addType(EntityManagerFactory.class)
                 .scope(ApplicationScoped.class)
@@ -1135,47 +1156,55 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    private void addCDITransactionScopedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
+    private void addCDITransactionScopedEntityManager(final AfterBeanDiscovery event,
                                                       final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "addCDITransactionScopedEntityManager";
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers});
+            LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
 
-        Objects.requireNonNull(beanConfigurator);
+        Objects.requireNonNull(event);
         Objects.requireNonNull(suppliedQualifiers);
 
         if (this.transactionsSupported) {
             final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
-            qualifiers.add(ContainerManaged.Literal.INSTANCE);
-            qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
             qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
-            final Class<? extends Annotation> scope;
-            Class<? extends Annotation> temp = null;
-            try {
-                @SuppressWarnings("unchecked")
-                final Class<? extends Annotation> transactionScopedAnnotationClass =
-                    (Class<? extends Annotation>) Class.forName("javax.transaction.TransactionScoped",
-                                                                true,
-                                                                Thread.currentThread().getContextClassLoader());
-                temp = transactionScopedAnnotationClass;
-            } catch (final ClassNotFoundException classNotFoundException) {
-                // This will not happen if this.transactionsSupported
-                // is true, or else CDI's exclusion mechanisms are
-                // broken.  If somehow it does we throw a severe
-                // error.
-                throw new InternalError(classNotFoundException.getMessage(),
-                                        classNotFoundException);
-            } finally {
-                scope = temp;
+            qualifiers.add(ContainerManaged.Literal.INSTANCE);
+            qualifiers.remove(Extended.Literal.INSTANCE);
+            qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+            if (this.cdiTransactionScopedEntityManagerQualifiers.add(qualifiers)) {
+                final Class<? extends Annotation> scope;
+                Class<? extends Annotation> temp = null;
+                try {
+                    @SuppressWarnings("unchecked")
+                        final Class<? extends Annotation> transactionScopedAnnotationClass =
+                        (Class<? extends Annotation>) Class.forName("javax.transaction.TransactionScoped",
+                                                                    true,
+                                                                    Thread.currentThread().getContextClassLoader());
+                    temp = transactionScopedAnnotationClass;
+                } catch (final ClassNotFoundException classNotFoundException) {
+                    // This will not happen if this.transactionsSupported
+                    // is true, or else CDI's exclusion mechanisms are
+                    // broken.  If somehow it does we throw a severe
+                    // error.
+                    throw new InternalError(classNotFoundException.getMessage(),
+                                            classNotFoundException);
+                } finally {
+                    scope = temp;
+                }
+                assert scope != null;
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.logp(Level.FINE, cn, mn, "Adding a CDI-TransactionScoped EntityManager with the following qualifiers: "
+                                + qualifiers);
+                }
+                event.addBean()
+                    .addType(EntityManager.class)
+                    .scope(scope)
+                    .addQualifiers(qualifiers)
+                    .produceWith(instance -> produceCDITransactionScopedEntityManager(instance, suppliedQualifiers))
+                    .disposeWith((em, instance) -> em.close());
             }
-            assert scope != null;
-            beanConfigurator.addType(EntityManager.class)
-                .scope(scope)
-                .addQualifiers(qualifiers)
-                .produceWith(instance -> produceEntityManager(instance, suppliedQualifiers))
-                .disposeWith((em, instance) -> em.close());
         }
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1215,8 +1244,8 @@ public class JpaExtension implements Extension {
     /**
      * @see #addJPATransactionScopedEntityManager(BeanConfigurator, Set)
      */
-    private static EntityManager produceJPATransactionScopedEntityManager(final Instance<Object> instance,
-                                                                          final Set<Annotation> suppliedQualifiers) {
+    private EntityManager produceJPATransactionScopedEntityManager(final Instance<Object> instance,
+                                                                   final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "produceJPATransactionScopedEntityManager";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1225,6 +1254,9 @@ public class JpaExtension implements Extension {
 
         Objects.requireNonNull(instance);
         Objects.requireNonNull(suppliedQualifiers);
+        if (!this.transactionsSupported) {
+            throw new IllegalStateException();
+        }
 
         final TransactionSupport transactionSupport = instance.select(TransactionSupport.class).get();
         assert transactionSupport != null;
@@ -1304,15 +1336,17 @@ public class JpaExtension implements Extension {
     }
 
     private void addExtendedEntityManager(final BeanConfigurator<EntityManager> beanConfigurator,
-                                          final Set<Annotation> suppliedQualifiers) {
+                                          final Set<Annotation> suppliedQualifiers,
+                                          final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
         final String mn = "addExtendedEntityManager";
         if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers});
+            LOGGER.entering(cn, mn, new Object[] {beanConfigurator, suppliedQualifiers, beanManager});
         }
 
         Objects.requireNonNull(beanConfigurator);
         Objects.requireNonNull(suppliedQualifiers);
+        Objects.requireNonNull(beanManager);
 
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
         qualifiers.add(Extended.Literal.INSTANCE);
@@ -1323,7 +1357,7 @@ public class JpaExtension implements Extension {
             beanConfigurator.addType(EntityManager.class)
                 .scope(ReferenceCounted.class)
                 .qualifiers(qualifiers)
-                .produceWith(instance -> produceEntityManager(instance, suppliedQualifiers));
+                .produceWith(instance -> produceExtendedEntityManager(instance, suppliedQualifiers, beanManager));
                 // deliberately no disposeWith()
         }
 
@@ -1712,27 +1746,10 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    /**
-     * Returns an {@link EntityManager} for use either as an
-     * <em>extended</em> {@link EntityManager} or as a
-     * JTA-transaction-scoped delegate {@link EntityManager} to be
-     * used by a {@link DelegatingEntityManager} as created by the
-     * {@link #produceJPATransactionScopedEntityManager(Instance,
-     * Set)} method.
-     *
-     * <p>This method never returns {@code null}.</p>
-     *
-     * @param instance an {@link Instance} of {@link Object}s; must
-     * not be {@code null}
-     *
-     * @param suppliedQualifiers a {@link Set} of qualifier {@link
-     * Annotation} instances; must not be {@code null}; not mutated by
-     * this method
-     */
-    private EntityManager produceEntityManager(final Instance<Object> instance,
-                                               final Set<Annotation> suppliedQualifiers) {
+    private EntityManager produceCDITransactionScopedEntityManager(final Instance<Object> instance,
+                                                                   final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "produceEntityManager";
+        final String mn = "produceCDITransactionScopedEntityManager";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {instance, suppliedQualifiers});
         }
@@ -1755,6 +1772,91 @@ public class JpaExtension implements Extension {
         @SuppressWarnings("rawtypes")
         final Map properties = new HashMap<String, Object>();
         final EntityManager returnValue = emf.createEntityManager(syncType, properties);
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn, returnValue);
+        }
+        return returnValue;
+    }
+
+    // Revisit: scope is reference-counted.  Make sure we {handwave}
+    // take that into account.
+    private EntityManager produceExtendedEntityManager(final Instance<Object> instance,
+                                                       final Set<Annotation> suppliedQualifiers,
+                                                       final BeanManager beanManager) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "produceExtendedEntityManager";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {instance, suppliedQualifiers, beanManager});
+        }
+
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(suppliedQualifiers);
+        Objects.requireNonNull(beanManager);
+        if (!this.transactionsSupported) {
+            throw new IllegalStateException();
+        }
+
+        final TransactionSupport transactionSupport = instance.select(TransactionSupport.class).get();
+        assert transactionSupport != null;
+        assert transactionSupport.isActive();
+
+        final EntityManagerFactory emf = getContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
+        assert emf != null;
+
+        final SynchronizationType syncType;
+        if (suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
+            syncType = SynchronizationType.UNSYNCHRONIZED;
+        } else {
+            syncType = null;
+        }
+
+        // Revisit: need to deal with properties here
+        @SuppressWarnings("rawtypes")
+        final Map properties = new HashMap<String, Object>();
+        final EntityManager delegate = emf.createEntityManager(syncType, properties);
+
+        final EntityManager returnValue = new DelegatingEntityManager() {
+
+                @Override
+                protected EntityManager acquireDelegate() {
+                    final EntityManager returnValue;
+
+                    final Context context = transactionSupport.getContext();
+                    if (context != null && context.isActive()) {
+                        final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
+                        qualifiers.remove(Extended.Literal.INSTANCE);
+                        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+                        qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+                        qualifiers.add(ContainerManaged.Literal.INSTANCE);
+                        final Set<Bean<?>> cdiTransactionScopedEntityManagerBeans =
+                            beanManager.getBeans(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
+                        final Bean<?> cdiTransactionScopedEntityManagerBean =
+                            beanManager.resolve(cdiTransactionScopedEntityManagerBeans);
+                        // This is a little dicey.
+                        if (context.get(cdiTransactionScopedEntityManagerBean) != null) {
+                            // JPA section 7.6.3.1; see
+                            // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/ExtendedEntityManager.java#L149
+                            // as an arbitrary example
+                            throw new CreationException("section 7.6.3.1 violation"); // Revisit: message
+                        }
+                        delegate.joinTransaction();
+                    }
+                    returnValue = delegate;
+                    return returnValue;
+                }
+
+                @Override
+                public void close() {
+                    // Revisit: Wildfly allows end users to close
+                    // UNSYNCHRONIZED container-managed EntityManagers:
+                    // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/UnsynchronizedEntityManagerWrapper.java#L75-L78
+                    // I don't know why.  Glassfish does not:
+                    // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L752-L761
+                    throw new IllegalStateException();
+                }
+
+            };
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);

@@ -29,6 +29,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceContextType;
 import javax.persistence.TransactionRequiredException;
 import javax.transaction.Transactional;
 
@@ -58,8 +59,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 )
 class TestAnnotationRewriting {
 
-    @PersistenceContext(unitName = "fred")
+    @PersistenceContext(unitName = "test")
     private EntityManager em;
+
+    @PersistenceContext(unitName = "test", type = PersistenceContextType.EXTENDED)
+    private EntityManager extendedEm;
     
     private SeContainer cdiContainer;
 
@@ -83,7 +87,7 @@ class TestAnnotationRewriting {
         }
     }
 
-    @PersistenceContext(unitName = "fred")
+    @PersistenceContext(unitName = "test")
     private void testAnnotationRewriting(@Observes @Initialized(ApplicationScoped.class) final Object event,
                                          final EntityManager fred) {
         assertNotNull(event);
@@ -139,5 +143,5 @@ class TestAnnotationRewriting {
 
         }
     }
-    
+
 }

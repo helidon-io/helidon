@@ -23,17 +23,39 @@ import java.util.Objects;
 import javax.enterprise.context.spi.AlterableContext;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.spi.BeanManager;
 
 /**
- * An {@link AlterableContext} that destroys its objects when their
- * reference count drops to zero or less than zero.
+ * A somewhat special-purpose {@link AlterableContext} that
+ * {@linkplain #destroy(Contextual) destroys} a contextual instance
+ * when its thread-specific reference count drops to zero or less than
+ * zero.
+ *
+ * <p>A contextual instance's thread-specific reference count is
+ * incremented when either the {@link #get(Contextual)} or {@link
+ * #get(Contextual, CreationalContext)} method is called.  It is
+ * decremented when the obtained instance is passed to the {@link
+ * #decrementReferenceCount(Contextual)} method, which is indirectly
+ * and solely responsible for that instance's ultimate removal from
+ * this {@link ReferenceCountedContext}.</p>
+ *
+ * <p>Internally, the {@link #destroy(Contextual)} method simply calls
+ * {@link #decrementReferenceCount(Contextual)}.</p>
  *
  * <h2>Thread Safety</h2>
  *
  * <p>Instances of this class are safe for concurrent use by multiple
  * threads.</p>
+ *
+ * @see #decrementReferenceCount(Contextual)
+ *
+ * @see #destroy(Contextual)
+ *
+ * @see #get(Contextual, CreationalContext)
+ *
+ * @see ReferenceCounted
  */
-final class ReferenceCountedContext implements AlterableContext {
+public final class ReferenceCountedContext implements AlterableContext {
 
 
     /*
@@ -72,15 +94,22 @@ final class ReferenceCountedContext implements AlterableContext {
     /**
      * Decrements the reference count of the contextual instance, if
      * any, associated with the combination of the current thread and
-     * the supplied {@link Contextual}, destroying the instance if the
-     * reference count becomes zero, and returns the resulting reference
-     * count.
+     * the supplied {@link Contextual}, {@linkplain
+     * Contextual#destroy(Object, CreationalContext) destroying} the
+     * instance if and only if the reference count becomes less than
+     * or equal to zero, and returns the resulting reference count.
      *
-     * @param c the {@link Contextual} whose instance's reference count
-     * should be decremented; may be {@code null} in which case no
-     * action will be taken and {@code 0} will be returned
+     * @param c the {@link Contextual} whose instance's reference
+     * count should be decremented; may be {@code null} in which case
+     * no action will be taken and {@code 0} will be returned
      *
      * @return the resulting reference count
+     *
+     * @see Contextual#destroy(Object, CreationalContext)
+     *
+     * @see #get(Contextual, CreationalContext)
+     *
+     * @see #decrementReferenceCount(Contextual)
      */
     public int decrementReferenceCount(final Contextual<?> c) {
         final int returnValue;
@@ -93,6 +122,9 @@ final class ReferenceCountedContext implements AlterableContext {
             if (instance == null) {
                 returnValue = 0;
             } else {
+                // Note that instance.decrementReferenceCount() will
+                // cause c.destroy(theObject, creationalContext) to be
+                // called if needed; no need to do it explicitly here.
                 returnValue = instance.decrementReferenceCount();
                 if (returnValue <= 0) {
                     instances.remove(c);
@@ -103,38 +135,37 @@ final class ReferenceCountedContext implements AlterableContext {
     }
 
     /**
-     * Calls the {@link #decrementReferenceCount(Contextual)} method,
-     * and, if its return value is less than or equal to {@code 0},
-     * destroys the supplied {@link Contextual} such that a subsequent
-     * invocation of {@link #get(Contextual, CreationalContext)} will
-     * return a newly created contextual instance.
+     * Calls the {@link #decrementReferenceCount(Contextual)} method
+     * with the supplied {@link Contextual}, destroying it if and only
+     * if its thread-specific reference count becomes less than or
+     * equal to zero.
      *
-     * @param bean the {@link Contextual} to destroy; may be {@code
-     * null} in which case no action will be taken
+     * @param contextual the {@link Contextual} to destroy; may be
+     * {@code null} in which case no action will be taken
+     *
+     * @see #decrementReferenceCount(Contextual)
      *
      * @see #get(Contextual, CreationalContext)
      */
     @Override
-    public void destroy(final Contextual<?> bean) {
-        if (bean != null && this.decrementReferenceCount(bean) <= 0) {
-            ALL_INSTANCES.get().get(this).remove(bean);
-        }
+    public void destroy(final Contextual<?> contextual) {
+        this.decrementReferenceCount(contextual);
     }
 
     /**
      * Returns the contextual instance associated with the current
-     * thread and the supplied {@link Contextual}, or {@code null} if no
-     * such contextual instance exists.
+     * thread and the supplied {@link Contextual}, or {@code null} if
+     * no such contextual instance exists.
      *
-     * @param bean the {@link Contextual} in question; may be {@code
-     * null} in which case {@code null} wil be returned
+     * @param contextual the {@link Contextual} in question; may be
+     * {@code null} in which case {@code null} wil be returned
      *
      * @return the contextual instance associated with the current
      * thread and the supplied {@link Contextual}, or {@code null}
      */
     @Override
-    public <T> T get(final Contextual<T> bean) {
-        return this.get(bean, null, false);
+    public <T> T get(final Contextual<T> contextual) {
+        return this.get(contextual, null, false);
     }
 
     /**
@@ -142,19 +173,19 @@ final class ReferenceCountedContext implements AlterableContext {
      * thread and the supplied {@link Contextual}, {@linkplain
      * Contextual#create(CreationalContext) creating} it if necessary.
      *
-     * @param bean the {@link Contextual} in question; may be {@code
-     * null} in which case {@code null} wil be returned
+     * @param contextual the {@link Contextual} in question; may be
+     * {@code null} in which case {@code null} wil be returned
      *
      * @param cc a {@link CreationalContext} that will hold dependent
      * instances; may be {@code null}
      *
      * @return the contextual instance associated with the current
-     * thread and the supplied {@link Contextual}; may strictly speaking
-     * be {@code null} but normally is not
+     * thread and the supplied {@link Contextual}; may strictly
+     * speaking be {@code null} but normally is not
      */
     @Override
-    public <T> T get(final Contextual<T> bean, final CreationalContext<T> cc) {
-        return this.get(bean, cc, true);
+    public <T> T get(final Contextual<T> contextual, final CreationalContext<T> cc) {
+        return this.get(contextual, cc, true);
     }
 
     /**
@@ -165,8 +196,8 @@ final class ReferenceCountedContext implements AlterableContext {
      *
      * @param <T> the type of the contextual instance to get
      *
-     * @param bean the {@link Contextual} in question; may be {@code
-     * null} in which case {@code null} wil be returned
+     * @param contextual the {@link Contextual} in question; may be
+     * {@code null} in which case {@code null} wil be returned
      *
      * @param cc a {@link CreationalContext} that will hold dependent
      * instances; may be {@code null}
@@ -174,24 +205,24 @@ final class ReferenceCountedContext implements AlterableContext {
      * @param maybeCreate whether or not to create a new contextual
      * instance if required
      *
-     * @return the possibly newly-created contextual instance associated
-     * with the current thread and the supplied {@link Contextual}, or
-     * {@code null}
+     * @return the possibly newly-created contextual instance
+     * associated with the current thread and the supplied {@link
+     * Contextual}, or {@code null}
      */
-    private <T> T get(final Contextual<T> bean, final CreationalContext<T> cc, final boolean maybeCreate) {
+    private <T> T get(final Contextual<T> contextual, final CreationalContext<T> cc, final boolean maybeCreate) {
         final T returnValue;
-        if (bean == null) {
+        if (contextual == null) {
             returnValue = null;
         } else {
             final Map<Contextual<?>, Instance<?>> instances = ALL_INSTANCES.get().get(this);
             assert instances != null;
             @SuppressWarnings("unchecked")
-            final Instance<T> temp = (Instance<T>) instances.get(bean);
+            final Instance<T> temp = (Instance<T>) instances.get(contextual);
             Instance<T> instance = temp;
             if (instance == null) {
                 if (maybeCreate) {
-                    instance = new Instance<T>(bean, cc);
-                    instances.put(bean, instance);
+                    instance = new Instance<T>(contextual, cc);
+                    instances.put(contextual, instance);
                     returnValue = instance.get();
                 } else {
                     returnValue = null;
@@ -227,6 +258,38 @@ final class ReferenceCountedContext implements AlterableContext {
 
 
     /*
+     * Static methods.
+     */
+
+
+    /**
+     * Returns the sole {@link ReferenceCountedContext} that is
+     * registered with the supplied {@link BeanManager}.
+     *
+     * <p>Strictly speaking, this method may return {@code null} if
+     * the {@link ReferenceCountedExtension} has been deliberately
+     * disabled and hence has not had a chance to {@linkplain
+     * javax.enterprise.inject.spi.AfterBeanDiscovery#addContext(Context)
+     * install} a {@link ReferenceCountedContext}.  In all normal
+     * usage this method will not return {@code null}.</p>
+     *
+     * @param beanManager the {@link BeanManager} whose {@link
+     * ReferenceCountedContext} should be returned; must not be {@code
+     * null}
+     *
+     * @return a {@link ReferenceCountedContext}, or {@code null} in
+     * exceptionally rare situations
+     *
+     * @exception NullPointerException if {@code beanManager} is
+     * {@code null}
+     */
+    public static ReferenceCountedContext getInstanceFrom(final BeanManager beanManager) {
+        Objects.requireNonNull(beanManager);
+        return (ReferenceCountedContext) beanManager.getContext(ReferenceCounted.class);
+    }
+
+
+    /*
      * Inner and nested classes.
      */
 
@@ -234,8 +297,9 @@ final class ReferenceCountedContext implements AlterableContext {
     /**
      * A coupling of an object (a contextual instance), the {@link
      * CreationalContext} in effect when it was created, the {@link
-     * Contextual} that {@linkplain Contextual#create(CreationalContext)
-     * created} it, and a reference count.
+     * Contextual} that {@linkplain
+     * Contextual#create(CreationalContext) created} it, and a
+     * reference count.
      *
      * <h2>Thread Safety</h2>
      *
@@ -265,12 +329,13 @@ final class ReferenceCountedContext implements AlterableContext {
         /**
          * The reference count of this {@link Instance}, basically
          * equivalent to the number of times that {@link
-         * ReferenceCountedContext#get(Contextual, CreationalContext)} and
-         * {@link ReferenceCountedContext#get(Contextual)} have been
-         * called.
+         * ReferenceCountedContext#get(Contextual, CreationalContext)}
+         * and {@link ReferenceCountedContext#get(Contextual)} have
+         * been called.
          *
-         * <p>If this field's value is less than zero, then {@link #get()}
-         * invocations will throw {@link IllegalStateException}.</p>
+         * <p>If this field's value is less than zero, then {@link
+         * #get()} invocations will throw {@link
+         * IllegalStateException}.</p>
          *
          * @see #decrementReferenceCount()
          *
@@ -279,8 +344,8 @@ final class ReferenceCountedContext implements AlterableContext {
         private int referenceCount;
 
         /**
-         * The {@link CreationalContext} supplied to this {@link Instance}
-         * at construction time.
+         * The {@link CreationalContext} supplied to this {@link
+         * Instance} at construction time.
          *
          * <p>This field may be {@code null}.</p>
          */
@@ -292,7 +357,7 @@ final class ReferenceCountedContext implements AlterableContext {
          *
          * <p>This field will never be {@code null}.</p>
          */
-        private final Contextual<T> bean;
+        private final Contextual<T> contextual;
 
 
         /*
@@ -303,14 +368,15 @@ final class ReferenceCountedContext implements AlterableContext {
         /**
          * Creates a new {@link Instance}.
          *
-         * @param bean the {@link Contextual} that creates and destroys
-         * contextual instances; must not be {@code null}
+         * @param contextual the {@link Contextual} that creates and
+         * destroys contextual instances; must not be {@code null}
          *
          * @param creationalContext the {@link CreationalContext} that
-         * will track dependent instances of the contextual instance; may
-         * be {@code null}
+         * will track dependent instances of the contextual instance;
+         * may be {@code null}
          *
-         * @exception NullPointerException if {@code bean} is {@code null}
+         * @exception NullPointerException if {@code contextual} is
+         * {@code null}
          *
          * @see Contextual
          *
@@ -318,11 +384,11 @@ final class ReferenceCountedContext implements AlterableContext {
          *
          * @see Contextual#create(CreationalContext)
          */
-        private Instance(final Contextual<T> bean, final CreationalContext<T> creationalContext) {
+        private Instance(final Contextual<T> contextual, final CreationalContext<T> creationalContext) {
             super();
-            this.bean = Objects.requireNonNull(bean);
+            this.contextual = Objects.requireNonNull(contextual);
             this.creationalContext = creationalContext;
-            this.object = this.bean.create(creationalContext);
+            this.object = this.contextual.create(creationalContext);
         }
 
 
@@ -332,19 +398,20 @@ final class ReferenceCountedContext implements AlterableContext {
 
 
         /**
-         * Returns the contextual instance this {@link Instance} wraps and
-         * increments its reference count.
+         * Returns the contextual instance this {@link Instance} wraps
+         * and increments its reference count.
          *
          * <p>This method may return {@code null} if the contextual
          * instance this {@link Instance} was created with was {@code
          * null} at construction time.</p>
          *
-         * @return the contextual instance this {@link Instance} wraps, or
-         * {@code null}
+         * @return the contextual instance this {@link Instance}
+         * wraps, or {@code null}
          *
          * @exception IllegalStateException if the reference count
          * internally is less than zero, such as when an invocation of
-         * {@link #decrementReferenceCount()} has resulted in destruction
+         * {@link #decrementReferenceCount()} has resulted in
+         * destruction
          */
         private T get() {
             if (this.referenceCount < 0) {
@@ -356,15 +423,16 @@ final class ReferenceCountedContext implements AlterableContext {
         }
 
         /**
-         * Decrements this {@link Instance}'s reference count, unless it
-         * is {@code 0}, and returns the result.
+         * Decrements this {@link Instance}'s reference count, unless
+         * it is {@code 0}, and returns the result.
          *
-         * <p>If the result of decrementing the reference count is {@code
-         * 0}, then this {@link Instance}'s contextual instance is
-         * {@linkplain Contextual#destroy(Object, CreationalContext)
-         * destroyed}, and its internal object reference is set to {@code
-         * null}.  Subsequent invocations of {@link #get()} will throw
-         * {@link IllegalStateException}.</p>
+         * <p>If the result of decrementing the reference count is
+         * {@code 0}, then this {@link Instance}'s contextual instance
+         * is {@linkplain Contextual#destroy(Object,
+         * CreationalContext) destroyed}, and its internal object
+         * reference is set to {@code null}.  Subsequent invocations
+         * of {@link #get()} will throw {@link
+         * IllegalStateException}.</p>
          *
          * @return the resulting decremented reference count
          *
@@ -375,7 +443,7 @@ final class ReferenceCountedContext implements AlterableContext {
             if (this.referenceCount > 0) {
                 --this.referenceCount;
                 if (this.referenceCount == 0) {
-                    this.bean.destroy(this.object, this.creationalContext);
+                    this.contextual.destroy(this.object, this.creationalContext);
                     if (this.creationalContext != null) {
                         this.creationalContext.release();
                     }
