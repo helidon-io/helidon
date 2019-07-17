@@ -45,7 +45,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-1.2</artifactId>
+            <artifactId>helidon-microprofile-2.2</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
