@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -274,18 +275,39 @@ class ThreadPoolTest {
     }
 
     @Test
-    void testRateFunction() {
-        for (int rate = 1; rate <= 100; rate ++) {
-            assertRandomRate(rate, 1000000);
-        }
+    void testCannotChangeMaxPoolSize() {
+        pool = newPool(2, 2, 100, 25);
+        assertThrows(UnsupportedOperationException.class, () -> pool.setMaximumPoolSize(4));
     }
 
-    private static void assertRandomRate(int growthRate, int sampleSize) {
-        float average = sampleRateFunction(growthRate, sampleSize, new Random(growthRate));
-        float minAcceptable = growthRate * 0.9F;
-        float maxAcceptable = growthRate * 1.1F;
-        assertThat(average, is(greaterThanOrEqualTo(minAcceptable)));
-        assertThat(average, is(lessThanOrEqualTo(maxAcceptable)));
+    @Test
+    void testFixedPoolQueueSelection() {
+        pool = newPool(2, 2, 100, 25);
+        assertThat(pool.getQueue().getClass() == ThreadPool.WorkQueue.class, is(true));
+    }
+
+    @Test
+    void testZeroGrowthRateQueueSelection() {
+        pool = newPool(2, 8, 100, 0);
+        assertThat(pool.getQueue().getClass() == ThreadPool.WorkQueue.class, is(true));
+    }
+
+    @Test
+    void testNonZeroGrowthRateQueueSelection() {
+        pool = newPool(2, 8, 100, 10);
+        assertThat(pool.getQueue().getClass() == ThreadPool.DynamicPoolWorkQueue.class, is(true));
+    }
+
+    @Test
+    void testRateFunction() {
+        final int sampleSize = 1000000;
+        for (int growthRate = 1; growthRate <= 100; growthRate++) {
+            float average = sampleGrowthRateFunction(growthRate, sampleSize, new LocalRandomFloat(growthRate));
+            float minAcceptable = growthRate * 0.9F;
+            float maxAcceptable = growthRate * 1.1F;
+            assertThat(average, is(greaterThanOrEqualTo(minAcceptable)));
+            assertThat(average, is(lessThanOrEqualTo(maxAcceptable)));
+        }
     }
 
     @Test
@@ -349,7 +371,7 @@ class ThreadPoolTest {
         assertThat(pool.getPoolSize(), is(coreSize));
         assertThat(pool.getQueueSize(), is(growthThreshold + 1));
 
-        // Add 1 task and ensure that we grow 1 thread
+        // Add 1 task and ensure that we grow by 1 thread
 
         addTasks(1);
         waitUntilActiveThreadsIs(coreSize + 1);
@@ -475,18 +497,20 @@ class ThreadPoolTest {
         }
     }
 
-    // Test different rate functions.
+    /**
+     * Test different growth rate functions.
+     */
     public static void main() {
         final int sampleSize = 10000000;
         for (int rate = 2; rate < 100; rate += 5) {
-            sampleRateFunction("random", rate, sampleSize, new Random(rate));
-            sampleRateFunction("counter", rate, sampleSize, new Counter(rate));
-            sampleRateFunction("random1", rate, sampleSize, RANDOM_INT);
-            sampleRateFunction("nanoTime", rate, sampleSize, NANO_TIME);
+            sampleGrowthRateFunction("random", rate, sampleSize, new LocalRandomFloat(rate));
+            sampleGrowthRateFunction("counter", rate, sampleSize, new Counter(rate));
+            sampleGrowthRateFunction("random1", rate, sampleSize, LOCAL_RANDOM_INT);
+            sampleGrowthRateFunction("nanoTime", rate, sampleSize, NANO_TIME);
         }
     }
 
-    private static float sampleRateFunction(int growthRate, int sampleSize, Function<Integer, Boolean> function) {
+    private static float sampleGrowthRateFunction(int growthRate, int sampleSize, Function<Integer, Boolean> function) {
         int growthCount = 0;
         for (int i = 0; i < sampleSize; i++) {
             if (function.apply(growthRate)) {
@@ -496,24 +520,24 @@ class ThreadPoolTest {
         return ((float) growthCount / (float) sampleSize) * 100;
     }
 
-    private static void sampleRateFunction(String algorithm,
-                                           int growthRate,
-                                           int sampleSize,
-                                           Function<Integer, Boolean> function) {
+    private static void sampleGrowthRateFunction(String algorithm,
+                                                 int growthRate,
+                                                 int sampleSize,
+                                                 Function<Integer, Boolean> function) {
         final long startTime = System.nanoTime();
-        final float growthPercent = sampleRateFunction(growthRate, sampleSize, function);
+        final float growthPercent = sampleGrowthRateFunction(growthRate, sampleSize, function);
         final long elapsedTime = System.nanoTime() - startTime;
         System.out.println(String.format("%8s: requested %d, actual %.2f in %d ns", algorithm, growthRate, growthPercent,
                                          elapsedTime));
     }
 
-    private static Function<Integer, Boolean> RANDOM_INT = rate -> ThreadLocalRandom.current().nextInt(100) < rate;
+    private static Function<Integer, Boolean> LOCAL_RANDOM_INT = rate -> ThreadLocalRandom.current().nextInt(100) < rate;
     private static Function<Integer, Boolean> NANO_TIME = rate -> (System.nanoTime() % 100) < rate;
 
-    private static class Random implements Function<Integer, Boolean> {
+    private static class LocalRandomFloat implements Function<Integer, Boolean> {
         private final float rate;
 
-        Random(int growthRate) {
+        LocalRandomFloat(int growthRate) {
             rate = growthRate / 100f;
         }
 

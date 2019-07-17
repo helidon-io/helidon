@@ -435,7 +435,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
-    private static class WorkQueue extends LinkedBlockingQueue<Runnable> {
+    static class WorkQueue extends LinkedBlockingQueue<Runnable> {
         private final int capacity;
         private final LongAdder totalSize;
         private final AtomicInteger totalTasks;
@@ -505,7 +505,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
-    private static final class DynamicPoolWorkQueue extends WorkQueue {
+    static final class DynamicPoolWorkQueue extends WorkQueue {
         private final Predicate<ThreadPool> growthPolicy;
         private final int maxPoolSize;
         // We can't make this final because it is a circular dependency, but we set it during the construction of
