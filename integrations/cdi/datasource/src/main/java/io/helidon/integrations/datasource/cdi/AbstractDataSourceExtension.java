@@ -28,7 +28,6 @@ import java.util.regex.Matcher;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.configurator.BeanConfigurator;
 import javax.inject.Named;
@@ -41,10 +40,17 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 /**
  * An abstract {@link Extension} whose subclasses arrange for {@link
  * DataSource} instances to be added as CDI beans.
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * <p>As with all CDI portable extensions, this class' instances are
+ * not safe for concurrent use by multiple threads.</p>
  */
 public abstract class AbstractDataSourceExtension implements Extension {
 
     private final Map<String, Properties> masterProperties;
+
+    private final Map<String, Properties> explicitlySetProperties;
 
     private final Config config;
 
@@ -54,6 +60,7 @@ public abstract class AbstractDataSourceExtension implements Extension {
     protected AbstractDataSourceExtension() {
         super();
         this.masterProperties = new HashMap<>();
+        this.explicitlySetProperties = new HashMap<>();
         this.config = ConfigProvider.getConfig();
     }
 
@@ -167,7 +174,17 @@ public abstract class AbstractDataSourceExtension implements Extension {
      * of known data source names
      */
     protected final Set<String> getDataSourceNames() {
-        return Collections.unmodifiableSet(this.masterProperties.keySet());
+        final Set<String> returnValue;
+        if (this.masterProperties.isEmpty()) {
+            if (this.explicitlySetProperties.isEmpty()) {
+                returnValue = Collections.emptySet();
+            } else {
+                returnValue = Collections.unmodifiableSet(this.explicitlySetProperties.keySet());
+            }
+        } else {
+            returnValue = Collections.unmodifiableSet(this.masterProperties.keySet());
+        }
+        return returnValue;
     }
 
     /**
@@ -188,10 +205,28 @@ public abstract class AbstractDataSourceExtension implements Extension {
      * {@code dataSourceName}, or {@code null}
      */
     protected final Properties putDataSourceProperties(final String dataSourceName, final Properties properties) {
-        return this.masterProperties.put(dataSourceName, properties);
+        return this.explicitlySetProperties.put(dataSourceName, properties);
     }
 
-    private void initializeMasterProperties(@Observes final BeforeBeanDiscovery event) {
+    /**
+     * <strong>{@linkplain Map#clear() Clears}</strong> and then
+     * builds or rebuilds an internal map of data source properties
+     * whose contents will be processed eventually by the {@link
+     * #addBean(BeanConfigurator, Named, Properties)} method.
+     *
+     * <p>If no subclass explicitly calls this method, it will be
+     * called by the {@link #addBean(BeanConfigurator, Named,
+     * Properties)} method just prior to its other activities.</p>
+     *
+     * <p>Once the {@link #addBean(BeanConfigurator, Named,
+     * Properties)} method has run to completion, while this method
+     * may be called freely its use is discouraged and its effects
+     * will no longer be used.</p>
+     *
+     * @see #addBean(BeanConfigurator, Named, Properties)
+     */
+    protected final void initializeMasterProperties() {
+        this.masterProperties.clear();
         final Set<? extends String> allPropertyNames = this.getPropertyNames();
         if (allPropertyNames != null && !allPropertyNames.isEmpty()) {
             for (final String propertyName : allPropertyNames) {
@@ -211,10 +246,12 @@ public abstract class AbstractDataSourceExtension implements Extension {
                 }
             }
         }
+        this.masterProperties.putAll(this.explicitlySetProperties);
     }
 
     /**
-     * Returns a {@link Set} of all known configuration property names.
+     * Returns a {@link Set} of all known configuration property
+     * names.
      *
      * <p>This method never returns {@code null}.</p>
      *
@@ -249,6 +286,16 @@ public abstract class AbstractDataSourceExtension implements Extension {
         // make sure to get all property names from all ConfigSources
         // "by hand".
         //
+        // Additionally, the Helidon MicroProfile Config
+        // implementation may add on some Helidon SE Config sources
+        // that are not represented as MicroProfile Config sources.
+        // Consequently we have to source property names from both the
+        // MicroProfile Config ConfigSources and from Helidon itself.
+        // We do this by first iterating over the MicroProfile Config
+        // ConfigSources and then augmenting where necessary with any
+        // other (cached) property names reported by the Helidon
+        // MicroProfile Config implementation.
+        //
         // (The MicroProfile Config specification also does not say
         // whether a ConfigSource is thread-safe
         // (https://github.com/eclipse/microprofile-config/issues/369),
@@ -259,8 +306,23 @@ public abstract class AbstractDataSourceExtension implements Extension {
         // implementation caches all property names up front, which
         // may not be correct, but is also not forbidden.
         final Set<String> returnValue;
-        final Set<String> propertyNames = getPropertyNames(this.config.getConfigSources());
-        if (propertyNames == null || propertyNames.isEmpty()) {
+
+        // Start by getting all the property names directly from our
+        // MicroProfile Config ConfigSources.  They take precedence.
+        Set<String> propertyNames = getPropertyNames(this.config.getConfigSources());
+        assert propertyNames != null;
+
+        // Add any property names that the Config itself might report
+        // that aren't reflected, for whatever reason, in the
+        // ConfigSources' property names.
+        final Iterable<String> configPropertyNames = this.config.getPropertyNames();
+        if (configPropertyNames != null) {
+            for (final String configPropertyName : configPropertyNames) {
+                propertyNames.add(configPropertyName);
+            }
+        }
+
+        if (propertyNames.isEmpty()) {
             returnValue = Collections.emptySet();
         } else {
             returnValue = Collections.unmodifiableSet(propertyNames);
@@ -280,11 +342,14 @@ public abstract class AbstractDataSourceExtension implements Extension {
                 }
             }
         }
-        return Collections.unmodifiableSet(returnValue);
+        return returnValue;
     }
 
     private void afterBeanDiscovery(@Observes final AfterBeanDiscovery event) {
         if (event != null) {
+            if (this.masterProperties.isEmpty()) {
+                this.initializeMasterProperties();
+            }
             final Set<? extends Entry<? extends String, ? extends Properties>> masterPropertiesEntries =
                 this.masterProperties.entrySet();
             if (masterPropertiesEntries != null && !masterPropertiesEntries.isEmpty()) {
@@ -296,6 +361,7 @@ public abstract class AbstractDataSourceExtension implements Extension {
             }
         }
         this.masterProperties.clear();
+        this.explicitlySetProperties.clear();
     }
 
 }

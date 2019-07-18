@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.datasource.hikaricp.cdi;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
@@ -24,7 +27,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.sql.DataSource;
 
-import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -32,11 +34,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @ApplicationScoped
 class TestConfiguration {
@@ -54,12 +52,13 @@ class TestConfiguration {
     @BeforeEach
     void startServer() {
         this.stopServer();
-        // The sequence of calls here is the only way to supply a CDI
-        // container to Helidon's MicroProfile Server such that all of
-        // the normal configuration is loaded properly.
         final Server.Builder builder = Server.builder();
         assertNotNull(builder);
-        builder.config((MpConfig) ConfigProviderResolver.instance().getConfig(Thread.currentThread().getContextClassLoader()));
+        // The Helidon MicroProfile server implementation uses
+        // ConfigProviderResolver#getConfig(ClassLoader) directly
+        // instead of ConfigProvider#getConfig() so we follow suit
+        // here for fidelity.
+        builder.config(ConfigProviderResolver.instance().getConfig(Thread.currentThread().getContextClassLoader()));
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(TestConfiguration.class);
         assertNotNull(initializer);
@@ -77,9 +76,15 @@ class TestConfiguration {
         }
     }
 
-    private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) {
+    private void onStartup(@Observes @Initialized(ApplicationScoped.class) final Object event) throws SQLException {
         assertNotNull(this.test);
         assertNotNull(this.test.toString());
+        Connection connection = null;
+        try {
+            connection = this.test.getConnection();
+        } finally {
+            connection.close();
+        }
     }
 
     @Test
