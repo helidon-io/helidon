@@ -21,7 +21,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -46,6 +45,7 @@ import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementQuery;
+import io.helidon.common.reactive.CollectingSubscriber;
 
 /**
  * Implementation of query.
@@ -134,29 +134,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
 
             private CompletionStage<List<DbRow>> toFuture() {
                 CompletableFuture<List<DbRow>> result = new CompletableFuture<>();
-                toPublisher().subscribe(new Flow.Subscriber<DbRow>() {
-                    private final List<DbRow> allRows = new LinkedList<>();
-
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        subscription.request(Long.MAX_VALUE);
-                    }
-
-                    @Override
-                    public void onNext(DbRow dbRow) {
-                        allRows.add(dbRow);
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        result.completeExceptionally(throwable);
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        result.complete(allRows);
-                    }
-                });
+                toPublisher().subscribe(CollectingSubscriber.create(result));
                 return result;
             }
 

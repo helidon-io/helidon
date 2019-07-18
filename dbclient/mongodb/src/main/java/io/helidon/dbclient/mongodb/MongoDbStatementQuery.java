@@ -17,7 +17,6 @@ package io.helidon.dbclient.mongodb;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -39,8 +38,9 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.common.reactive.CollectingSubscriber;
 import io.helidon.dbclient.common.InterceptorSupport;
-import io.helidon.dbclient.common.MappingProcessor;
+import io.helidon.common.reactive.MappingProcessor;
 
 import com.mongodb.reactivestreams.client.FindPublisher;
 import com.mongodb.reactivestreams.client.MongoCollection;
@@ -441,29 +441,7 @@ class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, DbRows<Db
 
             // this is a simple subscriber - I want all the records
             // and as fast as possible
-            toPublisher().subscribe(new Flow.Subscriber<T>() {
-                private final List<T> allRows = new LinkedList<>();
-
-                @Override
-                public void onSubscribe(Flow.Subscription subscription) {
-                    subscription.request(Long.MAX_VALUE);
-                }
-
-                @Override
-                public void onNext(T rowType) {
-                    allRows.add(rowType);
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    result.completeExceptionally(throwable);
-                }
-
-                @Override
-                public void onComplete() {
-                    result.complete(allRows);
-                }
-            });
+            toPublisher().subscribe(CollectingSubscriber.create(result));
             return result;
         }
 

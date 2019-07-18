@@ -20,17 +20,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.reactive.Flow;
-import io.helidon.dbclient.DbClientException;
+import io.helidon.common.reactive.GetSubscriber;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementGet;
 
 /**
  * A JDBC get implementation.
+ * Delegates to {@link io.helidon.dbclient.jdbc.JdbcStatementQuery} and processes the result using a subscriber
+ * to read the first value.
  */
 class JdbcStatementGet implements DbStatementGet {
     private final JdbcStatementQuery query;
@@ -85,49 +84,8 @@ class JdbcStatementGet implements DbStatementGet {
         query.execute()
                 .thenApply(DbRows::publisher)
                 .thenAccept(publisher -> {
-                    publisher.subscribe(new Flow.Subscriber<DbRow>() {
-                        private Flow.Subscription subscription;
-                        private final AtomicBoolean done = new AtomicBoolean(false);
-                        // defense against bad publisher - if I receive complete after cancelled...
-                        private final AtomicBoolean cancelled = new AtomicBoolean(false);
-                        private final AtomicReference<DbRow> theRow = new AtomicReference<>();
-
-                        @Override
-                        public void onSubscribe(Flow.Subscription subscription) {
-                            this.subscription = subscription;
-                            subscription.request(2);
-                        }
-
-                        @Override
-                        public void onNext(DbRow dbRow) {
-                            if (done.get()) {
-                                subscription.cancel();
-                                result.completeExceptionally(new DbClientException("Result of get statement " + query
-                                        .name() + " returned "
-                                                                                           + "more than one row."));
-                                cancelled.set(true);
-                            } else {
-                                theRow.set(dbRow);
-                                done.set(true);
-                            }
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            result.completeExceptionally(throwable);
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            result.complete(Optional.ofNullable(theRow.get()));
-                        }
-                    });
+                    publisher.subscribe(GetSubscriber.create(result, "Received more than one results for query "
+                            + query.name()));
                 })
                 .exceptionally(throwable -> {
                     result.completeExceptionally(throwable);
