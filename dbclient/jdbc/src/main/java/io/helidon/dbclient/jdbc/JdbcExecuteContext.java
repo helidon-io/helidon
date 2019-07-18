@@ -18,6 +18,7 @@ package io.helidon.dbclient.jdbc;
 import java.sql.Connection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.mapper.MapperManager;
@@ -34,6 +35,7 @@ final class JdbcExecuteContext {
     private final MapperManager mapperManager;
     private final String dbType;
     private final CompletionStage<Connection> connection;
+    private final ConcurrentHashMap.KeySetView<CompletableFuture<Long>, Boolean> futures = ConcurrentHashMap.newKeySet();
 
     private JdbcExecuteContext(ExecutorService executorService,
                                InterceptorSupport interceptors,
@@ -50,11 +52,11 @@ final class JdbcExecuteContext {
     }
 
     static JdbcExecuteContext create(ExecutorService executorService,
-                              InterceptorSupport interceptors,
-                              String dbType,
-                              CompletionStage<Connection> connection,
-                              DbMapperManager dbMapperManager,
-                              MapperManager mapperManager) {
+                                     InterceptorSupport interceptors,
+                                     String dbType,
+                                     CompletionStage<Connection> connection,
+                                     DbMapperManager dbMapperManager,
+                                     MapperManager mapperManager) {
         return new JdbcExecuteContext(executorService,
                                       interceptors,
                                       dbMapperManager,
@@ -85,5 +87,20 @@ final class JdbcExecuteContext {
 
     CompletionStage<Connection> connection() {
         return connection;
+    }
+
+    void addFuture(CompletableFuture<Long> queryFuture) {
+        this.futures.add(queryFuture);
+    }
+
+    public CompletionStage<Void> whenComplete() {
+        CompletionStage<?> overallStage = CompletableFuture.completedFuture(null);
+
+        for (CompletableFuture<Long> future : futures) {
+            overallStage = overallStage.thenCompose(o -> future);
+        }
+
+        return overallStage.thenAccept(it -> {
+        });
     }
 }

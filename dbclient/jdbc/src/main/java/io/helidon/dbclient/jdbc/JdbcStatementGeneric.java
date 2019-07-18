@@ -46,6 +46,8 @@ class JdbcStatementGeneric extends JdbcStatement<DbStatementGeneric, DbResult> i
                                                   CompletableFuture<Void> interceptorStatementFuture,
                                                   CompletableFuture<Long> interceptorQueryFuture) {
 
+        executeContext().addFuture(interceptorQueryFuture);
+
         CompletableFuture<DbRows<DbRow>> queryResultFuture = new CompletableFuture<>();
         CompletableFuture<Long> dmlResultFuture = new CompletableFuture<>();
         CompletableFuture<Throwable> exceptionFuture = new CompletableFuture<>();

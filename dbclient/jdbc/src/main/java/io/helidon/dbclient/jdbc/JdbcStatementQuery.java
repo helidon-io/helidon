@@ -63,6 +63,8 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                                                        CompletableFuture<Void> statementFuture,
                                                        CompletableFuture<Long> queryFuture) {
 
+        executeContext().addFuture(queryFuture);
+
         return dbContextFuture.thenCompose(interceptorContext -> {
             return connection().thenApply(conn -> {
                 PreparedStatement statement = super.build(conn, interceptorContext);
@@ -299,6 +301,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                                 subscriber.onNext(dbRow);
                                 count++;
                             } else {
+                                System.out.println("Query completed");
                                 queryFuture.complete(count);
                                 subscriber.onComplete();
                                 return;

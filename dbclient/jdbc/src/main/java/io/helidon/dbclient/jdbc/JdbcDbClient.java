@@ -17,12 +17,9 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.mapper.MapperManager;
@@ -62,58 +59,53 @@ class JdbcDbClient implements DbClient {
 
     @Override
     public <T> CompletionStage<T> inTransaction(Function<DbTransaction, CompletionStage<T>> executor) {
-        CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
-                .thenApply(conn -> {
-                    try {
-                        conn.setAutoCommit(false);
-                    } catch (SQLException e) {
-                        throw new DbClientException("Failed to set autocommit to false", e);
-                    }
-                    return conn;
+
+        JdbcTxExecute execute = new JdbcTxExecute(statements,
+                                                  executorService,
+                                                  interceptors,
+                                                  connectionPool,
+                                                  dbMapperManager,
+                                                  mapperManager);
+
+        return executor.apply(execute)
+                .thenApply(it -> {
+                    execute.context()
+                            .whenComplete()
+                            .thenAccept(nothing -> {
+                                System.out.println("Commit");
+                                execute.doCommit();
+                            });
+                    return it;
+                })
+                .exceptionally(throwable -> {
+                    System.out.println("Rollback");
+                    execute.doRollback();
+                    return null;
                 });
-
-        JdbcExecute execute = new JdbcExecute(statements,
-                                              executorService,
-                                              interceptors,
-                                              connectionPool.dbType(),
-                                              connection,
-                                              dbMapperManager,
-                                              mapperManager);
-
-        execute.whenComplete(success -> {
-            if (success) {
-                execute.doCommit();
-            } else {
-                execute.doRollback();
-            }
-        });
-
-        return executor.apply(execute);
     }
 
     @Override
     public <T> CompletionStage<T> execute(Function<DbExecute, CompletionStage<T>> executor) {
-        CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
-                .thenApply(conn -> {
-                    try {
-                        conn.setAutoCommit(true);
-                    } catch (SQLException e) {
-                        throw new DbClientException("Failed to set autocommit to true", e);
-                    }
-                    return conn;
-                });
-
         JdbcExecute execute = new JdbcExecute(statements,
                                               executorService,
                                               interceptors,
-                                              connectionPool.dbType(),
-                                              connection,
+                                              connectionPool,
                                               dbMapperManager,
                                               mapperManager);
 
-        execute.whenComplete(success -> execute.doClose());
+        CompletionStage<T> resultFuture = executor.apply(execute);
+        resultFuture
+                .handle((t, throwable) -> {
+                    execute.context()
+                            .whenComplete()
+                            .thenAccept(nothing -> {
+                                System.out.println("Close connection");
+                                execute.close();
+                            });
+                    return t;
+                });
 
-        return executor.apply(execute);
+        return resultFuture;
     }
 
     @Override
@@ -129,25 +121,117 @@ class JdbcDbClient implements DbClient {
         return connectionPool.dbType();
     }
 
-    private static class JdbcExecute extends AbstractDbExecute implements DbTransaction {
-        private final JdbcExecuteContext context;
+    private static final class JdbcTxExecute extends JdbcExecute implements DbTransaction {
         private volatile boolean setRollbackOnly = false;
 
-        JdbcExecute(DbStatements statements,
-                    ExecutorService executorService,
-                    InterceptorSupport interceptors,
-                    String dbType,
-                    CompletionStage<Connection> connection,
-                    DbMapperManager dbMapperManager,
-                    MapperManager mapperManager) {
+        private JdbcTxExecute(DbStatements statements,
+                              ExecutorService executorService,
+                              InterceptorSupport interceptors,
+                              ConnectionPool connectionPool,
+                              DbMapperManager dbMapperManager,
+                              MapperManager mapperManager) {
+            super(statements, createTxContext(executorService, interceptors, connectionPool, dbMapperManager, mapperManager));
+        }
+
+        private static JdbcExecuteContext createTxContext(ExecutorService executorService,
+                                                          InterceptorSupport interceptors,
+                                                          ConnectionPool connectionPool,
+                                                          DbMapperManager dbMapperManager,
+                                                          MapperManager mapperManager) {
+            CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
+                    .thenApply(conn -> {
+                        try {
+                            conn.setAutoCommit(false);
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to set autocommit to false", e);
+                        }
+                        return conn;
+                    });
+
+            return JdbcExecuteContext.create(executorService,
+                                             interceptors,
+                                             connectionPool.dbType(),
+                                             connection,
+                                             dbMapperManager,
+                                             mapperManager);
+        }
+
+        @Override
+        public void rollback() {
+            setRollbackOnly = true;
+        }
+
+        private void doRollback() {
+            context().connection()
+                    .thenApply(conn -> {
+                        try {
+                            conn.rollback();
+                            conn.close();
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to rollback a transaction, or close a connection", e);
+                        }
+
+                        return conn;
+                    });
+        }
+
+        private void doCommit() {
+            if (setRollbackOnly) {
+                doRollback();
+                return;
+            }
+            context().connection()
+                    .thenApply(conn -> {
+                        try {
+                            conn.commit();
+                            conn.close();
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to commit a transaction, or close a connection", e);
+                        }
+                        return conn;
+                    });
+        }
+    }
+
+    private static class JdbcExecute extends AbstractDbExecute {
+        private final JdbcExecuteContext context;
+
+        private JdbcExecute(DbStatements statements, JdbcExecuteContext context) {
             super(statements);
 
-            this.context = JdbcExecuteContext.create(executorService,
-                                                     interceptors,
-                                                     dbType,
-                                                     connection,
-                                                     dbMapperManager,
-                                                     mapperManager);
+            this.context = context;
+        }
+
+        private JdbcExecute(DbStatements statements,
+                            ExecutorService executorService,
+                            InterceptorSupport interceptors,
+                            ConnectionPool connectionPool,
+                            DbMapperManager dbMapperManager,
+                            MapperManager mapperManager) {
+            this(statements, createContext(executorService, interceptors, connectionPool, dbMapperManager, mapperManager));
+        }
+
+        private static JdbcExecuteContext createContext(ExecutorService executorService,
+                                                        InterceptorSupport interceptors,
+                                                        ConnectionPool connectionPool,
+                                                        DbMapperManager dbMapperManager,
+                                                        MapperManager mapperManager) {
+            CompletionStage<Connection> connection = CompletableFuture.supplyAsync(connectionPool::connection, executorService)
+                    .thenApply(conn -> {
+                        try {
+                            conn.setAutoCommit(true);
+                        } catch (SQLException e) {
+                            throw new DbClientException("Failed to set autocommit to true", e);
+                        }
+                        return conn;
+                    });
+
+            return JdbcExecuteContext.create(executorService,
+                                             interceptors,
+                                             connectionPool.dbType(),
+                                             connection,
+                                             dbMapperManager,
+                                             mapperManager);
         }
 
         @Override
@@ -193,57 +277,20 @@ class JdbcDbClient implements DbClient {
                                             JdbcStatementContext.create(DbStatementType.UNKNOWN, statementName, statement));
         }
 
-        @Override
-        public void rollback() {
-            setRollbackOnly = true;
+        JdbcExecuteContext context() {
+            return context;
         }
 
-        private void doRollback() {
+        void close() {
             context.connection()
-                    .thenApply(conn -> {
-                        try {
-                            conn.rollback();
-                            conn.close();
-                        } catch (SQLException e) {
-                            throw new DbClientException("Failed to rollback a transaction, or close a connection", e);
-                        }
-
-                        return conn;
-                    });
-        }
-
-        private void doCommit() {
-            if (setRollbackOnly) {
-                doRollback();
-                return;
-            }
-            context.connection()
-                    .thenApply(conn -> {
-                        try {
-                            conn.commit();
-                            conn.close();
-                        } catch (SQLException e) {
-                            throw new DbClientException("Failed to commit a transaction, or close a connection", e);
-                        }
-                        return conn;
-                    });
-        }
-
-        private void doClose() {
-            context.connection()
-                    .thenApply(conn -> {
+                    .thenAccept(conn -> {
                         try {
                             conn.close();
                         } catch (SQLException e) {
-                            throw new DbClientException("Failed to close a connection", e);
+                            //TODO
+                            e.printStackTrace();
                         }
-                        return conn;
                     });
-        }
-
-        public void whenComplete(Consumer<Boolean> completionConsumer) {
-            List<CompletionStage> connectionConsumers = new LinkedList<>();
-
         }
     }
 }
