@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.reactive.CollectingSubscriber;
 import io.helidon.common.reactive.Flow;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbColumn;
@@ -45,7 +46,6 @@ import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbRows;
 import io.helidon.dbclient.DbStatementQuery;
-import io.helidon.common.reactive.CollectingSubscriber;
 
 /**
  * Implementation of query.
