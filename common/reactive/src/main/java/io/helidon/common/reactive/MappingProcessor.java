@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.common;
+package io.helidon.common.reactive;
 
 import java.util.function.Function;
-
-import io.helidon.common.reactive.Flow;
 
 /**
  * A {@link Flow.Processor} that only maps the source type to target type using a mapping function.
