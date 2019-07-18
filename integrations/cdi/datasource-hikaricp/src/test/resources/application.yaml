@@ -1,0 +1,10 @@
+javax:
+   sql:
+      DataSource:
+         test:
+            dataSourceClassName: org.postgresql.ds.PGPoolingDataSource
+            dataSource:
+               url: jdbc:postgresql://127.0.0.1:5432/hello_world
+               user: benchmarkdbuser
+               password: benchmarkdbpass
+
