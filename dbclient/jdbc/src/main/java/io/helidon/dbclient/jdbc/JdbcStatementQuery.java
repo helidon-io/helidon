@@ -36,9 +36,11 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.reactive.CollectingSubscriber;
 import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.MappingProcessor;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbInterceptorContext;
@@ -94,57 +96,11 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
             CompletableFuture<Long> queryFuture,
             ResultSet resultSet) {
 
-        return new DbRows<DbRow>() {
-            private final AtomicBoolean resultRequested = new AtomicBoolean();
-
-            @Override
-            public <U> DbRows<U> map(Function<DbRow, U> mapper) {
-                throw new UnsupportedOperationException("TODO in later release");
-            }
-
-            @Override
-            public <U> DbRows<U> map(Class<U> type) {
-                throw new UnsupportedOperationException("TODO in later release");
-            }
-
-            @Override
-            public <U> DbRows<U> map(GenericType<U> type) {
-                throw new UnsupportedOperationException("TODO in later release");
-            }
-
-            @Override
-            public Flow.Publisher<DbRow> publisher() {
-                checkResult();
-                return toPublisher();
-            }
-
-            @Override
-            public CompletionStage<List<DbRow>> collect() {
-                checkResult();
-                return toFuture();
-            }
-
-            private Flow.Publisher<DbRow> toPublisher() {
-                return new RowPublisher(executorService,
-                                        resultSet,
-                                        queryFuture,
-                                        dbMapperManager,
-                                        mapperManager);
-            }
-
-            private CompletionStage<List<DbRow>> toFuture() {
-                CompletableFuture<List<DbRow>> result = new CompletableFuture<>();
-                toPublisher().subscribe(CollectingSubscriber.create(result));
-                return result;
-            }
-
-            private void checkResult() {
-                if (resultRequested.get()) {
-                    throw new IllegalStateException("Result has already been requested");
-                }
-                resultRequested.set(true);
-            }
-        };
+        return new JdbcDbRows<>(executorService,
+                                dbMapperManager,
+                                mapperManager,
+                                queryFuture,
+                                resultSet);
     }
 
     static Map<Long, DbColumn> createMetadata(ResultSet rs) throws SQLException {
@@ -201,6 +157,162 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
 
     String name() {
         return statementName();
+    }
+
+    private static final class JdbcDbRows<T> implements DbRows<T> {
+        private final AtomicBoolean resultRequested = new AtomicBoolean();
+        private final ExecutorService executorService;
+        private final DbMapperManager dbMapperManager;
+        private final MapperManager mapperManager;
+        private final CompletableFuture<Long> queryFuture;
+        private final ResultSet resultSet;
+        private final JdbcDbRows<?> parent;
+        private final GenericType<T> currentType;
+        private final Function<?, T> resultMapper;
+
+        private JdbcDbRows(ResultSet resultSet,
+                           ExecutorService executorService,
+                           DbMapperManager dbMapperManager,
+                           MapperManager mapperManager,
+                           CompletableFuture<Long> queryFuture,
+                           Class<T> initialType) {
+
+            this(resultSet,
+                 executorService,
+                 dbMapperManager,
+                 mapperManager,
+                 queryFuture,
+                 GenericType.create(initialType),
+                 Function.identity(),
+                 null);
+        }
+
+        private JdbcDbRows(ResultSet resultSet,
+                           ExecutorService executorService,
+                           DbMapperManager dbMapperManager,
+                           MapperManager mapperManager,
+                           CompletableFuture<Long> queryFuture,
+                           GenericType<T> nextType,
+                           Function<?, T> resultMapper,
+                           JdbcDbRows<?> parent) {
+
+            this.executorService = executorService;
+            this.dbMapperManager = dbMapperManager;
+            this.mapperManager = mapperManager;
+            this.queryFuture = queryFuture;
+            this.resultSet = resultSet;
+            this.currentType = nextType;
+            this.resultMapper = resultMapper;
+            this.parent = parent;
+        }
+
+        @Override
+        public <U> DbRows<U> map(Function<T, U> mapper) {
+            return new JdbcDbRows<>(resultSet,
+                                    executorService,
+                                    dbMapperManager,
+                                    mapperManager,
+                                    queryFuture,
+                                    null,
+                                    mapper,
+                                    this);
+        }
+
+        @Override
+        public <U> DbRows<U> map(Class<U> type) {
+            return map(GenericType.create(type));
+        }
+
+        @Override
+        public <U> DbRows<U> map(GenericType<U> type) {
+            GenericType<T> currentType = this.currentType;
+
+            Function<T, U> theMapper;
+
+            if (null == currentType) {
+                theMapper = value -> mapperManager.map(value,
+                                                       GenericType.create(value.getClass()),
+                                                       type);
+            } else if (currentType.equals(DbMapperManager.TYPE_DB_ROW)) {
+                // maybe we want the same type
+                if (type.equals(DbMapperManager.TYPE_DB_ROW)) {
+                    return (DbRows<U>) this;
+                }
+                // try to find mapper in db mapper manager
+                theMapper = value -> {
+                    //first try db mapper
+                    try {
+                        return dbMapperManager.read((DbRow) value, type);
+                    } catch (MapperException originalException) {
+                        // not found in db mappers, use generic mappers
+                        try {
+                            return mapperManager.map(value,
+                                                     DbMapperManager.TYPE_DB_ROW,
+                                                     type);
+                        } catch (MapperException ignored) {
+                            throw originalException;
+                        }
+                    }
+                };
+            } else {
+                // one type to another
+                theMapper = value -> mapperManager.map(value,
+                                                       currentType,
+                                                       type);
+            }
+            return new JdbcDbRows<>(resultSet,
+                                    executorService,
+                                    dbMapperManager,
+                                    mapperManager,
+                                    queryFuture,
+                                    type,
+                                    theMapper,
+                                    this);
+        }
+
+        @Override
+        public Flow.Publisher<T> publisher() {
+            checkResult();
+            return toPublisher();
+        }
+
+        @Override
+        public CompletionStage<List<T>> collect() {
+            checkResult();
+            return toFuture();
+        }
+
+        @SuppressWarnings("unchecked")
+        private Flow.Publisher<T> toPublisher() {
+            if (null == parent) {
+                // this is DbRow type
+                return (Flow.Publisher<T>) new RowPublisher(executorService,
+                                                            resultSet,
+                                                            queryFuture,
+                                                            dbMapperManager,
+                                                            mapperManager);
+            }
+
+            Flow.Publisher<?> parentPublisher = parent.publisher();
+            Function<Object, T> mappingFunction = (Function<Object, T>) resultMapper;
+            // otherwise we must apply mapping
+            MappingProcessor<Object, T> processor = MappingProcessor.create(mappingFunction);
+            parentPublisher.subscribe(processor);
+            return processor;
+        }
+
+        private CompletionStage<List<T>> toFuture() {
+            CompletableFuture<List<T>> result = new CompletableFuture<>();
+            toPublisher().subscribe(CollectingSubscriber.create(result));
+            return result;
+        }
+
+        private void checkResult() {
+            if (resultRequested.get()) {
+                throw new IllegalStateException("Result has already been requested");
+            }
+            resultRequested.set(true);
+        }
     }
 
     private static final class RowPublisher implements Flow.Publisher<DbRow> {

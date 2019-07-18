@@ -325,7 +325,7 @@ class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery, DbRows<Db
             this.statementFuture = statementFuture;
             this.queryFuture = queryFuture;
             this.currentType = GenericType.create(initialType);
-            this.resultMapper = null;
+            this.resultMapper = Function.identity();
             this.parent = null;
         }
 
