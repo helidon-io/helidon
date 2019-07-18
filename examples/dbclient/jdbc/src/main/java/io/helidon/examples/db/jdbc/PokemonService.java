@@ -26,6 +26,7 @@ import javax.json.JsonObject;
 import io.helidon.common.http.Http;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbRows;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
@@ -140,7 +141,13 @@ public class PokemonService implements Service {
      * @param response the server response
      */
     private void listPokemons(ServerRequest request, ServerResponse response) {
-        dbClient.execute(exec -> exec.namedQuery("select-all"))
+        dbClient.execute(exec -> {
+            exec.namedQuery("select-all")
+                    .thenCompose(DbRows::collect)
+                    .thenAccept(System.out::println);
+
+            return exec.namedQuery("select-all");
+        })
                 .thenAccept(response::send)
                 .exceptionally(throwable -> sendError(throwable, response));
     }

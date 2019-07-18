@@ -44,6 +44,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
     private final ExecutorService executorService;
     private final String dbType;
     private final CompletionStage<Connection> connection;
+    private final JdbcExecuteContext executeContext;
 
     JdbcStatement(JdbcExecuteContext executeContext, JdbcStatementContext statementContext) {
         super(statementContext.statementType(),
@@ -53,6 +54,7 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
               executeContext.mapperManager(),
               executeContext.interceptors());
 
+        this.executeContext = executeContext;
         this.dbType = executeContext.dbType();
         this.connection = executeContext.connection();
         this.executorService = executeContext.executorService();
@@ -109,6 +111,10 @@ abstract class JdbcStatement<S extends DbStatement<S, R>, R> extends AbstractSta
 
     ExecutorService executorService() {
         return executorService;
+    }
+
+    JdbcExecuteContext executeContext() {
+        return executeContext;
     }
 
     private PreparedStatement prepareStatement(Connection conn, String statementName, String statement) {
