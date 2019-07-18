@@ -29,6 +29,10 @@
     <name>Helidon DB Client JDBC</name>
     <description>Helidon DB implementation for JDBC</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>

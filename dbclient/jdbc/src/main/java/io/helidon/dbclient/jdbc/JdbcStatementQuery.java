@@ -265,17 +265,9 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
                 }
             });
 
-            /*
-            TODO
-            TODO Connection is now closed in JdbcExecute - that is wrong - here we need connection much later
-            TODO Need to device some way to notify that we have finished our work with the connection (CountdownLatch equiv?)
-            TODO
-             */
-
             // and now we can process the data from the database
             executorService.submit(() -> {
                 //now we have a subscriber, we can handle the processing of result set
-
                 try (ResultSet rs = this.rs) {
                     Map<Long, DbColumn> metadata = createMetadata(rs);
                     long count = 0;
