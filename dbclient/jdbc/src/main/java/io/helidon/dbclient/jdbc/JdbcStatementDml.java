@@ -34,6 +34,8 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml, Long> implements Db
                                               CompletableFuture<Void> statementFuture,
                                               CompletableFuture<Long> queryFuture) {
 
+        executeContext().addFuture(queryFuture);
+
         // query and statement future must always complete either OK, or exceptionally
         dbContextFuture.exceptionally(throwable -> {
             statementFuture.completeExceptionally(throwable);
