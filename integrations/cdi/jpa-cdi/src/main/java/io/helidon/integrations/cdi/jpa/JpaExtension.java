@@ -700,8 +700,8 @@ public class JpaExtension implements Extension {
             this.processImplicitPersistenceUnits(event, providers);
         }
 
-        // Add synthetic beans to support JPA.  In some cases, JTA
-        // must be present (see JPA section 7.5, for example: "A
+        // Add beans to support JPA.  In some cases, JTA must be
+        // present (see JPA section 7.5, for example: "A
         // container-managed entity manager must be a JTA entity
         // manager.").
         this.addContainerManagedJpaBeans(event, beanManager);
@@ -730,16 +730,17 @@ public class JpaExtension implements Extension {
             for (final Set<Annotation> qualifiers : this.allQualifiers) {
                 // Note that each add* method invoked below is
                 // responsible for ensuring that it adds beans only
-                // once if at all, i.e. for validating the qualifiers
-                // that it is supplied with.
-                addContainerManagedEntityManagerFactory(event, qualifiers);
-                addCDITransactionScopedEntityManager(event, qualifiers);
+                // once if at all, i.e. for validating and
+                // de-duplicating the qualifiers that it is supplied
+                // with if necessary.
+                addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
+                addCDITransactionScopedEntityManagerBeans(event, qualifiers);
                 if (qualifiers.contains(Extended.Literal.INSTANCE)) {
-                    addExtendedEntityManager(event, qualifiers, beanManager);
+                    addExtendedEntityManagerBeans(event, qualifiers, beanManager);
                 } else {
                     assert qualifiers.contains(JPATransactionScoped.Literal.INSTANCE);
-                    addNonTransactionalEntityManager(event, qualifiers, beanManager);
-                    addJPATransactionScopedEntityManager(event, qualifiers);
+                    addNonTransactionalEntityManagerBeans(event, qualifiers, beanManager);
+                    addJPATransactionScopedEntityManagerBeans(event, qualifiers);
                 }
             }
         } else {
@@ -748,7 +749,7 @@ public class JpaExtension implements Extension {
                 // responsible for ensuring that it adds beans only
                 // once if at all, i.e. for validating the qualifiers
                 // that it is supplied with.
-                addContainerManagedEntityManagerFactory(event, qualifiers);
+                addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
             }
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -756,10 +757,10 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addContainerManagedEntityManagerFactory(final AfterBeanDiscovery event,
-                                                         final Set<Annotation> suppliedQualifiers) {
+    private void addContainerManagedEntityManagerFactoryBeans(final AfterBeanDiscovery event,
+                                                             final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addContainerManagedEntityManagerFactory";
+        final String mn = "addContainerManagedEntityManagerFactoryBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
@@ -779,7 +780,7 @@ public class JpaExtension implements Extension {
                 .addType(EntityManagerFactory.class)
                 .scope(ApplicationScoped.class)
                 .addQualifiers(qualifiers)
-                .produceWith(instance -> produceContainerManagedEntityManagerFactory(instance, suppliedQualifiers))
+                .produceWith(instance -> produceContainerManagedEntityManagerFactory(instance, qualifiers))
                 .disposeWith((emf, instance) -> emf.close());
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -787,10 +788,10 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addCDITransactionScopedEntityManager(final AfterBeanDiscovery event,
-                                                      final Set<Annotation> suppliedQualifiers) {
+    private void addCDITransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
+                                                          final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addCDITransactionScopedEntityManager";
+        final String mn = "addCDITransactionScopedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
@@ -849,10 +850,10 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addJPATransactionScopedEntityManager(final AfterBeanDiscovery event,
-                                                      final Set<Annotation> suppliedQualifiers) {
+    private void addJPATransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
+                                                           final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addJPATransactionScopedEntityManager";
+        final String mn = "addJPATransactionScopedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
@@ -887,11 +888,11 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addNonTransactionalEntityManager(final AfterBeanDiscovery event,
-                                                  final Set<Annotation> suppliedQualifiers,
-                                                  final BeanManager beanManager) {
+    private void addNonTransactionalEntityManagerBeans(final AfterBeanDiscovery event,
+                                                       final Set<Annotation> suppliedQualifiers,
+                                                       final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addNonTransactionalEntityManager";
+        final String mn = "addNonTransactionalEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
@@ -922,11 +923,11 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addExtendedEntityManager(final AfterBeanDiscovery event,
-                                          final Set<Annotation> suppliedQualifiers,
-                                          final BeanManager beanManager) {
+    private void addExtendedEntityManagerBeans(final AfterBeanDiscovery event,
+                                               final Set<Annotation> suppliedQualifiers,
+                                               final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addExtendedEntityManager";
+        final String mn = "addExtendedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers, beanManager});
         }
@@ -1089,15 +1090,17 @@ public class JpaExtension implements Extension {
      * @param instance an {@link Instance} used to acquire contextual
      * references; must not be {@code null}
      *
-     * @param suppliedQualifiers qualifiers that will qualify the
-     * returned {@link EntityManagerFactory}; must not be {@code null}
+     * @param suppliedQualifiers a {@link Set} of qualifier
+     * annotations with which the CDI bean whose producer method this
+     * method effectively is will be associated; must not be {@code
+     * null}
      *
      * @see
      * PersistenceProvider#createContainerEntityManagerFactory(PersistenceUnitInfo,
      * Map)
      */
     private EntityManagerFactory produceContainerManagedEntityManagerFactory(final Instance<Object> instance,
-                                                                             final Set<Annotation> suppliedQualifiers) {
+                                                                             final Set<? extends Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "produceContainerManagedEntityManagerFactory";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1659,7 +1662,7 @@ public class JpaExtension implements Extension {
     }
 
     private static PersistenceUnitInfo getPersistenceUnitInfo(final Instance<Object> instance,
-                                                              final Set<Annotation> suppliedQualifiers) {
+                                                              final Set<? extends Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
         final String mn = "getPersistenceUnitInfo";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1706,7 +1709,7 @@ public class JpaExtension implements Extension {
     }
 
     private static PersistenceProvider getPersistenceProvider(final Instance<Object> instance,
-                                                              final Set<Annotation> suppliedQualifiers,
+                                                              final Set<? extends Annotation> suppliedQualifiers,
                                                               final PersistenceUnitInfo persistenceUnitInfo)
         throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
