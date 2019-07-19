@@ -68,9 +68,9 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
         if (context != null && context.isActive()) {
             final Set<Annotation> qualifiers = new HashSet<>(this.suppliedQualifiers);
             qualifiers.remove(Extended.Literal.INSTANCE);
-            qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+            qualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
             qualifiers.remove(NonTransactional.Literal.INSTANCE);
-            qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+            qualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
             qualifiers.add(ContainerManaged.Literal.INSTANCE);
             final Set<Bean<?>> cdiTransactionScopedEntityManagerBeans =
                 this.beanManager.getBeans(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()]));

@@ -24,12 +24,12 @@ import javax.inject.Provider;
 import javax.transaction.TransactionScoped;
 
 @ApplicationScoped
-final class JTATransactionSupport implements TransactionSupport {
+final class JtaTransactionSupport implements TransactionSupport {
 
     private final Provider<BeanManager> beanManagerProvider;
 
     @Inject
-    private JTATransactionSupport(final Provider<BeanManager> beanManagerProvider) {
+    private JtaTransactionSupport(final Provider<BeanManager> beanManagerProvider) {
         super();
         this.beanManagerProvider = beanManagerProvider;
     }

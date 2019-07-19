@@ -25,13 +25,13 @@ import javax.inject.Qualifier;
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
-@interface CDITransactionScoped {
+@interface CdiTransactionScoped {
 
-  final class Literal extends AnnotationLiteral<CDITransactionScoped> implements CDITransactionScoped {
+  final class Literal extends AnnotationLiteral<CdiTransactionScoped> implements CdiTransactionScoped {
 
     private static final long serialVersionUID = 1L;
 
-    static final CDITransactionScoped INSTANCE = new Literal();
+    static final CdiTransactionScoped INSTANCE = new Literal();
 
     private Literal() {
       super();

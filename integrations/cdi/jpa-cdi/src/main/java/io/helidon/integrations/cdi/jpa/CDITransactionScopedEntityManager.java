@@ -22,9 +22,9 @@ import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 
-final class CDITransactionScopedEntityManager extends DelegatingEntityManager {
+final class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
 
-    CDITransactionScopedEntityManager(final Instance<Object> instance,
+    CdiTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
         super(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers));
     }

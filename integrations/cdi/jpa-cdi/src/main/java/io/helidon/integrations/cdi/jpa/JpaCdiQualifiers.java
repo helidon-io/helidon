@@ -33,11 +33,11 @@ final class JpaCdiQualifiers {
 
     static {
         final Set<Annotation> jpaCdiQualifiers = new HashSet<>();
-        jpaCdiQualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+        jpaCdiQualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
         jpaCdiQualifiers.add(ContainerManaged.Literal.INSTANCE);
         jpaCdiQualifiers.add(Extended.Literal.INSTANCE);
         jpaCdiQualifiers.add(NonTransactional.Literal.INSTANCE);
-        jpaCdiQualifiers.add(JPATransactionScoped.Literal.INSTANCE);
+        jpaCdiQualifiers.add(JpaTransactionScoped.Literal.INSTANCE);
         jpaCdiQualifiers.add(Synchronized.Literal.INSTANCE);
         jpaCdiQualifiers.add(Unsynchronized.Literal.INSTANCE);
         JPA_CDI_QUALIFIERS = Collections.unmodifiableSet(jpaCdiQualifiers);

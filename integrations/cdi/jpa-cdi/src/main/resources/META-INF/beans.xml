@@ -23,7 +23,7 @@
        version="2.0"
        bean-discovery-mode="annotated">
   <scan>
-    <exclude name="io.helidon.integrations.cdi.jpa.JTATransactionSupport">
+    <exclude name="io.helidon.integrations.cdi.jpa.JtaTransactionSupport">
       <if-class-not-available name="javax.transaction.Transaction"/>
     </exclude>
     <exclude name="io.helidon.integrations.cdi.jpa.NoTransactionSupport">

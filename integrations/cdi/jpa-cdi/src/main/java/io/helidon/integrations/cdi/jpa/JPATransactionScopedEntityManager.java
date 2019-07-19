@@ -25,7 +25,7 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Provider;
 import javax.persistence.EntityManager;
 
-final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
+final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
     private final TransactionSupport transactionSupport;
 
@@ -33,7 +33,7 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
 
     private final Provider<EntityManager> nonTransactionalEntityManagerProvider;
 
-    JPATransactionScopedEntityManager(final Instance<Object> instance,
+    JpaTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
         super();
         Objects.requireNonNull(instance);
@@ -43,7 +43,7 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
             throw new IllegalArgumentException("!transactionSupport.isActive()");
         }
         this.cdiTransactionScopedEntityManagerProvider =
-            Objects.requireNonNull(getCDITransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
+            Objects.requireNonNull(getCdiTransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
         final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
         selectionQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
         selectionQualifiers.add(NonTransactional.Literal.INSTANCE);
@@ -76,15 +76,15 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
     }
 
     static Instance<EntityManager>
-        getCDITransactionScopedEntityManagerInstance(final Instance<Object> instance,
+        getCdiTransactionScopedEntityManagerInstance(final Instance<Object> instance,
                                                      final Set<? extends Annotation> suppliedQualifiers) {
         Objects.requireNonNull(instance);
         Objects.requireNonNull(suppliedQualifiers);
         final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
         selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
-        selectionQualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
         selectionQualifiers.remove(Any.Literal.INSTANCE);
-        selectionQualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
         selectionQualifiers.remove(Extended.Literal.INSTANCE);
         selectionQualifiers.remove(NonTransactional.Literal.INSTANCE);
         final Instance<EntityManager> returnValue =

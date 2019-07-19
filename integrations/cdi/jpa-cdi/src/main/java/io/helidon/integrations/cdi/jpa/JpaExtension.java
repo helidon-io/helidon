@@ -199,7 +199,7 @@ public class JpaExtension implements Extension {
 
     /**
      * A {@link Set} of {@link Set}s of CDI qualifiers for which
-     * {@link CDITransactionScoped}-annotated {@link EntityManager}s
+     * {@link CdiTransactionScoped}-annotated {@link EntityManager}s
      * may be created.
      *
      * <p>This field is never {@code null}.</p>
@@ -330,7 +330,7 @@ public class JpaExtension implements Extension {
      * PersistenceContext} to CDI injection points annotated with an
      * appropriate combination of {@link Inject}, {@link
      * ContainerManaged}, {@link Extended}, {@link
-     * JPATransactionScoped}, {@link Synchronized} and/or {@link
+     * JpaTransactionScoped}, {@link Synchronized} and/or {@link
      * Unsynchronized}.
      *
      * <p>This method does nothing if the {@link
@@ -734,13 +734,13 @@ public class JpaExtension implements Extension {
                 // de-duplicating the qualifiers that it is supplied
                 // with if necessary.
                 addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
-                addCDITransactionScopedEntityManagerBeans(event, qualifiers);
+                addCdiTransactionScopedEntityManagerBeans(event, qualifiers);
                 if (qualifiers.contains(Extended.Literal.INSTANCE)) {
                     addExtendedEntityManagerBeans(event, qualifiers, beanManager);
                 } else {
-                    assert qualifiers.contains(JPATransactionScoped.Literal.INSTANCE);
+                    assert qualifiers.contains(JpaTransactionScoped.Literal.INSTANCE);
                     addNonTransactionalEntityManagerBeans(event, qualifiers, beanManager);
-                    addJPATransactionScopedEntityManagerBeans(event, qualifiers);
+                    addJpaTransactionScopedEntityManagerBeans(event, qualifiers);
                 }
             }
         } else {
@@ -788,10 +788,10 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addCDITransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
+    private void addCdiTransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
                                                           final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addCDITransactionScopedEntityManagerBeans";
+        final String mn = "addCdiTransactionScopedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
@@ -803,15 +803,15 @@ public class JpaExtension implements Extension {
         // Provide support for, e.g.:
         //   @Inject
         //   @ContainerManaged
-        //   @CDITransactionScoped
+        //   @CdiTransactionScoped
         //   @Synchronized // or @Unsynchronized, or none
         //   @Named("test")
         //   private final EntityManager cdiTransactionScopedEm;
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
-        qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+        qualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
         qualifiers.remove(Extended.Literal.INSTANCE);
-        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
         if (this.cdiTransactionScopedEntityManagerQualifiers.add(qualifiers)) {
             final Class<? extends Annotation> scope;
             Class<? extends Annotation> temp = null;
@@ -839,10 +839,10 @@ public class JpaExtension implements Extension {
             }
             event.addBean()
                 .addType(EntityManager.class)
-                .addType(CDITransactionScopedEntityManager.class)
+                .addType(CdiTransactionScopedEntityManager.class)
                 .scope(scope)
                 .addQualifiers(qualifiers)
-                .produceWith(instance -> new CDITransactionScopedEntityManager(instance, suppliedQualifiers))
+                .produceWith(instance -> new CdiTransactionScopedEntityManager(instance, suppliedQualifiers))
                 .disposeWith((em, instance) -> em.close());
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -850,10 +850,10 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private void addJPATransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
+    private void addJpaTransactionScopedEntityManagerBeans(final AfterBeanDiscovery event,
                                                            final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
-        final String mn = "addJPATransactionScopedEntityManagerBeans";
+        final String mn = "addJpaTransactionScopedEntityManagerBeans";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, suppliedQualifiers});
         }
@@ -865,23 +865,23 @@ public class JpaExtension implements Extension {
         // Provide support for, e.g.:
         //   @Inject
         //   @ContainerManaged
-        //   @JPATransactionScoped
+        //   @JpaTransactionScoped
         //   @Synchronized // or @Unsynchronized, or none
         //   @Named("test")
         //   private final EntityManager cdiTransactionScopedEm;
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
-        qualifiers.add(JPATransactionScoped.Literal.INSTANCE);
-        qualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
+        qualifiers.add(JpaTransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(CdiTransactionScoped.Literal.INSTANCE);
         qualifiers.remove(Extended.Literal.INSTANCE);
         qualifiers.remove(NonTransactional.Literal.INSTANCE);
         event.addBean()
             .addType(EntityManager.class)
-            .addType(JPATransactionScopedEntityManager.class)
+            .addType(JpaTransactionScopedEntityManager.class)
             .scope(Dependent.class)
             .addQualifiers(qualifiers)
-            .beanClass(JPATransactionScopedEntityManager.class)
-            .produceWith(instance -> new JPATransactionScopedEntityManager(instance, suppliedQualifiers));
+            .beanClass(JpaTransactionScopedEntityManager.class)
+            .produceWith(instance -> new JpaTransactionScopedEntityManager(instance, suppliedQualifiers));
             // (deliberately no disposeWith())
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -947,8 +947,8 @@ public class JpaExtension implements Extension {
         final Set<Annotation> qualifiers = new HashSet<>(suppliedQualifiers);
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
         qualifiers.add(Extended.Literal.INSTANCE);
-        qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
-        qualifiers.remove(CDITransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
+        qualifiers.remove(CdiTransactionScoped.Literal.INSTANCE);
         qualifiers.remove(NonTransactional.Literal.INSTANCE);
         event.addBean()
             .addType(EntityManager.class)
@@ -1255,7 +1255,7 @@ public class JpaExtension implements Extension {
         if (PersistenceContextType.EXTENDED.equals(pc.type())) {
             fc.add(Extended.Literal.INSTANCE);
         } else {
-            fc.add(JPATransactionScoped.Literal.INSTANCE);
+            fc.add(JpaTransactionScoped.Literal.INSTANCE);
         }
         if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
             fc.add(Unsynchronized.Literal.INSTANCE);
@@ -1434,7 +1434,7 @@ public class JpaExtension implements Extension {
                                 if (PersistenceContextType.EXTENDED.equals(pc.type())) {
                                     apc.add(Extended.Literal.INSTANCE);
                                 } else {
-                                    apc.add(JPATransactionScoped.Literal.INSTANCE);
+                                    apc.add(JpaTransactionScoped.Literal.INSTANCE);
                                 }
                                 if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
                                     apc.add(Unsynchronized.Literal.INSTANCE);

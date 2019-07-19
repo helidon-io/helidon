@@ -25,13 +25,13 @@ import javax.inject.Qualifier;
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
-@interface JPATransactionScoped {
+@interface JpaTransactionScoped {
 
-  final class Literal extends AnnotationLiteral<JPATransactionScoped> implements JPATransactionScoped {
+  final class Literal extends AnnotationLiteral<JpaTransactionScoped> implements JpaTransactionScoped {
 
     private static final long serialVersionUID = 1L;
 
-    static final JPATransactionScoped INSTANCE = new Literal();
+    static final JpaTransactionScoped INSTANCE = new Literal();
 
     private Literal() {
       super();
