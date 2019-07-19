@@ -57,14 +57,8 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.InjectionTarget;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
-import javax.enterprise.inject.spi.ProcessInjectionTarget;
-import javax.enterprise.inject.spi.ProcessObserverMethod;
-import javax.enterprise.inject.spi.ProcessProducer;
-import javax.enterprise.inject.spi.Producer;
 import javax.enterprise.inject.spi.WithAnnotations;
 import javax.enterprise.inject.spi.configurator.AnnotatedFieldConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
@@ -96,7 +90,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import io.helidon.integrations.cdi.delegates.DelegatingInjectionTarget;
 import io.helidon.integrations.cdi.jpa.PersistenceUnitInfoBean.DataSourceProvider;
 import io.helidon.integrations.cdi.jpa.jaxb.Persistence;
 import io.helidon.integrations.cdi.referencecountedcontext.ReferenceCounted;
@@ -757,59 +750,6 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private <T> void installSpecialProducer(@Observes final ProcessProducer<?, T> event) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "installSpecialProducer";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, event);
-        }
-        final Producer<T> producer = event.getProducer();
-        final Set<?> keys = getPersistenceUnitNamesReferencedBy(producer);
-        if (keys != null && !keys.isEmpty()) {
-            event.setProducer(new EntityManagerReferencingProducer<>(producer, keys));
-        }
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn);
-        }
-    }
-
-    private <T> void installSpecialInjectionTarget(@Observes final ProcessInjectionTarget<T> event) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "installSpecialInjectionTarget";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, event);
-        }
-        final InjectionTarget<T> injectionTarget = event.getInjectionTarget();
-        final Set<?> keys = getPersistenceUnitNamesReferencedBy(injectionTarget);
-        if (keys != null && !keys.isEmpty()) {
-            event.setInjectionTarget(new DelegatingInjectionTarget<>(injectionTarget,
-                                                                     new EntityManagerReferencingProducer<>(injectionTarget,
-                                                                                                            keys)));
-        }
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn);
-        }
-    }
-
-    private <T> void installSpecialNotifier(@Observes final ProcessObserverMethod<T, ?> event,
-                                        final BeanManager beanManager) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "installSpecialNotifier";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, new Object[] {event, beanManager});
-        }
-        final Set<InjectionPoint> observerMethodInjectionPoints =
-            getObserverMethodInjectionPoints(event.getAnnotatedMethod(), beanManager);
-        final Set<?> keys = getPersistenceUnitNamesReferencedBy(observerMethodInjectionPoints);
-        if (keys != null && !keys.isEmpty()) {
-            event.configureObserverMethod()
-                .notifyWith(new EntityManagerReferencingNotifier<>(event.getObserverMethod(), keys));
-        }
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn);
-        }
-    }
-
     /**
      * Adds various beans that integrate JPA into CDI SE.
      *
@@ -920,128 +860,6 @@ public class JpaExtension implements Extension {
         }
     }
 
-    /**
-     * Returns a deliberately opaque {@link Set} representing
-     * the persistence <em>units</em> referenced by the bean
-     * represented by the supplied {@link Producer}.
-     *
-     * @param producer the {@link Producer} in question; must not be {@code null}
-     *
-     * @return a non-{@code null}, {@linkplain
-     * Collections#unmodifiableSet(Set) unmodifiable} {@link Set} of
-     * persistence unit identifiers
-     *
-     * @exception NullPointerException if {@code producer} is {@code
-     * null}
-     *
-     * @see
-     * EntityManagerReferencingProducer#EntityManagerReferencingProducer(Producer,
-     * Set)
-     */
-    private static Set<?> getPersistenceUnitNamesReferencedBy(final Producer<?> producer) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "getPersistenceUnitNamesReferencedBy";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, producer);
-        }
-        final Set<?> returnValue = getPersistenceUnitNamesReferencedBy(producer.getInjectionPoints());
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn, returnValue);
-        }
-        return returnValue;
-    }
-
-    private static Set<?> getPersistenceUnitNamesReferencedBy(final Set<? extends InjectionPoint> injectionPoints) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "getPersistenceUnitNamesReferencedBy";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, injectionPoints);
-        }
-        final Set<Object> keys = new HashSet<>();
-        if (injectionPoints != null && !injectionPoints.isEmpty()) {
-            for (final InjectionPoint injectionPoint : injectionPoints) {
-                final Type type = injectionPoint.getType();
-                if (type instanceof Class && EntityManager.class.isAssignableFrom((Class<?>) type)) {
-                    final Set<? extends Annotation> qualifiers = injectionPoint.getQualifiers();
-                    if (qualifiers != null && !qualifiers.isEmpty()) {
-                        boolean jpaTransactionScoped = false;
-                        Named named = null;
-                        for (final Annotation qualifier : qualifiers) {
-                            if (qualifier instanceof Named) {
-                                named = (Named) qualifier;
-                            } else if (qualifier instanceof JPATransactionScoped) {
-                                jpaTransactionScoped = true;
-                            }
-                        }
-                        if (jpaTransactionScoped && named != null) {
-                            // Because of processing the annotated
-                            // type stuff above, we have converted
-                            // all @PersistenceContext annotations
-                            // into sequences like:
-                            //   @Inject
-                            //   @ContainerManaged
-                            //   @Named("fred")
-                            //   @JPATransactionScoped
-                            //   @Synchronized
-                            // ...so we look for @Named here.
-                            keys.add(named.value().trim());
-                        }
-                    }
-                }
-            }
-        }
-        final Set<?> returnValue = Collections.unmodifiableSet(keys);
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn, returnValue);
-        }
-        return returnValue;
-    }
-
-    /**
-     * Returns a non-{@code null}, {@linkplain
-     * Collections#unmodifiableSet(Set) unmodifiable <code>Set</code>}
-     * of {@link InjectionPoint}s representing the injectable
-     * parameters in an observer method.
-     *
-     * <p>This method never returns {@code null}.</p>
-     *
-     * @param annotatedMethod the {@link AnnotatedMethod} normally
-     * {@linkplain ProcessObserverMethod#getAnnotatedMethod() sourced
-     * from} a {@link ProcessObserverMethod} event; may be {@code
-     * null} in which case an empty {@link Set} will be returned
-     *
-     * @param beanManager a {@link BeanManager} whose {@link
-     * BeanManager#createInjectionPoint(AnnotatedParameter)} method
-     * will be used to actually create {@link InjectionPoint}
-     * instances; may be {@code null} in whichc ase an empty {@link
-     * Set} will be returned
-     */
-    private static <X> Set<InjectionPoint> getObserverMethodInjectionPoints(final AnnotatedMethod<X> annotatedMethod,
-                                                                            final BeanManager beanManager) {
-        final String cn = JpaExtension.class.getName();
-        final String mn = "getObserverMethodInjectionPoints";
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.entering(cn, mn, new Object[] {annotatedMethod, beanManager});
-        }
-        final Set<InjectionPoint> injectionPoints = new HashSet<>();
-        if (annotatedMethod != null && beanManager != null) {
-            final List<AnnotatedParameter<X>> annotatedParameters = annotatedMethod.getParameters();
-            if (annotatedParameters != null && annotatedParameters.size() > 1) {
-                for (final AnnotatedParameter<X> annotatedParameter : annotatedParameters) {
-                    if (annotatedParameter != null && !annotatedParameter.isAnnotationPresent(Observes.class)) {
-                        final InjectionPoint injectionPoint = beanManager.createInjectionPoint(annotatedParameter);
-                        injectionPoints.add(injectionPoint);
-                    }
-                }
-            }
-        }
-        final Set<InjectionPoint> returnValue = Collections.unmodifiableSet(injectionPoints);
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.exiting(cn, mn, returnValue);
-        }
-        return returnValue;
-    }
-
     private void addContainerManagedEntityManagerBeans(final AfterBeanDiscovery event, final BeanManager beanManager) {
         final String cn = JpaExtension.class.getName();
         final String mn = "addContainerManagedEntityManagerBeans";
@@ -1102,8 +920,6 @@ public class JpaExtension implements Extension {
                 })
             .disposeWith((emf, instance) -> {
                     emf.close();
-                    final Object contents = NonTransactionalTransactionScopedEntityManagerReferences.getContents();
-                    System.out.println("********* CONTENTS: " + contents);
                 });
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
