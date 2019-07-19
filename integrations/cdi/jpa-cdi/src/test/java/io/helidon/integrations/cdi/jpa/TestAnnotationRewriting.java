@@ -27,8 +27,10 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
+import javax.persistence.PersistenceUnit;
 import javax.persistence.TransactionRequiredException;
 import javax.transaction.Transactional;
 
@@ -53,6 +55,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 )
 class TestAnnotationRewriting {
 
+    @PersistenceUnit(unitName = "test")
+    private EntityManagerFactory emf;
+    
     @PersistenceContext(unitName = "test")
     private EntityManager em;
 
@@ -85,12 +90,17 @@ class TestAnnotationRewriting {
     private void observerMethod(@Observes final TestIsRunning event,
                                 final EntityManager emParameter) {
         assertNotNull(event);
+
         assertNotNull(emParameter);
         assertTrue(emParameter.isOpen());
         assertFalse(emParameter.isJoinedToTransaction());
+
         assertNotNull(this.em);
         assertTrue(this.em.isOpen());
         assertFalse(this.em.isJoinedToTransaction());
+
+        assertNotNull(this.emf);
+        assertTrue(this.emf.isOpen());
     }
 
     @Test

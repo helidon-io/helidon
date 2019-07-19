@@ -44,13 +44,13 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
         }
         this.cdiTransactionScopedEntityManagerProvider =
             Objects.requireNonNull(getCDITransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
-        final Set<Annotation> nonTransactionalQualifiers = new HashSet<>(suppliedQualifiers);
-        nonTransactionalQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
-        nonTransactionalQualifiers.add(NonTransactional.Literal.INSTANCE);
-        final Annotation[] nonTransactionalQualifiersArray =
-            nonTransactionalQualifiers.toArray(new Annotation[nonTransactionalQualifiers.size()]);
+        final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
+        selectionQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
+        selectionQualifiers.add(NonTransactional.Literal.INSTANCE);
+        final Annotation[] selectionQualifiersArray =
+            selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]);
         this.nonTransactionalEntityManagerProvider =
-            Objects.requireNonNull(instance.select(EntityManager.class, nonTransactionalQualifiersArray));
+            Objects.requireNonNull(instance.select(EntityManager.class, selectionQualifiersArray));
 
     }
 
@@ -80,15 +80,15 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
                                                      final Set<? extends Annotation> suppliedQualifiers) {
         Objects.requireNonNull(instance);
         Objects.requireNonNull(suppliedQualifiers);
-        final Set<Annotation> emQualifiers = new HashSet<>(suppliedQualifiers);
-        emQualifiers.add(ContainerManaged.Literal.INSTANCE);
-        emQualifiers.add(CDITransactionScoped.Literal.INSTANCE);
-        emQualifiers.remove(Any.Literal.INSTANCE);
-        emQualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
-        emQualifiers.remove(Extended.Literal.INSTANCE);
-        emQualifiers.remove(NonTransactional.Literal.INSTANCE);
+        final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
+        selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
+        selectionQualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.remove(Any.Literal.INSTANCE);
+        selectionQualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.remove(Extended.Literal.INSTANCE);
+        selectionQualifiers.remove(NonTransactional.Literal.INSTANCE);
         final Instance<EntityManager> returnValue =
-            instance.select(EntityManager.class, emQualifiers.toArray(new Annotation[emQualifiers.size()]));
+            instance.select(EntityManager.class, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         return returnValue;
     }
 

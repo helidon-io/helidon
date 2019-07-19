@@ -53,25 +53,25 @@ final class EntityManagerFactories {
         assert emf.isOpen();
         final SynchronizationType syncType =
             suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE) ? SynchronizationType.UNSYNCHRONIZED : null;
-        final Set<Annotation> qualifiers;
+        final Set<Annotation> selectionQualifiers;
         if (suppliedQualifiers.isEmpty()) {
-            qualifiers = Collections.singleton(ContainerManaged.Literal.INSTANCE);
+            selectionQualifiers = Collections.singleton(ContainerManaged.Literal.INSTANCE);
         } else {
-            qualifiers = new HashSet<>(suppliedQualifiers);
-            qualifiers.remove(Any.Literal.INSTANCE);
-            qualifiers.add(ContainerManaged.Literal.INSTANCE);
+            selectionQualifiers = new HashSet<>(suppliedQualifiers);
+            selectionQualifiers.remove(Any.Literal.INSTANCE);
+            selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
         }
         final TypeLiteral<Map<?, ?>> typeLiteral = new TypeLiteral<Map<?, ?>>() {
                 private static final long serialVersionUID = 1L;
             };
         final Map<?, ?> properties;
         Instance<Map<?, ?>> propertiesInstance =
-            instance.select(typeLiteral, qualifiers.toArray(new Annotation[qualifiers.size()]));
+            instance.select(typeLiteral, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         if (propertiesInstance != null && !propertiesInstance.isUnsatisfied()) {
-            qualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
-            qualifiers.add(ContainerManaged.Literal.INSTANCE);
+            selectionQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
+            selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
             propertiesInstance =
-                instance.select(typeLiteral, qualifiers.toArray(new Annotation[qualifiers.size()]));
+                instance.select(typeLiteral, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
             if (propertiesInstance != null && !propertiesInstance.isUnsatisfied()) {
                 properties = propertiesInstance.get();
             } else {
@@ -96,11 +96,11 @@ final class EntityManagerFactories {
         }
         Objects.requireNonNull(instance);
         Objects.requireNonNull(suppliedQualifiers);
-        final Set<Annotation> qualifiers;
+        final Set<Annotation> selectionQualifiers;
         if (suppliedQualifiers.isEmpty()) {
-            qualifiers = Collections.singleton(ContainerManaged.Literal.INSTANCE);
+            selectionQualifiers = Collections.singleton(ContainerManaged.Literal.INSTANCE);
         } else {
-            qualifiers = new HashSet<>(suppliedQualifiers);
+            selectionQualifiers = new HashSet<>(suppliedQualifiers);
             // Get an Instance that can give us an
             // EntityManagerFactory.  We want to preserve
             // user-supplied qualifiers, but we don't need any of
@@ -108,12 +108,12 @@ final class EntityManagerFactories {
             // (e.g. @Synchronized, @Unsynchronized, @CDITransactionScoped,
             // etc. etc.).  The EntityManagerFactory it vends will be
             // in @ApplicationScoped scope, or it better be, anyway.
-            qualifiers.remove(Any.Literal.INSTANCE);
-            qualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
-            qualifiers.add(ContainerManaged.Literal.INSTANCE);
+            selectionQualifiers.remove(Any.Literal.INSTANCE);
+            selectionQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
+            selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
         }
         final Instance<EntityManagerFactory> returnValue =
-            instance.select(EntityManagerFactory.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
+            instance.select(EntityManagerFactory.class, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
         }
