@@ -44,7 +44,7 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
         this.cdiTransactionScopedEntityManagerProvider =
             Objects.requireNonNull(JpaExtension.getCDITransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
         final Set<Annotation> nonTransactionalQualifiers = new HashSet<>(suppliedQualifiers);
-        nonTransactionalQualifiers.removeAll(JpaExtension.JPA_CDI_QUALIFIERS);
+        nonTransactionalQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
         nonTransactionalQualifiers.add(NonTransactional.Literal.INSTANCE);
         final Annotation[] nonTransactionalQualifiersArray =
             nonTransactionalQualifiers.toArray(new Annotation[nonTransactionalQualifiers.size()]);

@@ -16,17 +16,13 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.lang.annotation.Annotation;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
-import javax.persistence.SynchronizationType;
 import javax.persistence.TransactionRequiredException;
 
 /**
@@ -49,7 +45,7 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
 
     NonTransactionalTransactionScopedEntityManager(final Instance<Object> instance,
                                                    final Set<? extends Annotation> suppliedQualifiers) {
-        super(createDelegate(instance, suppliedQualifiers));
+        super(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers));
     }
 
 
@@ -124,29 +120,6 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
     @Override
     public void close() {
         super.close();
-    }
-
-    private static EntityManager createDelegate(final Instance<Object> instance,
-                                                final Set<? extends Annotation> suppliedQualifiers) {
-        Objects.requireNonNull(instance);
-        Objects.requireNonNull(suppliedQualifiers);
-        final EntityManagerFactory emf = JpaExtension.getContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
-        assert emf != null;
-        assert emf.isOpen();
-        // We are only going to use syncType for non-transactional
-        // EntityManagers (see below).  In such cases, if it is not
-        // UNSYNCHRONIZED, it must be null (not SYNCHRONIZED).
-        final SynchronizationType syncType =
-            suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE) ? SynchronizationType.UNSYNCHRONIZED : null;
-        // Create the actual EntityManager that will be produced.  It
-        // itself will be in @Dependent scope but its delegate may be
-        // something else.  Revisit: need to supply properties somehow
-        @SuppressWarnings("rawtypes") // the API requires it sadly
-        final Map properties = new HashMap();
-        final EntityManager delegate = emf.createEntityManager(syncType, properties);
-        assert delegate != null;
-        assert delegate.isOpen();
-        return delegate;
     }
 
 }

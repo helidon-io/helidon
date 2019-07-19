@@ -16,9 +16,7 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.lang.annotation.Annotation;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -28,8 +26,6 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.SynchronizationType;
 
 final class ExtendedEntityManager extends DelegatingEntityManager {
 
@@ -44,8 +40,8 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
     ExtendedEntityManager(final Instance<Object> instance,
                           final Set<? extends Annotation> suppliedQualifiers,
                           final BeanManager beanManager) {
-        this(createDelegate(instance, suppliedQualifiers),
-             findTransactionSupport(instance),
+        this(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers),
+             instance.select(TransactionSupport.class).get(),
              suppliedQualifiers,
              beanManager);
 
@@ -100,25 +96,6 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
         // I don't know why.  Glassfish does not:
         // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L752-L761
         throw new IllegalStateException();
-    }
-
-    private static EntityManager createDelegate(final Instance<Object> instance,
-                                                final Set<? extends Annotation> suppliedQualifiers) {
-        Objects.requireNonNull(instance);
-        final SynchronizationType syncType =
-            suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE) ? SynchronizationType.UNSYNCHRONIZED : null;
-        // Revisit: need to deal with properties here
-        @SuppressWarnings("rawtypes")
-        final Map properties = new HashMap<String, Object>();
-        final EntityManagerFactory emf =
-            JpaExtension.getContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
-        assert emf != null;
-        assert emf.isOpen();
-        return emf.createEntityManager(syncType, properties);
-    }
-
-    private static TransactionSupport findTransactionSupport(final Instance<Object> instance) {
-        return instance.select(TransactionSupport.class).get();
     }
 
 }
