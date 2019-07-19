@@ -767,12 +767,8 @@ public class JpaExtension implements Extension {
                 .addType(EntityManagerFactory.class)
                 .scope(ApplicationScoped.class)
                 .addQualifiers(qualifiers)
-                .produceWith(instance -> {
-                        return produceContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
-                    })
-                .disposeWith((emf, instance) -> {
-                        emf.close();
-                    });
+                .produceWith(instance -> produceContainerManagedEntityManagerFactory(instance, suppliedQualifiers))
+                .disposeWith((emf, instance) -> emf.close());
         }
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1044,6 +1040,24 @@ public class JpaExtension implements Extension {
         }
     }
 
+    /**
+     * {@linkplain
+     * PersistenceProvider#createContainerEntityManagerFactory(PersistenceUnitInfo,
+     * Map) Creates and returns a new
+     * <code>EntityManagerFactory</code>} when invoked, honoring
+     * sections 3.6.2, 9.1, 9.5 and 9.5.1 of the JPA 2.2
+     * specification.
+     *
+     * @param instance an {@link Instance} used to acquire contextual
+     * references; must not be {@code null}
+     *
+     * @param suppliedQualifiers qualifiers that will qualify the
+     * returned {@link EntityManagerFactory}; must not be {@code null}
+     *
+     * @see
+     * PersistenceProvider#createContainerEntityManagerFactory(PersistenceUnitInfo,
+     * Map)
+     */
     private EntityManagerFactory produceContainerManagedEntityManagerFactory(final Instance<Object> instance,
                                                                              final Set<Annotation> suppliedQualifiers) {
         final String cn = JpaExtension.class.getName();
@@ -1058,7 +1072,7 @@ public class JpaExtension implements Extension {
         }
         final PersistenceUnitInfo pu = getPersistenceUnitInfo(instance, suppliedQualifiers);
         if (PersistenceUnitTransactionType.RESOURCE_LOCAL.equals(pu.getTransactionType())) {
-            throw new CreationException();
+            throw new CreationException(); // Revisit: message
         }
         PersistenceProvider persistenceProvider = null;
         try {
@@ -1067,6 +1081,9 @@ public class JpaExtension implements Extension {
             throw new CreationException(reflectiveOperationException.getMessage(),
                                         reflectiveOperationException);
         }
+        // Revisit: there should be a way to acquire these, or maybe
+        // not, given that we can source PersistenceUnitInfos as beans
+        // anyway.
         final Map<String, Object> properties = new HashMap<>();
         final BeanManager beanManager = instance.select(BeanManager.class).get();
         properties.put("javax.persistence.bean.manager", beanManager);
@@ -1074,7 +1091,7 @@ public class JpaExtension implements Extension {
         try {
             validatorFactoryClass = Class.forName("javax.validation.ValidatorFactory");
         } catch (final ClassNotFoundException classNotFoundException) {
-
+            // Revisit: log
         }
         if (validatorFactoryClass != null) {
             final Bean<?> vfb = getValidatorFactoryBean(beanManager, validatorFactoryClass);
@@ -1514,23 +1531,6 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
         }
-        return returnValue;
-    }
-
-    static Instance<EntityManager>
-        getCDITransactionScopedEntityManagerInstance(final Instance<Object> instance,
-                                                     final Set<? extends Annotation> suppliedQualifiers) {
-        Objects.requireNonNull(instance);
-        Objects.requireNonNull(suppliedQualifiers);
-        final Set<Annotation> emQualifiers = new HashSet<>(suppliedQualifiers);
-        emQualifiers.add(ContainerManaged.Literal.INSTANCE);
-        emQualifiers.add(CDITransactionScoped.Literal.INSTANCE);
-        emQualifiers.remove(Any.Literal.INSTANCE);
-        emQualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
-        emQualifiers.remove(Extended.Literal.INSTANCE);
-        emQualifiers.remove(NonTransactional.Literal.INSTANCE);
-        final Instance<EntityManager> returnValue =
-            instance.select(EntityManager.class, emQualifiers.toArray(new Annotation[emQualifiers.size()]));
         return returnValue;
     }
 

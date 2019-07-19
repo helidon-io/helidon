@@ -117,9 +117,4 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
         throw new TransactionRequiredException();
     }
 
-    @Override
-    public void close() {
-        super.close();
-    }
-
 }

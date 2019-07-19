@@ -420,11 +420,15 @@ abstract class DelegatingEntityManager implements EntityManager {
         return this.delegate().getEntityGraphs(entityClass);
     }
 
-  /*
-    @Override
-    public String toString() {
-        return this.delegate().toString();
-    }
-  */
+    /*
+     * Note: this class deliberately does *not* override toString().
+     * Container-managed, JPA-transaction-scoped EntityManagers, when
+     * a transaction is not present, are supposed to acquire or create
+     * a potentially new EntityManager for all non-transactional
+     * operations (including toString()).  toString() could easily
+     * create hundreds if not thousands of non-transactional
+     * EntityManagers "by mistake".  Consequently it is not overridden
+     * here.
+     */
 
 }

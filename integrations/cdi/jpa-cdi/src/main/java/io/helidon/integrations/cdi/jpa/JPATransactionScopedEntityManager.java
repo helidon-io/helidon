@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.enterprise.inject.Any;
 import javax.enterprise.inject.Instance;
 import javax.inject.Provider;
 import javax.persistence.EntityManager;
@@ -42,7 +43,7 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
             throw new IllegalArgumentException("!transactionSupport.isActive()");
         }
         this.cdiTransactionScopedEntityManagerProvider =
-            Objects.requireNonNull(JpaExtension.getCDITransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
+            Objects.requireNonNull(getCDITransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
         final Set<Annotation> nonTransactionalQualifiers = new HashSet<>(suppliedQualifiers);
         nonTransactionalQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
         nonTransactionalQualifiers.add(NonTransactional.Literal.INSTANCE);
@@ -72,6 +73,23 @@ final class JPATransactionScopedEntityManager extends DelegatingEntityManager {
         // I don't know why.  Glassfish does not:
         // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L752-L761
         throw new IllegalStateException();
+    }
+
+    static Instance<EntityManager>
+        getCDITransactionScopedEntityManagerInstance(final Instance<Object> instance,
+                                                     final Set<? extends Annotation> suppliedQualifiers) {
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(suppliedQualifiers);
+        final Set<Annotation> emQualifiers = new HashSet<>(suppliedQualifiers);
+        emQualifiers.add(ContainerManaged.Literal.INSTANCE);
+        emQualifiers.add(CDITransactionScoped.Literal.INSTANCE);
+        emQualifiers.remove(Any.Literal.INSTANCE);
+        emQualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+        emQualifiers.remove(Extended.Literal.INSTANCE);
+        emQualifiers.remove(NonTransactional.Literal.INSTANCE);
+        final Instance<EntityManager> returnValue =
+            instance.select(EntityManager.class, emQualifiers.toArray(new Annotation[emQualifiers.size()]));
+        return returnValue;
     }
 
 }

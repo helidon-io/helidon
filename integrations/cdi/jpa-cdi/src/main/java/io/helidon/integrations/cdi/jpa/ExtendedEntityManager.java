@@ -63,28 +63,37 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
 
     @Override
     protected EntityManager acquireDelegate() {
-        final EntityManager returnValue;
+        final EntityManager returnValue = this.delegate;
         final Context context = transactionSupport.getContext();
         if (context != null && context.isActive()) {
             final Set<Annotation> qualifiers = new HashSet<>(this.suppliedQualifiers);
             qualifiers.remove(Extended.Literal.INSTANCE);
             qualifiers.remove(JPATransactionScoped.Literal.INSTANCE);
+            qualifiers.remove(NonTransactional.Literal.INSTANCE);
             qualifiers.add(CDITransactionScoped.Literal.INSTANCE);
             qualifiers.add(ContainerManaged.Literal.INSTANCE);
             final Set<Bean<?>> cdiTransactionScopedEntityManagerBeans =
                 this.beanManager.getBeans(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
             final Bean<?> cdiTransactionScopedEntityManagerBean =
                 this.beanManager.resolve(cdiTransactionScopedEntityManagerBeans);
-            // This is a little dicey.
+            // Check to see if there's already a container-managed
+            // EntityManager enrolled in the transaction (without
+            // accidentally creating a new one, hence the
+            // single-argument Context#get(Contextual) invocation).
+            // We have to do this to honor section 7.6.3.1 of the JPA
+            // specification.
             if (context.get(cdiTransactionScopedEntityManagerBean) != null) {
-                // JPA section 7.6.3.1; see
+                // If there IS already a container-managed
+                // EntityManager enrolled in the transaction, we need
+                // to follow JPA section 7.6.3.1 and throw an analog
+                // of EJBException; see
                 // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/ExtendedEntityManager.java#L149
                 // as an arbitrary example
                 throw new CreationException("section 7.6.3.1 violation"); // Revisit: message
+            } else {
+                this.delegate.joinTransaction();
             }
-            this.delegate.joinTransaction();
         }
-        returnValue = this.delegate;
         return returnValue;
     }
 
