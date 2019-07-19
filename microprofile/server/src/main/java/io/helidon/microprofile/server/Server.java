@@ -214,7 +214,7 @@ public interface Server {
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
-                                                                 .name("jersey")
+                                                                 .name("server")
                                                                  .config(config.helidonConfig().get("server.executor-service"))
                                                                  .build();
             }

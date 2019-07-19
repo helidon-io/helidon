@@ -135,7 +135,7 @@ public class JerseySupport implements Service {
         if (DEFAULT_THREAD_POOL.get() == null) {
             Config executorConfig = Config.create().get("server.executor-service");
             DEFAULT_THREAD_POOL.set(ServerThreadPoolSupplier.builder()
-                                            .name("jersey")
+                                            .name("server")
                                             .config(executorConfig)
                                             .build()
                                             .get());
