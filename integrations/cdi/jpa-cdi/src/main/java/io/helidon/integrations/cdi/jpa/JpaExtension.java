@@ -39,6 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
@@ -66,7 +67,6 @@ import javax.enterprise.inject.spi.configurator.AnnotatedParameterConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
 import javax.persistence.Converter;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -765,8 +765,7 @@ public class JpaExtension implements Extension {
             this.containerManagedEntityManagerFactoryQualifiers.add(qualifiers);
             event.addBean()
                 .addType(EntityManagerFactory.class)
-                // .scope(ApplicationScoped.class)
-                .scope(Singleton.class)
+                .scope(ApplicationScoped.class)
                 .addQualifiers(qualifiers)
                 .produceWith(instance -> {
                         return produceContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
@@ -824,9 +823,10 @@ public class JpaExtension implements Extension {
             }
             event.addBean()
                 .addType(EntityManager.class)
+                .addType(CDITransactionScopedEntityManager.class)
                 .scope(scope)
                 .addQualifiers(qualifiers)
-                .produceWith(instance -> EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers))
+                .produceWith(instance -> new CDITransactionScopedEntityManager(instance, suppliedQualifiers))
                 .disposeWith((em, instance) -> em.close());
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -854,8 +854,10 @@ public class JpaExtension implements Extension {
         qualifiers.remove(NonTransactional.Literal.INSTANCE);
         event.addBean()
             .addType(EntityManager.class)
+            .addType(JPATransactionScopedEntityManager.class)
             .scope(Dependent.class)
             .addQualifiers(qualifiers)
+            .beanClass(JPATransactionScopedEntityManager.class)
             .produceWith(instance -> new JPATransactionScopedEntityManager(instance, suppliedQualifiers));
             // (deliberately no disposeWith())
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -881,12 +883,11 @@ public class JpaExtension implements Extension {
             this.nonTransactionalEntityManagerQualifiers.add(qualifiers);
             event.addBean()
                 .addType(EntityManager.class)
-                .addType(NonTransactionalTransactionScopedEntityManager.class)
+                .addType(NonTransactionalEntityManager.class)
                 .scope(ReferenceCounted.class)
                 .addQualifiers(qualifiers)
-                .produceWith(instance -> {
-                        return new NonTransactionalTransactionScopedEntityManager(instance, suppliedQualifiers);
-                    })
+                .beanClass(NonTransactionalEntityManager.class)
+                .produceWith(instance -> new NonTransactionalEntityManager(instance, suppliedQualifiers))
                 .disposeWith((em, instance) -> em.close());
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -916,8 +917,10 @@ public class JpaExtension implements Extension {
         qualifiers.remove(NonTransactional.Literal.INSTANCE);
         event.addBean()
             .addType(EntityManager.class)
+            .addType(ExtendedEntityManager.class)
             .scope(ReferenceCounted.class)
             .qualifiers(qualifiers)
+            .beanClass(ExtendedEntityManager.class)
             .produceWith(instance -> new ExtendedEntityManager(instance, suppliedQualifiers, beanManager));
             // deliberately no disposeWith()
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -947,7 +950,7 @@ public class JpaExtension implements Extension {
             }
             event.addBean()
                 .types(Collections.singleton(PersistenceUnitInfo.class))
-                .scope(Singleton.class)
+                .scope(ApplicationScoped.class)
                 .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
                 .createWith(cc -> persistenceUnitInfoBean);
             maybeAddPersistenceProviderBean(event, persistenceUnitInfoBean, providers);
@@ -1028,7 +1031,7 @@ public class JpaExtension implements Extension {
                         final String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
                         event.addBean()
                             .types(Collections.singleton(PersistenceUnitInfo.class))
-                            .scope(Singleton.class)
+                            .scope(ApplicationScoped.class)
                             .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
                             .createWith(cc -> persistenceUnitInfo);
                         maybeAddPersistenceProviderBean(event, persistenceUnitInfo, providers);
@@ -1325,9 +1328,6 @@ public class JpaExtension implements Extension {
                     maybeAddPersistenceProviderBean(event, pui, providers);
                 } finally {
                     preexistingPersistenceUnitInfoBean.destroy(pui, cc);
-                    // Contextual#destroy() *should* release the
-                    // CreationalContext, but it is an idempotent call
-                    // and many Bean authors forget to do this.
                     cc.release();
                 }
             }
@@ -1347,13 +1347,13 @@ public class JpaExtension implements Extension {
         final PersistenceProviderResolver resolver = PersistenceProviderResolverHolder.getPersistenceProviderResolver();
         event.addBean()
             .types(PersistenceProviderResolver.class)
-            .scope(Singleton.class)
+            .scope(ApplicationScoped.class)
             .createWith(cc -> resolver);
         final Collection<? extends PersistenceProvider> providers = resolver.getPersistenceProviders();
         for (final PersistenceProvider provider : providers) {
             event.addBean()
                 .addTransitiveTypeClosure(provider.getClass())
-                .scope(Singleton.class)
+                .scope(ApplicationScoped.class)
                 .createWith(cc -> provider);
         }
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1419,7 +1419,7 @@ public class JpaExtension implements Extension {
                 final String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
                 event.addBean()
                     .types(PersistenceProvider.class)
-                    .scope(Singleton.class)
+                    .scope(ApplicationScoped.class)
                     .addQualifiers(NamedLiteral.of(persistenceUnitName == null ? "" : persistenceUnitName))
                     .createWith(cc -> {
                             try {
@@ -1462,20 +1462,19 @@ public class JpaExtension implements Extension {
         } else {
             puInstance = instance.select(PersistenceUnitInfo.class,
                                          qualifiers.toArray(new Annotation[qualifiers.size()]));
-        }
-        assert puInstance != null;
-        if (puInstance.isUnsatisfied()) {
-            // We didn't find any PersistenceUnitInfo named, for
-            // example, @Bork @Named("fred").  So let's remove @Named
-            // qualifiers and see what we get.
-            qualifiers.removeIf(q -> q instanceof Named);
-            puInstance = instance.select(PersistenceUnitInfo.class,
-                                         qualifiers.toArray(new Annotation[qualifiers.size()]));
-            assert puInstance != null;
-            // Revisit: suppose someone has asked
-            // for @Bork @Named("fred").  We "fell back" to
-            // just @Bork.  Should we fall back to nothing (@Default),
-            // period?  Or @Any, and look for size-of-1?
+            if (puInstance.isUnsatisfied()) {
+                // We didn't find any PersistenceUnitInfo named, for
+                // example, @Bork (or @Default) @Named("fred").  So
+                // let's fall back to @Bork.
+                qualifiers.removeIf(q -> q instanceof Named);
+                puInstance = instance.select(PersistenceUnitInfo.class,
+                                             qualifiers.toArray(new Annotation[qualifiers.size()]));
+                // Revisit: suppose someone has asked
+                // for @Bork @Named("fred").  We "fell back" to
+                // just @Bork.  Should we now fall back to nothing
+                // (@Default), period?  Or @Any, and take the sole
+                // item if present?
+            }
         }
         final PersistenceUnitInfo returnValue = puInstance.get();
         if (LOGGER.isLoggable(Level.FINER)) {

@@ -35,7 +35,7 @@ import javax.persistence.TransactionRequiredException;
  * {@link DelegatingEntityManager} implementation's {@link
  * #acquireDelegate()} method.</p>
  */
-final class NonTransactionalTransactionScopedEntityManager extends DelegatingEntityManager {
+final class NonTransactionalEntityManager extends DelegatingEntityManager {
 
 
     /*
@@ -43,8 +43,8 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
      */
 
 
-    NonTransactionalTransactionScopedEntityManager(final Instance<Object> instance,
-                                                   final Set<? extends Annotation> suppliedQualifiers) {
+    NonTransactionalEntityManager(final Instance<Object> instance,
+                                  final Set<? extends Annotation> suppliedQualifiers) {
         super(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers));
     }
 
