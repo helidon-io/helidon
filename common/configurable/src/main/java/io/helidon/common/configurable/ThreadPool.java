@@ -630,6 +630,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         private final int threads;
         private final int activeThreads;
         private final int queueSize;
+        private final int completedTasks;
 
         enum Type {
             IDLE,
@@ -646,6 +647,7 @@ public class ThreadPool extends ThreadPoolExecutor {
             this.threads = pool.getPoolSize();
             this.activeThreads = pool.getActiveThreads();
             this.queueSize = queue.size();
+            this.completedTasks = pool.getCompletedTasks();
         }
 
         @Override
@@ -656,7 +658,8 @@ public class ThreadPool extends ThreadPoolExecutor {
         private String toCsv() {
             final float elapsedMillis = time - START_TIME;
             final float elapsedSeconds = elapsedMillis / 1000f;
-            return String.format("%.4f,%s,%d,%d,%d\n", elapsedSeconds, type, threads, activeThreads, queueSize);
+            return String.format("%.4f,%d,%s,%d,%d,%d\n", elapsedSeconds, completedTasks, type, threads, activeThreads,
+                                 queueSize);
         }
 
         private static void add(Type type, ThreadPool pool, WorkQueue queue) {
@@ -698,7 +701,7 @@ public class ThreadPool extends ThreadPoolExecutor {
                                                               StandardOpenOption.CREATE,
                                                               StandardOpenOption.WRITE,
                                                               StandardOpenOption.TRUNCATE_EXISTING)) {
-                    out.write("Elapsed Seconds,Event,Threads,Active Threads,Queue Size\n".getBytes());
+                    out.write("Elapsed Seconds,Completed Tasks,Event,Threads,Active Threads,Queue Size\n".getBytes());
                     for (Event event : EVENTS) {
                         out.write(event.toCsv().getBytes());
                     }
