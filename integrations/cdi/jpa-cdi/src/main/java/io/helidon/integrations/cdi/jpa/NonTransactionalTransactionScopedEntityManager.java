@@ -15,12 +15,18 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
+import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.LockModeType;
 import javax.persistence.PersistenceException;
+import javax.persistence.SynchronizationType;
 import javax.persistence.TransactionRequiredException;
 
 /**
@@ -41,16 +47,9 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
      */
 
 
-    /**
-     * Creates a new {@link
-     * NonTransactionalTransactionScopedEntityManager}.
-     *
-     * @exception NullPointerException if {@code delegate} is {@code
-     * null}
-     */
-    NonTransactionalTransactionScopedEntityManager(final EntityManager delegate, final Object key) {
-        super(Objects.requireNonNull(delegate));
-        NonTransactionalTransactionScopedEntityManagerReferences.putIfAbsent(key, this);
+    NonTransactionalTransactionScopedEntityManager(final Instance<Object> instance,
+                                                   final Set<? extends Annotation> suppliedQualifiers) {
+        super(createDelegate(instance, suppliedQualifiers));
     }
 
 
@@ -120,6 +119,34 @@ final class NonTransactionalTransactionScopedEntityManager extends DelegatingEnt
         // https://github.com/wildfly/wildfly/blob/cb3f5429e4bb5423236564c1f3afd8b4a2430ec0/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/AbstractEntityManager.java#L454-L466.
         // We follow the reference application (Glassfish).
         throw new TransactionRequiredException();
+    }
+
+    @Override
+    public void close() {
+        super.close();
+    }
+
+    private static EntityManager createDelegate(final Instance<Object> instance,
+                                                final Set<? extends Annotation> suppliedQualifiers) {
+        Objects.requireNonNull(instance);
+        Objects.requireNonNull(suppliedQualifiers);
+        final EntityManagerFactory emf = JpaExtension.getContainerManagedEntityManagerFactory(instance, suppliedQualifiers);
+        assert emf != null;
+        assert emf.isOpen();
+        // We are only going to use syncType for non-transactional
+        // EntityManagers (see below).  In such cases, if it is not
+        // UNSYNCHRONIZED, it must be null (not SYNCHRONIZED).
+        final SynchronizationType syncType =
+            suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE) ? SynchronizationType.UNSYNCHRONIZED : null;
+        // Create the actual EntityManager that will be produced.  It
+        // itself will be in @Dependent scope but its delegate may be
+        // something else.  Revisit: need to supply properties somehow
+        @SuppressWarnings("rawtypes") // the API requires it sadly
+        final Map properties = new HashMap();
+        final EntityManager delegate = emf.createEntityManager(syncType, properties);
+        assert delegate != null;
+        assert delegate.isOpen();
+        return delegate;
     }
 
 }

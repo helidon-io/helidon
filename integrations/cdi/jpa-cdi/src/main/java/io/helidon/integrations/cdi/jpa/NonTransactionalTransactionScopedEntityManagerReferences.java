@@ -15,13 +15,17 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import javax.persistence.EntityManager;
 
+// Revisit: this is just a context.  This is not going to work.  We
+// should just use ReferenceCountedContext here as well.
 final class NonTransactionalTransactionScopedEntityManagerReferences {
 
     private static final ThreadLocal<Map<Object, EntityManagerWithReferenceCount>> ENTITY_MANAGERS =
@@ -31,16 +35,12 @@ final class NonTransactionalTransactionScopedEntityManagerReferences {
         super();
     }
 
-    static void putIfAbsent(final Object key, final EntityManager entityManager) {
-        final Map<Object, EntityManagerWithReferenceCount> map = ENTITY_MANAGERS.get();
-        map.putIfAbsent(key,
-                        new EntityManagerWithReferenceCount(entityManager,
-                                                            () -> map.remove(key)));
-    }
-
     static void incrementReferenceCount(final Object key) {
-        final EntityManagerWithReferenceCount ref = ENTITY_MANAGERS.get().get(key);
-        if (ref != null) {
+        final Map<Object, EntityManagerWithReferenceCount> map = ENTITY_MANAGERS.get();
+        EntityManagerWithReferenceCount ref = map.get(key);
+        if (ref == null) {
+            map.put(key, new EntityManagerWithReferenceCount(null, () -> map.remove(key)));
+        } else {
             ref.incrementReferenceCount();
         }
     }
@@ -52,9 +52,24 @@ final class NonTransactionalTransactionScopedEntityManagerReferences {
         }
     }
 
-    static EntityManager get(final Object key) {
-        final EntityManagerWithReferenceCount ref = ENTITY_MANAGERS.get().get(key);
-        return ref == null ? null : ref.getEntityManager();
+    static Map<?, ?> getContents() {
+        return Collections.unmodifiableMap(ENTITY_MANAGERS.get());
+    }
+
+    static EntityManager compute(final Object key, final Supplier<? extends EntityManager> supplier) {
+        final Map<Object, EntityManagerWithReferenceCount> map = ENTITY_MANAGERS.get();
+        EntityManagerWithReferenceCount ref = map.get(key);
+        if (ref == null) {
+            ref = new EntityManagerWithReferenceCount(supplier.get(), () -> map.remove(key));
+            map.put(key, ref);
+        }
+        assert ref != null;
+        EntityManager returnValue = ref.getEntityManager();
+        if (returnValue == null) {
+            returnValue = supplier.get();
+            ref.setEntityManager(returnValue);
+        }
+        return returnValue;
     }
 
     static void close(final Object key) {
@@ -66,16 +81,20 @@ final class NonTransactionalTransactionScopedEntityManagerReferences {
 
     private static final class EntityManagerWithReferenceCount {
 
-        private final EntityManager entityManager;
+        private EntityManager entityManager;
 
         private final AtomicInteger referenceCount;
 
         private final Runnable destroyer;
 
+        private EntityManagerWithReferenceCount(final Runnable destroyer) {
+            this(null, destroyer);
+        }
+
         private EntityManagerWithReferenceCount(final EntityManager entityManager,
                                                 final Runnable destroyer) {
             super();
-            this.entityManager = Objects.requireNonNull(entityManager);
+            this.entityManager = entityManager;
             this.referenceCount = new AtomicInteger(1);
             this.destroyer = Objects.requireNonNull(destroyer);
         }
@@ -102,6 +121,11 @@ final class NonTransactionalTransactionScopedEntityManagerReferences {
 
         private EntityManager getEntityManager() {
             return this.entityManager;
+        }
+
+        private void setEntityManager(final EntityManager entityManager) {
+            assert this.referenceCount.get() > 0;
+            this.entityManager = Objects.requireNonNull(entityManager);
         }
 
     }

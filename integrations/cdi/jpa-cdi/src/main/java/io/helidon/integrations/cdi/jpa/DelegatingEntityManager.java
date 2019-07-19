@@ -420,9 +420,11 @@ abstract class DelegatingEntityManager implements EntityManager {
         return this.delegate().getEntityGraphs(entityClass);
     }
 
+  /*
     @Override
     public String toString() {
         return this.delegate().toString();
     }
+  */
 
 }

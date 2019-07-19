@@ -26,22 +26,16 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
-import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
 import javax.persistence.TransactionRequiredException;
 import javax.transaction.Transactional;
 
-import io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
-import io.helidon.integrations.jta.cdi.NarayanaExtension;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,10 +82,12 @@ class TestAnnotationRewriting {
     }
 
     @PersistenceContext(unitName = "test")
-    private void testAnnotationRewriting(@Observes @Initialized(ApplicationScoped.class) final Object event,
-                                         final EntityManager fred) {
+    private void observerMethod(@Observes final TestIsRunning event,
+                                final EntityManager emParameter) {
         assertNotNull(event);
-        assertNotNull(fred);
+        assertNotNull(emParameter);
+        assertTrue(emParameter.isOpen());
+        assertFalse(emParameter.isJoinedToTransaction());
         assertNotNull(this.em);
         assertTrue(this.em.isOpen());
         assertFalse(this.em.isJoinedToTransaction());
@@ -99,11 +95,18 @@ class TestAnnotationRewriting {
 
     @Test
     void testAnnotationRewriting() {
-        
+        this.cdiContainer.getBeanManager()
+            .getEvent()
+            .select(TestIsRunning.class)
+            .fire(new TestIsRunning("testAnnotationRewriting"));
     }
 
     @Test
     void testNonTransactionalEntityManager() {
+        this.cdiContainer.getBeanManager()
+            .getEvent()
+            .select(TestIsRunning.class)
+            .fire(new TestIsRunning("testNonTransactionalEntityManager"));
         final Set<Annotation> qualifiers = new HashSet<>();
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
         qualifiers.add(JPATransactionScoped.Literal.INSTANCE);
@@ -127,6 +130,10 @@ class TestAnnotationRewriting {
 
     @Test
     void testTransactionalEntityManager() {
+        this.cdiContainer.getBeanManager()
+            .getEvent()
+            .select(TestIsRunning.class)
+            .fire(new TestIsRunning("testTransactionalEntityManager"));
         final TestAnnotationRewriting testInstance = this.cdiContainer.select(TestAnnotationRewriting.class).get();
         assertNotNull(testInstance);
         testInstance.testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod();
@@ -141,6 +148,21 @@ class TestAnnotationRewriting {
             fail("Closed EntityManager; should not have been able to");
         } catch (final IllegalStateException expected) {
 
+        }
+    }
+
+    private static final class TestIsRunning {
+
+        private final String test;
+
+        private TestIsRunning(final String test) {
+            super();
+            this.test = test;
+        }
+
+        @Override
+        public final String toString() {
+            return this.test;
         }
     }
 
