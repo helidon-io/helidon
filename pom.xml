@@ -193,7 +193,7 @@
         <!-- maven plugin versions -->
         <version.plugin.build-helper>1.12</version.plugin.build-helper>
         <version.plugin.checkstyle>2.17</version.plugin.checkstyle>
-        <version.plugin.compiler>3.7.0</version.plugin.compiler>
+        <version.plugin.compiler>3.8.1</version.plugin.compiler>
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
