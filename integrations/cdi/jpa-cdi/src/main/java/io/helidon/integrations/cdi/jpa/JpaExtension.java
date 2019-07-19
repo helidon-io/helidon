@@ -45,6 +45,7 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.InjectLiteral;
@@ -1480,19 +1481,27 @@ public class JpaExtension implements Extension {
             puInstance = instance.select(PersistenceUnitInfo.class,
                                          qualifiers.toArray(new Annotation[qualifiers.size()]));
             if (puInstance.isUnsatisfied()) {
-                // We didn't find any PersistenceUnitInfo named, for
-                // example, @Bork (or @Default) @Named("fred").  So
-                // let's fall back to @Bork.
+                // We looked for @Qualifier @Named("x"); now look for
+                // just @Qualifier...
                 qualifiers.removeIf(q -> q instanceof Named);
                 puInstance = instance.select(PersistenceUnitInfo.class,
                                              qualifiers.toArray(new Annotation[qualifiers.size()]));
-                // Revisit: suppose someone has asked
-                // for @Bork @Named("fred").  We "fell back" to
-                // just @Bork.  Should we now fall back to nothing
-                // (@Default), period?  Or @Any, and take the sole
-                // item if present?
+                if (puInstance.isUnsatisfied() && !qualifiers.equals(Collections.singleton(Default.Literal.INSTANCE))) {
+                    // ...now just @Default...
+                    puInstance = instance.select(PersistenceUnitInfo.class);
+                    if (puInstance.isUnsatisfied()) {
+                        // ...now any at all.  Obviously this case
+                        // will resolve only if there is exactly one
+                        // PersistenceUnitInfo bean, and somewhat
+                        // bizarrely it won't have the @Default
+                        // qualifier.
+                        puInstance = instance.select(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
+                    }
+                }
             }
         }
+        // This may very well throw a resolution exception; that is
+        // anticipated.
         final PersistenceUnitInfo returnValue = puInstance.get();
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
