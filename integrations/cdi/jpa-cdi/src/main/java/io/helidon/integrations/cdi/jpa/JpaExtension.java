@@ -635,31 +635,32 @@ public class JpaExtension implements Extension {
         }
         final Set<Annotation> qualifiers = event.getInjectionPoint().getQualifiers();
         assert qualifiers != null;
-        Throwable throwable = null;
+        boolean error = false;
         if (qualifiers.contains(JpaTransactionScoped.Literal.INSTANCE)) {
             if (qualifiers.contains(CdiTransactionScoped.Literal.INSTANCE)
                 || qualifiers.contains(Extended.Literal.INSTANCE)
                 || qualifiers.contains(NonTransactional.Literal.INSTANCE)) {
-                throwable = createInjectionException(qualifiers);
+                error = true;
             }
         } else if (qualifiers.contains(Extended.Literal.INSTANCE)) {
             if (qualifiers.contains(CdiTransactionScoped.Literal.INSTANCE)
                 || qualifiers.contains(NonTransactional.Literal.INSTANCE)) {
-                throwable = createInjectionException(qualifiers);
+                error = true;
             }
         } else if (qualifiers.contains(NonTransactional.Literal.INSTANCE)) {
             if (qualifiers.contains(CdiTransactionScoped.Literal.INSTANCE)) {
-                throwable = createInjectionException(qualifiers);
+                error = true;
             }
         } else if (qualifiers.contains(Synchronized.Literal.INSTANCE)) {
             if (qualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
-                throwable = createInjectionException(qualifiers);
+                error = true;
             }
         }
-        if (throwable == null) {
-            this.persistenceContextQualifiers.add(qualifiers);
+        if (error) {
+            event.addDefinitionError(new InjectionException("Invalid injection point; some qualifiers are mutually exclusive: "
+                                                            + qualifiers));
         } else {
-            event.addDefinitionError(throwable);
+            this.persistenceContextQualifiers.add(qualifiers);
         }
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1835,10 +1836,6 @@ public class JpaExtension implements Extension {
             }
         }
         return returnValue;
-    }
-
-    private static InjectionException createInjectionException(final Object qualifiers) {
-        return new InjectionException("Invalid injection point; some qualifiers are mutually exclusive: " + qualifiers);
     }
 
 }
