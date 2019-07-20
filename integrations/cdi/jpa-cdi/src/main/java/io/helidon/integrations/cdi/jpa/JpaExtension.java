@@ -46,6 +46,7 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
 import javax.enterprise.inject.Default;
+import javax.enterprise.inject.InjectionException;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.InjectLiteral;
@@ -195,7 +196,7 @@ public class JpaExtension implements Extension {
      * #afterBeanDiscovery(AfterBeanDiscovery, BeanManager)} container
      * lifecycle method.</p>
      */
-    private final Set<Set<Annotation>> allQualifiers;
+    private final Set<Set<Annotation>> persistenceContextQualifiers;
 
     /**
      * A {@link Set} of {@link Set}s of CDI qualifiers for which
@@ -240,6 +241,19 @@ public class JpaExtension implements Extension {
     private final Set<Set<Annotation>> containerManagedEntityManagerFactoryQualifiers;
 
     /**
+     * A {@link Set} of {@link Set}s of CDI qualifiers for which
+     * {@link EntityManagerFactory} beans may be created.
+     *
+     * <p>This field is never {@code null}.</p>
+     *
+     * <p>This field is {@linkplain Collection#clear() cleared} at the
+     * termination of the {@link
+     * #afterBeanDiscovery(AfterBeanDiscovery, BeanManager)} container
+     * lifecycle method.</p>
+     */
+    private final Set<Set<Annotation>> persistenceUnitQualifiers;
+
+    /**
      * A feature flag set to {@code true} if a System property named
      * {@code jpaAnnotationRewritingEnabled} is {@link
      * Boolean#getBoolean(String) set to the <code>String</code> value
@@ -276,10 +290,11 @@ public class JpaExtension implements Extension {
         this.jpaAnnotationRewritingEnabled = Boolean.getBoolean("jpaAnnotationRewritingEnabled");
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
-        this.allQualifiers = new HashSet<>();
+        this.persistenceContextQualifiers = new HashSet<>();
         this.cdiTransactionScopedEntityManagerQualifiers = new HashSet<>();
         this.containerManagedEntityManagerFactoryQualifiers = new HashSet<>();
         this.nonTransactionalEntityManagerQualifiers = new HashSet<>();
+        this.persistenceUnitQualifiers = new HashSet<>();
         // We start by presuming that JTA transactions can be
         // supported.  See the
         // #divineTransactionSupport(ProcessAnnotatedType) method
@@ -598,13 +613,54 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private <T extends EntityManager> void saveEntityManagerQualifiers(@Observes final ProcessInjectionPoint<?, T> event) {
+    private <T extends EntityManagerFactory> void saveEntityManagerFactoryQualifiers(@Observes
+                                                                                     final ProcessInjectionPoint<?, T> event) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "saveEntityManagerFactoryQualifiers";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, event);
+        }
+        this.persistenceUnitQualifiers.add(event.getInjectionPoint().getQualifiers());
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private <T extends EntityManager> void saveEntityManagerQualifiers(@Observes
+                                                                       final ProcessInjectionPoint<?, T> event) {
         final String cn = JpaExtension.class.getName();
         final String mn = "saveEntityManagerQualifiers";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, event);
         }
-        this.allQualifiers.add(event.getInjectionPoint().getQualifiers());
+        final Set<Annotation> qualifiers = event.getInjectionPoint().getQualifiers();
+        assert qualifiers != null;
+        Throwable throwable = null;
+        if (qualifiers.contains(JpaTransactionScoped.Literal.INSTANCE)) {
+            if (qualifiers.contains(CdiTransactionScoped.Literal.INSTANCE)
+                || qualifiers.contains(Extended.Literal.INSTANCE)
+                || qualifiers.contains(NonTransactional.Literal.INSTANCE)) {
+                throwable = createInjectionException(qualifiers);
+            }
+        } else if (qualifiers.contains(Extended.Literal.INSTANCE)) {
+            if (qualifiers.contains(CdiTransactionScoped.Literal.INSTANCE)
+                || qualifiers.contains(NonTransactional.Literal.INSTANCE)) {
+                throwable = createInjectionException(qualifiers);
+            }
+        } else if (qualifiers.contains(NonTransactional.Literal.INSTANCE)) {
+            if (qualifiers.contains(CdiTransactionScoped.Literal.INSTANCE)) {
+                throwable = createInjectionException(qualifiers);
+            }
+        } else if (qualifiers.contains(Synchronized.Literal.INSTANCE)) {
+            if (qualifiers.contains(Unsynchronized.Literal.INSTANCE)) {
+                throwable = createInjectionException(qualifiers);
+            }
+        }
+        if (throwable == null) {
+            this.persistenceContextQualifiers.add(qualifiers);
+        } else {
+            event.addDefinitionError(throwable);
+        }
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
         }
@@ -708,11 +764,12 @@ public class JpaExtension implements Extension {
 
         // Clear out no-longer-needed-or-used collections to save
         // memory.
-        this.allQualifiers.clear();
+        this.persistenceContextQualifiers.clear();
         this.cdiTransactionScopedEntityManagerQualifiers.clear();
         this.containerManagedEntityManagerFactoryQualifiers.clear();
         this.implicitPersistenceUnits.clear();
         this.nonTransactionalEntityManagerQualifiers.clear();
+        this.persistenceUnitQualifiers.clear();
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
 
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -726,8 +783,11 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {event, beanManager});
         }
+        for (final Set<Annotation> qualifiers : this.persistenceUnitQualifiers) {
+            addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
+        }
         if (this.transactionsSupported) {
-            for (final Set<Annotation> qualifiers : this.allQualifiers) {
+            for (final Set<Annotation> qualifiers : this.persistenceContextQualifiers) {
                 // Note that each add* method invoked below is
                 // responsible for ensuring that it adds beans only
                 // once if at all, i.e. for validating and
@@ -744,7 +804,7 @@ public class JpaExtension implements Extension {
                 }
             }
         } else {
-            for (final Set<Annotation> qualifiers : this.allQualifiers) {
+            for (final Set<Annotation> qualifiers : this.persistenceContextQualifiers) {
                 // Note that each add* method invoked below is
                 // responsible for ensuring that it adds beans only
                 // once if at all, i.e. for validating the qualifiers
@@ -1775,6 +1835,10 @@ public class JpaExtension implements Extension {
             }
         }
         return returnValue;
+    }
+
+    private static InjectionException createInjectionException(final Object qualifiers) {
+        return new InjectionException("Invalid injection point; some qualifiers are mutually exclusive: " + qualifiers);
     }
 
 }
