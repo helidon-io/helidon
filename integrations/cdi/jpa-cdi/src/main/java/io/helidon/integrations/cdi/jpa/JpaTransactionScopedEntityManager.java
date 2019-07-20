@@ -25,7 +25,18 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Provider;
 import javax.persistence.EntityManager;
 
+/**
+ * A {@link DelegatingEntityManager} that adheres to the JPA
+ * specification's rules for transaction-scoped {@link
+ * EntityManager}s.
+ */
 final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
+
+
+    /*
+     * Instance fields.
+     */
+
 
     private final TransactionSupport transactionSupport;
 
@@ -33,6 +44,21 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
     private final Provider<EntityManager> nonTransactionalEntityManagerProvider;
 
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link JpaTransactionScopedEntityManager}.
+     *
+     * @param instance an {@link Instance} representing the CDI
+     * container; must not be {@code null}
+     *
+     * @param suppliedQualifiers a {@link Set} of qualifier {@link
+     * Annotation}s; must not be {@code null}
+     */
     JpaTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
         super();
@@ -54,6 +80,25 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
     }
 
+    /**
+     * Acquires and returns a delegate {@link EntityManager}, adhering
+     * to the rules spelled out by the JPA specification around
+     * transaction-scoped entity managers.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * <p>If a {@linkplain TransactionSupport#inTransaction() JTA
+     * transaction is active}, then an {@link EntityManager} that is
+     * joined to it is returned.  Otherwise a non-transactional {@link
+     * EntityManager} is returned.</p>
+     *
+     * <p>Recall that this method is invoked by all {@link
+     * DelegatingEntityManager} methods.</p>
+     *
+     * @return a non-{@code null} {@link EntityManager} that will be
+     * used as this {@link JpaTransactionScopedEntityManager}'s
+     * delegate
+     */
     @Override
     protected EntityManager acquireDelegate() {
         final EntityManager returnValue;
@@ -75,7 +120,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         throw new IllegalStateException();
     }
 
-    static Instance<EntityManager>
+    private static Instance<EntityManager>
         getCdiTransactionScopedEntityManagerInstance(final Instance<Object> instance,
                                                      final Set<? extends Annotation> suppliedQualifiers) {
         Objects.requireNonNull(instance);

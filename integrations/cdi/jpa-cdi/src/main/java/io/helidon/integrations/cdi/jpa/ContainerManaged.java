@@ -22,21 +22,39 @@ import java.lang.annotation.Target;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
+/**
+ * A {@link Qualifier} indicating that the qualified bean's instances
+ * are <em>container-managed</em>, in any number of the various senses
+ * defined by the JPA specification.
+ */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
 @interface ContainerManaged {
 
-  final class Literal extends AnnotationLiteral<ContainerManaged> implements ContainerManaged {
+    /**
+     * An {@link AnnotationLiteral} that implements {@link
+     * CdiTransactionScoped}.
+     */
+    final class Literal extends AnnotationLiteral<ContainerManaged> implements ContainerManaged {
 
-    private static final long serialVersionUID = 1L;
+        /**
+         * The version of this class for serialization purposes.
+         */
+        private static final long serialVersionUID = 1L;
 
-    static final ContainerManaged INSTANCE = new Literal();
+        /**
+         * The sole instance of this class.
+         */
+        static final ContainerManaged INSTANCE = new Literal();
 
-    private Literal() {
-      super();
+        /**
+         * Creates a new {@link Literal}.
+         */
+        private Literal() {
+            super();
+        }
+
     }
-
-  }
 
 }

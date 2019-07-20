@@ -22,21 +22,41 @@ import java.lang.annotation.Target;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
+/**
+ * A {@link Qualifier} indicating that the qualified bean's instances
+ * are associated with a JTA transaction.
+ *
+ * <p>This qualifier must not be combined with {@link
+ * CdiTransactionScoped}, {@link JpaTransactionScoped} or {@link
+ * NonTransactional}.</p>
+ */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
 @interface Extended {
 
-  final class Literal extends AnnotationLiteral<Extended> implements Extended {
+    /**
+     * An {@link AnnotationLiteral} that implements {@link Extended}.
+     */
+    final class Literal extends AnnotationLiteral<Extended> implements Extended {
 
-    private static final long serialVersionUID = 1L;
+        /**
+         * The version of this class for serialization purposes.
+         */
+        private static final long serialVersionUID = 1L;
 
-    static final Extended INSTANCE = new Literal();
+        /**
+         * The sole instance of this class.
+         */
+        static final Extended INSTANCE = new Literal();
 
-    private Literal() {
-      super();
+        /**
+         * Creates a new {@link Literal}.
+         */
+        private Literal() {
+            super();
+        }
+
     }
-
-  }
 
 }

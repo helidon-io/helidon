@@ -20,7 +20,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A utility class providing access to all JPA-related qualifiers
+ * defined by this package.
+ *
+ * @see #JPA_CDI_QUALIFIERS
+ */
 final class JpaCdiQualifiers {
+
+
+    /*
+     * Static fields
+     */
+
 
     /**
      * An {@linkplain Collections#unmodifiableSet(Set) unmodifiable
@@ -43,6 +55,15 @@ final class JpaCdiQualifiers {
         JPA_CDI_QUALIFIERS = Collections.unmodifiableSet(jpaCdiQualifiers);
     }
 
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link JpaCdiQualifiers}.
+     */
     private JpaCdiQualifiers() {
         super();
     }

@@ -43,9 +43,21 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
      */
 
 
+    /**
+     * Creates a new {@link NonTransactionalEntityManager}.
+     *
+     * @param instance an {@link Instance} representing the CDI
+     * container
+     *
+     * @param suppliedQualifiers a {@link Set} of qualifier {@link
+     * Annotation}s; must not be {@code null}
+     *
+     * @exception NullPointerException if either parameter value is
+     * {@code null}
+     */
     NonTransactionalEntityManager(final Instance<Object> instance,
                                   final Set<? extends Annotation> suppliedQualifiers) {
-        super(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers));
+        super(EntityManagers.createContainerManagedEntityManager(instance, suppliedQualifiers));
     }
 
 
@@ -68,38 +80,95 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
         throw new PersistenceException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void persist(final Object entity) {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public <T> T merge(final T entity) {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void remove(final Object entity) {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void refresh(final Object entity) {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @param properties ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void refresh(final Object entity,
                         final Map<String, Object> properties) {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @param lockMode ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void refresh(final Object entity,
                         final LockModeType lockMode) {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @param entity ignored
+     *
+     * @param lockMode ignored
+     *
+     * @param properties ignored
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void refresh(final Object entity,
                         final LockModeType lockMode,
@@ -107,6 +176,11 @@ final class NonTransactionalEntityManager extends DelegatingEntityManager {
         throw new TransactionRequiredException();
     }
 
+    /**
+     * Throws a {@link TransactionRequiredException} when invoked.
+     *
+     * @exception TransactionRequiredException when invoked
+     */
     @Override
     public void flush() {
         // See

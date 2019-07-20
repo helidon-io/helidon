@@ -22,21 +22,41 @@ import java.lang.annotation.Target;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
+/**
+ * A {@link Qualifier} indicating that the qualified bean's instances
+ * are associated with a synchronized persistence context.
+ *
+ * <p>This qualifier must not be combined with {@link
+ * Unsynchronized}.</p>
+ */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
 @interface Synchronized {
 
-  final class Literal extends AnnotationLiteral<Synchronized> implements Synchronized {
+    /**
+     * An {@link AnnotationLiteral} that implements {@link
+     * Synchronized}.
+     */
+    final class Literal extends AnnotationLiteral<Synchronized> implements Synchronized {
 
-    private static final long serialVersionUID = 1L;
+        /**
+         * The version of this class for serialization purposes.
+         */
+        private static final long serialVersionUID = 1L;
 
-    static final Synchronized INSTANCE = new Literal();
+        /**
+         * The sole instance of this class.
+         */
+        static final Synchronized INSTANCE = new Literal();
 
-    private Literal() {
-      super();
+        /**
+         * Creates a new {@link Literal}.
+         */
+        private Literal() {
+            super();
+        }
+
     }
-
-  }
 
 }

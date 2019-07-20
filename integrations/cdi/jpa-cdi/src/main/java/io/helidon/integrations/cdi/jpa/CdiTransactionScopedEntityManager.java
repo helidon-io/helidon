@@ -22,12 +22,40 @@ import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 
+/**
+ * A {@link DelegatingEntityManager} created in certain very specific
+ * JPA-mandated transaction-related scenarios.
+ */
 final class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
 
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link CdiTransactionScopedEntityManager}.
+     *
+     * @param instance an {@link Instance} representing the CDI
+     * container; must not be {@code null}
+     *
+     * @param suppliedQualifiers a {@link Set} of qualifier {@link
+     * Annotation} instances; must not be {@code null}
+     *
+     * @exception NullPointerException if either parameter value is
+     * {@code null}
+     */
     CdiTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
-        super(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers));
+        super(EntityManagers.createContainerManagedEntityManager(instance, suppliedQualifiers));
     }
+
+
+    /*
+     * Instance methods.
+     */
+
 
     /**
      * Throws a {@link PersistenceException} when invoked, because it

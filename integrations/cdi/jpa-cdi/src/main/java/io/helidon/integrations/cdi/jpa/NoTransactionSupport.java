@@ -16,19 +16,51 @@
 package io.helidon.integrations.cdi.jpa;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.spi.Context;
 
+/**
+ * A {@link TransactionSupport} implementation that is loaded only if
+ * JTA is not available.
+ *
+ * <p>See the exclusion stanzas in {@code META-INF/beans.xml} for more
+ * details.</p>
+ */
 @ApplicationScoped
 final class NoTransactionSupport implements TransactionSupport {
 
+
+    /**
+     * Creates a new {@link NoTransactionSupport}.
+     */
     private NoTransactionSupport() {
         super();
     }
 
+    /**
+     * Returns {@code false} when invoked.
+     *
+     * @return {@code false} when invoked
+     */
     @Override
     public boolean isActive() {
         return false;
     }
 
+    /**
+     * Returns {@code null} when invoked.
+     *
+     * @return {@code null} when invoked
+     */
+    @Override
+    public Context getContext() {
+        return null;
+    }
+
+    /**
+     * Returns {@code false} when invoked.
+     *
+     * @return {@code false} when invoked
+     */
     @Override
     public boolean inTransaction() {
         return false;

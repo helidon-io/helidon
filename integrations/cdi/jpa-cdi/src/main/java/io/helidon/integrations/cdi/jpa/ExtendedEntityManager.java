@@ -27,7 +27,17 @@ import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.persistence.EntityManager;
 
+/**
+ * A {@link DelegatingEntityManager} created to support extended
+ * persistence contexts.
+ */
 final class ExtendedEntityManager extends DelegatingEntityManager {
+
+
+    /*
+     * Instance fields.
+     */
+
 
     private final EntityManager delegate;
 
@@ -37,10 +47,16 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
 
     private final BeanManager beanManager;
 
+
+    /*
+     * Constructors.
+     */
+
+
     ExtendedEntityManager(final Instance<Object> instance,
                           final Set<? extends Annotation> suppliedQualifiers,
                           final BeanManager beanManager) {
-        this(EntityManagerFactories.createContainerManagedEntityManager(instance, suppliedQualifiers),
+        this(EntityManagers.createContainerManagedEntityManager(instance, suppliedQualifiers),
              instance.select(TransactionSupport.class).get(),
              suppliedQualifiers,
              beanManager);
@@ -61,28 +77,71 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
         }
     }
 
+
+    /*
+     * Instance methods.
+     */
+
+
+    /**
+     * Acquires and returns the delegate {@link EntityManager} that
+     * this {@link ExtendedEntityManager} must use according to the
+     * rules for extended persistence contexts spelled out in the JPA
+     * specification.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return the delegate {@link EntityManager}; never {@code null}
+     */
     @Override
     protected EntityManager acquireDelegate() {
+
+        // In all cases, we return the EntityManager supplied to us at
+        // construction time.  In addition, however, we need to join
+        // it to any active transaction (see below), checking first to
+        // make sure that no *other* EntityManager is currently joined
+        // to that transaction.  See section 7.6.3.1 of the JPA
+        // specification for details.
         final EntityManager returnValue = this.delegate;
+
         final Context context = transactionSupport.getContext();
         if (context != null && context.isActive()) {
-            final Set<Annotation> qualifiers = new HashSet<>(this.suppliedQualifiers);
-            qualifiers.remove(Extended.Literal.INSTANCE);
-            qualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
-            qualifiers.remove(NonTransactional.Literal.INSTANCE);
-            qualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
-            qualifiers.add(ContainerManaged.Literal.INSTANCE);
+
+            // If the Context is active, it means a JTA transaction is
+            // in play.  Now we need to see if an EntityManager is
+            // already enrolled in it.
+
+            // Look for an EntityManager bean annotated with, among
+            // other possible things, @CdiTransactionScoped
+            // and @ContainerManaged.
+            final Set<Annotation> selectionQualifiers = new HashSet<>(this.suppliedQualifiers);
+            selectionQualifiers.remove(Extended.Literal.INSTANCE);
+            selectionQualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
+            selectionQualifiers.remove(NonTransactional.Literal.INSTANCE);
+            selectionQualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
+            selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
+
             final Set<Bean<?>> cdiTransactionScopedEntityManagerBeans =
-                this.beanManager.getBeans(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()]));
+                this.beanManager.getBeans(EntityManager.class,
+                                          selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
+            assert cdiTransactionScopedEntityManagerBeans != null;
+            assert !cdiTransactionScopedEntityManagerBeans.isEmpty();
+
             final Bean<?> cdiTransactionScopedEntityManagerBean =
                 this.beanManager.resolve(cdiTransactionScopedEntityManagerBeans);
-            // Check to see if there's already a container-managed
-            // EntityManager enrolled in the transaction (without
-            // accidentally creating a new one, hence the
-            // single-argument Context#get(Contextual) invocation).
-            // We have to do this to honor section 7.6.3.1 of the JPA
+            assert cdiTransactionScopedEntityManagerBean != null;
+
+            // Using that bean, check the Context to see if there's
+            // already a container-managed EntityManager enrolled in
+            // the transaction (without accidentally creating a new
+            // one, hence the single-argument Context#get(Contextual)
+            // invocation, not the dual-argument
+            // Context#get(Contextual, CreationalContext) one).  We
+            // have to do this to honor section 7.6.3.1 of the JPA
             // specification.
+
             if (context.get(cdiTransactionScopedEntityManagerBean) != null) {
+
                 // If there IS already a container-managed
                 // EntityManager enrolled in the transaction, we need
                 // to follow JPA section 7.6.3.1 and throw an analog
@@ -90,9 +149,10 @@ final class ExtendedEntityManager extends DelegatingEntityManager {
                 // https://github.com/wildfly/wildfly/blob/7f80f0150297bbc418a38e7e23da7cf0431f7c28/jpa/subsystem/src/main/java/org/jboss/as/jpa/container/ExtendedEntityManager.java#L149
                 // as an arbitrary example
                 throw new CreationException("section 7.6.3.1 violation"); // Revisit: message
-            } else {
-                this.delegate.joinTransaction();
+
             }
+
+            this.delegate.joinTransaction();
         }
         return returnValue;
     }

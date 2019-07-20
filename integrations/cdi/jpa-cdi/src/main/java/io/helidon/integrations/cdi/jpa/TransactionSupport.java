@@ -17,14 +17,42 @@ package io.helidon.integrations.cdi.jpa;
 
 import javax.enterprise.context.spi.Context;
 
+/**
+ * An interface whose implementations indicate indirectly whether JTA
+ * is available in the environment.
+ *
+ * @see NoTransactionSupport
+ *
+ * @see JtaTransactionSupport
+ */
 interface TransactionSupport {
 
-  boolean isActive();
+    /**
+     * Returns {@code true} if JTA facilities are available.
+     *
+     * @return {@code true} if JTA facilities are available; {@code
+     * false} otherwise
+     */
+    boolean isActive();
 
-  default Context getContext() {
-    return null;
-  }
+    /**
+     * Returns the {@linkplain Context#isActive() active} {@link
+     * Context}, if any, that supports JTA facilities, or {@code null}
+     *
+     * <p>Implementations of this method may return {@code null}.</p>
+     *
+     * @return the {@link Context}, if any, that supports JTA
+     * facilities, or {@code null}
+     */
+    Context getContext();
 
-  boolean inTransaction();
+    /**
+     * Returns {@code true} if a JTA transaction is currently in
+     * effect.
+     *
+     * @return {@code true} if a JTA transaction is currently in
+     * effect; {@code false} otherwise
+     */
+    boolean inTransaction();
 
 }

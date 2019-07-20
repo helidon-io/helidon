@@ -22,20 +22,40 @@ import java.lang.annotation.Target;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Qualifier;
 
+/**
+ * A {@link Qualifier} indicating that the qualified bean's instances
+ * are associated with a JPA transaction with very specific semantics.
+ *
+ * <p>This qualifier must not be combined with {@link Extended},
+ * {@link CdiTransactionScoped} or {@link NonTransactional}.</p>
+ */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({}) // can only be programmatically added
 @interface JpaTransactionScoped {
 
-  final class Literal extends AnnotationLiteral<JpaTransactionScoped> implements JpaTransactionScoped {
+    /**
+     * An {@link AnnotationLiteral} that implements {@link
+     * JpaTransactionScoped}.
+     */
+    final class Literal extends AnnotationLiteral<JpaTransactionScoped> implements JpaTransactionScoped {
 
-    private static final long serialVersionUID = 1L;
+        /**
+         * The version of this class for serialization purposes.
+         */
+        private static final long serialVersionUID = 1L;
 
-    static final JpaTransactionScoped INSTANCE = new Literal();
+        /**
+         * The sole instance of this class.
+         */
+        static final JpaTransactionScoped INSTANCE = new Literal();
 
-    private Literal() {
-      super();
-    }
+        /**
+         * Creates a new {@link Literal}.
+         */
+        private Literal() {
+            super();
+        }
 
   }
 
