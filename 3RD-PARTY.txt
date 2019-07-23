@@ -916,10 +916,10 @@ Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
 Copyright (c) OSGi Alliance (2013). All Rights Reserved.
 
 =======================
-MicroProfile Health API 1.0
+MicroProfile Health API 2.0.1
 =======================
 MicroProfile Health API (org.eclipse.microprofile.health:microprofile-health-api)
-Copyright (c) 2017 Contributors to the Eclipse Foundation
+Copyright (c) 2017,2019 Contributors to the Eclipse Foundation
 Apache License, Version 2.0
 
 This product includes software developed at
@@ -992,6 +992,24 @@ Apache License, Version 2.0
  Copyright (c) OSGi Alliance (2013). All Rights Reserved.
 Apache License, Version 2.0
 --------------------------------------------
+=======================
+MicroProfile Open Tracing API 1.3.1
+=======================
+Copyright (c) 2017,2019 Contributors to the Eclipse Foundation
+Copyright (c) 2017,2018 Contributors to the Eclipse Foundation
+Apache License, Version 2.0
+--------------------------------------------
+"org.osgi:org.osgi.annotation.versioning" 1.0.0 (org.osgi:org.osgi.annotation.versioning)
+ Copyright (c) OSGi Alliance (2013, 2014). All Rights Reserved.
+ Copyright (c) OSGi Alliance (2013). All Rights Reserved.
+Apache License, Version 2.0
+--------------------------------------------
+
+=======================
+MicroProfile Rest Client API 1.2.1
+=======================
+Copyright (c) 2016-2019 Contributors to the Eclipse Foundation
+Apache License, Version 2.0
 
 =======================
 MicroProfile OpenAPI API 1.1.2
@@ -1010,7 +1028,7 @@ PackageName: Eclipse MicroProfile
 PackageHomePage: http://www.eclipse.org/microprofile
 PackageLicenseDeclared: Apache-2.0
 
-PackageCopyrightText: 
+PackageCopyrightText:
 Arthur De Magalhaes arthurdm@ca.ibm.com
 
 =======================
@@ -1433,7 +1451,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------
-"SLF4J API Module" 1.7.25 (org.slf4j:slf4j-api)
+"SLF4J API Module" 1.7.26 (org.slf4j:slf4j-api)
 Copyright (c) QOS.ch
 
 The MIT License SPDX short identifier: MIT
@@ -1458,41 +1476,41 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------
-"Netty/Codec/DNS" 4.1.30.Final (io.netty:netty-codec-dns)
+"Netty/Codec/DNS" 4.1.34.Final (io.netty:netty-codec-dns)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Codec" 4.1.30.Final (io.netty:netty-codec)
+"Netty/Codec" 4.1.34.Final (io.netty:netty-codec)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Codec/HTTP" 4.1.30.Final (io.netty:netty-codec-http)
+"Netty/Codec/HTTP" 4.1.34.Final (io.netty:netty-codec-http)
 Copyright The Netty Project
  Copyright (c) Bjoern Hoehrmann 
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Handler" 4.1.30.Final (io.netty:netty-handler)
+"Netty/Handler" 4.1.34.Final (io.netty:netty-handler)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Buffer" 4.1.30.Final (io.netty:netty-buffer)
+"Netty/Buffer" 4.1.34.Final (io.netty:netty-buffer)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Common" 4.1.30.Final (io.netty:netty-common)
+"Netty/Common" 4.1.34.Final (io.netty:netty-common)
 Copyright (c) QOS.ch
  Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Transport" 4.1.30.Final (io.netty:netty-transport)
+"Netty/Transport" 4.1.34.Final (io.netty:netty-transport)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Resolver/DNS" 4.1.30.Final (io.netty:netty-resolver-dns)
+"Netty/Resolver/DNS" 4.1.34.Final (io.netty:netty-resolver-dns)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Resolver" 4.1.30.Final (io.netty:netty-resolver)
+"Netty/Resolver" 4.1.34.Final (io.netty:netty-resolver)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
@@ -1546,9 +1564,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+=======================
 Zipkin OpenTracing Brave (io.opentracing.brave:brave-opentracing)
  Copyright 2016-2018 The OpenZipkin Authors
-
 =======================
 OpenTracing Java Bridge for Zipkin 0.30.0
 =======================
@@ -1646,6 +1665,56 @@ Apache License, Version 2.0
 --------------------------------------------
 "OpenTracing-noop" 0.31.0 (io.opentracing:opentracing-noop)
 Copyright The OpenTracing Authors
+Apache License, Version 2.0
+--------------------------------------------
+
+=======================
+Jaeger Tracing Client 0.34.0
+=======================
+jaeger-client (io.jaegertracing:jaeger-client)
+Copyright (c) 2018, The Jaeger Authors
+Copyright (c) 2016- 2018, The Jaeger Authors
+Copyright (c) 2016, Uber Technologies, Inc
+Apache License, Version 2.0
+--------------------------------------------
+"SLF4J API Module" 1.7.25 (org.slf4j:slf4j-api)
+Copyright (c) 2004-2011 QOS.ch
+Apache License, Version 2.0
+--------------------------------------------
+"Apache Thrift" 0.12.0 (org.apache.thrift:libthrift)
+Copyright The Apache Software Foundation
+Apache License, Version 2.0
+--------------------------------------------
+"OkHttp" 3.9.0 (com.squareup.okhttp3:okhttp)
+Copyright 2013 Twitter, Inc.
+Copyright (C) 2012,2017 Square, Inc.
+Copyright (C) 2010,2012 The Android Open Source Project
+Apache License, Version 2.0
+--------------------------------------------
+"Okio" 1.13.0 (com.squareup.okio:okio)
+Copyright 2014 Square Inc.
+Copyright (C) 2014,2017 Square, Inc.
+Apache License, Version 2.0
+--------------------------------------------
+"OpenTracing API" 0.31.0 (io.opentracing:opentracing-api)
+Copyright 2016-2018 The OpenTracing Authors
+Apache License, Version 2.0
+--------------------------------------------
+"OpenTracing-util" 0.31.0 (io.opentracing:opentracing-util)
+Copyright 2016-2018 The OpenTracing Authors
+Apache License, Version 2.0
+--------------------------------------------
+"OpenTracing-noop" 0.31.0 (io.opentracing:opentracing-noop)
+Copyright 2016-2018 The OpenTracing Authors
+Apache License, Version 2.0
+--------------------------------------------
+"Gson" 2.8.2 (com.google.code.gson:gson)
+Copyright (C) 2008,2014 Google Inc.
+Copyright (C) 2010 The Android Open Source Project
+Apache License, Version 2.0
+--------------------------------------------
+"Tracer resolver" 0.1.5 (io.opentracing.contrib:opentracing-tracerresolver)
+Copyright 2017-2018 The OpenTracing Authors
 Apache License, Version 2.0
 --------------------------------------------
 
