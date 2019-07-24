@@ -197,6 +197,7 @@
         <version.plugin.dependency>3.0.0</version.plugin.dependency>
         <version.plugin.deploy>2.8.2</version.plugin.deploy>
         <version.plugin.directory>0.1</version.plugin.directory>
+        <version.plugin.eclipselink>2.7.1.1</version.plugin.eclipselink>
         <version.plugin.enforcer>1.4.1</version.plugin.enforcer>
         <version.plugin.enforcer>3.0.0-M1</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
@@ -556,6 +557,11 @@
                         <skipStagingRepositoryClose>true</skipStagingRepositoryClose>
                         <skipNexusStagingDeployMojo>${maven.deploy.skip}</skipNexusStagingDeployMojo>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.ethlo.persistence.tools</groupId>
+                    <artifactId>eclipselink-maven-plugin</artifactId>
+                    <version>${version.plugin.eclipselink}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jvnet.jaxb2.maven2</groupId>

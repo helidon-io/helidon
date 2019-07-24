@@ -16,23 +16,58 @@
 package io.helidon.integrations.cdi.jpa;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
 
 /**
  * A {@link DelegatingEntityManager} created in certain very specific
  * JPA-mandated transaction-related scenarios.
  */
-final class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
+class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
+
+
+    /*
+     * Instance fields.
+     */
+
+
+    private final Instance<Object> instance;
+
+    private final Set<? extends Annotation> suppliedQualifiers;
+
+    private EntityManager delegate;
+
+    private boolean closeDelegate;
+
+    private boolean closed;
 
 
     /*
      * Constructors.
      */
 
+
+    /**
+     * This constructor exists solely to fulfil the requirement that
+     * certain kinds of contextual objects in CDI must have
+     * zero-argument constructors.  Do not call this constructor by
+     * hand.
+     *
+     * @deprecated Use the {@link
+     * #CdiTransactionScopedEntityManager(Instance, Set)} constructor
+     * instead.
+     */
+    @Deprecated
+    CdiTransactionScopedEntityManager() {
+        super();
+        this.closeDelegate = true;
+        this.instance = null;
+        this.suppliedQualifiers = Collections.emptySet();
+    }
 
     /**
      * Creates a new {@link CdiTransactionScopedEntityManager}.
@@ -48,7 +83,9 @@ final class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      */
     CdiTransactionScopedEntityManager(final Instance<Object> instance,
                                       final Set<? extends Annotation> suppliedQualifiers) {
-        super(EntityManagers.createContainerManagedEntityManager(instance, suppliedQualifiers));
+        super();
+        this.instance = Objects.requireNonNull(instance);
+        this.suppliedQualifiers = Objects.requireNonNull(suppliedQualifiers);
     }
 
 
@@ -57,18 +94,65 @@ final class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
      */
 
 
-    /**
-     * Throws a {@link PersistenceException} when invoked, because it
-     * will never be invoked in the normal course of events.
-     *
-     * @return a non-{@code null} {@link EntityManager}, but this will
-     * never happen
-     *
-     * @exception PersistenceException when invoked
-     */
     @Override
     protected EntityManager acquireDelegate() {
-        throw new PersistenceException();
+        if (this.delegate == null) {
+            this.delegate = EntityManagers.createContainerManagedEntityManager(this.instance, this.suppliedQualifiers);
+            this.closeDelegate = true;
+        }
+        assert this.delegate != null;
+        return this.delegate;
+    }
+
+    /**
+     * Sets this {@link CdiTransactionScopedEntityManager}'s internal
+     * delegate {@link EntityManager} only if it has not yet been set.
+     *
+     * <p>This method will prevent this {@link
+     * CdiTransactionScopedEntityManager} from {@linkplain
+     * EntityManager#close() closing} the supplied {@code delegate}.
+     * The caller must ensure that this delegate will be closed when
+     * appropriate.</p>
+     *
+     * @param delegate the delegate {@link EntityManager}; must not be
+     * {@code null}; must not be this {@link
+     * CdiTransactionScopedEntityManager}
+     *
+     * @exception NullPointerException if {@code delegate} is {@code null}
+     *
+     * @exception IllegalArgumentException if {@code delegate} is
+     * equal to this {@code CdiTransactionScopedEntityManager}
+     *
+     * @exception IllegalStateException if this {@link
+     * CdiTransactionScopedEntityManager}'s internal delegate has
+     * already been set one way or another
+     *
+     * @see #acquireDelegate()
+     */
+    void setDelegate(final EntityManager delegate) {
+        Objects.requireNonNull(delegate);
+        if (delegate == this) {
+            throw new IllegalArgumentException("delegate == this");
+        }
+        if (this.delegate != null) {
+            throw new IllegalStateException();
+        }
+        this.delegate = delegate;
+        this.closeDelegate = false;
+    }
+
+    @Override
+    public boolean isOpen() {
+        return !this.closed && super.isOpen();
+    }
+
+    @Override
+    public void close() {
+        this.closed = true;
+        if (this.closeDelegate) {
+            super.close();
+            assert this.delegate != null ? !this.delegate.isOpen() : true;
+        }
     }
 
 }

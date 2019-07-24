@@ -21,9 +21,11 @@ import java.util.Set;
 
 import javax.annotation.sql.DataSourceDefinition;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.persistence.EntityManager;
@@ -31,8 +33,11 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceContextType;
 import javax.persistence.PersistenceUnit;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
 import javax.persistence.TransactionRequiredException;
 import javax.transaction.Transactional;
+import javax.transaction.TransactionManager;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Dependent
+@ApplicationScoped
 @DataSourceDefinition(
     name = "test",
     className = "org.h2.jdbcx.JdbcDataSource",
@@ -86,6 +91,23 @@ class TestAnnotationRewriting {
         }
     }
 
+  private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
+                          final TransactionManager tm) throws SystemException {
+    // If an assertion fails, or some other error happens in the
+        // CDI container, there may be a current transaction that has
+        // neither been committed nor rolled back.  Because the
+        // Narayana transaction engine is fundamentally static, this
+        // means that a transaction affiliation with the main thread
+        // may "leak" into another JUnit test (since JUnit, by
+        // default, forks once, and then runs all tests in the same
+        // JVM).  CDI, thankfully, will fire an event for the
+        // application context shutting down, even in the case of
+        // errors.
+        if (tm.getStatus() != Status.STATUS_NO_TRANSACTION) {
+            tm.rollback();
+        }
+    }
+  
     @PersistenceContext(unitName = "test")
     private void observerMethod(@Observes final TestIsRunning event,
                                 final EntityManager emParameter) {
@@ -144,9 +166,10 @@ class TestAnnotationRewriting {
             .getEvent()
             .select(TestIsRunning.class)
             .fire(new TestIsRunning("testTransactionalEntityManager"));
-        final TestAnnotationRewriting testInstance = this.cdiContainer.select(TestAnnotationRewriting.class).get();
-        assertNotNull(testInstance);
-        testInstance.testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod();
+        final Instance<TestAnnotationRewriting> instance = this.cdiContainer.select(TestAnnotationRewriting.class);
+        final TestAnnotationRewriting test = instance.get();
+        assertNotNull(test);
+        test.testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod();
     }
     
     @Transactional

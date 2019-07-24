@@ -133,6 +133,42 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.ethlo.persistence.tools</groupId>
+                <artifactId>eclipselink-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-api</artifactId>
+                        <version>${version.lib.junit}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>weave</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>weave</goal>
+                        </goals>
+                        <configuration>
+                            <persistenceInfoLocation>${project.build.testOutputDirectory}</persistenceInfoLocation>
+                            <source>${project.build.testOutputDirectory}</source>
+                            <target>${project.build.testOutputDirectory}</target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>modelgen</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>modelgen</goal>
+                        </goals>
+                        <configuration>
+                            <source>${project.build.testSourceDirectory}</source>
+                            <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.jvnet.jaxb2.maven2</groupId>
                 <artifactId>maven-jaxb2-plugin</artifactId>
                 <executions>

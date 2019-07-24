@@ -17,6 +17,7 @@ package io.helidon.integrations.cdi.jpa;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -68,9 +69,14 @@ final class EntityManagers {
      * Static methods.
      */
 
-
     static EntityManager createContainerManagedEntityManager(final Instance<Object> instance,
                                                              final Set<? extends Annotation> suppliedQualifiers) {
+        return createContainerManagedEntityManager(instance, suppliedQualifiers, null);
+    }
+
+    static EntityManager createContainerManagedEntityManager(final Instance<Object> instance,
+                                                             final Set<? extends Annotation> suppliedQualifiers,
+                                                             SynchronizationType syncType) {
         final String cn = EntityManagers.class.getName();
         final String mn = "createContainerManagedEntityManager";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -100,11 +106,11 @@ final class EntityManagers {
 
         // Go look for persistence context properties.  Many (most?)
         // times there won't be any.
-        final TypeLiteral<Map<?, ?>> typeLiteral = new TypeLiteral<Map<?, ?>>() {
+        final TypeLiteral<Map<? extends String, ?>> typeLiteral = new TypeLiteral<Map<? extends String, ?>>() {
                 private static final long serialVersionUID = 1L;
             };
-        final Map<?, ?> properties;
-        Instance<Map<?, ?>> propertiesInstance =
+        final Map<String, Object> properties = new HashMap<>();
+        Instance<Map<? extends String, ?>> propertiesInstance =
             instance.select(typeLiteral, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
         if (propertiesInstance != null && !propertiesInstance.isUnsatisfied()) {
             selectionQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
@@ -112,20 +118,25 @@ final class EntityManagers {
             propertiesInstance =
                 instance.select(typeLiteral, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
             if (propertiesInstance != null && !propertiesInstance.isUnsatisfied()) {
-                properties = propertiesInstance.get();
-            } else {
-                properties = null;
+                properties.putAll(propertiesInstance.get());
             }
-        } else {
-            properties = null;
         }
 
         // Work out what SynchronizationType to use based on the
-        // qualifiers that were handed to us.
-        final SynchronizationType syncType =
-            suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE)
-            ? SynchronizationType.UNSYNCHRONIZED
-            : SynchronizationType.SYNCHRONIZED;
+        // parameters and qualifiers that were handed to us.
+        if (syncType == null) {
+            syncType =
+                suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE)
+                ? SynchronizationType.UNSYNCHRONIZED
+                : SynchronizationType.SYNCHRONIZED;
+        }
+
+        // Store the SynchronizationType in the returned
+        // EntityManager's properties so other code can figure out
+        // what it was.  It is slightly amazing this was not made part
+        // of the JPA APIs.
+        assert !properties.containsKey(SynchronizationType.class.getName());
+        properties.put(SynchronizationType.class.getName(), syncType);
 
         // Use the synchronization type we computed and the properties
         // we found to actually create the EntityManager.
@@ -135,6 +146,26 @@ final class EntityManagers {
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn, returnValue);
+        }
+        return returnValue;
+    }
+
+    static SynchronizationType getSynchronizationTypeFor(final EntityManager entityManager) {
+        final SynchronizationType returnValue;
+        if (entityManager == null) {
+            returnValue = null;
+        } else {
+            final Map<String, Object> properties = entityManager.getProperties();
+            if (properties == null || properties.isEmpty()) {
+                returnValue = null;
+            } else {
+                final Object propertyValue = properties.get(SynchronizationType.class.getName());
+                if (propertyValue instanceof SynchronizationType) {
+                    returnValue = (SynchronizationType) propertyValue;
+                } else {
+                    returnValue = null;
+                }
+            }
         }
         return returnValue;
     }

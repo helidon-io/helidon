@@ -80,7 +80,7 @@ final class EntityManagerFactories {
 
     static EntityManagerFactory getContainerManagedEntityManagerFactory(final Instance<Object> instance,
                                                                         final Set<? extends Annotation> suppliedQualifiers) {
-        final String cn = JpaExtension.class.getName();
+        final String cn = EntityManagerFactories.class.getName();
         final String mn = "getContainerManagedEntityManagerFactory";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn, new Object[] {instance, suppliedQualifiers});
@@ -151,7 +151,7 @@ final class EntityManagerFactories {
 
         final PersistenceUnitInfo pu = getPersistenceUnitInfo(instance, suppliedQualifiers);
         if (PersistenceUnitTransactionType.RESOURCE_LOCAL.equals(pu.getTransactionType())) {
-            throw new PersistenceException(); // Revisit: message
+            throw new PersistenceException(Messages.format("resourceLocalPersistenceUnitDisallowed", pu));
         }
 
         PersistenceProvider persistenceProvider = null;
@@ -173,7 +173,9 @@ final class EntityManagerFactories {
         try {
             validatorFactoryClass = Class.forName("javax.validation.ValidatorFactory");
         } catch (final ClassNotFoundException classNotFoundException) {
-            // Revisit: log
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.logp(Level.INFO, cn, mn, "noValidatorFactoryClass", classNotFoundException);
+            }
         }
         if (validatorFactoryClass != null) {
             final Instance<?> validatorFactoryInstance = instance.select(validatorFactoryClass);

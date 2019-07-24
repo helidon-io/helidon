@@ -116,7 +116,7 @@ abstract class DelegatingEntityManager implements EntityManager {
      *
      * @see #DelegatingEntityManager(EntityManager)
      */
-    protected final EntityManager delegate() {
+    protected EntityManager delegate() {
         final EntityManager returnValue;
         if (this.delegate == null) {
             returnValue = this.acquireDelegate();

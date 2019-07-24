@@ -21,28 +21,36 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
                                  http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd">
-  <persistence-unit name="test" transaction-type="JTA">
-      <jta-data-source>test</jta-data-source>
-      <properties>
-          <property name="eclipselink.deploy-on-startup" value="true"/>
-          <property name="eclipselink.jdbc.native-sql" value="true"/>
-          <property name="eclipselink.logging.logger" value="JavaLogger"/>
-          <property name="eclipselink.logging.parameters" value="true"/>
-          <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
-          
-          <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
-          <!--
-              Hibernate doesn't need a property here; the presence of a
-              JTAPlatform CDI bean will be enough.
-          -->
 
-          <property name="eclipselink.weaving" value="false"/>
-          <!--
-              Hibernate weaving is disabled by default so there is no
-              property to set here; see
-              https://github.com/hibernate/hibernate-orm/blob/5.3.7/documentation/src/main/asciidoc/userguide/chapters/pc/BytecodeEnhancement.adoc#runtime-enhancement
-          -->
+    <persistence-unit name="test" transaction-type="JTA">
+        <description>A persistence unit for use by unit tests.</description>                             
+        <jta-data-source>test</jta-data-source>
+        <properties>
+            <property name="eclipselink.deploy-on-startup" value="true"/>
+            <property name="eclipselink.jdbc.native-sql" value="true"/>
+            <property name="eclipselink.logging.logger" value="JavaLogger"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
+            <property name="eclipselink.weaving" value="false"/>
+        </properties>
+    </persistence-unit>
+  
+    <persistence-unit name="chirp" transaction-type="JTA">
+        <description>A persistence unit to support the Chirp series of unit tests.</description>
+        <jta-data-source>chirp</jta-data-source>
+        <class>io.helidon.integrations.cdi.jpa.chirp.Author</class>
+        <class>io.helidon.integrations.cdi.jpa.chirp.Chirp</class>
+        <class>io.helidon.integrations.cdi.jpa.chirp.Microblog</class>
+        <properties>
+            <property name="eclipselink.deploy-on-startup" value="true"/>
+            <property name="eclipselink.jdbc.native-sql" value="true"/>
+            <property name="eclipselink.logging.logger" value="JavaLogger"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
+            <property name="eclipselink.weaving" value="false"/>
+        </properties>
+    </persistence-unit>
 
-    </properties>
-  </persistence-unit>
 </persistence>

@@ -20,10 +20,15 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.enterprise.context.spi.Context;
 import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Default;
 import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.Bean;
+import javax.enterprise.inject.spi.BeanManager;
 import javax.inject.Provider;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 
 /**
  * A {@link DelegatingEntityManager} that adheres to the JPA
@@ -37,12 +42,19 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
      * Instance fields.
      */
 
+    private final BeanManager beanManager;
+
+    private final Instance<Object> instance;
 
     private final TransactionSupport transactionSupport;
 
-    private final Provider<EntityManager> cdiTransactionScopedEntityManagerProvider;
+    private final Annotation[] cdiTransactionScopedEntityManagerSelectionQualifiersArray;
 
     private final Provider<EntityManager> nonTransactionalEntityManagerProvider;
+
+    private final boolean isUnsynchronized;
+
+    private final Bean<?> cdiTransactionScopedEntityManagerOppositeSynchronizationBean;
 
 
     /*
@@ -66,18 +78,77 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         Objects.requireNonNull(suppliedQualifiers);
         this.transactionSupport = Objects.requireNonNull(instance.select(TransactionSupport.class).get());
         if (!transactionSupport.isActive()) {
-            throw new IllegalArgumentException("!transactionSupport.isActive()");
+            throw new IllegalArgumentException("!instance.select(TransacitonSupport.class).get().isActive()");
         }
-        this.cdiTransactionScopedEntityManagerProvider =
-            Objects.requireNonNull(getCdiTransactionScopedEntityManagerInstance(instance, suppliedQualifiers));
-        final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
-        selectionQualifiers.removeAll(JpaCdiQualifiers.JPA_CDI_QUALIFIERS);
-        selectionQualifiers.add(NonTransactional.Literal.INSTANCE);
-        final Annotation[] selectionQualifiersArray =
-            selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]);
-        this.nonTransactionalEntityManagerProvider =
-            Objects.requireNonNull(instance.select(EntityManager.class, selectionQualifiersArray));
 
+        this.beanManager = instance.select(BeanManager.class).get();
+        this.instance = instance;
+        this.isUnsynchronized = suppliedQualifiers.contains(Unsynchronized.Literal.INSTANCE);
+
+        // This large block is devoted to honoring the slightly odd
+        // provision in the JPA specification that there be only one
+        // transaction-scoped EntityManager for a given transaction.
+        // The EntityManager for a given transaction may, of course,
+        // be SynchronizationType.SYNCHRONIZED or
+        // SynchronizationType.UNSYNCHRONIZED.  Which one it is is
+        // determined by who "gets there first".  That is, by spec, if
+        // someone requests a synchronized transaction scoped entity
+        // manager, then the entity manager that is established for
+        // the transaction will happen to be synchronized.  If someone
+        // else somehow wants to get their hands on an unsynchronized
+        // transaction scoped entity manager, we have to detect this
+        // mixed synchronization case and throw an error.
+        //
+        // The mixed synchronization detection has to happen on each
+        // and every EntityManager method invocation, by spec. (!)
+        //
+        // So here we establish the necessary Beans and Instances to
+        // get handles on the @Synchronized @CdiTransaction scoped
+        // bean and the @Unsynchronized @CdiTransactionScoped bean
+        // relevant to the other qualifiers that are present
+        // (e.g. @Named("test")).  In acquireDelegate(), below, we'll
+        // use these "handles" to do the mixed synchronization
+        // testing.
+        final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
+        selectionQualifiers.remove(Any.Literal.INSTANCE);
+        selectionQualifiers.remove(Default.Literal.INSTANCE);
+        selectionQualifiers.remove(Extended.Literal.INSTANCE);
+        selectionQualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.remove(NonTransactional.Literal.INSTANCE);
+        selectionQualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
+        if (this.isUnsynchronized) {
+            selectionQualifiers.remove(Synchronized.Literal.INSTANCE);
+            selectionQualifiers.add(Unsynchronized.Literal.INSTANCE);
+            this.cdiTransactionScopedEntityManagerSelectionQualifiersArray =
+                selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]);
+            selectionQualifiers.remove(Unsynchronized.Literal.INSTANCE);
+            selectionQualifiers.add(Synchronized.Literal.INSTANCE);
+        } else {
+            selectionQualifiers.remove(Unsynchronized.Literal.INSTANCE);
+            selectionQualifiers.add(Synchronized.Literal.INSTANCE);
+            this.cdiTransactionScopedEntityManagerSelectionQualifiersArray =
+                selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]);
+            selectionQualifiers.remove(Synchronized.Literal.INSTANCE);
+            selectionQualifiers.add(Unsynchronized.Literal.INSTANCE);
+        }
+        final Set<Bean<?>> beans =
+            this.beanManager.getBeans(EntityManager.class,
+                                      selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
+        assert beans != null;
+        assert beans.size() == 1 : "beans.size() != 1: " + beans;
+        this.cdiTransactionScopedEntityManagerOppositeSynchronizationBean = this.beanManager.resolve(beans);
+        assert this.cdiTransactionScopedEntityManagerOppositeSynchronizationBean != null;
+
+        selectionQualifiers.remove(CdiTransactionScoped.Literal.INSTANCE);
+        selectionQualifiers.remove(ContainerManaged.Literal.INSTANCE);
+        selectionQualifiers.remove(Synchronized.Literal.INSTANCE);
+        selectionQualifiers.remove(Unsynchronized.Literal.INSTANCE);
+        selectionQualifiers.add(NonTransactional.Literal.INSTANCE);
+        this.nonTransactionalEntityManagerProvider =
+            Objects.requireNonNull(instance.select(EntityManager.class,
+                                                   selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()])));
+        assert this.nonTransactionalEntityManagerProvider != null;
     }
 
     /**
@@ -103,10 +174,33 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
     protected EntityManager acquireDelegate() {
         final EntityManager returnValue;
         if (this.transactionSupport.inTransaction()) {
-            returnValue = this.cdiTransactionScopedEntityManagerProvider.get();
+            // If we're in a transaction, then we're obligated to see
+            // if there's a transaction-scoped entity manager already
+            // affiliated with the current transaction.  If there is,
+            // and its synchronization type doesn't match ours, we're
+            // supposed to throw an exception.
+            final Context context =
+                this.beanManager.getContext(this.cdiTransactionScopedEntityManagerOppositeSynchronizationBean.getScope());
+            assert context != null;
+            assert context.isActive();
+            final Object contextualInstance =
+                context.get(this.cdiTransactionScopedEntityManagerOppositeSynchronizationBean);
+            if (contextualInstance != null) {
+                // The Context in question reported that it has
+                // already created (and is therefore storing) an
+                // instance with the "wrong" synchronization type.  We
+                // must throw an exception.
+                throw new PersistenceException(Messages.format("mixedSynchronizationTypes",
+                                                               this.cdiTransactionScopedEntityManagerOppositeSynchronizationBean,
+                                                               contextualInstance));
+            }
+            returnValue =
+                this.instance.select(EntityManager.class,
+                                     this.cdiTransactionScopedEntityManagerSelectionQualifiersArray).get();
         } else {
             returnValue = this.nonTransactionalEntityManagerProvider.get();
         }
+        assert returnValue != null;
         return returnValue;
     }
 
@@ -118,23 +212,6 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         // I don't know why.  Glassfish does not:
         // https://github.com/javaee/glassfish/blob/f9e1f6361dcc7998cacccb574feef5b70bf84e23/appserver/common/container-common/src/main/java/com/sun/enterprise/container/common/impl/EntityManagerWrapper.java#L752-L761
         throw new IllegalStateException();
-    }
-
-    private static Instance<EntityManager>
-        getCdiTransactionScopedEntityManagerInstance(final Instance<Object> instance,
-                                                     final Set<? extends Annotation> suppliedQualifiers) {
-        Objects.requireNonNull(instance);
-        Objects.requireNonNull(suppliedQualifiers);
-        final Set<Annotation> selectionQualifiers = new HashSet<>(suppliedQualifiers);
-        selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
-        selectionQualifiers.add(CdiTransactionScoped.Literal.INSTANCE);
-        selectionQualifiers.remove(Any.Literal.INSTANCE);
-        selectionQualifiers.remove(JpaTransactionScoped.Literal.INSTANCE);
-        selectionQualifiers.remove(Extended.Literal.INSTANCE);
-        selectionQualifiers.remove(NonTransactional.Literal.INSTANCE);
-        final Instance<EntityManager> returnValue =
-            instance.select(EntityManager.class, selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
-        return returnValue;
     }
 
 }
