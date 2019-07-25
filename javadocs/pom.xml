@@ -108,7 +108,15 @@
                             <maxmemory>256m</maxmemory>
                             <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
                             <sourceFileExcludes>
-                                <sourceFileExclude>**/module-info.java</sourceFileExclude>
+                              <sourceFileExclude>**/module-info.java</sourceFileExclude>
+                              <!--
+                                  Exclude JPA static metamodel stuff
+                                  used during unit testing.  The
+                                  plugin that generates this metamodel
+                                  adds it irrevocably to the main, not
+                                  test, compilation roots.
+                              -->
+                              <sourceFileExclude>**/*_.java</sourceFileExclude>
                             </sourceFileExcludes>
                             <sourceFileIncludes>
                                 <sourceFileInclude>io/helidon/**/*.java</sourceFileInclude>
