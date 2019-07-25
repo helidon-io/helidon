@@ -32,7 +32,8 @@ import javax.enterprise.context.spi.Context;
 final class NoTransactionSupport implements TransactionSupport {
 
 
-    private static final Logger LOGGER = Logger.getLogger(NoTransactionSupport.class.getName(), "messages");
+    private static final Logger LOGGER = Logger.getLogger(NoTransactionSupport.class.getName(),
+                                                          NoTransactionSupport.class.getPackage().getName() + ".LogMessages");
 
 
     /**

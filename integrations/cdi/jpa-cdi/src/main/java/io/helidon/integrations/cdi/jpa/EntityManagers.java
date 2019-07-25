@@ -52,7 +52,8 @@ final class EntityManagers {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(EntityManagers.class.getName(), "messages");
+    private static final Logger LOGGER = Logger.getLogger(EntityManagers.class.getName(),
+                                                          EntityManagers.class.getPackage().getName() + ".Messages");
 
 
     /*

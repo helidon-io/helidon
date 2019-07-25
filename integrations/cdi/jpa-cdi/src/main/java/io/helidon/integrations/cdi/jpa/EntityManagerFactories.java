@@ -60,7 +60,8 @@ final class EntityManagerFactories {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(EntityManagerFactories.class.getName(), "messages");
+    private static final Logger LOGGER = Logger.getLogger(EntityManagerFactories.class.getName(),
+                                                          EntityManagerFactories.class.getPackage().getName() + ".Messages");
 
 
     /*
