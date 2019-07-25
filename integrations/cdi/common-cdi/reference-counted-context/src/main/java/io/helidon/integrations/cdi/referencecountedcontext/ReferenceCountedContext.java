@@ -117,17 +117,21 @@ public final class ReferenceCountedContext implements AlterableContext {
             returnValue = 0;
         } else {
             final Map<?, ? extends Instance<?>> instances = ALL_INSTANCES.get().get(this);
-            assert instances != null;
-            final Instance<?> instance = instances.get(c);
-            if (instance == null) {
+            if (instances == null) {
                 returnValue = 0;
             } else {
-                // Note that instance.decrementReferenceCount() will
-                // cause c.destroy(theObject, creationalContext) to be
-                // called if needed; no need to do it explicitly here.
-                returnValue = instance.decrementReferenceCount();
-                if (returnValue <= 0) {
-                    instances.remove(c);
+                final Instance<?> instance = instances.get(c);
+                if (instance == null) {
+                    returnValue = 0;
+                } else {
+                    // Note that instance.decrementReferenceCount()
+                    // will cause c.destroy(theObject,
+                    // creationalContext) to be called if needed; no
+                    // need to do it explicitly here.
+                    returnValue = instance.decrementReferenceCount();
+                    if (returnValue <= 0) {
+                        instances.remove(c);
+                    }
                 }
             }
         }
@@ -214,21 +218,30 @@ public final class ReferenceCountedContext implements AlterableContext {
         if (contextual == null) {
             returnValue = null;
         } else {
-            final Map<Contextual<?>, Instance<?>> instances = ALL_INSTANCES.get().get(this);
-            assert instances != null;
-            @SuppressWarnings("unchecked")
-            final Instance<T> temp = (Instance<T>) instances.get(contextual);
-            Instance<T> instance = temp;
-            if (instance == null) {
-                if (maybeCreate) {
-                    instance = new Instance<T>(contextual, cc);
-                    instances.put(contextual, instance);
-                    returnValue = instance.get();
-                } else {
-                    returnValue = null;
-                }
+            final Map<ReferenceCountedContext, Map<Contextual<?>, Instance<?>>> allInstances = ALL_INSTANCES.get();
+            assert allInstances != null;
+            Map<Contextual<?>, Instance<?>> instances = allInstances.get(this);
+            if (instances == null && maybeCreate) {
+                instances = new HashMap<>();
+                allInstances.put(this, instances);
+            }
+            if (instances == null) {
+                returnValue = null;
             } else {
-                returnValue = instance.get();
+                @SuppressWarnings("unchecked")
+                final Instance<T> temp = (Instance<T>) instances.get(contextual);
+                Instance<T> instance = temp;
+                if (instance == null) {
+                    if (maybeCreate) {
+                        instance = new Instance<T>(contextual, cc);
+                        instances.put(contextual, instance);
+                        returnValue = instance.get();
+                    } else {
+                        returnValue = null;
+                    }
+                } else {
+                    returnValue = instance.get();
+                }
             }
         }
         return returnValue;

@@ -34,7 +34,7 @@ import javax.inject.Qualifier;
 
     /**
      * An {@link AnnotationLiteral} that implements {@link
-     * CdiTransactionScoped}.
+     * ContainerManaged}.
      */
     final class Literal extends AnnotationLiteral<ContainerManaged> implements ContainerManaged {
 
