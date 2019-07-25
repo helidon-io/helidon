@@ -309,6 +309,14 @@ public class JpaExtension implements Extension {
      */
     public JpaExtension() {
         super();
+        final String cn = this.getClass().getName();
+        final String mn = "<init>";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
+        }
+        if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.logp(Level.WARNING, cn, mn, "experimental");
+        }
         this.jpaAnnotationRewritingEnabled = Boolean.getBoolean("jpaAnnotationRewritingEnabled");
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
@@ -322,6 +330,9 @@ public class JpaExtension implements Extension {
         // #disableTransactionSupport(ProcessAnnotatedType) method
         // where this decision might be reversed.
         this.transactionsSupported = true;
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
     }
 
 

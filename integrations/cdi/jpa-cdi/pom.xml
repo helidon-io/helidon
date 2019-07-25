@@ -131,6 +131,33 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <sourceFileExcludes>
+                            <!--
+                                The eclipselink-maven-plugin's
+                                modelgen goal (see below) irrevocably
+                                adds its generatedSourcesDirectory to
+                                the source roots processed by the
+                                maven-javadoc-plugin.  We need to
+                                exclude these static metamodel sources
+                                because in our case they reference
+                                unit-test-only files.  Note that these
+                                source roots are added to the javadoc
+                                *report*, not just its "generate test
+                                javadocs" goal, and even though the
+                                sources from which they are generated
+                                are only found under src/test/java.
+                            -->
+                            <sourceFileExclude>**/*_.java</sourceFileExclude>
+                        </sourceFileExcludes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>com.ethlo.persistence.tools</groupId>
