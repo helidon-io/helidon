@@ -122,7 +122,14 @@ public class GreetService implements Service {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        request.content().as(JsonObject.class).thenAccept(jo -> updateGreetingFromJson(jo, response));
+        request.content()
+               .as(JsonObject.class)
+               .thenAccept(jo -> updateGreetingFromJson(jo, response))
+               .exceptionally( t -> {
+                   JsonObject jsonErrorObject = JSON.createObjectBuilder().add("error", "No body provided").build();
+                   response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+                   return null;
+               });
     }
 
 }
