@@ -306,7 +306,6 @@
                         <additionalJOptions combine.children="append">
                             <JOption>-J-Dhttp.agent=maven-javadoc-plugin</JOption>
                         </additionalJOptions>
-                        <additionalOptions>--frames</additionalOptions>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/module-info.java</sourceFileExclude>
                             <sourceFileExclude>target/**/*.java</sourceFileExclude>
@@ -1439,6 +1438,15 @@
                                     </configuration>
                                 </execution>
                             </executions>
+                        </plugin>
+                        <plugin>
+                          <groupId>org.apache.maven.plugins</groupId>
+                          <artifactId>maven-javadoc-plugin</artifactId>
+                          <configuration>
+                              <additionalJOptions combine.children="append">
+                                  <additionalJOption>--frames</additionalJOption>
+                              </additionalJOptions>
+                          </configuration>
                         </plugin>
                     </plugins>
                 </pluginManagement>
