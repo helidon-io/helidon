@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.cdi.jpa;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.spi.Context;
 
@@ -29,11 +32,25 @@ import javax.enterprise.context.spi.Context;
 final class NoTransactionSupport implements TransactionSupport {
 
 
+    private static final Logger LOGGER = Logger.getLogger(NoTransactionSupport.class.getName(), "messages");
+
+
     /**
      * Creates a new {@link NoTransactionSupport}.
      */
     private NoTransactionSupport() {
         super();
+        final String cn = this.getClass().getName();
+        final String mn = "<init>";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn);
+        }
+        if (LOGGER.isLoggable(Level.WARNING)) {
+            LOGGER.logp(Level.WARNING, cn, mn, "noTransactionSupport");
+        }
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
     }
 
     /**
