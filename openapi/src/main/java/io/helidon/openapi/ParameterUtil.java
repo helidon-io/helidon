@@ -26,6 +26,8 @@ import java.util.Locale;
  */
 public class ParameterUtil {
 
+    private ParameterUtil() {}
+
     /**
      * Ways to separate multiple values in OpenAPI endpoint parameters.
      *
