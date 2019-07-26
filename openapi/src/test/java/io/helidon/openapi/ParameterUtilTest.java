@@ -48,7 +48,7 @@ public class ParameterUtilTest {
     }
 
     private void check(String input, String format, String... expected) {
-        final List<String> expectedList = new ArrayList<String>();
+        final List<String> expectedList = new ArrayList<>();
         Collections.addAll(expectedList, expected);
         final List<String> parsed = ParameterUtil.parser(input, format);
         assertEquals(expectedList, parsed, "Unexpected results for format " + format);
