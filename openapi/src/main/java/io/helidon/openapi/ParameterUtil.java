@@ -17,6 +17,7 @@
 package io.helidon.openapi;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -64,16 +65,37 @@ public class ParameterUtil {
     /**
      * Parses a parameter value according to the specified format.
      *
-     * @param value String containing the multiple values
-     * @param formatName which format the values are expressed in (csv, ssv,
+     * @param multiValue String containing the multiple values
+     * @param formatName which format the multi-values are expressed in (csv, ssv,
      * tsv, pipes, multi)
      * @return List of Strings corresponding to the individual values
      * @throws IllegalArgumentException if the format is not recognized
      */
-    public static List<String> parser(String value, String formatName) {
+    public static List<String> parse(String multiValue, String formatName) {
         final Separator sep = Separator.match(formatName);
         final List<String> result = new ArrayList<>();
-        Collections.addAll(result, value.split(sep.separatorString));
+        Collections.addAll(result, multiValue.split(sep.separatorString));
+        return result;
+    }
+
+    /**
+     * Parses a collection of parameter values, possibly expressing multiple values
+     * in each, according to the specified format.
+     * <p>
+     * This method is particularly useful, for example, in conveniently processing all
+     * occurrences of a header from a request.
+     *
+     * @param multiValues Collection of Strings, each of which might contain multiple value settings
+     * @param formatName which format the multi-values are expressed in
+     * @return List of Strings corresponding to all the individual values from all
+     * the multi-values provided
+     * @throws IllegalArgumentException if the format is not recognized
+     */
+    public static List<String> parse(Collection<String> multiValues, String formatName) {
+        final List<String> result = new ArrayList<>();
+        for (String multiValue : multiValues) {
+            result.addAll(parse(multiValue, formatName));
+        }
         return result;
     }
 }

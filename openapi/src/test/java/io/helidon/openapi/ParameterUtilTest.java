@@ -17,6 +17,7 @@
 package io.helidon.openapi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ public class ParameterUtilTest {
     @Test
     public void testBadFormat() {
         assertThrows(IllegalArgumentException.class, () -> {
-                ParameterUtil.parser("w$x$y", "dollar");
+                ParameterUtil.parse("w$x$y", "dollar");
             });
     }
 
@@ -47,10 +48,24 @@ public class ParameterUtilTest {
         check("z", "csv", "z");
     }
 
+    @Test
+    public void checkListOfMultiValues() {
+        final List<String> inputs = new ArrayList<>();
+        inputs.addAll(Arrays.asList("ww,xx,yy", "aaa,bbb,ccc"));
+        checkMulti(inputs, "csv", "ww", "xx", "yy", "aaa", "bbb", "ccc");
+    }
+
     private void check(String input, String format, String... expected) {
         final List<String> expectedList = new ArrayList<>();
         Collections.addAll(expectedList, expected);
-        final List<String> parsed = ParameterUtil.parser(input, format);
+        final List<String> parsed = ParameterUtil.parse(input, format);
+        assertEquals(expectedList, parsed, "Unexpected results for format " + format);
+    }
+
+    private void checkMulti(List<String> inputs, String format, String... expected) {
+        final List<String> expectedList = new ArrayList<>();
+        Collections.addAll(expectedList, expected);
+        final List<String> parsed = ParameterUtil.parse(inputs, format);
         assertEquals(expectedList, parsed, "Unexpected results for format " + format);
     }
 }
