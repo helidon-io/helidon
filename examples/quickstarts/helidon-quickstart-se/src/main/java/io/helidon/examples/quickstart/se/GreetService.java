@@ -125,7 +125,7 @@ public class GreetService implements Service {
         request.content()
                .as(JsonObject.class)
                .thenAccept(jo -> updateGreetingFromJson(jo, response))
-               .exceptionally( t -> {
+               .exceptionally(t -> {
                    JsonObject jsonErrorObject = JSON.createObjectBuilder().add("error", "No body provided").build();
                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
                    return null;
