@@ -22,4 +22,12 @@
                            http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
        version="2.0"
        bean-discovery-mode="annotated">
+  <scan>
+    <exclude name="io.helidon.integrations.cdi.jpa.JtaTransactionSupport">
+      <if-class-not-available name="javax.transaction.Transaction"/>
+    </exclude>
+    <exclude name="io.helidon.integrations.cdi.jpa.NoTransactionSupport">
+      <if-class-available name="javax.transaction.Transaction"/>
+    </exclude>
+  </scan>
 </beans>

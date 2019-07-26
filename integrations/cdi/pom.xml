@@ -32,6 +32,7 @@
     <name>Helidon CDI Integrations</name>
 
     <modules>
+        <module>common-cdi</module>
         <module>datasource</module>
         <module>datasource-hikaricp</module>
         <module>datasource-ucp</module>

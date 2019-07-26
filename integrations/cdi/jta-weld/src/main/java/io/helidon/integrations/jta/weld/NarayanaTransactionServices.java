@@ -60,7 +60,8 @@ final class NarayanaTransactionServices implements TransactionServices {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(NarayanaTransactionServices.class.getName(), "messages");
+    private static final Logger LOGGER = Logger.getLogger(NarayanaTransactionServices.class.getName(),
+                                                          NarayanaTransactionServices.class.getPackage().getName() + ".Messages");
 
 
     /*

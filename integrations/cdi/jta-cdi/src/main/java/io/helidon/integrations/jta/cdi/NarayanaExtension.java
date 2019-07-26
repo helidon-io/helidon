@@ -67,7 +67,8 @@ public final class NarayanaExtension implements Extension {
      *
      * <p>This field is never {@code null}.</p>
      */
-    private static final Logger LOGGER = Logger.getLogger(NarayanaExtension.class.getName(), "messages");
+    private static final Logger LOGGER = Logger.getLogger(NarayanaExtension.class.getName(),
+                                                          NarayanaExtension.class.getPackage().getName() + ".Messages");
 
     /**
      * The default {@link JTAEnvironmentBean} used throughout the
