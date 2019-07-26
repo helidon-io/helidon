@@ -26,6 +26,41 @@ import javax.enterprise.context.NormalScope;
 /**
  * An annotation indicating the bean that is annotated belongs to the
  * {@link ReferenceCountedContext}.
+ *
+ * <h2>Use Cases</h2>
+ *
+ * <p>Annotate a class with {@link ReferenceCounted @ReferenceCounted}
+ * when all of the following apply:</p>
+ *
+ * <ul>
+ *
+ * <li>You need an instance of your class to be associated with
+ * exactly one thread.</li>
+ *
+ * <li>You need the single thread-specific instance of your class to be
+ * destroyed eagerly, but not too eagerly.  Specifically, you need the
+ * instance to be destroyed when it is no longer in use by any other
+ * object that is not itself destroyed.</li>
+ *
+ * <li>If an instance of your class is destroyed, and some other
+ * object asks for an instance of your class, a new instance should be
+ * provided.</li>
+ *
+ * </ul>
+ *
+ * <p>Another way of thinking of {@link
+ * ReferenceCounted @ReferenceCounted}-annotated classes is that they
+ * behave as though they were members of a slightly shorter-lived
+ * {@linkplain javax.enterprise.context.ApplicationScoped application
+ * scope}.</p>
+ *
+ * <p>Still another way of thinking of {@link
+ * ReferenceCounted @ReferenceCounted}-annotated classes is that they
+ * behave as though they were members of {@linkplain
+ * javax.enterprise.context.RequestScoped request scope}, but with the
+ * notional request starting upon first instantiation.</p>
+ *
+ * @see ReferenceCountedContext
  */
 @Documented
 @NormalScope(passivating = false)
