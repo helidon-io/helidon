@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -30,6 +31,7 @@ import java.util.stream.IntStream;
 
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -43,17 +45,26 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
+
 /**
  * Unit test for class {@link ThreadPool}.
  */
 class ThreadPoolTest {
 
     private static int MAX_WAIT_SECONDS = Integer.parseInt(System.getProperty("thread.pool.test.max.wait", "10"));
+    private static String WARMUP_SECONDS = "thread.pool.warmup.seconds";
+    private static String WARMUP_TASKS = "thread.pool.warmup.tasks";
     private final List<Task> tasks = new ArrayList<>();
     private ThreadPool pool;
 
+    @BeforeEach
+    void setup() {
+        System.setProperty(WARMUP_SECONDS, "0");
+        System.setProperty(WARMUP_TASKS, "0");
+    }
+
     @AfterEach
-    void shutdown() throws Exception {
+    void cleanup() throws Exception {
         if (pool != null) {
 
             // Unblock all tasks and shutdown
@@ -63,6 +74,8 @@ class ThreadPoolTest {
             pool.shutdown();
             assertThat(pool.awaitTermination(MAX_WAIT_SECONDS, SECONDS), is(true));
             pool = null;
+            System.getProperties().remove(WARMUP_SECONDS);
+            System.getProperties().remove(WARMUP_TASKS);
         }
     }
 
@@ -281,6 +294,14 @@ class ThreadPoolTest {
     }
 
     @Test
+    void testSetRejectionHandlerRequiresRejectionPolicy() {
+        pool = newPool(2, 2, 100, 25);
+        assertThrows(IllegalArgumentException.class, () -> pool.setRejectedExecutionHandler((r, executor) -> {
+
+        }));
+    }
+
+    @Test
     void testFixedPoolQueueSelection() {
         pool = newPool(2, 2, 100, 25);
         assertThat(pool.getQueue().getClass() == ThreadPool.WorkQueue.class, is(true));
@@ -404,6 +425,58 @@ class ThreadPoolTest {
             fail("should have failed");
         } catch (RejectedExecutionException e) {
             assertThat(rejectionPolicy.getRejectionCount(), is(1));
+        }
+    }
+
+    @Test
+    void testSetCustomRejectionPolicy() {
+
+        ThreadPool.RejectionPolicy defaultPolicy = new ThreadPool.RejectionPolicy();
+        ThreadPool.RejectionPolicy customPolicy = new ThreadPool.RejectionPolicy() {
+            @Override
+            protected void throwException(Runnable task, ThreadPoolExecutor executor) {
+                throw new IllegalStateException("queue is full");
+            }
+        };
+
+        pool = ThreadPool.create("test",
+                                 1,
+                                 1,
+                                 10,
+                                 20,
+                                 1,
+                                 TimeUnit.MINUTES,
+                                 1,
+                                 "reject",
+                                 true,
+                                 defaultPolicy);
+
+        // Consume the one thread in the pool and fill the queue
+
+        addTasks(2);
+
+        // Ensure that another task is rejected with the expected exception
+
+        try {
+            assertThat(defaultPolicy.getRejectionCount(), is(0));
+            pool.submit(new Task());
+            fail("should have failed");
+        } catch (RejectedExecutionException e) {
+            assertThat(defaultPolicy.getRejectionCount(), is(1));
+        }
+
+        // Reset the handler with with our custom policy
+
+        pool.setRejectedExecutionHandler(customPolicy);
+
+        // Ensure that another task is rejected with the new expected exception
+
+        try {
+            assertThat(customPolicy.getRejectionCount(), is(0));
+            pool.submit(new Task());
+            fail("should have failed");
+        } catch (IllegalStateException e) {
+            assertThat(customPolicy.getRejectionCount(), is(1));
         }
     }
 
