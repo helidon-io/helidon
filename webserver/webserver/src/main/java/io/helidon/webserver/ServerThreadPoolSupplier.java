@@ -36,8 +36,8 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
     private static final int DEFAULT_MIN_THREADS_PER_CORE = 2;
     private static final int DEFAULT_MAX_THREADS_PER_CORE = 8;
     private static final int DEFAULT_QUEUE_CAPACITY = 8192;
-    private static final int DEFAULT_GROWTH_RATE = 20;
-    private static final int DEFAULT_GROWTH_THRESHOLD = 100;
+    private static final int DEFAULT_GROWTH_THRESHOLD = 256;
+    private static final int DEFAULT_GROWTH_RATE = 5;
 
     private static final ThreadPool.RejectionPolicy DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionPolicy() {
         @Override
