@@ -3,6 +3,7 @@
 .args
 .bundle
 .class
+.ddl
 .exe
 .gif
 .gitignore

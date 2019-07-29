@@ -37,7 +37,6 @@ import io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension;
 
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
-import oracle.ucp.jdbc.PoolDataSourceImpl;
 
 /**
  * An {@link Extension} that arranges for named {@link DataSource}
@@ -97,7 +96,6 @@ public class UCPBackedDataSourceExtension extends AbstractDataSourceExtension {
         beanConfigurator
             .addQualifier(dataSourceName)
             .addTransitiveTypeClosure(PoolDataSource.class)
-            .beanClass(PoolDataSourceImpl.class)
             .scope(ApplicationScoped.class)
             .createWith(cc -> {
                     try {

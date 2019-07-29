@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.1.3-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-javadocs</artifactId>
     <name>Helidon Javadocs</name>
@@ -108,7 +108,15 @@
                             <maxmemory>256m</maxmemory>
                             <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
                             <sourceFileExcludes>
-                                <sourceFileExclude>**/module-info.java</sourceFileExclude>
+                              <sourceFileExclude>**/module-info.java</sourceFileExclude>
+                              <!--
+                                  Exclude JPA static metamodel stuff
+                                  used during unit testing.  The
+                                  plugin that generates this metamodel
+                                  adds it irrevocably to the main, not
+                                  test, compilation roots.
+                              -->
+                              <sourceFileExclude>**/*_.java</sourceFileExclude>
                             </sourceFileExcludes>
                             <sourceFileIncludes>
                                 <sourceFileInclude>io/helidon/**/*.java</sourceFileInclude>
@@ -383,6 +391,11 @@
                 </dependency>
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-delegates</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
                     <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
                     <version>${project.version}</version>
                 </dependency>
@@ -394,6 +407,11 @@
                 <dependency>
                     <groupId>io.helidon.integrations.cdi</groupId>
                     <artifactId>helidon-integrations-cdi-oci-objectstorage</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>io.helidon.integrations.cdi</groupId>
+                    <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

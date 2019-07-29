@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+tracing:
+  service: idcs-example
+
+server:
+  port: 7987
 
 security:
   config.require-encryption: false
@@ -35,6 +41,7 @@ security:
       proxy-host: "${ALIAS=security.properties.proxy-host}"
       frontend-uri: "${ALIAS=security.properties.frontend-uri}"
   - idcs-role-mapper:
+      multitenant: false
       oidc-config:
         # we must repeat IDCS configuration, as in this case
         # IDCS serves both as open ID connect authenticator and

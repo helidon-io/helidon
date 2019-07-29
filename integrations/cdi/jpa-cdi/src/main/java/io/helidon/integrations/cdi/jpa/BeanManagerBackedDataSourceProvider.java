@@ -77,7 +77,7 @@ class BeanManagerBackedDataSourceProvider implements PersistenceUnitInfoBean.Dat
      * Creates a new {@link BeanManagerBackedDataSourceProvider}.
      *
      * @param beanManager the {@link BeanManager} to use; may be
-     * {@code null}, but shouldn't, and if so the {@link
+     * {@code null}, but shouldn't be, and if so the {@link
      * #getDataSource(boolean, boolean, String)} method will throw an
      * {@link IllegalStateException}
      */

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>1.1.3-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
@@ -281,7 +281,7 @@
             <dependency>
                 <groupId>io.helidon.microprofile.bundles</groupId>
                 <artifactId>helidon-microprofile-2.2</artifactId>
-                <version>${project.version{</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile</groupId>
@@ -301,6 +301,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.config</groupId>
                 <artifactId>helidon-microprofile-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile</groupId>
+                <artifactId>helidon-microprofile-access-log</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- metrics -->
@@ -465,6 +470,16 @@
             <dependency>
                 <groupId>io.helidon.serviceconfiguration</groupId>
                 <artifactId>helidon-serviceconfiguration-ucp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-common-delegates</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-common-reference-counted-context</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -41,6 +42,7 @@ import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
+import io.helidon.security.integration.common.RoleMapTracing;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.providers.oidc.common.OidcConfig;
@@ -77,6 +79,11 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * Json key for token to be retrieved from IDCS response when requesting application token.
      */
     protected static final String ACCESS_TOKEN_KEY = "access_token";
+    /**
+     * Property sent with JAX-RS requests to override parent span context in outbound calls.
+     * We cannot use the constant declared in {@code ClientTracingFilter}, as it is not a required dependency.
+     */
+    protected static final String PARENT_CONTEXT_CLIENT_PROPERTY = "io.helidon.tracing.span-context";
 
     private final Set<SubjectType> supportedTypes = EnumSet.noneOf(SubjectType.class);
     private final OidcConfig oidcConfig;
@@ -367,26 +374,31 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
         /**
          * Get the token to use for requests to IDCS.
+         * @param tracing tracing to use when requesting a new token from server
          * @return token content or empty if it could not be obtained
          */
-        protected synchronized Optional<String> getToken() {
+        protected synchronized Optional<String> getToken(RoleMapTracing tracing) {
             if (null == appJwt) {
-                fromServer();
+                fromServer(tracing);
             } else {
                 if (!appJwt.validate(Jwt.defaultTimeValidators()).isValid()) {
-                    fromServer();
+                    fromServer(tracing);
                 }
             }
             return tokenContent;
         }
 
-        private void fromServer() {
+        private void fromServer(RoleMapTracing tracing) {
             MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
             formData.putSingle("grant_type", "client_credentials");
             formData.putSingle("scope", "urn:opc:idm:__myscopes__");
 
-            Response tokenResponse = tokenEndpoint
-                    .request()
+            Invocation.Builder reqBuilder = tokenEndpoint.request();
+
+            tracing.findParent()
+                    .ifPresent(spanContext -> reqBuilder.property(PARENT_CONTEXT_CLIENT_PROPERTY, spanContext));
+
+            Response tokenResponse = reqBuilder
                     .accept(MediaType.APPLICATION_JSON_TYPE)
                     .post(Entity.form(formData));
 
