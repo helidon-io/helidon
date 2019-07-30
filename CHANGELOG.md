@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+## [1.2.0] - 2019-07-29
 
 ### Notes
 
@@ -21,6 +21,7 @@ enhancements and bug and performances fixes.
 - WebServer: Support for HTTP/2 negotiation with TLS/APLN [807](https://github.com/oracle/helidon/pull/807)
 - Config: credentials support added to git config [810](https://github.com/oracle/helidon/pull/801)
 - Early Access: support for the Oracle Universal Connection Pool [777](https://github.com/oracle/helidon/pull/777)
+- Early Access: JPA/JTA: Support analog to extended persistence contexts [639](https://github.com/oracle/helidon/issues/639)
 
 ### Fixes
 
@@ -33,6 +34,8 @@ enhancements and bug and performances fixes.
 - Tracing: add Tracing configuration module [809](https://github.com/oracle/helidon/pull/809)
 - Tracing: Fix constant sampler name for Jaeger [828](https://github.com/oracle/helidon/pull/828)
 - Tracing: IDCS Role mapper: calls to IDCS not associated with the call [794](https://github.com/oracle/helidon/issues/794)
+- Config: Enable support of application.yaml use case in data source injection extensions [847](https://github.com/oracle/helidon/pull/847)
+- Config: Correct traversal logic for MpConfig when acquiring configuration property names [845](https://github.com/oracle/helidon/pull/845)
 - MicroProfile Config: MpConfig will never include Helidon Config property names in the return value of getPropertyNames() [844](https://github.com/oracle/helidon/issues/844)
 - Update examples and tests to use microprofile-2.2 bundle [843](https://github.com/oracle/helidon/pull/843)
 
@@ -380,7 +383,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.1.2...HEAD
+[1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/oracle/helidon/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/oracle/helidon/compare/1.0.3...1.1.0
