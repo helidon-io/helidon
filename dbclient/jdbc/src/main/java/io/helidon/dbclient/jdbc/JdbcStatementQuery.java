@@ -96,11 +96,13 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery, DbRows<DbRow>> 
             CompletableFuture<Long> queryFuture,
             ResultSet resultSet) {
 
-        return new JdbcDbRows<>(executorService,
+        return new JdbcDbRows<>(
+                                resultSet,
+                                executorService,
                                 dbMapperManager,
                                 mapperManager,
                                 queryFuture,
-                                resultSet);
+                                DbRow.class);
     }
 
     static Map<Long, DbColumn> createMetadata(ResultSet rs) throws SQLException {
