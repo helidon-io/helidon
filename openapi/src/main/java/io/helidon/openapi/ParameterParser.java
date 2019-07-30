@@ -29,43 +29,70 @@ import java.util.regex.Pattern;
  * Parsers for OpenAPI parameter styles. Includes a factory method.
  * <p>
  * In OpenAPI, parameters are formatted according to a subset of
- * https://tools.ietf.org/html/rfc6570, using several different
- * styles. Which styles are valid depends on where the parameter appears -- its
- * location -- (header, path, query parameter, cookie). This class implements
- * each supported parameter style as separate parser, and it includes a factory
- * method which returns an instance of the correct parser given the parameter's
- * location and style.
+ * https://tools.ietf.org/html/rfc6570, using several different styles. Which
+ * styles are valid depends on where the parameter appears -- its location --
+ * (header, path, query parameter, cookie). This class implements each supported
+ * parameter style as separate parser, and it includes a factory method which
+ * returns an instance of the correct parser given the parameter's location and
+ * style.
  */
 public abstract class ParameterParser {
 
+    /**
+     * Builder for a {@code ParameterParser}.
+     */
     public static class Builder {
 
         private Optional<Location> location = Optional.empty();
         private Optional<Style> style = Optional.empty();
         private Optional<Boolean> explode = Optional.empty();
 
+        /**
+         * Sets the location for the parser to be built.
+         *
+         * @param location the name of the location containing the parameter to
+         * be parsed
+         * @return the {@code Builder} instance
+         */
         public Builder location(String location) {
             this.location = Optional.of(Location.match(location));
             return this;
         }
 
+        /**
+         * Sets the style for the parser to be built.
+         *
+         * @param style the name of the style to be used in the parser
+         * @return the {@code Builder} instance
+         */
         public Builder style(String style) {
             this.style = Optional.of(Style.match(style));
             return this;
         }
 
+        /**
+         * Sets whether arrays and objects should generate separate parameters
+         * for each array item or object property.
+         *
+         * @param explode whether array/object explosion should occur
+         * @return the {@code Builder} instance
+         */
         public Builder explode(boolean explode) {
             this.explode = Optional.of(explode);
             return this;
         }
 
+        /**
+         * Constructs the parser using the assigned builder settings.
+         * @return the configured {@code ParameterParser}
+         */
         public ParameterParser build() {
             if (!location.isPresent()) {
                 throw new IllegalArgumentException("ParameterParser must specify Location");
             }
             if (!location().supportsStyle(style())) {
                 throw new IllegalArgumentException("Location " + location().name()
-                + " does not support style " + style().name());
+                        + " does not support style " + style().name());
             }
             return style().factory.apply(explode());
         }
@@ -83,6 +110,11 @@ public abstract class ParameterParser {
         }
     }
 
+    /**
+     * Returns a builder ready for configuration by invoking the
+     * builder methods.
+     * @return a {@code Builder}
+     */
     public static Builder builder() {
         return new Builder();
     }
@@ -97,8 +129,20 @@ public abstract class ParameterParser {
         return explode;
     }
 
+    /**
+     * Parses the specified value according to the configured attributes
+     * of the parser. The value String can contain multiple values.
+     * @param value the String to be parsed
+     * @return {@code List} of {@code String}s parsed from the parameter
+     */
     public abstract List<String> parse(String value);
 
+    /**
+     * Parses the specified list of values according to the configured attributes
+     * of the parser. Each individual value can itself contain multiple values.
+     * @param values {@code List} of values to be parsed
+     * @return {@code List} of {@code String}s parsed from the input values
+     */
     public List<String> parse(List<String> values) {
         List<String> result = new ArrayList<>();
         for (String v : values) {
@@ -107,15 +151,14 @@ public abstract class ParameterParser {
         return result;
     }
 
-
-
     /**
      * Locations in a request where parameters might be found.
      * <p>
-     * Each parameter location has a default {@code Style}, a default {@code explode}
-     * setting, and a collection of {@code Style}s valid for that location.
+     * Each parameter location has a default {@code Style}, a default
+     * {@code explode} setting, and a collection of {@code Style}s valid for
+     * that location.
      */
-    static enum Location {
+    enum Location {
         PATH(Style.SIMPLE, false, Style.SIMPLE, Style.LABEL, Style.MATRIX),
         QUERY(Style.FORM, true, Style.FORM, Style.SPACE_DELIMITED, Style.PIPE_DELIMITED, Style.DEEP_OBJECT),
         HEADER(Style.SIMPLE, false, Style.SIMPLE),
@@ -140,7 +183,7 @@ public abstract class ParameterParser {
         }
     }
 
-    static enum Style {
+    enum Style {
         SIMPLE(SimpleParser::new),
         LABEL(LabelParser::new),
         MATRIX(MatrixParser::new),
@@ -229,7 +272,6 @@ public abstract class ParameterParser {
             final List<String> result = new ArrayList<>();
             return result;
         }
-
 
     }
 
