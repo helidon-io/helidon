@@ -17,11 +17,13 @@
 package io.helidon.examples.db.jdbc;
 
 import java.io.IOException;
+import java.util.ServiceLoader;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.dbclient.spi.DbInterceptorProvider;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.media.jsonp.server.JsonSupport;
@@ -101,7 +103,8 @@ public final class Main {
         Config dbConfig = config.get("db");
 
         // Interceptors are added through a service loader - see mongoDB example for explicit interceptors
-        DbClient dbClient = DbClient.create(dbConfig);
+        DbClient dbClient = DbClient.builder(dbConfig)
+                .build();
 
         HealthSupport health = HealthSupport.builder()
                 .add(DbClientHealthCheck.create(dbClient))
