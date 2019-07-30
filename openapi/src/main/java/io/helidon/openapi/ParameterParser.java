@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  * Parsers for OpenAPI parameter styles. Includes a factory method.
  * <p>
  * In OpenAPI, parameters are formatted according to a subset of
- * {@link https://tools.ietf.org/html/rfc6570 RFC 6570}, using several different
+ * https://tools.ietf.org/html/rfc6570, using several different
  * styles. Which styles are valid depends on where the parameter appears -- its
  * location -- (header, path, query parameter, cookie). This class implements
  * each supported parameter style as separate parser, and it includes a factory
