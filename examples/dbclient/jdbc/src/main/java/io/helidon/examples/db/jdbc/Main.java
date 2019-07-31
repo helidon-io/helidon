@@ -17,13 +17,11 @@
 package io.helidon.examples.db.jdbc;
 
 import java.io.IOException;
-import java.util.ServiceLoader;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.dbclient.spi.DbInterceptorProvider;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonb.server.JsonBindingSupport;
 import io.helidon.media.jsonp.server.JsonSupport;
