@@ -36,7 +36,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -45,8 +44,6 @@ import java.util.logging.Logger;
 import javax.management.NotificationEmitter;
 
 import io.helidon.common.context.ContextAwareExecutorService;
-
-import static java.lang.StrictMath.exp;
 
 /**
  * A {@link ThreadPoolExecutor} with an extensible growth policy and queue state accessors.
@@ -445,9 +442,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         if (maxPoolSize == corePoolSize || growthRate == 0) {
             return new WorkQueue(capacity);
         } else {
-            final boolean useAverage = "true".equals(System.getProperty("thread.pool.weighted.average.growth"));
-            final Predicate<ThreadPool> growthPolicy = useAverage ? new WeightedAverageGrowth()
-                                                                  : new RateLimitGrowth(growthThreshold, growthRate);
+            final Predicate<ThreadPool> growthPolicy = new RateLimitGrowth(growthThreshold, growthRate);
             return new DynamicPoolWorkQueue(growthPolicy, capacity, maxPoolSize);
         }
     }
@@ -523,12 +518,7 @@ public class ThreadPool extends ThreadPoolExecutor {
     }
 
     static final class DynamicPoolWorkQueue extends WorkQueue {
-        private static final int WARMUP_SECONDS = Integer.parseInt(System.getProperty("thread.pool.warmup.seconds", "0"));
-        private static final int WARMUP_TASKS = Integer.parseInt(System.getProperty("thread.pool.warmup.tasks", "0"));
-        private static final long WARMUP_TIME_MILLIS = TimeUnit.SECONDS.toMillis(WARMUP_SECONDS);
         private final Predicate<ThreadPool> growthPolicy;
-        private final AtomicBoolean isWarm;
-        private final AtomicLong warmupTimeEnd;
         private final int maxPoolSize;
         // We can't make this final because it is a circular dependency, but we set it during the construction of
         // the pool itself and therefore don't have to worry about concurrent access.
@@ -538,12 +528,6 @@ public class ThreadPool extends ThreadPoolExecutor {
             super(capacity);
             this.maxPoolSize = maxPoolSize;
             this.growthPolicy = growthPolicy;
-            this.isWarm = new AtomicBoolean(WARMUP_SECONDS == 0 && WARMUP_TASKS == 0);
-            this.warmupTimeEnd = new AtomicLong();
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.fine(String.format("Warmup seconds = %d, warmup tasks = %d isWarm = %b",
-                                          WARMUP_SECONDS, WARMUP_TASKS, isWarm.get()));
-            }
         }
 
         @Override
@@ -554,84 +538,44 @@ public class ThreadPool extends ThreadPoolExecutor {
         @Override
         public boolean offer(Runnable task) {
 
-            // Are we warmed up yet?
 
-            if (isWarm.get()) {
+            // Are we maxed out?
 
-                // Yes. Are we maxed out?
+            final int currentSize = pool.getPoolSize();
+            if (currentSize >= maxPoolSize) {
 
-                final int currentSize = pool.getPoolSize();
-                if (currentSize >= maxPoolSize) {
+                // Yes, so enqueue if we can
 
-                    // Yes, so enqueue if we can
+                Event.add(Event.Type.MAX, pool, this);
+                return tryOffer(task);
 
-                    Event.add(Event.Type.MAX, pool, this);
-                    return tryOffer(task);
+            } else if (pool.getActiveThreads() < currentSize) {
 
-                } else if (pool.getActiveThreads() < currentSize) {
+                // No, but we've got idle threads so enqueue if we can
 
-                    // No, but we've got idle threads so enqueue if we can
+                Event.add(Event.Type.IDLE, pool, this);
+                return tryOffer(task);
 
-                    Event.add(Event.Type.IDLE, pool, this);
-                    return tryOffer(task);
-
-                } else {
-
-                    // Ok, we might want to add a thread so ask our policy
-
-                    if (growthPolicy.test(pool)) {
-
-                        // Add a thread. Note that this can still result in a rejection due to a race condition
-                        // in which the pool has not yet grown from a previous false return (and so our maxPoolSize
-                        // check above is not accurate); in this case, the rejection handler will just add it to
-                        // the queue.
-
-                        if (LOGGER.isLoggable(Level.FINE)) {
-                            LOGGER.fine("Adding a thread, pool size = " + pool.getPoolSize() + ", queue size = " + size());
-                        }
-                        return false;
-
-                    } else {
-                        // Enqueue if we can
-                        return tryOffer(task);
-                    }
-                }
             } else {
 
-                // Have we started the warmup period?
+                // Ok, we might want to add a thread so ask our policy
 
-                if (warmupTimeEnd.get() == 0) {
+                if (growthPolicy.test(pool)) {
 
-                    // No, so do it. Note that since there is no synchronization, we may set this
-                    // multiple times but the window is so small that the net effect is the same.
-                    // Regardless, log only once.
+                    // Add a thread. Note that this can still result in a rejection due to a race condition
+                    // in which the pool has not yet grown from a previous false return (and so our maxPoolSize
+                    // check above is not accurate); in this case, the rejection handler will just add it to
+                    // the queue.
 
-                    if (warmupTimeEnd.getAndSet(System.currentTimeMillis() + WARMUP_TIME_MILLIS) == 0) {
-                        if (LOGGER.isLoggable(Level.FINE)) {
-                            LOGGER.fine("ThreadPool warmup started");
-                        }
+                    if (LOGGER.isLoggable(Level.FINE)) {
+                        LOGGER.fine("Adding a thread, pool size = " + pool.getPoolSize() + ", queue size = " + size());
                     }
+                    return false;
 
                 } else {
-
-                    // Has the warmup time passed?
-
-                    if (System.currentTimeMillis() > warmupTimeEnd.get()) {
-
-                        // Yes. Have we processed enough tasks yet?
-
-                        if (pool.getCompletedTaskCount() > WARMUP_TASKS) {
-
-                            // Yes, so we're warmed up.
-
-                            if (!isWarm.getAndSet(true)) {
-                                LOGGER.fine(() -> "ThreadPool warmup complete");
-                            }
-                        }
-                    }
+                    // Enqueue if we can
+                    return tryOffer(task);
                 }
-
-                return tryOffer(task);
             }
         }
     }
@@ -784,164 +728,6 @@ public class ThreadPool extends ThreadPoolExecutor {
         private static int getIntProperty(String propertyName, int defaultValue) {
             final String value = System.getProperty(propertyName);
             return value == null ? defaultValue : Integer.parseInt(value);
-        }
-    }
-
-
-    static final class WeightedAverageGrowth implements Predicate<ThreadPool> {
-        private static final long TICK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
-        private static final double THRESHOLD_PERCENTAGE = 0.95D;
-        private final EWMA averageActiveThreads;
-        private final AtomicLong lastTick;
-
-        WeightedAverageGrowth() {
-            this.averageActiveThreads = EWMA.oneMinuteEWMA();
-            this.lastTick = new AtomicLong(System.nanoTime());
-        }
-
-        @Override
-        public boolean test(ThreadPool pool) {
-
-            // At this point, we know that the pool has no idle threads and that we
-            // have not reached the maximum pool size, so there is room to grow.
-
-            // Move the clock forward if needed
-
-            tickIfNecessary();
-
-            // Update our moving average with the current active thread count
-
-            final int currentActiveThreads = pool.getActiveCount();
-            averageActiveThreads.update(currentActiveThreads);
-
-            // Is the one minute weighted average more than 95% of the current count?
-
-            final double threshold = THRESHOLD_PERCENTAGE * currentActiveThreads;
-            final double average = averageActiveThreads.getRate(TimeUnit.SECONDS);
-            if (average > threshold) {
-
-                // Yes, so grow
-
-                Event.add(Event.Type.ADD, pool, pool.getQueue());
-                return true;
-
-            } else {
-
-                // Nope, so just enqueue
-
-                Event.add(Event.Type.WAIT, pool, pool.getQueue());
-                return false;
-            }
-        }
-
-        private void tickIfNecessary() {
-            final long oldTick = lastTick.get();
-            final long newTick = System.nanoTime();
-            final long age = newTick - oldTick;
-            if (age > TICK_INTERVAL) {
-                final long newIntervalStartTick = newTick - (age % TICK_INTERVAL);
-                if (lastTick.compareAndSet(oldTick, newIntervalStartTick)) {
-                    final long requiredTicks = age / TICK_INTERVAL;
-                    for (long i = 0; i < requiredTicks; i++) {
-                        averageActiveThreads.tick();
-                    }
-                }
-            }
-        }
-    }
-
-    static final class EWMA {
-        private static final int INTERVAL = 5;
-        private static final double SECONDS_PER_MINUTE = 60.0;
-        private static final int ONE_MINUTE = 1;
-        private static final int FIVE_MINUTES = 5;
-        private static final int FIFTEEN_MINUTES = 15;
-        private static final double M1_ALPHA = 1 - exp(-INTERVAL / SECONDS_PER_MINUTE / ONE_MINUTE);
-        private static final double M5_ALPHA = 1 - exp(-INTERVAL / SECONDS_PER_MINUTE / FIVE_MINUTES);
-        private static final double M15_ALPHA = 1 - exp(-INTERVAL / SECONDS_PER_MINUTE / FIFTEEN_MINUTES);
-        private final LongAdder uncounted = new LongAdder();
-        private final double alpha;
-        private final double interval;
-        private volatile boolean initialized = false;
-        private volatile double rate = 0.0;
-
-        /**
-         * Create a new EWMA with a specific smoothing constant.
-         *
-         * @param alpha the smoothing constant
-         * @param interval the expected tick interval
-         * @param intervalUnit the time unit of the tick interval
-         */
-        private EWMA(double alpha, long interval, TimeUnit intervalUnit) {
-            this.interval = intervalUnit.toNanos(interval);
-            this.alpha = alpha;
-        }
-
-        /**
-         * Creates a new EWMA which is equivalent to the UNIX one minute load average and which expects
-         * to be ticked every 5 seconds.
-         *
-         * @return a one-minute EWMA
-         */
-        static EWMA oneMinuteEWMA() {
-            return new EWMA(M1_ALPHA, INTERVAL, TimeUnit.SECONDS);
-        }
-
-        /**
-         * Creates a new EWMA which is equivalent to the UNIX five minute load average and which expects
-         * to be ticked every 5 seconds.
-         *
-         * @return a five-minute EWMA
-         */
-        static EWMA fiveMinuteEWMA() {
-            return new EWMA(M5_ALPHA, INTERVAL, TimeUnit.SECONDS);
-        }
-
-        /**
-         * Creates a new EWMA which is equivalent to the UNIX fifteen minute load average and which
-         * expects to be ticked every 5 seconds.
-         *
-         * @return a fifteen-minute EWMA
-         */
-        static EWMA fifteenMinuteEWMA() {
-            return new EWMA(M15_ALPHA, INTERVAL, TimeUnit.SECONDS);
-        }
-
-        /**
-         * Update the moving average with a new value.
-         *
-         * @param n the new value
-         */
-        void update(long n) {
-            uncounted.add(n);
-        }
-
-        /**
-         * Mark the passage of time and decay the current rate accordingly.
-         */
-        void tick() {
-            final long count = uncounted.sumThenReset();
-            final double instantRate = count / interval;
-            if (initialized) {
-                double currentRate = rate;
-                currentRate += (alpha * (instantRate - currentRate));
-                // we may lose changes that happen at the very same moment as the previous two lines, though better than being
-                // inconsistent
-                rate = currentRate;
-            } else {
-                rate = instantRate;
-                initialized = true;
-            }
-        }
-
-        /**
-         * Returns the rate in the given units of time.
-         *
-         * @param rateUnit the unit of time
-         * @return the rate
-         */
-        double getRate(TimeUnit rateUnit) {
-            return rate * (double) rateUnit.toNanos(1);
         }
     }
 }

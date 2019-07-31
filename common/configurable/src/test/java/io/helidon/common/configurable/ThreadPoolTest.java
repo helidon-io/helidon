@@ -31,7 +31,6 @@ import java.util.stream.IntStream;
 
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -52,16 +51,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ThreadPoolTest {
 
     private static int MAX_WAIT_SECONDS = Integer.parseInt(System.getProperty("thread.pool.test.max.wait", "10"));
-    private static String WARMUP_SECONDS = "thread.pool.warmup.seconds";
-    private static String WARMUP_TASKS = "thread.pool.warmup.tasks";
     private final List<Task> tasks = new ArrayList<>();
     private ThreadPool pool;
-
-    @BeforeEach
-    void setup() {
-        System.setProperty(WARMUP_SECONDS, "0");
-        System.setProperty(WARMUP_TASKS, "0");
-    }
 
     @AfterEach
     void cleanup() throws Exception {
@@ -74,8 +65,6 @@ class ThreadPoolTest {
             pool.shutdown();
             assertThat(pool.awaitTermination(MAX_WAIT_SECONDS, SECONDS), is(true));
             pool = null;
-            System.getProperties().remove(WARMUP_SECONDS);
-            System.getProperties().remove(WARMUP_TASKS);
         }
     }
 
