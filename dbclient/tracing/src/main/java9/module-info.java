@@ -22,6 +22,7 @@ module io.helidon.dbclient.tracing {
     requires io.helidon.dbclient;
     requires opentracing.api;
     requires opentracing.util;
+    requires io.helidon.tracing.config;
 
     exports io.helidon.dbclient.tracing;
     provides io.helidon.dbclient.spi.DbInterceptorProvider with io.helidon.dbclient.tracing.DbClientTracingProvider;
