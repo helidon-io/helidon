@@ -630,7 +630,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
-    // Consider removing this whole mechanism?
+    // Consider removing this whole mechanism? If so, remove java.management from module-info!
 
     private static class Event implements Comparable<Event> {
         private static final int MAX_EVENTS = getIntProperty("thread.pool.events", 0);
