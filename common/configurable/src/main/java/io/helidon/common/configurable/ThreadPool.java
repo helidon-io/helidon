@@ -51,7 +51,7 @@ import io.helidon.common.context.ContextAwareExecutorService;
  */
 public class ThreadPool extends ThreadPoolExecutor {
     private static final Logger LOGGER = Logger.getLogger(ThreadPool.class.getName());
-    private static final int MAX_GROW_RATE = 100;
+    private static final int MAX_GROWTH_RATE = 100;
 
     private final String name;
     private final WorkQueue queue;
@@ -134,11 +134,11 @@ public class ThreadPool extends ThreadPoolExecutor {
             throw new IllegalArgumentException("maxPoolSize < 0");
         } else if (maxPoolSize < corePoolSize) {
             throw new IllegalArgumentException("maxPoolSize < corePoolSize");
-        } if (growthThreshold < 0) {
+        } else if (growthThreshold < 0) {
             throw new IllegalArgumentException("growthThreshold < 0");
         } else if (growthRate < 0) {
             throw new IllegalArgumentException("growthRate < 0");
-        } else if (growthRate > MAX_GROW_RATE) {
+        } else if (growthRate > MAX_GROWTH_RATE) {
             throw new IllegalArgumentException("growthRate > 100");
         } else if (keepAliveTime < 1) {
             throw new IllegalArgumentException("keepAliveTime < 1");
