@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -634,7 +635,7 @@ public class ThreadPool extends ThreadPoolExecutor {
     private static class Event implements Comparable<Event> {
         private static final int MAX_EVENTS = getIntProperty("thread.pool.events", 0);
         private static final int DELAY_SECONDS = getIntProperty("thread.pool.events.delay", 0);
-        private static final List<Event> EVENTS = new ArrayList<>(MAX_EVENTS);
+        private static final List<Event> EVENTS = MAX_EVENTS == 0 ? Collections.emptyList() : new ArrayList<>(MAX_EVENTS);
         private static final AtomicBoolean STARTED = new AtomicBoolean();
         private static final AtomicBoolean WRITTEN = new AtomicBoolean();
         private static final long START_TIME = ManagementFactory.getRuntimeMXBean().getStartTime();
