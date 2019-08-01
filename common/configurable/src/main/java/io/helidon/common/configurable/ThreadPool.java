@@ -115,6 +115,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      * {@code workQueueCapacity < 1} <br>
      * {@code threadNamePrefix is null or empty}
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     static ThreadPool create(String name,
                              int corePoolSize,
                              int maxPoolSize,
