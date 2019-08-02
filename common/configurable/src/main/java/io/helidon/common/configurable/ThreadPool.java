@@ -19,6 +19,7 @@ package io.helidon.common.configurable;
 import java.io.OutputStream;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,6 +27,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -523,8 +525,9 @@ public class ThreadPool extends ThreadPoolExecutor {
         private final Predicate<ThreadPool> growthPolicy;
         private final int maxPoolSize;
         // We can't make this final because it is a circular dependency, but we set it during the construction of
-        // the pool itself and therefore don't have to worry about concurrent access.
-        private ThreadPool pool;
+        // the pool itself and therefore don't have to worry about concurrent access. It must be transient
+        // since LinkedBlockingQueue is serializable.
+        private transient ThreadPool pool;
 
         DynamicPoolWorkQueue(Predicate<ThreadPool> growthPolicy, int capacity, int maxPoolSize) {
             super(capacity);
@@ -637,6 +640,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         private static final int MAX_EVENTS = getIntProperty("thread.pool.events", 0);
         private static final int DELAY_SECONDS = getIntProperty("thread.pool.events.delay", 0);
         private static final List<Event> EVENTS = MAX_EVENTS == 0 ? Collections.emptyList() : new ArrayList<>(MAX_EVENTS);
+        private static final String FILE_HEADER = "Elapsed Seconds,Completed Tasks,Event,Threads,Active Threads,Queue Size%n";
         private static final AtomicBoolean STARTED = new AtomicBoolean();
         private static final AtomicBoolean WRITTEN = new AtomicBoolean();
         private static final long START_TIME = ManagementFactory.getRuntimeMXBean().getStartTime();
@@ -670,10 +674,28 @@ public class ThreadPool extends ThreadPoolExecutor {
             return Long.compare(time, o.time);
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final Event event = (Event) o;
+            return time == event.time &&
+                   threads == event.threads &&
+                   activeThreads == event.activeThreads &&
+                   queueSize == event.queueSize &&
+                   completedTasks == event.completedTasks &&
+                   type == event.type;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(time, type, threads, activeThreads, queueSize, completedTasks);
+        }
+
         private String toCsv() {
             final float elapsedMillis = time - START_TIME;
             final float elapsedSeconds = elapsedMillis / 1000f;
-            return String.format("%.4f,%d,%s,%d,%d,%d\n", elapsedSeconds, completedTasks, type, threads, activeThreads,
+            return String.format("%.4f,%d,%s,%d,%d,%d%n", elapsedSeconds, completedTasks, type, threads, activeThreads,
                                  queueSize);
         }
 
@@ -716,9 +738,9 @@ public class ThreadPool extends ThreadPoolExecutor {
                                                               StandardOpenOption.CREATE,
                                                               StandardOpenOption.WRITE,
                                                               StandardOpenOption.TRUNCATE_EXISTING)) {
-                    out.write("Elapsed Seconds,Completed Tasks,Event,Threads,Active Threads,Queue Size\n".getBytes());
+                    out.write(FILE_HEADER.getBytes(StandardCharsets.UTF_8));
                     for (Event event : EVENTS) {
-                        out.write(event.toCsv().getBytes());
+                        out.write(event.toCsv().getBytes(StandardCharsets.UTF_8));
                     }
                     LOGGER.info("Finished writing thread pool events");
                 } catch (Throwable e) {
