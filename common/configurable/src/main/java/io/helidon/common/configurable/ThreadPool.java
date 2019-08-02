@@ -16,6 +16,9 @@
 
 package io.helidon.common.configurable;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -385,7 +388,7 @@ public class ThreadPool extends ThreadPoolExecutor {
             // Just add it to the queue if there is capacity
 
             final WorkQueue queue = ((ThreadPool) executor).getQueue();
-            if (!queue.tryOffer(task)) {
+            if (!queue.enqueue(task)) {
 
                 // No capacity, so reject
 
@@ -451,12 +454,20 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
+    /**
+     * A queue that tracks peak and average sizes.
+     */
     static class WorkQueue extends LinkedBlockingQueue<Runnable> {
         private final int capacity;
         private final LongAdder totalSize;
         private final AtomicInteger totalTasks;
         private final AtomicInteger peakSize;
 
+        /**
+         * Constructor.
+         *
+         * @param capacity The queue capacity.
+         */
         WorkQueue(int capacity) {
             super(capacity);
             this.capacity = capacity;
@@ -465,15 +476,30 @@ public class ThreadPool extends ThreadPoolExecutor {
             this.peakSize = new AtomicInteger();
         }
 
+        /**
+         * Called by the {@link ThreadPool} constructor to enable the queue
+         * to keep a reference.
+         *
+         * @param pool The pool that owns this queue.
+         */
         void setPool(ThreadPool pool) {
         }
 
         @Override
         public boolean offer(Runnable task) {
-            return tryOffer(task);
+            return enqueue(task);
         }
 
-        boolean tryOffer(Runnable task) {
+        /**
+         * Enqueue the task by invoking the parent {@link #offer(Runnable)} method, updating the statistics
+         * if successful. Moving the actual enqueue logic here provides flexibility for subclasses that override
+         * {@link #offer(Runnable)} and provides a pathway for the {@link RejectionPolicy} to directly enqueue a
+         * task without invoking the subclass.
+         *
+         * @param task The task to enqueue.
+         * @return {@code true} if the task was enqueued, {@code false} if the queue is full.
+         */
+        boolean enqueue(Runnable task) {
             if (super.offer(task)) {
                 // Update stats
                 final int queueSize = size();
@@ -521,14 +547,36 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
+    /**
+     * A queue that uses a predicate to determine if an offered task should be enqueued or if the associated thread pool
+     * should add a thread. The predicate is consulted only when the pool is below the maximum size and there are no idle
+     * threads; otherwise, the task is always enqueued.
+     * <p>
+     * This implementation relies on the behavior of {@link ThreadPoolExecutor#execute(Runnable)} and its interaction with
+     * the queue and the {@link RejectedExecutionHandler}. Specifically, when the {@link #offer(Runnable)} method returns
+     * {@code false}, the execute method attempts to add a thread, handing it the task to execute. If the pool has reached
+     * maximum size, the task is instead handed off to the rejection handler.
+     * <p>
+     * To avoid introducing contention, this class explicitly does not try to coordinate across multiple threads invoking
+     * {@link ThreadPoolExecutor#execute(Runnable)}; therefore, by the time a decision is made to add a thread, the state
+     * on which that decision was made may have changed. In this case, the pool may fail to add a thread because the max
+     * size has actually already been reached; to avoid rejection due to this race condition, we install a handler that
+     * simply causes the task to be enqueued (see {@link RejectionPolicy}).
+     */
     static final class DynamicPoolWorkQueue extends WorkQueue {
-        private static final long serialVersionUID = 5677509198003139200L;
-        private final transient Predicate<ThreadPool> growthPolicy;
-        private final transient int maxPoolSize;
+        private final Predicate<ThreadPool> growthPolicy;
+        private final int maxPoolSize;
         // We can't make pool final because it is a circular dependency, but we set it during the construction of
         // the pool itself and therefore don't have to worry about concurrent access.
-        private transient ThreadPool pool;
+        private ThreadPool pool;
 
+        /**
+         * Constructor.
+         *
+         * @param growthPolicy The growth policy.
+         * @param capacity The queue capacity.
+         * @param maxPoolSize The maximum pool size.
+         */
         DynamicPoolWorkQueue(Predicate<ThreadPool> growthPolicy, int capacity, int maxPoolSize) {
             super(capacity);
             this.maxPoolSize = maxPoolSize;
@@ -543,7 +591,6 @@ public class ThreadPool extends ThreadPoolExecutor {
         @Override
         public boolean offer(Runnable task) {
 
-
             // Are we maxed out?
 
             final int currentSize = pool.getPoolSize();
@@ -552,14 +599,14 @@ public class ThreadPool extends ThreadPoolExecutor {
                 // Yes, so enqueue if we can
 
                 Event.add(Event.Type.MAX, pool, this);
-                return tryOffer(task);
+                return enqueue(task);
 
             } else if (pool.getActiveThreads() < currentSize) {
 
                 // No, but we've got idle threads so enqueue if we can
 
                 Event.add(Event.Type.IDLE, pool, this);
-                return tryOffer(task);
+                return enqueue(task);
 
             } else {
 
@@ -579,20 +626,40 @@ public class ThreadPool extends ThreadPoolExecutor {
 
                 } else {
                     // Enqueue if we can
-                    return tryOffer(task);
+                    return enqueue(task);
                 }
             }
         }
+
+        // The base class is serializable, but we don't need to support this behavior
+        private void writeObject(ObjectOutputStream stream) throws IOException {
+            throw new UnsupportedOperationException("cannot serialize");
+        }
+
+        // The base class is serializable, but we don't need to support this behavior
+        private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+            throw new UnsupportedOperationException("cannot deserialize");
+        }
     }
 
+    /**
+     * A growth policy that will attempt to add a thread to the pool when the queue is above the specified threshold
+     * size and a random number is above the specified growth rate.
+     */
     private static class RateLimitGrowth implements Predicate<ThreadPool> {
         private final int queueThreshold;
-        private final boolean alwaysRate;
+        private final boolean alwaysAdd;
         private final float rate;
 
+        /**
+         * Constructor.
+         *
+         * @param queueThreshold The queue threshold.
+         * @param growthRate The growth rate.
+         */
         RateLimitGrowth(int queueThreshold, int growthRate) {
             this.queueThreshold = queueThreshold;
-            this.alwaysRate = growthRate == 100;
+            this.alwaysAdd = growthRate == 100;
             this.rate = growthRate / 100f;
         }
 
@@ -609,7 +676,7 @@ public class ThreadPool extends ThreadPoolExecutor {
                 // Note that this random number generator is quite fast, and on average is faster than or equivalent to
                 // alternatives such as a counter (which does not provide even distribution) or System.nanoTime().
 
-                if (alwaysRate || ThreadLocalRandom.current().nextFloat() < rate) {
+                if (alwaysAdd || ThreadLocalRandom.current().nextFloat() < rate) {
 
                     // Yep
 
@@ -634,12 +701,22 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
-    // Consider removing this whole mechanism? If so, remove java.management from module-info!
-
+    /**
+     * This class supports recording of fine grained pool, queue and GC events to monitor growth behavior under
+     * various load conditions.
+     * <p>
+     * Disabled by default, it can be enabled by setting the {@code "thread.pool.events"} system property to the
+     * number of events to capture. On pool shutdown, events are written in CSV format to a file in the current
+     * working directory.
+     * <p>
+     * Note that if this mechanism is removed, the {@code "java.management"} requires clause should be removed
+     * from {@code module-info.java}.
+     */
     private static class Event implements Comparable<Event> {
         private static final int MAX_EVENTS = getIntProperty("thread.pool.events", 0);
         private static final int DELAY_SECONDS = getIntProperty("thread.pool.events.delay", 0);
         private static final List<Event> EVENTS = MAX_EVENTS == 0 ? Collections.emptyList() : new ArrayList<>(MAX_EVENTS);
+        private static final String EVENTS_FILE_NAME = "thread-pool-events.csv";
         private static final String FILE_HEADER = "Elapsed Seconds,Completed Tasks,Event,Threads,Active Threads,Queue Size%n";
         private static final AtomicBoolean STARTED = new AtomicBoolean();
         private static final AtomicBoolean WRITTEN = new AtomicBoolean();
@@ -699,6 +776,13 @@ public class ThreadPool extends ThreadPoolExecutor {
                                  queueSize);
         }
 
+        /**
+         * Add an event if recording is enabled.
+         *
+         * @param type The event type.
+         * @param pool The thread pool.
+         * @param queue The queue.
+         */
         private static void add(Type type, ThreadPool pool, WorkQueue queue) {
             if (shouldAdd()) {
                 if (!STARTED.getAndSet(true)) {
@@ -731,7 +815,7 @@ public class ThreadPool extends ThreadPoolExecutor {
 
         private static void write() {
             if (!EVENTS.isEmpty() && !WRITTEN.getAndSet(true)) {
-                final Path file = Paths.get("thread-pool-events.csv").toAbsolutePath();
+                final Path file = Paths.get(EVENTS_FILE_NAME).toAbsolutePath();
                 LOGGER.info("Writing thread pool events to " + file);
                 EVENTS.sort(null);
                 try (OutputStream out = Files.newOutputStream(file,
