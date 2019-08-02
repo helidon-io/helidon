@@ -119,7 +119,7 @@
         <version.lib.google-api-client>1.23.0</version.lib.google-api-client>
         <version.lib.graalvm>1.0.0-rc13</version.lib.graalvm>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.grpc>1.20.0</version.lib.grpc>
+        <version.lib.grpc>1.22.1</version.lib.grpc>
         <version.lib.guava>25.0-jre</version.lib.guava>
         <version.lib.h2>1.4.197</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -155,8 +155,8 @@
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mysql-connector-java>8.0.11</version.lib.mysql-connector-java>
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
-        <version.lib.netty>4.1.34.Final</version.lib.netty>
-        <version.netty.tcnative>2.0.22.Final</version.netty.tcnative>
+        <version.lib.netty>4.1.38.Final</version.lib.netty>
+        <version.netty.tcnative>2.0.25.Final</version.netty.tcnative>
         <version.lib.oci-java-sdk-objectstorage>1.5.2</version.lib.oci-java-sdk-objectstorage>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
@@ -873,9 +873,8 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-tcnative</artifactId>
+                <artifactId>netty-tcnative-boringssl-static</artifactId>
                 <version>${version.netty.tcnative}</version>
-                <classifier>${os.detected.classifier}</classifier>
             </dependency>
             <dependency>
               <groupId>io.opentracing.contrib</groupId>
