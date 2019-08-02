@@ -1221,7 +1221,7 @@ atomicops_internals_generic_gcc.h
 
 
 =======================
-grpc-java 1.16.1
+grpc-java 1.22.1
 =======================
 Copyright 2014 The gRPC Authors
 Apache License, Version 2.0
@@ -1476,41 +1476,41 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------
-"Netty/Codec/DNS" 4.1.34.Final (io.netty:netty-codec-dns)
+"Netty/Codec/DNS" 4.1.38.Final (io.netty:netty-codec-dns)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Codec" 4.1.34.Final (io.netty:netty-codec)
+"Netty/Codec" 4.1.38.Final (io.netty:netty-codec)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Codec/HTTP" 4.1.34.Final (io.netty:netty-codec-http)
+"Netty/Codec/HTTP" 4.1.38.Final (io.netty:netty-codec-http)
 Copyright The Netty Project
  Copyright (c) Bjoern Hoehrmann 
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Handler" 4.1.34.Final (io.netty:netty-handler)
+"Netty/Handler" 4.1.38.Final (io.netty:netty-handler)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Buffer" 4.1.34.Final (io.netty:netty-buffer)
+"Netty/Buffer" 4.1.38.Final (io.netty:netty-buffer)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Common" 4.1.34.Final (io.netty:netty-common)
+"Netty/Common" 4.1.38.Final (io.netty:netty-common)
 Copyright (c) QOS.ch
  Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Transport" 4.1.34.Final (io.netty:netty-transport)
+"Netty/Transport" 4.1.38.Final (io.netty:netty-transport)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Resolver/DNS" 4.1.34.Final (io.netty:netty-resolver-dns)
+"Netty/Resolver/DNS" 4.1.38.Final (io.netty:netty-resolver-dns)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
-"Netty/Resolver" 4.1.34.Final (io.netty:netty-resolver)
+"Netty/Resolver" 4.1.38.Final (io.netty:netty-resolver)
 Copyright The Netty Project
 Apache License, Version 2.0
 --------------------------------------------
@@ -1950,10 +1950,10 @@ Copyright 2009 Sun Microsystems, Inc. All rights reserved.
 Copyright 2015,2016 Red Hat, Inc., and individual contributors
 
 =======================
-netty 4.1.34.Final
+netty 4.1.38.Final
 =======================
 The Netty Project
-netty-4.1.34.Final
+netty-4.1.38.Final
 Copyright 2012,2019 The Netty Project
 Copyright 2011,2018 The Netty Project
 Copyright 2014,2017 The Netty Project
