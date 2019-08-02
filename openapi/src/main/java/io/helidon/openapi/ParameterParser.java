@@ -30,30 +30,30 @@ import io.helidon.openapi.ParameterParserImpl.SimpleParser;
 import io.helidon.openapi.ParameterParserImpl.SpaceDelimitedParser;
 
 /**
- * Abstraction of parsers for OpenAPI parameters. Includes a builder for correctly
- * constructing parsers.
+ * Abstraction of parsers for OpenAPI parameters. Includes a builder for
+ * correctly constructing parsers.
  * <p>
  * In OpenAPI, parameters are formatted according to a subset of
  * https://tools.ietf.org/html/rfc6570, using several different styles. Which
- * styles are valid depends on its location (where the parameter appears: header,
- * path, query parameter, cookie).
+ * styles are valid depends on its location (where the parameter appears:
+ * header, path, query parameter, cookie).
  * <p>
- * Instantiate this class, using the {@code Builder}, once for each separate parameter.
- * An instance can be reused for parsing that same parameter in multiple incoming
- * requests.
+ * Instantiate this class, using the {@code Builder}, once for each separate
+ * parameter. An instance can be reused for parsing that same parameter in
+ * multiple incoming requests.
  */
 interface ParameterParser {
 
     /**
-     * Returns a {@code Builder} for use in constructing a new {@code ParameterParser}.
+     * Returns a {@code Builder} for use in constructing a new
+     * {@code ParameterParser}.
      *
      * @param paramName name of the parameter to be parsed
      * @param location {@code Location} where the parameter exists
-     * @param style {@code Style} in which the parameter value is expressed
      * @return a {@code Builder} for parsing the parameter
      */
-    static Builder builder(String paramName, Location location, Style style) {
-        return ParameterParserImpl.builder(paramName, location, style);
+    static Builder builder(String paramName, Location location) {
+        return ParameterParserImpl.builder(paramName, location);
     }
 
     /**
@@ -78,12 +78,33 @@ interface ParameterParser {
      */
     List<String> parse(List<String> values);
 
+    /**
+     * A {@code Builder} for {@code ParameterParser}s.
+     * <p>
+     * Instantiate the {@code Builder} itself using the
+     * {@code ParameterParser#builder} method, which requires the parameter name
+     * and location. Then optionally invoke the builder's methods to set other
+     * characteristics, finally using {@link #build() } to create the
+     * properly-initialized parser.
+     */
     interface Builder extends io.helidon.common.Builder<ParameterParser> {
+
+        /**
+         * Sets the style with which the parameter is formatted.
+         * <p>
+         * Note that each {@code Location} has a default style if you do not
+         * specify one.
+         *
+         * @param style {@code Style} used for the parameter
+         * @return the {@code Builder}
+         */
+        Builder style(Style style);
 
         /**
          * Sets whether the parameter is expressed in exploded format.
          *
-         * @param exploded true if the parameter is in exploded format; false otherwise
+         * @param exploded true if the parameter is in exploded format; false
+         * otherwise
          * @return the {@code Builder} instance
          */
         Builder exploded(boolean exploded);
@@ -98,11 +119,11 @@ interface ParameterParser {
     }
 
     /**
-     * Locations in a request where parameters might be found.
+     * Locations in a request where parameters are found.
      * <p>
      * Each parameter location has a default {@code Style}, a default
-     * {@code explode} setting, and a collection of {@code Style}s valid for
-     * that location.
+     * {@code explode} setting, and a collection of {@code Style}s which are
+     * valid for that location.
      */
     enum Location {
         PATH(Style.SIMPLE, false, Style.SIMPLE, Style.LABEL, Style.MATRIX),
@@ -120,22 +141,53 @@ interface ParameterParser {
             this.supportedStyles = Arrays.asList(styles);
         }
 
+        /**
+         * Returns the default {@code Style} for this {@code Location}.
+         *
+         * @return default {@code Style}
+         */
+        Style defaultStyle() {
+            return defaultStyle;
+        }
+
+        /**
+         * Tells whether this {@code Location} supports the specified
+         * {@code Style}.
+         *
+         * @param style the {@code Style} to check
+         * @return whether this {@code Location} supports the specified
+         * {@code Style}
+         */
         boolean supportsStyle(Style style) {
             return supportedStyles.contains(style);
         }
 
+        /**
+         * Tells whether this {@code Location} uses exploded formatting by
+         * default.
+         *
+         * @return if the {@code Location} uses exploded by default
+         */
         boolean explodeByDefault() {
             return defaultExplode;
         }
 
+        /**
+         * Returns the {@code Location} value that matches the specified location
+         * name.
+         *
+         * @param locationName
+         * @return matching {@code Location}
+         * @throws IllegalArgumentException if the name matches no {@code Location}
+         */
         static Location match(String locationName) {
             return Enum.valueOf(Location.class, locationName.toUpperCase(Locale.ENGLISH));
         }
     }
 
     /**
-     * Styles with which parameter values can be represented in OpenAPI-compatible
-     * requests.
+     * Styles with which parameter values can be represented in
+     * OpenAPI-compatible requests.
      */
     enum Style {
         SIMPLE(SimpleParser::new),
@@ -146,6 +198,14 @@ interface ParameterParser {
         PIPE_DELIMITED(PipeDelimitedParser::new, "pipeDelimited"),
         DEEP_OBJECT(DeepObjectParser::new, "deepObject");
 
+        /**
+         * Returns the {@code Style} value that matches the specified style
+         * name.
+         *
+         * @param styleName
+         * @return matching {@code Style}
+         * @throws IllegalArgumentException if the name matches no {@code Style}
+         */
         static Style match(String styleName) {
             for (Style s : Style.values()) {
                 if (s.styleName.equals(styleName)) {
@@ -167,6 +227,14 @@ interface ParameterParser {
             this.styleName = styleName;
         }
 
+        /**
+         * Returns a parser of this {@code Style} for the given parameter and
+         * exploded setting.
+         *
+         * @param paramName parameter name that will be parsed
+         * @param exploded whether exploded format is used
+         * @return a {@code ParameterParser} properly configured for this {@code Style}
+         */
         ParameterParser parser(String paramName, boolean exploded) {
             return factory.apply(paramName, exploded);
         }

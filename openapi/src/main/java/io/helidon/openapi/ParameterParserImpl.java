@@ -49,8 +49,8 @@ abstract class ParameterParserImpl implements ParameterParser {
     static class Builder implements ParameterParser.Builder {
 
         private final Location location;
-        private final Style style;
         private final String paramName;
+        private Optional<Style> style = Optional.empty();
         private Optional<Boolean> exploded = Optional.empty();
 
         /**
@@ -62,14 +62,19 @@ abstract class ParameterParserImpl implements ParameterParser {
          * @throws {@code IllegalArgumentException} if the location name or style name
          * are unrecognized or if the location does not support the given style
          */
-        Builder(String paramName, Location location, Style style) {
+        Builder(String paramName, Location location) {
             this.paramName = paramName;
             this.location = location;
-            this.style = style;
+        }
+
+        @Override
+        public Builder style(Style style) {
             if (!location.supportsStyle(style)) {
                 throw new IllegalArgumentException("Location " + location.name()
                         + " does not support style " + style.name());
             }
+            this.style = Optional.of(style);
+            return this;
         }
 
         /**
@@ -91,9 +96,8 @@ abstract class ParameterParserImpl implements ParameterParser {
          */
         @Override
         public ParameterParser build() {
-
-            return style.parser(paramName,
-                    exploded.orElse(location.explodeByDefault()));
+            return style.orElse(location.defaultStyle())
+                    .parser(paramName, exploded.orElse(location.explodeByDefault()));
         }
     }
 
@@ -106,8 +110,8 @@ abstract class ParameterParserImpl implements ParameterParser {
      *
      * @return a {@code Builder}
      */
-    static ParameterParser.Builder builder(String paramName, Location location, Style style) {
-        return new Builder(paramName, location, style);
+    static ParameterParser.Builder builder(String paramName, Location location) {
+        return new Builder(paramName, location);
     }
 
     private final String paramName;

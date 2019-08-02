@@ -35,30 +35,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ParameterParserTest {
 
-    /*
-     * The following assignments intentionally use the {@code match} methods to
-     * test those methods, rather than assigning the enum values directly to the
-     * constants.
-     */
-    private static final Location PATH = Location.match("path");
-    private static final Location HEADER = Location.match("header");
-    private static final Location COOKIE = Location.match("cookie");
-    private static final Location QUERY = Location.match("query");
-
-    private static final Style SIMPLE = Style.match("simple");
-    private static final Style LABEL = Style.match("label");
-    private static final Style MATRIX = Style.match("matrix");
-    private static final Style FORM = Style.match("form");
-    private static final Style SPACE_DELIM = Style.match("spaceDelimited");
-    private static final Style PIPE_DELIM = Style.match("pipeDelimited");
-
     public ParameterParserTest() {
     }
 
     @Test
     public void testSimpleStyle() {
-        final ParameterParser parser = ParameterParser.builder("id", PATH, SIMPLE)
-                .build();
+        final ParameterParser parser = ParameterParser.builder("id", Location.PATH)
+                .build(); // uses default SIMPLE style
 
         final String input = "a,b,c";
         final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
@@ -66,8 +49,8 @@ public class ParameterParserTest {
         final List<String> result = parser.parse(input);
         assertEquals(expected, result);
 
-        final ParameterParser headerParser = ParameterParser.builder("id", HEADER, SIMPLE)
-                .build();
+        final ParameterParser headerParser = ParameterParser.builder("id", Location.HEADER)
+                .build(); // uses the default and only possible style: SIMPLE
 
         final List<String> listInput = CollectionsHelper.listOf("a,b,c", "d,e");
         final List<String> headerExpected = CollectionsHelper.listOf("a,b,c,d,e".split(","));
@@ -78,7 +61,8 @@ public class ParameterParserTest {
 
     @Test
     public void testLabelStyle() {
-        final ParameterParser parser = ParameterParser.builder("id", PATH, LABEL)
+        final ParameterParser parser = ParameterParser.builder("id", Location.PATH)
+                .style(Style.LABEL)
                 .build();
 
         final String input = ".a,b,c";
@@ -87,7 +71,8 @@ public class ParameterParserTest {
         assertEquals(expected, parser.parse(input));
 
         final String explodedInput = ".a.b.c";
-        final ParameterParser explodedParser = ParameterParser.builder("id", PATH, LABEL)
+        final ParameterParser explodedParser = ParameterParser.builder("id", Location.PATH)
+                .style(Style.LABEL)
                 .exploded(true)
                 .build();
 
@@ -97,7 +82,8 @@ public class ParameterParserTest {
 
     @Test
     public void testMatrixStyle() {
-        final ParameterParser parser = ParameterParser.builder("id", PATH, MATRIX)
+        final ParameterParser parser = ParameterParser.builder("id", Location.PATH)
+                .style(Style.MATRIX)
                 .build();
 
         final String input = ";id=a,b,c";
@@ -105,7 +91,8 @@ public class ParameterParserTest {
 
         assertEquals(expected, parser.parse(input));
 
-        final ParameterParser explodedParser = ParameterParser.builder("id", PATH, MATRIX)
+        final ParameterParser explodedParser = ParameterParser.builder("id", Location.PATH)
+                .style(Style.MATRIX)
                 .exploded(true)
                 .build();
 
@@ -113,16 +100,17 @@ public class ParameterParserTest {
         assertEquals(expected, explodedParser.parse(explodedInput));
 
         assertThrows(IllegalArgumentException.class, () -> {
-            ParameterParser.builder("id", PATH,FORM)
-                    .build(); // path does not support form
+            ParameterParser.builder("id", Location.PATH)
+                    .style(Style.FORM) // path does not support form
+                    .build();
         });
     }
 
     @Test
     public void testFormStyle() {
-        final ParameterParser parser = ParameterParser.builder("id", COOKIE, FORM)
+        final ParameterParser parser = ParameterParser.builder("id", Location.COOKIE)
                 .exploded(false)
-                .build();
+                .build(); // uses the default and only style for cookie: FORM
 
         final String input = "id=a&b&c";
         final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
@@ -130,7 +118,7 @@ public class ParameterParserTest {
         assertEquals(expected, parser.parse(input));
 
         final String explodedInput = "id=a&id=b&id=c";
-        final ParameterParser explodedParser = ParameterParser.builder("id", COOKIE, FORM)
+        final ParameterParser explodedParser = ParameterParser.builder("id", Location.COOKIE)
                 .exploded(true)
                 .build();
         assertEquals(expected, explodedParser.parse(explodedInput));
@@ -138,7 +126,8 @@ public class ParameterParserTest {
 
     @Test
     public void testSpaceDelimitedStyle() {
-        ParameterParser parser = ParameterParser.builder("id", QUERY, SPACE_DELIM)
+        ParameterParser parser = ParameterParser.builder("id", Location.QUERY)
+                .style(Style.SPACE_DELIMITED)
                 .exploded(false)
                 .build();
 
@@ -152,7 +141,8 @@ public class ParameterParserTest {
 
     @Test
     public void testPipeDelimitedStyle() {
-        ParameterParser parser = ParameterParser.builder("id", QUERY, PIPE_DELIM)
+        ParameterParser parser = ParameterParser.builder("id", Location.QUERY)
+                .style(Style.PIPE_DELIMITED)
                 .exploded(false)
                 .build();
 
@@ -202,13 +192,15 @@ public class ParameterParserTest {
             String[] badStyles) {
 
         for (String style : goodStyles) {
-            ParameterParser.builder("id", Location.match(location), Style.match(style));
+            ParameterParser.builder("id", Location.match(location))
+                    .style(Style.match(style));
         }
 
         for (String style : badStyles) {
             assertThrows(IllegalArgumentException.class, () -> {
                 // The style is not valid for this location.
-                ParameterParser.builder("id", Location.match(location), Style.match(style));
+                ParameterParser.builder("id", Location.match(location))
+                        .style(Style.match(style));
             });
         }
     }
