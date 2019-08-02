@@ -19,6 +19,15 @@ package io.helidon.openapi;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiFunction;
+
+import io.helidon.openapi.ParameterParserImpl.DeepObjectParser;
+import io.helidon.openapi.ParameterParserImpl.FormParser;
+import io.helidon.openapi.ParameterParserImpl.LabelParser;
+import io.helidon.openapi.ParameterParserImpl.MatrixParser;
+import io.helidon.openapi.ParameterParserImpl.PipeDelimitedParser;
+import io.helidon.openapi.ParameterParserImpl.SimpleParser;
+import io.helidon.openapi.ParameterParserImpl.SpaceDelimitedParser;
 
 /**
  * Abstraction of parsers for OpenAPI parameters. Includes a builder for correctly
@@ -35,6 +44,40 @@ import java.util.Locale;
  */
 interface ParameterParser {
 
+    /**
+     * Returns a {@code Builder} for use in constructing a new {@code ParameterParser}.
+     *
+     * @param paramName name of the parameter to be parsed
+     * @param location {@code Location} where the parameter exists
+     * @param style {@code Style} in which the parameter value is expressed
+     * @return a {@code Builder} for parsing the parameter
+     */
+    static Builder builder(String paramName, Location location, Style style) {
+        return ParameterParserImpl.builder(paramName, location, style);
+    }
+
+    /**
+     * Parses the specified value according to the configured attributes of the
+     * parser. The value String can contain multiple values and, if
+     * {@code explode} is true (or if {@code explode} is absent and the default
+     * explode setting is true), then each value appears as a separate parameter
+     * occurrence.
+     *
+     * @param value the String to be parsed
+     * @return {@code List} of {@code String}s parsed from the parameter
+     */
+    List<String> parse(String value);
+
+    /**
+     * Parses the specified list of values according to the configured
+     * attributes of the parser.Each individual value can itself contain
+     * multiple values.
+     *
+     * @param values the Strings to be parsed
+     * @return {@code List} of {@code String}s parsed from the input values
+     */
+    List<String> parse(List<String> values);
+
     interface Builder extends io.helidon.common.Builder<ParameterParser> {
 
         /**
@@ -50,6 +93,7 @@ interface ParameterParser {
          *
          * @return the configured {@code ParameterParserImpl}
          */
+        @Override
         ParameterParser build();
     }
 
@@ -89,14 +133,18 @@ interface ParameterParser {
         }
     }
 
+    /**
+     * Styles with which parameter values can be represented in OpenAPI-compatible
+     * requests.
+     */
     enum Style {
-        SIMPLE,
-        LABEL,
-        MATRIX,
-        FORM,
-        SPACE_DELIMITED("spaceDelimited"),
-        PIPE_DELIMITED("pipeDelimited"),
-        DEEP_OBJECT("deepObject");
+        SIMPLE(SimpleParser::new),
+        LABEL(LabelParser::new),
+        MATRIX(MatrixParser::new),
+        FORM(FormParser::new),
+        SPACE_DELIMITED(SpaceDelimitedParser::new, "spaceDelimited"),
+        PIPE_DELIMITED(PipeDelimitedParser::new, "pipeDelimited"),
+        DEEP_OBJECT(DeepObjectParser::new, "deepObject");
 
         static Style match(String styleName) {
             for (Style s : Style.values()) {
@@ -108,47 +156,19 @@ interface ParameterParser {
         }
 
         private String styleName = name().toLowerCase(Locale.ENGLISH);
+        private final BiFunction<String, Boolean, ParameterParserImpl> factory;
 
-        Style() {}
+        Style(BiFunction<String, Boolean, ParameterParserImpl> factory) {
+            this.factory = factory;
+        }
 
-        Style(String styleName) {
+        Style(BiFunction<String, Boolean, ParameterParserImpl> factory, String styleName) {
+            this.factory = factory;
             this.styleName = styleName;
         }
+
+        ParameterParser parser(String paramName, boolean exploded) {
+            return factory.apply(paramName, exploded);
+        }
     }
-
-    /**
-     * Returns a builder ready to be set up by invoking the builder methods.
-     *
-     * @param paramName name of the parameter to be parsed
-     * @param location {@code Location} where the parameter exists
-     * @param style {@code Style} in which the parameter value is expressed.
-     *
-     * @return a {@code Builder}
-     */
-    static Builder builder(String paramName, Location location, Style style) {
-        return ParameterParserImpl.builder(paramName, location, style);
-    }
-
-    /**
-     * Parses the specified value according to the configured attributes of the
-     * parser. The value String can contain multiple values and, if
-     * {@code explode} is true (or if {@code explode} is absent and the default
-     * explode setting is true), then each value appears as a separate parameter
-     * occurrence.
-     *
-     * @param value the String to be parsed
-     * @return {@code List} of {@code String}s parsed from the parameter
-     */
-    List<String> parse(String value);
-
-    /**
-     * Parses the specified list of values according to the configured
-     * attributes of the parser.Each individual value can itself contain
-     * multiple values.
-     *
-     * @param values the Strings to be parsed
-     * @return {@code List} of {@code String}s parsed from the input values
-     */
-    List<String> parse(List<String> values);
-
 }

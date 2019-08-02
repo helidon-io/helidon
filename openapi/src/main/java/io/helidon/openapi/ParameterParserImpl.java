@@ -20,11 +20,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,7 +41,7 @@ import io.helidon.openapi.ParameterParser.Style;
  * An instance can be reused for parsing that same parameter in multiple incoming
  * requests.
  */
-public abstract class ParameterParserImpl implements ParameterParser {
+abstract class ParameterParserImpl implements ParameterParser {
 
     /**
      * Builder for a {@code ParameterParserImpl}.
@@ -55,23 +52,6 @@ public abstract class ParameterParserImpl implements ParameterParser {
         private final Style style;
         private final String paramName;
         private Optional<Boolean> exploded = Optional.empty();
-
-        private final Map<Style, BiFunction<String, Boolean, ParameterParser>> parserFactories
-                = initParserFactories();
-
-        private static Map<Style, BiFunction<String, Boolean, ParameterParser>> initParserFactories() {
-            Map<Style, BiFunction<String, Boolean, ParameterParser>> result = new EnumMap<>(Style.class);
-
-            result.put(Style.SIMPLE, SimpleParser::new);
-            result.put(Style.LABEL, LabelParser::new);
-            result.put(Style.MATRIX, MatrixParser::new);
-            result.put(Style.FORM, FormParser::new);
-            result.put(Style.SPACE_DELIMITED, SpaceDelimitedParser::new);
-            result.put(Style.PIPE_DELIMITED, PipeDelimitedParser::new);
-            result.put(Style.DEEP_OBJECT, DeepObjectParser::new);
-
-            return result;
-        }
 
         /**
          * Creates a builder with the required parameter name, location, and style.
@@ -112,7 +92,7 @@ public abstract class ParameterParserImpl implements ParameterParser {
         @Override
         public ParameterParser build() {
 
-            return parserFactories.get(style).apply(paramName,
+            return style.parser(paramName,
                     exploded.orElse(location.explodeByDefault()));
         }
     }
@@ -126,7 +106,7 @@ public abstract class ParameterParserImpl implements ParameterParser {
      *
      * @return a {@code Builder}
      */
-    public static ParameterParser.Builder builder(String paramName, Location location, Style style) {
+    static ParameterParser.Builder builder(String paramName, Location location, Style style) {
         return new Builder(paramName, location, style);
     }
 
@@ -150,6 +130,7 @@ public abstract class ParameterParserImpl implements ParameterParser {
      * @param value the String to be parsed
      * @return {@code List} of {@code String}s parsed from the parameter
      */
+    @Override
     public List<String> parse(String value) {
         try {
             value = URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
@@ -180,6 +161,7 @@ public abstract class ParameterParserImpl implements ParameterParser {
      * @param values the Strings to be parsed
      * @return {@code List} of {@code String}s parsed from the input values
      */
+    @Override
     public List<String> parse(List<String> values) {
         List<String> result = new ArrayList<>();
         for (String v : values) {
@@ -303,14 +285,14 @@ public abstract class ParameterParserImpl implements ParameterParser {
         }
     }
 
-    private static class SimpleParser extends DelimitedParser {
+    static class SimpleParser extends DelimitedParser {
 
         SimpleParser(String paramName, Boolean exploded) {
             super(paramName, exploded, false, ",");
         }
     }
 
-    private static class LabelParser extends PrefixedParser {
+    static class LabelParser extends PrefixedParser {
 
         LabelParser(String paramName, Boolean exploded) {
             super(paramName, exploded, false);
@@ -327,7 +309,7 @@ public abstract class ParameterParserImpl implements ParameterParser {
         }
     }
 
-    private static class MatrixParser extends PrefixedParser {
+    static class MatrixParser extends PrefixedParser {
 
         MatrixParser(String paramName, Boolean exploded) {
             super(paramName, exploded, true);
@@ -354,7 +336,7 @@ public abstract class ParameterParserImpl implements ParameterParser {
         }
     }
 
-    private static class FormParser extends DelimitedParser {
+    static class FormParser extends DelimitedParser {
 
         FormParser(String paramName, Boolean exploded) {
             super(paramName, exploded, true, "&");
@@ -372,21 +354,21 @@ public abstract class ParameterParserImpl implements ParameterParser {
         }
     }
 
-    private static class SpaceDelimitedParser extends DelimitedParser {
+    static class SpaceDelimitedParser extends DelimitedParser {
 
         SpaceDelimitedParser(String paramName, Boolean exploded) {
             super(paramName, exploded, true, " ");
         }
     }
 
-    private static class PipeDelimitedParser extends DelimitedParser {
+    static class PipeDelimitedParser extends DelimitedParser {
 
         PipeDelimitedParser(String paramName, Boolean exploded) {
             super(paramName, exploded, true, "\\|");
         }
     }
 
-    private static class DeepObjectParser extends ParameterParserImpl {
+    static class DeepObjectParser extends ParameterParserImpl {
 
         DeepObjectParser(String paramName, Boolean exploded) {
             super(paramName, exploded, true);
