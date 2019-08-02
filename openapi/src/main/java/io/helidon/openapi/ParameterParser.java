@@ -16,139 +16,41 @@
  */
 package io.helidon.openapi;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Parsers for OpenAPI parameter styles. Includes a factory method.
+ * Abstraction of parsers for OpenAPI parameters. Includes a builder for correctly
+ * constructing parsers.
  * <p>
  * In OpenAPI, parameters are formatted according to a subset of
  * https://tools.ietf.org/html/rfc6570, using several different styles. Which
- * styles are valid depends on where the parameter appears -- its location --
- * (header, path, query parameter, cookie). This class implements each supported
- * parameter style as separate parser, and it includes a factory method which
- * returns an instance of the correct parser given the parameter's location and
- * style.
+ * styles are valid depends on its location (where the parameter appears: header,
+ * path, query parameter, cookie).
+ * <p>
+ * Instantiate this class, using the {@code Builder}, once for each separate parameter.
+ * An instance can be reused for parsing that same parameter in multiple incoming
+ * requests.
  */
-public abstract class ParameterParser {
+interface ParameterParser {
 
-    /**
-     * Builder for a {@code ParameterParser}.
-     */
-    public static class Builder {
-
-        private Optional<Location> location = Optional.empty();
-        private Optional<Style> style = Optional.empty();
-        private Optional<Boolean> explode = Optional.empty();
+    interface Builder extends io.helidon.common.Builder<ParameterParser> {
 
         /**
-         * Sets the location for the parser to be built.
+         * Sets whether the parameter is expressed in exploded format.
          *
-         * @param location the name of the location containing the parameter to
-         * be parsed
+         * @param exploded true if the parameter is in exploded format; false otherwise
          * @return the {@code Builder} instance
          */
-        public Builder location(String location) {
-            this.location = Optional.of(Location.match(location));
-            return this;
-        }
-
-        /**
-         * Sets the style for the parser to be built.
-         *
-         * @param style the name of the style to be used in the parser
-         * @return the {@code Builder} instance
-         */
-        public Builder style(String style) {
-            this.style = Optional.of(Style.match(style));
-            return this;
-        }
-
-        /**
-         * Sets whether arrays and objects should generate separate parameters
-         * for each array item or object property.
-         *
-         * @param explode whether array/object explosion should occur
-         * @return the {@code Builder} instance
-         */
-        public Builder explode(boolean explode) {
-            this.explode = Optional.of(explode);
-            return this;
-        }
+        Builder exploded(boolean exploded);
 
         /**
          * Constructs the parser using the assigned builder settings.
-         * @return the configured {@code ParameterParser}
+         *
+         * @return the configured {@code ParameterParserImpl}
          */
-        public ParameterParser build() {
-            if (!location.isPresent()) {
-                throw new IllegalArgumentException("ParameterParser must specify Location");
-            }
-            if (!location().supportsStyle(style())) {
-                throw new IllegalArgumentException("Location " + location().name()
-                        + " does not support style " + style().name());
-            }
-            return style().factory.apply(explode());
-        }
-
-        private Location location() {
-            return location.get();
-        }
-
-        private Style style() {
-            return style.orElse(location().defaultStyle);
-        }
-
-        private boolean explode() {
-            return explode.orElse(location().defaultExplode);
-        }
-    }
-
-    /**
-     * Returns a builder ready for configuration by invoking the
-     * builder methods.
-     * @return a {@code Builder}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    private final boolean explode;
-
-    private ParameterParser(boolean explode) {
-        this.explode = explode;
-    }
-
-    boolean explode() {
-        return explode;
-    }
-
-    /**
-     * Parses the specified value according to the configured attributes
-     * of the parser. The value String can contain multiple values.
-     * @param value the String to be parsed
-     * @return {@code List} of {@code String}s parsed from the parameter
-     */
-    public abstract List<String> parse(String value);
-
-    /**
-     * Parses the specified list of values according to the configured attributes
-     * of the parser. Each individual value can itself contain multiple values.
-     * @param values {@code List} of values to be parsed
-     * @return {@code List} of {@code String}s parsed from the input values
-     */
-    public List<String> parse(List<String> values) {
-        List<String> result = new ArrayList<>();
-        for (String v : values) {
-            result.addAll(parse(v));
-        }
-        return result;
+        ParameterParser build();
     }
 
     /**
@@ -178,19 +80,23 @@ public abstract class ParameterParser {
             return supportedStyles.contains(style);
         }
 
+        boolean explodeByDefault() {
+            return defaultExplode;
+        }
+
         static Location match(String locationName) {
             return Enum.valueOf(Location.class, locationName.toUpperCase(Locale.ENGLISH));
         }
     }
 
     enum Style {
-        SIMPLE(SimpleParser::new),
-        LABEL(LabelParser::new),
-        MATRIX(MatrixParser::new),
-        FORM(FormParser::new),
-        SPACE_DELIMITED(SpaceDelimitedParser::new, "spaceDelimited"),
-        PIPE_DELIMITED(PipeDelimitedParser::new, "pipeDelimited"),
-        DEEP_OBJECT(DeepObjectParser::new, "deepObject");
+        SIMPLE,
+        LABEL,
+        MATRIX,
+        FORM,
+        SPACE_DELIMITED("spaceDelimited"),
+        PIPE_DELIMITED("pipeDelimited"),
+        DEEP_OBJECT("deepObject");
 
         static Style match(String styleName) {
             for (Style s : Style.values()) {
@@ -201,114 +107,48 @@ public abstract class ParameterParser {
             throw new IllegalArgumentException("Cannot find ParameterParser.Style matching style name " + styleName);
         }
 
-        private final String styleName;
-        private final Function<Boolean, ParameterParser> factory;
+        private String styleName = name().toLowerCase(Locale.ENGLISH);
 
-        Style(Function<Boolean, ParameterParser> factory) {
-            this.factory = factory;
-            styleName = name().toLowerCase(Locale.ENGLISH);
-        }
+        Style() {}
 
-        Style(Function<Boolean, ParameterParser> factory, String styleName) {
-            this.factory = factory;
+        Style(String styleName) {
             this.styleName = styleName;
         }
-
-        ParameterParser parser(boolean explode) {
-            return factory.apply(explode);
-        }
     }
 
-    static class SimpleParser extends DelimitedParser {
-
-        SimpleParser(boolean explode) {
-            super(",", explode);
-        }
+    /**
+     * Returns a builder ready to be set up by invoking the builder methods.
+     *
+     * @param paramName name of the parameter to be parsed
+     * @param location {@code Location} where the parameter exists
+     * @param style {@code Style} in which the parameter value is expressed.
+     *
+     * @return a {@code Builder}
+     */
+    static Builder builder(String paramName, Location location, Style style) {
+        return ParameterParserImpl.builder(paramName, location, style);
     }
 
-    static class LabelParser extends PrefixedParser {
+    /**
+     * Parses the specified value according to the configured attributes of the
+     * parser. The value String can contain multiple values and, if
+     * {@code explode} is true (or if {@code explode} is absent and the default
+     * explode setting is true), then each value appears as a separate parameter
+     * occurrence.
+     *
+     * @param value the String to be parsed
+     * @return {@code List} of {@code String}s parsed from the parameter
+     */
+    List<String> parse(String value);
 
-        LabelParser(boolean explode) {
-            super(".", explode);
-        }
-    }
+    /**
+     * Parses the specified list of values according to the configured
+     * attributes of the parser.Each individual value can itself contain
+     * multiple values.
+     *
+     * @param values the Strings to be parsed
+     * @return {@code List} of {@code String}s parsed from the input values
+     */
+    List<String> parse(List<String> values);
 
-    static class MatrixParser extends PrefixedParser {
-
-        MatrixParser(boolean explode) {
-            super(";", explode);
-        }
-    }
-
-    static class FormParser extends DelimitedParser {
-
-        FormParser(boolean explode) {
-            super("&", explode);
-        }
-    }
-
-    static class SpaceDelimitedParser extends DelimitedParser {
-
-        SpaceDelimitedParser(boolean explode) {
-            super(" ", explode);
-        }
-    }
-
-    static class PipeDelimitedParser extends DelimitedParser {
-
-        PipeDelimitedParser(boolean explode) {
-            super("\\|", explode);
-        }
-    }
-
-    static class DeepObjectParser extends ParameterParser {
-
-        DeepObjectParser(boolean explode) {
-            super(explode);
-        }
-
-        @Override
-        public List<String> parse(String value) {
-            final List<String> result = new ArrayList<>();
-            return result;
-        }
-
-    }
-
-    static class DelimitedParser extends ParameterParser {
-
-        private final String delimiter;
-
-        DelimitedParser(String delimiter, boolean explode) {
-            super(explode);
-            this.delimiter = delimiter;
-        }
-
-        @Override
-        public List<String> parse(String value) {
-            return Arrays.asList(value.split(delimiter));
-        }
-    }
-
-    static class PrefixedParser extends ParameterParser {
-
-        private final String prefix;
-        private final Pattern pattern;
-
-        PrefixedParser(String prefix, boolean explode) {
-            super(explode);
-            this.prefix = prefix;
-            pattern = Pattern.compile("\\" + prefix + "([^" + "\\" + prefix + "]+)");
-        }
-
-        @Override
-        public List<String> parse(String value) {
-            final List<String> result = new ArrayList<>();
-            final Matcher matcher = pattern.matcher(value);
-            while (matcher.find()) {
-                result.add(matcher.group(1));
-            }
-            return result;
-        }
-    }
 }

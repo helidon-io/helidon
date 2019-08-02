@@ -16,8 +16,12 @@
  */
 package io.helidon.openapi;
 
-import io.helidon.common.CollectionsHelper;
 import java.util.List;
+
+import io.helidon.common.CollectionsHelper;
+import io.helidon.openapi.ParameterParser.Location;
+import io.helidon.openapi.ParameterParser.Style;
+
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,90 +35,125 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ParameterParserTest {
 
+    /*
+     * The following assignments intentionally use the {@code match} methods to
+     * test those methods, rather than assigning the enum values directly to the
+     * constants.
+     */
+    private static final Location PATH = Location.match("path");
+    private static final Location HEADER = Location.match("header");
+    private static final Location COOKIE = Location.match("cookie");
+    private static final Location QUERY = Location.match("query");
+
+    private static final Style SIMPLE = Style.match("simple");
+    private static final Style LABEL = Style.match("label");
+    private static final Style MATRIX = Style.match("matrix");
+    private static final Style FORM = Style.match("form");
+    private static final Style SPACE_DELIM = Style.match("spaceDelimited");
+    private static final Style PIPE_DELIM = Style.match("pipeDelimited");
+
     public ParameterParserTest() {
     }
 
     @Test
     public void testSimpleStyle() {
-        ParameterParser parser = ParameterParser.builder()
-                .location("path")
-                .style("simple")
+        final ParameterParser parser = ParameterParser.builder("id", PATH, SIMPLE)
                 .build();
 
         final String input = "a,b,c";
-        List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
+        final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
 
-        List<String> result = parser.parse(input);
+        final List<String> result = parser.parse(input);
         assertEquals(expected, result);
 
-        parser = ParameterParser.builder()
-                .location("header")
-                .style("simple")
+        final ParameterParser headerParser = ParameterParser.builder("id", HEADER, SIMPLE)
                 .build();
 
         final List<String> listInput = CollectionsHelper.listOf("a,b,c", "d,e");
-        expected = CollectionsHelper.listOf("a,b,c,d,e".split(","));
+        final List<String> headerExpected = CollectionsHelper.listOf("a,b,c,d,e".split(","));
 
-        result = parser.parse(listInput);
-        assertEquals(expected, result);
+        final List<String> headerResult = headerParser.parse(listInput);
+        assertEquals(headerExpected, headerResult);
     }
 
     @Test
     public void testLabelStyle() {
-        ParameterParser parser = ParameterParser.builder()
-                .location("path")
-                .style("label")
+        final ParameterParser parser = ParameterParser.builder("id", PATH, LABEL)
                 .build();
 
-        final String input = ".a.b.c";
+        final String input = ".a,b,c";
+        final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
 
-        assertEquals(CollectionsHelper.listOf("a,b,c".split(",")), parser.parse(input));
+        assertEquals(expected, parser.parse(input));
+
+        final String explodedInput = ".a.b.c";
+        final ParameterParser explodedParser = ParameterParser.builder("id", PATH, LABEL)
+                .exploded(true)
+                .build();
+
+        assertEquals(expected, explodedParser.parse(explodedInput));
+
     }
 
     @Test
     public void testMatrixStyle() {
-        ParameterParser parser = ParameterParser.builder()
-                .location("path")
-                .style("matrix")
+        final ParameterParser parser = ParameterParser.builder("id", PATH, MATRIX)
                 .build();
 
-        final String input = ";a;b;c";
+        final String input = ";id=a,b,c";
+        final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
 
-        assertEquals(CollectionsHelper.listOf("a,b,c".split(",")), parser.parse(input));
+        assertEquals(expected, parser.parse(input));
+
+        final ParameterParser explodedParser = ParameterParser.builder("id", PATH, MATRIX)
+                .exploded(true)
+                .build();
+
+        final String explodedInput = ";id=a;id=b;id=c";
+        assertEquals(expected, explodedParser.parse(explodedInput));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            ParameterParser.builder("id", PATH,FORM)
+                    .build(); // path does not support form
+        });
     }
 
     @Test
     public void testFormStyle() {
-        ParameterParser parser = ParameterParser.builder()
-                .location("cookie")
-                .style("form")
-                .explode(false)
+        final ParameterParser parser = ParameterParser.builder("id", COOKIE, FORM)
+                .exploded(false)
                 .build();
 
-        final String input = "a&b&c";
+        final String input = "id=a&b&c";
+        final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
 
-        assertEquals(CollectionsHelper.listOf("a,b,c".split(",")), parser.parse(input));
+        assertEquals(expected, parser.parse(input));
+
+        final String explodedInput = "id=a&id=b&id=c";
+        final ParameterParser explodedParser = ParameterParser.builder("id", COOKIE, FORM)
+                .exploded(true)
+                .build();
+        assertEquals(expected, explodedParser.parse(explodedInput));
     }
 
     @Test
     public void testSpaceDelimitedStyle() {
-        ParameterParser parser = ParameterParser.builder()
-                .location("query")
-                .style("spaceDelimited")
-                .explode(false)
+        ParameterParser parser = ParameterParser.builder("id", QUERY, SPACE_DELIM)
+                .exploded(false)
                 .build();
 
-        final String input = "a b c";
+        String input = "a%20b%20c";
+        final List<String> expected = CollectionsHelper.listOf("a,b,c".split(","));
 
-        assertEquals(CollectionsHelper.listOf("a,b,c".split(",")), parser.parse(input));
+        assertEquals(expected, parser.parse(input));
+
+
     }
 
     @Test
     public void testPipeDelimitedStyle() {
-        ParameterParser parser = ParameterParser.builder()
-                .location("query")
-                .style("pipeDelimited")
-                .explode(false)
+        ParameterParser parser = ParameterParser.builder("id", QUERY, PIPE_DELIM)
+                .exploded(false)
                 .build();
 
         final String input = "a|b|c";
@@ -126,9 +165,7 @@ public class ParameterParserTest {
     public void testLocationValidation() {
 
         assertThrows(IllegalArgumentException.class, () -> {
-            ParameterParser.builder()
-                .location("badOnPurpose")
-                .build();
+            Location.match("badOnPurpose");
         });
     }
 
@@ -163,58 +200,16 @@ public class ParameterParserTest {
     private void testGoodAndBadStylesForLocation(String location,
             String[] goodStyles,
             String[] badStyles) {
+
         for (String style : goodStyles) {
-            ParameterParser.builder()
-                .location(location)
-                .style(style)
-                .build();
+            ParameterParser.builder("id", Location.match(location), Style.match(style));
         }
 
         for (String style : badStyles) {
             assertThrows(IllegalArgumentException.class, () -> {
-                ParameterParser.builder()
-                    .location(location)
-                    .style(style) // not valid for this location
-                    .build();
+                // The style is not valid for this location.
+                ParameterParser.builder("id", Location.match(location), Style.match(style));
             });
         }
     }
-
-//    @Test
-//    public void testBadFormat() {
-//        assertThrows(IllegalArgumentException.class, () -> {
-//                ParameterParser.parse("w$x$y", "dollar");
-//            });
-//    }
-//
-//    @Test
-//    public void checkAllFormats() {
-//        check("ww,xx,yy", "csv", "ww", "xx", "yy");
-//        check("aaa bbb ccc", "ssv", "aaa", "bbb", "ccc");
-//        check("m\tn\to", "tsv", "m", "n", "o");
-//        check("g-g|h-h|i-i|j", "pipes", "g-g", "h-h", "i-i", "j");
-//        check("1,2,3", "multi", "1", "2", "3");
-//        check("z", "csv", "z");
-//    }
-//
-//    @Test
-//    public void checkListOfMultiValues() {
-//        final List<String> inputs = new ArrayList<>();
-//        inputs.addAll(Arrays.asList("ww,xx,yy", "aaa,bbb,ccc"));
-//        checkMulti(inputs, "csv", "ww", "xx", "yy", "aaa", "bbb", "ccc");
-//    }
-//
-//    private void check(String input, String format, String... expected) {
-//        final List<String> expectedList = new ArrayList<>();
-//        Collections.addAll(expectedList, expected);
-//        final List<String> parsed = ParameterParser.parse(input, format);
-//        assertEquals(expectedList, parsed, "Unexpected results for format " + format);
-//    }
-//
-//    private void checkMulti(List<String> inputs, String format, String... expected) {
-//        final List<String> expectedList = new ArrayList<>();
-//        Collections.addAll(expectedList, expected);
-//        final List<String> parsed = ParameterParser.parse(inputs, format);
-//        assertEquals(expectedList, parsed, "Unexpected results for format " + format);
-//    }
 }
