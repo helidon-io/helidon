@@ -35,8 +35,8 @@ import io.helidon.openapi.ParameterParserImpl.SpaceDelimitedParser;
  * <p>
  * In OpenAPI, parameters are formatted according to a subset of
  * https://tools.ietf.org/html/rfc6570, using several different styles. Which
- * styles are valid depends on its location (where the parameter appears:
- * header, path, query parameter, cookie).
+ * styles are valid for a parameter depends on its location (where the parameter
+ * appears: header, path, query parameter, cookie).
  * <p>
  * Instantiate this class, using the {@code Builder}, once for each separate
  * parameter. An instance can be reused for parsing that same parameter in
@@ -173,12 +173,13 @@ interface ParameterParser {
         }
 
         /**
-         * Returns the {@code Location} value that matches the specified location
-         * name.
+         * Returns the {@code Location} value that matches the specified
+         * location name.
          *
          * @param locationName
          * @return matching {@code Location}
-         * @throws IllegalArgumentException if the name matches no {@code Location}
+         * @throws IllegalArgumentException if the name matches no
+         * {@code Location}
          */
         static Location match(String locationName) {
             return Enum.valueOf(Location.class, locationName.toUpperCase(Locale.ENGLISH));
@@ -234,7 +235,8 @@ interface ParameterParser {
          *
          * @param paramName parameter name that will be parsed
          * @param exploded whether exploded format is used
-         * @return a {@code ParameterParser} properly configured for this {@code Style}
+         * @return a {@code ParameterParser} properly configured for this
+         * {@code Style}
          */
         ParameterParser parser(String paramName, boolean exploded) {
             return factory.apply(paramName, exploded);
