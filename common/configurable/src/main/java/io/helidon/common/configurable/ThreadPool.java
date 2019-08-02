@@ -522,11 +522,11 @@ public class ThreadPool extends ThreadPoolExecutor {
     }
 
     static final class DynamicPoolWorkQueue extends WorkQueue {
-        private final Predicate<ThreadPool> growthPolicy;
-        private final int maxPoolSize;
-        // We can't make this final because it is a circular dependency, but we set it during the construction of
-        // the pool itself and therefore don't have to worry about concurrent access. It must be transient
-        // since LinkedBlockingQueue is serializable.
+        private static final long serialVersionUID = 5677509198003139200L;
+        private final transient Predicate<ThreadPool> growthPolicy;
+        private final transient int maxPoolSize;
+        // We can't make pool final because it is a circular dependency, but we set it during the construction of
+        // the pool itself and therefore don't have to worry about concurrent access.
         private transient ThreadPool pool;
 
         DynamicPoolWorkQueue(Predicate<ThreadPool> growthPolicy, int capacity, int maxPoolSize) {
@@ -679,12 +679,12 @@ public class ThreadPool extends ThreadPoolExecutor {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             final Event event = (Event) o;
-            return time == event.time &&
-                   threads == event.threads &&
-                   activeThreads == event.activeThreads &&
-                   queueSize == event.queueSize &&
-                   completedTasks == event.completedTasks &&
-                   type == event.type;
+            return time == event.time
+                   && threads == event.threads
+                   && activeThreads == event.activeThreads
+                   && queueSize == event.queueSize
+                   && completedTasks == event.completedTasks
+                   && type == event.type;
         }
 
         @Override
