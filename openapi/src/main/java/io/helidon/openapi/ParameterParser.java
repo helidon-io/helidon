@@ -215,11 +215,12 @@ interface ParameterParser {
             throw new IllegalArgumentException("Cannot find ParameterParser.Style matching style name " + styleName);
         }
 
-        private String styleName = name().toLowerCase(Locale.ENGLISH);
+        private final String styleName;
         private final BiFunction<String, Boolean, ParameterParserImpl> factory;
 
         Style(BiFunction<String, Boolean, ParameterParserImpl> factory) {
             this.factory = factory;
+            styleName = name().toLowerCase(Locale.ENGLISH);
         }
 
         Style(BiFunction<String, Boolean, ParameterParserImpl> factory, String styleName) {
