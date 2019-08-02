@@ -27,7 +27,7 @@ By default, the server uses the MicroProfile Config, but you may also want to us
 There are 3 default MicroProfile Config sources:
 
 * `System.getProperties()`
-* `System.getenv()` 
+* `System.getenv()`
 * all `META-INF/microprofile-config.properties` files on the class path
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
@@ -48,7 +48,7 @@ server.backlog: 512
 server.receive-buffer: 256
 # Socket timeout milliseconds - defaults to 0 (infinite)
 server.timeout: 30000
-# Default is CPU_COUNT * 2
+# Defaults to Runtime.availableProcessors()
 server.workers=4
 # Default is not to use SSL
 ssl:
