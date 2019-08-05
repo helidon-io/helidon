@@ -81,4 +81,32 @@ class LruCacheTest {
         res = theCache.get(10);
         assertThat(res, is(Optional.of(10)));
     }
+
+    @Test
+    void testLruBehavior() {
+        LruCache<Integer, Integer> theCache =  LruCache.<Integer, Integer>builder().capacity(10).build();
+        for (int i = 0; i < 10; i++) {
+            // insert all
+            theCache.put(i, i);
+        }
+        for (int i = 0; i < 10; i++) {
+            // use them in ascending order
+            Optional<Integer> integer = theCache.get(i);
+            assertThat(integer, is(Optional.of(i)));
+        }
+        // now use 0
+        Optional<Integer> value = theCache.get(0);
+        assertThat(value, is(Optional.of(0)));
+
+        theCache.put(10, 10);
+
+        // 0 should be in
+        value = theCache.get(0);
+        assertThat(value, is(Optional.of(0)));
+
+        // 1 should not
+        value = theCache.get(1);
+        assertThat(value, is(Optional.empty()));
+
+    }
 }
