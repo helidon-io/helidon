@@ -82,10 +82,31 @@ public final class LruCache<K, V> {
      */
     public Optional<V> get(K key) {
         readLock.lock();
+
+        V value = backingMap.get(key);
+        readLock.unlock();
+
+        if (null == value) {
+            return Optional.empty();
+        }
+
+        writeLock.lock();
         try {
-            return Optional.ofNullable(backingMap.get(key));
+            // make sure the value is the last in the map (I do ignore a race here, as it is not significant)
+            // if some other thread moved another record to the front, we just move ours before it
+
+            // TODO this hurts - we just need to move the key to the last position
+            // maybe this should be replaced with a list and a map?
+            value = backingMap.get(key);
+            if (null == value) {
+                return Optional.empty();
+            }
+            backingMap.remove(key);
+            backingMap.put(key, value);
+
+            return Optional.of(value);
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
