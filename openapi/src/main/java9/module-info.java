@@ -17,6 +17,7 @@
 
 module io.helidon.openapi {
     requires java.logging;
+    requires java.xml.bind;
 
     requires io.helidon.common;
     requires io.helidon.config;
