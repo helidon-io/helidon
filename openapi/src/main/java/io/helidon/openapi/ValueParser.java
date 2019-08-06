@@ -34,30 +34,12 @@ public interface ValueParser {
     ValueParser PARSER = new ValueParserImpl();
 
     /**
-     * Returns the method name of the converter method
-     * given the datatype to be converted. Primarily useful for code generation.
-     *
-     * @param datatype name of the datatype to be converted
-     * @return name of the method that converts the datatype; null if none
-     */
-    String converterMethod(String datatype);
-
-    /**
-     * Returns the method name of the converter method for
-     * the datatype and format specified. Primarily useful for code generation.
-     * @param datatype datatype name to be converted
-     * @param format format name to be converted
-     * @return name of the method that converts the datatype/format
-     */
-    String converterMethod(String datatype, String format);
-
-    /**
      * Parses an {@code int}.
      *
      * @param value String to be parsed
      * @return the resulting {@code int}
      */
-    int integer(String value);
+    int parseInteger(String value);
 
     /**
      * Parses an {@code int} specified with 32-bit format.
@@ -65,7 +47,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code int}
      */
-    int integerInt32(String value);
+    int parseIntegerInt32(String value);
 
     /**
      * Parses a {@code long}.
@@ -73,7 +55,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code long}
      */
-    long integerInt64(String value);
+    long parseIntegerInt64(String value);
 
     /**
      * Parses a number as the default {@code double}.
@@ -81,7 +63,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code double}
      */
-    double number(String value);
+    double parseNumber(String value);
 
     /**
      * Parses a {@code float}.
@@ -89,7 +71,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code float}
      */
-    float numberFloat(String value);
+    float parseNumberFloat(String value);
 
     /**
      * Parses a number specified as a {@code double}.
@@ -97,7 +79,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code double}
      */
-    double numberDouble(String value);
+    double parseNumberDouble(String value);
 
     /**
      * Parses as a default {@code String}.
@@ -105,14 +87,14 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the String itself
      */
-    String string(String value);
+    String parseString(String value);
 
     /**
      * Parses a base64-encoded string as a {@code byte[]}.
      * @param value String to be parsed
      * @return the resulting {@code byte[]}
      */
-    byte[] stringByte(String value);
+    byte[] parseStringByte(String value);
 
     /**
      * Parses a hex-encoded string as a {@code byte[]}.
@@ -120,7 +102,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code byte[]}
      */
-    byte[] stringBinary(String value);
+    byte[] parseStringBinary(String value);
 
     /**
      * Parses a {@code boolean}.
@@ -128,7 +110,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code boolean}
      */
-    boolean bool(String value);
+    boolean parseBoolean(String value);
 
     /**
      * Parses a date in the RFC3339 full-date format as a {@code Date}.
@@ -137,7 +119,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code Date}
      */
-    Date date(String value);
+    Date parseStringDate(String value);
 
     /**
      * Parses a date in the RFC3339 date-time format as a {@code Date}.
@@ -147,8 +129,7 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting {@code Date}
      */
-    // date-time       = full-date "T" full-time
-    Date dateDateTime(String value);
+    Date parseStringDateDateTime(String value);
 
     /**
      * Parses a password.
@@ -156,6 +137,6 @@ public interface ValueParser {
      * @param value String to be parsed
      * @return the resulting character array
      */
-    char[] stringPassword(String value);
+    char[] parseStringPassword(String value);
 
 }

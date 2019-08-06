@@ -34,125 +34,125 @@ public class ValueParserTest {
 
     @Test
     public void testInteger() throws Exception {
-        int i = PARSER.integer("4");
+        int i = PARSER.parseInteger("4");
         assertEquals(4, i);
-        i = PARSER.integer("-2");
+        i = PARSER.parseInteger("-2");
         assertEquals(-2, i);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.integer("2.3");
+            PARSER.parseInteger("2.3");
         });
     }
 
     @Test
     public void testIntegerInt32() {
-        int i = PARSER.integerInt32("4");
+        int i = PARSER.parseIntegerInt32("4");
         assertEquals(4, i);
-        i = PARSER.integerInt32("-2");
+        i = PARSER.parseIntegerInt32("-2");
         assertEquals(-2, i);
 
         assertThrows(IllegalArgumentException.class, () -> {
-                PARSER.integerInt32("2.3");
+                PARSER.parseIntegerInt32("2.3");
         });
     }
 
     @Test
     public void testIntegerInt64() {
-        long l = PARSER.integerInt64("4");
+        long l = PARSER.parseIntegerInt64("4");
         assertEquals(4l, l);
-        l = PARSER.integerInt64("-2");
+        l = PARSER.parseIntegerInt64("-2");
         assertEquals(-2l, l);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.integerInt64("2.3");
+            PARSER.parseIntegerInt64("2.3");
         });
     }
 
     @Test
     public void testNumber() {
-        double d = PARSER.number("1.3");
+        double d = PARSER.parseNumber("1.3");
         assertEquals(1.3d, d);
-        d = PARSER.number("-1.4");
+        d = PARSER.parseNumber("-1.4");
         assertEquals(-1.4d, d);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.number("junk");
+            PARSER.parseNumber("junk");
         });
     }
 
     @Test
     public void testNumberDouble() {
-        double d = PARSER.number("1.3");
+        double d = PARSER.parseNumber("1.3");
         assertEquals(1.3d, d);
-        d = PARSER.number("-1.4");
+        d = PARSER.parseNumber("-1.4");
         assertEquals(-1.4d, d);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.number("junk");
+            PARSER.parseNumber("junk");
         });
     }
 
     @Test
     public void testNumberFloat() {
-        float f = PARSER.numberFloat("1.3");
+        float f = PARSER.parseNumberFloat("1.3");
         assertEquals(1.3f, f);
-        f = PARSER.numberFloat("-1.4");
+        f = PARSER.parseNumberFloat("-1.4");
         assertEquals(-1.4f, f);
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.number("junk");
+            PARSER.parseNumber("junk");
         });
     }
 
     @Test
     public void testString() {
-        String s = PARSER.string("hi");
+        String s = PARSER.parseString("hi");
         assertEquals("hi", s);
     }
 
     @Test
     public void testStringByte() {
-        byte[] b = PARSER.stringByte("SGkgdGhlcmU=");
+        byte[] b = PARSER.parseStringByte("SGkgdGhlcmU=");
         assertArrayEquals("Hi there".getBytes(), b);
     }
 
     @Test
     public void testStringBinary() {
-        byte[] b = PARSER.stringBinary("476F6F646279652068657265");
+        byte[] b = PARSER.parseStringBinary("476F6F646279652068657265");
         assertArrayEquals("Goodbye here".getBytes(), b);
     }
 
     @Test
     public void testBoolean() {
-        boolean b = PARSER.bool("true");
+        boolean b = PARSER.parseBoolean("true");
         assertTrue(b);
-        b = PARSER.bool("TRUE");
+        b = PARSER.parseBoolean("TRUE");
         assertTrue(b);
-        b = PARSER.bool("false");
+        b = PARSER.parseBoolean("false");
         assertFalse(b);
-        b = PARSER.bool("FALSE");
+        b = PARSER.parseBoolean("FALSE");
         assertFalse(b);
 
-        b = PARSER.bool("junk");
+        b = PARSER.parseBoolean("junk");
         assertFalse(b);
     }
 
     @Test
     public void testStringDate() {
-        Date d = PARSER.date("2019-08-01");
+        Date d = PARSER.parseStringDate("2019-08-01");
         Calendar c = new Calendar.Builder()
                 .setDate(2019, 7 /* 0-based! */, 1)
                 .build();
         assertEquals(c.toInstant(), d.toInstant());
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.date("a-b-c");
+            PARSER.parseStringDate("a-b-c");
         });
     }
 
     @Test
     public void testStringDateDateTime() {
-        Date d = PARSER.dateDateTime("2019-08-01T12:34:56.987Z+00:00");
+        Date d = PARSER.parseStringDateDateTime("2019-08-01T12:34:56.987Z+00:00");
         Calendar c = new Calendar.Builder()
                 .setTimeZone(TimeZone.getTimeZone("Z+0"))
                 .setDate(2019, 7, 1)
@@ -161,13 +161,13 @@ public class ValueParserTest {
         assertEquals(c.toInstant(), d.toInstant());
 
         assertThrows(IllegalArgumentException.class, () -> {
-            PARSER.dateDateTime("a-b-cTw:x;y");
+            PARSER.parseStringDateDateTime("a-b-cTw:x;y");
         });
     }
 
     @Test
     public void testStringPassword() {
-        char[] pw = PARSER.stringPassword("hello");
+        char[] pw = PARSER.parseStringPassword("hello");
         assertArrayEquals("hello".toCharArray(), pw);
     }
 }

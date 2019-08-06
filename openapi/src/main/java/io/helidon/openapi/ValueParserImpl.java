@@ -38,122 +38,67 @@ public class ValueParserImpl implements ValueParser {
             new SimpleDateFormat(FULL_DATE_FORMAT_STRING);
 
     @Override
-    public String converterMethod(String datatype) {
-        switch (datatype) {
-            case "integer":
-            case "number":
-            case "string":
-                return datatype;
-            case "boolean":
-                return "bool";
-            default:
-                return null;
-        }
+    public int parseInteger(String value) throws NumberFormatException {
+        return parseIntegerInt32(value);
     }
 
     @Override
-    public String converterMethod(String datatype, String format) {
-        switch (datatype) {
-            case "integer":
-                switch (format) {
-                    case "int32":
-                        return "integerInt32";
-                    case "int64":
-                        return "integerInt64";
-                    default:
-                        return null;
-                }
-            case "number":
-                switch (format) {
-                    case "float":
-                        return "numberFloat";
-                    case "double":
-                        return "numberDouble";
-                    default:
-                        return null;
-                }
-            case "string":
-                switch (format) {
-                    case "byte":
-                        return "stringByte";
-                    case "binary":
-                        return "stringBinary";
-                    case "date":
-                        return "stringDate";
-                    case "date-time":
-                        return "stringDateTime";
-                    case "password":
-                        return "stringPassword";
-                    default:
-                        return null;
-                }
-            default:
-                return null;
-        }
+    public int parseIntegerInt32(String value) throws NumberFormatException {
+        return Integer.valueOf(value);
     }
 
     @Override
-    public int integer(String value) throws NumberFormatException {
-        return integerInt32(value);
+    public long parseIntegerInt64(String value) throws NumberFormatException {
+        return Long.valueOf(value);
     }
 
     @Override
-    public int integerInt32(String value) throws NumberFormatException {
-        return Integer.parseInt(value);
+    public double parseNumber(String value) throws NumberFormatException {
+        return Double.valueOf(value);
     }
 
     @Override
-    public long integerInt64(String value) throws NumberFormatException {
-        return Long.parseLong(value);
+    public float parseNumberFloat(String value) throws NumberFormatException {
+        return Float.valueOf(value);
     }
 
     @Override
-    public double number(String value) throws NumberFormatException {
-        return Double.parseDouble(value);
+    public double parseNumberDouble(String value) throws NumberFormatException {
+        return Double.valueOf(value);
     }
 
     @Override
-    public float numberFloat(String value) throws NumberFormatException {
-        return Float.parseFloat(value);
-    }
-
-    @Override
-    public double numberDouble(String value) throws NumberFormatException {
-        return Double.parseDouble(value);
-    }
-
-    @Override
-    public String string(String value) {
+    public String parseString(String value) {
         return value;
     }
 
     @Override
-    public byte[] stringByte(String value) throws IllegalArgumentException {
+    public byte[] parseStringByte(String value) throws IllegalArgumentException {
         return Base64.getDecoder().decode(value);
     }
 
     @Override
-    public byte[] stringBinary(String value) throws IllegalArgumentException {
+    public byte[] parseStringBinary(String value) throws IllegalArgumentException {
         return DatatypeConverter.parseHexBinary(value);
     }
 
     @Override
-    public boolean bool(String value) throws NumberFormatException {
-        return Boolean.parseBoolean(value);
+    public boolean parseBoolean(String value) throws NumberFormatException {
+        return Boolean.valueOf(value);
     }
 
     @Override
-    public Date date(String value) {
+    public Date parseStringDate(String value) {
         return parseDate(FULL_DATE_FORMAT, value);
     }
 
     @Override
-    public Date dateDateTime(String value) {
+    public Date parseStringDateDateTime(String value) {
          return parseDate(DATE_TIME_FORMAT, value);
     }
 
     @Override
-    public char[] stringPassword(String value) {
+    public char[] parseStringPassword(String value) {
         return value.toCharArray();
     }
 
