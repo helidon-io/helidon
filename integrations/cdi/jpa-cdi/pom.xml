@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>1.2.0-SNAPSHOT</version>
+        <version>1.2.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-jpa</artifactId>
     <name>Helidon CDI Integrations JPA</name>
@@ -32,7 +32,7 @@
     <properties>
       <doclint>-syntax</doclint>
     </properties>
-    
+
     <dependencies>
         <!-- Test-scoped dependencies. -->
         <dependency>
@@ -46,8 +46,42 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-cdi</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -79,10 +113,88 @@
             <artifactId>javax.transaction-api</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Compile-scoped dependencies. -->
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-delegates</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <sourceFileExcludes>
+                            <!--
+                                The eclipselink-maven-plugin's
+                                modelgen goal (see below) irrevocably
+                                adds its generatedSourcesDirectory to
+                                the source roots processed by the
+                                maven-javadoc-plugin.  We need to
+                                exclude these static metamodel sources
+                                because in our case they reference
+                                unit-test-only files.  Note that these
+                                source roots are added to the javadoc
+                                *report*, not just its "generate test
+                                javadocs" goal, and even though the
+                                sources from which they are generated
+                                are only found under src/test/java.
+                            -->
+                            <sourceFileExclude>**/*_.java</sourceFileExclude>
+                        </sourceFileExcludes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>com.ethlo.persistence.tools</groupId>
+                <artifactId>eclipselink-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-api</artifactId>
+                        <version>${version.lib.junit}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>weave</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>weave</goal>
+                        </goals>
+                        <configuration>
+                            <persistenceInfoLocation>${project.build.testOutputDirectory}</persistenceInfoLocation>
+                            <source>${project.build.testOutputDirectory}</source>
+                            <target>${project.build.testOutputDirectory}</target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>modelgen</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>modelgen</goal>
+                        </goals>
+                        <configuration>
+                            <source>${project.build.testSourceDirectory}</source>
+                            <generatedSourcesDirectory>${project.build.directory}/generated-test-sources/apt</generatedSourcesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jvnet.jaxb2.maven2</groupId>
                 <artifactId>maven-jaxb2-plugin</artifactId>
@@ -98,11 +210,11 @@
                             <schemas>
                                 <schema>
                                     <dependencyResource>
-  			                                <groupId>jakarta.persistence</groupId>
-			                                  <artifactId>jakarta.persistence-api</artifactId>
-			                                  <resource>javax/persistence/persistence_2_2.xsd</resource>
-		                                </dependencyResource>
-	                              </schema>
+                                        <groupId>jakarta.persistence</groupId>
+                                        <artifactId>jakarta.persistence-api</artifactId>
+                                        <resource>javax/persistence/persistence_2_2.xsd</resource>
+                                    </dependencyResource>
+                                </schema>
                             </schemas>
                             <strict>false</strict>
                         </configuration>
@@ -121,6 +233,15 @@
                         <phase>process-classes</phase>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
