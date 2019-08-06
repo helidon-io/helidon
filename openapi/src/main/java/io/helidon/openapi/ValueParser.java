@@ -21,6 +21,10 @@ import java.util.Date;
 /**
  * Parses strings into Java types according to the the datatypes and formats
  * supported by OpenAPI.
+ * <p>
+ * All methods that actually convert text to data (that is, methods other than
+ * {@code converterMethod}) can throw an {@code IllegalArgumentException} if
+ * the supplied value cannot be converted.
  */
 public interface ValueParser {
 
