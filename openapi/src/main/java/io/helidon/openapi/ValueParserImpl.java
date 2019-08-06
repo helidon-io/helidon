@@ -44,27 +44,27 @@ public class ValueParserImpl implements ValueParser {
 
     @Override
     public int parseIntegerInt32(String value) throws NumberFormatException {
-        return Integer.valueOf(value);
+        return Integer.parseInt(value);
     }
 
     @Override
     public long parseIntegerInt64(String value) throws NumberFormatException {
-        return Long.valueOf(value);
+        return Long.parseLong(value);
     }
 
     @Override
     public double parseNumber(String value) throws NumberFormatException {
-        return Double.valueOf(value);
+        return Double.parseDouble(value);
     }
 
     @Override
     public float parseNumberFloat(String value) throws NumberFormatException {
-        return Float.valueOf(value);
+        return Float.parseFloat(value);
     }
 
     @Override
     public double parseNumberDouble(String value) throws NumberFormatException {
-        return Double.valueOf(value);
+        return Double.parseDouble(value);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class ValueParserImpl implements ValueParser {
 
     @Override
     public boolean parseBoolean(String value) throws NumberFormatException {
-        return Boolean.valueOf(value);
+        return Boolean.parseBoolean(value);
     }
 
     @Override
