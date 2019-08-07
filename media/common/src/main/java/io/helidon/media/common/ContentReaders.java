@@ -66,13 +66,11 @@ public final class ContentReaders {
     }
 
     /**
-     * For basic charsets, returns a cached {@link StringBodyReader} instance or
-     * create a new instance otherwise.
+     * Get a reader that converts a {@link DataChunk} publisher to a
+     * {@link String}.
      *
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
-     * @deprecated use {@link #readString(Publisher, Charset)} instead
-     * instead
      */
     public static io.helidon.common.http.Reader<String> stringReader(
             Charset charset) {
@@ -101,7 +99,6 @@ public final class ContentReaders {
      * {@link InputStream#read()}) block.
      *
      * @return a input stream content reader
-     * @deprecated use {@link PublisherInputStream} instead
      */
     public static io.helidon.common.http.Reader<InputStream> inputStreamReader() {
         return (publisher, clazz) -> CompletableFuture
