@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-media-jsonp-common</artifactId>
+    <name>Helidon Media JSON-P Common</name>
 
     <dependencies>
         <dependency>
