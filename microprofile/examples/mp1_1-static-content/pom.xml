@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.examples</groupId>
         <artifactId>examples-project</artifactId>
-        <version>0.10.5</version>
+        <version>0.10.6-SNAPSHOT</version>
     </parent>
     <artifactId>mp1_1-static-content</artifactId>
     <name>Helidon Microprofile Examples MP 1.1 Static Content</name>

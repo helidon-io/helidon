@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security.examples</groupId>
         <artifactId>helidon-security-examples-project</artifactId>
-        <version>0.10.5</version>
+        <version>0.10.6-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-examples-webserver-signatures</artifactId>
     <name>Helidon Security Examples HTTP Signatures</name>

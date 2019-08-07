@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.security</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
-        <version>0.10.5</version>
+        <version>0.10.6-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-security-provider-google-login</artifactId>
     <name>Helidon Security Providers Google Login</name>

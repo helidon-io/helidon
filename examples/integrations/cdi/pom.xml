@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
-        <version>0.10.5</version>
+        <version>0.10.6-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.integrations.examples</groupId>
