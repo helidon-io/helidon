@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.net.InetAddress;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ForkJoinPool;
@@ -30,16 +31,13 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Flow.Subscription;
+import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.SubmissionPublisher;
 
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Subscription;
-import reactor.core.publisher.BaseSubscriber;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.SignalType;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -49,6 +47,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * The NettyWebServerTest.
  */
@@ -63,8 +62,11 @@ public class NettyWebServerTest {
      * </code></pre>
      * <p>
      * To show how the request body is handled in chunks, do<ol>
-     * <li>Add {@code Thread.sleap(1000) to {@link BaseSubscriber#hookOnNext(Object)}} bellow</li>
-     * <li>And then disable request chunks by enabling {@link io.netty.handler.codec.http.HttpObjectAggregator} in
+     * <li>Add
+     * {@code Thread.sleap(1000) to {@link BaseSubscriber#hookOnNext(Object)}}
+     * bellow</li>
+     * <li>And then disable request chunks by enabling
+     * {@link io.netty.handler.codec.http.HttpObjectAggregator} in
      * {@link HttpInitializer#initChannel(io.netty.channel.socket.SocketChannel)}</li>
      * </ol>
      *
@@ -77,59 +79,48 @@ public class NettyWebServerTest {
                     long id = new SecureRandom().nextLong();
                     System.out.println("Received request .. ID: " + id);
 
-                    Flux<DataChunk> publisher = ReactiveStreamsAdapter.publisherFromFlow(breq.bodyPublisher());
-
-                    SubmissionPublisher<DataChunk> responsePublisher = new SubmissionPublisher<>(ForkJoinPool.commonPool(),
-                                                                                                 1024);
+                    SubmissionPublisher<DataChunk> responsePublisher =
+                            new SubmissionPublisher<>(ForkJoinPool.commonPool(),
+                                    1024);
                     responsePublisher.subscribe(bres);
 
+                    final AtomicReference<Subscription> subscription =
+                            new AtomicReference<>();
+
                     // Read request and immediately write to response
-                    publisher.subscribe(new BaseSubscriber<DataChunk>() {
+                    Multi.from(breq.bodyPublisher()).subscribe((DataChunk chunk) -> {
+                        DataChunk responseChunk = DataChunk.create(true,
+                                chunk.data(), chunk::release);
+                        responsePublisher.submit(responseChunk);
 
-                        private volatile Subscription subscription;
-
-                        @Override
-                        protected void hookOnSubscribe(Subscription subscription) {
-                            System.out.println("Subscribe");
-                            this.subscription = subscription;
-
-                            request(1L);
-
-                            bres.writeStatusAndHeaders(Http.Status.CREATED_201, Collections.emptyMap());
-                        }
-
-                        @Override
-                        protected void hookOnNext(DataChunk chunk) {
-                            DataChunk responseChunk = DataChunk.create(true, chunk.data(), chunk::release);
-                            responsePublisher.submit(responseChunk);
-
-                            ForkJoinPool.commonPool().submit(() -> {
-                                try {
-                                    Thread.sleep(1);
-                                    subscription.request(ThreadLocalRandom.current().nextLong(1, 3));
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    throw new IllegalStateException(e);
-                                }
-                            });
-
-                        }
-
-                        @Override
-                        protected void hookFinally(SignalType type) {
-                            System.out.println("Final execution");
-                            responsePublisher.close();
-                        }
-
-                        @Override
-                        protected void hookOnError(Throwable throwable) {
-                            LOGGER.log(Level.WARNING, "An error occurred during the flow consumption!", throwable);
-                        }
+                        ForkJoinPool.commonPool().submit(() -> {
+                            try {
+                                Thread.sleep(1);
+                                subscription.get().request(
+                                        ThreadLocalRandom.current()
+                                                .nextLong(1, 3));
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new IllegalStateException(e);
+                            }
+                        });
+                    }, (Throwable ex) -> {
+                        LOGGER.log(Level.WARNING,
+                                "An error occurred during the flow consumption!",
+                                ex);
+                    }, () -> {
+                        System.out.println("Final execution");
+                        responsePublisher.close();
+                    }, (Subscription s) -> {
+                        System.out.println("Subscribe");
+                        subscription.set(s);
+                        s.request(1);
+                        bres.writeStatusAndHeaders(Http.Status.CREATED_201,
+                                Collections.emptyMap());
                     });
                 }));
 
         webServer.start();
-
         Thread.currentThread().join();
     }
 
@@ -146,7 +137,8 @@ public class NettyWebServerTest {
 
     @Test
     public void testShutdown() throws Exception {
-        WebServer webServer = WebServer.create(routing((bareRequest, bareResponse) -> {
+        WebServer webServer = WebServer.create(
+                routing((bareRequest, bareResponse) -> {
         }));
 
         long startNanos = System.nanoTime();
@@ -155,10 +147,12 @@ public class NettyWebServerTest {
         webServer.shutdown().toCompletableFuture().get(10, TimeUnit.SECONDS);
         long endNanos = System.nanoTime();
 
-        System.out.println("Start took: " + TimeUnit.MILLISECONDS.convert(shutdownStartNanos - startNanos,
-                                                                          TimeUnit.NANOSECONDS) + " ms.");
-        System.out.println("Shutdown took: " + TimeUnit.MILLISECONDS.convert(endNanos - shutdownStartNanos,
-                                                                             TimeUnit.NANOSECONDS) + " ms.");
+        System.out.println("Start took: "
+                + TimeUnit.MILLISECONDS.convert(shutdownStartNanos - startNanos,
+                TimeUnit.NANOSECONDS) + " ms.");
+        System.out.println("Shutdown took: "
+                + TimeUnit.MILLISECONDS.convert(endNanos - shutdownStartNanos,
+                TimeUnit.NANOSECONDS) + " ms.");
     }
 
     @Test
@@ -171,8 +165,10 @@ public class NettyWebServerTest {
 
         try {
             assertThat(webServer.port(), greaterThan(0));
-            assertThat(webServer.configuration().sockets().entrySet(), IsCollectionWithSize.hasSize(1));
-            assertThat(webServer.configuration().sockets().get(ServerConfiguration.DEFAULT_SOCKET_NAME).port(),
+            assertThat(webServer.configuration().sockets().entrySet(),
+                    IsCollectionWithSize.hasSize(1));
+            assertThat(webServer.configuration().sockets()
+                    .get(ServerConfiguration.DEFAULT_SOCKET_NAME).port(),
                        Is.is(webServer.configuration().port()));
         } finally {
             webServer.shutdown()
@@ -184,33 +180,37 @@ public class NettyWebServerTest {
     @Test
     public void testMultiplePortsSuccessStart() throws Exception {
         WebServer webServer = WebServer.create(ServerConfiguration.builder()
-                                                                  .addSocket("1", (SocketConfiguration) null)
-                                                                  .addSocket("2", (SocketConfiguration) null)
-                                                                  .addSocket("3", (SocketConfiguration) null)
-                                                                  .addSocket("4", (SocketConfiguration) null),
-                                               Routing.builder());
+                .addSocket("1", (SocketConfiguration) null)
+                .addSocket("2", (SocketConfiguration) null)
+                .addSocket("3", (SocketConfiguration) null)
+                .addSocket("4", (SocketConfiguration) null),
+                Routing.builder());
 
         webServer.start()
-                 .toCompletableFuture()
-                 .join();
+                .toCompletableFuture()
+                .join();
 
         try {
             assertThat(webServer.port(), greaterThan(0));
-            assertThat(webServer.port("1"), allOf(greaterThan(0), not(webServer.port())));
+            assertThat(webServer.port("1"), allOf(greaterThan(0),
+                    not(webServer.port())));
             assertThat(webServer.port("2"),
-                       allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1"))));
+                    allOf(greaterThan(0), not(webServer.port()),
+                            not(webServer.port("1"))));
             assertThat(webServer.port("3"),
-                       allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1")), not(webServer.port("2"))));
+                    allOf(greaterThan(0), not(webServer.port()),
+                            not(webServer.port("1")),
+                            not(webServer.port("2"))));
             assertThat(webServer.port("4"),
-                       allOf(greaterThan(0),
-                             not(webServer.port()),
-                             not(webServer.port("1")),
-                             not(webServer.port("2")),
-                             not(webServer.port("3"))));
+                    allOf(greaterThan(0),
+                            not(webServer.port()),
+                            not(webServer.port("1")),
+                            not(webServer.port("2")),
+                            not(webServer.port("3"))));
         } finally {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .join();
+                    .toCompletableFuture()
+                    .join();
         }
     }
 
@@ -219,8 +219,8 @@ public class NettyWebServerTest {
         int samePort = 9999;
         WebServer webServer = WebServer.create(
                 ServerConfiguration.builder()
-                                   .port(samePort)
-                                   .addSocket("third", SocketConfiguration.builder().port(samePort)),
+                        .port(samePort)
+                        .addSocket("third", SocketConfiguration.builder().port(samePort)),
                 Routing.builder());
 
         assertStartFailure(webServer);
@@ -231,39 +231,43 @@ public class NettyWebServerTest {
         int samePort = 9999;
         WebServer webServer = WebServer.create(
                 ServerConfiguration.builder()
-                                   .port(samePort)
-                                   .addSocket("1", (SocketConfiguration) null)
-                                   .addSocket("2", SocketConfiguration.builder().port(samePort))
-                                   .addSocket("3", (SocketConfiguration) null)
-                                   .addSocket("4", (SocketConfiguration) null)
-                                   .addSocket("5", (SocketConfiguration) null)
-                                   .addSocket("6", (SocketConfiguration) null),
+                        .port(samePort)
+                        .addSocket("1", (SocketConfiguration) null)
+                        .addSocket("2", SocketConfiguration.builder().port(samePort))
+                        .addSocket("3", (SocketConfiguration) null)
+                        .addSocket("4", (SocketConfiguration) null)
+                        .addSocket("5", (SocketConfiguration) null)
+                        .addSocket("6", (SocketConfiguration) null),
                 Routing.builder());
 
         assertStartFailure(webServer);
     }
 
-    private void assertStartFailure(WebServer webServer) throws InterruptedException {
+    private void assertStartFailure(WebServer webServer)
+            throws InterruptedException {
+
         try {
             webServer.start()
-                     .toCompletableFuture()
-                     .join();
+                    .toCompletableFuture()
+                    .join();
 
             fail("Should have failed!");
         } catch (CompletionException e) {
-            assertThat(e.getMessage(), containsString("WebServer was unable to start"));
-            CompletableFuture<WebServer> shutdownFuture = webServer.whenShutdown().toCompletableFuture();
+            assertThat(e.getMessage(),
+                    containsString("WebServer was unable to start"));
+            CompletableFuture<WebServer> shutdownFuture = webServer
+                    .whenShutdown().toCompletableFuture();
             assertThat("Shutdown future not as expected: " + shutdownFuture,
-                       shutdownFuture.isDone() && !shutdownFuture.isCompletedExceptionally(),
-                       is(true));
+                    shutdownFuture.isDone()
+                            && !shutdownFuture.isCompletedExceptionally(),
+                    is(true));
 
         } catch (Exception e) {
-            e.printStackTrace();
-            fail("No other exception expected!");
+            fail("No other exception expected!", e);
         } finally {
             webServer.shutdown()
-                     .toCompletableFuture()
-                     .join();
+                    .toCompletableFuture()
+                    .join();
         }
     }
 
@@ -271,12 +275,12 @@ public class NettyWebServerTest {
     public void unpairedRoutingCausesAFailure() throws Exception {
         try {
             WebServer webServer = WebServer.builder(Routing.builder())
-                                           .config(ServerConfiguration.builder()
-                                                                             .addSocket("matched", SocketConfiguration.builder()))
-                                           .addNamedRouting("unmatched-first", Routing.builder())
-                                           .addNamedRouting("matched", Routing.builder())
-                                           .addNamedRouting("unmatched-second", Routing.builder())
-                                           .build();
+                    .config(ServerConfiguration.builder()
+                            .addSocket("matched", SocketConfiguration.builder()))
+                    .addNamedRouting("unmatched-first", Routing.builder())
+                    .addNamedRouting("matched", Routing.builder())
+                    .addNamedRouting("unmatched-second", Routing.builder())
+                    .build();
 
             fail("Should have thrown an exception: " + webServer);
         } catch (IllegalStateException e) {
@@ -288,10 +292,10 @@ public class NettyWebServerTest {
     @Test
     public void additionalPairedRoutingsDoWork() throws Exception {
         WebServer webServer = WebServer.builder(Routing.builder())
-                                       .config(ServerConfiguration.builder()
-                                                                         .addSocket("matched", SocketConfiguration.builder()))
-                                       .addNamedRouting("matched", Routing.builder())
-                                       .build();
+                .config(ServerConfiguration.builder()
+                        .addSocket("matched", SocketConfiguration.builder()))
+                .addNamedRouting("matched", Routing.builder())
+                .build();
 
         assertThat(webServer.configuration().socket("matched"), notNullValue());
     }

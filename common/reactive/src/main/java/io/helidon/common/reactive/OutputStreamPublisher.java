@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Output stream that {@link io.helidon.common.reactive.Flow.Publisher publishes} any data written to it as {@link ByteBuffer}
+ * Output stream that {@link io.helidon.common.reactive.Flow.Publisher} publishes any data written to it as {@link ByteBuffer}
  * events.
  */
 @SuppressWarnings("WeakerAccess")

@@ -35,13 +35,11 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.ReadOnlyParameters;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Mono;
 import io.helidon.webserver.BareRequest;
 import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
-
-import reactor.core.publisher.Flux;
 
 /**
  * Client API designed to create request directly on {@link Routing} without a network layer.
@@ -157,7 +155,7 @@ public class TestClient {
             this.path = path;
             this.headers = new ReadOnlyParameters(headers).toMap();
             if (publisher == null) {
-                this.publisher = ReactiveStreamsAdapter.publisherToFlow(Flux.empty());
+                this.publisher = Mono.<DataChunk>empty();
             } else {
                 this.publisher = publisher;
             }

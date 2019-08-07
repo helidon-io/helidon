@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
-
-import io.helidon.common.http.DataChunk;
-import io.helidon.common.reactive.Flow;
+package io.helidon.common.reactive;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -26,15 +23,17 @@ import org.reactivestreams.Subscription;
 /**
  * The WrappedOriginThreadPublisher.
  */
-public class WrappedOriginThreadPublisher extends OriginThreadPublisher implements Publisher<DataChunk> {
+public class WrappedOriginThreadPublisher
+        extends OriginThreadPublisher<CharSequence, byte[]>
+        implements Publisher<CharSequence> {
 
     WrappedOriginThreadPublisher(UnboundedSemaphore semaphore) {
-        super(semaphore, new ReferenceHoldingQueue<>());
+        super(semaphore);
     }
 
     @Override
-    public void subscribe(Subscriber<? super DataChunk> subscriber) {
-        super.subscribe(new Flow.Subscriber<DataChunk>() {
+    public void subscribe(Subscriber<? super CharSequence> subscriber) {
+        super.subscribe(new Flow.Subscriber<CharSequence>() {
             @Override
             public void onSubscribe(Flow.Subscription flowSubscription) {
                 subscriber.onSubscribe(new Subscription() {
@@ -51,14 +50,8 @@ public class WrappedOriginThreadPublisher extends OriginThreadPublisher implemen
             }
 
             @Override
-            public void onNext(DataChunk item) {
-                try {
-                    subscriber.onNext(item);
-                } finally {
-                    // just for better logs sake, we're releasing the chunk because the TCK test
-                    // wouldn't do so
-                    item.release();
-                }
+            public void onNext(CharSequence item) {
+                subscriber.onNext(item);
             }
 
             @Override
@@ -71,6 +64,10 @@ public class WrappedOriginThreadPublisher extends OriginThreadPublisher implemen
                 subscriber.onComplete();
             }
         });
+    }
 
+    @Override
+    protected CharSequence wrap(byte[] item) {
+        return new String(item);
     }
 }

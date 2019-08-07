@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.media.common;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow;
 import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.media.common.PublisherInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +66,8 @@ public class PublisherInputStreamTest {
                 @Override
                 public void request(long n) {
                     if(n > 0){
-                        for(; delivered < n && delivered < chunks.length ; delivered ++){
+                        for(; delivered < n && delivered < chunks.length
+                                ; delivered ++){
                             subscriber.onNext(chunks[delivered]);
                         }
                         if(delivered == chunks.length){

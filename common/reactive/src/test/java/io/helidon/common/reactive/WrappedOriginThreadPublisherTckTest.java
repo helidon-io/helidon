@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.reactive;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -22,9 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.DataChunk;
-
-import io.netty.buffer.Unpooled;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -36,7 +33,7 @@ import org.testng.annotations.Test;
 /**
  * The WrappedOriginThreadPublisherTckTest.
  */
-public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<DataChunk> {
+public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<CharSequence> {
 
     private static final int DEFAULT_TIMEOUT_MILLIS = 200;
     private static final Logger LOGGER = Logger.getLogger(WrappedOriginThreadPublisherTckTest.class.getName());
@@ -48,7 +45,7 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<D
     private static final ExecutorService service = Executors.newCachedThreadPool();
 
     @Override
-    public Publisher<DataChunk> createPublisher(long elements) {
+    public Publisher<CharSequence> createPublisher(long elements) {
         LOGGER.fine("creating publisher");
 
         UnboundedSemaphore semaphore = new UnboundedSemaphore();
@@ -68,7 +65,7 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<D
                     // actively loop
                 }
                 LOGGER.fine("Sending data");
-                publisher.submit(Unpooled.wrappedBuffer(new byte[] {}));
+                publisher.submit(new byte[] {});
             }
 
             publisher.complete();
@@ -99,10 +96,10 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<D
     }
 
     @Override
-    public Publisher<DataChunk> createFailedPublisher() {
+    public Publisher<CharSequence> createFailedPublisher() {
         return new WrappedOriginThreadPublisher(new UnboundedSemaphore()) {
             @Override
-            public void subscribe(Subscriber<? super DataChunk> subscriber) {
+            public void subscribe(Subscriber<? super CharSequence> subscriber) {
                 subscriber.onSubscribe(new Subscription() {
                     @Override
                     public void request(long n) {

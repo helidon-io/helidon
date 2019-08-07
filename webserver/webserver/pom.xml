@@ -146,11 +146,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.reactivestreams</groupId>
-            <artifactId>reactive-streams-tck</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
             <scope>test</scope>

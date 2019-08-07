@@ -107,7 +107,7 @@ abstract class Request implements ServerRequest {
      * @param request the request to extract the charset from
      * @return the charset or {@link #DEFAULT_CHARSET} if none found
      */
-    static Charset requestContentCharset(ServerRequest request) {
+    static Charset contentCharset(ServerRequest request) {
         return request.headers()
                       .contentType()
                       .flatMap(MediaType::charset)
@@ -362,7 +362,7 @@ abstract class Request implements ServerRequest {
 
         private Reader<String> stringContentReader() {
             try {
-                Charset charset = requestContentCharset(Request.this);
+                Charset charset = contentCharset(Request.this);
                 return ContentReaders.stringReader(charset);
             } catch (final UnsupportedCharsetException e) {
                 return (publisher, clazz) -> {

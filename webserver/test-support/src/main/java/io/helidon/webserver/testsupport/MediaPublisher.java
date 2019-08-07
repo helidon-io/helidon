@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,7 @@ import java.util.Optional;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
-
-import reactor.core.publisher.Flux;
+import io.helidon.common.reactive.Multi;
 
 /**
  * Represents a {@link Flow.Publisher publisher} of specific media type.
@@ -75,7 +73,7 @@ public interface MediaPublisher extends Flow.Publisher<DataChunk> {
                 .map(Charset::forName)
                 .orElse(StandardCharsets.UTF_8)
                 .encode(charSequence.toString());
-        Flow.Publisher<DataChunk> publisher = ReactiveStreamsAdapter.publisherToFlow(Flux.just(DataChunk.create(data)));
+        Flow.Publisher<DataChunk> publisher = Multi.just(DataChunk.create(data));
         return new MediaPublisher() {
             @Override
             public MediaType mediaType() {

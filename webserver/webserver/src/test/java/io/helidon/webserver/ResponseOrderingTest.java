@@ -22,7 +22,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +34,7 @@ import javax.ws.rs.core.Response;
 import io.helidon.common.InputStreamHelper;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.ReactiveStreamsAdapter;
+import io.helidon.common.reactive.Multi;
 
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
@@ -43,7 +42,6 @@ import org.glassfish.jersey.client.JerseyWebTarget;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
@@ -71,22 +69,22 @@ public class ResponseOrderingTest {
      *
      * @param args not used
      */
-    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
+    public static void main(String[] args)
+            throws InterruptedException, ExecutionException, TimeoutException {
+
         Routing routing = Routing.builder()
                 .any("/multi", (req, res) -> {
-                    CompletionStage<? extends String> content = req.content().as(String.class);
-
-                    content.whenComplete((o, throwable) -> {
+                    req.content().as(String.class).whenComplete((o, throwable) -> {
                         queue.add(res.requestId());
-
                         res.status(201);
                         res.send("" + res.requestId())
                                 .exceptionally(throwable1 -> {
                                     errorQueue.add(throwable1);
                                     return null;
                                 });
-                        System.out.println("Response sent: " + res.requestId() + " .. " + Thread.currentThread()
-                                .toString());
+                        System.out.println("Response sent: " 
+                                + res.requestId() + " .. " 
+                                + Thread.currentThread().toString());
                     }).exceptionally(throwable -> {
                         throwable.printStackTrace();
                         res.status(500);
@@ -96,13 +94,10 @@ public class ResponseOrderingTest {
                 })
                 .any("/stream", (req, res) -> {
                     res.status(Http.Status.ACCEPTED_202);
-
-                    Flux<DataChunk> flux =
-                            ReactiveStreamsAdapter.publisherFromFlow(req.content())
-                                    .map(chunk -> {
-                                        return DataChunk.create(false, chunk.data(), chunk::release);
-                                    });
-                    res.send(ReactiveStreamsAdapter.publisherToFlow(flux));
+                    Multi<DataChunk> multi = Multi.from(req.content()).map(chunk -> {
+                        return DataChunk.create(false, chunk.data(), chunk::release);
+                    });
+                    res.send(multi);
                 })
                 .error(Throwable.class, (req, res, ex) -> {
                     errorQueue.add(ex);
@@ -116,8 +111,8 @@ public class ResponseOrderingTest {
                 .thenRun(() -> System.out.println("UP and RUNNING!"))
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
-
-        webServer.whenShutdown().thenRun(() -> System.out.println("=============== SERVER IS DOWN ================!"));
+        webServer.whenShutdown().thenRun(() -> System.out.println(
+                "=============== SERVER IS DOWN ================!"));
     }
 
     @BeforeAll

@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.media.common;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.IntFunction;
 
+import io.helidon.common.http.DataChunk;
+import io.helidon.common.reactive.Flow.Publisher;
+import io.helidon.common.reactive.Flow.Subscriber;
+import io.helidon.common.reactive.Flow.Subscription;
 import io.helidon.common.reactive.RetrySchema;
-import io.helidon.media.common.ReadableByteChannelPublisher;
-import io.helidon.webserver.utils.CollectingSubscriber;
 
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests {@link io.helidon.media.common.ReadableByteChannelPublisher}.
@@ -50,17 +51,18 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void allData() throws Exception {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 256, TEST_DATA_SIZE);
-        CollectingSubscriber subscriber = new CollectingSubscriber();
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(5));
-        ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
+        CountingOnNextDelegatingPublisher publisher =
+                new CountingOnNextDelegatingPublisher(
+                new ReadableByteChannelPublisher(pc, RetrySchema.constant(5)));
         // assert
-        byte[] bytes = subscriber.result().get(5, TimeUnit.SECONDS);
+        byte[] bytes = ContentReaders.readBytes(publisher)
+                .block(Duration.ofSeconds(5));
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
         assertThat(pc.isOpen(), is(false));
         assertThat("Publisher did not concatenate read results to minimize output chunks!",
-                   pc.readMethodCallCounter > (subscriber.onNextCounter() * 2),
+                   pc.readMethodCallCounter > (publisher.onNextCounter() * 2),
                    is(true));
 
     }
@@ -68,11 +70,11 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void chunky() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(25, 3);
-        CollectingSubscriber subscriber = new CollectingSubscriber(1);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
-        ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
+        ReadableByteChannelPublisher publisher =
+                new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
         // assert
-        byte[] bytes = subscriber.result().get(5, TimeUnit.SECONDS);
+        byte[] bytes = ContentReaders.readBytes(publisher)
+                .block(Duration.ofSeconds(5));
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(2));
@@ -82,11 +84,11 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void chunkyNoDelay() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 3);
-        CollectingSubscriber subscriber = new CollectingSubscriber(Long.MAX_VALUE);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
-        ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
+        ReadableByteChannelPublisher publisher =
+                new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
-        byte[] bytes = subscriber.result().get(5, TimeUnit.SECONDS);
+        byte[] bytes = ContentReaders.readBytes(publisher)
+                .block(Duration.ofSeconds(5));
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
@@ -97,34 +99,38 @@ public class ReadableByteChannelPublisherTest {
     public void onClosedChannel() throws Exception {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 1024, TEST_DATA_SIZE);
         pc.close();
-        CollectingSubscriber subscriber = new CollectingSubscriber(Long.MAX_VALUE);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
-        ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
+        ReadableByteChannelPublisher publisher =
+                new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
         try {
-            subscriber.result().get(5, TimeUnit.SECONDS);
-            throw new AssertionError("Did not throw expected ExecutionException!");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause(), IsInstanceOf.instanceOf(ClosedChannelException.class));
+            ContentReaders.readBytes(publisher)
+                .block(Duration.ofSeconds(5));
+            fail("Did not throw expected ExecutionException!");
+        } catch (RuntimeException e) {
+            assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
         }
     }
 
     @Test
     public void negativeDelay() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 1);
-        CollectingSubscriber subscriber = new CollectingSubscriber(Long.MAX_VALUE);
-        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, (i, delay) -> i >= 3 ? -10 : 0);
-        ForkJoinPool.commonPool().submit(() -> subscriber.subscribeOn(publisher));
+        ReadableByteChannelPublisher publisher =
+                new ReadableByteChannelPublisher(pc,
+                        (i, delay) -> i >= 3 ? -10 : 0);
         // assert
         try {
-            subscriber.result().get(5, TimeUnit.SECONDS);
-            throw new AssertionError("Did not throw expected ExecutionException!");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause(), IsInstanceOf.instanceOf(TimeoutException.class));
+            ContentReaders.readBytes(publisher)
+                .block(Duration.ofSeconds(5));
+            throw new AssertionError(
+                    "Did not throw expected ExecutionException!");
+        } catch (RuntimeException e) {
+            assertThat(e.getCause(), instanceOf(TimeoutException.class));
         }
     }
 
-    private static PeriodicalChannel createChannelWithNoAvailableData(int hasDataCount, int noDataCount) {
+    private static PeriodicalChannel createChannelWithNoAvailableData(
+            int hasDataCount, int noDataCount) {
+
         return new PeriodicalChannel(i -> {
             int subIndex = i % (hasDataCount + noDataCount);
             return subIndex < hasDataCount ? 512 : 0;
@@ -136,7 +142,7 @@ public class ReadableByteChannelPublisherTest {
         int index = 0;
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] != PeriodicalChannel.SEQUENCE[index]) {
-                throw new AssertionError("Invalid (unexpected) byte in an array on position: " + i);
+                fail("Invalid (unexpected) byte in an array on position: " + i);
             }
             index++;
             if (index == PeriodicalChannel.SEQUENCE.length) {
@@ -145,9 +151,65 @@ public class ReadableByteChannelPublisherTest {
         }
     }
 
+    private static class CountingOnNextSubscriber
+            implements Subscriber<DataChunk> {
+
+        private final Subscriber<? super DataChunk> delegate;
+        private volatile int onNextCount;
+
+        CountingOnNextSubscriber(Subscriber<? super DataChunk> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            delegate.onSubscribe(subscription);
+        }
+
+        @Override
+        public void onNext(DataChunk item) {
+            onNextCount++;
+            delegate.onNext(item);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            delegate.onError(throwable);
+        }
+
+        @Override
+        public void onComplete() {
+            delegate.onComplete();
+        }
+    }
+
+    static class CountingOnNextDelegatingPublisher
+            implements Publisher<DataChunk> {
+
+        private final Publisher<DataChunk> delegate;
+        private CountingOnNextSubscriber subscriber;
+
+        CountingOnNextDelegatingPublisher(Publisher<DataChunk> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void subscribe(Subscriber<? super DataChunk> subscriber) {
+            if (this.subscriber == null) {
+                this.subscriber = new CountingOnNextSubscriber(subscriber);
+            }
+            delegate.subscribe(this.subscriber);
+        }
+
+        int onNextCounter() {
+            return subscriber == null ? 0 : subscriber.onNextCount;
+        }
+    }
+
     static class PeriodicalChannel implements ReadableByteChannel {
 
-        static final byte[] SEQUENCE = "abcdefghijklmnopqrstuvwxyz".getBytes(StandardCharsets.US_ASCII);
+        static final byte[] SEQUENCE = "abcdefghijklmnopqrstuvwxyz"
+                .getBytes(StandardCharsets.US_ASCII);
 
         private boolean open = true;
         private int pointer = 0;
@@ -180,7 +242,9 @@ public class ReadableByteChannelPublisherTest {
             // Do read
             int chunkSizeLimit = maxChunkSize.apply(readMethodCallCounter);
             int writeCounter = 0;
-            while (count < size && writeCounter < chunkSizeLimit && dst.remaining() > 0) {
+            while (count < size
+                    && writeCounter < chunkSizeLimit
+                    && dst.remaining() > 0) {
                 count++;
                 writeCounter++;
                 dst.put(pick());
