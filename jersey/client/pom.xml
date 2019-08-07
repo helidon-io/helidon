@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-jersey-client</artifactId>
+    <name>Helidon Jersey Client</name>
 
     <dependencies>
         <dependency>

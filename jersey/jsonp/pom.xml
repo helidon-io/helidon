@@ -26,6 +26,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-jersey-media-jsonp</artifactId>
+    <name>Helidon Jersey Media JSON-P</name>
 
     <dependencies>
         <dependency>

@@ -29,6 +29,7 @@
     <packaging>pom</packaging>
     <groupId>io.helidon.media.jsonb</groupId>
     <artifactId>helidon-media-jsonb-project</artifactId>
+    <name>Helidon Media JSON-B</name>
 
     <modules>
         <module>common</module>

@@ -29,6 +29,7 @@
     <packaging>pom</packaging>
     <groupId>io.helidon.media.jackson</groupId>
     <artifactId>helidon-media-jackson-project</artifactId>
+    <name>Helidon Media Jackson</name>
 
     <modules>
         <module>common</module>
