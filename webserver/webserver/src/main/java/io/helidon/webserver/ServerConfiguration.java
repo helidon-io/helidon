@@ -53,9 +53,9 @@ public interface ServerConfiguration extends SocketConfiguration {
     String DEFAULT_SOCKET_NAME = "@default";
 
     /**
-     * Returns a count of threads in s pool used to tryProcess HTTP requests.
+     * Returns the count of threads in the pool used to process HTTP requests.
      * <p>
-     * Default value is {@code CPU_COUNT * 2}.
+     * Default value is {@link Runtime#availableProcessors()}.
      *
      * @return a workers count
      */
@@ -565,7 +565,7 @@ public interface ServerConfiguration extends SocketConfiguration {
             }
 
             if (workers <= 0) {
-                workers = Runtime.getRuntime().availableProcessors() * 2;
+                workers = Runtime.getRuntime().availableProcessors();
             }
 
             if (null == experimental) {
