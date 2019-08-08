@@ -16,9 +16,9 @@ Prerequisites:
     ```
     docker run -d -p 9411:9411 openzipkin/zipkin
     ```
-    or with Java 8:
+    or with Java 8+:
     ```
-    wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec'
+    curl -sSL https://zipkin.io/quickstart.sh | bash -s
     java -jar zipkin.jar
     ```
 

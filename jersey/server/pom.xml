@@ -26,6 +26,7 @@
     </parent>
 
     <artifactId>helidon-jersey-server</artifactId>
+    <name>Helidon Jersey Server</name>
 
     <dependencies>
         <dependency>
