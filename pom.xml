@@ -1167,6 +1167,12 @@
                 <artifactId>smallrye-open-api</artifactId>
                 <version>${version.lib.smallrye-openapi}</version>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.openapi</groupId>
+                <artifactId>microprofile-openapi-api</artifactId>
+                <version>${version.lib.microprofile-openapi-api}</version>
+            </dependency>
+            
 
             <!-- Integrations related -->
             <dependency>

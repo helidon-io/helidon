@@ -49,14 +49,15 @@ import io.smallrye.openapi.runtime.OpenApiStaticFile;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer;
 import io.smallrye.openapi.runtime.io.OpenApiSerializer.Format;
 import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.jboss.jandex.IndexView;
 
 /**
  * Provides an endpoint and supporting logic for returning an OpenAPI document
- * that describes the endpoints handled by the application.
+ * that describes the endpoints handled by the server.
  * <p>
- * The application can use the {@link Builder} to set OpenAPI-related
- * attributes. If the application uses none of these builder methods and does
+ * The server can use the {@link Builder} to set OpenAPI-related
+ * attributes. If the server uses none of these builder methods and does
  * not provide a static {@code openapi} file, then the {@code /openapi} endpoint
  * responds with a nearly-empty OpenAPI document.
  */
@@ -86,6 +87,7 @@ public class OpenAPISupport implements Service {
     private final Builder builder;
     private final OpenApiConfig openAPIConfig;
 
+    private OpenAPI model = null;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
 
     private OpenAPISupport(final Builder builder) {
@@ -127,17 +129,20 @@ public class OpenAPISupport implements Service {
      */
     void initializeOpenAPIDocument(final OpenApiConfig config) throws IOException {
         try (OpenApiStaticFile staticFile = buildOpenAPIStaticFile()) {
-            OpenApiDocument.INSTANCE.reset();
-            OpenApiDocument.INSTANCE.config(config);
-            OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
-            OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
-            if (isAnnotationProcessingEnabled(config)) {
-                expandModelUsingAnnotations(config);
-            } else {
-                LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+            synchronized (OpenApiDocument.INSTANCE) {
+                OpenApiDocument.INSTANCE.reset();
+                OpenApiDocument.INSTANCE.config(config);
+                OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(config, getContextClassLoader()));
+                OpenApiDocument.INSTANCE.modelFromStaticFile(OpenApiProcessor.modelFromStaticFile(staticFile));
+                if (isAnnotationProcessingEnabled(config)) {
+                    expandModelUsingAnnotations(config);
+                } else {
+                    LOGGER.log(Level.FINE, "OpenAPI Annotation processing is disabled");
+                }
+                OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
+                OpenApiDocument.INSTANCE.initialize();
+                model = OpenApiDocument.INSTANCE.get();
             }
-            OpenApiDocument.INSTANCE.filter(OpenApiProcessor.getFilter(config, getContextClassLoader()));
-            OpenApiDocument.INSTANCE.initialize();
         }
     }
 
@@ -196,8 +201,8 @@ public class OpenAPISupport implements Service {
      * from its underlying data
      */
     String prepareDocument(MediaType resultMediaType) throws IOException {
-        if (!OpenApiDocument.INSTANCE.isSet()) {
-            throw new IllegalStateException("OpenApiDocument used but has not been initialized");
+        if (model == null) {
+            throw new IllegalStateException("OpenAPI model used but has not been initialized");
         }
 
         OpenAPIMediaTypes matchingOpenAPIMediaType =
@@ -226,7 +231,7 @@ public class OpenAPISupport implements Service {
     private String formatDocument(Format fmt) {
         try {
             return OpenApiSerializer.serialize(
-                    OpenApiDocument.INSTANCE.get(), fmt);
+                    model, fmt);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
