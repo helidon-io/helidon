@@ -307,6 +307,12 @@ wanted to get these changes in before 1.0. For details see
 - Fault Tolerance: Memory improvement [180](https://github.com/oracle/helidon/pull/180) 
 - Build: fails when compiling with Java 11 [225](https://github.com/oracle/helidon/issues/225)
 
+## [0.10.6] - 2019-08-07
+
+### Fixes
+
+- WebServer (backport): Remove the channel closed listener in BareResponseImpl when request completes. [695](https://github.com/oracle/helidon/pull/695)
+
 ## [0.10.5] - 2018-11-06
 
 ### Fixes
@@ -402,6 +408,7 @@ for details.
 [1.0.0]: https://github.com/oracle/helidon/compare/0.11.0...1.0.0
 [0.11.1]: https://github.com/oracle/helidon/compare/0.11.0...0.11.1
 [0.11.0]: https://github.com/oracle/helidon/compare/0.10.5...0.11.0
+[0.10.6]: https://github.com/oracle/helidon/compare/0.10.5...0.10.6
 [0.10.5]: https://github.com/oracle/helidon/compare/0.10.4...0.10.5
 [0.10.4]: https://github.com/oracle/helidon/compare/0.10.3...0.10.4
 [0.10.3]: https://github.com/oracle/helidon/compare/0.10.2...0.10.3
