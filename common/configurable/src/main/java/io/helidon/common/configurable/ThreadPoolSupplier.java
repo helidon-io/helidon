@@ -30,7 +30,7 @@ import io.helidon.config.Config;
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
-    private static final ThreadPool.RejectionPolicy DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionPolicy();
+    private static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();
     private static final AtomicInteger DEFAULT_NAME_COUNTER = new AtomicInteger();
     private static final int DEFAULT_CORE_POOL_SIZE = 10;
     private static final int DEFAULT_MAX_POOL_SIZE = 50;
@@ -53,7 +53,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final String name;
     private final int growthThreshold;
     private final int growthRate;
-    private final ThreadPool.RejectionPolicy rejectionPolicy;
+    private final ThreadPool.RejectionHandler rejectionHandler;
     private volatile ExecutorService instance;
 
     private ThreadPoolSupplier(Builder builder) {
@@ -67,7 +67,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.name = builder.name == null ? DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet() : builder.name;
         this.growthThreshold = builder.growthThreshold;
         this.growthRate = builder.growthRate;
-        this.rejectionPolicy = builder.rejectionPolicy == null ? DEFAULT_REJECTION_POLICY : builder.rejectionPolicy;
+        this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
     }
 
     /**
@@ -110,7 +110,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
                                               queueCapacity,
                                               threadNamePrefix,
                                               isDaemon,
-                                              rejectionPolicy);
+                                              rejectionHandler);
         if (prestart) {
             result.prestartAllCoreThreads();
         }
@@ -138,7 +138,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private boolean prestart = DEFAULT_PRESTART;
         private int growthThreshold = DEFAULT_GROWTH_THRESHOLD;
         private int growthRate = DEFAULT_GROWTH_RATE;
-        private ThreadPool.RejectionPolicy rejectionPolicy = DEFAULT_REJECTION_POLICY;
+        private ThreadPool.RejectionHandler rejectionHandler = DEFAULT_REJECTION_POLICY;
         private String name;
 
         private Builder() {
@@ -149,8 +149,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             if (name == null) {
                 name = DEFAULT_POOL_NAME_PREFIX + DEFAULT_NAME_COUNTER.incrementAndGet();
             }
-            if (rejectionPolicy == null) {
-                rejectionPolicy = DEFAULT_REJECTION_POLICY;
+            if (rejectionHandler == null) {
+                rejectionHandler = DEFAULT_REJECTION_POLICY;
             }
 
             return new ThreadPoolSupplier(this);
@@ -255,11 +255,11 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         /**
          * Rejection policy of the thread pool executor.
          *
-         * @param rejectionPolicy the rejection policy
+         * @param rejectionHandler the rejection policy
          * @return updated builder instance
          */
-        public Builder rejectionHandler(ThreadPool.RejectionPolicy rejectionPolicy) {
-            this.rejectionPolicy = rejectionPolicy;
+        public Builder rejectionHandler(ThreadPool.RejectionHandler rejectionHandler) {
+            this.rejectionHandler = rejectionHandler;
             return this;
         }
 

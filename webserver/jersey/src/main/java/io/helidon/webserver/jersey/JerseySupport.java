@@ -37,6 +37,7 @@ import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.SecurityContext;
 
+import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPool;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -45,7 +46,6 @@ import io.helidon.webserver.Handler;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
-import io.helidon.webserver.ServerThreadPoolSupplier;
 import io.helidon.webserver.Service;
 
 import io.opentracing.Span;

@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.configurable;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
 
-import io.helidon.common.configurable.ThreadPool;
-import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
-
-import static io.helidon.common.http.Http.Status.SERVICE_UNAVAILABLE_503;
 
 /**
  * Supplier of a custom thread pool with defaults appropriate for a thread-per-request server.
@@ -38,13 +33,6 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
     private static final int DEFAULT_QUEUE_CAPACITY = 8192;
     private static final int DEFAULT_GROWTH_THRESHOLD = 256;
     private static final int DEFAULT_GROWTH_RATE = 5;
-
-    private static final ThreadPool.RejectionPolicy DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionPolicy() {
-        @Override
-        protected void throwException(Runnable task, ThreadPoolExecutor executor) {
-            throw new HttpException(SERVICE_UNAVAILABLE_503.reasonPhrase(), SERVICE_UNAVAILABLE_503);
-        }
-    };
 
     private final ThreadPoolSupplier supplier;
 
@@ -75,8 +63,7 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
                                  .maxPoolSize(maxPoolSize)
                                  .queueCapacity(DEFAULT_QUEUE_CAPACITY)
                                  .growthThreshold(DEFAULT_GROWTH_THRESHOLD)
-                                 .growthRate(DEFAULT_GROWTH_RATE)
-                                 .rejectionHandler(DEFAULT_REJECTION_POLICY);
+                                 .growthRate(DEFAULT_GROWTH_RATE);
     }
 
     /**

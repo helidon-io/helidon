@@ -60,7 +60,7 @@ public class ThreadPool extends ThreadPoolExecutor {
 
     private final String name;
     private final WorkQueue queue;
-    private final RejectionPolicy rejectionPolicy;
+    private final RejectionHandler rejectionHandler;
     private final AtomicInteger activeThreads;
     private final LongAdder totalActiveThreads;
     private final AtomicInteger completedTasks;
@@ -106,7 +106,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      * @param workQueueCapacity The capacity of the work queue.
      * @param threadNamePrefix The name prefix to use when a new thread is created.
      * @param useDaemonThreads {@code true} if created threads should be set as daemon.
-     * @param rejectionPolicy The rejection policy.
+     * @param rejectionHandler The rejection policy.
      * @throws IllegalArgumentException if any of the following holds:<br>
      * {@code name is null or empty}<br>
      * {@code corePoolSize < 0}<br>
@@ -131,7 +131,7 @@ public class ThreadPool extends ThreadPoolExecutor {
                              int workQueueCapacity,
                              String threadNamePrefix,
                              boolean useDaemonThreads,
-                             RejectionPolicy rejectionPolicy) {
+                             RejectionHandler rejectionHandler) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("name is null or empty");
         } else if (corePoolSize < 0) {
@@ -152,14 +152,14 @@ public class ThreadPool extends ThreadPoolExecutor {
             throw new IllegalArgumentException("workQueueCapacity < 1");
         } else if (threadNamePrefix == null || threadNamePrefix.isEmpty()) {
             throw new IllegalArgumentException("threadNamePrefix is null or empty");
-        } else if (rejectionPolicy == null) {
+        } else if (rejectionHandler == null) {
             throw new IllegalArgumentException("rejectionPolicy is null");
         }
 
         final WorkQueue queue = createQueue(workQueueCapacity, corePoolSize, maxPoolSize, growthThreshold, growthRate);
         final ThreadFactory threadFactory = new GroupedThreadFactory(name, threadNamePrefix, useDaemonThreads);
         return new ThreadPool(name, corePoolSize, maxPoolSize, growthThreshold, growthRate,
-                              keepAliveTime, keepAliveTimeUnits, threadFactory, queue, rejectionPolicy);
+                              keepAliveTime, keepAliveTimeUnits, threadFactory, queue, rejectionHandler);
     }
 
     private ThreadPool(String name,
@@ -171,8 +171,8 @@ public class ThreadPool extends ThreadPoolExecutor {
                        TimeUnit keepAliveTimeUnit,
                        ThreadFactory threadFactory,
                        WorkQueue queue,
-                       RejectionPolicy rejectionPolicy) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, queue, threadFactory, rejectionPolicy);
+                       RejectionHandler rejectionHandler) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, keepAliveTimeUnit, queue, threadFactory, rejectionHandler);
         this.name = name;
         this.queue = queue;
         this.growthThreshold = growthThreshold;
@@ -181,7 +181,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         this.completedTasks = new AtomicInteger();
         this.failedTasks = new AtomicInteger();
         this.growthRate = growthRate;
-        this.rejectionPolicy = rejectionPolicy;
+        this.rejectionHandler = rejectionHandler;
         queue.setPool(this);
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine(toString());
@@ -298,7 +298,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      * @return The count.
      */
     public int getRejectionCount() {
-        return rejectionPolicy.getRejectionCount();
+        return rejectionHandler.getRejectionCount();
     }
 
     /**
@@ -326,16 +326,18 @@ public class ThreadPool extends ThreadPoolExecutor {
 
     @Override
     public void setRejectedExecutionHandler(RejectedExecutionHandler handler) {
-        if (handler instanceof RejectionPolicy) {
+        if (handler instanceof RejectionHandler) {
             super.setRejectedExecutionHandler(handler);
         } else {
-            throw new IllegalArgumentException(handler.getClass() + " must be an instance of " + RejectionPolicy.class);
+            throw new IllegalArgumentException(handler.getClass() + " must be an instance of " + RejectionHandler.class);
         }
     }
 
     @Override
     public void setMaximumPoolSize(int maximumPoolSize) {
-        throw new UnsupportedOperationException();
+        if (maximumPoolSize != getMaximumPoolSize()) {
+            LOGGER.warning("Maximum pool size cannot be changed in " + this);
+        }
     }
 
     @Override
@@ -379,7 +381,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      * A {@link RejectedExecutionHandler} that adds the task to the queue; if that fails, the
      * rejection is counted and an exception thrown.
      */
-    public static class RejectionPolicy implements RejectedExecutionHandler {
+    public static class RejectionHandler implements RejectedExecutionHandler {
         private final AtomicInteger rejections = new AtomicInteger();
 
         @Override
@@ -392,9 +394,9 @@ public class ThreadPool extends ThreadPoolExecutor {
 
                 // No capacity, so reject
 
-                LOGGER.warning(rejectionMessage(task, executor));
+                LOGGER.warning(rejectionMessage(executor));
                 rejections.incrementAndGet();
-                throwException(task, executor);
+                throwException(executor);
             }
         }
 
@@ -410,16 +412,15 @@ public class ThreadPool extends ThreadPoolExecutor {
         /**
          * Throws an exception.
          *
-         * @param task The task that is being rejected.
          * @param executor The executor that is rejecting the task.
          */
-        protected void throwException(Runnable task, ThreadPoolExecutor executor) {
-            throw new RejectedExecutionException(rejectionMessage(task, executor));
+        protected void throwException(ThreadPoolExecutor executor) {
+            throw new RejectedExecutionException(rejectionMessage(executor));
         }
 
-        private static String rejectionMessage(Runnable task, ThreadPoolExecutor executor) {
+        private static String rejectionMessage(ThreadPoolExecutor executor) {
             final ThreadPool pool = (ThreadPool) executor;
-            return "Task " + task + " rejected by ThreadPool '" + pool.getName() + "': queue is full";
+            return "Task rejected by ThreadPool '" + pool.getName() + "': queue is full";
         }
     }
 
@@ -493,7 +494,7 @@ public class ThreadPool extends ThreadPoolExecutor {
         /**
          * Enqueue the task by invoking the parent {@link #offer(Runnable)} method, updating the statistics
          * if successful. Moving the actual enqueue logic here provides flexibility for subclasses that override
-         * {@link #offer(Runnable)} and provides a pathway for the {@link RejectionPolicy} to directly enqueue a
+         * {@link #offer(Runnable)} and provides a pathway for the {@link RejectionHandler} to directly enqueue a
          * task without invoking the subclass.
          *
          * @param task The task to enqueue.
@@ -561,7 +562,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      * {@link ThreadPoolExecutor#execute(Runnable)}; therefore, by the time a decision is made to add a thread, the state
      * on which that decision was made may have changed. In this case, the pool may fail to add a thread because the max
      * size has actually already been reached; to avoid rejection due to this race condition, we install a handler that
-     * simply causes the task to be enqueued (see {@link RejectionPolicy}).
+     * simply causes the task to be enqueued (see {@link RejectionHandler}).
      */
     static final class DynamicPoolWorkQueue extends WorkQueue {
         private final Predicate<ThreadPool> growthPolicy;

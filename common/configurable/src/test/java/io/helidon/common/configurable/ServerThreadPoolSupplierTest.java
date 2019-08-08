@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.common.configurable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -35,8 +37,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ServerThreadPoolSupplierTest {
 
     @Test
-    void testRejectionThrowsHttp503() throws Exception {
+    void testRejection() throws Exception {
         ExecutorService pool = ServerThreadPoolSupplier.builder()
+                                                       .name("test")
                                                        .corePoolSize(1)
                                                        .maxPoolSize(1)
                                                        .queueCapacity(1)
@@ -44,7 +47,7 @@ class ServerThreadPoolSupplierTest {
                                                        .get();
         List<Task> tasks = new ArrayList<>();
 
-        // Submit one task to consume the single thread, and wait for it to be running
+        // Submit one task to consume the single thread and wait for it to be running
 
         Task t1 = new Task();
         tasks.add(t1);
@@ -62,9 +65,8 @@ class ServerThreadPoolSupplierTest {
         try {
             pool.submit(new Task());
             fail("should have failed");
-        } catch (HttpException e) {
-            assertThat(e.status().code(), is(503));
-            assertThat(e.getLocalizedMessage(), containsString("Service Unavailable"));
+        } catch (RejectedExecutionException e) {
+            MatcherAssert.assertThat(e.getLocalizedMessage(), containsString("rejected by ThreadPool 'test'"));
         }
 
         tasks.forEach(Task::finish);

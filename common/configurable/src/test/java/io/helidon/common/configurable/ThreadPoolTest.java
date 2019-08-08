@@ -27,6 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import org.awaitility.core.ConditionTimeoutException;
@@ -80,7 +83,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "name is null or empty");
     }
 
@@ -96,7 +99,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "name is null or empty");
     }
 
@@ -112,7 +115,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "corePoolSize < 0");
     }
 
@@ -128,7 +131,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "maxPoolSize < 0");
     }
 
@@ -144,7 +147,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "maxPoolSize < corePoolSize");
     }
 
@@ -160,7 +163,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "growthThreshold < 0");
     }
 
@@ -176,7 +179,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "growthRate < 0");
     }
 
@@ -192,7 +195,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "growthRate > 100");
     }
 
@@ -208,7 +211,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "keepAliveTime < 1");
     }
 
@@ -224,7 +227,7 @@ class ThreadPoolTest {
                                                       0,
                                                       "test-thread",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "workQueueCapacity < 1");
     }
 
@@ -240,7 +243,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       null,
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "threadNamePrefix is null or empty");
     }
 
@@ -256,7 +259,7 @@ class ThreadPoolTest {
                                                       1000,
                                                       "",
                                                       true,
-                                                      new ThreadPool.RejectionPolicy()
+                                                      new ThreadPool.RejectionHandler()
         ), "threadNamePrefix is null or empty");
     }
 
@@ -279,7 +282,35 @@ class ThreadPoolTest {
     @Test
     void testCannotChangeMaxPoolSize() {
         pool = newPool(2, 2, 100, 25);
-        assertThrows(UnsupportedOperationException.class, () -> pool.setMaximumPoolSize(4));
+        Logger log = Logger.getLogger(ThreadPool.class.getName());
+        assertThat(log.getHandlers().length, is(0));
+        assertThat(log.getUseParentHandlers(), is(true));
+        List<LogRecord> logRecords = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                logRecords.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+        };
+
+        try {
+            log.addHandler(handler);
+            assertThat(pool.getMaximumPoolSize(), is(2));
+            pool.setMaximumPoolSize(4);
+            assertThat(pool.getMaximumPoolSize(), is(2));
+            assertThat(logRecords.size(), is(1));
+            assertThat(logRecords.get(0).getMessage(), containsString("cannot be changed"));
+        } finally {
+            log.removeHandler(handler);
+        }
     }
 
     @Test
@@ -389,7 +420,7 @@ class ThreadPoolTest {
 
     @Test
     void testRejection() {
-        ThreadPool.RejectionPolicy rejectionPolicy = new ThreadPool.RejectionPolicy();
+        ThreadPool.RejectionHandler rejectionHandler = new ThreadPool.RejectionHandler();
         pool = ThreadPool.create("test",
                                  1,
                                  1,
@@ -400,7 +431,7 @@ class ThreadPoolTest {
                                  1,
                                  "reject",
                                  true,
-                                 rejectionPolicy);
+                                 rejectionHandler);
 
         // Consume the one thread in the pool and fill the queue
 
@@ -409,21 +440,21 @@ class ThreadPoolTest {
         // Ensure that another task is rejected with the expected exception
 
         try {
-            assertThat(rejectionPolicy.getRejectionCount(), is(0));
+            assertThat(rejectionHandler.getRejectionCount(), is(0));
             pool.submit(new Task());
             fail("should have failed");
         } catch (RejectedExecutionException e) {
-            assertThat(rejectionPolicy.getRejectionCount(), is(1));
+            assertThat(rejectionHandler.getRejectionCount(), is(1));
         }
     }
 
     @Test
     void testSetCustomRejectionPolicy() {
 
-        ThreadPool.RejectionPolicy defaultPolicy = new ThreadPool.RejectionPolicy();
-        ThreadPool.RejectionPolicy customPolicy = new ThreadPool.RejectionPolicy() {
+        ThreadPool.RejectionHandler defaultPolicy = new ThreadPool.RejectionHandler();
+        ThreadPool.RejectionHandler customPolicy = new ThreadPool.RejectionHandler() {
             @Override
-            protected void throwException(Runnable task, ThreadPoolExecutor executor) {
+            protected void throwException(ThreadPoolExecutor executor) {
                 throw new IllegalStateException("queue is full");
             }
         };
@@ -516,7 +547,7 @@ class ThreadPoolTest {
                                  100,
                                  "helidon",
                                  true,
-                                 new ThreadPool.RejectionPolicy()
+                                 new ThreadPool.RejectionHandler()
         );
     }
 
