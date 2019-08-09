@@ -39,7 +39,7 @@ module io.helidon.security {
     exports io.helidon.security;
     exports io.helidon.security.spi;
 
-    exports io.helidon.security.internal to io.helidon.security.integration.jersey, io.helidon.security.integration.webserver;
+    exports io.helidon.security.internal to io.helidon.security.integration.jersey, io.helidon.security.integration.webserver, io.helidon.security.integration.grpc;
 
     uses io.helidon.security.spi.SecurityProviderService;
 }

@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>io.grpc</module>
         <module>core</module>
         <module>server</module>
         <module>client</module>
