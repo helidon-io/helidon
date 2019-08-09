@@ -49,6 +49,7 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
 
+import io.helidon.metrics.HelidonMetadata;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -92,34 +93,34 @@ public class MetricsCdiExtension implements Extension {
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name(), counted.absolute());
-            Metadata meta = new Metadata(metricName,
+            Metadata meta = new HelidonMetadata(metricName,
                                          counted.displayName(),
                                          counted.description(),
                                          MetricType.COUNTER,
-                                         counted.unit(),
-                                         toTags(counted.tags()));
+                                         counted.unit());
+                                         // TODO toTags(counted.tags()));
             registry.counter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name(), metered.absolute());
-            Metadata meta = new Metadata(metricName,
+            Metadata meta = new HelidonMetadata(metricName,
                                          metered.displayName(),
                                          metered.description(),
                                          MetricType.METERED,
-                                         metered.unit(),
-                                         toTags(metered.tags()));
+                                         metered.unit());
+                                         // TODO toTags(metered.tags()));
             registry.meter(meta);
             LOGGER.log(Level.FINE, () -> "### Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name(), timed.absolute());
-            Metadata meta = new Metadata(metricName,
+            Metadata meta = new HelidonMetadata(metricName,
                                          timed.displayName(),
                                          timed.description(),
                                          MetricType.TIMER,
-                                         timed.unit(),
-                                         toTags(timed.tags()));
+                                         timed.unit());
+                                         // TODO toTags(timed.tags()));
             registry.timer(meta);
             LOGGER.log(Level.FINE, () -> "### Registered timer " + metricName);
         }
@@ -339,12 +340,12 @@ public class MetricsCdiExtension implements Extension {
             AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
             DelegatingGauge<?> dg = buildDelegatingGauge(gaugeName, site, bm);
             Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
-            Metadata md = new Metadata(gaugeName,
+            Metadata md = new HelidonMetadata(gaugeName,
                     gaugeAnnotation.displayName(),
                     gaugeAnnotation.description(),
                     MetricType.GAUGE,
-                    gaugeAnnotation.unit(),
-                    toTags(gaugeAnnotation.tags()));
+                    gaugeAnnotation.unit());
+                    // TODO toTags(gaugeAnnotation.tags()));
             LOGGER.log(Level.FINE, () -> String.format("### Registering gauge with metadata %s", md.toString()));
             registry.register(md, dg);
         });

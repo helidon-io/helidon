@@ -86,7 +86,7 @@ class HelidonHistogramTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("file_sizes",
+        meta = new HelidonMetadata("file_sizes",
                             "theDisplayName",
                             "Users file size",
                             MetricType.HISTOGRAM,

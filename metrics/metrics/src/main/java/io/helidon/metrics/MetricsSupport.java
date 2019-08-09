@@ -269,25 +269,25 @@ public final class MetricsSupport implements Service {
         String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
 
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
-        Counter totalCount = vendor.counter(new Metadata(metricPrefix + "count",
+        Counter totalCount = vendor.counter(new HelidonMetadata(metricPrefix + "count",
                                                          "Total number of HTTP requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
                                                          MetricUnits.NONE));
 
-        Meter totalMeter = vendor.meter(new Metadata(metricPrefix + "meter",
+        Meter totalMeter = vendor.meter(new HelidonMetadata(metricPrefix + "meter",
                                                      "Meter for overall HTTP requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
                                                      MetricUnits.NONE));
 
-        vendor.counter(new Metadata("grpc.requests.count",
+        vendor.counter(new HelidonMetadata("grpc.requests.count",
                                     "Total number of gRPC requests",
                                     "Each gRPC request (regardless of the method) will increase this counter",
                                     MetricType.COUNTER,
                                     MetricUnits.NONE));
 
-        vendor.meter(new Metadata("grpc.requests.meter",
+        vendor.meter(new HelidonMetadata("grpc.requests.meter",
                                   "Meter for overall gRPC requests",
                                   "Each gRPC request will mark the meter to see overall throughput",
                                   MetricType.METERED,

@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -36,8 +37,10 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -64,7 +67,7 @@ class Registry extends MetricRegistry {
         return register(toImpl(name, metric));
     }
 
-    @Override
+    // TODO @Override
     public <T extends Metric> T register(String name, T metric, Metadata metadata) throws IllegalArgumentException {
         return register(metadata, metric);
     }
@@ -89,7 +92,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Counter counter(String name) {
-        return counter(new Metadata(name, MetricType.COUNTER));
+        return counter(new HelidonMetadata(name, MetricType.COUNTER));
     }
 
     @Override
@@ -99,7 +102,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Histogram histogram(String name) {
-        return histogram(new Metadata(name, MetricType.HISTOGRAM));
+        return histogram(new HelidonMetadata(name, MetricType.HISTOGRAM));
     }
 
     @Override
@@ -109,7 +112,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Meter meter(String name) {
-        return meter(new Metadata(name, MetricType.METERED));
+        return meter(new HelidonMetadata(name, MetricType.METERED));
     }
 
     @Override
@@ -119,7 +122,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Timer timer(String name) {
-        return timer(new Metadata(name, MetricType.TIMER));
+        return timer(new HelidonMetadata(name, MetricType.TIMER));
     }
 
     @Override
@@ -134,7 +137,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public void removeMatching(MetricFilter filter) {
-        allMetrics.entrySet().removeIf(entry -> filter.matches(entry.getKey(), entry.getValue()));
+        allMetrics.entrySet().removeIf(entry -> filter.matches(new MetricID(entry.getKey()), entry.getValue()));
     }
 
     @Override
@@ -142,60 +145,65 @@ class Registry extends MetricRegistry {
         return new TreeSet<>(allMetrics.keySet());
     }
 
-    @Override
+    /*
+     * Old 1.1 Methods
+     *
+     *
+    // TODO @Override
     public SortedMap<String, Gauge> getGauges() {
         return getGauges(MetricFilter.ALL);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Gauge> getGauges(MetricFilter filter) {
         return getSortedMetrics(filter, Gauge.class);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Counter> getCounters() {
         return getCounters(MetricFilter.ALL);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Counter> getCounters(MetricFilter filter) {
         return getSortedMetrics(filter, Counter.class);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Histogram> getHistograms() {
         return getHistograms(MetricFilter.ALL);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
         return getSortedMetrics(filter, Histogram.class);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Meter> getMeters() {
         return getMeters(MetricFilter.ALL);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Meter> getMeters(MetricFilter filter) {
         return getSortedMetrics(filter, Meter.class);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Timer> getTimers() {
         return getTimers(MetricFilter.ALL);
     }
 
-    @Override
+    // TODO @Override
     public SortedMap<String, Timer> getTimers(MetricFilter filter) {
         return getSortedMetrics(filter, Timer.class);
     }
 
-    @Override
-    public Map<String, Metric> getMetrics() {
+    // TODO @Override
+    public Map<String, Metric> getMetrics10() {
         return new HashMap<>(allMetrics);
     }
+    */
 
     @Override
     public Map<String, Metadata> getMetadata() {
@@ -253,7 +261,7 @@ class Registry extends MetricRegistry {
             clazz = clazz.getSuperclass();
         } while (clazz != null);
 
-        return toImpl(new Metadata(name, MetricType.from(clazz == null ? metric.getClass() : clazz)), metric);
+        return toImpl(new HelidonMetadata(name, MetricType.from(clazz == null ? metric.getClass() : clazz)), metric);
     }
 
     @Override
@@ -265,7 +273,7 @@ class Registry extends MetricRegistry {
         Map<String, V> collected = allMetrics.entrySet()
                 .stream()
                 .filter(it -> metricClass.isAssignableFrom(it.getValue().getClass()))
-                .filter(it -> filter.matches(it.getKey(), it.getValue()))
+                .filter(it -> filter.matches(new MetricID(it.getKey()), it.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, it -> metricClass.cast(it.getValue())));
 
         return new TreeMap<>(collected);
@@ -281,7 +289,7 @@ class Registry extends MetricRegistry {
             }
         } else {
             metric = newInstanceCreator.apply(metadata.getName());
-            metric.setReusable(metadata.isReusable());
+            // TODO metric.setReusable(metadata.isReusable());
             allMetrics.put(metadata.getName(), metric);
         }
         if (!(type.isAssignableFrom(metric.getClass()))) {
@@ -293,4 +301,145 @@ class Registry extends MetricRegistry {
         return type.cast(metric);
     }
 
+    // TODO -- New 2.0 methods ----------------------------------------------------
+
+    @Override
+    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
+        return null;
+    }
+
+    @Override
+    public Counter counter(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Counter counter(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata) {
+        return null;
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Histogram histogram(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Histogram histogram(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Meter meter(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Meter meter(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Timer timer(String name, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public Timer timer(Metadata metadata, Tag... tags) {
+        return null;
+    }
+
+    @Override
+    public boolean remove(MetricID metricID) {
+        return false;
+    }
+
+    @Override
+    public SortedSet<MetricID> getMetricIDs() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
+        return null;
+    }
+
+    @Override
+    public Map<MetricID, Metric> getMetrics() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Gauge> getGauges() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Gauge> getGauges(MetricFilter metricFilter) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Counter> getCounters() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Counter> getCounters(MetricFilter metricFilter) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Histogram> getHistograms() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Histogram> getHistograms(MetricFilter metricFilter) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Meter> getMeters() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Meter> getMeters(MetricFilter metricFilter) {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Timer> getTimers() {
+        return null;
+    }
+
+    @Override
+    public SortedMap<MetricID, Timer> getTimers(MetricFilter metricFilter) {
+        return null;
+    }
 }

@@ -22,6 +22,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
+import io.helidon.metrics.HelidonMetadata;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -40,17 +41,17 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 public class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? new Metadata(getName(ip),
+        return metric == null ? new HelidonMetadata(getName(ip),
                                              "",
                                              "",
                                              metricType,
                                              MetricUnits.NONE)
-                : new Metadata(getName(metric, ip),
+                : new HelidonMetadata(getName(metric, ip),
                                metric.displayName(),
                                metric.description(),
                                metricType,
-                               metric.unit(),
-                               toTags(metric.tags()));
+                               metric.unit());
+                               // TODO toTags(metric.tags()));
     }
 
     private static String toTags(String[] tags) {

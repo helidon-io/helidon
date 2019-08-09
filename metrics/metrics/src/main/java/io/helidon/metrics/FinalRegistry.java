@@ -122,6 +122,8 @@ final class FinalRegistry extends Registry {
         return delegate.getNames();
     }
 
+    /** TODO
+     *
     @Override
     public SortedMap<String, Gauge> getGauges() {
         return delegate.getGauges();
@@ -176,6 +178,7 @@ final class FinalRegistry extends Registry {
     public Map<String, Metric> getMetrics() {
         return delegate.getMetrics();
     }
+    */
 
     @Override
     public Map<String, Metadata> getMetadata() {

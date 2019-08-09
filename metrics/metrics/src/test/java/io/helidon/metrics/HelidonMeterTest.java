@@ -51,7 +51,7 @@ class HelidonMeterTest {
 
     @BeforeAll
     static void initClass() throws InterruptedException {
-        Metadata meta = new Metadata("requests",
+        Metadata meta = new HelidonMetadata("requests",
                                      "Requests",
                                      "Tracks the number of requests to the server",
                                      MetricType.METERED,

@@ -53,6 +53,8 @@ public class ProducerBean {
             count += n;
         }
 
+        // TODO
+        /*
         @Override
         public void dec() {
             count--;
@@ -62,6 +64,7 @@ public class ProducerBean {
         public void dec(long n) {
             count -= n;
         }
+        */
 
         @Override
         public long getCount() {

@@ -16,14 +16,14 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
-
 import javax.enterprise.inject.spi.CDI;
+import java.lang.reflect.Method;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -300,11 +300,8 @@ class FaultToleranceMetrics {
      * @return The counter created.
      */
     private static Counter registerCounter(String name, String description) {
-        return getMetricRegistry().counter(new Metadata(name,
-                                                        name,
-                                                        description,
-                                                        MetricType.COUNTER,
-                                                        MetricUnits.NONE));
+        return getMetricRegistry().counter(
+                newMetadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE));
     }
 
     /**
@@ -315,11 +312,8 @@ class FaultToleranceMetrics {
      * @return The histogram created.
      */
     static Histogram registerHistogram(String name, String description) {
-        return getMetricRegistry().histogram(new Metadata(name,
-                                                          name,
-                                                          description,
-                                                          MetricType.HISTOGRAM,
-                                                          MetricUnits.NANOSECONDS));
+        return getMetricRegistry().histogram(
+                newMetadata(name, name, description, MetricType.HISTOGRAM, MetricUnits.NANOSECONDS));
     }
 
     /**
@@ -338,12 +332,21 @@ class FaultToleranceMetrics {
                                     metricName);
         Gauge<T> existing = getMetricRegistry().getGauges().get(name);
         if (existing == null) {
-            getMetricRegistry().register(new Metadata(name,
-                                                      name,
-                                                      description,
-                                                      MetricType.GAUGE,
-                                                      MetricUnits.NANOSECONDS), gauge);
+            getMetricRegistry().register(
+                    newMetadata(name, name, description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
+                    gauge);
         }
         return existing;
+    }
+
+    private static Metadata newMetadata(String name, String displayName, String description,
+                                        MetricType type, String unit) {
+        return new MetadataBuilder()
+                .withName(name)
+                .withDisplayName(displayName)
+                .withDescription(description)
+                .withType(type)
+                .withUnit(unit)
+                .build();
     }
 }

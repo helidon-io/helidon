@@ -56,8 +56,11 @@ final class InterceptorCounted extends InterceptorBase<Counter, Counted> {
                               Counted annot,
                               InvocationContext context,
                               Exception ex) {
+        // TODO
+        /*
         if (!annot.monotonic()) {
             counter.dec();
         }
+        */
     }
 }

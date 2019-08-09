@@ -43,12 +43,11 @@ class HelidonCounterTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("theName",
+        meta = new HelidonMetadata("theName",
                             "theDisplayName",
                             "theDescription",
                             MetricType.COUNTER,
-                            MetricUnits.NONE,
-                            "a=b,c=d");
+                            MetricUnits.NONE);
     }
 
     @BeforeEach
@@ -64,6 +63,8 @@ class HelidonCounterTest {
 
             }
 
+            // TODO
+            /*
             @Override
             public void dec() {
 
@@ -73,6 +74,7 @@ class HelidonCounterTest {
             public void dec(long n) {
 
             }
+            */
 
             @Override
             public long getCount() {
@@ -110,9 +112,13 @@ class HelidonCounterTest {
         counter.inc();
         wrappingCounter.inc();
         testValues(1);
+
+        // TODO
+        /*
         counter.dec();
         wrappingCounter.dec();
         testValues(0);
+        */
     }
 
     @Test
@@ -121,9 +127,13 @@ class HelidonCounterTest {
         counter.inc(49);
         wrappingCounter.inc(49);
         testValues(49);
+
+        // TODO
+        /*
         counter.dec(7);
         wrappingCounter.dec(7);
         testValues(42);
+        */
     }
 
     @Test

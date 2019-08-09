@@ -64,7 +64,7 @@ class HelidonTimerTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("response_time",
+        meta = new HelidonMetadata("response_time",
                             "Responses",
                             "Server response time for /index.html",
                             MetricType.TIMER,

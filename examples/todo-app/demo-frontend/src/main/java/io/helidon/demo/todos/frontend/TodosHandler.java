@@ -16,10 +16,10 @@
 
 package io.helidon.demo.todos.frontend;
 
+import javax.json.JsonObject;
+
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import javax.json.JsonObject;
 
 import io.helidon.common.OptionalHelper;
 import io.helidon.common.http.Http;
@@ -33,6 +33,7 @@ import io.helidon.webserver.Service;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -94,7 +95,12 @@ public final class TodosHandler implements Service {
     }
 
     private Metadata counterMetadata(String name, String description) {
-        return new Metadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE);
+        return new MetadataBuilder()
+                .withName(name)
+                .withDescription(description)
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build();
     }
 
     @Override

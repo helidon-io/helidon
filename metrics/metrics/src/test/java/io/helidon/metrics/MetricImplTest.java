@@ -43,20 +43,18 @@ class MetricImplTest {
             + "\"unit\":\"none\","
             + "\"type\":\"counter\","
             + "\"description\":\"theDescription\","
-            + "\"displayName\":\"theDisplayName\","
-            + "\"tags\":\"a=b,c=d\"}}";
+            + "\"displayName\":\"theDisplayName\"}}";
 
     private static MetricImpl impl;
     private static MetricImpl implWithoutDescription;
 
     @BeforeAll
     public static void initClass() {
-        Metadata meta = new Metadata("theName",
+        Metadata meta = new HelidonMetadata("theName",
                                      "theDisplayName",
                                      "theDescription",
                                      MetricType.COUNTER,
-                                     MetricUnits.NONE,
-                                     "a=b,c=d");
+                                     MetricUnits.NONE);
 
         impl = new MetricImpl("base", meta) {
             @Override
@@ -68,12 +66,11 @@ class MetricImplTest {
 
             @Override
             public void jsonData(JsonObjectBuilder builder) {
-                //TODO how with tags?
                 builder.add(getName(), 45);
             }
         };
 
-        meta = new Metadata("counterWithoutDescription", MetricType.COUNTER);
+        meta = new HelidonMetadata("counterWithoutDescription", MetricType.COUNTER);
 
         implWithoutDescription = new MetricImpl("base", meta) {
             @Override
@@ -85,7 +82,6 @@ class MetricImplTest {
 
             @Override
             public void jsonData(JsonObjectBuilder builder) {
-                //TODO how with tags?
                 builder.add(getName(), 45);
             }
         };

@@ -31,13 +31,14 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
+import org.eclipse.microprofile.metrics.DefaultMetadata;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
  * Base for our implementations of various metrics.
  */
-abstract class MetricImpl extends Metadata implements HelidonMetric {
+abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
@@ -88,16 +89,16 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
     MetricImpl(String registryType, Metadata metadata) {
         super(metadata.getName(),
               metadata.getDisplayName(),
-              metadata.getDescription(),
+              metadata.getDescription().get(),
               metadata.getTypeRaw(),
-              metadata.getUnit(),
-              tagsToSimpleString(metadata));
+              metadata.getUnit().get(),
+              true);        // TODO tagsToSimpleString(metadata));
         this.registryType = registryType;
     }
 
     private static String tagsToSimpleString(Metadata metadata) {
         // add tags
-        HashMap<String, String> tags = metadata.getTags();
+        HashMap<String, String> tags = new HashMap<>();     // TODO metadata.getTags();
 
         if (tags.isEmpty()) {
             return "";
@@ -133,10 +134,10 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
     public void jsonMeta(JsonObjectBuilder builder) {
         JsonObjectBuilder metaBuilder = JSON.createObjectBuilder();
 
-        addNonEmpty(metaBuilder, "unit", getUnit());
-        addNonEmpty(metaBuilder, "unit", getUnit());
+        addNonEmpty(metaBuilder, "unit", getUnit().get());
+        addNonEmpty(metaBuilder, "unit", getUnit().get());
         addNonEmpty(metaBuilder, "type", getType());
-        addNonEmpty(metaBuilder, "description", getDescription());
+        addNonEmpty(metaBuilder, "description", getDescription().get());
         addNonEmpty(metaBuilder, "displayName", getDisplayName());
         addNonEmpty(metaBuilder, "tags", tagsToSimpleString(this));
 
@@ -148,7 +149,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         StringBuilder sb = new StringBuilder();
 
         String name = prometheusName(getName());
-        String tags = getTagsAsString();
+        String tags = "";       // TODO getTagsAsString();
         if (!tags.isEmpty()) {
             tags = "{" + tags + "}";
         }
@@ -250,7 +251,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
 
     // for Gauge and Histogram - must convert
     Units getUnits() {
-        String unit = getUnit();
+        String unit = getUnit().get();
         if ((null == unit) || unit.isEmpty() || MetricUnits.NONE.equals(unit)) {
             return new Units(null);
         }
