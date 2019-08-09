@@ -35,27 +35,36 @@ import org.junit.jupiter.api.BeforeAll;
  */
 public class ServerTest {
 
-    private static WebServer webServer;
+    private static WebServer greetingWebServer;
+    private static WebServer timeWebServer;
 
-    private static final String QUICKSTART_PATH = "/openapi-quickstart";
+    private static final String GREETING_PATH = "/openapi-greeting";
+    private static final String TIME_PATH = "/openapi-time";
 
-    private static final OpenAPISupport.Builder OPENAPI_SUPPORT_BUILDER
+    private static final OpenAPISupport.Builder GREETING_OPENAPI_SUPPORT_BUILDER
             = OpenAPISupport.builder()
-                    .staticFile("src/test/resources/openapi-quickstart.yml")
-                    .webContext(QUICKSTART_PATH);
+                    .staticFile("src/test/resources/openapi-greeting.yml")
+                    .webContext(GREETING_PATH);
+
+    private static final OpenAPISupport.Builder TIME_OPENAPI_SUPPORT_BUILDER
+            = OpenAPISupport.builder()
+                    .staticFile("src/test/resources/openapi-time-server.yml")
+                    .webContext(TIME_PATH);
 
     public ServerTest() {
     }
 
     @BeforeAll
     public static void startup() {
-        webServer = TestUtil.startServer(OPENAPI_SUPPORT_BUILDER);
+        greetingWebServer = TestUtil.startServer(GREETING_OPENAPI_SUPPORT_BUILDER);
+        timeWebServer = TestUtil.startServer(TIME_OPENAPI_SUPPORT_BUILDER);
     }
 
 
     @AfterAll
     public static void shutdown() {
-        TestUtil.shutdownServer(webServer);
+        TestUtil.shutdownServer(greetingWebServer);
+        TestUtil.shutdownServer(timeWebServer);
     }
 
 
@@ -68,11 +77,11 @@ public class ServerTest {
      */
     @SuppressWarnings("unchecked")
     @Test
-    public void testSimpleAsYAML() throws Exception {
+    public void testGreetingAsYAML() throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
-                webServer.port(),
+                greetingWebServer.port(),
                 "GET",
-                QUICKSTART_PATH,
+                GREETING_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
         Map<String, Object> openAPIDocument = TestUtil.yamlFromResponse(cnx);
 
@@ -104,11 +113,11 @@ public class ServerTest {
      * response
      */
     @Test
-    public void testSimpleAsConfig() throws Exception {
+    public void testGreetingAsConfig() throws Exception {
         HttpURLConnection cnx = TestUtil.getURLConnection(
-                webServer.port(),
+                greetingWebServer.port(),
                 "GET",
-                QUICKSTART_PATH,
+                GREETING_PATH,
                 MediaType.APPLICATION_OPENAPI_YAML);
         Config c = TestUtil.configFromResponse(cnx);
         assertEquals("Sets the greeting prefix",
@@ -145,7 +154,43 @@ public class ServerTest {
         connectAndConsumePayload(null);
     }
 
+    @Test
+    public void testTimeAsConfig() throws Exception {
+        HttpURLConnection cnx = TestUtil.getURLConnection(
+                timeWebServer.port(),
+                "GET",
+                TIME_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
+        Config c = TestUtil.configFromResponse(cnx);
+        assertEquals("Returns the current time",
+                TestUtil.fromConfig(c, "paths./timecheck.get.summary"));
+        assertEquals("string",
+                TestUtil.fromConfig(c,
+                        "paths./timecheck.get.responses.200.content."
+                            + "application/json.schema.properties.message.type"));
+    }
+
+    @Test
+    public void ensureNoCrosstalkAmongPorts() throws Exception {
+        HttpURLConnection timeCnx = TestUtil.getURLConnection(
+                timeWebServer.port(),
+                "GET",
+                TIME_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
+        HttpURLConnection greetingCnx = TestUtil.getURLConnection(
+                greetingWebServer.port(),
+                "GET",
+                GREETING_PATH,
+                MediaType.APPLICATION_OPENAPI_YAML);
+        Config greetingConfig = TestUtil.configFromResponse(greetingCnx);
+        Config timeConfig = TestUtil.configFromResponse(timeCnx);
+        assertFalse(timeConfig.get("paths./greet/greeting.put.summary").exists(),
+                "Incorrectly found greeting-related item in time OpenAPI document");
+        assertFalse(greetingConfig.get("paths./timecheck.get.summary").exists(),
+                "Incorrectly found time-related item in greeting OpenAPI document");
+    }
+
     private static void connectAndConsumePayload(MediaType mt) throws Exception {
-        TestUtil.connectAndConsumePayload(webServer.port(), QUICKSTART_PATH, mt);
+        TestUtil.connectAndConsumePayload(greetingWebServer.port(), GREETING_PATH, mt);
     }
 }

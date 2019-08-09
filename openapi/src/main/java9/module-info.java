@@ -28,5 +28,7 @@ module io.helidon.openapi {
 
     requires smallrye.open.api;
 
+    requires microprofile.openapi.api;
+
     exports io.helidon.openapi;
 }
