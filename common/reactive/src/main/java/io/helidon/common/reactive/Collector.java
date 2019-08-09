@@ -15,30 +15,27 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Subscriber;
-
 /**
- * Implementation of {@link Mono} that never invokes
- * {@link Subscriber#onComplete()} or
- * {@link Subscriber#onError(java.lang.Throwable)}.
+ * A collector accumulates the items provided when
+ * {@link #collect(java.lang.Object)} is invoked and makes them available in a
+ * single container objects with {@link #value()}.
+ *
+ * @param <T> collected items type (input)
+ * @param <U> result container type (output)
  */
-final class MonoNever implements Mono<Object> {
+public interface Collector<T, U> {
 
     /**
-     * Singleton instance.
+     * Collect the given item.
+     *
+     * @param item item to collect
      */
-    private static final MonoNever INSTANCE = new MonoNever();
+    void collect(T item);
 
-    private MonoNever() {
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super Object> actual) {
-        actual.onSubscribe(EmptySubscription.INSTANCE);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T> Mono<T> instance() {
-        return (Mono<T>) INSTANCE;
-    }
+    /**
+     * Get the collected items container.
+     *
+     * @return T
+     */
+    U value();
 }

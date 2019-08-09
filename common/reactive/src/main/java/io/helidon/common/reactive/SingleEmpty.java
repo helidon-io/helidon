@@ -16,27 +16,28 @@
 package io.helidon.common.reactive;
 
 /**
- * {@link MonoCollector} implementation that concatenates items
- * {@link Object#toString()} in a {@link String}.
- *
- * @param <T> collected item type
+ * Implementation of {@link Single} that represents the absence of a value by
+ * invoking {@link Subscriber#onComplete() } during
+ * {@link Publisher#subscribe(Subscriber)}.
  */
-final class MonoStringCollector<T extends Object>
-        extends MonoCollector<T, String> {
+final class SingleEmpty implements Single<Object> {
 
-    private final StringBuilder sb;
+    /**
+     * Singleton instance.
+     */
+    private static final SingleEmpty INSTANCE = new SingleEmpty();
 
-    MonoStringCollector() {
-        this.sb = new StringBuilder();
+    private SingleEmpty() {
     }
 
     @Override
-    public String value() {
-        return sb.toString();
+    public void subscribe(Flow.Subscriber<? super Object> subscriber) {
+        subscriber.onSubscribe(EmptySubscription.INSTANCE);
+        subscriber.onComplete();
     }
 
-    @Override
-    public void collect(T item) {
-        sb.append(item.toString());
+    @SuppressWarnings("unchecked")
+    static <T> Single<T> instance() {
+        return (Single<T>) INSTANCE;
     }
 }

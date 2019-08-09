@@ -17,23 +17,26 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 
+import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Mono} that represents a non {@code null} value.
+ * Implementation of {@link Single} that exposed the first item of a
+ * {@link Publisher}.
  *
  * @param <T> item type
  */
-final class MonoJust<T> implements Mono<T> {
+final class SingleNext<T> implements Single<T> {
 
-    private final T value;
+    private final Publisher<? extends T> source;
 
-    MonoJust(T value) {
-        this.value = Objects.requireNonNull(value, "value cannot be null!");
+    SingleNext(Publisher<? extends T> source) {
+        this.source = Objects.requireNonNull(source,
+                "source cannot be null!");
     }
 
     @Override
-    public void subscribe(Subscriber<? super T> subscriber) {
-        subscriber.onSubscribe(new MonoSubscription<>(value, subscriber));
+    public void subscribe(Subscriber<? super T> actual) {
+        source.subscribe(new SingleSubscriber<>(actual));
     }
 }

@@ -15,25 +15,29 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.Objects;
 import java.util.function.Function;
 
+import io.helidon.common.reactive.Flow.Publisher;
+
 /**
- * Implementation of {@link MonoMapper} backed by a java function for mapping
- * the items.
+ * Implementation of {@link Mapper} backed by a java function for
+ * mapping the items.
  *
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class MonoMapperFunctional<T, U> extends MonoMapper<T, U> {
+final class SingleMultiMapperFunctional<T, U> implements Mapper<T, Publisher<U>> {
 
-    private final Function<T, U> mapperFunction;
+    private final Function<T, Publisher<U>> function;
 
-    MonoMapperFunctional(Function<T, U> mapperFunction) {
-        this.mapperFunction = mapperFunction;
+    SingleMultiMapperFunctional(Function<T, Publisher<U>> function) {
+        this.function = Objects.requireNonNull(function,
+                "function cannot be null!");
     }
 
     @Override
-    public U mapNext(T item) {
-        return mapperFunction.apply(item);
+    public Publisher<U> map(T item) {
+        return function.apply(item);
     }
 }

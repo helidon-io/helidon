@@ -21,25 +21,22 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Processor of {@link Publisher} to {@link Mono} that publishes and maps each
+ * Processor of {@link Publisher} to {@link Single} that publishes and maps each
  * received item.
  *
  * @param <T> subscribed type
  * @param <U> published type
  */
-public abstract class MultiMapper<T, U> implements Processor<T, U>, Multi<U> {
+final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
 
     private Subscriber<? super U> delegate;
     private boolean done;
     private Subscription subscription;
+    private final Mapper<T, U> mapper;
 
-    /**
-     * Map a given item.
-     *
-     * @param item input item to map
-     * @return mapped item
-     */
-    public abstract U mapNext(T item);
+    MultiMappingProcessor(Mapper<T, U> mapper) {
+        this.mapper = mapper;
+    }
 
     @Override
     public final void onSubscribe(Subscription s) {
@@ -55,7 +52,7 @@ public abstract class MultiMapper<T, U> implements Processor<T, U>, Multi<U> {
     public final void onNext(T item) {
         if (!done) {
             try {
-                U val = mapNext(item);
+                U val = mapper.map(item);
                 if (val == null) {
                     delegate.onError(new IllegalStateException(
                             "Mapper returned a null value"));

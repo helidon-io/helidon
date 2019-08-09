@@ -22,15 +22,15 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Mono backed by a {@link CompletionStage}.
+ * Single backed by a {@link CompletionStage}.
  */
-final class MonoFromCompletionStage<T> implements Mono<T> {
+final class SingleFromCompletionStage<T> implements Single<T> {
 
     private final CompletionStage<? extends T> future;
     private Subscriber<? super T> subscriber;
     private volatile boolean requested;
 
-    MonoFromCompletionStage(CompletionStage<? extends T> future) {
+    SingleFromCompletionStage(CompletionStage<? extends T> future) {
         this.future = Objects.requireNonNull(future, "future");
     }
 
@@ -54,8 +54,8 @@ final class MonoFromCompletionStage<T> implements Mono<T> {
             @Override
             public void request(long n) {
                 if (n > 0 && !requested) {
-                    future.exceptionally(MonoFromCompletionStage.this::raiseError);
-                    future.thenAccept(MonoFromCompletionStage.this::submit);
+                    future.exceptionally(SingleFromCompletionStage.this::raiseError);
+                    future.thenAccept(SingleFromCompletionStage.this::submit);
                     requested = true;
                 }
             }

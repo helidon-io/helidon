@@ -18,7 +18,6 @@ package io.helidon.common.reactive;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
@@ -92,62 +91,37 @@ public interface Multi<T> extends Publisher<T> {
 
     /**
      * Map this {@link Multi} instance to a new {@link Multi} of another type
-     * using the given {@link MultiMapper}.
+     * using the given {@link Mapper}.
      * @param <U> mapped item type
      * @param mapper mapper
      * @return Multi
      */
-    default <U> Multi<U> map(MultiMapper<T, U> mapper) {
-        return mapper;
+    default <U> Multi<U> map(Mapper<T, U> mapper) {
+        MultiMappingProcessor<T, U> processor = new MultiMappingProcessor<>(mapper);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**
-     * Map this {@link Multi} instance to a new {@link Multi} of another type
-     * using the given java {@link Function}.
-     *
-     * @param <U> mapped item type
-     * @param function mapper function
-     * @return Multi
-     */
-    default <U> Multi<U> map(Function<T, U> function) {
-        MultiMapperFunctional<T, U> mapper = new MultiMapperFunctional<>(function);
-        this.subscribe(mapper);
-        return mapper;
-    }
-
-    /**
-     * Collect the items of this {@link Multi} instance into a {@link Mono} of
+     * Collect the items of this {@link Multi} instance into a {@link Single} of
      * {@link List}.
      *
-     * @return Mono
+     * @return Single
      */
-    default Mono<List<T>> collectList() {
-        MonoListCollector<T> collector = new MonoListCollector<>();
-        this.subscribe(collector);
-        return collector;
+    default Single<List<T>> collectList() {
+        return collect(new ListCollector<>());
     }
 
     /**
-     * Collect the items of this {@link Multi} instance into a {@link Mono} of
-     * {@link String}.
-     *
-     * @return Mono
-     */
-    default Mono<String> collectString() {
-        MonoStringCollector<T> collector = new MonoStringCollector<>();
-        this.subscribe(collector);
-        return collector;
-    }
-
-    /**
-     * Collect the items of this {@link Multi} instance into a {@link Mono}.
+     * Collect the items of this {@link Multi} instance into a {@link Single}.
      * @param <U> collector container type
      * @param collector collector to use
-     * @return Mono
+     * @return Single
      */
-    default <U> Mono<U> collect(MonoCollector<? super T, U> collector) {
-        this.subscribe(collector);
-        return collector;
+    default <U> Single<U> collect(Collector<? super T, U> collector) {
+        MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
+        this.subscribe(processor);
+        return processor;
     }
 
     /**

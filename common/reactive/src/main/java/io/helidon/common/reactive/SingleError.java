@@ -21,22 +21,23 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Mono} that exposed the first item of a
- * {@link Publisher}.
+ * Implementation of {@link Single} that represents an error, raised during
+ * {@link Publisher#subscribe(Subscriber)} by invoking
+ * {@link Subscriber#onError(java.lang.Throwable)}.
  *
  * @param <T> item type
  */
-final class MonoNext<T> implements Mono<T> {
+final class SingleError<T> implements Single<T> {
 
-    private final Publisher<? extends T> source;
+    private final Throwable error;
 
-    MonoNext(Publisher<? extends T> source) {
-        this.source = Objects.requireNonNull(source,
-                "source cannot be null!");
+    SingleError(Throwable error) {
+        this.error = Objects.requireNonNull(error, "error cannot be null!");
     }
 
     @Override
-    public void subscribe(Subscriber<? super T> actual) {
-        source.subscribe(new MonoSubscriber<>(actual));
+    public void subscribe(Subscriber<? super T> subscriber) {
+        subscriber.onSubscribe(EmptySubscription.INSTANCE);
+        subscriber.onError(error);
     }
 }

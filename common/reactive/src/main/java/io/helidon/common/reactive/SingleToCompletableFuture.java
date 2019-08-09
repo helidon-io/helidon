@@ -23,9 +23,9 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Mono exposed as a {@link CompletableFuture}.
+ * {@link Single} exposed as a {@link CompletableFuture}.
  */
-final class MonoToCompletableFuture<T> extends CompletableFuture<T>
+final class SingleToCompletableFuture<T> extends CompletableFuture<T>
         implements Subscriber<T> {
 
     private final AtomicReference<Subscription> ref = new AtomicReference<>();

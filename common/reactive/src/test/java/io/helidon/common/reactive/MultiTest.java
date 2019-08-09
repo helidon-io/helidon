@@ -101,15 +101,6 @@ public class MultiTest {
         assertThat(subscriber.items.get(0), hasItems("foo", "bar"));
     }
 
-    @Test
-    public void testMultiCollectString() {
-        TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Multi.just("foo", "bar").collectString().subscribe(subscriber);
-        assertThat(subscriber.completed, is(equalTo(true)));
-        assertThat(subscriber.error, is(nullValue()));
-        assertThat(subscriber.items, hasItems("foobar"));
-    }
-
     private static final class TestSubscriber<T> implements Subscriber<T> {
 
         private boolean completed;

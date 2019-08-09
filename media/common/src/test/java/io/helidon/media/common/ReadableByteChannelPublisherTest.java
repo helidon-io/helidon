@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -32,6 +31,7 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 import io.helidon.common.reactive.RetrySchema;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ public class ReadableByteChannelPublisherTest {
                 new ReadableByteChannelPublisher(pc, RetrySchema.constant(5)));
         // assert
         byte[] bytes = ContentReaders.readBytes(publisher)
-                .block(Duration.ofSeconds(5));
+                .toFuture().get(5, TimeUnit.SECONDS);
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
@@ -74,7 +74,7 @@ public class ReadableByteChannelPublisherTest {
                 new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
         // assert
         byte[] bytes = ContentReaders.readBytes(publisher)
-                .block(Duration.ofSeconds(5));
+                .toFuture().get(5, TimeUnit.SECONDS);
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(2));
@@ -88,7 +88,7 @@ public class ReadableByteChannelPublisherTest {
                 new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
         byte[] bytes = ContentReaders.readBytes(publisher)
-                .block(Duration.ofSeconds(5));
+                .toFuture().get(5, TimeUnit.SECONDS);
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
@@ -104,7 +104,7 @@ public class ReadableByteChannelPublisherTest {
         // assert
         try {
             ContentReaders.readBytes(publisher)
-                .block(Duration.ofSeconds(5));
+                .toFuture().get(5, TimeUnit.SECONDS);
             fail("Did not throw expected ExecutionException!");
         } catch (RuntimeException e) {
             assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
@@ -120,7 +120,7 @@ public class ReadableByteChannelPublisherTest {
         // assert
         try {
             ContentReaders.readBytes(publisher)
-                .block(Duration.ofSeconds(5));
+                .toFuture().get(5, TimeUnit.SECONDS);
             throw new AssertionError(
                     "Did not throw expected ExecutionException!");
         } catch (RuntimeException e) {

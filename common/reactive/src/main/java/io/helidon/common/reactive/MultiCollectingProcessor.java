@@ -22,34 +22,24 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Processor of {@link Multi} to {@link Mono} that collects items from the
- * {@link Multi} and publishes a single collector object as a {@link Mono}.
+ * Processor of {@link Multi} to {@link Single} that collects items from the
+ * {@link Multi} and publishes a single collector object as a {@link Single}.
  *
  * @param <T> subscribed type (collected)
  * @param <U> published type (collector)
  */
-public abstract class MonoCollector<T, U>
-        implements Processor<T, U>, Mono<U>, Subscription {
+final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>, Subscription {
 
     private Subscriber<? super U> delegate;
     private Flow.Subscription subscription;
     private Throwable error;
     private volatile boolean requested;
     private volatile boolean done;
+    private final Collector<T, U> collector;
 
-    /**
-     * Collect the given item.
-     *
-     * @param item item to collect
-     */
-    public abstract void collect(T item);
-
-    /**
-     * Get the collected items container.
-     *
-     * @return T
-     */
-    public abstract U value();
+    MultiCollectingProcessor(Collector<T, U> collector) {
+        this.collector = collector;
+    }
 
     @Override
     public final void request(long n) {
@@ -88,7 +78,7 @@ public abstract class MonoCollector<T, U>
     public final void onNext(T item) {
         if (!done) {
             try {
-                collect(item);
+                collector.collect(item);
             } catch (Throwable e) {
                 onError(e);
             }
@@ -119,7 +109,7 @@ public abstract class MonoCollector<T, U>
             if (error != null) {
                 delegate.onError(error);
             } else {
-                delegate.onNext(value());
+                delegate.onNext(collector.value());
                 delegate.onComplete();
             }
         }

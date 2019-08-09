@@ -23,12 +23,13 @@ import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Reader;
 import io.helidon.common.http.Utils;
 import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Mono;
-import io.helidon.common.reactive.MonoCollector;
-import io.helidon.common.reactive.MonoMapper;
+import io.helidon.common.reactive.Collector;
+import io.helidon.common.reactive.Mapper;
 import io.helidon.common.reactive.Multi;
+import io.helidon.common.reactive.Single;
 
 /**
  * Utility class that provides standalone mechanisms for reading message body
@@ -47,9 +48,9 @@ public final class ContentReaders {
      * array.
      *
      * @param chunks source publisher
-     * @return Mono
+     * @return Single
      */
-    public static Mono<byte[]> readBytes(Publisher<DataChunk> chunks) {
+    public static Single<byte[]> readBytes(Publisher<DataChunk> chunks) {
         return Multi.from(chunks).collect(new BytesCollector());
     }
 
@@ -57,9 +58,9 @@ public final class ContentReaders {
      * Convert the given publisher of {@link DataChunk} into a {@link String}.
      * @param chunks source publisher
      * @param charset charset to use for decoding the bytes
-     * @return Mono
+     * @return Single
      */
-    public static Mono<String> readString(Publisher<DataChunk> chunks,
+    public static Single<String> readString(Publisher<DataChunk> chunks,
             Charset charset) {
 
         return readBytes(chunks).map(new BytesToString(charset));
@@ -72,7 +73,7 @@ public final class ContentReaders {
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
      */
-    public static io.helidon.common.http.Reader<String> stringReader(
+    public static Reader<String> stringReader(
             Charset charset) {
 
         return (chunks, type) -> readString(chunks, charset).toFuture();
@@ -86,7 +87,7 @@ public final class ContentReaders {
      * completion stage that might end exceptionally with
      * @deprecated use {@link #readBytes(Publisher)} instead
      */
-    public static io.helidon.common.http.Reader<byte[]> byteArrayReader() {
+    public static Reader<byte[]> byteArrayReader() {
         return (publisher, clazz) -> readBytes(publisher).toFuture();
     }
 
@@ -100,17 +101,17 @@ public final class ContentReaders {
      *
      * @return a input stream content reader
      */
-    public static io.helidon.common.http.Reader<InputStream> inputStreamReader() {
+    public static Reader<InputStream> inputStreamReader() {
         return (publisher, clazz) -> CompletableFuture
                     .completedFuture(new PublisherInputStream(publisher));
     }
 
     /**
-     * Implementation of {@link MonoMapper} that converts a {@code byte[]} into
+     * Implementation of {@link Mapper} that converts a {@code byte[]} into
      * a {@link String} using a given {@link Charset}.
      */
     private static final class BytesToString
-            extends MonoMapper<byte[], String> {
+            implements Mapper<byte[], String> {
 
         private final Charset charset;
 
@@ -119,7 +120,7 @@ public final class ContentReaders {
         }
 
         @Override
-        public String mapNext(byte[] bytes) {
+        public String map(byte[] bytes) {
             return new String(bytes, charset);
         }
     }
@@ -129,7 +130,7 @@ public final class ContentReaders {
      * {@code byte[]}.
      */
     private static final class BytesCollector
-            extends MonoCollector<DataChunk, byte[]> {
+            implements Collector<DataChunk, byte[]> {
 
         private final ByteArrayOutputStream baos;
 

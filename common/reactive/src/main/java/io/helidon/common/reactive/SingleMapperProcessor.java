@@ -21,29 +21,27 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Processor of {@link Publisher} to {@link Mono} that only processes the first
+ * Processor of {@link Publisher} to {@link Single} that only processes the first
  * item and maps it to a different type.
  *
  * @param <T> subscribed type
  * @param <U> published type
  */
-public abstract class MonoMapper<T, U> implements Processor<T, U>, Mono<U> {
+final class SingleMapperProcessor<T, U> implements Processor<T, U>, Single<U> {
 
     private Publisher<? extends U> delegate;
     private Subscriber<? super U> subscriber;
     private volatile boolean subcribed;
+    private final Mapper<T, U> mapper;
 
-    /**
-     * Map a given item.
-     * @param item input item to map
-     * @return mapped item
-     */
-    public abstract U mapNext(T item);
+    SingleMapperProcessor(Mapper<T, U> mapper) {
+        this.mapper = mapper;
+    }
 
     @Override
     public final void onNext(T item) {
         if (delegate == null) {
-            delegate = Mono.just(mapNext(item));
+            delegate = Single.just(mapper.map(item));
             doSusbcribe();
         }
     }
@@ -51,7 +49,7 @@ public abstract class MonoMapper<T, U> implements Processor<T, U>, Mono<U> {
     @Override
     public final void onError(Throwable ex) {
         if (delegate == null) {
-            delegate = Mono.<U>error(ex);
+            delegate = Single.<U>error(ex);
             doSusbcribe();
         }
     }

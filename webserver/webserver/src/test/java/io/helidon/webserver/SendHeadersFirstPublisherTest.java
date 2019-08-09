@@ -23,7 +23,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Flow;
-import io.helidon.common.reactive.Mono;
 import io.helidon.common.reactive.Multi;
 
 import io.opentracing.mock.MockSpan;
@@ -36,6 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import io.helidon.common.reactive.Single;
 
 /**
  * Tests {@link SendHeadersFirstPublisher}.
@@ -65,7 +65,7 @@ public class SendHeadersFirstPublisherTest {
     @Disabled // see JC-403
     @Test
     public void subscribeOnEmpty() throws Exception {
-        Flow.Publisher<String> stringPublisher = Mono.empty();
+        Flow.Publisher<String> stringPublisher = Single.empty();
         MockTracer tracer = new MockTracer();
         MockSpan span = tracer.buildSpan("write").start();
         HashResponseHeaders headers = mock(HashResponseHeaders.class);
@@ -84,7 +84,7 @@ public class SendHeadersFirstPublisherTest {
 
     @Test
     public void rejectSecondSubscriber() throws Exception {
-        Flow.Publisher<String> stringPublisher = Mono.empty();
+        Flow.Publisher<String> stringPublisher = Single.empty();
         MockTracer tracer = new MockTracer();
         MockSpan span = tracer.buildSpan("write").start();
         HashResponseHeaders headers = mock(HashResponseHeaders.class);

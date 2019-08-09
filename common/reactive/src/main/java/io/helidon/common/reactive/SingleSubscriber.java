@@ -22,16 +22,16 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Mono subscriber.
+ * Single subscriber.
  */
-final class MonoSubscriber<T> implements Subscriber<T>, Subscription {
+final class SingleSubscriber<T> implements Subscriber<T>, Subscription {
 
     private final Subscriber<? super T> actual;
     private final AtomicBoolean requested;
     private Subscription s;
     private boolean done;
 
-    MonoSubscriber(Subscriber<? super T> s) {
+    SingleSubscriber(Subscriber<? super T> s) {
         requested = new AtomicBoolean(false);
         actual = s;
     }

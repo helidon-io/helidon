@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -36,38 +35,32 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
 /**
- * {@link Mono} test.
+ * {@link Single} test.
  */
-public class MonoTest {
+public class SingleTest {
 
     @Test
-    public void testMonoJust() {
+    public void testSingleJust() {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Mono.<String>just("foo").subscribe(subscriber);
+        Single.<String>just("foo").subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(true)));
         assertThat(subscriber.error, is(nullValue()));
         assertThat(subscriber.items, hasItems("foo"));
     }
 
     @Test
-    public void testMonoBlock() {
-        String foo = Mono.<String>just("foo").block(Duration.ofSeconds(5));
-        assertThat(foo, is(equalTo("foo")));
-    }
-
-    @Test
-    public void testMonoEmpty() {
+    public void testSingleEmpty() {
         TestSubscriber<Object> subscriber = new TestSubscriber<>();
-        Mono.<Object>empty().subscribe(subscriber);
+        Single.<Object>empty().subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(true)));
         assertThat(subscriber.error, is(nullValue()));
         assertThat(subscriber.items, is(empty()));
     }
 
     @Test
-    public void testMonoError() {
+    public void testSingleError() {
         TestSubscriber<Object> subscriber = new TestSubscriber<>();
-        Mono.<Object>error(new Exception("foo")).subscribe(subscriber);
+        Single.<Object>error(new Exception("foo")).subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(false)));
         assertThat(subscriber.error, is(notNullValue()));
         assertThat(subscriber.error.getMessage(), is(equalTo("foo")));
@@ -75,28 +68,28 @@ public class MonoTest {
     }
 
     @Test
-    public void testMonoNever() {
+    public void testSingleNever() {
         TestSubscriber<Object> subscriber = new TestSubscriber<>();
-        Mono.<Object>never().subscribe(subscriber);
+        Single.<Object>never().subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(false)));
         assertThat(subscriber.error, is(nullValue()));
         assertThat(subscriber.items, is(empty()));
     }
 
     @Test
-    public void testMonoMapper() {
+    public void testSingleMap() {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Mono.just("foo").map(String::toUpperCase).subscribe(subscriber);
+        Single.just("foo").map(String::toUpperCase).subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(true)));
         assertThat(subscriber.error, is(nullValue()));
         assertThat(subscriber.items, hasItems("FOO"));
     }
 
     @Test
-    public void testMonoMapperSubscriptionNotCanceled() {
+    public void testSingleMapperSubscriptionNotCanceled() {
         TestPublisher<String> publisher = new TestPublisher<>("foo", "bar");
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Mono.from(publisher).map(String::toUpperCase).subscribe(subscriber);
+        Single.from(publisher).map(String::toUpperCase).subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(true)));
         assertThat(subscriber.error, is(nullValue()));
         assertThat(subscriber.items, hasItems("FOO"));
@@ -105,9 +98,9 @@ public class MonoTest {
     }
 
     @Test
-    public void testMonoMultiMapper() {
+    public void testSingleMapMany() {
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Mono.just("f.o.o").mapMany((str) -> Multi.just(str.split("\\.")))
+        Single.just("f.o.o").mapMany((str) -> Multi.just(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.completed, is(equalTo(true)));
         assertThat(subscriber.error, is(nullValue()));

@@ -19,14 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * {@link MonoCollector} implementation that collects items in a {@link List}.
+ * {@link Collector} implementation that collects items in a {@link List}.
  * @param <U> collected item type
  */
-final class MonoListCollector<U> extends MonoCollector<U, List<U>> {
+final class ListCollector<U> implements Collector<U, List<U>> {
 
     private final ArrayList<U> list;
 
-    MonoListCollector() {
+    ListCollector() {
         this.list = new ArrayList<>();
     }
 

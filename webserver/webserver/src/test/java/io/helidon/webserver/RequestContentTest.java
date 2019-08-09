@@ -34,7 +34,6 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
-import io.helidon.common.reactive.Mono;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.SubmissionPublisher;
 import io.helidon.media.common.ContentReaders;
@@ -54,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import io.helidon.common.reactive.Single;
 
 /**
  * The RequestContentTest.
@@ -205,7 +205,7 @@ public class RequestContentTest {
 
     @Test
     public void failingFilter() throws Exception {
-        Request request = requestTestStub(Mono.never());
+        Request request = requestTestStub(Single.never());
 
         request.content().registerFilter(publisher -> {
             throw new IllegalStateException("failed-publisher-transformation");
@@ -232,7 +232,7 @@ public class RequestContentTest {
 
     @Test
     public void failingReader() throws Exception {
-        Request request = requestTestStub(Mono.never());
+        Request request = requestTestStub(Single.never());
 
         request.content().registerReader(Duration.class, (publisher, clazz) -> {
             throw new IllegalStateException("failed-read");
@@ -254,8 +254,7 @@ public class RequestContentTest {
 
     @Test
     public void missingReaderTest() throws Exception {
-        Request request = requestTestStub(
-                Mono.just(DataChunk.create("hello".getBytes())));
+        Request request = requestTestStub(Single.just(DataChunk.create("hello".getBytes())));
 
         request.content().registerReader(LocalDate.class, (publisher, clazz) -> {
             throw new IllegalStateException("Should not be called");
@@ -273,7 +272,7 @@ public class RequestContentTest {
 
     @Test
     public void nullFilter() throws Exception {
-        Request request = requestTestStub(Mono.never());
+        Request request = requestTestStub(Single.never());
         assertThrows(NullPointerException.class, () -> {
             request.content().registerFilter(null);
         });
@@ -360,7 +359,8 @@ public class RequestContentTest {
                     return Multi.from(publisher)
                             .map(TestUtils::requestChunkAsString)
                             .map(String::toUpperCase)
-                            .collectString()
+                            .collectList()
+                            .map((strings -> strings.get(0)))
                             .toFuture();
                });
 

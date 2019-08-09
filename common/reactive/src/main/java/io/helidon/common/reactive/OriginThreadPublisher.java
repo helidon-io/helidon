@@ -78,14 +78,14 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
      * by the semaphore (i.e., to properly acquire a permission to send the
      * data; to not send when the number of permits is zero).
      */
-    public OriginThreadPublisher(UnboundedSemaphore semaphore) {
+    protected OriginThreadPublisher(UnboundedSemaphore semaphore) {
         this.semaphore = semaphore;
     }
 
     /**
      * Create same thread publisher.
      */
-    public OriginThreadPublisher() {
+    protected OriginThreadPublisher() {
         this(new UnboundedSemaphore());
     }
 
@@ -108,8 +108,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
                 @Override
                 public void request(long n) {
                     if (n <= 0) {
-                        error(new IllegalArgumentException(
-                                "Illegal value requested: " + n));
+                        error(new IllegalArgumentException("Illegal value requested: " + n));
                         return;
                     }
 

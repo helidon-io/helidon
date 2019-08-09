@@ -15,28 +15,19 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-import java.util.function.Function;
-
 /**
- * Implementation of {@link MultiMapper} backed by a java function for mapping
- * the items.
- *
- * @param <T> subscribed type
- * @param <U> published type
+ * Map an item to a new object of a given type.
+ * @param <T> input item type
+ * @param <U> output (mapped) item type
  */
-final class MultiMapperFunctional<T, U>
-        extends MultiMapper<T, U> {
+@FunctionalInterface
+public interface Mapper<T, U> {
 
-    private final Function<? super T, ? extends U> function;
-
-    MultiMapperFunctional(Function<? super T, ? extends U> function) {
-        this.function = Objects.requireNonNull(function,
-                "function cannot be null!");
-    }
-
-    @Override
-    public U mapNext(T item) {
-        return function.apply(item);
-    }
+    /**
+     * Map a given item.
+     *
+     * @param item input item to map
+     * @return mapped item
+     */
+    U map(T item);
 }

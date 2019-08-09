@@ -15,29 +15,30 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-
-import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Mono} that represents an error, raised during
- * {@link Publisher#subscribe(Subscriber)} by invoking
+ * Implementation of {@link Single} that never invokes
+ * {@link Subscriber#onComplete()} or
  * {@link Subscriber#onError(java.lang.Throwable)}.
- *
- * @param <T> item type
  */
-final class MonoError<T> implements Mono<T> {
+final class SingleNever implements Single<Object> {
 
-    private final Throwable error;
+    /**
+     * Singleton instance.
+     */
+    private static final SingleNever INSTANCE = new SingleNever();
 
-    MonoError(Throwable error) {
-        this.error = Objects.requireNonNull(error, "error cannot be null!");
+    private SingleNever() {
     }
 
     @Override
-    public void subscribe(Subscriber<? super T> subscriber) {
-        subscriber.onSubscribe(EmptySubscription.INSTANCE);
-        subscriber.onError(error);
+    public void subscribe(Subscriber<? super Object> actual) {
+        actual.onSubscribe(EmptySubscription.INSTANCE);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> Single<T> instance() {
+        return (Single<T>) INSTANCE;
     }
 }

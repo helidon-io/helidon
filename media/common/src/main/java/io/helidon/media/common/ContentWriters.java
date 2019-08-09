@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Mono;
 import io.helidon.common.reactive.RetrySchema;
+import io.helidon.common.reactive.Single;
 
 /**
  * Utility class that provides standalone mechanisms for writing message body
@@ -40,13 +40,13 @@ public final class ContentWriters {
 
     /**
      * Create a {@link DataChunk} with the given byte array and return a
-     * {@link Mono}.
+     * {@link Single}.
      *
      * @param bytes the byte array
      * @param copy if {@code true} the byte array is copied
-     * @return Mono
+     * @return Single
      */
-    public static Mono<DataChunk> writeBytes(byte[] bytes, boolean copy) {
+    public static Single<DataChunk> writeBytes(byte[] bytes, boolean copy) {
         byte[] data;
         if (copy) {
             data = new byte[bytes.length];
@@ -54,36 +54,36 @@ public final class ContentWriters {
         } else {
             data = bytes;
         }
-        return Mono.just(DataChunk.create(false, ByteBuffer.wrap(data)));
+        return Single.just(DataChunk.create(false, ByteBuffer.wrap(data)));
     }
 
     /**
      * Create a publisher of {@link DataChunk} with the given
-     * {@link CharSequence} / {@link Charset} and return a {@link Mono}.
+     * {@link CharSequence} / {@link Charset} and return a {@link Single}.
      *
      * @param cs the char sequence
      * @param charset the charset to use to encode the char sequence
-     * @return Mono
+     * @return Single
      */
-    public static Mono<DataChunk> writeCharSequence(CharSequence cs,
+    public static Single<DataChunk> writeCharSequence(CharSequence cs,
             Charset charset) {
 
-        return Mono.just(DataChunk.create(false,
+        return Single.just(DataChunk.create(false,
                 charset.encode(cs.toString())));
     }
 
     /**
      * Create a a publisher {@link DataChunk} with the given
-     * {@link CharBuffer} / {@link Charset} and return a {@link Mono}.
+     * {@link CharBuffer} / {@link Charset} and return a {@link Single}.
      *
      * @param buffer the char buffer
      * @param charset the charset to use to encode the char sequence
-     * @return Mono
+     * @return Single
      */
-    public static Mono<DataChunk> writeCharBuffer(CharBuffer buffer,
+    public static Single<DataChunk> writeCharBuffer(CharBuffer buffer,
             Charset charset) {
 
-        return Mono.just(DataChunk.create(false, buffer.encode(charset)));
+        return Single.just(DataChunk.create(false, buffer.encode(charset)));
     }
 
     /**

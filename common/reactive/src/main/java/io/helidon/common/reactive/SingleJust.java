@@ -16,28 +16,24 @@
 package io.helidon.common.reactive;
 
 import java.util.Objects;
-import java.util.function.Function;
 
-import io.helidon.common.reactive.Flow.Publisher;
+import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link MonoMultiMapper} backed by a java function for
- * mapping the items.
+ * Implementation of {@link Single} that represents a non {@code null} value.
  *
- * @param <T> subscribed type
- * @param <U> published type
+ * @param <T> item type
  */
-final class MonoMultiMapperFunctional<T, U> extends MonoMultiMapper<T, U> {
+final class SingleJust<T> implements Single<T> {
 
-    private final Function<T, Publisher<U>> function;
+    private final T value;
 
-    MonoMultiMapperFunctional(Function<T, Publisher<U>> function) {
-        this.function = Objects.requireNonNull(function,
-                "function cannot be null!");
+    SingleJust(T value) {
+        this.value = Objects.requireNonNull(value, "value cannot be null!");
     }
 
     @Override
-    public Publisher<U> mapNext(T item) {
-        return function.apply(item);
+    public void subscribe(Subscriber<? super T> subscriber) {
+        subscriber.onSubscribe(new SingleSubscription<>(value, subscriber));
     }
 }
