@@ -90,8 +90,7 @@ public class OpenAPISupport implements Service {
 
     private OpenAPISupport(final Builder builder) {
         webContext = builder.webContext();
-        model = prepareModel(builder.openAPIConfig(), builder.indexView(),
-                    builder.staticFile());
+        model = prepareModel(builder.openAPIConfig(), builder.indexView(), builder.staticFile());
     }
 
     @Override
