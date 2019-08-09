@@ -88,13 +88,13 @@ public class OpenAPISupport implements Service {
     private final OpenAPI model;
     private final ConcurrentMap<Format, String> cachedDocuments = new ConcurrentHashMap<>();
 
-    private OpenAPISupport(final Builder builder) {
+    private OpenAPISupport(Builder builder) {
         webContext = builder.webContext();
         model = prepareModel(builder.openAPIConfig(), builder.indexView(), builder.staticFile());
     }
 
     @Override
-    public void update(final Routing.Rules rules) {
+    public void update(Routing.Rules rules) {
         configureEndpoint(rules);
     }
 
@@ -120,8 +120,7 @@ public class OpenAPISupport implements Service {
      * @throws RuntimeException in case of errors reading any existing static
      * OpenAPI document
      */
-    private OpenAPI prepareModel(final OpenApiConfig config,
-            final IndexView indexView, OpenApiStaticFile staticFile) {
+    private OpenAPI prepareModel(OpenApiConfig config, IndexView indexView, OpenApiStaticFile staticFile) {
         try {
             synchronized (OpenApiDocument.INSTANCE) {
                 OpenApiDocument.INSTANCE.reset();
@@ -146,7 +145,7 @@ public class OpenAPISupport implements Service {
         return !config.scanDisable();
     }
 
-    private void expandModelUsingAnnotations(final OpenApiConfig config, IndexView indexView) throws IOException {
+    private void expandModelUsingAnnotations(OpenApiConfig config, IndexView indexView) throws IOException {
         if (indexView != null) {
             OpenApiDocument.INSTANCE.modelFromAnnotations(
                     OpenApiProcessor.modelFromAnnotations(config, new FilteredIndexView(indexView, config)));
@@ -362,7 +361,7 @@ public class OpenAPISupport implements Service {
      * @return new {@code OpenAPISupport} instance created using the
      * helidonConfig settings
      */
-    public static OpenAPISupport create(final Config config) {
+    public static OpenAPISupport create(Config config) {
         return builderSE().helidonConfig(config).build();
     }
 
