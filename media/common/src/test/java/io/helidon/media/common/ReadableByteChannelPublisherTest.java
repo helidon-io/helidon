@@ -54,8 +54,7 @@ public class ReadableByteChannelPublisherTest {
         CountingOnNextDelegatingPublisher publisher = new CountingOnNextDelegatingPublisher(
                 new ReadableByteChannelPublisher(pc, RetrySchema.constant(5)));
         // assert
-        byte[] bytes = ContentReaders.readBytes(publisher)
-                .toFuture().get(5, TimeUnit.SECONDS);
+        byte[] bytes = ContentReaders.readBytes(publisher).toFuture().get(5, TimeUnit.SECONDS);
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
@@ -69,11 +68,9 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void chunky() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(25, 3);
-        ReadableByteChannelPublisher publisher =
-                new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(2));
         // assert
-        byte[] bytes = ContentReaders.readBytes(publisher)
-                .toFuture().get(5, TimeUnit.SECONDS);
+        byte[] bytes = ContentReaders.readBytes(publisher).toFuture().get(5, TimeUnit.SECONDS);
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(2));
@@ -85,8 +82,7 @@ public class ReadableByteChannelPublisherTest {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 3);
         ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
-        byte[] bytes = ContentReaders.readBytes(publisher)
-                .toFuture().get(5, TimeUnit.SECONDS);
+        byte[] bytes = ContentReaders.readBytes(publisher).toFuture().get(5, TimeUnit.SECONDS);
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
         assertThat(pc.threads.size(), is(1));
@@ -97,12 +93,10 @@ public class ReadableByteChannelPublisherTest {
     public void onClosedChannel() throws Exception {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 1024, TEST_DATA_SIZE);
         pc.close();
-        ReadableByteChannelPublisher publisher =
-                new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
         try {
-            ContentReaders.readBytes(publisher)
-                .toFuture().get(5, TimeUnit.SECONDS);
+            ContentReaders.readBytes(publisher).toFuture().get(5, TimeUnit.SECONDS);
             fail("Did not throw expected ExecutionException!");
         } catch (RuntimeException e) {
             assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
@@ -115,8 +109,7 @@ public class ReadableByteChannelPublisherTest {
         ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, (i, delay) -> i >= 3 ? -10 : 0);
         // assert
         try {
-            ContentReaders.readBytes(publisher)
-                .toFuture().get(5, TimeUnit.SECONDS);
+            ContentReaders.readBytes(publisher).toFuture().get(5, TimeUnit.SECONDS);
             throw new AssertionError(
                     "Did not throw expected ExecutionException!");
         } catch (RuntimeException e) {

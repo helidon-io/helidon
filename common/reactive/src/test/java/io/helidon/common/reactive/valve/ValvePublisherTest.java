@@ -171,8 +171,7 @@ class ValvePublisherTest {
         stringTank.close();
 
         Multi<String> multi = Multi.from(stringTank.toPublisher());
-        String joined = multi.collect(new StringCollector<>()).toFuture().get();
-        assertThat(joined, is("123"));
+        assertThat(multi.collect(new StringCollector<>()).toFuture().get(), is("123"));
 
         try {
             multi.collect(new StringCollector<>()).toFuture().get();
@@ -190,22 +189,17 @@ class ValvePublisherTest {
         stringTank.addAll(listOf("1", "2", "3"));
         stringTank.close();
 
-        String joined = Multi.from(stringTank.toPublisher())
-                .collect(new StringCollector<>()).toFuture().get();
-        assertThat(joined, is("123"));
+        assertThat(Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).toFuture().get(), is("123"));
 
         try {
-            Multi.from(stringTank.toPublisher())
-                .collect(new StringCollector<>())
-                .toFuture().get();
+            Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).toFuture().get();
             fail("Should have thrown an exception!");
         } catch (IllegalStateException e) {
             assertThat(e.getMessage(), containsString("Handler is already registered"));
         }
     }
 
-    private static final class StringCollector<T extends Object>
-            implements Collector<T, String> {
+    private static final class StringCollector<T extends Object> implements Collector<T, String> {
 
         private final StringBuilder sb;
 

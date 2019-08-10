@@ -24,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-
 /**
  * The ReferenceHoldingQueue is an enhanced reference queue that allows a post
  * mortem execution such as a releasing of memory that would otherwise cause a
@@ -128,12 +127,12 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      * This class holds a reference to a {@link Runnable} that will be executed
      * the latest when its referent (the {@link T} instance) is garbage
      * collected. It is however strongly recommended to call the
-     * {@link #release()} method explicitly due to a performance impact and a
-     * large memory demand.
+     * {@link #release()} method explicitly due to
+     * a performance impact and a large memory demand.
      *
      * @param <T> the referent type
      */
-     static final class ReleasableReference<T> extends PhantomReference<T> {
+    static final class ReleasableReference<T> extends PhantomReference<T> {
 
         private final AtomicBoolean released = new AtomicBoolean(false);
         private final ReferenceHoldingQueue<T> queue;
@@ -141,6 +140,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
 
         /**
          * Create a new {@code ReleasableReference}.
+         *
          * @param referent the referenced object
          * @param q the reference holding queue
          * @param r the release callback
@@ -164,8 +164,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
         }
 
         /**
-         * Unlink this reference from the queue and invoke the associated
-         * release callback.
+         * Unlink this reference from the queue and invoke the associated release callback.
          */
         void release() {
             if (!released.getAndSet(true)) {

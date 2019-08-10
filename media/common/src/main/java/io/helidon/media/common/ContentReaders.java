@@ -60,9 +60,7 @@ public final class ContentReaders {
      * @param charset charset to use for decoding the bytes
      * @return Single
      */
-    public static Single<String> readString(Publisher<DataChunk> chunks,
-            Charset charset) {
-
+    public static Single<String> readString(Publisher<DataChunk> chunks, Charset charset) {
         return readBytes(chunks).map(new BytesToString(charset));
     }
 
@@ -73,9 +71,7 @@ public final class ContentReaders {
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
      */
-    public static Reader<String> stringReader(
-            Charset charset) {
-
+    public static Reader<String> stringReader( Charset charset) {
         return (chunks, type) -> readString(chunks, charset).toFuture();
     }
 
@@ -102,8 +98,7 @@ public final class ContentReaders {
      * @return a input stream content reader
      */
     public static Reader<InputStream> inputStreamReader() {
-        return (publisher, clazz) -> CompletableFuture
-                    .completedFuture(new PublisherInputStream(publisher));
+        return (publisher, clazz) -> CompletableFuture.completedFuture(new PublisherInputStream(publisher));
     }
 
     /**

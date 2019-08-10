@@ -65,11 +65,8 @@ public final class ContentWriters {
      * @param charset the charset to use to encode the char sequence
      * @return Single
      */
-    public static Single<DataChunk> writeCharSequence(CharSequence cs,
-            Charset charset) {
-
-        return Single.just(DataChunk.create(false,
-                charset.encode(cs.toString())));
+    public static Single<DataChunk> writeCharSequence(CharSequence cs, Charset charset) {
+        return Single.just(DataChunk.create(false, charset.encode(cs.toString())));
     }
 
     /**
@@ -80,9 +77,7 @@ public final class ContentWriters {
      * @param charset the charset to use to encode the char sequence
      * @return Single
      */
-    public static Single<DataChunk> writeCharBuffer(CharBuffer buffer,
-            Charset charset) {
-
+    public static Single<DataChunk> writeCharBuffer(CharBuffer buffer, Charset charset) {
         return Single.just(DataChunk.create(false, buffer.encode(charset)));
     }
 
@@ -96,9 +91,7 @@ public final class ContentWriters {
      * if {@code byte[]} will be immediately reused.
      * @return a {@code byte[]} writer
      */
-    public static Function<byte[], Publisher<DataChunk>> byteArrayWriter(
-            boolean copy) {
-
+    public static Function<byte[], Publisher<DataChunk>> byteArrayWriter( boolean copy) {
         return (bytes) -> writeBytes(bytes, copy);
     }
 
@@ -113,9 +106,7 @@ public final class ContentWriters {
      * @return a {@link String} writer
      * @throws NullPointerException if parameter {@code charset} is {@code null}
      */
-    public static Function<CharSequence, Publisher<DataChunk>> charSequenceWriter(
-            Charset charset) {
-
+    public static Function<CharSequence, Publisher<DataChunk>> charSequenceWriter(Charset charset) {
         return (cs) -> writeCharSequence(cs, charset);
     }
 
@@ -130,9 +121,7 @@ public final class ContentWriters {
      * @return a {@link String} writer
      * @throws NullPointerException if parameter {@code charset} is {@code null}
      */
-    public static Function<CharBuffer, Publisher<DataChunk>> charBufferWriter(
-            Charset charset) {
-
+    public static Function<CharBuffer, Publisher<DataChunk>> charBufferWriter(Charset charset) {
         return (buffer) -> writeCharBuffer(buffer, charset);
     }
 
@@ -145,11 +134,8 @@ public final class ContentWriters {
      * operation reads {@code 0 bytes}
      * @return a {@link ReadableByteChannel} writer
      */
-    public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter(
-            RetrySchema retrySchema) {
-
-        final RetrySchema schema = retrySchema == null
-                ? RetrySchema.linear(0, 10, 250) : retrySchema;
+    public static Function<ReadableByteChannel, Publisher<DataChunk>> byteChannelWriter(RetrySchema retrySchema) {
+        final RetrySchema schema = retrySchema == null ? RetrySchema.linear(0, 10, 250) : retrySchema;
         return channel -> new ReadableByteChannelPublisher(channel, schema);
     }
 

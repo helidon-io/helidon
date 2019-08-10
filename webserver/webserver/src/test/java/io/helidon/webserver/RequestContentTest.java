@@ -96,7 +96,6 @@ public class RequestContentTest {
 
     @Test
     public void multiThreadingFilterAndReaderTest() throws Exception {
-
         CountDownLatch subscribedLatch = new CountDownLatch(1);
         SubmissionPublisher<DataChunk> publisher = new SubmissionPublisher<>(Runnable::run, 10);
         ForkJoinPool.commonPool().submit(() -> {
@@ -226,8 +225,7 @@ public class RequestContentTest {
         });
 
         try {
-            request.content().as(Duration.class)
-                    .toCompletableFuture().get(10, TimeUnit.SECONDS);
+            request.content().as(Duration.class).toCompletableFuture().get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception");
         } catch (ExecutionException e) {
             assertThat(e.getCause(),
@@ -247,8 +245,7 @@ public class RequestContentTest {
             throw new IllegalStateException("Should not be called");
         });
 
-        CompletableFuture<?> future = request.content().as(Duration.class)
-                .toCompletableFuture();
+        CompletableFuture<?> future = request.content().as(Duration.class).toCompletableFuture();
         try {
             future.get(10, TimeUnit.SECONDS);
             fail("Should have thrown an exception");
@@ -267,8 +264,7 @@ public class RequestContentTest {
 
     @Test
     public void failingSubscribe() throws Exception {
-        Request request = requestTestStub(
-                Multi.just(DataChunk.create("data".getBytes())));
+        Request request = requestTestStub(Multi.just(DataChunk.create("data".getBytes())));
 
         request.content().registerFilter((Publisher<DataChunk> publisher) -> {
             throw new IllegalStateException("failed-publisher-transformation");
@@ -283,16 +279,13 @@ public class RequestContentTest {
 
         Throwable throwable = receivedThrowable.get();
         assertThat(throwable, allOf(instanceOf(IllegalArgumentException.class),
-                hasProperty("message",
-                        containsString("Unexpected exception occurred during publishers chaining"))));
-        assertThat(throwable.getCause(), hasProperty("message",
-                containsString("failed-publisher-transformation")));
+                hasProperty("message", containsString("Unexpected exception occurred during publishers chaining"))));
+        assertThat(throwable.getCause(), hasProperty("message", containsString("failed-publisher-transformation")));
     }
 
     @Test
     public void readerTest() throws Exception {
-        Request request = requestTestStub(
-                Multi.just(DataChunk.create("2010-01-02".getBytes())));
+        Request request = requestTestStub(Multi.just(DataChunk.create("2010-01-02".getBytes())));
 
         request.content().registerReader(LocalDate.class,
                 (publisher, clazz) -> ContentReaders
@@ -300,10 +293,8 @@ public class RequestContentTest {
                         .toFuture()
                         .thenApply(LocalDate::parse));
 
-        CompletionStage<String> complete = request.content()
-                .as(LocalDate.class)
-                .thenApply(o -> o.getDayOfMonth() + "/" + o.getMonthValue()
-                        + "/" + o.getYear());
+        CompletionStage<String> complete = request.content().as(LocalDate.class)
+                .thenApply(o -> o.getDayOfMonth() + "/" + o.getMonthValue()  + "/" + o.getYear());
 
         String result = complete.toCompletableFuture().get(10, TimeUnit.SECONDS);
         assertThat(result, is("2/1/2010"));
@@ -311,50 +302,38 @@ public class RequestContentTest {
 
     @Test
     public void implicitByteArrayContentReader() throws Exception {
-        Request request = requestTestStub(
-                Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
 
-        CompletionStage<String> complete = request.content().as(byte[].class)
-                .thenApply(String::new);
-        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),
-                is("test-string"));
+        CompletionStage<String> complete = request.content().as(byte[].class).thenApply(String::new);
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),  is("test-string"));
     }
 
     @Test
     public void implicitStringContentReader() throws Exception {
-        Request request = requestTestStub(
-                Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
 
-        CompletionStage<? extends String> complete = request.content()
-                .as(String.class);
-        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),
-                is("test-string"));
+        CompletionStage<? extends String> complete = request.content().as(String.class);
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("test-string"));
     }
 
     @Test
     public void overridingStringContentReader() throws Exception {
-        Request request = requestTestStub(
-                Multi.just(DataChunk.create("test-string".getBytes())));
+        Request request = requestTestStub(Multi.just(DataChunk.create("test-string".getBytes())));
 
-        request.content()
-               .registerReader(String.class, (publisher, clazz) -> {
-                   fail("Should not be called");
-                   throw new IllegalStateException("unreachable code");
-               });
-        request.content()
-               .registerReader(String.class, (publisher, clazz) -> {
-                    return Multi.from(publisher)
-                            .map(TestUtils::requestChunkAsString)
-                            .map(String::toUpperCase)
-                            .collectList()
-                            .map((strings -> strings.get(0)))
-                            .toFuture();
-               });
+        request.content().registerReader(String.class, (publisher, clazz) -> {
+            fail("Should not be called");
+            throw new IllegalStateException("unreachable code");
+        });
+        request.content().registerReader(String.class, (publisher, clazz) -> {
+            return Multi.from(publisher)
+                    .map(TestUtils::requestChunkAsString)
+                    .map(String::toUpperCase)
+                    .collectList()
+                    .map((strings -> strings.get(0)))
+                    .toFuture();
+        });
 
-        CompletionStage<? extends String> complete = request.content()
-                .as(String.class);
-
-        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS),
-                is("TEST-STRING"));
+        CompletionStage<? extends String> complete = request.content().as(String.class);
+        assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("TEST-STRING"));
     }
 }

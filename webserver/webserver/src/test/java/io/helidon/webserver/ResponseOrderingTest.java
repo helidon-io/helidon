@@ -69,8 +69,7 @@ public class ResponseOrderingTest {
      *
      * @param args not used
      */
-    public static void main(String[] args)
-            throws InterruptedException, ExecutionException, TimeoutException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException, TimeoutException {
 
         Routing routing = Routing.builder()
                 .any("/multi", (req, res) -> {
@@ -82,9 +81,7 @@ public class ResponseOrderingTest {
                                     errorQueue.add(throwable1);
                                     return null;
                                 });
-                        System.out.println("Response sent: " 
-                                + res.requestId() + " .. " 
-                                + Thread.currentThread().toString());
+                        System.out.println("Response sent: " + res.requestId() + " .. " + Thread.currentThread().toString());
                     }).exceptionally(throwable -> {
                         throwable.printStackTrace();
                         res.status(500);
@@ -111,8 +108,7 @@ public class ResponseOrderingTest {
                 .thenRun(() -> System.out.println("UP and RUNNING!"))
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
-        webServer.whenShutdown().thenRun(() -> System.out.println(
-                "=============== SERVER IS DOWN ================!"));
+        webServer.whenShutdown().thenRun(() -> System.out.println("=============== SERVER IS DOWN ================!"));
     }
 
     @BeforeAll
