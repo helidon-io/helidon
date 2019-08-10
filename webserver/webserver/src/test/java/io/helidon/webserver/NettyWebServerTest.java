@@ -79,26 +79,19 @@ public class NettyWebServerTest {
                     long id = new SecureRandom().nextLong();
                     System.out.println("Received request .. ID: " + id);
 
-                    SubmissionPublisher<DataChunk> responsePublisher =
-                            new SubmissionPublisher<>(ForkJoinPool.commonPool(),
-                                    1024);
+                    SubmissionPublisher<DataChunk> responsePublisher = new SubmissionPublisher<>(ForkJoinPool.commonPool(), 1024);
                     responsePublisher.subscribe(bres);
 
-                    final AtomicReference<Subscription> subscription =
-                            new AtomicReference<>();
+                    final AtomicReference<Subscription> subscription = new AtomicReference<>();
 
                     // Read request and immediately write to response
                     Multi.from(breq.bodyPublisher()).subscribe((DataChunk chunk) -> {
-                        DataChunk responseChunk = DataChunk.create(true,
-                                chunk.data(), chunk::release);
+                        DataChunk responseChunk = DataChunk.create(true, chunk.data(), chunk::release);
                         responsePublisher.submit(responseChunk);
-
                         ForkJoinPool.commonPool().submit(() -> {
                             try {
                                 Thread.sleep(1);
-                                subscription.get().request(
-                                        ThreadLocalRandom.current()
-                                                .nextLong(1, 3));
+                                subscription.get().request(ThreadLocalRandom.current().nextLong(1, 3));
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                                 throw new IllegalStateException(e);
@@ -147,11 +140,9 @@ public class NettyWebServerTest {
         webServer.shutdown().toCompletableFuture().get(10, TimeUnit.SECONDS);
         long endNanos = System.nanoTime();
 
-        System.out.println("Start took: "
-                + TimeUnit.MILLISECONDS.convert(shutdownStartNanos - startNanos,
+        System.out.println("Start took: " + TimeUnit.MILLISECONDS.convert(shutdownStartNanos - startNanos,
                 TimeUnit.NANOSECONDS) + " ms.");
-        System.out.println("Shutdown took: "
-                + TimeUnit.MILLISECONDS.convert(endNanos - shutdownStartNanos,
+        System.out.println("Shutdown took: " + TimeUnit.MILLISECONDS.convert(endNanos - shutdownStartNanos,
                 TimeUnit.NANOSECONDS) + " ms.");
     }
 
@@ -192,15 +183,11 @@ public class NettyWebServerTest {
 
         try {
             assertThat(webServer.port(), greaterThan(0));
-            assertThat(webServer.port("1"), allOf(greaterThan(0),
-                    not(webServer.port())));
+            assertThat(webServer.port("1"), allOf(greaterThan(0), not(webServer.port())));
             assertThat(webServer.port("2"),
-                    allOf(greaterThan(0), not(webServer.port()),
-                            not(webServer.port("1"))));
+                    allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1"))));
             assertThat(webServer.port("3"),
-                    allOf(greaterThan(0), not(webServer.port()),
-                            not(webServer.port("1")),
-                            not(webServer.port("2"))));
+                    allOf(greaterThan(0), not(webServer.port()), not(webServer.port("1")), not(webServer.port("2"))));
             assertThat(webServer.port("4"),
                     allOf(greaterThan(0),
                             not(webServer.port()),
@@ -253,13 +240,10 @@ public class NettyWebServerTest {
 
             fail("Should have failed!");
         } catch (CompletionException e) {
-            assertThat(e.getMessage(),
-                    containsString("WebServer was unable to start"));
-            CompletableFuture<WebServer> shutdownFuture = webServer
-                    .whenShutdown().toCompletableFuture();
+            assertThat(e.getMessage(), containsString("WebServer was unable to start"));
+            CompletableFuture<WebServer> shutdownFuture = webServer.whenShutdown().toCompletableFuture();
             assertThat("Shutdown future not as expected: " + shutdownFuture,
-                    shutdownFuture.isDone()
-                            && !shutdownFuture.isCompletedExceptionally(),
+                    shutdownFuture.isDone() && !shutdownFuture.isCompletedExceptionally(),
                     is(true));
 
         } catch (Exception e) {

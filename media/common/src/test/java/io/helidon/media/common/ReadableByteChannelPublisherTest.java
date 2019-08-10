@@ -51,8 +51,7 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void allData() throws Exception {
         PeriodicalChannel pc = new PeriodicalChannel(i -> 256, TEST_DATA_SIZE);
-        CountingOnNextDelegatingPublisher publisher =
-                new CountingOnNextDelegatingPublisher(
+        CountingOnNextDelegatingPublisher publisher = new CountingOnNextDelegatingPublisher(
                 new ReadableByteChannelPublisher(pc, RetrySchema.constant(5)));
         // assert
         byte[] bytes = ContentReaders.readBytes(publisher)
@@ -84,8 +83,7 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void chunkyNoDelay() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 3);
-        ReadableByteChannelPublisher publisher =
-                new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, RetrySchema.constant(0));
         // assert
         byte[] bytes = ContentReaders.readBytes(publisher)
                 .toFuture().get(5, TimeUnit.SECONDS);
@@ -114,9 +112,7 @@ public class ReadableByteChannelPublisherTest {
     @Test
     public void negativeDelay() throws Exception {
         PeriodicalChannel pc = createChannelWithNoAvailableData(10, 1);
-        ReadableByteChannelPublisher publisher =
-                new ReadableByteChannelPublisher(pc,
-                        (i, delay) -> i >= 3 ? -10 : 0);
+        ReadableByteChannelPublisher publisher = new ReadableByteChannelPublisher(pc, (i, delay) -> i >= 3 ? -10 : 0);
         // assert
         try {
             ContentReaders.readBytes(publisher)
@@ -128,8 +124,7 @@ public class ReadableByteChannelPublisherTest {
         }
     }
 
-    private static PeriodicalChannel createChannelWithNoAvailableData(
-            int hasDataCount, int noDataCount) {
+    private static PeriodicalChannel createChannelWithNoAvailableData(int hasDataCount, int noDataCount) {
 
         return new PeriodicalChannel(i -> {
             int subIndex = i % (hasDataCount + noDataCount);
@@ -151,8 +146,7 @@ public class ReadableByteChannelPublisherTest {
         }
     }
 
-    private static class CountingOnNextSubscriber
-            implements Subscriber<DataChunk> {
+    private static class CountingOnNextSubscriber implements Subscriber<DataChunk> {
 
         private final Subscriber<? super DataChunk> delegate;
         private volatile int onNextCount;
@@ -183,8 +177,7 @@ public class ReadableByteChannelPublisherTest {
         }
     }
 
-    static class CountingOnNextDelegatingPublisher
-            implements Publisher<DataChunk> {
+    static class CountingOnNextDelegatingPublisher implements Publisher<DataChunk> {
 
         private final Publisher<DataChunk> delegate;
         private CountingOnNextSubscriber subscriber;
@@ -208,8 +201,7 @@ public class ReadableByteChannelPublisherTest {
 
     static class PeriodicalChannel implements ReadableByteChannel {
 
-        static final byte[] SEQUENCE = "abcdefghijklmnopqrstuvwxyz"
-                .getBytes(StandardCharsets.US_ASCII);
+        static final byte[] SEQUENCE = "abcdefghijklmnopqrstuvwxyz".getBytes(StandardCharsets.US_ASCII);
 
         private boolean open = true;
         private int pointer = 0;
@@ -242,9 +234,7 @@ public class ReadableByteChannelPublisherTest {
             // Do read
             int chunkSizeLimit = maxChunkSize.apply(readMethodCallCounter);
             int writeCounter = 0;
-            while (count < size
-                    && writeCounter < chunkSizeLimit
-                    && dst.remaining() > 0) {
+            while (count < size && writeCounter < chunkSizeLimit && dst.remaining() > 0) {
                 count++;
                 writeCounter++;
                 dst.put(pick());

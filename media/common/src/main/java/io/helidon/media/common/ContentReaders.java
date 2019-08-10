@@ -110,8 +110,7 @@ public final class ContentReaders {
      * Implementation of {@link Mapper} that converts a {@code byte[]} into
      * a {@link String} using a given {@link Charset}.
      */
-    private static final class BytesToString
-            implements Mapper<byte[], String> {
+    private static final class BytesToString implements Mapper<byte[], String> {
 
         private final Charset charset;
 
@@ -129,8 +128,7 @@ public final class ContentReaders {
      * Implementation of {@link Collector} that collects chunks into a single
      * {@code byte[]}.
      */
-    private static final class BytesCollector
-            implements Collector<DataChunk, byte[]> {
+    private static final class BytesCollector implements Collector<DataChunk, byte[]> {
 
         private final ByteArrayOutputStream baos;
 
@@ -143,8 +141,7 @@ public final class ContentReaders {
             try {
                 Utils.write(chunk.data(), baos);
             } catch (IOException e) {
-                throw new IllegalArgumentException(
-                        "Cannot convert byte buffer to a byte array!", e);
+                throw new IllegalArgumentException("Cannot convert byte buffer to a byte array!", e);
             } finally {
                 chunk.release();
             }

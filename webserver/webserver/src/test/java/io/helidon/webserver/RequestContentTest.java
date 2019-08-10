@@ -70,23 +70,15 @@ public class RequestContentTest {
 
     @Test
     public void directSubscriptionTest() throws Exception {
-        Request request = requestTestStub(
-                Multi.just("first", "second", "third")
-                .map(s -> DataChunk.create(s.getBytes())));
-
+        Request request = requestTestStub(Multi.just("first", "second", "third").map(s -> DataChunk.create(s.getBytes())));
         StringBuilder sb = new StringBuilder();
-        Multi.from(request.content()).subscribe(chunk ->
-                sb.append(requestChunkAsString(chunk)).append("-"));
-
+        Multi.from(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
         assertThat(sb.toString(), is("first-second-third-"));
     }
 
     @Test
     public void upperCaseFilterTest() throws Exception {
-        Request request = requestTestStub(
-                Multi.just("first", "second", "third")
-                .map(s -> DataChunk.create(s.getBytes())));
-
+        Request request = requestTestStub(Multi.just("first", "second", "third").map(s -> DataChunk.create(s.getBytes())));
         StringBuilder sb = new StringBuilder();
         request.content().registerFilter((Publisher<DataChunk> publisher) -> {
             sb.append("apply_filter-");
@@ -96,12 +88,9 @@ public class RequestContentTest {
                     .map(s -> DataChunk.create(s.getBytes()));
         });
 
-        assertThat("Apply filter is expected to be called after a subscription!",
-                sb.toString(), is(""));
+        assertThat("Apply filter is expected to be called after a subscription!", sb.toString(), is(""));
 
-        Multi.from(request.content()).subscribe(chunk ->
-                sb.append(requestChunkAsString(chunk)).append("-"));
-
+        Multi.from(request.content()).subscribe(chunk -> sb.append(requestChunkAsString(chunk)).append("-"));
         assertThat(sb.toString(), is("apply_filter-FIRST-SECOND-THIRD-"));
     }
 
@@ -109,8 +98,7 @@ public class RequestContentTest {
     public void multiThreadingFilterAndReaderTest() throws Exception {
 
         CountDownLatch subscribedLatch = new CountDownLatch(1);
-        SubmissionPublisher<DataChunk> publisher =
-                new SubmissionPublisher<>(Runnable::run, 10);
+        SubmissionPublisher<DataChunk> publisher = new SubmissionPublisher<>(Runnable::run, 10);
         ForkJoinPool.commonPool().submit(() -> {
             try {
                 if (!subscribedLatch.await(10, TimeUnit.SECONDS)) {
@@ -124,7 +112,6 @@ public class RequestContentTest {
             publisher.submit(DataChunk.create("first".getBytes()));
             publisher.submit(DataChunk.create("second".getBytes()));
             publisher.submit(DataChunk.create("third".getBytes()));
-
             publisher.close();
         });
 

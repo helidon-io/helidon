@@ -82,37 +82,30 @@ public class BytesReuseTest {
                 Routing.builder()
                         .any((req, res) -> {
                             req.content().registerFilter(
-                                    (Publisher<DataChunk> publisher) -> Multi.from(publisher)
-                                            .map(chunk -> {
-                                                if (req.queryParams()
-                                                        .first("keep_chunks")
-                                                        .map(Boolean::valueOf)
-                                                        .orElse(true)) {
-                                                    chunkReference.add(chunk);
-                                                }
-                                                return chunk;
-                                            }));
+                                    (Publisher<DataChunk> publisher) -> Multi.from(publisher).map(chunk -> {
+                                        if (req.queryParams().first("keep_chunks").map(Boolean::valueOf).orElse(true)) {
+                                            chunkReference.add(chunk);
+                                        }
+                                        return chunk;
+                                    }));
                             res.headers().add("Transfer-Encoding", "chunked");
                             req.next();
                         })
                         .post("/subscriber", (req, res) -> {
-                            Multi.from(req.content()).subscribe(
-                                    (DataChunk chunk) -> {
-                                        if (req.queryParams().first("release")
-                                                .map(Boolean::valueOf)
-                                                .orElse(true)) {
-                                            chunk.release();
-                                        }
-                                    }, (Throwable ex) -> {
-                                        LOGGER.log(Level.WARNING,
-                                                "Encountered an exception!", ex);
-                                        res.status(500)
-                                                .send("Error: " + ex.getMessage());
-                                    }, () -> {
-                                        res.send("Finished");
-                                    }, (Subscription subscription) -> {
-                                        subscription.request(Long.MAX_VALUE);
-                                    });
+                            Multi.from(req.content()).subscribe((DataChunk chunk) -> {
+                                if (req.queryParams().first("release").map(Boolean::valueOf).orElse(true)) {
+                                    chunk.release();
+                                }
+                            }, (Throwable ex) -> {
+                                LOGGER.log(Level.WARNING,
+                                        "Encountered an exception!", ex);
+                                res.status(500)
+                                        .send("Error: " + ex.getMessage());
+                            }, () -> {
+                                res.send("Finished");
+                            }, (Subscription subscription) -> {
+                                subscription.request(Long.MAX_VALUE);
+                            });
                         })
                         .post("/string", Handler.create(String.class, (req, res, s) -> {
                             assertAgainstPrefixQueryParam(req, s);
@@ -123,32 +116,27 @@ public class BytesReuseTest {
                             res.send("Finished");
                         }))
                         .post("/bytes_deferred", (req, res) -> {
-                            Executors.newSingleThreadExecutor()
-                                    .submit(() -> {
-                                        req.content()
-                                                .as(byte[].class)
-                                                .thenAccept(bytes -> {
-                                                    assertAgainstPrefixQueryParam(req, new String(bytes));
-                                                    res.send("Finished");
-                                                })
-                                                .exceptionally(t -> {
-                                                    req.next(t);
-                                                    return null;
-                                                });
-                                    });
+                            Executors.newSingleThreadExecutor().submit(() -> {
+                                req.content().as(byte[].class).thenAccept(bytes -> {
+                                    assertAgainstPrefixQueryParam(req, new String(bytes));
+                                    res.send("Finished");
+                                }).exceptionally(t -> {
+                                    req.next(t);
+                                    return null;
+                                });
+                            });
                         })
                         .post("/input_stream", Handler.create(InputStream.class, (req, res, stream) -> {
-                            Executors.newSingleThreadExecutor()
-                                    .submit(() -> {
-                                        try {
-                                            LOGGER.info("Consuming data from input stream!");
-                                            assertAgainstPrefixQueryParam(req,
-                                                    new String(InputStreamHelper.readAllBytes(stream)));
-                                            res.send("Finished");
-                                        } catch (IOException e) {
-                                            req.next(new IllegalStateException("Got an IO error.", e));
-                                        }
-                                    });
+                            Executors.newSingleThreadExecutor().submit(() -> {
+                                try {
+                                    LOGGER.info("Consuming data from input stream!");
+                                    assertAgainstPrefixQueryParam(req,
+                                            new String(InputStreamHelper.readAllBytes(stream)));
+                                    res.send("Finished");
+                                } catch (IOException e) {
+                                    req.next(new IllegalStateException("Got an IO error.", e));
+                                }
+                            });
                         }))
                         .any("/unconsumed", (req, res) -> res.send("Nothing consumed!"))
                         .build())
@@ -156,8 +144,7 @@ public class BytesReuseTest {
                 .toCompletableFuture()
                 .get(10, TimeUnit.SECONDS);
 
-        LOGGER.log(Level.INFO,"Started server at: https://localhost:{0}",
-                webServer.port());
+        LOGGER.log(Level.INFO, "Started server at: https://localhost:{0}", webServer.port());
     }
 
     private static void assertAgainstPrefixQueryParam(ServerRequest req, String actual) {

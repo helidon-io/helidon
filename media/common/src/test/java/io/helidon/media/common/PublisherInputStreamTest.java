@@ -66,8 +66,7 @@ public class PublisherInputStreamTest {
                 @Override
                 public void request(long n) {
                     if(n > 0){
-                        for(; delivered < n && delivered < chunks.length
-                                ; delivered ++){
+                        for(; delivered < n && delivered < chunks.length ; delivered ++){
                             subscriber.onNext(chunks[delivered]);
                         }
                         if(delivered == chunks.length){

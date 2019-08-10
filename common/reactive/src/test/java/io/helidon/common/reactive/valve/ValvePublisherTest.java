@@ -120,8 +120,7 @@ class ValvePublisherTest {
         integerTank.add(7);
         assertThat(sb.toString(), is("1234567"));
 
-        // TODO webserver#22 close itself doesn't complete the subscriber;
-        // change the test once the issue is solved
+        // TODO webserver#22 close itself doesn't complete the subscriber; change the test once the issue is solved
         integerTank.close();
         assertThat(sb.toString(), is("1234567"));
         subscriptionRef.get().request(1);

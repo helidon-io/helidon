@@ -38,8 +38,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
     /**
      * Logger.
      */
-    private static final Logger LOGGER =
-            Logger.getLogger(ReferenceHoldingQueue.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ReferenceHoldingQueue.class.getName());
 
     /**
      * This set is used to keep references on the {@code ReleasableReference}
@@ -109,8 +108,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
      */
     private void link(ReleasableReference<T> reference) {
         if (down) {
-            throw new IllegalStateException(
-                    "Shutdown was requested. This queue must not be used anymore");
+            throw new IllegalStateException("Shutdown was requested. This queue must not be used anymore");
         }
         set.add(reference);
     }

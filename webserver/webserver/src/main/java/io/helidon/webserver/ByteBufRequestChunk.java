@@ -39,13 +39,11 @@ class ByteBufRequestChunk implements DataChunk {
     private final ByteBuffer byteBuffer;
     private final ReferenceHoldingQueue.ReleasableReference<DataChunk> ref;
 
-    ByteBufRequestChunk(ByteBuf byteBuf,
-            ReferenceHoldingQueue<DataChunk> referenceHoldingQueue) {
+    ByteBufRequestChunk(ByteBuf byteBuf, ReferenceHoldingQueue<DataChunk> referenceHoldingQueue) {
 
         Objects.requireNonNull(byteBuf, "The ByteBuf must not be null!");
         byteBuffer = byteBuf.nioBuffer().asReadOnlyBuffer();
-        ref = new ReferenceHoldingQueue.ReleasableReference<>(this,
-                referenceHoldingQueue, byteBuf::release);
+        ref = new ReferenceHoldingQueue.ReleasableReference<>(this, referenceHoldingQueue, byteBuf::release);
         byteBuf.retain();
     }
 
@@ -57,8 +55,7 @@ class ByteBufRequestChunk implements DataChunk {
     @Override
     public ByteBuffer data() {
         if (isReleased()) {
-            throw new IllegalStateException(
-                    "The request chunk was already released!");
+            throw new IllegalStateException("The request chunk was already released!");
         }
         return byteBuffer;
     }
@@ -111,7 +108,7 @@ class ByteBufRequestChunk implements DataChunk {
             // TODO add a link to a website that explains the problem
             LOGGER.warning("LEAK: DataChunk.release() was not called before it was garbage collected. "
                     + "While the Reactive WebServer is "
-                    + "designed to automatically release all the RequestChunks, it still "
+                    + "designed to automatically release all the data chunks, it still "
                     + "comes with a considerable performance penalty and a demand for a large "
                     + "memory space (depending on expected throughput, it might require even more than 2GB). "
                     + "As such the users are "

@@ -44,8 +44,7 @@ public class JsonContentReaderTest {
 
     @Test
     public void simpleJsonObject() throws Exception {
-        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" }")
-                .map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonObject> stage = JsonSupport.create()
                 .reader()
@@ -57,8 +56,7 @@ public class JsonContentReaderTest {
 
     @Test
     public void incompatibleTypes() throws Exception {
-        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" }")
-                .map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" }").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonArray> stage = JsonSupport.create()
                 .reader()
@@ -77,8 +75,7 @@ public class JsonContentReaderTest {
 
     @Test
     public void simpleJsonArray() throws Exception {
-        Publisher<DataChunk> chunks = Multi.just("[ \"val\" ]")
-                .map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("[ \"val\" ]").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonArray> stage = JsonSupport.create()
                 .reader()
@@ -90,8 +87,7 @@ public class JsonContentReaderTest {
 
     @Test
     public void invalidJson() throws Exception {
-        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" ")
-                .map(s -> DataChunk.create(s.getBytes()));
+        Publisher<DataChunk> chunks = Multi.just("{ \"p\" : \"val\" ").map(s -> DataChunk.create(s.getBytes()));
 
         CompletionStage<? extends JsonObject> stage = JsonSupport.create()
                 .reader()
