@@ -91,7 +91,7 @@ public final class ContentWriters {
      * if {@code byte[]} will be immediately reused.
      * @return a {@code byte[]} writer
      */
-    public static Function<byte[], Publisher<DataChunk>> byteArrayWriter( boolean copy) {
+    public static Function<byte[], Publisher<DataChunk>> byteArrayWriter(boolean copy) {
         return (bytes) -> writeBytes(bytes, copy);
     }
 

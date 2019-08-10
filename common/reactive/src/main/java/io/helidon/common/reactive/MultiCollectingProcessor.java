@@ -42,7 +42,7 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
     }
 
     @Override
-    public final void request(long n) {
+    public void request(long n) {
         if (n > 0) {
             if (!requested) {
                 requested = true;
@@ -54,14 +54,14 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
     }
 
     @Override
-    public final void cancel() {
+    public void cancel() {
         if (subscription != null) {
             subscription.cancel();
         }
     }
 
     @Override
-    public final void onSubscribe(Subscription subscription) {
+    public void onSubscribe(Subscription subscription) {
         Objects.requireNonNull(subscription, "subscription cannot be null!");
         if (this.subscription != null) {
             this.subscription.cancel();
@@ -75,7 +75,7 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
     }
 
     @Override
-    public final void onNext(T item) {
+    public void onNext(T item) {
         if (!done) {
             try {
                 collector.collect(item);
@@ -86,7 +86,7 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
     }
 
     @Override
-    public final void onError(Throwable ex) {
+    public void onError(Throwable ex) {
         if (!done) {
             done = true;
             error = ex;
@@ -95,7 +95,7 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
     }
 
     @Override
-    public final void onComplete() {
+    public void onComplete() {
         if (!done) {
             done = true;
             if (requested) {
@@ -116,7 +116,7 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
     }
 
     @Override
-    public final void subscribe(Subscriber<? super U> subscriber) {
+    public void subscribe(Subscriber<? super U> subscriber) {
         this.delegate = subscriber;
         delegate.onSubscribe(this);
     }

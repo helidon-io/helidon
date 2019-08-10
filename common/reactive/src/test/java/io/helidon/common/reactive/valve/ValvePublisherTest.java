@@ -17,6 +17,7 @@
 package io.helidon.common.reactive.valve;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.reactive.Collector;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.CollectionsHelper.listOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -176,8 +178,9 @@ class ValvePublisherTest {
         try {
             multi.collect(new StringCollector<>()).toFuture().get();
             fail("Should have thrown an exception!");
-        } catch (IllegalStateException e) {
+        } catch (ExecutionException e) {
             assertThat(e.getCause(), is(notNullValue()));
+            assertThat(e.getCause(), is(instanceOf(IllegalStateException.class)));
             assertThat(e.getCause().getMessage(), containsString("Multiple subscribers aren't allowed"));
         }
     }

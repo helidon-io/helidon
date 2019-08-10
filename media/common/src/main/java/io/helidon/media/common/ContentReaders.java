@@ -25,8 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Reader;
 import io.helidon.common.http.Utils;
-import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Collector;
+import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Mapper;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
@@ -71,7 +71,7 @@ public final class ContentReaders {
      * @param charset the charset to use with the returned string content reader
      * @return a string content reader
      */
-    public static Reader<String> stringReader( Charset charset) {
+    public static Reader<String> stringReader(Charset charset) {
         return (chunks, type) -> readString(chunks, charset).toFuture();
     }
 

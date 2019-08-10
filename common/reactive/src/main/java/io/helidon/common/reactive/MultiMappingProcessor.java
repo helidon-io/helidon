@@ -39,7 +39,7 @@ final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
     }
 
     @Override
-    public final void onSubscribe(Subscription s) {
+    public void onSubscribe(Subscription s) {
         if (subscription == null) {
             subscription = s;
             if (delegate != null) {
@@ -49,7 +49,7 @@ final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
     }
 
     @Override
-    public final void onNext(T item) {
+    public void onNext(T item) {
         if (!done) {
             try {
                 U val = mapper.map(item);
@@ -66,7 +66,7 @@ final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
     }
 
     @Override
-    public final void onError(Throwable ex) {
+    public void onError(Throwable ex) {
         if (!done) {
             done = true;
             delegate.onError(ex);
@@ -74,7 +74,7 @@ final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
     }
 
     @Override
-    public final void onComplete() {
+    public void onComplete() {
         if (!done) {
             done = true;
             delegate.onComplete();
@@ -82,7 +82,7 @@ final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
     }
 
     @Override
-    public final void subscribe(Subscriber<? super U> subscriber) {
+    public void subscribe(Subscriber<? super U> subscriber) {
         this.delegate = subscriber;
         if (subscription != null) {
             delegate.onSubscribe(subscription);

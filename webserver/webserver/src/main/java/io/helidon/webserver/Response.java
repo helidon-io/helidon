@@ -37,6 +37,7 @@ import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.common.reactive.Flow;
+import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentWriters;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
@@ -44,7 +45,6 @@ import io.helidon.tracing.config.TracingConfigUtil;
 import io.opentracing.Span;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
-import io.helidon.common.reactive.Single;
 
 /**
  * The basic implementation of {@link ServerResponse}.

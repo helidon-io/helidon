@@ -41,7 +41,7 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
     }
 
     @Override
-    public final void onNext(T item) {
+    public void onNext(T item) {
         if (delegate == null) {
             delegate = mapper.map(item);
             doSusbcribe();
@@ -50,7 +50,7 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
     }
 
     @Override
-    public final void onError(Throwable ex) {
+    public void onError(Throwable ex) {
         if (delegate == null) {
             error = ex;
             delegate = Single.<U>error(error);
@@ -59,13 +59,13 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
     }
 
     @Override
-    public final void onSubscribe(Subscription s) {
+    public void onSubscribe(Subscription s) {
         this.subscription = s;
         s.request(1);
     }
 
     @Override
-    public final void onComplete() {
+    public void onComplete() {
     }
 
     private void doSusbcribe() {
@@ -76,7 +76,7 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
     }
 
     @Override
-    public final void subscribe(Subscriber<? super U> subscriber) {
+    public void subscribe(Subscriber<? super U> subscriber) {
         this.subscriber = subscriber;
         if (delegate != null) {
             doSusbcribe();
