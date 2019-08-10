@@ -31,8 +31,7 @@ import io.helidon.common.reactive.Multi;
  * <p>
  * This is a naive implementation.
  */
-public final class UpperXFilter
-        implements Function<Publisher<DataChunk>, Publisher<DataChunk>> {
+public final class UpperXFilter implements Function<Publisher<DataChunk>, Publisher<DataChunk>> {
 
     private static final Charset CHARSET = StandardCharsets.US_ASCII;
     private static final byte LOWER_X = "x".getBytes(CHARSET)[0];
