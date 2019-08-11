@@ -66,8 +66,8 @@ database connections:
    https://github.com/brettwooldridge/HikariCP[Hikari connection pool]
    into Helidon MP applications
 
-2. Oracle Universal Connection Pool extension: an extension that
-   integrates
+2. <<extensions/06_cdi_datasource-ucp.adoc,Oracle Universal Connection
+   Pool extension>>: an extension that integrates
    https://docs.oracle.com/en/database/oracle/oracle-database/19/jjucp/index.html[Oracle's
    Universal Connection Pool] into Helidon MP applications
 
