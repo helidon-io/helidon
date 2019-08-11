@@ -120,6 +120,23 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>io.helidon.serviceconfiguration:helidon-serviceconfiguration-hikaricp-accs</classpathDependencyExclude>
+                        <classpathDependencyExclude>io.helidon.serviceconfiguration:helidon-serviceconfiguration-hikaricp-localhost</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <repositories>
         <repository>
             <id>maven.oracle.com</id>
