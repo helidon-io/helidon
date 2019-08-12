@@ -29,6 +29,7 @@ There are 3 default MicroProfile Config sources:
 * `System.getProperties()`
 * `System.getenv()`
 * all `META-INF/microprofile-config.properties` files on the class path
+* `application.yaml` on the classpath (read by default by Helidon Config)
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
@@ -57,23 +58,29 @@ ssl:
     keystore-passphrase: "abcd"
 ----
 
+== Configure "admin" port
+For this example, we will use a `yaml` file. We configure a port 8011 that would server health and metrics endpoints,
+and then configure health and metrics to use it.
 
-For Helidon config, the default file is `application.yaml` on the classpath
- (e.g. src/main/resources/application.yaml).
+Alternative ports can be used by Server extensions that support it. This support is currently limited to MP Health and
+MP Metrics implementations in Helidon.
+
+You can create a custom Server extension and run routes on alternative ports - this support is limited to WebServer routing.
 
 [source,yaml]
 .application.yaml - Server configuration
 ----
 server:
+  port: 7011
+  host: "some.host"
   sockets:
-    - secure:
-        port: 443
-        # supports all socket related properties of server
-        backlog: 1024
-        receive-buffer: 0
-        timeout: 60000
-        ssl:
-          ....
-    - another:
-        port: 12041
+    admin:
+      port: 8011
+      bind-address: "some.host"
+
+metrics:
+  routing: "admin"
+
+health:
+  routing: "admin"
 ----
