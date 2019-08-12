@@ -134,8 +134,7 @@ class ValvePublisherTest {
         final AtomicReference<Throwable> exception = new AtomicReference<>();
         Tank<Integer> integerTank = new Tank<>(10);
 
-        final AtomicReference<Subscription> subscriptionRef =
-                new AtomicReference<>();
+        final AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
 
         integerTank.toPublisher().subscribe(new Subscriber<Integer>() {
             @Override

@@ -35,8 +35,7 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBu
 
     private volatile boolean suspended = false;
     private final ChannelHandlerContext ctx;
-    private final ReentrantReadWriteLock.WriteLock lock =
-            new ReentrantReadWriteLock().writeLock();
+    private final ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock();
     private final ReferenceHoldingQueue<DataChunk> referenceQueue;
 
     HttpRequestScopedPublisher(ChannelHandlerContext ctx, ReferenceHoldingQueue<DataChunk> referenceQueue) {
