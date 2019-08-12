@@ -27,6 +27,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -117,63 +118,60 @@ final class FinalRegistry extends Registry {
         return delegate.getNames();
     }
 
-    /** TODO
-     *
     @Override
-    public SortedMap<String, Gauge> getGauges() {
+    public SortedMap<MetricID, Gauge> getGauges() {
         return delegate.getGauges();
     }
 
     @Override
-    public SortedMap<String, Gauge> getGauges(MetricFilter filter) {
+    public SortedMap<MetricID, Gauge> getGauges(MetricFilter filter) {
         return delegate.getGauges(filter);
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters() {
+    public SortedMap<MetricID, Counter> getCounters() {
         return delegate.getCounters();
     }
 
     @Override
-    public SortedMap<String, Counter> getCounters(MetricFilter filter) {
+    public SortedMap<MetricID, Counter> getCounters(MetricFilter filter) {
         return delegate.getCounters(filter);
     }
 
     @Override
-    public SortedMap<String, Histogram> getHistograms() {
+    public SortedMap<MetricID, Histogram> getHistograms() {
         return delegate.getHistograms();
     }
 
     @Override
-    public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
+    public SortedMap<MetricID, Histogram> getHistograms(MetricFilter filter) {
         return delegate.getHistograms(filter);
     }
 
     @Override
-    public SortedMap<String, Meter> getMeters() {
+    public SortedMap<MetricID, Meter> getMeters() {
         return delegate.getMeters();
     }
 
     @Override
-    public SortedMap<String, Meter> getMeters(MetricFilter filter) {
+    public SortedMap<MetricID, Meter> getMeters(MetricFilter filter) {
         return delegate.getMeters(filter);
     }
 
     @Override
-    public SortedMap<String, Timer> getTimers() {
+    public SortedMap<MetricID, Timer> getTimers() {
         return delegate.getTimers();
     }
 
     @Override
-    public SortedMap<String, Timer> getTimers(MetricFilter filter) {
+    public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
         return delegate.getTimers(filter);
     }
 
     @Override
-    public Map<String, Metric> getMetrics() {
+    public Map<MetricID, Metric> getMetrics() {
         return delegate.getMetrics();
     }
-    */
 
     @Override
     public Map<String, Metadata> getMetadata() {

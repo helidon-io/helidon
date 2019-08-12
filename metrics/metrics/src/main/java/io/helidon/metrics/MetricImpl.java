@@ -88,9 +88,9 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     MetricImpl(String registryType, Metadata metadata) {
         super(metadata.getName(),
               metadata.getDisplayName(),
-              metadata.getDescription().get(),
+              metadata.getDescription().orElse(null),
               metadata.getTypeRaw(),
-              metadata.getUnit().get(),
+              metadata.getUnit().orElse(null),
               true);        // TODO tagsToSimpleString(metadata));
         this.registryType = registryType;
     }
@@ -133,10 +133,10 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     public void jsonMeta(JsonObjectBuilder builder) {
         JsonObjectBuilder metaBuilder = JSON.createObjectBuilder();
 
-        addNonEmpty(metaBuilder, "unit", getUnit().get());
-        addNonEmpty(metaBuilder, "unit", getUnit().get());
+        addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
+        addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
         addNonEmpty(metaBuilder, "type", getType());
-        addNonEmpty(metaBuilder, "description", getDescription().get());
+        addNonEmpty(metaBuilder, "description", getDescription().orElse(null));
         addNonEmpty(metaBuilder, "displayName", getDisplayName());
         addNonEmpty(metaBuilder, "tags", tagsToSimpleString(this));
 
@@ -179,7 +179,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         sb.append("# HELP ")
                 .append(nameWithUnits)
                 .append(" ")
-                .append(getDescription() == null ? "" : getDescription())
+                .append(getDescription().orElse(""))
                 .append('\n');
     }
 

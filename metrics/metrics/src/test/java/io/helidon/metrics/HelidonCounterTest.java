@@ -63,19 +63,6 @@ class HelidonCounterTest {
 
             }
 
-            // TODO
-            /*
-            @Override
-            public void dec() {
-
-            }
-
-            @Override
-            public void dec(long n) {
-
-            }
-            */
-
             @Override
             public long getCount() {
                 return 49;
@@ -107,49 +94,19 @@ class HelidonCounterTest {
     }
 
     @Test
-    void testDec() {
-        testValues(0);
-        counter.inc();
-        wrappingCounter.inc();
-        testValues(1);
-
-        // TODO
-        /*
-        counter.dec();
-        wrappingCounter.dec();
-        testValues(0);
-        */
-    }
-
-    @Test
-    void testDecWithParam() {
-        testValues(0);
-        counter.inc(49);
-        wrappingCounter.inc(49);
-        testValues(49);
-
-        // TODO
-        /*
-        counter.dec(7);
-        wrappingCounter.dec(7);
-        testValues(42);
-        */
-    }
-
-    @Test
     void testPrometheusData() {
         counter.inc(17);
         wrappingCounter.inc(17);
 
         String expected = "# TYPE base:the_name counter\n"
                 + "# HELP base:the_name theDescription\n"
-                + "base:the_name{a=\"b\",c=\"d\"} 17\n";
+                + "base:the_name 17\n";
 
         assertThat(counter.prometheusData(), is(expected));
 
         expected = "# TYPE base:the_name counter\n"
                 + "# HELP base:the_name theDescription\n"
-                + "base:the_name{a=\"b\",c=\"d\"} 49\n";
+                + "base:the_name 49\n";
         assertThat(wrappingCounter.prometheusData(), is(expected));
     }
 

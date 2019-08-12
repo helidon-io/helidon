@@ -60,7 +60,7 @@ class Registry extends MetricRegistry {
     }
 
     Optional<HelidonMetric> getMetric(String metricName) {
-        return Optional.ofNullable(allMetrics.get(metricName));
+        return Optional.ofNullable(allMetrics.get(new MetricID(metricName)));
     }
 
     @Override
