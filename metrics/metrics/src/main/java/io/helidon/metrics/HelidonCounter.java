@@ -54,18 +54,6 @@ final class HelidonCounter extends MetricImpl implements Counter {
         delegate.inc(n);
     }
 
-    // TODO @Override
-    /*
-    public void dec() {
-        delegate.dec();
-    }
-
-    @Override
-    public void dec(long n) {
-        delegate.dec(n);
-    }
-    */
-
     @Override
     public long getCount() {
         return delegate.getCount();
@@ -96,18 +84,6 @@ final class HelidonCounter extends MetricImpl implements Counter {
         public void inc(long n) {
             adder.add(n);
         }
-
-        /* TODO
-        @Override
-        public void dec() {
-            adder.decrement();
-        }
-
-        @Override
-        public void dec(long n) {
-            adder.add(-n);
-        }
-        */
 
         @Override
         public long getCount() {

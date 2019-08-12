@@ -193,22 +193,28 @@ class Registry extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(String name) {
-        return null;        // TODO
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
-        return null;        // TODO
+        return concurrentGauge(new HelidonMetadata(name, MetricType.CONCURRENT_GAUGE));
     }
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return null;        // TODO
+        return getMetric(metadata,
+                ConcurrentGauge.class,
+                name -> HelidonConcurrentGauge.create(type.getName(), metadata));
+    }
+
+    @Override
+    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
+        return concurrentGauge(new HelidonMetadata(name, MetricType.CONCURRENT_GAUGE), tags);
+
     }
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
-        return null;        // TODO
+        return getMetric(metadata,
+                ConcurrentGauge.class,
+                name -> HelidonConcurrentGauge.create(type.getName(), metadata),
+                tags);
     }
 
     @Override
@@ -290,12 +296,12 @@ class Registry extends MetricRegistry {
 
     @Override
     public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
-        return null;        // TODO
+        return getConcurrentGauges(MetricFilter.ALL);
     }
 
     @Override
     public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
-        return null;        // TODO
+        return getSortedMetrics(filter, ConcurrentGauge.class);
     }
 
     @Override
@@ -340,6 +346,8 @@ class Registry extends MetricRegistry {
                 return HelidonMeter.create(type.getName(), metadata, (Meter) metric);
             case TIMER:
                 return HelidonTimer.create(type.getName(), metadata, (Timer) metric);
+            case CONCURRENT_GAUGE:
+                return HelidonConcurrentGauge.create(type.getName(), metadata, (ConcurrentGauge) metric);
             case INVALID:
             default:
                 throw new IllegalArgumentException("Unexpected metric type " + metadata.getType()
