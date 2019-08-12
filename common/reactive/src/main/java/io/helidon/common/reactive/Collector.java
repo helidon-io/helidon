@@ -17,7 +17,7 @@ package io.helidon.common.reactive;
 
 /**
  * A collector accumulates the items provided when {@link #collect(java.lang.Object)} is invoked and makes them available in a
- * single container objects with {@link #value()}.
+ * single container object with {@link #value()}.
  *
  * @param <T> collected items type (input)
  * @param <U> result container type (output)

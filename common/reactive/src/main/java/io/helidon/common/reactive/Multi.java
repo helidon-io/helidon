@@ -46,11 +46,8 @@ public interface Multi<T> extends Publisher<T> {
      * @param consumer onNext delegate function
      * @param errorConsumer onError delegate function
      */
-    default void subscribe(Consumer<? super T> consumer,
-            Consumer<? super Throwable> errorConsumer) {
-
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer,
-                null, null));
+    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer) {
+        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, null, null));
     }
 
     /**
@@ -60,12 +57,8 @@ public interface Multi<T> extends Publisher<T> {
      * @param errorConsumer onError delegate function
      * @param completeConsumer onComplete delegate function
      */
-    default void subscribe(Consumer<? super T> consumer,
-            Consumer<? super Throwable> errorConsumer,
-            Runnable completeConsumer) {
-
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer,
-                completeConsumer, null));
+    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer) {
+        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, null));
     }
 
     /**
@@ -76,13 +69,10 @@ public interface Multi<T> extends Publisher<T> {
      * @param completeConsumer onComplete delegate function
      * @param subscriptionConsumer onSusbcribe delegate function
      */
-    default void subscribe(Consumer<? super T> consumer,
-            Consumer<? super Throwable> errorConsumer,
-            Runnable completeConsumer,
+    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer,
             Consumer<? super Subscription> subscriptionConsumer) {
 
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer,
-                completeConsumer, subscriptionConsumer));
+        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, subscriptionConsumer));
     }
 
     /**

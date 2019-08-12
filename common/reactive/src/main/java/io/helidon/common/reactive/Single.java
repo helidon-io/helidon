@@ -55,17 +55,14 @@ public interface Single<T> extends Publisher<T> {
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletableFuture}. Note that if this {
-     *
-     * @Single} completes without a value, the resulting {@link CompletableFuture} will be completed exceptionally with an
-     * {@link IllegalStateException}
+     * Exposes this {@link Single} instance as a {@link CompletableFuture}. Note that if this {@link Single} completes without a
+     * value, the resulting {@link CompletableFuture} will be completed exceptionally with an {@link IllegalStateException}
      *
      * @return CompletableFuture
      */
     default CompletableFuture<T> toFuture() {
         try {
-            SingleToCompletableFuture<T> subscriber
-                    = new SingleToCompletableFuture<>();
+            SingleToCompletableFuture<T> subscriber = new SingleToCompletableFuture<>();
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {

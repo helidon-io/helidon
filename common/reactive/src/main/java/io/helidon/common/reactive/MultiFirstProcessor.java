@@ -15,10 +15,11 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.Objects;
+
 import io.helidon.common.reactive.Flow.Processor;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
-import java.util.Objects;
 
 /**
  * Processor of {@code Multi<T>} to {@code Single<T>}.
