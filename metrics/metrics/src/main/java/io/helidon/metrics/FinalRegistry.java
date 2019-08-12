@@ -50,11 +50,6 @@ final class FinalRegistry extends Registry {
     }
 
     @Override
-    public <T extends Metric> T register(String name, T metric, Metadata metadata) throws IllegalArgumentException {
-        throw cannotRegister(name);
-    }
-
-    @Override
     public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
         throw cannotRegister(metadata.getName());
     }

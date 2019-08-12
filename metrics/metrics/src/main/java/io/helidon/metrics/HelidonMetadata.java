@@ -21,7 +21,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * Class HelidonMetadata. In MP Metrics 2.0, {@link org.eclipse.microprofile.metrics.Metadata}
- * iscnow immutable and a builder was added. This class allows creation of metadata
+ * is now immutable and a builder was added. This class allows creation of metadata
  * directly using a constructor to avoid switching to a builder in dozens of locations.
  * Can be used from other packages unfortunately.
  */

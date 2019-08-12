@@ -31,6 +31,7 @@ interface HelidonMetric extends Metric {
      * @return metric name
      */
     String getName();
+
     /**
      * Add this metrics data to the JSON builder.
      *
