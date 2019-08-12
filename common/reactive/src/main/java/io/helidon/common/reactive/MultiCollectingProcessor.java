@@ -22,8 +22,8 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Processor of {@link Multi} to {@link Single} that collects items from the
- * {@link Multi} and publishes a single collector object as a {@link Single}.
+ * Processor of {@link Multi} to {@link Single} that collects items from the {@link Multi} and publishes a single collector object
+ * as a {@link Single}.
  *
  * @param <T> subscribed type (collected)
  * @param <U> published type (collector)
@@ -117,6 +117,7 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
 
     @Override
     public void subscribe(Subscriber<? super U> subscriber) {
+        Objects.requireNonNull(subscriber, "subscriber cannot be null!");
         this.delegate = subscriber;
         delegate.onSubscribe(this);
     }

@@ -101,6 +101,15 @@ public class MultiTest {
         assertThat(subscriber.items.get(0), hasItems("foo", "bar"));
     }
 
+    @Test
+    public void testMultiFirst() {
+        TestSubscriber<String> subscriber = new TestSubscriber<>();
+        Multi.just("foo", "bar").first().subscribe(subscriber);
+        assertThat(subscriber.completed, is(equalTo(true)));
+        assertThat(subscriber.error, is(nullValue()));
+        assertThat(subscriber.items.get(0), is(equalTo("foo")));
+    }
+
     private static final class TestSubscriber<T> implements Subscriber<T> {
 
         private boolean completed;

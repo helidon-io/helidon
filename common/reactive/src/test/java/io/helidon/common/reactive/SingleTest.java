@@ -15,19 +15,21 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Publisher;
-import java.util.List;
-
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+
+import io.helidon.common.reactive.Flow.Publisher;
+import io.helidon.common.reactive.Flow.Subscriber;
+import io.helidon.common.reactive.Flow.Subscription;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -55,6 +57,16 @@ public class SingleTest {
         assertThat(subscriber.completed, is(equalTo(true)));
         assertThat(subscriber.error, is(nullValue()));
         assertThat(subscriber.items, is(empty()));
+    }
+
+    @Test
+    public void testSingleEmptyToFuture() {
+        CompletableFuture<Object> future = Single.<Object>empty().toFuture();
+        assertThat(future.isCompletedExceptionally(), is(equalTo(true)));
+        future.exceptionally((ex) -> {
+            assertThat(ex, is(instanceOf(IllegalStateException.class)));
+           return null;
+        });
     }
 
     @Test
@@ -89,12 +101,9 @@ public class SingleTest {
     public void testSingleMapperSubscriptionNotCanceled() {
         TestPublisher<String> publisher = new TestPublisher<>("foo", "bar");
         TestSubscriber<String> subscriber = new TestSubscriber<>();
-        Single.from(publisher).map(String::toUpperCase).subscribe(subscriber);
-        assertThat(subscriber.completed, is(equalTo(true)));
-        assertThat(subscriber.error, is(nullValue()));
-        assertThat(subscriber.items, hasItems("FOO"));
-        assertThat(publisher.subscription, is(notNullValue()));
-        assertThat(publisher.subscription.canceled, is(equalTo(false)));
+        Single.from(publisher).subscribe(subscriber);
+        assertThat(subscriber.completed, is(equalTo(false)));
+        assertThat(subscriber.error, is(instanceOf(IllegalStateException.class)));
     }
 
     @Test

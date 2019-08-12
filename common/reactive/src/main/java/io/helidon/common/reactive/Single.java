@@ -22,14 +22,15 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Single item publisher.
- * @param <T> published type
+ * Single item publisher utility.
+ *
+ * @param <T> item type
  */
 public interface Single<T> extends Publisher<T> {
 
     /**
-     * Map this {@link Single} instance to a new {@link Single} of another type
-     * using the given {@link Mapper}.
+     * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
+     *
      * @param <U> mapped item type
      * @param mapper mapper
      * @return Single
@@ -41,8 +42,7 @@ public interface Single<T> extends Publisher<T> {
     }
 
     /**
-     * Map this {@link Single} instance to a publisher using the given
-     * {@link Mapper}.
+     * Map this {@link Single} instance to a publisher using the given {@link Mapper}.
      *
      * @param <U> mapped items type
      * @param mapper mapper
@@ -55,13 +55,17 @@ public interface Single<T> extends Publisher<T> {
     }
 
     /**
-     * Exposes this {@link Single} instance as a {@link CompletableFuture}.
+     * Exposes this {@link Single} instance as a {@link CompletableFuture}. Note that if this {
+     *
+     * @Single} completes without a value, the resulting {@link CompletableFuture} will be completed exceptionally with an
+     * {@link IllegalStateException}
+     *
      * @return CompletableFuture
      */
     default CompletableFuture<T> toFuture() {
         try {
-            SingleToCompletableFuture<T> subscriber =
-                    new SingleToCompletableFuture<>();
+            SingleToCompletableFuture<T> subscriber
+                    = new SingleToCompletableFuture<>();
             this.subscribe(subscriber);
             return subscriber;
         } catch (Throwable ex) {
@@ -73,6 +77,7 @@ public interface Single<T> extends Publisher<T> {
 
     /**
      * Create a {@link Single} instance from a {@link CompletionStage}.
+     *
      * @param <T> item type
      * @param future source future
      * @return Single
@@ -82,8 +87,10 @@ public interface Single<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Single} instance that publishes the first item received
-     * from the given publisher.
+     * Create a {@link Single} instance that publishes the first and only item received from the given publisher. Note that if the
+     * publisher publishes more than one item, the resulting {@link Single} will hold an error. Use {@link Multi#first()} instead
+     * in order to get the first item of a publisher that may publish more than one item.
+     *
      * @param <T> item type
      * @param source source publisher
      * @return Single
@@ -97,8 +104,7 @@ public interface Single<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Single} instance that publishes the given item to its
-     * subscriber(s).
+     * Create a {@link Single} instance that publishes the given item to its subscriber(s).
      *
      * @param <T> item type
      * @param item item to publish
@@ -109,10 +115,8 @@ public interface Single<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Single} instance that reports the given given exception to
-     * its subscriber(s). The exception is reported by invoking
-     * {@link Subscriber#onError(java.lang.Throwable)} when
-     * {@link Publisher#subscribe(Subscriber)} is called.
+     * Create a {@link Single} instance that reports the given given exception to its subscriber(s). The exception is reported by
+     * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
      *
      * @param <T> item type
      * @param error exception to hold
@@ -134,6 +138,7 @@ public interface Single<T> extends Publisher<T> {
 
     /**
      * Get a {@link Single} instance that never completes.
+     *
      * @param <T> item type
      * @return Single
      */

@@ -18,8 +18,7 @@ package io.helidon.common.reactive;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Multi} that never invokes
- * {@link Subscriber#onComplete()} or
+ * Implementation of {@link Multi} that never invokes {@link Subscriber#onComplete()} or
  * {@link Subscriber#onError(java.lang.Throwable)}.
  */
 final class MultiNever implements Multi<Object> {

@@ -21,8 +21,7 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Multi} that represents an error, raised during
- * {@link Publisher#subscribe(Subscriber)} by invoking
+ * Implementation of {@link Multi} that represents an error, raised during {@link Publisher#subscribe(Subscriber)} by invoking
  * {@link Subscriber#onError(java.lang.Throwable)}.
  *
  * @param <T> item type

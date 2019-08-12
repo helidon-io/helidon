@@ -73,7 +73,7 @@ final class SingleToCompletableFuture<T> extends CompletableFuture<T>
     @Override
     public void onComplete() {
         if (ref.getAndSet(null) != null) {
-            complete(null);
+            completeExceptionally(new IllegalStateException("Completed without value"));
         }
     }
 }

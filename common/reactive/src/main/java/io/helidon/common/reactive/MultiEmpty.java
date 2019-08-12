@@ -19,8 +19,7 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Multi} that represents the absence of a value by
- * invoking {@link Subscriber#onComplete() } during
+ * Implementation of {@link Multi} that represents the absence of a value by invoking {@link Subscriber#onComplete() } during
  * {@link Publisher#subscribe(Subscriber)}.
  */
 final class MultiEmpty implements Multi<Object> {

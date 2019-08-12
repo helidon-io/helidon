@@ -178,6 +178,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
      * @return item to publish
      * @throws ClassCastException if {@code U} cannot be cast to {@code T}
      */
+    @SuppressWarnings("unchecked")
     protected T wrap(U data) {
         return (T) data;
     }

@@ -32,8 +32,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
 public interface Multi<T> extends Publisher<T> {
 
     /**
-     * Subscribe to this {@link Multi} instance with the given delegate
-     * functions.
+     * Subscribe to this {@link Multi} instance with the given delegate functions.
      *
      * @param consumer onNext delegate function
      */
@@ -42,8 +41,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Subscribe to this {@link Multi} instance with the given delegate
-     * functions.
+     * Subscribe to this {@link Multi} instance with the given delegate functions.
      *
      * @param consumer onNext delegate function
      * @param errorConsumer onError delegate function
@@ -56,8 +54,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Subscribe to this {@link Multi} instance with the given delegate
-     * functions.
+     * Subscribe to this {@link Multi} instance with the given delegate functions.
      *
      * @param consumer onNext delegate function
      * @param errorConsumer onError delegate function
@@ -72,8 +69,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Subscribe to this {@link Multi} instance with the given delegate
-     * functions.
+     * Subscribe to this {@link Multi} instance with the given delegate functions.
      *
      * @param consumer onNext delegate function
      * @param errorConsumer onError delegate function
@@ -90,8 +86,8 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Map this {@link Multi} instance to a new {@link Multi} of another type
-     * using the given {@link Mapper}.
+     * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Mapper}.
+     *
      * @param <U> mapped item type
      * @param mapper mapper
      * @return Multi
@@ -103,8 +99,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Collect the items of this {@link Multi} instance into a {@link Single} of
-     * {@link List}.
+     * Collect the items of this {@link Multi} instance into a {@link Single} of {@link List}.
      *
      * @return Single
      */
@@ -114,12 +109,23 @@ public interface Multi<T> extends Publisher<T> {
 
     /**
      * Collect the items of this {@link Multi} instance into a {@link Single}.
+     *
      * @param <U> collector container type
      * @param collector collector to use
      * @return Single
      */
     default <U> Single<U> collect(Collector<? super T, U> collector) {
         MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
+        this.subscribe(processor);
+        return processor;
+    }
+
+    /**
+     * Get the first item of this {@link Multi} instance as a {@link Single}.
+     * @return Single
+     */
+    default Single<T> first() {
+        MultiFirstProcessor<T> processor = new MultiFirstProcessor<>();
         this.subscribe(processor);
         return processor;
     }
@@ -136,8 +142,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Multi} instance that publishes the given items to a
-     * single subscriber.
+     * Create a {@link Multi} instance that publishes the given items to a single subscriber.
      *
      * @param <T> item type
      * @param items items to publish
@@ -148,8 +153,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Multi} instance that publishes the given items to a
-     * single subscriber.
+     * Create a {@link Multi} instance that publishes the given items to a single subscriber.
      *
      * @param <T> item type
      * @param items items to publish
@@ -161,10 +165,8 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Multi} instance that reports the given given exception to
-     * its subscriber(s). The exception is reported by invoking
-     * {@link Subscriber#onError(java.lang.Throwable)} when
-     * {@link Publisher#subscribe(Subscriber)} is called.
+     * Create a {@link Multi} instance that reports the given given exception to its subscriber(s). The exception is reported by
+     * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
      *
      * @param <T> item type
      * @param error exception to hold
@@ -186,6 +188,7 @@ public interface Multi<T> extends Publisher<T> {
 
     /**
      * Get a {@link Multi} instance that never completes.
+     *
      * @param <T> item type
      * @return Multi
      */

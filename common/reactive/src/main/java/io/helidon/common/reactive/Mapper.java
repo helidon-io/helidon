@@ -17,6 +17,7 @@ package io.helidon.common.reactive;
 
 /**
  * Map an item to a new object of a given type.
+ *
  * @param <T> input item type
  * @param <U> output (mapped) item type
  */

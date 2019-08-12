@@ -21,8 +21,7 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 
 /**
- * Implementation of {@link Single} that exposed the first item of a
- * {@link Publisher}.
+ * Implementation of {@link Single} that exposes the one and only item of {@link Publisher}.
  *
  * @param <T> item type
  */

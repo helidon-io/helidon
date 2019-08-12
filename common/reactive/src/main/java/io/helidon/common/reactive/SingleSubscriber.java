@@ -23,6 +23,7 @@ import io.helidon.common.reactive.Flow.Subscription;
 
 /**
  * Single subscriber.
+ * Delegate subscriber that expected one and only one item.
  */
 final class SingleSubscriber<T> implements Subscriber<T>, Subscription {
 
@@ -30,6 +31,7 @@ final class SingleSubscriber<T> implements Subscriber<T>, Subscription {
     private final AtomicBoolean requested;
     private Subscription s;
     private boolean done;
+    private volatile T item;
 
     SingleSubscriber(Subscriber<? super T> s) {
         requested = new AtomicBoolean(false);
@@ -53,9 +55,11 @@ final class SingleSubscriber<T> implements Subscriber<T>, Subscription {
         if (done) {
             return;
         }
-
-        actual.onNext(t);
-        onComplete();
+        if (item != null) {
+            onError(new IllegalStateException("Single item already published"));
+        } else {
+            item = t;
+        }
     }
 
     @Override
@@ -73,13 +77,14 @@ final class SingleSubscriber<T> implements Subscriber<T>, Subscription {
             return;
         }
         done = true;
+        actual.onNext(item);
         actual.onComplete();
     }
 
     @Override
     public void request(long n) {
         if (requested.compareAndSet(false, true)) {
-            s.request(1);
+            s.request(Long.MAX_VALUE);
         }
     }
 

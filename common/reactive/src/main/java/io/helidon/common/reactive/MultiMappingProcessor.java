@@ -21,8 +21,7 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Processor of {@link Publisher} to {@link Single} that publishes and maps each
- * received item.
+ * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.
  *
  * @param <T> subscribed type
  * @param <U> published type
