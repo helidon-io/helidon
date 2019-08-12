@@ -157,6 +157,23 @@ abstract class ParameterParserImpl implements ParameterParser {
         return result;
     }
 
+    @Override
+    public Optional<String> parse(Optional<String> value) {
+        return Optional.ofNullable(value.orElse(null));
+    }
+
+    @Override
+    public String parseFirst(String value) {
+        final List<String> parsedValue = parse(value);
+        return parsedValue.isEmpty() ? null : parsedValue.get(0);
+    }
+
+    @Override
+    public String parseFirst(List<String> values) {
+        final List<String> parsedValues = parse(values);
+        return parsedValues.isEmpty() ? null : parsedValues.get(0);
+    }
+
     /**
      * Parses the specified list of values according to the configured
      * attributes of the parser.Each individual value can itself contain

@@ -21,6 +21,7 @@ import java.util.List;
 import io.helidon.common.CollectionsHelper;
 import io.helidon.openapi.ParameterParser.Location;
 import io.helidon.openapi.ParameterParser.Style;
+import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -185,6 +186,20 @@ public class ParameterParserTest {
         testGoodAndBadStylesForLocation("cookie",
                 new String[] {"form"},
                 new String[] {"simple, spaceDelimited", "pipeDelimited", "deepObject"});
+    }
+
+    @Test
+    public void testFirstItemParsing() {
+        ParameterParser parser = ParameterParser.builder("id", Location.QUERY)
+                .style(Style.PIPE_DELIMITED)
+                .exploded(false)
+                .build();
+
+        final String input = "a|b|c";
+
+        assertEquals("a", parser.parseFirst(input));
+
+        assertEquals(null, parser.parseFirst(Collections.emptyList()));
     }
 
     private void testGoodAndBadStylesForLocation(String location,

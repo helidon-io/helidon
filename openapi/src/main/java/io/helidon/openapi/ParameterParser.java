@@ -19,6 +19,7 @@ package io.helidon.openapi;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 import io.helidon.openapi.ParameterParserImpl.DeepObjectParser;
@@ -42,7 +43,7 @@ import io.helidon.openapi.ParameterParserImpl.SpaceDelimitedParser;
  * parameter. An instance can be reused for parsing that same parameter in
  * multiple incoming requests.
  */
-interface ParameterParser {
+public interface ParameterParser {
 
     /**
      * Returns a {@code Builder} for use in constructing a new
@@ -68,6 +69,8 @@ interface ParameterParser {
      */
     List<String> parse(String value);
 
+    Optional<String> parse(Optional<String> value);
+
     /**
      * Parses the specified list of values according to the configured
      * attributes of the parser.Each individual value can itself contain
@@ -77,6 +80,26 @@ interface ParameterParser {
      * @return {@code List} of {@code String}s parsed from the input values
      */
     List<String> parse(List<String> values);
+
+    /**
+     * Parses the specified value according to the configured attributes of the
+     * parser, returning the {@code String> for the first parsed value if
+     * there is one, null otherwise.
+     *
+     * @param value the String to be parsed
+     * @return String of the first parsed value; null if no items were parsed
+     */
+    String parseFirst(String value);
+
+    /**
+     * Parses the given list of values according to the configured attributes of
+     * the parser, returning the {@code String> for the first parsed value if
+     * there is one, null otherwise.
+     *
+     * @param values Strings to be parsed
+     * @return String of the first parsed value; null if no items were parsed
+     */
+    String parseFirst(List<String> values);
 
     /**
      * A {@code Builder} for {@code ParameterParser}s.
@@ -207,7 +230,7 @@ interface ParameterParser {
          * @return matching {@code Style}
          * @throws IllegalArgumentException if the name matches no {@code Style}
          */
-        static Style match(String styleName) {
+        public static Style match(String styleName) {
             for (Style s : Style.values()) {
                 if (s.styleName.equals(styleName)) {
                     return s;
