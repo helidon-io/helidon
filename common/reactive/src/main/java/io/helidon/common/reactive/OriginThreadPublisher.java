@@ -173,10 +173,14 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
 
     /**
      * Wrap the submitted data into an item that can be published.
+     * This implementation casts {@code U} to {@code T}.
      * @param data submitted data
      * @return item to publish
+     * @throws ClassCastException if {@code U} cannot be cast to {@code T}
      */
-    protected abstract T wrap(U data);
+    protected T wrap(U data) {
+        return (T) data;
+    }
 
     /**
      * Submit the data to the subscriber. The same thread is used to call
