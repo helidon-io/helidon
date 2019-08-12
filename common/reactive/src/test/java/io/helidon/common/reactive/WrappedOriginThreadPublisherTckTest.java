@@ -48,7 +48,7 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<C
     public Publisher<CharSequence> createPublisher(long elements) {
         LOGGER.fine("creating publisher");
 
-        UnboundedSemaphore semaphore = new UnboundedSemaphore();
+        UnboundedSemaphore semaphore = UnboundedSemaphore.create();
         WrappedOriginThreadPublisher publisher = new WrappedOriginThreadPublisher(semaphore);
 
         CountDownLatch started = new CountDownLatch(1);
@@ -97,7 +97,7 @@ public class WrappedOriginThreadPublisherTckTest extends PublisherVerification<C
 
     @Override
     public Publisher<CharSequence> createFailedPublisher() {
-        return new WrappedOriginThreadPublisher(new UnboundedSemaphore()) {
+        return new WrappedOriginThreadPublisher(UnboundedSemaphore.create()) {
             @Override
             public void subscribe(Subscriber<? super CharSequence> subscriber) {
                 subscriber.onSubscribe(new Subscription() {

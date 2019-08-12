@@ -79,11 +79,14 @@ final class FixedItemsPublisher<T> implements Publisher<T> {
             if (!subscriber.isClosed()
                     && requested.get() > 0
                     && publishing.compareAndSet(false, true)) {
+
                 try {
+
                     Flow.Subscriber<? super T> sub = this.subscriber.get();
                     while (!subscriber.isClosed()
                             && requested.tryDecrement()
                             && !queue.isEmpty()) {
+
                         T item = queue.poll();
                         if (item != null) {
                             sub.onNext(item);
@@ -92,6 +95,7 @@ final class FixedItemsPublisher<T> implements Publisher<T> {
                     if (queue.isEmpty()) {
                         tryComplete();
                     }
+
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     tryComplete(e);

@@ -31,9 +31,7 @@ final class FunctionalSubscriber<T> implements Subscriber<T> {
     private final Consumer<? super Subscription> subscriptionConsumer;
     private Subscription subscription;
 
-    FunctionalSubscriber(Consumer<? super T> consumer,
-            Consumer<? super Throwable> errorConsumer,
-            Runnable completeConsumer,
+    FunctionalSubscriber(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer,
             Consumer<? super Subscription> subscriptionConsumer) {
 
         this.consumer = consumer;

@@ -31,6 +31,9 @@ public final class UnboundedSemaphore {
     // a synchronization primitive used to implement a semaphore logic
     private final AtomicLong atomicLong = new AtomicLong();
 
+    private UnboundedSemaphore() {
+    }
+
     /**
      * Releases {@code n} permits. If the cumulative value of the current total permits
      * reaches {@link Long#MAX_VALUE} this semaphore becomes unbounded and any consecutive
@@ -83,5 +86,13 @@ public final class UnboundedSemaphore {
      */
     long availablePermits() {
         return atomicLong.get();
+    }
+
+    /**
+     * Create a new instance.
+     * @return UnboundedSemaphore
+     */
+    public static UnboundedSemaphore create() {
+        return new UnboundedSemaphore();
     }
 }

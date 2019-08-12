@@ -29,18 +29,15 @@ import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * The OriginThreadPublisher's nature is to always run
- * {@link Subscriber#onNext(Object)} on the very same thread as
- * {@link #submit(Object)}. In other words, whenever the source of chunks sends
- * data, the same thread is used to deliver the data to the subscriber.
+ * The OriginThreadPublisher's nature is to always run {@link Subscriber#onNext(Object)} on the very same thread as
+ * {@link #submit(Object)}. In other words, whenever the source of chunks sends data, the same thread is used to deliver the data
+ * to the subscriber.
  * <p>
- * Standard publisher implementations (such as {@link SubmissionPublisher} or
- * Reactor Flux would use the same thread as {@link Subscription#request(long)}
- * was called on to deliver the chunk when the data are already available; this
- * implementation however strictly uses the originating thread.<p>
- * In order to be able to achieve such behavior, this publisher provides hooks
- * on subscription methods: {@link #hookOnCancel()} and
- * {@link #hookOnRequested(long, long)}.
+ * Standard publisher implementations (such as {@link SubmissionPublisher} or Reactor Flux would use the same thread as
+ * {@link Subscription#request(long)} was called on to deliver the chunk when the data are already available; this implementation
+ * however strictly uses the originating thread.<p>
+ * In order to be able to achieve such behavior, this publisher provides hooks on subscription methods: {@link #hookOnCancel()}
+ * and {@link #hookOnRequested(long, long)}.
  * </p>
  * <p>
  * <strong>This publisher allows only a single subscriber</strong>.
@@ -51,15 +48,13 @@ import io.helidon.common.reactive.Flow.Subscription;
  */
 public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
 
-    private static final Logger LOGGER =
-            Logger.getLogger(OriginThreadPublisher.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OriginThreadPublisher.class.getName());
 
     private final UnboundedSemaphore semaphore;
     private final AtomicBoolean hasSingleSubscriber = new AtomicBoolean(false);
 
     /**
-     * Required to achieve rule
-     * https://github.com/reactive-streams/reactive-streams-jvm#1.3 .
+     * Required to achieve rule https://github.com/reactive-streams/reactive-streams-jvm#1.3 .
      */
     private final Lock reentrantLock = new ReentrantLock();
 
@@ -73,10 +68,9 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
     /**
      * Create same thread publisher.
      *
-     * @param semaphore the semaphore to indicate the amount of requested data.
-     * The owner of this publisher is responsible to send the data as determined
-     * by the semaphore (i.e., to properly acquire a permission to send the
-     * data; to not send when the number of permits is zero).
+     * @param semaphore the semaphore to indicate the amount of requested data. The owner of this publisher is responsible to send
+     * the data as determined by the semaphore (i.e., to properly acquire a permission to send the data; to not send when the
+     * number of permits is zero).
      */
     protected OriginThreadPublisher(UnboundedSemaphore semaphore) {
         this.semaphore = semaphore;
@@ -86,14 +80,13 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
      * Create same thread publisher.
      */
     protected OriginThreadPublisher() {
-        this(new UnboundedSemaphore());
+        this(UnboundedSemaphore.create());
     }
 
     @Override
     public void subscribe(Subscriber<? super T> originalSubscriber) {
         if (!hasSingleSubscriber.compareAndSet(false, true)) {
-            originalSubscriber.onError(new IllegalStateException(
-                    "Only single subscriber is allowed!"));
+            originalSubscriber.onError(new IllegalStateException("Only single subscriber is allowed!"));
             return;
         }
 
@@ -172,8 +165,8 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
     }
 
     /**
-     * Wrap the submitted data into an item that can be published.
-     * This implementation casts {@code U} to {@code T}.
+     * Wrap the submitted data into an item that can be published. This implementation casts {@code U} to {@code T}.
+     *
      * @param data submitted data
      * @return item to publish
      * @throws ClassCastException if {@code U} cannot be cast to {@code T}
@@ -184,13 +177,11 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
     }
 
     /**
-     * Submit the data to the subscriber. The same thread is used to call
-     * {@link Subscriber#onNext(Object)}. That is, the data are
+     * Submit the data to the subscriber. The same thread is used to call {@link Subscriber#onNext(Object)}. That is, the data are
      * synchronously passed to the subscriber.
      * <p>
-     * Note that in order to maintain a consistency of this publisher, this
-     * method must be called only once per a single permit that must be acquired
-     * by {@link #tryAcquire()}.
+     * Note that in order to maintain a consistency of this publisher, this method must be called only once per a single permit
+     * that must be acquired by {@link #tryAcquire()}.
      *
      * @param data the chunk of data to send to the subscriber
      */
@@ -199,8 +190,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
             reentrantLock.lock();
             if (!queue.offer(wrap(data))) {
                 LOGGER.severe("Unable to add an element to the publisher cache.");
-                error(new IllegalStateException(
-                        "Unable to add an element to the publisher cache."));
+                error(new IllegalStateException("Unable to add an element to the publisher cache."));
                 return;
             }
 
@@ -209,12 +199,10 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
                 // the poll is never expected to return null
                 T item = queue.poll();
 
-                LOGGER.finest(() -> "Publishing item: "
-                        + (null == item ? "null" : item));
+                LOGGER.finest(() -> "Publishing item: " + (null == item ? "null" : item));
                 singleSubscriber.onNext(item);
             } else {
-                LOGGER.finest(() -> "Not publishing due to low request count: "
-                        + nextCount + " <= " + reqCount);
+                LOGGER.finest(() -> "Not publishing due to low request count: " + nextCount + " <= " + reqCount);
             }
         } catch (RuntimeException e) {
             if (singleSubscriber == null) {
@@ -272,22 +260,18 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
     }
 
     /**
-     * In a non-blocking manner, try to acquire an allowance to publish next
-     * item.
+     * In a non-blocking manner, try to acquire an allowance to publish next item.
      *
-     * @return original number of requests on the very one associated
-     * subscriber's subscription; if {@code 0} is returned, the requester didn't
-     * obtain a permit to publish next item. In case a {@link Long#MAX_VALUE} is
-     * returned, the requester is informed that unlimited number of items can be
-     * published.
+     * @return original number of requests on the very one associated subscriber's subscription; if {@code 0} is returned, the
+     * requester didn't obtain a permit to publish next item. In case a {@link Long#MAX_VALUE} is returned, the requester is
+     * informed that unlimited number of items can be published.
      */
     public long tryAcquire() {
         return semaphore.tryAcquire();
     }
 
     /**
-     * Indicates that the only one possible associated subscriber has been
-     * completed.
+     * Indicates that the only one possible associated subscriber has been completed.
      *
      * @return whether this publisher has successfully finished
      */
@@ -296,8 +280,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
     }
 
     /**
-     * Indicate that more items should be published in order to meet the
-     * current demand of the subscriber.
+     * Indicate that more items should be published in order to meet the current demand of the subscriber.
      *
      * @return whether this publisher currently satisfies the subscriber
      */
@@ -309,9 +292,8 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
      * Hook invoked after calls to {@link Subscription#request(long)}.
      *
      * @param n the requested count
-     * @param result the current total cumulative requested count; ranges
-     * between [0, {@link Long#MAX_VALUE}] where the max indicates that this
-     * publisher is unbounded
+     * @param result the current total cumulative requested count; ranges between [0, {@link Long#MAX_VALUE}] where the max
+     * indicates that this publisher is unbounded
      */
     protected void hookOnRequested(long n, long result) {
     }

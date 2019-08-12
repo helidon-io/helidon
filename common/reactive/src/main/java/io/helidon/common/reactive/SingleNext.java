@@ -30,8 +30,7 @@ final class SingleNext<T> implements Single<T> {
     private final Publisher<? extends T> source;
 
     SingleNext(Publisher<? extends T> source) {
-        this.source = Objects.requireNonNull(source,
-                "source cannot be null!");
+        this.source = Objects.requireNonNull(source, "source cannot be null!");
     }
 
     @Override
