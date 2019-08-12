@@ -81,7 +81,6 @@ public final class ContentReaders {
      *
      * @return reader that transforms a publisher of byte buffers to a
      * completion stage that might end exceptionally with
-     * @deprecated use {@link #readBytes(Publisher)} instead
      */
     public static Reader<byte[]> byteArrayReader() {
         return (publisher, clazz) -> readBytes(publisher).toFuture();
