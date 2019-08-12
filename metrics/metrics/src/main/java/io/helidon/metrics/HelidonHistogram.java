@@ -23,6 +23,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
@@ -153,7 +154,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
         myBuilder.add("count", getCount());
@@ -169,7 +170,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         myBuilder.add("p99", snapshot.get99thPercentile());
         myBuilder.add("p999", snapshot.get999thPercentile());
 
-        builder.add(getName(), myBuilder.build());
+        builder.add(jsonFullKey(metricID), myBuilder.build());
     }
 
     static final class HistogramImpl implements Histogram {

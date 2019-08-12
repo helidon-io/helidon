@@ -20,6 +20,8 @@ import javax.json.JsonObject;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +41,8 @@ class MetricsSupportTest {
         vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         app = rf.getARegistry(MetricRegistry.Type.APPLICATION);
 
-        Counter counter = app.counter("appCounter");
+        Counter counter = app.counter("appCounter",
+                new Tag("color", "blue"), new Tag("brightness", "dim"));
         counter.inc();
     }
 
@@ -77,5 +80,12 @@ class MetricsSupportTest {
     void testJsonMetaMultiple() {
         JsonObject jsonObject = MetricsSupport.toJsonMeta(app, base);
         System.out.println("jsonObject = " + jsonObject);
+    }
+
+    @Test
+    void testJsonDataWithTags() {
+        JsonObject jsonObject = MetricsSupport.toJsonData(app);
+        // Check for presence of tags and correct ordering.
+        Assertions.assertTrue(jsonObject.containsKey("appCounter;brightness=dim;color=blue"));
     }
 }

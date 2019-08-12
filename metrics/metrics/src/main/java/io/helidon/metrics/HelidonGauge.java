@@ -24,6 +24,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Gauge implementation.
@@ -57,26 +58,26 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         T value = getValue();
-        String name = getName();
+        String nameWithTags = jsonFullKey(metricID);
 
         if (value instanceof String) {
-            builder.add(name, (String) value);
+            builder.add(nameWithTags, (String) value);
         } else if (value instanceof BigInteger) {
-            builder.add(name, (BigInteger) value);
+            builder.add(nameWithTags, (BigInteger) value);
         } else if (value instanceof BigDecimal) {
-            builder.add(name, (BigDecimal) value);
+            builder.add(nameWithTags, (BigDecimal) value);
         } else if (value instanceof Integer) {
-            builder.add(name, (Integer) value);
+            builder.add(nameWithTags, (Integer) value);
         } else if (value instanceof Long) {
-            builder.add(name, (Long) value);
+            builder.add(nameWithTags, (Long) value);
         } else if (value instanceof Double) {
-            builder.add(name, (Double) value);
+            builder.add(nameWithTags, (Double) value);
         } else if (value instanceof Boolean) {
-            builder.add(name, (Boolean) value);
+            builder.add(nameWithTags, (Boolean) value);
         } else {
-            builder.add(name, String.valueOf(value));
+            builder.add(nameWithTags, String.valueOf(value));
         }
 
     }

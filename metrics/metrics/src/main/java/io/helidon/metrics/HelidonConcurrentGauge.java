@@ -24,6 +24,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Implementation of {@link ConcurrentGauge}.
@@ -79,8 +80,8 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
-        builder.add(getName(), getCount());
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        builder.add(jsonFullKey(metricID), getCount());
     }
 
     private static class ConcurrentGaugeImpl implements ConcurrentGauge {

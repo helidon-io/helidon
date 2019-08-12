@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -136,7 +137,7 @@ class HelidonHistogramTest {
     @Test
     void testJson() {
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        histoInt.jsonData(builder);
+        histoInt.jsonData(builder, new MetricID("file_sizes"));
 
         JsonObject result = builder.build();
 

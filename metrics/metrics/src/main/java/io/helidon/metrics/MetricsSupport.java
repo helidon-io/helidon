@@ -43,11 +43,12 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import java.util.Map;
 
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -186,8 +187,8 @@ public final class MetricsSupport implements Service {
         StringBuilder result = new StringBuilder();
 
         registry.stream()
-                .sorted(Comparator.comparing(HelidonMetric::getName))
-                .forEach(mpMetric -> result.append(mpMetric.prometheusData()));
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(mpMetric -> result.append(mpMetric.getValue().prometheusData()));
 
         return result.toString();
     }
@@ -233,8 +234,8 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonData(Registry registry) {
         JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
-                .sorted(Comparator.comparing(HelidonMetric::getName))
-                .forEach(mpMetric -> mpMetric.jsonData(builder));
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(mpMetric -> mpMetric.getValue().jsonData(builder, mpMetric.getKey()));
         return builder.build();
     }
 
@@ -251,8 +252,8 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonMeta(Registry registry) {
         JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
-                .sorted(Comparator.comparing(HelidonMetric::getName))
-                .forEach(mpMetric -> mpMetric.jsonMeta(builder));
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(mpMetric -> mpMetric.getValue().jsonMeta(builder));
         return builder.build();
     }
 
@@ -360,7 +361,7 @@ public final class MetricsSupport implements Service {
                 .ifPresentOrElse(metric -> {
                     if (requestsJsonData(req.headers())) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        metric.jsonData(builder);
+                        metric.jsonData(builder, new MetricID(metricName));
                         res.send(builder.build());
                     } else {
                         res.send(metric.prometheusData());

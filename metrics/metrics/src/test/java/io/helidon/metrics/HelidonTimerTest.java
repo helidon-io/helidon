@@ -23,6 +23,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -169,7 +170,7 @@ class HelidonTimerTest {
         dataSetTimerClock.setMillis(System.currentTimeMillis());
 
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        dataSetTimer.jsonData(builder);
+        dataSetTimer.jsonData(builder, new MetricID("response_time"));
 
         JsonObject json = builder.build();
         JsonObject metricData = json.getJsonObject("response_time");

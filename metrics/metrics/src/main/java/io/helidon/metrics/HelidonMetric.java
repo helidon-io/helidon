@@ -19,6 +19,7 @@ package io.helidon.metrics;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Helidon Extension of {@link Metric}.
@@ -37,7 +38,7 @@ interface HelidonMetric extends Metric {
      *
      * @param builder builder of the registry (or of a single metric) result
      */
-    void jsonData(JsonObjectBuilder builder);
+    void jsonData(JsonObjectBuilder builder, MetricID metricID);
 
     /**
      * Add this metrics metadata to the JSON builder.

@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,8 +66,8 @@ class MetricImplTest {
             }
 
             @Override
-            public void jsonData(JsonObjectBuilder builder) {
-                builder.add(getName(), 45);
+            public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+                builder.add(metricID.getName(), 45);
             }
         };
 
@@ -81,8 +82,8 @@ class MetricImplTest {
             }
 
             @Override
-            public void jsonData(JsonObjectBuilder builder) {
-                builder.add(getName(), 45);
+            public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+                builder.add(metricID.getName(), 45);
             }
         };
     }
@@ -130,7 +131,7 @@ class MetricImplTest {
         JsonObject expected = builder.build();
 
         builder = Json.createObjectBuilder();
-        impl.jsonData(builder);
+        impl.jsonData(builder, new MetricID("theName"));
         assertThat(builder.build(), is(expected));
     }
 

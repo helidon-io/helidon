@@ -127,7 +127,7 @@ class Registry extends MetricRegistry {
                 Histogram.class,
                 name -> HelidonHistogram.create(type.getName(), metadata));
     }
-    
+
     @Override
     public Histogram histogram(String name, Tag... tags) {
         return histogram(new HelidonMetadata(name, MetricType.HISTOGRAM), tags);
@@ -148,11 +148,11 @@ class Registry extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata) {
-        return getMetric(metadata, 
-                Meter.class, 
+        return getMetric(metadata,
+                Meter.class,
                 name -> HelidonMeter.create(type.getName(), metadata));
     }
-    
+
     @Override
     public Meter meter(String name, Tag... tags) {
         return meter(new HelidonMetadata(name, MetricType.METERED), tags);
@@ -163,9 +163,9 @@ class Registry extends MetricRegistry {
         return getMetric(metadata,
                 Meter.class,
                 name -> HelidonCounter.create(type.getName(), metadata),
-                tags);    
+                tags);
     }
-    
+
     @Override
     public Timer timer(String name) {
         return timer(new HelidonMetadata(name, MetricType.TIMER));
@@ -318,8 +318,8 @@ class Registry extends MetricRegistry {
         return result;
     }
 
-    public Stream<? extends HelidonMetric> stream() {
-        return allMetrics.values().stream();
+    public Stream<Map.Entry<MetricID, MetricImpl>> stream() {
+        return allMetrics.entrySet().stream();
     }
 
     public String type() {
@@ -398,7 +398,7 @@ class Registry extends MetricRegistry {
             }
         } else {
             metric = newInstanceCreator.apply(metadata.getName());
-            allMetrics.put(new MetricID(metadata.getName()), metric);
+            allMetrics.put(new MetricID(metadata.getName(), tags), metric);
         }
         if (!(type.isAssignableFrom(metric.getClass()))) {
             throw new IllegalArgumentException("Attempting to get " + metadata.getType()

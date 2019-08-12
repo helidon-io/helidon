@@ -23,6 +23,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Implementation of {@link Counter}.
@@ -68,8 +69,8 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
-        builder.add(getName(), getCount());
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        builder.add(jsonFullKey(metricID), getCount());
     }
 
     private static class CounterImpl implements Counter {

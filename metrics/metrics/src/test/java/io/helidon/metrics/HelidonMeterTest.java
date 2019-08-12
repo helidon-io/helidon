@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.hamcrest.CoreMatchers;
@@ -113,7 +114,7 @@ class HelidonMeterTest {
     @Test
     void testJson() {
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        meter.jsonData(builder);
+        meter.jsonData(builder, new MetricID("requests"));
 
         JsonObject result = builder.build();
 

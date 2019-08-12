@@ -26,12 +26,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
@@ -141,6 +143,14 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         addNonEmpty(metaBuilder, "tags", tagsToSimpleString(this));
 
         builder.add(getName(), metaBuilder);
+    }
+
+    public static String jsonFullKey(MetricID metricID) {
+        return metricID.getTags().isEmpty() ? metricID.getName()
+                : String.format("%s;%s", metricID.getName(),
+                        metricID.getTagsAsList().stream()
+                                .map(t -> String.format("%s=%s", t.getTagName(), t.getTagValue()))
+                                .collect(Collectors.joining(";")));
     }
 
     @Override
