@@ -25,6 +25,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -57,9 +58,9 @@ class FaultToleranceMetrics {
 
     @SuppressWarnings("unchecked")
     static <T extends Metric> T getMetric(Method method, String name) {
-        String metricName = String.format(METRIC_NAME_TEMPLATE,
-                                          method.getDeclaringClass().getName(),
-                                          method.getName(), name);
+        MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                method.getDeclaringClass().getName(),
+                method.getName(), name));
         return (T) getMetricRegistry().getMetrics().get(metricName);
     }
 
@@ -326,14 +327,14 @@ class FaultToleranceMetrics {
      */
     @SuppressWarnings("unchecked")
     static synchronized <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        String name = String.format(METRIC_NAME_TEMPLATE,
-                                    method.getDeclaringClass().getName(),
-                                    method.getName(),
-                                    metricName);
-        Gauge<T> existing = getMetricRegistry().getGauges().get(name);
+        MetricID id = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                method.getDeclaringClass().getName(),
+                method.getName(),
+                metricName));
+        Gauge<T> existing = getMetricRegistry().getGauges().get(id);
         if (existing == null) {
             getMetricRegistry().register(
-                    newMetadata(name, name, description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
+                    newMetadata(id.getName(), id.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
                     gauge);
         }
         return existing;
