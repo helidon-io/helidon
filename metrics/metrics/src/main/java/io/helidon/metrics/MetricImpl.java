@@ -145,7 +145,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         builder.add(getName(), metaBuilder);
     }
 
-    public static String jsonFullKey(MetricID metricID) {
+    static String jsonFullKey(MetricID metricID) {
         return metricID.getTags().isEmpty() ? metricID.getName()
                 : String.format("%s;%s", metricID.getName(),
                         metricID.getTagsAsList().stream()
