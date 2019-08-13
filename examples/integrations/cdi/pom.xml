@@ -33,6 +33,7 @@
 
     <modules>
         <module>datasource-hikaricp</module>
+        <module>datasource-hikaricp-h2</module>
         <module>datasource-hikaricp-mysql</module>
         <module>jedis</module>
         <module>jpa</module>
