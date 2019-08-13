@@ -95,7 +95,7 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
     }
 
     protected <T> Optional<T> getMetric(Map<MetricID, T> metricMap, String metricName) {
-        return Optional.ofNullable(metricMap.get(metricName));
+        return Optional.ofNullable(metricMap.get(new MetricID(metricName)));
     }
 
     @AroundConstruct
