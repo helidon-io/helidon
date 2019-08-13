@@ -272,7 +272,7 @@ final class FinalRegistry extends Registry {
     }
 
     @Override
-    public Stream<? extends HelidonMetric> stream() {
+    public Stream<Map.Entry<MetricID, MetricImpl>> stream() {
         return delegate.stream();
     }
 
