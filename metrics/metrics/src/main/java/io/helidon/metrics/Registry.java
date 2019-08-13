@@ -59,10 +59,6 @@ class Registry extends MetricRegistry {
         return new Registry(type);
     }
 
-    Optional<HelidonMetric> getMetric(String metricName) {
-        return Optional.ofNullable(allMetrics.get(new MetricID(metricName)));
-    }
-
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
         return register(toImpl(name, metric));
@@ -76,19 +72,6 @@ class Registry extends MetricRegistry {
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
         return register(toImpl(metadata, metric), tags);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T extends Metric> T register(MetricImpl impl, Tag... tags) throws IllegalArgumentException {
-        MetricImpl existing = allMetrics.putIfAbsent(new MetricID(impl.getName(), tags), impl);
-        if (null != existing) {
-            throw new IllegalArgumentException("Attempting to register duplicate metric. New: "
-                                                       + impl
-                                                       + ", existing: "
-                                                       + existing);
-        }
-
-        return (T) impl;
     }
 
     @Override
@@ -318,6 +301,8 @@ class Registry extends MetricRegistry {
         return result;
     }
 
+    // -- Public not overridden -----------------------------------------------
+
     public Stream<? extends HelidonMetric> stream() {
         return allMetrics.values().stream();
     }
@@ -330,9 +315,21 @@ class Registry extends MetricRegistry {
         return allMetrics.isEmpty();
     }
 
+    // -- Package private -----------------------------------------------------
+
+    Optional<HelidonMetric> getMetric(String metricName) {
+        return Optional.ofNullable(allMetrics.get(new MetricID(metricName)));
+    }
+
+    Optional<HelidonMetric> getMetric(MetricID metricID) {
+        return Optional.ofNullable(allMetrics.get(metricID));
+    }
+
     Type registryType() {
         return type;
     }
+
+    // -- Private methods -----------------------------------------------------
 
     private <T extends Metric> MetricImpl toImpl(Metadata metadata, T metric) {
         switch (metadata.getTypeRaw()) {
@@ -407,5 +404,19 @@ class Registry extends MetricRegistry {
         }
 
         return type.cast(metric);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private <T extends Metric> T register(MetricImpl impl, Tag... tags) throws IllegalArgumentException {
+        MetricImpl existing = allMetrics.putIfAbsent(new MetricID(impl.getName(), tags), impl);
+        if (null != existing) {
+            throw new IllegalArgumentException("Attempting to register duplicate metric. New: "
+                    + impl
+                    + ", existing: "
+                    + existing);
+        }
+
+        return (T) impl;
     }
 }
