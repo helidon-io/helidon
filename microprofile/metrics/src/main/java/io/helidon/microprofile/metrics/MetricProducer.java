@@ -145,7 +145,7 @@ public class MetricProducer {
     private <T> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
-                .filter(entry -> entry.getKey().equals(metric.name()))
+                .filter(entry -> entry.getKey().getName().equals(metric.name()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString()))
                 .getValue();

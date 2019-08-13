@@ -84,14 +84,15 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         builder.add(jsonFullKey(metricID), getCount());
     }
 
-    private static class ConcurrentGaugeImpl implements ConcurrentGauge {
+    static class ConcurrentGaugeImpl implements ConcurrentGauge {
         private final LongAdder adder;
         private AtomicLong max;
         private AtomicLong min;
 
         ConcurrentGaugeImpl() {
             adder = new LongAdder();
-            max = min = new AtomicLong(adder.sum());
+            max = new AtomicLong(0L);
+            min = new AtomicLong(0L);
         }
 
         @Override
@@ -110,7 +111,7 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         }
 
         @Override
-        public synchronized void inc() {
+        public void inc() {
             adder.increment();
             final long count = getCount();
             if (count > max.get()) {
@@ -119,7 +120,7 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         }
 
         @Override
-        public synchronized void dec() {
+        public void dec() {
             adder.decrement();
             final long count = getCount();
             if (count < min.get()) {
