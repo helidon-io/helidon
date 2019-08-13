@@ -99,7 +99,7 @@ class MetricImplTest {
                   () -> assertThat(impl.prometheusName("a b c d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("a-b-c-d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("a2.b.cC.d"), is("base_a2_b_cC_d")),
-                  () -> assertThat(impl.prometheusName("a_b.c.d"), is("base_a_b_c_d")),
+                  () -> assertThat(impl.prometheusName("a:b.c.d"), is("base_a:b_c_d")),
                   () -> assertThat(impl.prometheusName("a .b..c_.d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("_aB..c_.d"), is("base_aB_c_d")));
     }
