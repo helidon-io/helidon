@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -32,9 +33,12 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
+import io.helidon.common.CollectionsHelper;
+
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Base for our implementations of various metrics.
@@ -56,6 +60,20 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     private static final long MEGABYTES = 1000 * KILOBYTES;
     private static final long GIGABYTES = 1000 * MEGABYTES;
 
+    private static String bsls(String s) {
+        return "\\\\" + s;
+    }
+
+    private static final Map<String, String> JSON_ESCAPED_CHARS_MAP = CollectionsHelper.mapOf(
+            "\b", bsls("b"), "\f", bsls("f"), "\n", bsls("n"), "\r", bsls("r"),
+            "\t", bsls("t"), "\"", bsls("\""), "\\", bsls("\\\\"));
+
+    private static final Pattern JSON_ESCAPED_CHARS_REGEX = Pattern
+                .compile(JSON_ESCAPED_CHARS_MAP
+                            .keySet()
+                            .stream()
+                            .map(Pattern::quote)
+                            .collect(Collectors.joining("", "[", "]")));
 
     static {
         //see https://prometheus.io/docs/practices/naming/#base-units
@@ -149,8 +167,22 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         return metricID.getTags().isEmpty() ? metricID.getName()
                 : String.format("%s;%s", metricID.getName(),
                         metricID.getTagsAsList().stream()
-                                .map(t -> String.format("%s=%s", t.getTagName(), t.getTagValue()))
+                                .map(MetricImpl::tagForJsonKey)
                                 .collect(Collectors.joining(";")));
+    }
+
+    private static String tagForJsonKey(Tag t) {
+        return String.format("%s=%s", jsonEscape(t.getTagName()), jsonEscape(t.getTagValue()));
+    }
+
+    static String jsonEscape(String s) {
+        final Matcher m = JSON_ESCAPED_CHARS_REGEX.matcher(s);
+        final StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, JSON_ESCAPED_CHARS_MAP.get(m.group()));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     @Override

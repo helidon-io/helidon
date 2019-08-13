@@ -143,4 +143,11 @@ class MetricImplTest {
         impl.jsonMeta(builder);
         assertThat(builder.build(), is(expected));
     }
+
+    @Test
+    void testJsonEscaping() {
+        assertThat(MetricImpl.jsonEscape("plain"), is("plain"));
+        assertThat(MetricImpl.jsonEscape("not\bplain\tby\"a\nlong\\shot"),
+                is("not\\bplain\\tby\\\"a\\nlong\\\\shot"));
+    }
 }
