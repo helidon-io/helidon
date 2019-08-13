@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,23 +195,23 @@ class HelidonTimerTest {
     @Test
     void testPrometheus() {
         String prometheusData = dataSetTimer.prometheusData();
-        assertThat(prometheusData, startsWith("# TYPE application:response_time_rate_per_second gauge\n"
-                                                      + "application:response_time_rate_per_second 200.0\n"
-                                                      + "# TYPE application:response_time_one_min_rate_per_second gauge\n"
-                                                      + "application:response_time_one_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application:response_time_five_min_rate_per_second gauge\n"
-                                                      + "application:response_time_five_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application:response_time_fifteen_min_rate_per_second gauge\n"
-                                                      + "application:response_time_fifteen_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application:response_time_mean_seconds gauge\n"
-                                                      + "application:response_time_mean_seconds "));
-        assertThat(prometheusData, containsString("# TYPE application:response_time_max_seconds gauge\n"
-                                                          + "application:response_time_max_seconds "));
+        assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
+                                                      + "application_response_time_rate_per_second 200.0\n"
+                                                      + "# TYPE application_response_time_one_min_rate_per_second gauge\n"
+                                                      + "application_response_time_one_min_rate_per_second 0.0\n"
+                                                      + "# TYPE application_response_time_five_min_rate_per_second gauge\n"
+                                                      + "application_response_time_five_min_rate_per_second 0.0\n"
+                                                      + "# TYPE application_response_time_fifteen_min_rate_per_second gauge\n"
+                                                      + "application_response_time_fifteen_min_rate_per_second 0.0\n"
+                                                      + "# TYPE application_response_time_mean_seconds gauge\n"
+                                                      + "application_response_time_mean_seconds "));
+        assertThat(prometheusData, containsString("# TYPE application_response_time_max_seconds gauge\n"
+                                                          + "application_response_time_max_seconds "));
 
-        assertThat(prometheusData, containsString("# TYPE application:response_time_seconds summary\n"
-                                                          + "# HELP application:response_time_seconds Server response time for "
+        assertThat(prometheusData, containsString("# TYPE application_response_time_seconds summary\n"
+                                                          + "# HELP application_response_time_seconds Server response time for "
                                                           + "/index.html\n"
-                                                          + "application:response_time_seconds_count 200"));
+                                                          + "application_response_time_seconds_count 200"));
     }
 
     private void withTolerance(String field, double actual, double expectedValue) {

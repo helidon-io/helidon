@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,23 +60,23 @@ class HelidonHistogramTest {
             850, 870, 870, 880, 880, 880, 890, 890, 890, 890, 900, 910, 920, 920, 920, 930, 940, 950, 950, 950, 960,
             960, 960, 960, 970, 970, 970, 970, 980, 980, 980, 990, 990};
 
-    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application:file_sizes_mean_bytes gauge\n"
-            + "application:file_sizes_mean_bytes 50634.99999999998\n"
-            + "# TYPE application:file_sizes_max_bytes gauge\n"
-            + "application:file_sizes_max_bytes 99000\n"
-            + "# TYPE application:file_sizes_min_bytes gauge\n"
-            + "application:file_sizes_min_bytes 0\n"
-            + "# TYPE application:file_sizes_stddev_bytes gauge\n"
-            + "application:file_sizes_stddev_bytes 29438.949964290514\n"
-            + "# TYPE application:file_sizes_bytes summary\n"
-            + "# HELP application:file_sizes_bytes Users file size\n"
-            + "application:file_sizes_bytes_count 200\n"
-            + "application:file_sizes_bytes{quantile=\"0.5\"} 48000\n"
-            + "application:file_sizes_bytes{quantile=\"0.75\"} 75000\n"
-            + "application:file_sizes_bytes{quantile=\"0.95\"} 96000\n"
-            + "application:file_sizes_bytes{quantile=\"0.98\"} 98000\n"
-            + "application:file_sizes_bytes{quantile=\"0.99\"} 98000\n"
-            + "application:file_sizes_bytes{quantile=\"0.999\"} 99000\n";
+    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application_file_sizes_mean_bytes gauge\n"
+            + "application_file_sizes_mean_bytes 50634.99999999998\n"
+            + "# TYPE application_file_sizes_max_bytes gauge\n"
+            + "application_file_sizes_max_bytes 99000\n"
+            + "# TYPE application_file_sizes_min_bytes gauge\n"
+            + "application_file_sizes_min_bytes 0\n"
+            + "# TYPE application_file_sizes_stddev_bytes gauge\n"
+            + "application_file_sizes_stddev_bytes 29438.949964290514\n"
+            + "# TYPE application_file_sizes_bytes summary\n"
+            + "# HELP application_file_sizes_bytes Users file size\n"
+            + "application_file_sizes_bytes_count 200\n"
+            + "application_file_sizes_bytes{quantile=\"0.5\"} 48000\n"
+            + "application_file_sizes_bytes{quantile=\"0.75\"} 75000\n"
+            + "application_file_sizes_bytes{quantile=\"0.95\"} 96000\n"
+            + "application_file_sizes_bytes{quantile=\"0.98\"} 98000\n"
+            + "application_file_sizes_bytes{quantile=\"0.99\"} 98000\n"
+            + "application_file_sizes_bytes{quantile=\"0.999\"} 99000\n";
 
     private static Metadata meta;
     private static HelidonHistogram histoInt;

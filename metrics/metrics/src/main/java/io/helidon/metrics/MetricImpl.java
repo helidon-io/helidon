@@ -216,11 +216,9 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         name = name.replace('-', '_');
 
         //Scope is always specified at the start of the metric name.
-        //Scope and name are separated by colon (:).
-        name = registryType + ":" + name;
-
-        //camelCase is translated to camel_case
-        name = camelToSnake(name);
+        //Scope and name are separated by underscore (_) as of
+        // metrics 2.0 (OpenMetrics).
+        name = registryType + "_" + name;
 
         String orig;
         do {

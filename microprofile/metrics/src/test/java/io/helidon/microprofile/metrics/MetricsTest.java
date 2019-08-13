@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public class MetricsTest extends MetricsBaseTest {
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
         String promData = MetricsSupport.toPrometheusData(gauge);
 
-        Pattern prometheusDataPattern = Pattern.compile("(?s)#\\s+TYPE\\s+(\\w+):(\\w+)\\s*gauge.*#\\s*HELP.*\\{([^\\}]*)\\}\\s*(\\d*).*");
+        Pattern prometheusDataPattern = Pattern.compile("(?s)#\\s+TYPE\\s+([^_]+)_(\\w+)\\s*gauge.*#\\s*HELP.*\\{([^\\}]*)\\}\\s*(\\d*).*");
         Matcher m = prometheusDataPattern.matcher(promData);
         assertThat("Prometheus data " + promData + " for gauge bean did not match regex pattern", m.matches(), is(true));
         assertThat("Expected to find metric metadata and data in Prometheus data as 4 groups", m.groupCount(), is(4));
@@ -148,9 +148,9 @@ public class MetricsTest extends MetricsBaseTest {
         /*
          * Here is an example of the Prometheus data:
          *
-# TYPE application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds gauge
-# HELP application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds
-application:io_helidon_microprofile_metrics_cdi_gauged_bean_gauge_for_injection_test_seconds{tag1="valA",tag2="valB"} 2520
+# TYPE application_io_helidon_microprofile_metrics_cdi_GaugedBean_gaugeForInjectionTest_seconds gauge
+# HELP application_io_helidon_microprofile_metrics_cdi_GaugedBean_gaugeForInjectionTestSeconds
+application_io_helidon_microprofile_metrics_cdi_GaugedBean_gaugeForInjectionTest_seconds{tag1="valA",tag2="valB"} 2520
          *
          */
     }

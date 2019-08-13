@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,15 +131,15 @@ class HelidonCounterTest {
         counter.inc(17);
         wrappingCounter.inc(17);
 
-        String expected = "# TYPE base:the_name counter\n"
-                + "# HELP base:the_name theDescription\n"
-                + "base:the_name{a=\"b\",c=\"d\"} 17\n";
+        String expected = "# TYPE base_theName counter\n"
+                + "# HELP base_theName theDescription\n"
+                + "base_theName{a=\"b\",c=\"d\"} 17\n";
 
         assertThat(counter.prometheusData(), is(expected));
 
-        expected = "# TYPE base:the_name counter\n"
-                + "# HELP base:the_name theDescription\n"
-                + "base:the_name{a=\"b\",c=\"d\"} 49\n";
+        expected = "# TYPE base_theName counter\n"
+                + "# HELP base_theName theDescription\n"
+                + "base_theName{a=\"b\",c=\"d\"} 49\n";
         assertThat(wrappingCounter.prometheusData(), is(expected));
     }
 

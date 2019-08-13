@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Unit test for {@link HelidonMeter}.
  */
 class HelidonMeterTest {
-    private static final String EXPECTED_PROMETHEUS_START = "# TYPE application:requests_total counter\n"
-            + "# HELP application:requests_total Tracks the number of requests to the server\n"
-            + "application:requests_total 1000\n"
-            + "# TYPE application:requests_rate_per_second gauge\n"
-            + "application:requests_rate_per_second ";
+    private static final String EXPECTED_PROMETHEUS_START = "# TYPE application_requests_total counter\n"
+            + "# HELP application_requests_total Tracks the number of requests to the server\n"
+            + "application_requests_total 1000\n"
+            + "# TYPE application_requests_rate_per_second gauge\n"
+            + "application_requests_rate_per_second ";
     private static HelidonMeter meter;
 
     @BeforeAll
@@ -132,14 +132,14 @@ class HelidonMeterTest {
         String data = meter.prometheusData();
 
         assertThat(data, startsWith(EXPECTED_PROMETHEUS_START));
-        assertThat(data, containsString("# TYPE application:requests_one_min_rate_per_second gauge\n"
-                                                + "application:requests_one_min_rate_per_second "));
+        assertThat(data, containsString("# TYPE application_requests_one_min_rate_per_second gauge\n"
+                                                + "application_requests_one_min_rate_per_second "));
 
-        assertThat(data, containsString("# TYPE application:requests_five_min_rate_per_second gauge\n"
-                                                + "application:requests_five_min_rate_per_second "));
+        assertThat(data, containsString("# TYPE application_requests_five_min_rate_per_second gauge\n"
+                                                + "application_requests_five_min_rate_per_second "));
 
-        assertThat(data, containsString("# TYPE application:requests_fifteen_min_rate_per_second gauge\n"
-                                                + "application:requests_fifteen_min_rate_per_second "));
+        assertThat(data, containsString("# TYPE application_requests_fifteen_min_rate_per_second gauge\n"
+                                                + "application_requests_fifteen_min_rate_per_second "));
 
     }
 

@@ -94,14 +94,14 @@ class MetricImplTest {
     @Test
     void testPrometheusName() {
         assertAll("Various name transformations based on the 3.2.1 section of the spec",
-                  () -> assertThat(impl.prometheusName("theName"), is("base:the_name")),
-                  () -> assertThat(impl.prometheusName("a.b.c.d"), is("base:a_b_c_d")),
-                  () -> assertThat(impl.prometheusName("a b c d"), is("base:a_b_c_d")),
-                  () -> assertThat(impl.prometheusName("a-b-c-d"), is("base:a_b_c_d")),
-                  () -> assertThat(impl.prometheusName("a2.b.cC.d"), is("base:a2_b_c_c_d")),
-                  () -> assertThat(impl.prometheusName("a:b.c.d"), is("base:a:b_c_d")),
-                  () -> assertThat(impl.prometheusName("a .b..c_.d"), is("base:a_b_c_d")),
-                  () -> assertThat(impl.prometheusName("_aB..c_.d"), is("base:a_b_c_d")));
+                  () -> assertThat(impl.prometheusName("theName"), is("base_theName")),
+                  () -> assertThat(impl.prometheusName("a.b.c.d"), is("base_a_b_c_d")),
+                  () -> assertThat(impl.prometheusName("a b c d"), is("base_a_b_c_d")),
+                  () -> assertThat(impl.prometheusName("a-b-c-d"), is("base_a_b_c_d")),
+                  () -> assertThat(impl.prometheusName("a2.b.cC.d"), is("base_a2_b_cC_d")),
+                  () -> assertThat(impl.prometheusName("a_b.c.d"), is("base_a_b_c_d")),
+                  () -> assertThat(impl.prometheusName("a .b..c_.d"), is("base_a_b_c_d")),
+                  () -> assertThat(impl.prometheusName("_aB..c_.d"), is("base_aB_c_d")));
     }
 
     @Test
@@ -113,17 +113,17 @@ class MetricImplTest {
 
     @Test
     void testPrometheus() {
-        String expected = "# TYPE base:the_name counter\n"
-                + "# HELP base:the_name theDescription\n"
-                + "base:the_name 45";
+        String expected = "# TYPE base_theName counter\n"
+                + "# HELP base_theName theDescription\n"
+                + "base_theName 45";
         assertThat(impl.prometheusData(), is(expected));
     }
 
     @Test
     void testPrometheusWithoutDescription() {
-        String expected = "# TYPE base:counter_without_description counter\n"
-                + "# HELP base:counter_without_description \n"
-                + "base:counter_without_description 45";
+        String expected = "# TYPE base_counterWithoutDescription counter\n"
+                + "# HELP base_counterWithoutDescription \n"
+                + "base_counterWithoutDescription 45";
         assertThat(implWithoutDescription.prometheusData(), is(expected));
     }
 
