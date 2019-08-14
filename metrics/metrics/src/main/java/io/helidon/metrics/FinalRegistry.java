@@ -83,7 +83,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Counter counter(String name, Tag... tags) {
-        return delegate.getMetric(new MetricID(name, tags))
+        return delegate.getOptionalMetric(new MetricID(name, tags))
                 .map(Counter.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
@@ -105,7 +105,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Histogram histogram(String name, Tag... tags) {
-        return delegate.getMetric(new MetricID(name, tags))
+        return delegate.getOptionalMetric(new MetricID(name, tags))
                 .map(Histogram.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
@@ -127,7 +127,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Meter meter(String name, Tag... tags) {
-        return delegate.getMetric(new MetricID(name, tags))
+        return delegate.getOptionalMetric(new MetricID(name, tags))
                 .map(Meter.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
@@ -149,7 +149,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public Timer timer(String name, Tag... tags) {
-        return delegate.getMetric(new MetricID(name, tags))
+        return delegate.getOptionalMetric(new MetricID(name, tags))
                 .map(Timer.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
@@ -171,7 +171,7 @@ final class FinalRegistry extends Registry {
 
     @Override
     public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
-        return delegate.getMetric(new MetricID(name, tags))
+        return delegate.getOptionalMetric(new MetricID(name, tags))
                 .map(ConcurrentGauge.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }

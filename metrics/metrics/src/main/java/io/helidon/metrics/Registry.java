@@ -25,7 +25,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,17 +60,18 @@ class Registry extends MetricRegistry {
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
-        return register(toImpl(name, metric));
+        return register(toMetadata(name, metric), metric, null);
     }
 
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
-        return register(toImpl(metadata, metric));
+        return register(metadata, metric, null);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
-        return register(toImpl(metadata, metric), tags);
+        return (T) getOptionalMetric(metadata, metric, tags);
     }
 
     @Override
@@ -81,9 +81,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata) {
-        return getMetric(metadata,
-                Counter.class,
-                name -> HelidonCounter.create(type.getName(), metadata));
+        return counter(metadata, null);
     }
 
     @Override
@@ -93,9 +91,8 @@ class Registry extends MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata, Tag... tags) {
-        return getMetric(metadata,
-                Counter.class,
-                name -> HelidonCounter.create(type.getName(), metadata),
+        return (Counter) getOptionalMetric(metadata,
+                HelidonCounter.create(type.getName(), metadata),
                 tags);
     }
 
@@ -106,9 +103,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata) {
-        return getMetric(metadata,
-                Histogram.class,
-                name -> HelidonHistogram.create(type.getName(), metadata));
+        return histogram(metadata, null);
     }
 
     @Override
@@ -118,9 +113,8 @@ class Registry extends MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata, Tag... tags) {
-        return getMetric(metadata,
-                Histogram.class,
-                name -> HelidonCounter.create(type.getName(), metadata),
+        return (Histogram) getOptionalMetric(metadata,
+                HelidonHistogram.create(type.getName(), metadata),
                 tags);
     }
 
@@ -131,9 +125,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata) {
-        return getMetric(metadata,
-                Meter.class,
-                name -> HelidonMeter.create(type.getName(), metadata));
+        return meter(metadata, null);
     }
 
     @Override
@@ -143,9 +135,8 @@ class Registry extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata, Tag... tags) {
-        return getMetric(metadata,
-                Meter.class,
-                name -> HelidonCounter.create(type.getName(), metadata),
+        return (Meter) getOptionalMetric(metadata,
+                HelidonMeter.create(type.getName(), metadata),
                 tags);
     }
 
@@ -156,9 +147,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata) {
-        return getMetric(metadata,
-                Timer.class,
-                name -> HelidonTimer.create(type.getName(), metadata));
+        return timer(metadata, null);
     }
 
     @Override
@@ -168,9 +157,8 @@ class Registry extends MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata, Tag... tags) {
-        return getMetric(metadata,
-                Timer.class,
-                name -> HelidonCounter.create(type.getName(), metadata),
+        return (Timer) getOptionalMetric(metadata,
+                HelidonTimer.create(type.getName(), metadata),
                 tags);
     }
 
@@ -181,9 +169,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return getMetric(metadata,
-                ConcurrentGauge.class,
-                name -> HelidonConcurrentGauge.create(type.getName(), metadata));
+        return concurrentGauge(metadata, null);
     }
 
     @Override
@@ -194,9 +180,8 @@ class Registry extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
-        return getMetric(metadata,
-                ConcurrentGauge.class,
-                name -> HelidonConcurrentGauge.create(type.getName(), metadata),
+        return (ConcurrentGauge) getOptionalMetric(metadata,
+                HelidonConcurrentGauge.create(type.getName(), metadata),
                 tags);
     }
 
@@ -315,13 +300,18 @@ class Registry extends MetricRegistry {
         return allMetrics.isEmpty();
     }
 
+    @Override
+    public String toString() {
+        return type() + ": " + allMetrics.size() + " metrics";
+    }
+
     // -- Package private -----------------------------------------------------
 
-    Optional<HelidonMetric> getMetric(String metricName) {
+    Optional<HelidonMetric> getOptionalMetric(String metricName) {
         return Optional.ofNullable(allMetrics.get(new MetricID(metricName)));
     }
 
-    Optional<HelidonMetric> getMetric(MetricID metricID) {
+    Optional<HelidonMetric> getOptionalMetric(MetricID metricID) {
         return Optional.ofNullable(allMetrics.get(metricID));
     }
 
@@ -330,6 +320,31 @@ class Registry extends MetricRegistry {
     }
 
     // -- Private methods -----------------------------------------------------
+
+    private <T extends Metric> MetricImpl getOptionalMetric(Metadata metadata, T newMetric, Tag... tags) {
+        // If same name regardless of tags, must have same metadata
+        Optional<Metadata> oldMetadata = findMetadataForName(metadata.getName());
+        oldMetadata.ifPresent(m -> {
+            if (!m.isReusable()) {
+                throw new IllegalArgumentException("A metric of name '" + metadata.getName()
+                        + "' already registered with non-reusable metadata");
+            }
+            // Check that metadata is compatible
+            if (!m.getTypeRaw().equals(metadata.getTypeRaw()) || !m.getUnit().equals(metadata.getUnit())) {
+                throw new IllegalArgumentException("A metric of name '" + metadata.getName()
+                        + "' already registered with different metadata");
+            }
+        });
+
+        // Now search for metric by ID including tags
+        MetricID metricID = new MetricID(metadata.getName(), tags);
+        MetricImpl metric = allMetrics.get(metricID);
+        if (metric == null) {
+            metric = toImpl(metadata, newMetric);
+            allMetrics.put(metricID, metric);
+        }
+        return metric;
+    }
 
     private <T extends Metric> MetricImpl toImpl(Metadata metadata, T metric) {
         switch (metadata.getTypeRaw()) {
@@ -352,7 +367,7 @@ class Registry extends MetricRegistry {
         }
     }
 
-    private <T extends Metric> MetricImpl toImpl(String name, T metric) {
+    private <T extends Metric> Metadata toMetadata(String name, T metric) {
         // Find subtype of Metric, needed for user-defined metrics
         Class<?> clazz = metric.getClass();
         do {
@@ -366,14 +381,33 @@ class Registry extends MetricRegistry {
             clazz = clazz.getSuperclass();
         } while (clazz != null);
 
-        return toImpl(new HelidonMetadata(name, MetricType.from(clazz == null ? metric.getClass() : clazz)), metric);
+        return new HelidonMetadata(name, MetricType.from(clazz == null ? metric.getClass() : clazz));
     }
 
-    @Override
-    public String toString() {
-        return type() + ": " + allMetrics.size() + " metrics";
+    /**
+     * Finds the metric type for a registered metric of the same name. All
+     * metrics of same name, regardless of tags, must have the same type.
+     *
+     * @param name Metric name.
+     * @return Metadata for name.
+     */
+    private Optional<Metadata> findMetadataForName(String name) {
+        for (MetricID metricID : allMetrics.keySet()) {
+            if (metricID.getName().equals(name)) {
+                return Optional.of(allMetrics.get(metricID));
+            }
+        }
+        return Optional.empty();
     }
 
+    /**
+     * Returns a sorted map based ona filter a metric class.
+     *
+     * @param filter The filter.
+     * @param metricClass The class.
+     * @param <V> Type of class.
+     * @return The sorted map.
+     */
     private <V> SortedMap<MetricID, V> getSortedMetrics(MetricFilter filter, Class<V> metricClass) {
         Map<MetricID, V> collected = allMetrics.entrySet()
                 .stream()
@@ -382,41 +416,5 @@ class Registry extends MetricRegistry {
                 .collect(Collectors.toMap(Map.Entry::getKey, it -> metricClass.cast(it.getValue())));
 
         return new TreeMap<>(collected);
-    }
-
-    private <T extends Metric, I extends MetricImpl> T getMetric(Metadata metadata,
-                                                                 Class<T> type,
-                                                                 Function<String, I> newInstanceCreator,
-                                                                 Tag... tags) {
-        MetricImpl metric = allMetrics.get(new MetricID(metadata.getName(), tags));
-        if (metric != null) {
-            if (metric.isReusable() != metadata.isReusable()) {
-                throw new IllegalArgumentException("Metadata not re-usable for metric " + metadata.getName());
-            }
-        } else {
-            metric = newInstanceCreator.apply(metadata.getName());
-            allMetrics.put(new MetricID(metadata.getName(), tags), metric);
-        }
-        if (!(type.isAssignableFrom(metric.getClass()))) {
-            throw new IllegalArgumentException("Attempting to get " + metadata.getType()
-                                               + ", but metric registered under this name is "
-                                               + metric);
-        }
-
-        return type.cast(metric);
-    }
-
-
-    @SuppressWarnings("unchecked")
-    private <T extends Metric> T register(MetricImpl impl, Tag... tags) throws IllegalArgumentException {
-        MetricImpl existing = allMetrics.putIfAbsent(new MetricID(impl.getName(), tags), impl);
-        if (null != existing) {
-            throw new IllegalArgumentException("Attempting to register duplicate metric. New: "
-                    + impl
-                    + ", existing: "
-                    + existing);
-        }
-
-        return (T) impl;
     }
 }

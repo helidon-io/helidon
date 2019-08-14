@@ -357,7 +357,7 @@ public final class MetricsSupport implements Service {
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getMetric(metricName))
+        OptionalHelper.from(registry.getOptionalMetric(metricName))
                 .ifPresentOrElse(metric -> {
                     if (requestsJsonData(req.headers())) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
@@ -392,7 +392,7 @@ public final class MetricsSupport implements Service {
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getMetric(metricName))
+        OptionalHelper.from(registry.getOptionalMetric(metricName))
                 .ifPresentOrElse(metric -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
