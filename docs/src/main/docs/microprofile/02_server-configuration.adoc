@@ -58,8 +58,8 @@ ssl:
     keystore-passphrase: "abcd"
 ----
 
-== Configure "admin" port
-Helidon can expose multiple ports. For the purpose of Helidon MP, this support has the following limitations:
+== Configuring additional ports
+Helidon MP can expose multiple ports, with the following limitations:
 
 - The default port is the port that serves your application (JAX-RS applications and resources)
 - Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
