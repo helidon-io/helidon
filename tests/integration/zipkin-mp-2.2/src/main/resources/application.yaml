@@ -1,0 +1,5 @@
+server:
+  port: -1
+
+tracing:
+  service: "zipkin-mp-22"
