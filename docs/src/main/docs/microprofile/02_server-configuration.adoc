@@ -59,13 +59,18 @@ ssl:
 ----
 
 == Configure "admin" port
-For this example, we will use a `yaml` file. We configure a port 8011 that would server health and metrics endpoints,
-and then configure health and metrics to use it.
+Helidon can expose multiple ports. For the purpose of Helidon MP, this support has the following limitations:
 
-Alternative ports can be used by Server extensions that support it. This support is currently limited to MP Health and
-MP Metrics implementations in Helidon.
+- The default port is the port that serves your application (JAX-RS applications and resources)
+- Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
+    currently supported by MP Health and MP Metrics
 
-You can create a custom Server extension and run routes on alternative ports - this support is limited to WebServer routing.
+For this example, we will use a `yaml` file:
+
+- The port `7011` is the default port and will serve your application
+- The port `8011` is named "admin" (this is an arbitrary name)
+- MP Metrics are configured to use the "admin" port through the `routing` configuration (reference is by name)
+- MP Health is configured the same way to reference the "admin" port
 
 [source,yaml]
 .application.yaml - Server configuration
