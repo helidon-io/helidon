@@ -25,6 +25,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /*
  * This class is inspired by:
@@ -131,7 +132,7 @@ final class HelidonMeter extends MetricImpl implements Meter {
     }
     */
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
         myBuilder.add("count", getCount());
@@ -140,7 +141,7 @@ final class HelidonMeter extends MetricImpl implements Meter {
         myBuilder.add("fiveMinRate", getFiveMinuteRate());
         myBuilder.add("fifteenMinRate", getFifteenMinuteRate());
 
-        builder.add(getName(), myBuilder.build());
+        builder.add(jsonFullKey(metricID), myBuilder.build());
     }
 
     @Override

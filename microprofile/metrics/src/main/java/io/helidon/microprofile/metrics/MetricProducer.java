@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
+import io.helidon.metrics.HelidonMetadata;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -40,17 +42,17 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 public class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? new Metadata(getName(ip),
+        return metric == null ? new HelidonMetadata(getName(ip),
                                              "",
                                              "",
                                              metricType,
                                              MetricUnits.NONE)
-                : new Metadata(getName(metric, ip),
+                : new HelidonMetadata(getName(metric, ip),
                                metric.displayName(),
                                metric.description(),
                                metricType,
-                               metric.unit(),
-                               toTags(metric.tags()));
+                               metric.unit());
+                               // TODO toTags(metric.tags()));
     }
 
     private static String toTags(String[] tags) {
@@ -144,7 +146,7 @@ public class MetricProducer {
     private <T> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
-                .filter(entry -> entry.getKey().equals(metric.name()))
+                .filter(entry -> entry.getKey().getName().equals(metric.name()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString()))
                 .getValue();

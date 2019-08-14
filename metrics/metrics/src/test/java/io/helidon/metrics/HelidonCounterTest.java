@@ -24,6 +24,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,12 +44,11 @@ class HelidonCounterTest {
 
     @BeforeAll
     static void initClass() {
-        meta = new Metadata("theName",
+        meta = new HelidonMetadata("theName",
                             "theDisplayName",
                             "theDescription",
                             MetricType.COUNTER,
-                            MetricUnits.NONE,
-                            "a=b,c=d");
+                            MetricUnits.NONE);
     }
 
     @BeforeEach
@@ -61,16 +61,6 @@ class HelidonCounterTest {
 
             @Override
             public void inc(long n) {
-
-            }
-
-            @Override
-            public void dec() {
-
-            }
-
-            @Override
-            public void dec(long n) {
 
             }
 
@@ -105,28 +95,6 @@ class HelidonCounterTest {
     }
 
     @Test
-    void testDec() {
-        testValues(0);
-        counter.inc();
-        wrappingCounter.inc();
-        testValues(1);
-        counter.dec();
-        wrappingCounter.dec();
-        testValues(0);
-    }
-
-    @Test
-    void testDecWithParam() {
-        testValues(0);
-        counter.inc(49);
-        wrappingCounter.inc(49);
-        testValues(49);
-        counter.dec(7);
-        wrappingCounter.dec(7);
-        testValues(42);
-    }
-
-    @Test
     void testPrometheusData() {
         counter.inc(17);
         wrappingCounter.inc(17);
@@ -148,14 +116,15 @@ class HelidonCounterTest {
         counter.inc(47);
         wrappingCounter.inc(47);
 
+        final MetricID metricID = new MetricID("theName");
         JsonObject expected = Json.createReader(new StringReader("{\"theName\": 47}")).readObject();
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        counter.jsonData(builder);
+        counter.jsonData(builder, metricID);
         assertThat(builder.build(), is(expected));
 
         expected = Json.createReader(new StringReader("{\"theName\": 49}")).readObject();
         builder = Json.createObjectBuilder();
-        wrappingCounter.jsonData(builder);
+        wrappingCounter.jsonData(builder, metricID);
         assertThat(builder.build(), is(expected));
     }
 

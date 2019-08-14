@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
 
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import static io.helidon.microprofile.metrics.MetricUtil.getMetricName;
@@ -76,13 +77,14 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
     private final Class<A> annotationClass;
     private final Function<A, String> nameFunction;
     private final Function<A, Boolean> isAbsoluteFunction;
-    private final Function<MetricRegistry, SortedMap<String, T>> metricsMapFunction;
+    private final Function<MetricRegistry, SortedMap<MetricID, T>> metricsMapFunction;
     private final String metricTypeName;
+
     InterceptorBase(MetricRegistry registry,
                     Class<A> annotationClass,
                     Function<A, String> nameFunction,
                     Function<A, Boolean> isAbsoluteFunction,
-                    Function<MetricRegistry, SortedMap<String, T>> metricsMapFunction,
+                    Function<MetricRegistry, SortedMap<MetricID, T>> metricsMapFunction,
                     String metricTypeName) {
         this.registry = registry;
         this.annotationClass = annotationClass;
@@ -92,8 +94,8 @@ abstract class InterceptorBase<T extends Metric, A extends Annotation> {
         this.metricTypeName = metricTypeName;
     }
 
-    protected <T> Optional<T> getMetric(Map<String, T> metricMap, String metricName) {
-        return Optional.ofNullable(metricMap.get(metricName));
+    protected <T> Optional<T> getMetric(Map<MetricID, T> metricMap, String metricName) {
+        return Optional.ofNullable(metricMap.get(new MetricID(metricName)));
     }
 
     @AroundConstruct

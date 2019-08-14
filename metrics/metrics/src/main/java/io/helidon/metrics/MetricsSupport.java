@@ -18,6 +18,7 @@ package io.helidon.metrics;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -45,9 +46,9 @@ import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
 import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -186,8 +187,8 @@ public final class MetricsSupport implements Service {
         StringBuilder result = new StringBuilder();
 
         registry.stream()
-                .sorted(Comparator.comparing(HelidonMetric::getName))
-                .forEach(mpMetric -> result.append(mpMetric.prometheusData()));
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(mpMetric -> result.append(mpMetric.getValue().prometheusData()));
 
         return result.toString();
     }
@@ -233,8 +234,8 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonData(Registry registry) {
         JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
-                .sorted(Comparator.comparing(HelidonMetric::getName))
-                .forEach(mpMetric -> mpMetric.jsonData(builder));
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(mpMetric -> mpMetric.getValue().jsonData(builder, mpMetric.getKey()));
         return builder.build();
     }
 
@@ -251,8 +252,8 @@ public final class MetricsSupport implements Service {
     static JsonObject toJsonMeta(Registry registry) {
         JsonObjectBuilder builder = JSON.createObjectBuilder();
         registry.stream()
-                .sorted(Comparator.comparing(HelidonMetric::getName))
-                .forEach(mpMetric -> mpMetric.jsonMeta(builder));
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .forEach(mpMetric -> mpMetric.getValue().jsonMeta(builder));
         return builder.build();
     }
 
@@ -269,25 +270,25 @@ public final class MetricsSupport implements Service {
         String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
 
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
-        Counter totalCount = vendor.counter(new Metadata(metricPrefix + "count",
+        Counter totalCount = vendor.counter(new HelidonMetadata(metricPrefix + "count",
                                                          "Total number of HTTP requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
                                                          MetricUnits.NONE));
 
-        Meter totalMeter = vendor.meter(new Metadata(metricPrefix + "meter",
+        Meter totalMeter = vendor.meter(new HelidonMetadata(metricPrefix + "meter",
                                                      "Meter for overall HTTP requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
                                                      MetricUnits.NONE));
 
-        vendor.counter(new Metadata("grpc.requests.count",
+        vendor.counter(new HelidonMetadata("grpc.requests.count",
                                     "Total number of gRPC requests",
                                     "Each gRPC request (regardless of the method) will increase this counter",
                                     MetricType.COUNTER,
                                     MetricUnits.NONE));
 
-        vendor.meter(new Metadata("grpc.requests.meter",
+        vendor.meter(new HelidonMetadata("grpc.requests.meter",
                                   "Meter for overall gRPC requests",
                                   "Each gRPC request will mark the meter to see overall throughput",
                                   MetricType.METERED,
@@ -356,11 +357,11 @@ public final class MetricsSupport implements Service {
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getMetric(metricName))
+        OptionalHelper.from(registry.getOptionalMetric(metricName))
                 .ifPresentOrElse(metric -> {
                     if (requestsJsonData(req.headers())) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        metric.jsonData(builder);
+                        metric.jsonData(builder, new MetricID(metricName));
                         res.send(builder.build());
                     } else {
                         res.send(metric.prometheusData());
@@ -391,7 +392,7 @@ public final class MetricsSupport implements Service {
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getMetric(metricName))
+        OptionalHelper.from(registry.getOptionalMetric(metricName))
                 .ifPresentOrElse(metric -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();

@@ -16,15 +16,16 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.lang.reflect.Method;
-
 import javax.enterprise.inject.spi.CDI;
+import java.lang.reflect.Method;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -57,9 +58,9 @@ class FaultToleranceMetrics {
 
     @SuppressWarnings("unchecked")
     static <T extends Metric> T getMetric(Method method, String name) {
-        String metricName = String.format(METRIC_NAME_TEMPLATE,
-                                          method.getDeclaringClass().getName(),
-                                          method.getName(), name);
+        MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                method.getDeclaringClass().getName(),
+                method.getName(), name));
         return (T) getMetricRegistry().getMetrics().get(metricName);
     }
 
@@ -300,11 +301,8 @@ class FaultToleranceMetrics {
      * @return The counter created.
      */
     private static Counter registerCounter(String name, String description) {
-        return getMetricRegistry().counter(new Metadata(name,
-                                                        name,
-                                                        description,
-                                                        MetricType.COUNTER,
-                                                        MetricUnits.NONE));
+        return getMetricRegistry().counter(
+                newMetadata(name, name, description, MetricType.COUNTER, MetricUnits.NONE));
     }
 
     /**
@@ -315,11 +313,8 @@ class FaultToleranceMetrics {
      * @return The histogram created.
      */
     static Histogram registerHistogram(String name, String description) {
-        return getMetricRegistry().histogram(new Metadata(name,
-                                                          name,
-                                                          description,
-                                                          MetricType.HISTOGRAM,
-                                                          MetricUnits.NANOSECONDS));
+        return getMetricRegistry().histogram(
+                newMetadata(name, name, description, MetricType.HISTOGRAM, MetricUnits.NANOSECONDS));
     }
 
     /**
@@ -332,18 +327,27 @@ class FaultToleranceMetrics {
      */
     @SuppressWarnings("unchecked")
     static synchronized <T> Gauge<T> registerGauge(Method method, String metricName, String description, Gauge<T> gauge) {
-        String name = String.format(METRIC_NAME_TEMPLATE,
-                                    method.getDeclaringClass().getName(),
-                                    method.getName(),
-                                    metricName);
-        Gauge<T> existing = getMetricRegistry().getGauges().get(name);
+        MetricID id = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                method.getDeclaringClass().getName(),
+                method.getName(),
+                metricName));
+        Gauge<T> existing = getMetricRegistry().getGauges().get(id);
         if (existing == null) {
-            getMetricRegistry().register(new Metadata(name,
-                                                      name,
-                                                      description,
-                                                      MetricType.GAUGE,
-                                                      MetricUnits.NANOSECONDS), gauge);
+            getMetricRegistry().register(
+                    newMetadata(id.getName(), id.getName(), description, MetricType.GAUGE, MetricUnits.NANOSECONDS),
+                    gauge);
         }
         return existing;
+    }
+
+    private static Metadata newMetadata(String name, String displayName, String description,
+                                        MetricType type, String unit) {
+        return new MetadataBuilder()
+                .withName(name)
+                .withDisplayName(displayName)
+                .withDescription(description)
+                .withType(type)
+                .withUnit(unit)
+                .build();
     }
 }

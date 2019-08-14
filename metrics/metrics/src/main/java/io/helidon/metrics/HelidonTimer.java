@@ -26,6 +26,7 @@ import javax.json.JsonObjectBuilder;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
@@ -197,7 +198,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
         myBuilder.add("count", getCount());
@@ -217,7 +218,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         myBuilder.add("p99", snapshot.get99thPercentile());
         myBuilder.add("p999", snapshot.get999thPercentile());
 
-        builder.add(getName(), myBuilder.build());
+        builder.add(jsonFullKey(metricID), myBuilder.build());
     }
 
     private static final class ContextImpl implements Context {
@@ -255,8 +256,8 @@ final class HelidonTimer extends MetricImpl implements Timer {
         private final Clock clock;
 
         TimerImpl(String repoType, String name, Clock clock) {
-            this.meter = HelidonMeter.create(repoType, new Metadata(name, MetricType.METERED), clock);
-            this.histogram = HelidonHistogram.create(repoType, new Metadata(name, MetricType.HISTOGRAM));
+            this.meter = HelidonMeter.create(repoType, new HelidonMetadata(name, MetricType.METERED), clock);
+            this.histogram = HelidonHistogram.create(repoType, new HelidonMetadata(name, MetricType.HISTOGRAM));
             this.clock = clock;
         }
 

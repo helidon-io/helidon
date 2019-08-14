@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,20 +44,18 @@ class MetricImplTest {
             + "\"unit\":\"none\","
             + "\"type\":\"counter\","
             + "\"description\":\"theDescription\","
-            + "\"displayName\":\"theDisplayName\","
-            + "\"tags\":\"a=b,c=d\"}}";
+            + "\"displayName\":\"theDisplayName\"}}";
 
     private static MetricImpl impl;
     private static MetricImpl implWithoutDescription;
 
     @BeforeAll
     public static void initClass() {
-        Metadata meta = new Metadata("theName",
+        Metadata meta = new HelidonMetadata("theName",
                                      "theDisplayName",
                                      "theDescription",
                                      MetricType.COUNTER,
-                                     MetricUnits.NONE,
-                                     "a=b,c=d");
+                                     MetricUnits.NONE);
 
         impl = new MetricImpl("base", meta) {
             @Override
@@ -67,13 +66,12 @@ class MetricImplTest {
             }
 
             @Override
-            public void jsonData(JsonObjectBuilder builder) {
-                //TODO how with tags?
-                builder.add(getName(), 45);
+            public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+                builder.add(metricID.getName(), 45);
             }
         };
 
-        meta = new Metadata("counterWithoutDescription", MetricType.COUNTER);
+        meta = new HelidonMetadata("counterWithoutDescription", MetricType.COUNTER);
 
         implWithoutDescription = new MetricImpl("base", meta) {
             @Override
@@ -84,9 +82,8 @@ class MetricImplTest {
             }
 
             @Override
-            public void jsonData(JsonObjectBuilder builder) {
-                //TODO how with tags?
-                builder.add(getName(), 45);
+            public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+                builder.add(metricID.getName(), 45);
             }
         };
     }
@@ -134,7 +131,7 @@ class MetricImplTest {
         JsonObject expected = builder.build();
 
         builder = Json.createObjectBuilder();
-        impl.jsonData(builder);
+        impl.jsonData(builder, new MetricID("theName"));
         assertThat(builder.build(), is(expected));
     }
 
@@ -145,5 +142,12 @@ class MetricImplTest {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         impl.jsonMeta(builder);
         assertThat(builder.build(), is(expected));
+    }
+
+    @Test
+    void testJsonEscaping() {
+        assertThat(MetricImpl.jsonEscape("plain"), is("plain"));
+        assertThat(MetricImpl.jsonEscape("not\bplain\tby\"a\nlong\\shot"),
+                is("not\\bplain\\tby\\\"a\\nlong\\\\shot"));
     }
 }

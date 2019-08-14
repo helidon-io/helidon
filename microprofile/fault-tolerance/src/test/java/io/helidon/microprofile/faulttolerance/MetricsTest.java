@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
-import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -79,11 +79,11 @@ public class MetricsTest extends FaultToleranceTest {
     @Test
     public void testInjectCounterProgrammatically() {
         MetricRegistry metricRegistry = getMetricRegistry();
-        metricRegistry.counter(new Metadata("dcounter",
-                                            "",
-                                            "",
-                                            MetricType.COUNTER,
-                                            MetricUnits.NONE));
+        metricRegistry.counter(new MetadataBuilder()
+                .withName("dcounter")
+                .withType(MetricType.COUNTER)
+                .withUnit(MetricUnits.NONE)
+                .build());
         metricRegistry.counter("dcounter").inc();
         assertThat(metricRegistry.counter("dcounter").getCount(), is(1L));
     }

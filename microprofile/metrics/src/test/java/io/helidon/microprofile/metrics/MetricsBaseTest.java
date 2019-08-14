@@ -21,6 +21,7 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.enterprise.inject.spi.CDI;
 
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -63,9 +64,9 @@ public class MetricsBaseTest {
 
     @SuppressWarnings("unchecked")
     static <T extends Metric> T getMetric(Object bean, String name) {
-        String metricName = String.format(METRIC_NAME_TEMPLATE,
-                                          MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
-                                          name);
+        MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
+                MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
+                name));
         return (T) getMetricRegistry().getMetrics().get(metricName);
     }
 

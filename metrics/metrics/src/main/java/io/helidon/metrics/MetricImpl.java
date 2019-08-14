@@ -25,19 +25,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
+import io.helidon.common.CollectionsHelper;
+
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Base for our implementations of various metrics.
  */
-abstract class MetricImpl extends Metadata implements HelidonMetric {
+abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private static final Pattern DOUBLE_UNDERSCORE = Pattern.compile("__");
@@ -54,6 +60,20 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
     private static final long MEGABYTES = 1000 * KILOBYTES;
     private static final long GIGABYTES = 1000 * MEGABYTES;
 
+    private static String bsls(String s) {
+        return "\\\\" + s;
+    }
+
+    private static final Map<String, String> JSON_ESCAPED_CHARS_MAP = CollectionsHelper.mapOf(
+            "\b", bsls("b"), "\f", bsls("f"), "\n", bsls("n"), "\r", bsls("r"),
+            "\t", bsls("t"), "\"", bsls("\""), "\\", bsls("\\\\"));
+
+    private static final Pattern JSON_ESCAPED_CHARS_REGEX = Pattern
+                .compile(JSON_ESCAPED_CHARS_MAP
+                            .keySet()
+                            .stream()
+                            .map(Pattern::quote)
+                            .collect(Collectors.joining("", "[", "]")));
 
     static {
         //see https://prometheus.io/docs/practices/naming/#base-units
@@ -88,16 +108,16 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
     MetricImpl(String registryType, Metadata metadata) {
         super(metadata.getName(),
               metadata.getDisplayName(),
-              metadata.getDescription(),
+              metadata.getDescription().orElse(null),
               metadata.getTypeRaw(),
-              metadata.getUnit(),
-              tagsToSimpleString(metadata));
+              metadata.getUnit().orElse(null),
+              true);        // TODO tagsToSimpleString(metadata));
         this.registryType = registryType;
     }
 
     private static String tagsToSimpleString(Metadata metadata) {
         // add tags
-        HashMap<String, String> tags = metadata.getTags();
+        HashMap<String, String> tags = new HashMap<>();     // TODO metadata.getTags();
 
         if (tags.isEmpty()) {
             return "";
@@ -133,14 +153,36 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
     public void jsonMeta(JsonObjectBuilder builder) {
         JsonObjectBuilder metaBuilder = JSON.createObjectBuilder();
 
-        addNonEmpty(metaBuilder, "unit", getUnit());
-        addNonEmpty(metaBuilder, "unit", getUnit());
+        addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
+        addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
         addNonEmpty(metaBuilder, "type", getType());
-        addNonEmpty(metaBuilder, "description", getDescription());
+        addNonEmpty(metaBuilder, "description", getDescription().orElse(null));
         addNonEmpty(metaBuilder, "displayName", getDisplayName());
         addNonEmpty(metaBuilder, "tags", tagsToSimpleString(this));
 
         builder.add(getName(), metaBuilder);
+    }
+
+    static String jsonFullKey(MetricID metricID) {
+        return metricID.getTags().isEmpty() ? metricID.getName()
+                : String.format("%s;%s", metricID.getName(),
+                        metricID.getTagsAsList().stream()
+                                .map(MetricImpl::tagForJsonKey)
+                                .collect(Collectors.joining(";")));
+    }
+
+    private static String tagForJsonKey(Tag t) {
+        return String.format("%s=%s", jsonEscape(t.getTagName()), jsonEscape(t.getTagValue()));
+    }
+
+    static String jsonEscape(String s) {
+        final Matcher m = JSON_ESCAPED_CHARS_REGEX.matcher(s);
+        final StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            m.appendReplacement(sb, JSON_ESCAPED_CHARS_MAP.get(m.group()));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     @Override
@@ -148,7 +190,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         StringBuilder sb = new StringBuilder();
 
         String name = prometheusName(getName());
-        String tags = getTagsAsString();
+        String tags = "";       // TODO getTagsAsString();
         if (!tags.isEmpty()) {
             tags = "{" + tags + "}";
         }
@@ -179,7 +221,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
         sb.append("# HELP ")
                 .append(nameWithUnits)
                 .append(" ")
-                .append(getDescription() == null ? "" : getDescription())
+                .append(getDescription().orElse(""))
                 .append('\n');
     }
 
@@ -248,7 +290,7 @@ abstract class MetricImpl extends Metadata implements HelidonMetric {
 
     // for Gauge and Histogram - must convert
     Units getUnits() {
-        String unit = getUnit();
+        String unit = getUnit().get();
         if ((null == unit) || unit.isEmpty() || MetricUnits.NONE.equals(unit)) {
             return new Units(null);
         }

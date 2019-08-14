@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -42,7 +43,7 @@ import static org.hamcrest.number.OrderingComparison.greaterThan;
 public class MetricsTest extends MetricsBaseTest {
 
     @Test
-    public void testCounted1() throws Exception {
+    public void testCounted1() {
         CountedBean bean = newBean(CountedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Counter counter = getMetric(bean, "method1");
@@ -50,7 +51,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testCounted2() throws Exception {
+    public void testCounted2() {
         CountedBean bean = newBean(CountedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Counter counter = getMetric(bean, "method1");
@@ -58,7 +59,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testMetered1() throws Exception {
+    public void testMetered1() {
         MeteredBean bean = newBean(MeteredBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Meter meter = getMetric(bean, "method1");
@@ -67,7 +68,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testMetered2() throws Exception {
+    public void testMetered2() {
         MeteredBean bean = newBean(MeteredBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Meter meter = getMetric(bean, "method2");
@@ -76,7 +77,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testTimed1() throws Exception {
+    public void testTimed1() {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method1());
         Timer timer = getMetric(bean, "method1");
@@ -85,7 +86,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testTimed2() throws Exception {
+    public void testTimed2() {
         TimedBean bean = newBean(TimedBean.class);
         IntStream.range(0, 10).forEach(i -> bean.method2());
         Timer timer = getMetric(bean, "method2");
@@ -94,7 +95,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testInjection() throws Exception {
+    public void testInjection() {
         InjectedBean bean = newBean(InjectedBean.class);
         assertThat(bean.counter, notNullValue());
         assertThat(bean.meter, notNullValue());
@@ -104,7 +105,7 @@ public class MetricsTest extends MetricsBaseTest {
     }
 
     @Test
-    public void testGauge() throws Exception {
+    public void testGauge() {
         final int EXPECTED_VALUE = 42;
         GaugedBean bean = newBean(GaugedBean.class);
         bean.setValue(EXPECTED_VALUE);
@@ -117,7 +118,7 @@ public class MetricsTest extends MetricsBaseTest {
         assertThat(valueViaGauge, is(EXPECTED_VALUE));
     }
 
-    @Test
+    @Test @Disabled
     public void testGaugeMetadata() {
         final int EXPECTED_VALUE = 42;
         GaugedBean bean = newBean(GaugedBean.class);

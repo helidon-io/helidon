@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Implementation of {@link Counter}.
@@ -55,16 +56,6 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public void dec() {
-        delegate.dec();
-    }
-
-    @Override
-    public void dec(long n) {
-        delegate.dec(n);
-    }
-
-    @Override
     public long getCount() {
         return delegate.getCount();
     }
@@ -78,8 +69,8 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder) {
-        builder.add(getName(), getCount());
+    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+        builder.add(jsonFullKey(metricID), getCount());
     }
 
     private static class CounterImpl implements Counter {
@@ -93,16 +84,6 @@ final class HelidonCounter extends MetricImpl implements Counter {
         @Override
         public void inc(long n) {
             adder.add(n);
-        }
-
-        @Override
-        public void dec() {
-            adder.decrement();
-        }
-
-        @Override
-        public void dec(long n) {
-            adder.add(-n);
         }
 
         @Override

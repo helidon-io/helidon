@@ -38,6 +38,7 @@ import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
@@ -463,13 +464,13 @@ public class GrpcMetrics
          */
         org.eclipse.microprofile.metrics.Metadata metadata(ServiceDescriptor service, String method) {
             String name = nameFunction.orElse(this::defaultName).createName(service, method, type);
-            org.eclipse.microprofile.metrics.Metadata metadata = new org.eclipse.microprofile.metrics.Metadata(name, type);
+            MetadataBuilder builder = new MetadataBuilder().withName(name).withType(type);
 
-            this.tags.ifPresent(metadata::setTags);
-            this.description.ifPresent(metadata::setDescription);
-            this.units.ifPresent(metadata::setUnit);
+            // this.tags.ifPresent(builder::setTags);      // TODO
+            this.description.ifPresent(builder::withDescription);
+            this.units.ifPresent(builder::withUnit);
 
-            return metadata;
+            return builder.build();
         }
 
         private String defaultName(ServiceDescriptor service, String methodName, MetricType metricType) {
