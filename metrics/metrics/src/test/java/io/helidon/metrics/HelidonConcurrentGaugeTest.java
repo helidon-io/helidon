@@ -16,15 +16,12 @@
 
 package io.helidon.metrics;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.IntStream;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,9 +31,9 @@ import static org.hamcrest.core.Is.is;
  * Class HelidonConcurrentGaugeTest.
  */
 public class HelidonConcurrentGaugeTest {
+    private static final long SECONDS_THRESHOLD = 50;
 
     private static Metadata meta;
-    private HelidonConcurrentGauge gauge;
 
     @BeforeAll
     static void initClass() {
@@ -47,60 +44,56 @@ public class HelidonConcurrentGaugeTest {
                 MetricUnits.NONE);
     }
 
-    @BeforeEach
-    void resetCounter() {
-        gauge = HelidonConcurrentGauge.create("base", meta);
-    }
-
     @Test
-    void testConcurrentGauge() {
+    void testInitialState() {
+        HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
         assertThat(gauge.getCount(), is(0L));
         assertThat(gauge.getMax(), is(0L));
         assertThat(gauge.getMin(), is(0L));
+    }
 
+    @Test
+    void testMaxAndMin() throws InterruptedException{
+        ensureSecondsInMinute();
+        HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
+        System.out.println("Calling inc() and dec() a few times ...");
         IntStream.range(0, 10).forEach(i -> gauge.inc());
         assertThat(gauge.getCount(), is(10L));
-        assertThat(gauge.getMax(), is(10L));
+        IntStream.range(0, 20).forEach(i -> gauge.dec());
+        assertThat(gauge.getMax(), is(0L));
         assertThat(gauge.getMin(), is(0L));
 
-        IntStream.range(0, 20).forEach(i -> gauge.dec());
-        assertThat(gauge.getCount(), is(-10L));
-        assertThat(gauge.getMax(), is(10L));
-        assertThat(gauge.getMin(), is(-10L));
-
-        IntStream.range(0, 10).forEach(i -> gauge.inc());
-        assertThat(gauge.getCount(), is(0L));
+        waitUntilNextMinute();
+        System.out.println("Verifying max and min from last minute ...");
         assertThat(gauge.getMax(), is(10L));
         assertThat(gauge.getMin(), is(-10L));
     }
 
-    @Test
-    void testConcurrentGaugeInc() {
-        CompletableFuture<?>[] futures = new CompletableFuture<?>[10];
-        IntStream.range(0, 10).forEach(i -> {
-            futures[i] = new CompletableFuture<>();
-            ForkJoinPool.commonPool().submit(() -> {
-                gauge.inc();
-                futures[i].complete(null);
-            });
-        });
-        CompletableFuture.allOf(futures).thenRun(() ->
-                assertThat(gauge.getCount(), is(10L))
-        );
+    private static void ensureSecondsInMinute() throws InterruptedException {
+        long currentSeconds = currentTimeSeconds();
+        System.out.println("Seconds in minute are " + currentSeconds);
+        if (currentSeconds > SECONDS_THRESHOLD) {
+            waitUntilNextMinute();
+        }
     }
 
-    @Test
-    void testConcurrentGaugeDec() {
-        CompletableFuture<?>[] futures = new CompletableFuture<?>[10];
-        IntStream.range(0, 10).forEach(i -> {
-            futures[i] = new CompletableFuture<>();
-            ForkJoinPool.commonPool().submit(() -> {
-                gauge.dec();
-                futures[i].complete(null);
-            });
-        });
-        CompletableFuture.allOf(futures).thenRun(() ->
-                assertThat(gauge.getCount(), is(-10L))
-        );
+    private static void waitUntilNextMinute() throws InterruptedException {
+        boolean displayMessage = true;
+        long currentMinute = currentTimeMinute();
+        while (currentMinute == currentTimeMinute()) {
+            if (displayMessage) {
+                System.out.println("Waiting for next minute to start ...");
+                displayMessage = false;
+            }
+            Thread.sleep(10 * 1000);
+        }
+    }
+
+    private static long currentTimeMinute() {
+        return System.currentTimeMillis() / 1000 / 60;
+    }
+
+    private static long currentTimeSeconds() {
+        return System.currentTimeMillis() / 1000 % 60;
     }
 }

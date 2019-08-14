@@ -86,13 +86,19 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {
         private final LongAdder adder;
-        private AtomicLong max;
-        private AtomicLong min;
+        private AtomicLong lastMax;
+        private AtomicLong lastMin;
+        private AtomicLong currentMax;
+        private AtomicLong currentMin;
+        private AtomicLong lastMinute;
 
         ConcurrentGaugeImpl() {
             adder = new LongAdder();
-            max = new AtomicLong(0L);
-            min = new AtomicLong(0L);
+            lastMax = new AtomicLong(0L);
+            lastMin = new AtomicLong(0L);
+            currentMax = new AtomicLong(0L);
+            currentMin = new AtomicLong(0L);
+            lastMinute = new AtomicLong(currentTimeMinute());
         }
 
         @Override
@@ -102,30 +108,48 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
 
         @Override
         public long getMax() {
-            return max.get();
+            updateState();
+            return lastMax.get();
         }
 
         @Override
         public long getMin() {
-            return min.get();
+            updateState();
+            return lastMin.get();
         }
 
         @Override
         public void inc() {
+            updateState();
             adder.increment();
             final long count = getCount();
-            if (count > max.get()) {
-                max.set(count);
+            if (count > currentMax.get()) {
+                currentMax.set(count);
             }
         }
 
         @Override
         public void dec() {
+            updateState();
             adder.decrement();
             final long count = getCount();
-            if (count < min.get()) {
-                min.set(count);
+            if (count < currentMin.get()) {
+                currentMin.set(count);
             }
+        }
+
+        public synchronized void updateState() {
+            long currentMinute = currentTimeMinute();
+            long diff = currentMinute - lastMinute.get();
+            if (diff >= 1L) {
+                lastMax.set(currentMax.get());
+                lastMin.set(currentMin.get());
+                lastMinute.set(currentMinute);
+            }
+        }
+
+        private static long currentTimeMinute() {
+            return System.currentTimeMillis() / 1000 / 60;
         }
     }
 }
