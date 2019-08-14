@@ -58,6 +58,7 @@ public class ServerImpl implements Server {
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
+    private static final AtomicReference<ServerImpl> STARTED_INSTANCE = new AtomicReference<>();
 
     private final SeContainer container;
     private final boolean containerCreated;
@@ -296,6 +297,19 @@ public class ServerImpl implements Server {
     @Override
     public Server start() {
         STARTUP_LOGGER.entering(ServerImpl.class.getName(), "start");
+
+        ServerImpl existingServer = STARTED_INSTANCE
+                .getAndAccumulate(this, (server1, server2) -> ((null == server1) ? server2 : server1));
+        if (null != existingServer) {
+            LOGGER.warning("*****************************************************************");
+            LOGGER.warning("** WARNING                                                     **");
+            LOGGER.warning("** There is an existing server running on port " + existingServer.port + ".           **");
+            LOGGER.warning("** You are starting another server on configured port: " + port + ".     **");
+            LOGGER.warning("** This is NOT A SUPPORTED CONFIGURATION.                      **");
+            LOGGER.warning("** Some MP services will NOT WORK AS EXPECTED.                 **");
+            LOGGER.warning("** The servers use shared CDI and classloader!                 **");
+            LOGGER.warning("*****************************************************************");
+        }
 
         CountDownLatch cdl = new CountDownLatch(1);
         AtomicReference<Throwable> throwRef = new AtomicReference<>();

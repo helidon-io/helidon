@@ -16,6 +16,9 @@
 
 package io.helidon.microprofile.server;
 
+import java.io.IOException;
+import java.util.logging.LogManager;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -23,7 +26,9 @@ import org.junit.jupiter.api.Test;
  */
 class ServerTest {
     @Test
-    void testMultiRun() {
+    void testMultiRun() throws IOException {
+        LogManager.getLogManager().readConfiguration(ServerTest.class.getResourceAsStream("/logging.properties"));
+
         Server server = Server.builder().port(-1).build();
         server.start();
         int port = server.port();
