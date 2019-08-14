@@ -57,6 +57,12 @@
                 <artifactId>helidon-webserver-test-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- WebClient -->
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-jaxrs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- gRPC server -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
