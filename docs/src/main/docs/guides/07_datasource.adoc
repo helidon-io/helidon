@@ -165,12 +165,15 @@ whose sole element is a `sql` mapping whose sole mapping is a
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`].
 This preamble specifies the type of Java object that will supply
 database connections in your code.  Its sole element is a mapping
-whose key is the name of the data source in question.
+whose key is the name of the data source in question.  This preamble
+is required.
 
 <2> This mapping's key is the name of your data source, and will be
 referenced in your application code.  Its elements are
 https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby[Hikari
-connection pool properties].
+connection pool properties].  The data source name may be anything you
+like.  By convention, data source names are usually single words
+consisting of alphanumeric characters only.
 
 <3> This is the class name of the actual
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`]
@@ -217,7 +220,8 @@ mapping corresponds to the Java type of
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`].
 This preamble specifies the type of Java object that will supply
 database connections in your code.  Its sole element is a mapping
-whose key is the name of the data source in question.
+whose key is the name of the data source in question.  This preamble
+is required.
 
 <2> This mapping's key will be the name of your data source, and will
 be referenced in your application code.  Each of its elements' keys
@@ -225,7 +229,8 @@ are
 https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html[Java
 Bean properties] of the
 https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`oracle.ucp.jdbc.PoolDataSource`]
-class.
+class.  By convention, data source names are usually single words
+consisting of alphanumeric characters only.
 
 <3> If your database vendor provides a
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`]
@@ -343,3 +348,19 @@ https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/j
 implementation instance whose name is specified by the `@Named`
 annotation, and will set this field's value to it.
 
+== Examples
+
+Helidon features a few examples of projects that use data sources.
+
+* https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/datasource-hikaricp-h2[An
+  example showing a Hikari connection pool data source connected to an
+  H2 database]
+
+* https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/datasource-hikaricp-mysql[An
+  example showing a Hikari connection pool data source connected to a
+  MySQL database]
+
+Some examples' configurations can be found in their
+`META-INF/microprofile-config.properties` resources instead of in an
+`application.yaml` file as described above.  Though the syntax is
+different, the same principles as those described above still apply.
