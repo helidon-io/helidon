@@ -27,11 +27,10 @@ import io.helidon.common.reactive.Flow.Subscription;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
+final class SingleMultiMapperProcessor<T, U> implements Processor<T, U>, Multi<U> {
 
     private Throwable error;
     private Publisher<? extends U> delegate;
-    private Subscription subscription;
     private Subscriber<? super U> subscriber;
     private volatile boolean subcribed;
     private final Mapper<T, Publisher<U>> mapper;
@@ -46,7 +45,6 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
             delegate = mapper.map(item);
             doSusbcribe();
         }
-        subscription.cancel();
     }
 
     @Override
@@ -60,12 +58,15 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U> {
 
     @Override
     public void onSubscribe(Subscription s) {
-        this.subscription = s;
         s.request(1);
     }
 
     @Override
     public void onComplete() {
+        if (delegate == null) {
+            delegate = Single.empty();
+            doSusbcribe();
+        }
     }
 
     private void doSusbcribe() {

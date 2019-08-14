@@ -16,10 +16,10 @@
 package io.helidon.common.reactive;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
+import java.util.function.Consumer;
 
 /**
  * Single item publisher utility.
@@ -27,6 +27,50 @@ import io.helidon.common.reactive.Flow.Subscriber;
  * @param <T> item type
  */
 public interface Single<T> extends Publisher<T> {
+
+    /**
+     * Subscribe to this {@link Single} instance with the given delegate functions.
+     *
+     * @param consumer onNext delegate function
+     */
+    default void subscribe(Consumer<? super T> consumer) {
+        this.subscribe(new FunctionalSubscriber<>(consumer, null, null, null));
+    }
+
+    /**
+     * Subscribe to this {@link Single} instance with the given delegate functions.
+     *
+     * @param consumer onNext delegate function
+     * @param errorConsumer onError delegate function
+     */
+    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer) {
+        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, null, null));
+    }
+
+    /**
+     * Subscribe to this {@link Single} instance with the given delegate functions.
+     *
+     * @param consumer onNext delegate function
+     * @param errorConsumer onError delegate function
+     * @param completeConsumer onComplete delegate function
+     */
+    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer) {
+        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, null));
+    }
+
+    /**
+     * Subscribe to this {@link Single} instance with the given delegate functions.
+     *
+     * @param consumer onNext delegate function
+     * @param errorConsumer onError delegate function
+     * @param completeConsumer onComplete delegate function
+     * @param subscriptionConsumer onSusbcribe delegate function
+     */
+    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer,
+            Consumer<? super Flow.Subscription> subscriptionConsumer) {
+
+        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, subscriptionConsumer));
+    }
 
     /**
      * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
@@ -48,7 +92,7 @@ public interface Single<T> extends Publisher<T> {
      * @param mapper mapper
      * @return Publisher
      */
-    default <U> Publisher<U> mapMany(Mapper<T, Publisher<U>> mapper) {
+    default <U> Multi<U> mapMany(Mapper<T, Publisher<U>> mapper) {
         SingleMultiMapperProcessor<T, U> processor = new SingleMultiMapperProcessor<>(mapper);
         this.subscribe(processor);
         return processor;
@@ -70,17 +114,6 @@ public interface Single<T> extends Publisher<T> {
             future.completeExceptionally(ex);
             return future;
         }
-    }
-
-    /**
-     * Create a {@link Single} instance from a {@link CompletionStage}.
-     *
-     * @param <T> item type
-     * @param future source future
-     * @return Single
-     */
-    static <T> Single<T> fromFuture(CompletionStage<? extends T> future) {
-        return new SingleFromCompletionStage<>(future);
     }
 
     /**

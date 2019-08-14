@@ -35,6 +35,9 @@ final class SingleMapperProcessor<T, U> implements Processor<T, U>, Single<U> {
     private final Mapper<T, U> mapper;
 
     SingleMapperProcessor(Mapper<T, U> mapper) {
+        if (mapper == null) {
+            throw new IllegalArgumentException("mapper cannot be null!");
+        }
         this.mapper = mapper;
     }
 
@@ -61,6 +64,10 @@ final class SingleMapperProcessor<T, U> implements Processor<T, U>, Single<U> {
 
     @Override
     public void onComplete() {
+        if (delegate == null) {
+            delegate = Single.empty();
+            doSusbcribe();
+        }
     }
 
     private void doSusbcribe() {

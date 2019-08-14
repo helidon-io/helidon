@@ -31,8 +31,8 @@ import io.helidon.common.reactive.Flow.Subscription;
 final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>, Subscription {
 
     private Subscriber<? super U> delegate;
-    private Flow.Subscription subscription;
     private Throwable error;
+    private volatile boolean subscribed;
     private volatile boolean requested;
     private volatile boolean done;
     private final Collector<T, U> collector;
@@ -55,18 +55,15 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
 
     @Override
     public void cancel() {
-        if (subscription != null) {
-            subscription.cancel();
-        }
+        done = true;
+        requested = true;
     }
 
     @Override
     public void onSubscribe(Subscription subscription) {
         Objects.requireNonNull(subscription, "subscription cannot be null!");
-        if (this.subscription != null) {
-            this.subscription.cancel();
-        } else {
-            this.subscription = subscription;
+        if (!subscribed) {
+            subscribed = true;
             if (delegate != null) {
                 delegate.onSubscribe(this);
             }
@@ -109,8 +106,17 @@ final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>
             if (error != null) {
                 delegate.onError(error);
             } else {
-                delegate.onNext(collector.value());
-                delegate.onComplete();
+                try {
+                    U value = collector.value();
+                    if (value != null) {
+                        delegate.onNext(value);
+                        delegate.onComplete();
+                    } else {
+                        delegate.onError(new IllegalStateException("Collector returned a null container"));
+                    }
+                } catch (Throwable ex) {
+                    delegate.onError(ex);
+                }
             }
         }
     }

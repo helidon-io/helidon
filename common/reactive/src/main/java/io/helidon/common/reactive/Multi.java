@@ -127,7 +127,11 @@ public interface Multi<T> extends Publisher<T> {
      * @param source source publisher
      * @return Multi
      */
+    @SuppressWarnings("unchecked")
     static <T> Multi<T> from(Publisher<T> source) {
+        if (source instanceof Multi) {
+            return (Multi<T>) source;
+        }
         return new MultiFromPublisher<>(source);
     }
 
@@ -155,7 +159,7 @@ public interface Multi<T> extends Publisher<T> {
     }
 
     /**
-     * Create a {@link Multi} instance that reports the given given exception to its subscriber(s). The exception is reported by
+     * Create a {@link Multi} instance that reports the given exception to its subscriber(s). The exception is reported by
      * invoking {@link Subscriber#onError(java.lang.Throwable)} when {@link Publisher#subscribe(Subscriber)} is called.
      *
      * @param <T> item type

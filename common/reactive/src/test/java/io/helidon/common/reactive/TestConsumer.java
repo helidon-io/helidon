@@ -15,29 +15,17 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Objects;
-import java.util.function.Function;
-
-import io.helidon.common.reactive.Flow.Publisher;
+import java.util.function.Consumer;
 
 /**
- * Implementation of {@link Mapper} backed by a java function for
- * mapping the items.
- *
- * @param <T> subscribed type
- * @param <U> published type
+ * Dummy consumer for testing purpose.
  */
-final class SingleMultiMapperFunctional<T, U> implements Mapper<T, Publisher<U>> {
+class TestConsumer<T> implements Consumer<T> {
 
-    private final Function<T, Publisher<U>> function;
-
-    SingleMultiMapperFunctional(Function<T, Publisher<U>> function) {
-        this.function = Objects.requireNonNull(function,
-                "function cannot be null!");
-    }
+    T item;
 
     @Override
-    public Publisher<U> map(T item) {
-        return function.apply(item);
+    public void accept(T t) {
+        item = t;
     }
 }
