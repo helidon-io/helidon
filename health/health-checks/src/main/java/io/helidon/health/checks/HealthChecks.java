@@ -33,7 +33,7 @@ public final class HealthChecks {
      * Deadlock health check.
      *
      * @return deadlock health check
-     * @see io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      */
     public static HealthCheck deadlockCheck() {
         return DeadlockHealthCheck.create(ManagementFactory.getThreadMXBean());
@@ -43,7 +43,7 @@ public final class HealthChecks {
      * Disk space health check.
      *
      * @return disk space health check with default configuration
-     * @see io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      * @see DiskSpaceHealthCheck#builder()
      */
     public static HealthCheck diskSpaceCheck() {
@@ -54,7 +54,7 @@ public final class HealthChecks {
      * Memory health check.
      *
      * @return memory health check with default configuration
-     * @see io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      * @see HeapMemoryHealthCheck#builder()
      */
     public static HeapMemoryHealthCheck heapMemoryCheck() {
@@ -65,7 +65,7 @@ public final class HealthChecks {
      * Built-in health checks.
      *
      * @return built-in health checks to be configured with {@link io.helidon.health.HealthSupport}
-     * @see io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)
+     * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      */
     public static HealthCheck[] healthChecks() {
         if (IS_GRAAL_VM) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import java.lang.management.ThreadMXBean;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
 
 /**
  * A health check that looks for thread deadlocks. Automatically created and registered via CDI.
@@ -31,7 +31,7 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
  * This health check can be referred to in properties as "deadlock". So for example, to exclude this
  * health check from being exposed, use "helidon.health.exclude: deadlock".
  */
-@Health
+@Liveness
 @ApplicationScoped // this will be ignored if not within CDI
 public final class DeadlockHealthCheck implements HealthCheck {
     /**
@@ -50,7 +50,7 @@ public final class DeadlockHealthCheck implements HealthCheck {
      *
      * @param threadBean thread mx bean to get thread monitoring data from
      * @return a new health check to register with
-     *         {@link io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)}
+     *         {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
      */
     public static DeadlockHealthCheck create(ThreadMXBean threadBean) {
         return new DeadlockHealthCheck(threadBean);
