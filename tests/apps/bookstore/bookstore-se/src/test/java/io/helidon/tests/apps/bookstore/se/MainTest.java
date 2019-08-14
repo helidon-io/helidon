@@ -56,7 +56,7 @@ public class MainTest {
 
         Request getBooks = builder.build();
         try (Response getBooksRes = client.newCall(getBooks).execute()) {
-            Assertions.assertEquals(getBooksRes.code(), 200);
+            Assertions.assertEquals(200, getBooksRes.code());
             Assertions.assertNotNull(getBooksRes.header("content-length"));
             String body = getBooksRes.body().string();
             Assertions.assertEquals(body, "[]");
@@ -65,13 +65,13 @@ public class MainTest {
         Request postBook = builder.post(
                 RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
         try (Response postBookRes = client.newCall(postBook).execute()) {
-            Assertions.assertEquals(postBookRes.code(), 200);
+            Assertions.assertEquals(200, postBookRes.code());
         }
 
         builder = TestServer.newRequestBuilder(webServer, "/books/123456", false);
         Request getBook = builder.build();
         try (Response getBookRes = client.newCall(getBook).execute()) {
-            Assertions.assertEquals(getBookRes.code(), 200);
+            Assertions.assertEquals(200, getBookRes.code());
             Assertions.assertNotNull(getBookRes.header("content-length"));
             JsonReader jsonReader = Json.createReader(getBookRes.body().byteStream());
             JsonObject jsonObject = jsonReader.readObject();
@@ -81,7 +81,7 @@ public class MainTest {
 
         Request deleteBook = builder.delete().build();
         try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            Assertions.assertEquals(deleteBookRes.code(), 200);
+            Assertions.assertEquals(200, deleteBookRes.code());
         }
 
         Request getNoBook = builder.build();
