@@ -29,6 +29,13 @@
     <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
     <name>Helidon CDI Integrations JPA Weld</name>
 
+    <!--
+        This project is deprecated and slated for eventual removal
+        from Helidon.
+
+        Please see the ../jpa-cdi project instead.
+    -->
+
     <properties>
       <show>package</show>
     </properties>

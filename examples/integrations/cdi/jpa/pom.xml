@@ -175,7 +175,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
-            <artifactId>helidon-integrations-cdi-jpa-weld</artifactId>
+            <artifactId>helidon-integrations-cdi-jpa</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
