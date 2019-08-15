@@ -22,6 +22,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +58,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
@@ -100,7 +102,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.COUNTER,
                                          counted.unit(),
                                          false);
-            registry.counter(meta);
+            registry.counter(meta, tags(counted.tags()));
             LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
@@ -111,7 +113,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.METERED,
                                          metered.unit(),
                                         false);
-            registry.meter(meta);
+            registry.meter(meta, tags(metered.tags()));
             LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
@@ -122,7 +124,7 @@ public class MetricsCdiExtension implements Extension {
                                          MetricType.TIMER,
                                          timed.unit(),
                                         false);
-            registry.timer(meta);
+            registry.timer(meta, tags(timed.tags()));
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
         }
     }
@@ -132,6 +134,19 @@ public class MetricsCdiExtension implements Extension {
             return "";
         }
         return String.join(",", tags);
+    }
+
+    private static Tag[] tags(String[] tagStrings) {
+        final List<Tag> result = new ArrayList<>();
+        for (int i = 0; i < tagStrings.length; i++) {
+            final int eq = tagStrings[i].indexOf("=");
+            if (eq > 0) {
+                final String tagName = tagStrings[i].substring(0, eq);
+                final String tagValue = tagStrings[i].substring(eq + 1);
+                result.add(new Tag(tagName, tagValue));
+            }
+        }
+        return result.toArray(new Tag[result.size()]);
     }
 
     /**

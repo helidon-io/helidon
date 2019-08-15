@@ -60,12 +60,12 @@ class Registry extends MetricRegistry {
 
     @Override
     public <T extends Metric> T register(String name, T metric) throws IllegalArgumentException {
-        return register(toMetadata(name, metric), metric, null);
+        return register(toMetadata(name, metric), metric, (Tag[]) null);
     }
 
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
-        return register(metadata, metric, null);
+        return register(metadata, metric, (Tag[]) null);
     }
 
     @SuppressWarnings("unchecked")
@@ -81,7 +81,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata) {
-        return counter(metadata, null);
+        return counter(metadata, (Tag[]) null);
     }
 
     @Override
@@ -103,7 +103,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata) {
-        return histogram(metadata, null);
+        return histogram(metadata, (Tag[]) null);
     }
 
     @Override
@@ -125,7 +125,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata) {
-        return meter(metadata, null);
+        return meter(metadata, (Tag[]) null);
     }
 
     @Override
@@ -169,7 +169,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return concurrentGauge(metadata, null);
+        return concurrentGauge(metadata, (Tag[]) null);
     }
 
     @Override
