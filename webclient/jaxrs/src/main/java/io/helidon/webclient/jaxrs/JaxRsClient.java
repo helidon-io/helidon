@@ -19,14 +19,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
-
-import org.glassfish.jersey.spi.ExecutorServiceProvider;
 
 /**
  * Point of access to {@link javax.ws.rs.client.ClientBuilder} to support Helidon features,
@@ -34,7 +29,9 @@ import org.glassfish.jersey.spi.ExecutorServiceProvider;
  */
 public final class JaxRsClient {
     private static final AtomicReference<Supplier<ExecutorService>> EXECUTOR_SUPPLIER =
-            new AtomicReference<>(ThreadPoolSupplier.create());
+            new AtomicReference<>(ThreadPoolSupplier.builder()
+                                          .threadNamePrefix("helidon-jaxrs-client-")
+                                          .build());
 
     private JaxRsClient() {
     }
@@ -66,7 +63,7 @@ public final class JaxRsClient {
     }
 
     /**
-     * Configure the default executor service supplier to be used for asynchronous requests when explicit supplier is not
+     * Configure the default executor supplier to be used for asynchronous requests when explicit supplier is not
      * provided.
      *
      * @param executorServiceSupplier supplier that provides the executor service
@@ -77,25 +74,13 @@ public final class JaxRsClient {
         EXECUTOR_SUPPLIER.set(wrapped);
     }
 
-    public static ClientBuilder newBuilder() {
-        ClientBuilder result = ClientBuilder.newBuilder();
-
-        result.register(new ExecutorServiceProvider() {
-            @Override
-            public ExecutorService getExecutorService() {
-                return EXECUTOR_SUPPLIER.get().get();
-            }
-
-            @Override
-            public void dispose(ExecutorService executorService) {
-
-            }
-        });
-
-        return result;
-    }
-
-    public static Client newClient() {
-        return newClientBuilder().build();
+    /**
+     * The executor supplier configured as default.
+     *
+     * @return supplier of {@link java.util.concurrent.ExecutorService} to use for client
+     * asynchronous operations
+     */
+    static Supplier<ExecutorService> executor() {
+        return EXECUTOR_SUPPLIER.get();
     }
 }

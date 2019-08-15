@@ -31,6 +31,7 @@ module io.helidon.security.integration.jersey {
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;
     requires io.helidon.security.integration.common;
+    requires io.helidon.webclient.jaxrs;
     requires jersey.common;
     requires jersey.server;
     requires jersey.client;
