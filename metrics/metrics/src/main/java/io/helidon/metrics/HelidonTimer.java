@@ -201,24 +201,24 @@ final class HelidonTimer extends MetricImpl implements Timer {
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
-        myBuilder.add("count", getCount());
-        myBuilder.add("meanRate", getMeanRate());
-        myBuilder.add("oneMinRate", getOneMinuteRate());
-        myBuilder.add("fiveMinRate", getFiveMinuteRate());
-        myBuilder.add("fifteenMinRate", getFifteenMinuteRate());
+        myBuilder.add(jsonFullKey("count", metricID), getCount());
+        myBuilder.add(jsonFullKey("meanRate", metricID), getMeanRate());
+        myBuilder.add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate());
+        myBuilder.add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate());
+        myBuilder.add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
-        myBuilder.add("min", snapshot.getMin());
-        myBuilder.add("max", snapshot.getMax());
-        myBuilder.add("mean", snapshot.getMean());
-        myBuilder.add("stddev", snapshot.getStdDev());
-        myBuilder.add("p50", snapshot.getMedian());
-        myBuilder.add("p75", snapshot.get75thPercentile());
-        myBuilder.add("p95", snapshot.get95thPercentile());
-        myBuilder.add("p98", snapshot.get98thPercentile());
-        myBuilder.add("p99", snapshot.get99thPercentile());
-        myBuilder.add("p999", snapshot.get999thPercentile());
+        myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin());
+        myBuilder.add(jsonFullKey("max", metricID), snapshot.getMax());
+        myBuilder.add(jsonFullKey("mean", metricID), snapshot.getMean());
+        myBuilder.add(jsonFullKey("stddev", metricID), snapshot.getStdDev());
+        myBuilder.add(jsonFullKey("p50", metricID), snapshot.getMedian());
+        myBuilder.add(jsonFullKey("p75", metricID), snapshot.get75thPercentile());
+        myBuilder.add(jsonFullKey("p95", metricID), snapshot.get95thPercentile());
+        myBuilder.add(jsonFullKey("p98", metricID), snapshot.get98thPercentile());
+        myBuilder.add(jsonFullKey("p99", metricID), snapshot.get99thPercentile());
+        myBuilder.add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
 
-        builder.add(jsonFullKey(metricID), myBuilder.build());
+        builder.add(metricID.getName(), myBuilder.build());
     }
 
     private static final class ContextImpl implements Context {

@@ -64,9 +64,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         return "\\\\" + s;
     }
 
-    private static final Map<String, String> JSON_ESCAPED_CHARS_MAP = CollectionsHelper.mapOf(
-            "\b", bsls("b"), "\f", bsls("f"), "\n", bsls("n"), "\r", bsls("r"),
-            "\t", bsls("t"), "\"", bsls("\""), "\\", bsls("\\\\"));
+    private static final Map<String, String> JSON_ESCAPED_CHARS_MAP = initEscapedCharsMap();
 
     private static final Pattern JSON_ESCAPED_CHARS_REGEX = Pattern
                 .compile(JSON_ESCAPED_CHARS_MAP
@@ -101,6 +99,19 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         addConverter(new LengthUnits("millimeters", (double) 1 / 1000));
         addConverter(new LengthUnits("centimeters", (double) 1 / 100));
         addConverter(new LengthUnits("kilometers", 1000));
+    }
+
+    private static Map<String, String> initEscapedCharsMap() {
+        final Map<String, String> result = new HashMap<>();
+        result.put("\b", bsls("b"));
+        result.put("\f", bsls("f"));
+        result.put("\n", bsls("n"));
+        result.put("\r", bsls("r"));
+        result.put("\t", bsls("t"));
+        result.put("\"", bsls("\""));
+        result.put("\\", bsls("\\\\"));
+        result.put(";", "_");
+        return result;
     }
 
     private final String registryType;
@@ -163,12 +174,16 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         builder.add(getName(), metaBuilder);
     }
 
-    static String jsonFullKey(MetricID metricID) {
-        return metricID.getTags().isEmpty() ? metricID.getName()
-                : String.format("%s;%s", metricID.getName(),
+    static String jsonFullKey(String baseName, MetricID metricID) {
+        return metricID.getTags().isEmpty() ? baseName
+                : String.format("%s;%s", baseName,
                         metricID.getTagsAsList().stream()
                                 .map(MetricImpl::tagForJsonKey)
                                 .collect(Collectors.joining(";")));
+    }
+
+    static String jsonFullKey(MetricID metricID) {
+        return jsonFullKey(metricID.getName(), metricID);
     }
 
     private static String tagForJsonKey(Tag t) {

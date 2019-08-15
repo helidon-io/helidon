@@ -81,7 +81,12 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
 
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        builder.add(jsonFullKey(metricID), getCount());
+        final JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
+        myBuilder.add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("max", metricID), getMax())
+                .add(jsonFullKey("min", metricID), getMin());
+
+        builder.add(metricID.getName(), myBuilder);
     }
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {
