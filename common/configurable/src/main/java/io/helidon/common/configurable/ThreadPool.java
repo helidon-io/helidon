@@ -211,7 +211,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      *
      * @return The threshold.
      */
-    public int getGrowthThreshold() {
+    int getGrowthThreshold() {
         return growthThreshold;
     }
 
@@ -220,7 +220,7 @@ public class ThreadPool extends ThreadPoolExecutor {
      *
      * @return The rate.
      */
-    public int getGrowthRate() {
+    int getGrowthRate() {
         return growthRate;
     }
 
@@ -334,6 +334,11 @@ public class ThreadPool extends ThreadPoolExecutor {
     }
 
     @Override
+    public RejectionHandler getRejectedExecutionHandler() {
+        return (RejectionHandler) super.getRejectedExecutionHandler();
+    }
+
+    @Override
     public void setMaximumPoolSize(int maximumPoolSize) {
         if (maximumPoolSize != getMaximumPoolSize()) {
             LOGGER.warning("Maximum pool size cannot be changed in " + this);
@@ -378,8 +383,9 @@ public class ThreadPool extends ThreadPoolExecutor {
     }
 
     /**
-     * A {@link RejectedExecutionHandler} that adds the task to the queue; if that fails, the
-     * rejection is counted and an exception thrown.
+     * A {@link RejectedExecutionHandler} that supports pool growth by re-attempting to add the
+     * task to the queue. If the queue is actually full, the rejection is counted and an exception
+     * thrown.
      */
     public static class RejectionHandler implements RejectedExecutionHandler {
         private final AtomicInteger rejections = new AtomicInteger();
@@ -424,6 +430,9 @@ public class ThreadPool extends ThreadPoolExecutor {
         }
     }
 
+    /**
+     * A {@link ThreadFactory} that creates threads in a separate {@link ThreadGroup}.
+     */
     private static class GroupedThreadFactory implements ThreadFactory {
         private final ThreadGroup group;
         private final String namePrefix;
@@ -645,10 +654,13 @@ public class ThreadPool extends ThreadPoolExecutor {
 
     /**
      * A growth policy that will attempt to add a thread to the pool when the queue is above the specified threshold
-     * size and a random number is above the specified growth rate.
+     * size and a random number is below the specified growth rate. As a guard against extreme queue growth, a thread
+     * will always be added if the queue grows above eight times the specified threshold.
      */
     private static class RateLimitGrowth implements Predicate<ThreadPool> {
+        private static final int ALWAYS_THRESHOLD_MULTIPLIER = 8;
         private final int queueThreshold;
+        private final int alwaysThreshold;
         private final boolean alwaysAdd;
         private final float rate;
 
@@ -660,6 +672,7 @@ public class ThreadPool extends ThreadPoolExecutor {
          */
         RateLimitGrowth(int queueThreshold, int growthRate) {
             this.queueThreshold = queueThreshold;
+            this.alwaysThreshold = queueThreshold * ALWAYS_THRESHOLD_MULTIPLIER;
             this.alwaysAdd = growthRate == 100;
             this.rate = growthRate / 100f;
         }
@@ -677,7 +690,9 @@ public class ThreadPool extends ThreadPoolExecutor {
                 // Note that this random number generator is quite fast, and on average is faster than or equivalent to
                 // alternatives such as a counter (which does not provide even distribution) or System.nanoTime().
 
-                if (alwaysAdd || ThreadLocalRandom.current().nextFloat() < rate) {
+                if (alwaysAdd
+                    || queueSize > alwaysThreshold
+                    || ThreadLocalRandom.current().nextFloat() < rate) {
 
                     // Yep
 

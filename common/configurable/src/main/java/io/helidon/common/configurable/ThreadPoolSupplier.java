@@ -21,6 +21,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -30,6 +31,7 @@ import io.helidon.config.Config;
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
 public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
+    private static final Logger LOGGER = Logger.getLogger(ThreadPoolSupplier.class.getName());
     private static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();
     private static final AtomicInteger DEFAULT_NAME_COUNTER = new AtomicInteger();
     private static final int DEFAULT_CORE_POOL_SIZE = 10;
@@ -228,7 +230,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param growthThreshold the growth threshold
          * @return updated builder instance
          */
-        public Builder growthThreshold(int growthThreshold) {
+        Builder growthThreshold(int growthThreshold) {
             this.growthThreshold = growthThreshold;
             return this;
         }
@@ -247,7 +249,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
          * @param growthRate the growth rate
          * @return updated builder instance
          */
-        public Builder growthRate(int growthRate) {
+        Builder growthRate(int growthRate) {
             this.growthRate = growthRate;
             return this;
         }
@@ -286,19 +288,81 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         }
 
         /**
-         * Load all properties for this thread pool executor from configuration.
-         * Expected keys:
-         * <ul>
-         * <li>core-pool-size</li>
-         * <li>max-pool-size</li>
-         * <li>keep-alive-minutes</li>
-         * <li>queue-capacity</li>
-         * <li>is-daemon</li>
-         * <li>thread-name-prefix</li>
-         * <li>should-prestart</li>
-         * <li>growth-threshold</li>
-         * <li>growth-rate</li>
-         * </ul>
+         * Load all properties for this thread pool from configuration.
+         * <p>
+         * <table>
+         * <caption style="text-align: left; font-weight: bold; font-size:16px; margin-bottom: 12px;">
+         *     Optional Configuration Parameters</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>core-pool-size</td>
+         *     <td>10</td>
+         *     <td>The number of threads to keep in the pool.</td>
+         * </tr>
+         * <tr>
+         *     <td>max-pool-size</td>
+         *     <td>50</td>
+         *     <td>The maximum number of threads to allow in the pool.</td>
+         * </tr>
+         * <tr>
+         *     <td>keep-alive-minutes</td>
+         *     <td>3</td>
+         *     <td>When the number of threads is greater than the core, this is the maximum time that excess idle threads
+         *     will wait for new tasks before terminating.</td>
+         * </tr>
+         * <tr>
+         *     <td>queue-capacity</td>
+         *     <td>10000</td>
+         *     <td>The maximum number of tasks that the queue can contain before new tasks are rejected.</td>
+         * </tr>
+         * <tr>
+         *     <td>is-daemon</td>
+         *     <td>{@code true}</td>
+         *     <td>Whether or not all threads in the pool should be set as daemon.</td>
+         * </tr>
+         * <tr>
+         *     <td>thread-name-prefix</td>
+         *     <td>{@code "helidon-"}</td>
+         *     <td>The prefix used to generate names for new threads.</td>
+         * </tr>
+         * <tr>
+         *     <td>should-prestart</td>
+         *     <td>{@code true}</td>
+         *     <td>Whether or not all core threads should be started when the pool is created.</td>
+         * </tr>
+         * </table>
+         * <p>
+         * <table>
+         * <caption style="text-align: left; font-weight: bold; font-size:16px; margin-bottom: 12px;">Experimental Configuration
+         * Parameters (<em>subject to change</em>)</caption>
+         * <tr>
+         *     <th>key</th>
+         *     <th>default value</th>
+         *     <th>description</th>
+         * </tr>
+         * <tr>
+         *     <td>growth-threshold</td>
+         *     <td>256</td>
+         *     <td>The queue size above which pool growth will be considered if the pool is not fixed size.</td>
+         * </tr>
+         * <tr>
+         *     <td style="vertical-align: top;">growth-rate</td>
+         *     <td style="vertical-align: top;">5</td>
+         *     <td>The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100.
+         *     This rate applies only when all of the following are true:
+         *     <ul>
+         *     <li>the pool size is below the maximum, and</li>
+         *     <li>there are no idle threads, and</li>
+         *     <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
+         *     </ul>
+         *     For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
+         *     tasks.</td>
+         * </tr>
+         * </table>
          *
          * @param config config located on the key of executor-service
          * @return updated builder instance
@@ -311,9 +375,20 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
             config.get("is-daemon").asBoolean().ifPresent(this::daemon);
             config.get("thread-name-prefix").asString().ifPresent(this::threadNamePrefix);
             config.get("should-prestart").asBoolean().ifPresent(this::prestart);
-            config.get("growth-threshold").asInt().ifPresent(this::growthThreshold);
-            config.get("growth-rate").asInt().ifPresent(this::growthRate);
+            config.get("growth-threshold").asInt().ifPresent(value -> {
+                warnExperimental("growth-threshold");
+                growthThreshold(value);
+            });
+            config.get("growth-rate").asInt().ifPresent(value -> {
+                warnExperimental("growth-rate");
+                growthRate(value);
+
+            });
             return this;
+        }
+
+        private void warnExperimental(String key) {
+            LOGGER.warning(String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
         }
     }
 }

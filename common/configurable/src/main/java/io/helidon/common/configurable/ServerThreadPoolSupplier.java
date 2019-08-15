@@ -46,7 +46,7 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
     }
 
     /**
-     * Create a new fluent API builder to build thread pool supplier.
+     * Create a new fluent API builder to build a thread pool supplier.
      *
      * @return a builder instance
      */
