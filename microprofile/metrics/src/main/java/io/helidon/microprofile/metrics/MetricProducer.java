@@ -17,6 +17,8 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
@@ -32,6 +34,7 @@ import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
@@ -55,8 +58,20 @@ public class MetricProducer {
                                // TODO toTags(metric.tags()));
     }
 
-    private static String toTags(String[] tags) {
-        return tags.length == 0 ? "" : String.join(",", tags);
+    private static Tag[] tags(Metric metric) {
+        if (metric == null || metric.tags() == null) {
+            return null;
+        }
+        final List<Tag> result = new ArrayList<>();
+        for (String tag : metric.tags()) {
+            if (tag != null) {
+                final int eq = tag.indexOf("=");
+                if (eq > 0) {
+                    result.add(new Tag(tag.substring(0, eq), tag.substring(eq + 1)));
+                }
+            }
+        }
+        return result.toArray(new Tag[result.size()]);
     }
 
     private static String getName(InjectionPoint ip) {
@@ -93,7 +108,7 @@ public class MetricProducer {
     @VendorDefined
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.counter(newMetadata(ip, metric, MetricType.COUNTER));
+        return registry.counter(newMetadata(ip, metric, MetricType.COUNTER), tags(metric));
     }
 
     @Produces
@@ -105,7 +120,7 @@ public class MetricProducer {
     @VendorDefined
     private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.meter(newMetadata(ip, metric, MetricType.METERED));
+        return registry.meter(newMetadata(ip, metric, MetricType.METERED), tags(metric));
     }
 
     @Produces
@@ -117,7 +132,7 @@ public class MetricProducer {
     @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.timer(newMetadata(ip, metric, MetricType.TIMER));
+        return registry.timer(newMetadata(ip, metric, MetricType.TIMER), tags(metric));
     }
 
     @Produces
@@ -129,7 +144,7 @@ public class MetricProducer {
     @VendorDefined
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.histogram(newMetadata(ip, metric, MetricType.HISTOGRAM));
+        return registry.histogram(newMetadata(ip, metric, MetricType.HISTOGRAM), tags(metric));
     }
 
     /**
