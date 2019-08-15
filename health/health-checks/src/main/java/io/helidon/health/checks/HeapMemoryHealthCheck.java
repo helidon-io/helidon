@@ -23,9 +23,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.health.Health;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
 
 /**
  * A health check that verifies whether the server is running out of Java heap space. If heap usage exceeds a
@@ -41,7 +41,7 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
  * This health check can be referred to in properties as "heapMemory". So for example, to exclude this
  * health check from being exposed, use "helidon.health.exclude: heapMemory".
  */
-@Health
+@Liveness
 @ApplicationScoped // this will be ignored if not within CDI
 public final class HeapMemoryHealthCheck implements HealthCheck {
     /**
@@ -79,7 +79,7 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
      * Create a new heap memory health check with default configuration.
      *
      * @return a new health check to register with
-     *         {@link io.helidon.health.HealthSupport.Builder#add(org.eclipse.microprofile.health.HealthCheck...)}
+     *         {@link io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)}
      * @see #DEFAULT_THRESHOLD
      */
     public static HeapMemoryHealthCheck create() {
@@ -97,7 +97,8 @@ public final class HeapMemoryHealthCheck implements HealthCheck {
         final long threshold = (long) ((thresholdPercent / 100) * maxMemory);
         return HealthCheckResponse.named("heapMemory")
                 .state(threshold >= usedMemory)
-                .withData("percentFree", formatter.format("%.2f%%", 100 * ((double) (maxMemory - usedMemory) / maxMemory)).toString())
+                .withData("percentFree",
+                          formatter.format("%.2f%%", 100 * ((double) (maxMemory - usedMemory) / maxMemory)).toString())
                 .withData("free", DiskSpaceHealthCheck.format(freeMemory))
                 .withData("freeBytes", freeMemory)
                 .withData("max", DiskSpaceHealthCheck.format(maxMemory))
