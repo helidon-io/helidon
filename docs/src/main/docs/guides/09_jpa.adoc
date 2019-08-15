@@ -1,0 +1,136 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Using JPA in Helidon MP
+:description: Helidon JPA Guide
+:keywords: helidon, guide, transaction, jpa, microprofile
+
+This guide shows how to configure and use
+https://jcp.org/en/jsr/detail?id=338[Java Persistence API (JPA)] from
+within a Helidon MP application.
+
+== What You Need
+
+|===
+|About 30 minutes
+|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|<<07_datasources.adoc,An understanding of named data source support in Helidon MP>>
+|<<08_jta.adoc,An understanding of transaction support in Helidon MP>>
+|===
+
+== Overview
+
+Helidon supplies an extension that integrates JPA into Helidon's
+MicroProfile implementation, allowing you to use JPA from within
+Helidon's lightweight MicroProfile implementation, but as though your
+application were deployed in a conventional, heavyweight Java EE
+server.  All of the familiar JPA-related Java EE programming models
+are supported, but without the need for a full Java EE application
+server.
+
+This JPA integration builds upon other extensions supplied by Helidon:
+
+* Named datasources.  Please see the <<07_datasource.adoc,Setting Up
+  Data Sources guide>> for more information.
+* JTA transactions.  Please see the <<08_jta.adoc,Setting Up
+  Transaction Support guide>> for more information.
+
+== Installation
+
+Installing the JPA extension involves first installing the other
+extensions it depends on.
+
+=== Prerequisites
+
+First, <<07_datasources.adoc,install and configure the Helidon named
+datasource extension you wish to work with, and configure appropriate
+data sources>>.
+
+Next, <<08_jta.adoc,install and configure Helidon's JTA support>>.
+
+With those prerequisites out of the way you can now install JPA
+support itself.
+
+=== Add the Provider-Independent Helidon JPA Integration to Your Helidon MP Application's Runtime Classpath
+
+To bring JPA support to your Helidon MP application, you'll need to
+add an extension that takes care of those aspects of JPA that are not
+dependent upon a particular JPA implementation, but only upon the
+specification itself.
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-jpa</artifactId>
+    <version>{helidon-version}</version>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+
+<1> Note the scope is `runtime`.
+
+=== Add the Provider-Specific Helidon JPA Integration to Your Helidon MP Application's Runtime Classpath
+
+The Helidon JPA support works in part by supplying JPA providers with
+information related to the transaction support in the environment.
+The way this is accomplished is necessarily provider-specific.
+Consequently you have to decide which JPA implementation you would
+like to use.
+
+Helidon supplies integrations for http://hibernate.org/orm/[Hibernate]
+and https://www.eclipse.org/eclipselink/#jpa[EclipseLink].
+
+==== Add the Hibernate JPA Integration to the Runtime Classpath
+
+If you choose to use Hibernate, then add an appropriate
+https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dependency>`
+element] as a child element of the <dependencies> element in your
+pom.xml, referencing the Hibernate extension:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-hibernate</artifactId>
+    <version>{helidon-version}</version>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+
+<1> Note the scope is `runtime`.
+
+==== Add the EclipseLink JPA Integration to the Runtime Classpath
+
+If instead you choose to use EclipseLink, then add an appropriate
+https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dependency>`
+element] as a child element of the <dependencies> element in your
+pom.xml, referencing the EclipseLink extension:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <version>{helidon-version}</version>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+
+<1> Note the scope is `runtime`.
+
