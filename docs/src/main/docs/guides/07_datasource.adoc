@@ -352,11 +352,11 @@ annotation, and will set this field's value to it.
 
 Helidon features a few examples of projects that use data sources.
 
-* https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/datasource-hikaricp-h2[An
+* https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-h2[An
   example showing a Hikari connection pool data source connected to an
   H2 database]
 
-* https://github.com/oracle/helidon/tree/master/examples/integrations/cdi/datasource-hikaricp-mysql[An
+* https://github.com/oracle/helidon/tree/{helidon-version}/examples/integrations/cdi/datasource-hikaricp-mysql[An
   example showing a Hikari connection pool data source connected to a
   MySQL database]
 
