@@ -330,7 +330,7 @@ class Registry extends MetricRegistry {
                         + "' already registered with non-reusable metadata");
             }
             // Check that metadata is compatible
-            if (!m.getTypeRaw().equals(metadata.getTypeRaw()) || !m.getUnit().equals(metadata.getUnit())) {
+            if (!m.getTypeRaw().equals(metadata.getTypeRaw())) {
                 throw new IllegalArgumentException("A metric of name '" + metadata.getName()
                         + "' already registered with different metadata");
             }
