@@ -187,7 +187,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public boolean remove(String name) {
-        return remove(new MetricID(name));
+        return allMetrics.entrySet().removeIf(entry -> entry.getValue().getName().equals(name));
     }
 
     @Override
