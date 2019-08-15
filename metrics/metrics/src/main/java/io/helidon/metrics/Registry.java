@@ -147,7 +147,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata) {
-        return timer(metadata, null);
+        return timer(metadata, (Tag[]) null);
     }
 
     @Override
