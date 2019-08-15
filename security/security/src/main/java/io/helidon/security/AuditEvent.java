@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public interface AuditEvent {
      * Gets the message format of this {@code AuditEvent} to be used with
      * {@link String#format(String, Object...)}.
      *
-     * @return English message format (this is a fallback if internationalization is not configured.
+     * @return English message format (this is a fallback if internationalization is not configured).
      */
     String messageFormat();
 
