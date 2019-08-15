@@ -16,6 +16,11 @@
 
 package io.helidon.metrics;
 
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -53,20 +58,41 @@ public class HelidonConcurrentGaugeTest {
     }
 
     @Test
-    void testMaxAndMin() throws InterruptedException{
+    void testMaxAndMinConcurrent() throws InterruptedException {
         ensureSecondsInMinute();
         HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
-        System.out.println("Calling inc() and dec() a few times ...");
-        IntStream.range(0, 10).forEach(i -> gauge.inc());
-        assertThat(gauge.getCount(), is(10L));
-        IntStream.range(0, 20).forEach(i -> gauge.dec());
-        assertThat(gauge.getMax(), is(0L));
-        assertThat(gauge.getMin(), is(0L));
+        System.out.println("Calling inc() and dec() a few times concurrently ...");
+
+        // Increment gauge 5 times
+        CompletableFuture<?>[] futuresInc = new CompletableFuture<?>[5];
+        IntStream.range(0, 5).forEach(i -> {
+            futuresInc[i] = new CompletableFuture<>();
+            ForkJoinPool.commonPool().submit(() -> {
+                gauge.inc();
+                futuresInc[i].complete(null);
+            });
+        });
+        CompletableFuture.allOf(futuresInc).thenRun(() ->
+                assertThat(gauge.getCount(), is(5L))
+        );
+
+        // Decrement gauge 10 times
+        CompletableFuture<?>[] futuresDec = new CompletableFuture<?>[10];
+        IntStream.range(0, 10).forEach(i -> {
+            futuresDec[i] = new CompletableFuture<>();
+            ForkJoinPool.commonPool().submit(() -> {
+                gauge.dec();
+                futuresDec[i].complete(null);
+            });
+        });
+        CompletableFuture.allOf(futuresDec).thenRun(() ->
+                assertThat(gauge.getCount(), is(-5L))
+        );
 
         waitUntilNextMinute();
         System.out.println("Verifying max and min from last minute ...");
-        assertThat(gauge.getMax(), is(10L));
-        assertThat(gauge.getMin(), is(-10L));
+        assertThat(gauge.getMax(), is(5L));
+        assertThat(gauge.getMin(), is(-5L));
     }
 
     private static void ensureSecondsInMinute() throws InterruptedException {
