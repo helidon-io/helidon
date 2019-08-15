@@ -18,6 +18,7 @@ package io.helidon.metrics;
 
 import org.eclipse.microprofile.metrics.DefaultMetadata;
 import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
  * Class HelidonMetadata. In MP Metrics 2.0, {@link org.eclipse.microprofile.metrics.Metadata}
@@ -34,7 +35,7 @@ public class HelidonMetadata extends DefaultMetadata {
      * @param type Metric type.
      */
     public HelidonMetadata(String name, MetricType type) {
-        super(name, null, null, type, null, true);
+        super(name, null, null, type, MetricUnits.NONE, true);
     }
 
     /**
