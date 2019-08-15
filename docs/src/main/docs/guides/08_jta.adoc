@@ -112,7 +112,7 @@ https://javaee.github.io/javaee-spec/javadocs/javax/transaction/Transactional.Tx
 explicit
 https://javaee.github.io/javaee-spec/javadocs/javax/transaction/Transactional.TxType.html[`TxType`]).
 
-<2> Annotating a method with `@Transactional` starts a JTA
+<2> Annotating a method with `@Transactional` demarcates a JTA
 transaction, but it is up to individual JTA-aware frameworks and
 libraries to actually do something when the transaction is implicitly
 started.  JPA is an example of a framework that is JTA aware.
