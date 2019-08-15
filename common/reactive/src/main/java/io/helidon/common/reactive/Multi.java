@@ -104,7 +104,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param collector collector to use
      * @return Single
      */
-    default <U> Single<U> collect(Collector<? super T, U> collector) {
+    default <U> Single<U> collect(Collector<T, U> collector) {
         MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
         this.subscribe(processor);
         return processor;

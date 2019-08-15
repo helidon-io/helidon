@@ -27,7 +27,7 @@ import io.helidon.common.reactive.Flow.Subscription;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class SingleMultiMapperProcessor<T, U> implements Processor<T, U>, Multi<U> {
+final class SingleMultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
 
     private Throwable error;
     private Publisher<? extends U> delegate;
@@ -35,7 +35,7 @@ final class SingleMultiMapperProcessor<T, U> implements Processor<T, U>, Multi<U
     private volatile boolean subcribed;
     private final Mapper<T, Publisher<U>> mapper;
 
-    SingleMultiMapperProcessor(Mapper<T, Publisher<U>> mapper) {
+    SingleMultiMappingProcessor(Mapper<T, Publisher<U>> mapper) {
         this.mapper = mapper;
     }
 

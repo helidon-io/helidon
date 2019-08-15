@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -35,6 +36,8 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     private final Object invocationLock = new Object();
 
     private final RequestedCounter requested = new RequestedCounter();
+
+    private final CompletableFuture<?> completionResult = new CompletableFuture<>();
 
     @Override
     public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriberParam) {
@@ -72,6 +75,39 @@ public class OutputStreamPublisher extends OutputStream implements Flow.Publishe
     @Override
     public void close() throws IOException {
         complete();
+        try {
+            completionResult.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        } catch (ExecutionException e) {
+            throw new IOException(e.getCause());
+        }
+    }
+
+    /**
+     * Signals this publishing output stream that it can safely return from otherwise blocking invocation
+     * to it's {@link #close()} method.
+     * Subsequent multiple invocations of this method are allowed, but have no effect on this publishing output stream.
+     * <p>
+     * When the {@link #close()} method on this output stream is invoked, it will block waiting for a signal to complete.
+     * This is useful in cases, when the receiving side needs to synchronize it's completion with the publisher, e.g. to
+     * ensure that any resources used by the subscribing party are not released prematurely due to a premature exit from
+     * publishing output stream {@code close()} method.
+     * <p>
+     * Additionally, this mechanism can be used to propagate any downstream completion exceptions back to this publisher
+     * and up it's call stack. When a non-null {@code throwable} parameter is passed into the method, it will be wrapped
+     * in an {@link IOException} and thrown from the {@code close()} method when it is invoked.
+     *
+     * @param throwable represents a completion error condition that should be thrown when a {@code close()} method is invoked
+     *                  on this publishing output stream. If set to {@code null}, the {@code close()} method will exit normally.
+     */
+    public void signalCloseComplete(Throwable throwable) {
+        if (throwable == null) {
+            completionResult.complete(null);
+        } else {
+            completionResult.completeExceptionally(throwable);
+        }
     }
 
     /**

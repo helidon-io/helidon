@@ -53,8 +53,7 @@ final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
             try {
                 U val = mapper.map(item);
                 if (val == null) {
-                    delegate.onError(new IllegalStateException(
-                            "Mapper returned a null value"));
+                    onError(new IllegalStateException("Mapper returned a null value"));
                 } else {
                     delegate.onNext(val);
                 }

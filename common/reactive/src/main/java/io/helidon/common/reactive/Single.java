@@ -80,7 +80,7 @@ public interface Single<T> extends Publisher<T> {
      * @return Single
      */
     default <U> Single<U> map(Mapper<T, U> mapper) {
-        SingleMapperProcessor<T, U> processor = new SingleMapperProcessor<>(mapper);
+        SingleMappingProcessor<T, U> processor = new SingleMappingProcessor<>(mapper);
         this.subscribe(processor);
         return processor;
     }
@@ -93,7 +93,7 @@ public interface Single<T> extends Publisher<T> {
      * @return Publisher
      */
     default <U> Multi<U> mapMany(Mapper<T, Publisher<U>> mapper) {
-        SingleMultiMapperProcessor<T, U> processor = new SingleMultiMapperProcessor<>(mapper);
+        SingleMultiMappingProcessor<T, U> processor = new SingleMultiMappingProcessor<>(mapper);
         this.subscribe(processor);
         return processor;
     }
@@ -126,11 +126,16 @@ public interface Single<T> extends Publisher<T> {
      * @return Single
      */
     @SuppressWarnings("unchecked")
-    static <T> Single<T> from(Publisher<? extends T> source) {
+    static <T> Single<T> from(Publisher<T> source) {
         if (source instanceof Single) {
             return (Single<T>) source;
         }
-        return new SingleNext<>(source);
+        if (source == null) {
+            throw new IllegalArgumentException("source cannot be null");
+        }
+        SingleExactlyOneProcessor<T> processor = new SingleExactlyOneProcessor<>();
+        source.subscribe(processor);
+        return processor;
     }
 
     /**

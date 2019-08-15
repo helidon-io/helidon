@@ -15,9 +15,6 @@
  */
 package io.helidon.common.reactive;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -25,6 +22,7 @@ import java.util.function.Consumer;
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
@@ -252,12 +250,112 @@ public class SingleTest {
     }
 
     @Test
-    public void testFromSingle() {
+    public void testFrom() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.from(Single.<String>just("foo")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo"));
+    }
+
+    @Test
+    public void testFromCanceledSubscription() {
+        SingleTestSubscriber<Object> subscriber = new SingleTestSubscriber<Object>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.cancel();
+                subscription.request(Long.MAX_VALUE);
+            }
+        };
+        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testFromDoubleOnError() {
+        Publisher<String> publisher = new Publisher<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                subscriber.onError(new IllegalStateException("foo!"));
+                subscriber.onError(new IllegalStateException("bar!"));
+            }
+        };
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.from(publisher).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testFromNegativeSubscription() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(-1);
+            }
+        };
+        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testFromDeferredOnSubscribe() {
+        // setup a multi that does not invoke onSubscribe upstream
+        AtomicReference<Subscriber<? super String>> upstreamRef = new AtomicReference<>();
+        Publisher<String> publisher = new Publisher<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                upstreamRef.set(subscriber);
+            }
+        };
+        // subscribe downstream
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.from(publisher).subscribe(subscriber);
+
+        // invoke onSubscribe upstream
+        Subscriber<? super String> upstream = upstreamRef.get();
+        upstream.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                upstream.onNext("foo");
+                upstream.onComplete();
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), hasItems("foo"));
+    }
+
+    @Test
+    public void testFromDoubleOnSubscribe() {
+        final TestSubscription subscription1 = new TestSubscription();
+        final TestSubscription subscription2 = new TestSubscription();
+        Publisher<String> publisher = new Publisher<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                subscriber.onSubscribe(subscription1);
+                subscriber.onSubscribe(subscription2);
+            }
+        };
+        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(15L);
+            }
+        };
+        Single.from(publisher).subscribe(subscriber);
+        assertThat(subscription1.requested, is(equalTo(Long.MAX_VALUE)));
+        assertThat(subscription2.requested, is(equalTo(0L)));
     }
 
     @Test

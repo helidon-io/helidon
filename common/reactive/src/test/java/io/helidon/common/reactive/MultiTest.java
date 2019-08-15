@@ -16,6 +16,8 @@
 package io.helidon.common.reactive;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Flow.Subscriber;
@@ -24,9 +26,6 @@ import io.helidon.common.reactive.Flow.Subscription;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.CollectionsHelper.listOf;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -145,6 +144,75 @@ public class MultiTest {
     }
 
     @Test
+    public void testErrorFirst() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        Multi.<String>error(new IllegalStateException("foo!")).first().subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testFirstDeferredOnSubscribe() {
+        // setup a multi that does not invoke onSubscribe upstream
+        AtomicReference<Subscriber<? super String>> upstreamRef = new AtomicReference<>();
+        Multi<String> multi = new Multi<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                upstreamRef.set(subscriber);
+            }
+        };
+        // subscribe downstream
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        multi.first().subscribe(subscriber);
+
+        // invoke onSubscribe upstream
+        Subscriber<? super String> upstream = upstreamRef.get();
+        upstream.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                upstream.onNext("foo");
+                upstream.onNext("bar");
+                upstream.onComplete();
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(not(empty())));
+        assertThat(subscriber.getItems(), hasItems("foo"));
+    }
+
+    @Test
+    public void testFirstDoubleOnError() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        Multi<String> multi = new Multi<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                subscriber.onSubscribe(new Subscription() {
+                    @Override
+                    public void request(long n) {
+                        subscriber.onError(new IllegalStateException("foo!"));
+                        subscriber.onError(new IllegalStateException("foo!"));
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
+                });
+            }
+        };
+        multi.first().subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
     public void testCollectDeferredOnSubscribe() {
         // setup a multi that does not invoke onSubscribe upstream
         AtomicReference<Subscriber<? super String>> upstreamRef = new AtomicReference<>();
@@ -176,6 +244,35 @@ public class MultiTest {
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), is(not(empty())));
         assertThat(subscriber.getItems().get(0), hasItems("foo"));
+    }
+
+    @Test
+    public void testFirstNegativeSubscription() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(-1);
+            }
+        };
+        Multi.from(new TestPublisher<>("foo")).first().subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testJustCanceledSubscription() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.cancel();
+                subscription.request(Long.MAX_VALUE);
+            }
+        };
+        Multi.from(new TestPublisher<>("foo")).first().subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(empty()));
     }
 
     @Test
@@ -338,6 +435,129 @@ public class MultiTest {
         multi.collectList().subscribe(subscriber);
         assertThat(subscription1.requested, is(equalTo(Long.MAX_VALUE)));
         assertThat(subscription2.requested, is(equalTo(0L)));
+    }
+
+    @Test
+    public void testMapDeferredOnSubscribe() {
+        // setup a multi that does not invoke onSubscribe upstream
+        AtomicReference<Subscriber<? super String>> upstreamRef = new AtomicReference<>();
+        Multi<String> multi = new Multi<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                upstreamRef.set(subscriber);
+            }
+        };
+        // subscribe downstream
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        multi.map(String::toUpperCase).subscribe(subscriber);
+
+        // invoke onSubscribe upstream
+        Subscriber<? super String> upstream = upstreamRef.get();
+        upstream.onSubscribe(new Subscription() {
+            @Override
+            public void request(long n) {
+                upstream.onNext("foo");
+                upstream.onComplete();
+            }
+
+            @Override
+            public void cancel() {
+            }
+        });
+
+        assertThat(subscriber.isComplete(), is(equalTo(true)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), hasItems("FOO"));
+    }
+
+    @Test
+    public void testMapDoubleOnSubscribe() {
+        final TestSubscription subscription1 = new TestSubscription();
+        final TestSubscription subscription2 = new TestSubscription();
+        Multi<String> multi = new Multi<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                subscriber.onSubscribe(subscription1);
+                subscriber.onSubscribe(subscription2);
+            }
+        };
+        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(15L);
+            }
+        };
+        multi.map(String::toUpperCase).subscribe(subscriber);
+        assertThat(subscription1.requested, is(equalTo(15L)));
+        assertThat(subscription2.requested, is(equalTo(0L)));
+    }
+
+    @Test
+    public void testNeverMap() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<String>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(1);
+                subscription.request(1);
+            }
+        };
+        Multi.<String>never().map(String::toUpperCase).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(nullValue()));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testMapDoubleOnError() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        Multi<String> multi = new Multi<String>() {
+            @Override
+            public void subscribe(Subscriber<? super String> subscriber) {
+                subscriber.onSubscribe(new Subscription() {
+                    @Override
+                    public void request(long n) {
+                        subscriber.onError(new IllegalStateException("foo!"));
+                        subscriber.onError(new IllegalStateException("foo!"));
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
+                });
+            }
+        };
+        multi.map(String::toUpperCase).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testMapBadMapper() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        Multi.<String>just("foo", "bar").map(new Mapper<String, String>() {
+            @Override
+            public String map(String item) {
+                throw new IllegalStateException("foo!");
+            }
+        }).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
+    }
+
+    @Test
+    public void testMapBadMapperNullValue() {
+        MultiTestSubscriber<String> subscriber = new MultiTestSubscriber<>();
+        Multi.<String>just("foo", "bar").map(new Mapper<String, String>() {
+            @Override
+            public String map(String item) {
+                return null;
+            }
+        }).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
     }
 
     @Test

@@ -27,14 +27,14 @@ import io.helidon.common.reactive.Flow.Subscription;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class SingleMapperProcessor<T, U> implements Processor<T, U>, Single<U> {
+final class SingleMappingProcessor<T, U> implements Processor<T, U>, Single<U> {
 
     private Publisher<? extends U> delegate;
     private Subscriber<? super U> subscriber;
     private volatile boolean subcribed;
     private final Mapper<T, U> mapper;
 
-    SingleMapperProcessor(Mapper<T, U> mapper) {
+    SingleMappingProcessor(Mapper<T, U> mapper) {
         if (mapper == null) {
             throw new IllegalArgumentException("mapper cannot be null!");
         }

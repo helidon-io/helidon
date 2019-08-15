@@ -208,8 +208,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
             if (singleSubscriber == null) {
                 t = e;
             } else {
-                error(new IllegalStateException(
-                        "An error occurred when submitting data.", e));
+                error(new IllegalStateException("An error occurred when submitting data.", e));
             }
         } finally {
             reentrantLock.unlock();

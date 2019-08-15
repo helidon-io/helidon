@@ -23,9 +23,10 @@ import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 
 /**
- * Static utility methods for converting between Helidon reactive API {@link
- *  Flow} and <a href="http://www.reactive-streams.org/">
- * reactive-streams</a>.
+ * Static utility methods for converting between Helidon reactive API {@link Flow} and
+ * <a href="http://www.reactive-streams.org/">reactive-streams</a>.
+ *
+ * @deprecated This class will be removed in the next major release.
  */
 public final class ReactiveStreamsAdapter {
 

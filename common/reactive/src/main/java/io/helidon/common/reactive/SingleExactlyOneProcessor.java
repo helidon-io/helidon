@@ -15,29 +15,24 @@
  */
 package io.helidon.common.reactive;
 
+import io.helidon.common.reactive.Flow.Processor;
 import java.util.Objects;
 
-import io.helidon.common.reactive.Flow.Processor;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 
 /**
- * Processor of {@code Multi<T>} to {@code Single<T>}.
+ * Processor of {@code Publisher<T>} to {@code Single<T>} expecting exactly one item.
  * @param <T> item type
  */
-final class MultiFirstProcessor<T> implements Subscription, Processor<T, T>, Single<T> {
+final class SingleExactlyOneProcessor<T> implements Processor<T, T>, Subscription, Single<T> {
 
     private Subscriber<? super T> delegate;
-    private boolean done;
+    private Subscription subscription;
+    private Throwable error;
     private volatile boolean requested;
-    private volatile T item;
-    private volatile Throwable error;
-
-    @Override
-    public void onSubscribe(Subscription subscription) {
-        Objects.requireNonNull(subscription, "subscription cannot be null!");
-        subscription.request(1);
-    }
+    private volatile boolean done;
+    private T item;
 
     @Override
     public void request(long n) {
@@ -58,10 +53,24 @@ final class MultiFirstProcessor<T> implements Subscription, Processor<T, T>, Sin
     }
 
     @Override
-    public void onNext(T item) {
-        if (this.item == null) {
-            this.item = item;
-            onComplete();
+    public void onSubscribe(Subscription s) {
+        if (subscription == null) {
+            subscription = s;
+            if (delegate != null) {
+                delegate.onSubscribe(s);
+            }
+            subscription.request(Long.MAX_VALUE);
+        }
+    }
+
+    @Override
+    public void onNext(T t) {
+        if (!done) {
+            if (item != null) {
+                onError(new IllegalStateException("Single item already published"));
+            } else {
+                item = t;
+            }
         }
     }
 
@@ -78,17 +87,8 @@ final class MultiFirstProcessor<T> implements Subscription, Processor<T, T>, Sin
     public void onComplete() {
         if (!done) {
             done = true;
-            if (requested) {
-                doComplete();
-            }
+            doComplete();
         }
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super T> subscriber) {
-        Objects.requireNonNull(subscriber, "subscriber cannot be null!");
-        delegate = subscriber;
-        delegate.onSubscribe(this);
     }
 
     private void doComplete() {
@@ -100,5 +100,12 @@ final class MultiFirstProcessor<T> implements Subscription, Processor<T, T>, Sin
                 delegate.onComplete();
             }
         }
+    }
+
+    @Override
+    public void subscribe(Subscriber<? super T> subscriber) {
+        Objects.requireNonNull(subscriber, "subscriber cannot be null!");
+        delegate = subscriber;
+        delegate.onSubscribe(this);
     }
 }
