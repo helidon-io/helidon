@@ -39,7 +39,7 @@
         <module>eclipselink-cdi</module>
         <module>jedis-cdi</module>
         <module>jpa-cdi</module>
-        <module>jpa-weld</module>
+        <module>jpa-weld</module> <!-- Deprecated and slated for eventual removal. -->
         <module>jta-cdi</module>
         <module>jta-weld</module>
         <module>oci-objectstorage-cdi</module>

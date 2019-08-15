@@ -57,7 +57,7 @@ public class TestIntegration {
     @Inject
     private Transaction transaction;
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "test")
     private EntityManager entityManager;
   
     TestIntegration() {

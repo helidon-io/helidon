@@ -276,22 +276,6 @@ public class JpaExtension implements Extension {
      */
     private final Set<Set<Annotation>> containerManagedEntityManagerFactoryQualifiers;
 
-    /**
-     * A feature flag set to {@code true} if a System property named
-     * {@code jpaAnnotationRewritingEnabled} is {@link
-     * Boolean#getBoolean(String) set to the <code>String</code> value
-     * of <code>true</code>}, and indicates that {@link
-     * PersistenceContext}-annotated JPA injection points should be
-     * {@linkplain #rewriteJpaAnnotations(ProcessAnnotatedType)
-     * "rewritten" to be CDI-compliant injection points}.
-     *
-     * <p>If the value of this field is {@code false}, then large
-     * portions of this class will lie dormant.</p>
-     *
-     * @see #rewriteJpaAnnotations(ProcessAnnotatedType)
-     */
-    private final boolean jpaAnnotationRewritingEnabled;
-
 
     /*
      * Constructors.
@@ -315,10 +299,6 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn);
         }
-        if (LOGGER.isLoggable(Level.WARNING)) {
-            LOGGER.logp(Level.WARNING, cn, mn, "experimental");
-        }
-        this.jpaAnnotationRewritingEnabled = Boolean.getBoolean("jpaAnnotationRewritingEnabled");
         this.unlistedManagedClassesByPersistenceUnitNames = new HashMap<>();
         this.implicitPersistenceUnits = new HashMap<>();
         this.persistenceContextQualifiers = new HashSet<>();
@@ -388,9 +368,6 @@ public class JpaExtension implements Extension {
      * JpaTransactionScoped}, {@link Synchronized} and/or {@link
      * Unsynchronized}.
      *
-     * <p>This method does nothing if the {@link
-     * #jpaAnnotationRewritingEnabled} field is {@code false}.</p>
-     *
      * @param event the {@link ProcessAnnotatedType} container
      * lifecycle event being observed; must not be {@code null}
      */
@@ -403,17 +380,15 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, event);
         }
 
-        if (this.jpaAnnotationRewritingEnabled) {
-            final AnnotatedTypeConfigurator<T> atc = event.configureAnnotatedType();
-            atc.filterFields(JpaExtension::isEligiblePersistenceContextField)
-                .forEach(JpaExtension::rewritePersistenceContextFieldAnnotations);
-            atc.filterFields(JpaExtension::isEligiblePersistenceUnitField)
-                .forEach(JpaExtension::rewritePersistenceUnitFieldAnnotations);
-            atc.filterMethods(JpaExtension::isEligiblePersistenceContextSetterMethod)
-                .forEach(JpaExtension::rewritePersistenceContextSetterMethodAnnotations);
-            atc.filterMethods(JpaExtension::isEligiblePersistenceUnitSetterMethod)
-                .forEach(JpaExtension::rewritePersistenceUnitSetterMethodAnnotations);
-        }
+        final AnnotatedTypeConfigurator<T> atc = event.configureAnnotatedType();
+        atc.filterFields(JpaExtension::isEligiblePersistenceContextField)
+            .forEach(JpaExtension::rewritePersistenceContextFieldAnnotations);
+        atc.filterFields(JpaExtension::isEligiblePersistenceUnitField)
+            .forEach(JpaExtension::rewritePersistenceUnitFieldAnnotations);
+        atc.filterMethods(JpaExtension::isEligiblePersistenceContextSetterMethod)
+            .forEach(JpaExtension::rewritePersistenceContextSetterMethodAnnotations);
+        atc.filterMethods(JpaExtension::isEligiblePersistenceUnitSetterMethod)
+            .forEach(JpaExtension::rewritePersistenceUnitSetterMethodAnnotations);
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
