@@ -87,7 +87,6 @@ element as a child element of the `<dependencies>` element in your
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-    <version>{helidon-version}</version>
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----
@@ -105,7 +104,6 @@ element as a child element of the `<dependencies>` element in your
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
-    <version>{helidon-version}</version>
     <scope>runtime</scope> <!--1-->
 </dependency>
 ----

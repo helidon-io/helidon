@@ -36,7 +36,6 @@ Declare the following dependency in your project:
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
-    <version>{helidon-version}</version>
 </dependency>
 ----
 
