@@ -56,6 +56,7 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
@@ -82,7 +83,7 @@ public class MetricsCdiExtension implements Extension {
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
-    private final Map<String, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
+    private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -272,8 +273,6 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
-    // -- Utility classes and methods -----------------------------------------
-
     /**
      * Records metric producer methods defined by the application. Ignores producers
      * with non-default qualifiers and library producers.
@@ -344,11 +343,11 @@ public class MetricsCdiExtension implements Extension {
                 && method.isAnnotationPresent(Gauge.class))
                 .forEach(method -> {
                     Method javaMethod = method.getAnnotated().getJavaMember();
-                    String explicitGaugeName = method.getAnnotated().getAnnotation(Gauge.class).name();
+                    Gauge gaugeAnnotation = method.getAnnotated().getAnnotation(Gauge.class);
+                    String explicitGaugeName = gaugeAnnotation.name();
                     String gaugeName = String.format("%s.%s", clazz.getName(),
-                                                     explicitGaugeName != null && explicitGaugeName.length() > 0
-                                                             ? explicitGaugeName : javaMethod.getName());
-                    annotatedGaugeSites.put(gaugeName, method);
+                            explicitGaugeName.length() > 0 ? explicitGaugeName : javaMethod.getName());
+                    annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
                     LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
                 });
     }
@@ -359,19 +358,19 @@ public class MetricsCdiExtension implements Extension {
 
         annotatedGaugeSites.entrySet().forEach(gaugeSite -> {
             LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
-            String gaugeName = gaugeSite.getKey();
+            MetricID gaugeID = gaugeSite.getKey();
 
             AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
-            DelegatingGauge<?> dg = buildDelegatingGauge(gaugeName, site, bm);
+            DelegatingGauge<?> dg = buildDelegatingGauge(gaugeID.getName(), site, bm);
             Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
-            Metadata md = new HelidonMetadata(gaugeName,
+            Metadata md = new HelidonMetadata(gaugeID.getName(),
                     gaugeAnnotation.displayName(),
                     gaugeAnnotation.description(),
                     MetricType.GAUGE,
                     gaugeAnnotation.unit(),
                     false);
             LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
-            registry.register(md, dg);
+            registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
         });
 
         annotatedGaugeSites.clear();
