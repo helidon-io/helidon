@@ -99,10 +99,10 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
 
         ConcurrentGaugeImpl() {
             adder = new LongAdder();
-            lastMax = new AtomicLong(0L);
-            lastMin = new AtomicLong(0L);
-            currentMax = new AtomicLong(0L);
-            currentMin = new AtomicLong(0L);
+            lastMax = new AtomicLong(Long.MIN_VALUE);
+            lastMin = new AtomicLong(Long.MAX_VALUE);
+            currentMax = new AtomicLong(Long.MIN_VALUE);
+            currentMin = new AtomicLong(Long.MAX_VALUE);
             lastMinute = new AtomicLong(currentTimeMinute());
         }
 

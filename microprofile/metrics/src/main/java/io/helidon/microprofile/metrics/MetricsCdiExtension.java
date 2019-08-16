@@ -60,6 +60,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -77,7 +78,7 @@ public class MetricsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class);
+            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class);
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
@@ -126,14 +127,19 @@ public class MetricsCdiExtension implements Extension {
                                         false);
             registry.timer(meta, tags(timed.tags()));
             LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
+        } else if (annotation instanceof ConcurrentGauge) {
+            ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
+            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name(),
+                    concurrentGauge.absolute());
+            Metadata meta = new HelidonMetadata(metricName,
+                    concurrentGauge.displayName(),
+                    concurrentGauge.description(),
+                    MetricType.CONCURRENT_GAUGE,
+                    concurrentGauge.unit(),
+                    false);
+            registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
+            LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
         }
-    }
-
-    static String toTags(String[] tags) {
-        if (null == tags || tags.length == 0) {
-            return "";
-        }
-        return String.join(",", tags);
     }
 
     private static Tag[] tags(String[] tagStrings) {
@@ -184,9 +190,10 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorCounted.class, "InterceptorCounted");
         discovery.addAnnotatedType(InterceptorMetered.class, "InterceptorMetered");
         discovery.addAnnotatedType(InterceptorTimed.class, "InterceptorTimed");
+        discovery.addAnnotatedType(InterceptorConcurrentGauge.class, "InterceptorConcurrentGauge");
     }
 
-    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class})
+    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class})
                                          ProcessAnnotatedType<?> pat) {
         // Filter out interceptors
         AnnotatedType<?> type = pat.getAnnotatedType();
@@ -272,8 +279,8 @@ public class MetricsCdiExtension implements Extension {
      *
      * @param ppm Producer method.
      */
-    private void recordProducerMethods(@Observes
-                                               ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
+    private void recordProducerMethods(@Observes ProcessProducerMethod<?
+            extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
         LOGGER.log(Level.FINE, () -> "recordProducerMethods " + ppm.getBean().getBeanClass());
         if (!MetricProducer.class.equals(ppm.getBean().getBeanClass())) {
             Metric metric = ppm.getAnnotatedProducerMethod().getAnnotation(Metric.class);

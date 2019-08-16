@@ -16,11 +16,8 @@
 
 package io.helidon.metrics;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -53,8 +50,8 @@ public class HelidonConcurrentGaugeTest {
     void testInitialState() {
         HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
         assertThat(gauge.getCount(), is(0L));
-        assertThat(gauge.getMax(), is(0L));
-        assertThat(gauge.getMin(), is(0L));
+        assertThat(gauge.getMax(), is(Long.MIN_VALUE));
+        assertThat(gauge.getMin(), is(Long.MAX_VALUE));
     }
 
     @Test
