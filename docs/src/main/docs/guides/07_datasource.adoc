@@ -50,10 +50,9 @@ database driver library]:
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
     <version>1.4.199</version>
-    <scope>runtime</scope> <!--1-->
+    <scope>runtime</scope>
 </dependency>
 ----
-<1> Note the `<scope>` is `runtime`.
 
 == Add a Helidon Connection Pool Extension to Your Helidon MP Application's Runtime Classpath
 
@@ -82,15 +81,14 @@ https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dep
 element as a child element of the `<dependencies>` element in your
 `pom.xml`, referencing the HikariCP extension:
 
-[source,xml,subs="attributes+"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-    <scope>runtime</scope> <!--1-->
+    <scope>runtime</scope>
 </dependency>
 ----
-<1> Note the `<scope>` is `runtime`.
 
 === Add the Oracle Universal Connection Pool to the Runtime Classpath
 
@@ -99,15 +97,14 @@ https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dep
 element as a child element of the `<dependencies>` element in your
 `pom.xml`, referencing the Oracle Universal Connection Pool extension:
 
-[source,xml,subs="attributes+"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
-    <scope>runtime</scope> <!--1-->
+    <scope>runtime</scope>
 </dependency>
 ----
-<1> Note the `<scope>` is `runtime`.
 
 == Configure the Connection Pool
 
