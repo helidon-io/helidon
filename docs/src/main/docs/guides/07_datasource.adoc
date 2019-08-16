@@ -29,7 +29,7 @@ in your Helidon MP application.
 |===
 |About 20 minutes
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
-|The Maven coordinates for your database vendor's JDBC-compliant database driver library
+|`curl` (for testing)
 |===
 
 == What You'll Do
@@ -280,6 +280,81 @@ CDI rules.  Helidon MP's CDI container will use the configuration
 described elsewhere in this document to create a new or retrieve an
 existing `DataSource` implementation instance whose name is specified
 by the `@Named` annotation, and will set this field's value to it.
+
+== Use The Injected `DataSource`
+
+Now that you have a `DataSource`, you'll use it to connect to the database.
+
+First, ensure your resource class imports various `java.sql` classes:
+
+[source,java]
+----
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+----
+
+Next, add a resource method that will return some text from the database:
+
+[source,java]
+----
+@GET
+@Path("tables")
+@Produces("text/plain")
+public String getTableNames() throws SQLException { <1>
+    StringBuilder sb = new StringBuilder();
+    try (Connection connection = this.testDataSource.getConnection(); <2>
+         PreparedStatement ps =
+           connection.prepareStatement(" SELECT TABLE_NAME" <3>
+                                       + " FROM INFORMATION_SCHEMA.TABLES "
+                                       + "ORDER BY TABLE_NAME ASC");
+         ResultSet rs = ps.executeQuery()) {
+      while (rs.next()) {
+        sb.append(rs.getString(1)).append("\n");
+      }
+    }
+    return sb.toString();
+}
+----
+
+<1> Database interactions can throw `SQLException`.
+
+<2> We acquire a `Connection`, a `PreparedStatement` and a `ResultSet`
+in a try-with-resources block.
+
+<3> This SQL statement returns a list of all table names in the database.
+
+== Build the Application
+
+From the command line in the root directory of your application,
+execute the following:
+
+[source,sh]
+----
+mvn clean package
+----
+
+== Run the Application
+
+From the command line in the root directory of your application,
+execute the following:
+
+[source,sh]
+----
+java -jar target/archetype-application-name-here.jar
+----
+
+== Use the Application
+
+From a command line execute the following:
+
+[source,sh]
+----
+curl http://localhost:7001/tables
+----
+
+Observe that the result will be a list of database table names.
 
 == Examples
 
