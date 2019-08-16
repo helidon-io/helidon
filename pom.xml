@@ -248,6 +248,7 @@
         <module>grpc</module>
         <module>openapi</module>
         <module>jersey</module>
+        <module>webclient</module>
     </modules>
 
     <build>

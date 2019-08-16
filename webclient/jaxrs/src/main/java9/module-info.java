@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,21 @@
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
- * Tracing integration with jersey (JAX-RS) client.
+ * Basic integration with JAX-RS client.
  */
-module io.helidon.tracing.jersey.client {
+module io.helidon.webclient.jaxrs {
     requires java.logging;
     requires java.annotation;
 
     requires java.ws.rs;
-    requires javax.inject;
     requires jersey.client;
     requires jersey.common;
 
-    requires opentracing.api;
-    requires opentracing.util;
-
-    requires io.helidon.tracing;
-    requires io.helidon.tracing.config;
     requires io.helidon.common;
+    requires io.helidon.common.configurable;
     requires io.helidon.common.context;
-    requires io.helidon.webclient.jaxrs;
 
-    exports io.helidon.tracing.jersey.client;
+    exports io.helidon.webclient.jaxrs;
 
-    // needed to propagate tracing context from server to client
-    opens io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey,io.helidon.microprofile.tracing;
-    exports io.helidon.tracing.jersey.client.internal;
-
-    provides AutoDiscoverable with io.helidon.tracing.jersey.client.ClientTracingAutoDiscoverable;
+    provides AutoDiscoverable with io.helidon.webclient.jaxrs.JerseyClientAutoDiscoverable;
 }
