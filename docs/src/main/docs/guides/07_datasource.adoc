@@ -158,7 +158,7 @@ https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.D
 This preamble specifies the type of Java object that will supply
 database connections in your code.  Its sole element is a mapping
 whose key is the name of the data source in question.  This
-`javax:`/`sql:`/DataSource:` preamble is required.
+`javax:` / `sql:` / `DataSource:` preamble is required.
 
 <2> This mapping's key is the name of your data source, and will be
 referenced in your application code.  Its elements are
