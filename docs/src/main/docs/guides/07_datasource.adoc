@@ -32,17 +32,22 @@ in your Helidon MP application.
 |The Maven coordinates for your database vendor's JDBC-compliant database driver library
 |===
 
+== What You'll Do
+
+By following this guide, you'll enhance a bare-bones Helidon MP
+application to access a database.  You'll see how to install the
+relevant dependencies, set up and configure the datasource, and add
+datasource-related code to your application.
+
+== Use the Maven Archetype to Generate a Helidon MP Application
+
+#Archetype instructions go here#
+
 == Add Your Database Driver to Your Helidon MP Application's Runtime Classpath
 
-Make sure your database vendor's driver library is present on your
-application's runtime classpath.  In a Maven project, add an
-appropriate
-https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dependency>`]
-element as a child element of the `<dependencies>` element in your
-`pom.xml`, referencing the driver library.  Here's an example that
-includes the
-https://search.maven.org/classic/#artifactdetails%7Ccom.h2database%7Ch2%7C1.4.199%7Cjar[H2
-database driver library]:
+In this guide, we'll use the H2 database.
+
+Add the following dependency to your `pom.xml`:
 
 [source,xml]
 ----
@@ -53,6 +58,9 @@ database driver library]:
     <scope>runtime</scope>
 </dependency>
 ----
+
+In a production application, you may use a different database, so you
+may add a different database driver dependency here instead.
 
 == Add a Helidon Connection Pool Extension to Your Helidon MP Application's Runtime Classpath
 
@@ -71,13 +79,12 @@ database connections:
    Universal Connection Pool] into Helidon MP applications
 
 Each connection pool offers tradeoffs in terms of size, efficiency and
-features.
+features.  You need to pick one to use.
 
 === Add the Hikari Connection Pool to the Runtime Classpath
 
 If you choose to integrate the Hikari connection pool into your
-Helidon MP application, then add an appropriate
-https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dependency>`]
+Helidon MP application, then add an appropriate `<dependency>`
 element as a child element of the `<dependencies>` element in your
 `pom.xml`, referencing the HikariCP extension:
 
@@ -92,10 +99,11 @@ element as a child element of the `<dependencies>` element in your
 
 === Add the Oracle Universal Connection Pool to the Runtime Classpath
 
-If, instead, you shoose to integrate the Oracle Universal Connection Pool into your Helidon MP application, then add an appropriate
-https://maven.apache.org/ref/3.6.1/maven-model/maven.html#class_dependency[`<dependency>`]
-element as a child element of the `<dependencies>` element in your
-`pom.xml`, referencing the Oracle Universal Connection Pool extension:
+If, instead, you shoose to integrate the Oracle Universal Connection
+Pool into your Helidon MP application, then add an appropriate
+`<dependency>` element as a child element of the `<dependencies>`
+element in your `pom.xml`, referencing the Oracle Universal Connection
+Pool extension:
 
 [source,xml]
 ----
@@ -114,24 +122,13 @@ that connection pool's machinery how many pools to set up, what to
 name each of them so you can refer to them inside your code, and how
 each of them should connect to a database.
 
-Helidon MP, because it is a conformant MicroProfile specification
-implementation, uses <<microprofile/06_configuration.adoc,an
-implementation>> of the
-https://github.com/eclipse/microprofile-config[MicroProfile Config
-specification] to acquire configuration, so is subject to that
-specification's rules.  Some of those rules are that, out of the box,
-any MicroProfile Config implementation (such as
-<<microprofile/06_configuration.adoc,Helidon's>>) must automatically
-consider system properties, environment variables and a classpath
-resource named `META-INF/microprofile-config.properties`.
-<<microprofile/02_server-configuration.adoc,Helidon MP additionally
-considers a runtime classpath resource named `application.yaml`>>.
-
 In this guide, we'll set up configuration in an `application.yaml`
 classpath resource.  Different syntax may apply if you use a different
 MicroProfile Config
 https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#configsources[`ConfigSource`
-implementation], but the principles described below are the same.
+implementation], but the principles described below are the same.  You
+can see <<microprofile/06_configuration.adoc,the Helidon MP
+configuration docuemntation>> for more details.
 
 === Configure the Hikari Connection Pool
 
@@ -241,15 +238,15 @@ https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbc
 Now that you've included the relevant libraries and configured them
 appropriately you can use the features they enable.
 
-The Helidon connection pool extensions provide support for injecting
-https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`]
-implementations into your code.  The `DataSource` instances so
-injected will be in
-https://docs.jboss.org/cdi/spec/2.0/cdi-spec.html#application_context_se[application
-scope], so, loosely speaking, they are effectively singletons.
+First, ensure your resource class imports `javax.sql.DataSource`:
 
-To inject the `test` data source configured in the examples above,
-do the following:
+[source,java]
+----
+import javax.sql.DataSource;
+----
+
+To inject the `test` data source configured in the examples above, add
+a `DataSource` field annotated with both `@Inject` and `@Named("test")` as follows:
 
 [source,java]
 ----
@@ -265,83 +262,17 @@ annotated field automatically.
 
 <2> The
 http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`@Named`
-annotation] is used, in this case, to select which of several
-potentially configured data sources should be injected.  Here, the
-`test` data source is requested.
+annotation] is used to select which of several potentially configured
+data sources should be injected.  Here, the `test` data source is
+requested.
 
-<3> The `testDataSource` field here, whose name is arbitrary, is typed
-with
+<3> The `testDataSource` field, whose name is arbitrary, is typed with
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`DataSource`].
 Its protection level, `private` in this case, is immaterial, following
 CDI rules.  Helidon MP's CDI container will use the configuration
 described elsewhere in this document to create a new or retrieve an
 existing `DataSource` implementation instance whose name is specified
 by the `@Named` annotation, and will set this field's value to it.
-
-=== Coupling Your Application Code to a Particular Connection Pool
-
-If for some reason you wish to couple your application tightly to a
-particular connection pool implementation, you can choose a different
-data type for the field receiving an injected `DataSource`.
-
-You might choose to do this to take advantage of additional methods
-offered by either the Hikari connection pool classes or the Oracle
-Universal Connection Pool classes.
-
-In general, if you have no need for methods that are not present in
-the
-https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`
-interface], tight coupling to a connection pool implementation is
-discouraged.
-
-==== Coupling Your Application Code to the Hikari Connection Pool
-
-For example, if you wish to couple your application tightly to the
-Hikari connection pool implementation of the
-https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`
-interface], you can do this:
-
-[source,java]
-----
-import com.zaxxer.hikari.HikariDataSource; <1>
-
-@Inject
-@Named("test")
-private HikariDataSource testDataSource; <2>
-----
-
-<1> Your application will now require the Hikari connection pool
-classes on its compile and runtime classpaths.
-
-<2> The CDI container will use the Hikari connection pool
-configuration described elsewhere in this document to create a new or
-retrieve an existing `HikariDataSource` implementation instance whose
-name is specified by the `@Named` annotation, and will set this
-field's value to it.
-
-==== Coupling Your Application Code to the Oracle Universal Connection Pool
-
-If, instead, you wish to couple your application tightly to Oracle
-Universal Connection Pool classes and interfaces, you can do this:
-
-[source,java]
-----
-import oracle.ucp.jdbc.PoolDataSource; <1>
-
-@Inject
-@Named("test")
-private PoolDataSource testDataSource; <2>
-----
-
-<1> Your application will now require the Oracle Universal Connection
-Pool classes on its compile and runtime classpaths.
-
-<2> The CDI container will use the Oracle Universal Connection Pool
-configuration described elsewhere in this document to create a new or
-retrieve an existing
-https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`PoolDataSource`]
-implementation instance whose name is specified by the `@Named`
-annotation, and will set this field's value to it.
 
 == Examples
 
