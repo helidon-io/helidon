@@ -99,7 +99,7 @@ element as a child element of the `<dependencies>` element in your
 
 === Add the Oracle Universal Connection Pool to the Runtime Classpath
 
-If, instead, you shoose to integrate the Oracle Universal Connection
+If, instead, you choose to integrate the Oracle Universal Connection
 Pool into your Helidon MP application, then add an appropriate
 `<dependency>` element as a child element of the `<dependencies>`
 element in your `pom.xml`, referencing the Oracle Universal Connection
@@ -117,10 +117,9 @@ Pool extension:
 == Configure the Connection Pool
 
 Regardless of which connection pool you integrate into your Helidon MP
-application via the mechanisms described above, you will need to tell
-that connection pool's machinery how many pools to set up, what to
-name each of them so you can refer to them inside your code, and how
-each of them should connect to a database.
+application, you will need to tell it how many data sources to set up,
+what to name each of them so you can refer to them inside your code,
+and how each of them should connect to a database.
 
 In this guide, we'll set up configuration in an `application.yaml`
 classpath resource.  Different syntax may apply if you use a different
@@ -128,14 +127,15 @@ MicroProfile Config
 https://github.com/eclipse/microprofile-config/blob/master/spec/src/main/asciidoc/configsources.asciidoc#configsources[`ConfigSource`
 implementation], but the principles described below are the same.  You
 can see <<microprofile/06_configuration.adoc,the Helidon MP
-configuration docuemntation>> for more details.
+configuration documentation>> for more details.
 
 === Configure the Hikari Connection Pool
 
 If you have chosen to integrate the Hikari connection pool into your
 Helidon MP application, then ensure the following YAML is present in
 your `application.yaml`, and that your `application.yaml` is present
-on the runtime classpath of your Helidon MP application:
+on the runtime classpath of your Helidon MP application by creating it
+in `src/main/resources`:
 
 [source,yaml]
 ----
@@ -157,8 +157,8 @@ whose sole element is a `sql` mapping whose sole mapping is a
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`].
 This preamble specifies the type of Java object that will supply
 database connections in your code.  Its sole element is a mapping
-whose key is the name of the data source in question.  This preamble
-is required.
+whose key is the name of the data source in question.  This
+`javax:`/`sql:`/DataSource:` preamble is required.
 
 <2> This mapping's key is the name of your data source, and will be
 referenced in your application code.  Its elements are
