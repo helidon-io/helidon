@@ -56,7 +56,6 @@ public class MetricProducer {
                                metric.description(),
                                metricType,
                                metric.unit());
-                               // TODO toTags(metric.tags()));
     }
 
     private static Tag[] tags(Metric metric) {

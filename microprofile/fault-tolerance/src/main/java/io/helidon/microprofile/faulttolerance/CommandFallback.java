@@ -126,12 +126,10 @@ class CommandFallback {
         final Method method = context.getMethod();
         FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.FALLBACK_CALLS_TOTAL).inc();
 
-        // TODO
-        /*
         // If fallback was successful, it is not a failed invocation
         if (throwable == null) {
-            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).dec();
+            // Since metrics 2.0, countes should only be incrementing, so we cheat here
+            FaultToleranceMetrics.getCounter(method, FaultToleranceMetrics.INVOCATIONS_FAILED_TOTAL).inc(-1L);
         }
-        */
     }
 }

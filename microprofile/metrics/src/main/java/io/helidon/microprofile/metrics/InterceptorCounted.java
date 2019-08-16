@@ -50,17 +50,4 @@ final class InterceptorCounted extends InterceptorBase<Counter, Counted> {
         counter.inc();
         return context.proceed();
     }
-
-    @Override
-    protected void postInvoke(Counter counter,
-                              Counted annot,
-                              InvocationContext context,
-                              Exception ex) {
-        // TODO
-        /*
-        if (!annot.monotonic()) {
-            counter.dec();
-        }
-        */
-    }
 }

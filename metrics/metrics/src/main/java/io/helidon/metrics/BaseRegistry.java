@@ -258,17 +258,5 @@ final class BaseRegistry extends Registry {
         default void inc(long n) {
             throw new IllegalStateException("Cannot increase a system counter");
         }
-
-        /* TODO
-        @Override
-        default void dec() {
-            throw new IllegalStateException("Cannot decrease a system counter");
-        }
-
-        @Override
-        default void dec(long n) {
-            throw new IllegalStateException("Cannot decrease a system counter");
-        }
-        */
     }
 }
