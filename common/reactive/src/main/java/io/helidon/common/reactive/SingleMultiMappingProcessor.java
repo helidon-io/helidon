@@ -15,10 +15,9 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Processor;
+import java.util.Objects;
+
 import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 
 /**
  * Processor of {@link Single} to {@link Publisher} that expands the first (and
@@ -27,60 +26,29 @@ import io.helidon.common.reactive.Flow.Subscription;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class SingleMultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
+final class SingleMultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
 
-    private Throwable error;
-    private Publisher<? extends U> delegate;
-    private Subscriber<? super U> subscriber;
-    private volatile boolean subcribed;
+    private Publisher<U> delegate;
     private final Mapper<T, Publisher<U>> mapper;
 
     SingleMultiMappingProcessor(Mapper<T, Publisher<U>> mapper) {
-        this.mapper = mapper;
+        this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
     }
 
     @Override
-    public void onNext(T item) {
-        if (delegate == null) {
-            delegate = mapper.map(item);
-            doSusbcribe();
+    protected void hookOnNext(T item) {
+        Publisher<U> value = mapper.map(item);
+        if (value == null) {
+            onError(new IllegalStateException("Mapper returned a null value"));
+        } else {
+            delegate = value;
         }
     }
 
     @Override
-    public void onError(Throwable ex) {
-        if (delegate == null) {
-            error = ex;
-            delegate = Single.<U>error(error);
-            doSusbcribe();
-        }
-    }
-
-    @Override
-    public void onSubscribe(Subscription s) {
-        s.request(1);
-    }
-
-    @Override
-    public void onComplete() {
-        if (delegate == null) {
-            delegate = Single.empty();
-            doSusbcribe();
-        }
-    }
-
-    private void doSusbcribe() {
-        if (!subcribed && subscriber != null) {
-            delegate.subscribe(subscriber);
-            subcribed = true;
-        }
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super U> subscriber) {
-        this.subscriber = subscriber;
+    protected void hookOnComplete() {
         if (delegate != null) {
-            doSusbcribe();
+            doSubscribe(delegate);
         }
     }
 }

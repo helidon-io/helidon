@@ -17,16 +17,13 @@ package io.helidon.common.reactive;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 
-import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicReference;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -162,50 +159,26 @@ public class SingleTest {
 
     @Test
     public void testMapNullMapper() {
-        SingleTestSubscriber<Object> subscriber = new SingleTestSubscriber<>();
         try {
-            Single.just("foo").map(null).subscribe(subscriber);
-            fail("IllegalArgumentException should be thrown");
-        } catch(IllegalArgumentException ex) {
+            Single.just("foo").map(null);
+            fail("NullPointerException should be thrown");
+        } catch(NullPointerException ex) {
         }
     }
 
     @Test
-    public void testMapDoubleOnNext() {
-        Single<String> single = new Single<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onNext("foo");
-                subscriber.onNext("bar");
-            }
-        };
+    public void testMapBadMapperNullValue() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        single.map(String::toUpperCase).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("FOO"));
-    }
-
-    @Test
-    public void testErrorMap() {
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.<String>error(new IllegalStateException("foo!")).map(String::toUpperCase).subscribe(subscriber);
+        Single.just("bar").map((s) -> (String)null).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
     @Test
-    public void testMapDoubleOnError() {
-        Single<String> single = new Single<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onError(new IllegalStateException("foo!"));
-                subscriber.onError(new IllegalStateException("bar!"));
-            }
-        };
+    public void testErrorMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        single.map(String::toUpperCase).subscribe(subscriber);
+        Single.<String>error(new IllegalStateException("foo!")).map(String::toUpperCase).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
@@ -221,17 +194,6 @@ public class SingleTest {
     }
 
     @Test
-    public void testMapDoubleSubscribe() {
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single<String> single = Single.just("foo").map(String::toUpperCase);
-        single.subscribe(subscriber);
-        single.subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("FOO"));
-    }
-
-    @Test
     public void testNeverMap() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>never().map(String::toUpperCase).subscribe(subscriber);
@@ -241,128 +203,34 @@ public class SingleTest {
     }
 
     @Test
-    public void testMapperSubscriptionNotCanceled() {
-        TestPublisher<String> publisher = new TestPublisher<>("foo", "bar");
+    public void testFromPublisher() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(publisher).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-    }
-
-    @Test
-    public void testFrom() {
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(Single.<String>just("foo")).subscribe(subscriber);
+        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
         assertThat(subscriber.getItems(), hasItems("foo"));
     }
 
     @Test
-    public void testFromCanceledSubscription() {
-        SingleTestSubscriber<Object> subscriber = new SingleTestSubscriber<Object>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.cancel();
-                subscription.request(Long.MAX_VALUE);
-            }
-        };
-        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testFromDoubleOnError() {
-        Publisher<String> publisher = new Publisher<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onError(new IllegalStateException("foo!"));
-                subscriber.onError(new IllegalStateException("bar!"));
-            }
-        };
+    public void testFromPublisherMoreThanOne() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(publisher).subscribe(subscriber);
+        Single.from(new TestPublisher<>("foo", "bar")).subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
     }
 
     @Test
-    public void testFromNegativeSubscription() {
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<String>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(-1);
-            }
-        };
-        Single.from(new TestPublisher<>("foo")).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testFromDeferredOnSubscribe() {
-        // setup a multi that does not invoke onSubscribe upstream
-        AtomicReference<Subscriber<? super String>> upstreamRef = new AtomicReference<>();
-        Publisher<String> publisher = new Publisher<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                upstreamRef.set(subscriber);
-            }
-        };
-        // subscribe downstream
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Single.from(publisher).subscribe(subscriber);
-
-        // invoke onSubscribe upstream
-        Subscriber<? super String> upstream = upstreamRef.get();
-        upstream.onSubscribe(new Subscription() {
-            @Override
-            public void request(long n) {
-                upstream.onNext("foo");
-                upstream.onComplete();
-            }
-
-            @Override
-            public void cancel() {
-            }
-        });
-
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
-    }
-
-    @Test
-    public void testFromDoubleOnSubscribe() {
-        final TestSubscription subscription1 = new TestSubscription();
-        final TestSubscription subscription2 = new TestSubscription();
-        Publisher<String> publisher = new Publisher<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onSubscribe(subscription1);
-                subscriber.onSubscribe(subscription2);
-            }
-        };
-        TestSubscriber<String> subscriber = new TestSubscriber<String>() {
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(15L);
-            }
-        };
-        Single.from(publisher).subscribe(subscriber);
-        assertThat(subscription1.requested, is(equalTo(Long.MAX_VALUE)));
-        assertThat(subscription2.requested, is(equalTo(0L)));
+    public void testFromSingle() {
+        Single<String> single = Single.just("foo");
+        assertThat(Single.from(single), is(equalTo(single)));
     }
 
     @Test
     public void testMapMany() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.just("f.o.o")
-                .mapMany((str) -> Multi.just(str.split("\\.")))
+                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -373,7 +241,7 @@ public class SingleTest {
     public void testEmptyMapMany() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>empty()
-                .mapMany((str) -> Multi.just(str.split("\\.")))
+                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(true)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -384,61 +252,18 @@ public class SingleTest {
     public void testErrorMapMany() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>error(new IllegalStateException("foo!"))
-                .mapMany((str) -> Multi.just(str.split("\\.")))
+                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
         assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testMapManyDoubleOnNext() {
-        Single<String> single = new Single<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onNext("foo");
-                subscriber.onNext("bar");
-            }
-        };
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        single.mapMany((str) -> Multi.just(str.split("\\."))).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
-    }
-
-    @Test
-    public void testMapManyDoubleOnError() {
-        Single<String> single = new Single<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onError(new IllegalStateException("foo!"));
-                subscriber.onError(new IllegalStateException("bar!"));
-            }
-        };
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        single.mapMany((str) -> Multi.just(str.split("\\."))).subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(false)));
-        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
-        assertThat(subscriber.getItems(), is(empty()));
-    }
-
-    @Test
-    public void testMapManyDoubleSubscribe() {
-        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
-        Multi<String> single = Single.just("foo").mapMany((str) -> Multi.just(str.split("\\.")));
-        single.subscribe(subscriber);
-        single.subscribe(subscriber);
-        assertThat(subscriber.isComplete(), is(equalTo(true)));
-        assertThat(subscriber.getLastError(), is(nullValue()));
-        assertThat(subscriber.getItems(), hasItems("foo"));
     }
 
     @Test
     public void testNeverMapMany() {
         SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
         Single.<String>never()
-                .mapMany((str) -> Multi.just(str.split("\\.")))
+                .mapMany((str) -> new TestPublisher<>(str.split("\\.")))
                 .subscribe(subscriber);
         assertThat(subscriber.isComplete(), is(equalTo(false)));
         assertThat(subscriber.getLastError(), is(nullValue()));
@@ -446,136 +271,21 @@ public class SingleTest {
     }
 
     @Test
-    public void testSubscriberFunctionalNullConsumer() {
+    public void testMapManyNullMapper() {
         try {
-            Single.just("foo").subscribe((Consumer<String>) null);
-        } catch (Throwable ex) {
-            fail(ex);
+            Single.just("bar").map(null);
+            fail("NullPointerException should have been thrown");
+        } catch(NullPointerException ex) {
         }
     }
 
     @Test
-    public void testSubscriberFunctionalConsumer() {
-        TestConsumer<String> consumer = new TestConsumer<>();
-        Single.just("foo").subscribe(consumer);
-        assertThat(consumer.item, is(equalTo("foo")));
-    }
-
-    @Test
-    public void testSubscriberFunctionalErrorConsumer() {
-        TestConsumer<Throwable> errorConsumer = new TestConsumer<>();
-        Single.<String>error(new IllegalStateException("foo!")).subscribe(null, errorConsumer);
-        assertThat(errorConsumer.item, is(instanceOf(IllegalStateException.class)));
-    }
-
-    @Test
-    public void testSubscriberBadFunctionalConsumer() {
-        TestConsumer<Throwable> errorConsumer = new TestConsumer<>();
-        TestConsumer<String> consumer = new TestConsumer<String>() {
-            @Override
-            public void accept(String t) {
-                throw new IllegalStateException("foo!");
-            }
-        };
-        Single.just("foo").subscribe(consumer, errorConsumer);
-        assertThat(consumer.item, is(nullValue()));
-        assertThat(errorConsumer.item, is(instanceOf(IllegalStateException.class)));
-    }
-
-    @Test
-    public void testSubscriberFunctionalNullErrorConsumer() {
-        try {
-            Single.<String>error(new IllegalStateException("foo!")).subscribe(null, null);
-        } catch (Throwable ex) {
-            fail(ex);
-        }
-    }
-
-    @Test
-    public void testSubscriberFunctionalCompleteConsumer() {
-        TestRunnable completeConsumer = new TestRunnable();
-        Single.<String>empty().subscribe(null, null, completeConsumer);
-        assertThat(completeConsumer.invoked, is(equalTo(true)));
-    }
-
-    @Test
-    public void testSubscriberFunctionalNullCompleteConsumer() {
-        try {
-            Single.<String>empty().subscribe(null, null, null);
-        } catch (Throwable ex) {
-            fail(ex);
-        }
-    }
-
-    @Test
-    public void testSubscriberFunctionalBadCompleteConsumer() {
-        TestConsumer<Throwable> errorConsumer = new TestConsumer<>();
-        TestRunnable completeConsumer = new TestRunnable() {
-            @Override
-            public void run() {
-                throw new IllegalStateException("foo!");
-            }
-        };
-        Single.<String>empty().subscribe(null, errorConsumer, completeConsumer);
-        assertThat(completeConsumer.invoked, is(equalTo(false)));
-        assertThat(errorConsumer.item, is(instanceOf(IllegalStateException.class)));
-    }
-
-    @Test
-    public void testSubscriberFunctionalSubscriptionConsumer() {
-        TestConsumer<Subscription> subscriptionConsumer = new TestConsumer<Subscription>() {
-            @Override
-            public void accept(Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-            }
-        };
-        TestConsumer<String> consumer = new TestConsumer<>();
-        Single.just("foo").subscribe(consumer, null, null, subscriptionConsumer);
-        assertThat(consumer.item, is(equalTo("foo")));
-    }
-
-    @Test
-    public void testSubscriberFunctionalNullSubscriptionConsumer() {
-        try {
-            Single.<String>empty().subscribe(null, null, null, null);
-        } catch (Throwable ex) {
-            fail(ex);
-        }
-    }
-
-    @Test
-    public void testSubscriberFunctionalBadSubscriptionConsumer() {
-        TestConsumer<Throwable> errorConsumer = new TestConsumer<>();
-        TestConsumer<Subscription> subscriptionConsumer = new TestConsumer<Subscription>() {
-            @Override
-            public void accept(Subscription subscription) {
-                throw new IllegalStateException("foo!");
-            }
-        };
-        Single.<String>just("foo").subscribe(null, errorConsumer, null, subscriptionConsumer);
-        assertThat(errorConsumer.item, is(instanceOf(IllegalStateException.class)));
-    }
-
-    @Test
-    public void testSubscriberFunctionalSubscriptionConsumerDoubleOnSubscribe() {
-        final TestSubscription subscription1 = new TestSubscription();
-        final TestSubscription subscription2 = new TestSubscription();
-        Single<String> single = new Single<String>() {
-            @Override
-            public void subscribe(Subscriber<? super String> subscriber) {
-                subscriber.onSubscribe(subscription1);
-                subscriber.onSubscribe(subscription2);
-            }
-        };
-        TestConsumer<Subscription> subscriptionConsumer = new TestConsumer<Subscription>() {
-            @Override
-            public void accept(Subscription subscription) {
-                subscription.request(15);
-            }
-        };
-        single.subscribe(null, null, null, subscriptionConsumer);
-        assertThat(subscription1.requested, is(equalTo(15L)));
-        assertThat(subscription2.requested, is(equalTo(0L)));
+    public void testMapManyMapperNullValue() {
+        SingleTestSubscriber<String> subscriber = new SingleTestSubscriber<>();
+        Single.just("bar").mapMany((s) -> (Multi<String>) null).subscribe(subscriber);
+        assertThat(subscriber.isComplete(), is(equalTo(false)));
+        assertThat(subscriber.getLastError(), is(instanceOf(IllegalStateException.class)));
+        assertThat(subscriber.getItems(), is(empty()));
     }
 
     @Test

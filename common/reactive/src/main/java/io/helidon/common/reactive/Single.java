@@ -15,62 +15,18 @@
  */
 package io.helidon.common.reactive;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
-import java.util.function.Consumer;
 
 /**
  * Single item publisher utility.
  *
  * @param <T> item type
  */
-public interface Single<T> extends Publisher<T> {
-
-    /**
-     * Subscribe to this {@link Single} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer) {
-        this.subscribe(new FunctionalSubscriber<>(consumer, null, null, null));
-    }
-
-    /**
-     * Subscribe to this {@link Single} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     * @param errorConsumer onError delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer) {
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, null, null));
-    }
-
-    /**
-     * Subscribe to this {@link Single} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     * @param errorConsumer onError delegate function
-     * @param completeConsumer onComplete delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer) {
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, null));
-    }
-
-    /**
-     * Subscribe to this {@link Single} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     * @param errorConsumer onError delegate function
-     * @param completeConsumer onComplete delegate function
-     * @param subscriptionConsumer onSusbcribe delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer,
-            Consumer<? super Flow.Subscription> subscriptionConsumer) {
-
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, subscriptionConsumer));
-    }
+public interface Single<T> extends Subscribable<T> {
 
     /**
      * Map this {@link Single} instance to a new {@link Single} of another type using the given {@link Mapper}.
@@ -78,6 +34,7 @@ public interface Single<T> extends Publisher<T> {
      * @param <U> mapped item type
      * @param mapper mapper
      * @return Single
+     * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Single<U> map(Mapper<T, U> mapper) {
         SingleMappingProcessor<T, U> processor = new SingleMappingProcessor<>(mapper);
@@ -91,6 +48,7 @@ public interface Single<T> extends Publisher<T> {
      * @param <U> mapped items type
      * @param mapper mapper
      * @return Publisher
+     * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> mapMany(Mapper<T, Publisher<U>> mapper) {
         SingleMultiMappingProcessor<T, U> processor = new SingleMultiMappingProcessor<>(mapper);
@@ -124,14 +82,13 @@ public interface Single<T> extends Publisher<T> {
      * @param <T> item type
      * @param source source publisher
      * @return Single
+     * @throws NullPointerException if source is {@code null}
      */
     @SuppressWarnings("unchecked")
     static <T> Single<T> from(Publisher<T> source) {
+        Objects.requireNonNull(source, "source is null!");
         if (source instanceof Single) {
             return (Single<T>) source;
-        }
-        if (source == null) {
-            throw new IllegalArgumentException("source cannot be null");
         }
         SingleExactlyOneProcessor<T> processor = new SingleExactlyOneProcessor<>();
         source.subscribe(processor);
@@ -144,6 +101,7 @@ public interface Single<T> extends Publisher<T> {
      * @param <T> item type
      * @param item item to publish
      * @return Single
+     * @throws NullPointerException if item is {@code null}
      */
     static <T> Single<T> just(T item) {
         return new SingleJust<>(item);
@@ -156,6 +114,7 @@ public interface Single<T> extends Publisher<T> {
      * @param <T> item type
      * @param error exception to hold
      * @return Single
+     * @throws NullPointerException if error is {@code null}
      */
     static <T> Single<T> error(Throwable error) {
         return new SingleError<>(error);

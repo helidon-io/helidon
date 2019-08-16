@@ -30,6 +30,7 @@ import java.util.Queue;
 public class TestPublisher<T> implements Publisher<T> {
 
     private final T[] items;
+    boolean subscribed;
 
     @SafeVarargs
     TestPublisher(T... items) {
@@ -38,6 +39,7 @@ public class TestPublisher<T> implements Publisher<T> {
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
+        subscribed = true;
         subscriber.onSubscribe(new Subscription() {
             @Override
             public void request(long n) {

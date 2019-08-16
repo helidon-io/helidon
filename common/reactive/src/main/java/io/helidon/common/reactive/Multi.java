@@ -17,11 +17,9 @@ package io.helidon.common.reactive;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 
 import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 
 import static io.helidon.common.CollectionsHelper.listOf;
 
@@ -29,51 +27,7 @@ import static io.helidon.common.CollectionsHelper.listOf;
  * Multiple items publisher facility.
  * @param <T> item type
  */
-public interface Multi<T> extends Publisher<T> {
-
-    /**
-     * Subscribe to this {@link Multi} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer) {
-        this.subscribe(new FunctionalSubscriber<>(consumer, null, null, null));
-    }
-
-    /**
-     * Subscribe to this {@link Multi} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     * @param errorConsumer onError delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer) {
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, null, null));
-    }
-
-    /**
-     * Subscribe to this {@link Multi} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     * @param errorConsumer onError delegate function
-     * @param completeConsumer onComplete delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer) {
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, null));
-    }
-
-    /**
-     * Subscribe to this {@link Multi} instance with the given delegate functions.
-     *
-     * @param consumer onNext delegate function
-     * @param errorConsumer onError delegate function
-     * @param completeConsumer onComplete delegate function
-     * @param subscriptionConsumer onSusbcribe delegate function
-     */
-    default void subscribe(Consumer<? super T> consumer, Consumer<? super Throwable> errorConsumer, Runnable completeConsumer,
-            Consumer<? super Subscription> subscriptionConsumer) {
-
-        this.subscribe(new FunctionalSubscriber<>(consumer, errorConsumer, completeConsumer, subscriptionConsumer));
-    }
+public interface Multi<T> extends Subscribable<T> {
 
     /**
      * Map this {@link Multi} instance to a new {@link Multi} of another type using the given {@link Mapper}.
@@ -81,6 +35,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param <U> mapped item type
      * @param mapper mapper
      * @return Multi
+     * @throws NullPointerException if mapper is {@code null}
      */
     default <U> Multi<U> map(Mapper<T, U> mapper) {
         MultiMappingProcessor<T, U> processor = new MultiMappingProcessor<>(mapper);
@@ -103,6 +58,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param <U> collector container type
      * @param collector collector to use
      * @return Single
+     * @throws NullPointerException if collector is {@code null}
      */
     default <U> Single<U> collect(Collector<T, U> collector) {
         MultiCollectingProcessor<? super T, U> processor = new MultiCollectingProcessor<>(collector);
@@ -126,6 +82,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param <T> item type
      * @param source source publisher
      * @return Multi
+     * @throws NullPointerException if source is {@code null}
      */
     @SuppressWarnings("unchecked")
     static <T> Multi<T> from(Publisher<T> source) {
@@ -141,6 +98,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param <T> item type
      * @param items items to publish
      * @return Multi
+     * @throws NullPointerException if items is {@code null}
      */
     static <T> Multi<T> just(Collection<T> items) {
         return new MultiFromPublisher<>(new FixedItemsPublisher<>(items));
@@ -152,6 +110,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param <T> item type
      * @param items items to publish
      * @return Multi
+     * @throws NullPointerException if items is {@code null}
      */
     @SafeVarargs
     static <T> Multi<T> just(T... items) {
@@ -165,6 +124,7 @@ public interface Multi<T> extends Publisher<T> {
      * @param <T> item type
      * @param error exception to hold
      * @return Multi
+     * @throws NullPointerException if error is {@code null}
      */
     static <T> Multi<T> error(Throwable error) {
         return new MultiError<>(error);

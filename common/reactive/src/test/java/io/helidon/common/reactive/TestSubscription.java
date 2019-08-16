@@ -27,7 +27,7 @@ class TestSubscription implements Subscription {
 
     @Override
     public void request(long n) {
-        requested = n;
+        requested += n;
     }
 
     @Override

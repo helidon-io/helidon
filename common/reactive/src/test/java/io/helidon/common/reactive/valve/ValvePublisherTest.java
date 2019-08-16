@@ -196,8 +196,10 @@ class ValvePublisherTest {
         try {
             Multi.from(stringTank.toPublisher()).collect(new StringCollector<>()).toFuture().get();
             fail("Should have thrown an exception!");
-        } catch (IllegalStateException e) {
-            assertThat(e.getMessage(), containsString("Handler is already registered"));
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(notNullValue()));
+            assertThat(e.getCause(), is(instanceOf(IllegalStateException.class)));
+            assertThat(e.getCause().getMessage(), containsString("Handler is already registered"));
         }
     }
 

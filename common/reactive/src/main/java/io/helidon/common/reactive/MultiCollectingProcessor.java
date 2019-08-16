@@ -17,10 +17,6 @@ package io.helidon.common.reactive;
 
 import java.util.Objects;
 
-import io.helidon.common.reactive.Flow.Processor;
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
-
 /**
  * Processor of {@link Multi} to {@link Single} that collects items from the {@link Multi} and publishes a single collector object
  * as a {@link Single}.
@@ -28,103 +24,26 @@ import io.helidon.common.reactive.Flow.Subscription;
  * @param <T> subscribed type (collected)
  * @param <U> published type (collector)
  */
-final class MultiCollectingProcessor<T, U> implements Processor<T, U>, Single<U>, Subscription {
+final class MultiCollectingProcessor<T, U> extends BaseProcessor<T, U> implements Single<U> {
 
-    private Subscriber<? super U> delegate;
-    private Throwable error;
-    private volatile boolean subscribed;
-    private volatile boolean requested;
-    private volatile boolean done;
     private final Collector<T, U> collector;
 
     MultiCollectingProcessor(Collector<T, U> collector) {
-        this.collector = collector;
+        this.collector = Objects.requireNonNull(collector, "collector is null!");
     }
 
     @Override
-    public void request(long n) {
-        if (n > 0) {
-            if (!requested) {
-                requested = true;
-                if (done) {
-                    doComplete();
-                }
-            }
+    protected void hookOnNext(T item) {
+        collector.collect(item);
+    }
+
+    @Override
+    protected void hookOnComplete() {
+        U value = collector.value();
+        if (value == null) {
+            onError(new IllegalStateException("Collector returned a null container"));
+        } else {
+            submit(value);
         }
-    }
-
-    @Override
-    public void cancel() {
-        done = true;
-        requested = true;
-    }
-
-    @Override
-    public void onSubscribe(Subscription subscription) {
-        Objects.requireNonNull(subscription, "subscription cannot be null!");
-        if (!subscribed) {
-            subscribed = true;
-            if (delegate != null) {
-                delegate.onSubscribe(this);
-            }
-            subscription.request(Long.MAX_VALUE);
-        }
-    }
-
-    @Override
-    public void onNext(T item) {
-        if (!done) {
-            try {
-                collector.collect(item);
-            } catch (Throwable e) {
-                onError(e);
-            }
-        }
-    }
-
-    @Override
-    public void onError(Throwable ex) {
-        if (!done) {
-            done = true;
-            error = ex;
-            doComplete();
-        }
-    }
-
-    @Override
-    public void onComplete() {
-        if (!done) {
-            done = true;
-            if (requested) {
-                doComplete();
-            }
-        }
-    }
-
-    private void doComplete() {
-        if (delegate != null) {
-            if (error != null) {
-                delegate.onError(error);
-            } else {
-                try {
-                    U value = collector.value();
-                    if (value != null) {
-                        delegate.onNext(value);
-                        delegate.onComplete();
-                    } else {
-                        delegate.onError(new IllegalStateException("Collector returned a null container"));
-                    }
-                } catch (Throwable ex) {
-                    delegate.onError(ex);
-                }
-            }
-        }
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super U> subscriber) {
-        Objects.requireNonNull(subscriber, "subscriber cannot be null!");
-        this.delegate = subscriber;
-        delegate.onSubscribe(this);
     }
 }

@@ -15,10 +15,9 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Processor;
+import java.util.Objects;
+
 import io.helidon.common.reactive.Flow.Publisher;
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
 
 /**
  * Processor of {@link Publisher} to {@link Single} that publishes and maps each received item.
@@ -26,64 +25,21 @@ import io.helidon.common.reactive.Flow.Subscription;
  * @param <T> subscribed type
  * @param <U> published type
  */
-final class MultiMappingProcessor<T, U> implements Processor<T, U>, Multi<U> {
+final class MultiMappingProcessor<T, U> extends BaseProcessor<T, U> implements Multi<U> {
 
-    private Subscriber<? super U> delegate;
-    private boolean done;
-    private Subscription subscription;
     private final Mapper<T, U> mapper;
 
     MultiMappingProcessor(Mapper<T, U> mapper) {
-        this.mapper = mapper;
+        this.mapper = Objects.requireNonNull(mapper, "mapper is null!");
     }
 
     @Override
-    public void onSubscribe(Subscription s) {
-        if (subscription == null) {
-            subscription = s;
-            if (delegate != null) {
-                delegate.onSubscribe(s);
-            }
-        }
-    }
-
-    @Override
-    public void onNext(T item) {
-        if (!done) {
-            try {
-                U val = mapper.map(item);
-                if (val == null) {
-                    onError(new IllegalStateException("Mapper returned a null value"));
-                } else {
-                    delegate.onNext(val);
-                }
-            } catch (Throwable ex) {
-                onError(ex);
-            }
-        }
-    }
-
-    @Override
-    public void onError(Throwable ex) {
-        if (!done) {
-            done = true;
-            delegate.onError(ex);
-        }
-    }
-
-    @Override
-    public void onComplete() {
-        if (!done) {
-            done = true;
-            delegate.onComplete();
-        }
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super U> subscriber) {
-        this.delegate = subscriber;
-        if (subscription != null) {
-            delegate.onSubscribe(subscription);
+    protected void hookOnNext(T item) {
+        U value = mapper.map(item);
+        if (value == null) {
+            onError(new IllegalStateException("Mapper returned a null value"));
+        } else {
+            submit(value);
         }
     }
 }

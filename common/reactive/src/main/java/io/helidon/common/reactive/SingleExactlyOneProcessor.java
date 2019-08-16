@@ -15,97 +15,25 @@
  */
 package io.helidon.common.reactive;
 
-import io.helidon.common.reactive.Flow.Processor;
-import java.util.Objects;
-
-import io.helidon.common.reactive.Flow.Subscriber;
-import io.helidon.common.reactive.Flow.Subscription;
-
 /**
  * Processor of {@code Publisher<T>} to {@code Single<T>} expecting exactly one item.
  * @param <T> item type
  */
-final class SingleExactlyOneProcessor<T> implements Processor<T, T>, Subscription, Single<T> {
+final class SingleExactlyOneProcessor<T> extends BaseProcessor<T, T> implements Single<T> {
 
-    private Subscriber<? super T> delegate;
-    private Subscription subscription;
-    private Throwable error;
-    private volatile boolean requested;
-    private volatile boolean done;
     private T item;
 
     @Override
-    public void request(long n) {
-        if (n > 0) {
-            if (!requested) {
-                requested = true;
-                if (done) {
-                    doComplete();
-                }
-            }
+    protected void hookOnNext(T item) {
+        if (this.item != null) {
+            onError(new IllegalStateException("Source publisher published more than one"));
+        } else {
+            this.item = item;
         }
     }
 
     @Override
-    public void cancel() {
-        done = true;
-        requested = true;
-    }
-
-    @Override
-    public void onSubscribe(Subscription s) {
-        if (subscription == null) {
-            subscription = s;
-            if (delegate != null) {
-                delegate.onSubscribe(s);
-            }
-            subscription.request(Long.MAX_VALUE);
-        }
-    }
-
-    @Override
-    public void onNext(T t) {
-        if (!done) {
-            if (item != null) {
-                onError(new IllegalStateException("Single item already published"));
-            } else {
-                item = t;
-            }
-        }
-    }
-
-    @Override
-    public void onError(Throwable ex) {
-        if (!done) {
-            done = true;
-            error = ex;
-            doComplete();
-        }
-    }
-
-    @Override
-    public void onComplete() {
-        if (!done) {
-            done = true;
-            doComplete();
-        }
-    }
-
-    private void doComplete() {
-        if (delegate != null) {
-            if (error != null) {
-                delegate.onError(error);
-            } else {
-                delegate.onNext(item);
-                delegate.onComplete();
-            }
-        }
-    }
-
-    @Override
-    public void subscribe(Subscriber<? super T> subscriber) {
-        Objects.requireNonNull(subscriber, "subscriber cannot be null!");
-        delegate = subscriber;
-        delegate.onSubscribe(this);
+    protected void hookOnComplete() {
+        submit(item);
     }
 }
