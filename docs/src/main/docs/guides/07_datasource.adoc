@@ -160,8 +160,9 @@ database connections in your code.  Its sole element is a mapping
 whose key is the name of the data source in question.  This
 `javax:` / `sql:` / `DataSource:` preamble is required.
 
-<2> This mapping's key is the name of your data source, and will be
-referenced in your application code.  Its elements are
+<2> This mapping's key is the name of your data source (`test` in this
+case), and will be referenced in your application code.  Its elements
+are
 https://github.com/brettwooldridge/HikariCP/blob/dev/README.md#configuration-knobs-baby[Hikari
 connection pool properties].  The data source name may be anything you
 like.  By convention, data source names are usually single words
@@ -212,12 +213,12 @@ mapping corresponds to the Java type of
 https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`].
 This preamble specifies the type of Java object that will supply
 database connections in your code.  Its sole element is a mapping
-whose key is the name of the data source in question.  This preamble
-is required.
+whose key is the name of the data source in question.  This
+`javax:` / `sql:` / `DataSource:` preamble is required.
 
-<2> This mapping's key will be the name of your data source, and will
-be referenced in your application code.  Each of its elements' keys
-are
+<2> This mapping's key will be the name of your data source (`test` in
+this case), and will be referenced in your application code.  Each of
+its elements' keys are
 https://docs.oracle.com/javase/tutorial/javabeans/writing/properties.html[Java
 Bean properties] of the
 https://docs.oracle.com/en/database/oracle/oracle-database/19/jjuar/oracle/ucp/jdbc/PoolDataSource.html[`oracle.ucp.jdbc.PoolDataSource`]
@@ -238,10 +239,16 @@ https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html[`org.h2.jdbc
 Now that you've included the relevant libraries and configured them
 appropriately you can use the features they enable.
 
-First, ensure your resource class imports `javax.sql.DataSource`:
+First, ensure your resource class imports
+http://javax-inject.github.io/javax-inject/api/javax/inject/Inject.html[`javax.inject.Inject`],
+http://javax-inject.github.io/javax-inject/api/javax/inject/Named.html[`javax.inject.Named`]
+and
+https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html[`javax.sql.DataSource`]:
 
 [source,java]
 ----
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.sql.DataSource;
 ----
 
