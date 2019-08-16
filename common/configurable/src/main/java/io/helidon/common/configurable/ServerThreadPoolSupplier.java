@@ -28,8 +28,11 @@ import io.helidon.config.Config;
 public final class ServerThreadPoolSupplier implements Supplier<ExecutorService> {
 
     private static final int MINIMUM_CORES = 2;
-    private static final int DEFAULT_THREADS_PER_CORE = 8;
-    private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
+    private static final int DEFAULT_MIN_THREADS_PER_CORE = 2;
+    private static final int DEFAULT_MAX_THREADS_PER_CORE = 8;
+    private static final int DEFAULT_QUEUE_CAPACITY = 8192;
+    private static final int DEFAULT_GROWTH_THRESHOLD = 256;
+    private static final int DEFAULT_GROWTH_RATE = 5;
 
     private final ThreadPoolSupplier supplier;
 
@@ -43,7 +46,7 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
     }
 
     /**
-     * Create a new fluent API builder to build thread pool supplier.
+     * Create a new fluent API builder to build a thread pool supplier.
      *
      * @return a builder instance
      */
@@ -52,16 +55,15 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
         // Set defaults appropriate to a thread-per-request model, based on the number of cores.
 
         final int cores = Math.max(Runtime.getRuntime().availableProcessors(), MINIMUM_CORES);
-        final int corePoolSize = cores * DEFAULT_THREADS_PER_CORE;
-
-        // Since the ExecutorService only adds threads above the corePoolSize when the queue is full, setting
-        // maxPoolSize > corePoolSize with a large queue is meaningless unless under extreme load. To ensure
-        // we can actually use the max under normal load, use corePoolSize as maxPoolSize by default.
+        final int minPoolSize = DEFAULT_MIN_THREADS_PER_CORE * cores;
+        final int maxPoolSize = DEFAULT_MAX_THREADS_PER_CORE * cores;
 
         return ThreadPoolSupplier.builder()
-                                 .corePoolSize(corePoolSize)
-                                 .maxPoolSize(corePoolSize)
-                                 .queueCapacity(DEFAULT_QUEUE_CAPACITY);
+                                 .corePoolSize(minPoolSize)
+                                 .maxPoolSize(maxPoolSize)
+                                 .queueCapacity(DEFAULT_QUEUE_CAPACITY)
+                                 .growthThreshold(DEFAULT_GROWTH_THRESHOLD)
+                                 .growthRate(DEFAULT_GROWTH_RATE);
     }
 
     /**

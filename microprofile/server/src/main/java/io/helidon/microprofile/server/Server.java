@@ -214,9 +214,9 @@ public interface Server {
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
-                        .name("server")
-                        .config(config.helidonConfig().get("server.executor-service"))
-                        .build();
+                                                                 .name("server")
+                                                                 .config(config.helidonConfig().get("server.executor-service"))
+                                                                 .build();
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");
