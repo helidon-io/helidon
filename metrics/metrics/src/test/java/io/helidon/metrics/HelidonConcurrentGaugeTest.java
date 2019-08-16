@@ -50,8 +50,8 @@ public class HelidonConcurrentGaugeTest {
     void testInitialState() {
         HelidonConcurrentGauge gauge = HelidonConcurrentGauge.create("base", meta);
         assertThat(gauge.getCount(), is(0L));
-        assertThat(gauge.getMax(), is(Long.MIN_VALUE));
-        assertThat(gauge.getMin(), is(Long.MAX_VALUE));
+        assertThat(gauge.getMax(), is(0L));
+        assertThat(gauge.getMin(), is(0L));
     }
 
     @Test

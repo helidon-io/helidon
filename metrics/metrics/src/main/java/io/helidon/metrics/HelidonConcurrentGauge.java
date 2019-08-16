@@ -114,13 +114,15 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         @Override
         public long getMax() {
             updateState();
-            return lastMax.get();
+            final long max = lastMax.get();
+            return max == Long.MIN_VALUE ? 0L : max;
         }
 
         @Override
         public long getMin() {
             updateState();
-            return lastMin.get();
+            final long min = lastMin.get();
+            return min == Long.MAX_VALUE ? 0L : min;
         }
 
         @Override
