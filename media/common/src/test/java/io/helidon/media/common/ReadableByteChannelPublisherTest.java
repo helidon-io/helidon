@@ -23,6 +23,8 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.IntFunction;
 
@@ -31,8 +33,6 @@ import io.helidon.common.reactive.Flow.Publisher;
 import io.helidon.common.reactive.Flow.Subscriber;
 import io.helidon.common.reactive.Flow.Subscription;
 import io.helidon.common.reactive.RetrySchema;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
@@ -111,8 +111,7 @@ public class ReadableByteChannelPublisherTest {
         // assert
         try {
             ContentReaders.readBytes(publisher).toFuture().get(5, TimeUnit.SECONDS);
-            throw new AssertionError(
-                    "Did not throw expected ExecutionException!");
+            fail("Did not throw expected ExecutionException!");
         } catch (ExecutionException e) {
             assertThat(e.getCause(), instanceOf(TimeoutException.class));
         }

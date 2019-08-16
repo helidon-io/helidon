@@ -209,10 +209,8 @@ public class RequestContentTest {
         } catch (ExecutionException e) {
             assertThat(e.getCause(),
                     allOf(instanceOf(IllegalArgumentException.class),
-                    hasProperty("message",
-                            containsString("Transformation failed!"))));
-            assertThat(e.getCause().getCause(), hasProperty("message",
-                    containsString("failed-publisher-transformation")));
+                    hasProperty("message", containsString("Transformation failed!"))));
+            assertThat(e.getCause().getCause(), hasProperty("message", containsString("failed-publisher-transformation")));
         }
     }
 

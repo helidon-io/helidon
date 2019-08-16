@@ -23,8 +23,7 @@ import org.reactivestreams.Subscription;
 /**
  * The WrappedOriginThreadPublisher.
  */
-public class WrappedOriginThreadPublisher extends OriginThreadPublisher<CharSequence, byte[]>
-        implements Publisher<CharSequence> {
+public class WrappedOriginThreadPublisher extends OriginThreadPublisher<CharSequence, byte[]> implements Publisher<CharSequence> {
 
     WrappedOriginThreadPublisher(UnboundedSemaphore semaphore) {
         super(semaphore);

@@ -156,11 +156,9 @@ public class NettyWebServerTest {
 
         try {
             assertThat(webServer.port(), greaterThan(0));
-            assertThat(webServer.configuration().sockets().entrySet(),
-                    IsCollectionWithSize.hasSize(1));
+            assertThat(webServer.configuration().sockets().entrySet(), IsCollectionWithSize.hasSize(1));
             assertThat(webServer.configuration().sockets()
-                    .get(ServerConfiguration.DEFAULT_SOCKET_NAME).port(),
-                       Is.is(webServer.configuration().port()));
+                    .get(ServerConfiguration.DEFAULT_SOCKET_NAME).port(), Is.is(webServer.configuration().port()));
         } finally {
             webServer.shutdown()
                      .toCompletableFuture()

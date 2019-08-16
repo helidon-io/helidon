@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import io.helidon.common.reactive.Flow.Publisher;
 
 /**
- * Decorated publisher that allows for fine grained subscribers using java functions.
+ * Decorated publisher that allows subscribing to individual events with java functions.
  * @param <T> item type
  */
 public interface Subscribable<T> extends Publisher<T> {

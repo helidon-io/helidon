@@ -142,8 +142,7 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
                             LOGGER.finest("Completing from request.");
                             singleSubscriber.onComplete();
                         } else if (queue.isEmpty()) {
-                            long released = n == Long.MAX_VALUE ? Long.MAX_VALUE
-                                    : release;
+                            long released = n == Long.MAX_VALUE ? Long.MAX_VALUE : release;
                             long result = semaphore.release(released);
                             LOGGER.finest(() -> "Semaphore released: " + result);
                             hookOnRequested(released, result);

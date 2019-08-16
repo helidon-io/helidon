@@ -68,8 +68,7 @@ class ReferenceHoldingQueue<T> extends ReferenceQueue<T> {
             if (poll instanceof ReleasableReference) {
                 ((ReleasableReference) poll).release();
             } else {
-                LOGGER.warning(() -> "Unexpected type detected: "
-                        + poll.getClass());
+                LOGGER.warning(() -> "Unexpected type detected: " + poll.getClass());
             }
         }
         return set.isEmpty();

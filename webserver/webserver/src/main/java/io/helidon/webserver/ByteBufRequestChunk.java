@@ -31,8 +31,7 @@ import io.netty.buffer.ByteBuf;
  */
 class ByteBufRequestChunk implements DataChunk {
 
-    private static final Logger LOGGER =
-            Logger.getLogger(ByteBufRequestChunk.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ByteBufRequestChunk.class.getName());
     private static final AtomicLong ID_INCREMENTER = new AtomicLong(1);
 
     private final long id = ID_INCREMENTER.getAndIncrement();
