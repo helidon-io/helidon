@@ -39,5 +39,6 @@
         <module>security</module>
         <module>security-abac</module>
         <module>security-outbound</module>
+        <module>microprofile</module>
     </modules>
 </project>

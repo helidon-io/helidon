@@ -106,4 +106,11 @@ Expose health statuses of your applications.
 --
 Support OpenAPI from your application.
 --
+
+[CARD]
+.gRPC
+[icon=swap_horiz,link=grpc/01_introduction.adoc]
+--
+Build gRPC servers and clients.
+--
 ====

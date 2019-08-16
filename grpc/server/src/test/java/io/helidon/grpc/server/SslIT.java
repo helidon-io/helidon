@@ -28,7 +28,7 @@ import javax.net.ssl.SSLException;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
 
@@ -284,15 +284,15 @@ public class SslIT {
      * @throws Exception in case of an error
      */
     private static GrpcServer startGrpcServer(int nPort, boolean mutual, boolean useConfig ) throws Exception {
-        GrpcSslDescriptor sslConfig;
+        GrpcTlsDescriptor sslConfig;
         String name = "grpc.server";
         if (useConfig) {
             name = name + 1;
             Config config = Config.builder().sources(ConfigSources.classpath("config-ssl.conf")).build();
-            sslConfig = config.get("grpcserver.ssl").as(GrpcSslDescriptor::create).get();
+            sslConfig = config.get("grpcserver.ssl").as(GrpcTlsDescriptor::create).get();
         } else if (mutual) {
             name = name + 2;
-             sslConfig = GrpcSslDescriptor.builder()
+             sslConfig = GrpcTlsDescriptor.builder()
                         .jdkSSL(false)
                         .tlsCert(tlsCert)
                         .tlsKey(tlsKey)
@@ -300,7 +300,7 @@ public class SslIT {
                         .build();
         } else {
             name = name + 3;
-            sslConfig = GrpcSslDescriptor.builder()
+            sslConfig = GrpcTlsDescriptor.builder()
                         .jdkSSL(false)
                         .tlsCert(tlsCert)
                         .tlsKey(tlsKey)
@@ -311,7 +311,7 @@ public class SslIT {
                                          .register(new EchoService())
                                          .build();
 
-        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().name(name).port(nPort).sslConfig(sslConfig).build();
+        GrpcServerConfiguration serverConfig = GrpcServerConfiguration.builder().name(name).port(nPort).tlsConfig(sslConfig).build();
 
         GrpcServer grpcServer ;
         try {

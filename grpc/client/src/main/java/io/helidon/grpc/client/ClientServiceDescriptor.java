@@ -166,7 +166,7 @@ public class ClientServiceDescriptor {
      * @return service interceptors
      */
     public PriorityBag<ClientInterceptor> interceptors() {
-        return interceptors;
+        return interceptors.readOnly();
     }
 
     /**

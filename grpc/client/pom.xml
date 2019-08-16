@@ -49,10 +49,6 @@
             <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-zipkin</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-grpc</artifactId>
         </dependency>

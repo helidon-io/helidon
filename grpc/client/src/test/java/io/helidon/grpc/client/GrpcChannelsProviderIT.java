@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 import javax.net.ssl.SSLException;
 
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.grpc.server.GrpcRouting;
 import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
@@ -118,13 +118,13 @@ public class GrpcChannelsProviderIT {
      * @return A reference to a {@link io.helidon.grpc.server.GrpcServer}.
      */
     private static GrpcServer startGrpcServer(int nPort, boolean sslEnabled, boolean mutual) throws Exception {
-        GrpcSslDescriptor sslConfig = null;
+        GrpcTlsDescriptor sslConfig = null;
         String name = "grpc.server";
         if (!sslEnabled) {
             name = name + 1;
         } else if (mutual) {
             name = name + 2;
-            sslConfig = GrpcSslDescriptor.builder()
+            sslConfig = GrpcTlsDescriptor.builder()
                     .jdkSSL(false)
                     .tlsCert(tlsCert)
                     .tlsKey(tlsKey)
@@ -132,7 +132,7 @@ public class GrpcChannelsProviderIT {
                     .build();
         } else {
             name = name + 3;
-            sslConfig = GrpcSslDescriptor.builder()
+            sslConfig = GrpcTlsDescriptor.builder()
                     .jdkSSL(false)
                     .tlsCert(tlsCert)
                     .tlsKey(tlsKey)
@@ -145,7 +145,7 @@ public class GrpcChannelsProviderIT {
 
         GrpcServerConfiguration.Builder bldr = GrpcServerConfiguration.builder().name(name).port(nPort);
         if (sslEnabled) {
-            bldr.sslConfig(sslConfig);
+            bldr.tlsConfig(sslConfig);
         }
 
         return GrpcServer.create(bldr.build(), routing)
@@ -236,7 +236,7 @@ public class GrpcChannelsProviderIT {
 
         if ((sslMode & WITH_NO_SSL) == 0) {
             // SSL enabled.
-            GrpcSslDescriptor.Builder sslBldr = GrpcSslDescriptor.builder();
+            GrpcTlsDescriptor.Builder sslBldr = GrpcTlsDescriptor.builder();
             if ((sslMode & WITH_CA_CERT) > 0) {
                 sslBldr.tlsCaCert(tlsCaCert);
             }

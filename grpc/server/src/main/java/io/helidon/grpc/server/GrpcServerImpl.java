@@ -44,7 +44,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.pki.KeyConfig;
 import io.helidon.grpc.core.ContextKeys;
-import io.helidon.grpc.core.GrpcSslDescriptor;
+import io.helidon.grpc.core.GrpcTlsDescriptor;
 import io.helidon.grpc.core.InterceptorPriorities;
 import io.helidon.grpc.core.PriorityBag;
 
@@ -150,20 +150,20 @@ public class GrpcServerImpl implements GrpcServer {
         String sName = config.name();
         int port = config.port();
         boolean tls = false;
-        GrpcSslDescriptor sslConfig = config.sslConfig();
+        GrpcTlsDescriptor tlsConfig = config.tlsConfig();
         SslContext sslContext = null;
 
         try {
-            if (sslConfig != null) {
-                if (sslConfig.isJdkSSL()) {
+            if (tlsConfig != null) {
+                if (tlsConfig.isJdkSSL()) {
                     SSLContext sslCtx = SSLContextBuilder.create(KeyConfig.pemBuilder()
-                                                                         .key(findResource(sslConfig.tlsKey()))
-                                                                         .certChain(findResource(sslConfig.tlsCert()))
+                                                                         .key(findResource(tlsConfig.tlsKey()))
+                                                                         .certChain(findResource(tlsConfig.tlsCert()))
                                                                          .build()).build();
                     sslContext = new JdkSslContext(sslCtx, false, ClientAuth.NONE);
 
                 } else {
-                    sslContext = sslContextBuilder(sslConfig).build();
+                    sslContext = sslContextBuilder(tlsConfig).build();
                 }
             }
 
@@ -392,13 +392,13 @@ public class GrpcServerImpl implements GrpcServer {
     /**
      * Return an instance of SslContextBuilder from the specified SslConfig.
      *
-     * @param sslConfig the ssl configuration
+     * @param tlsConfig the ssl configuration
      * @return an instance of SslContextBuilder
      */
-    protected SslContextBuilder sslContextBuilder(GrpcSslDescriptor sslConfig) {
-        String sCertFile = sslConfig.tlsCert();
-        String sKeyFile = sslConfig.tlsKey();
-        String sClientCertFile = sslConfig.tlsCaCert();
+    protected SslContextBuilder sslContextBuilder(GrpcTlsDescriptor tlsConfig) {
+        String sCertFile = tlsConfig.tlsCert();
+        String sKeyFile = tlsConfig.tlsKey();
+        String sClientCertFile = tlsConfig.tlsCaCert();
 
         if (sCertFile == null || sCertFile.isEmpty()) {
             throw new IllegalStateException("gRPC server is configured to use TLS but cert file is not set");

@@ -16,6 +16,8 @@
 
 package io.helidon.grpc.core;
 
+import javax.inject.Named;
+
 import com.google.protobuf.MessageLite;
 import io.grpc.MethodDescriptor;
 import io.grpc.protobuf.lite.ProtoLiteUtils;
@@ -26,6 +28,16 @@ import io.grpc.protobuf.lite.ProtoLiteUtils;
  */
 @FunctionalInterface
 public interface MarshallerSupplier {
+
+    /**
+     * The name of the Protocol Buffer marshaller supplier.
+     */
+    String PROTO = "proto";
+
+    /**
+     * The name to use to specify the default marshaller supplier.
+     */
+    String DEFAULT = "default";
 
     /**
      * Obtain a {@link MethodDescriptor.Marshaller} for a type.
@@ -49,31 +61,43 @@ public interface MarshallerSupplier {
     /**
      * The default {@link MarshallerSupplier}.
      */
+    @Named(MarshallerSupplier.DEFAULT)
     class DefaultMarshallerSupplier
             implements MarshallerSupplier {
 
-        /**
-         * The singleton default {@link MethodDescriptor.Marshaller}.
-         */
-        private static final MethodDescriptor.Marshaller JAVA_MARSHALLER = new JavaMarshaller();
+        private final ProtoMarshallerSupplier proto = new ProtoMarshallerSupplier();
+
+        @Override
+        public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
+            if (MessageLite.class.isAssignableFrom(clazz)) {
+                return proto.get(clazz);
+            }
+            return JavaMarshaller.instance();
+        }
+    }
+
+    /**
+     * A {@link MarshallerSupplier} implementation that
+     * supplies Protocol Buffer marshaller instances.
+     */
+    @Named(PROTO)
+    class ProtoMarshallerSupplier
+            implements MarshallerSupplier {
 
         @Override
         @SuppressWarnings("unchecked")
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
-            if (MessageLite.class.isAssignableFrom(clazz)) {
-                try {
-                    java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
-                    MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
-                    return (MethodDescriptor.Marshaller<T>) ProtoLiteUtils.marshaller(instance);
-                } catch (Exception e) {
-                    String msg = String.format(
-                            "Attempting to use class %s, which is not a valid Protobuf message, with a default marshaller",
-                            clazz.getName());
-                    throw new IllegalArgumentException(msg);
-                }
-            }
+            try {
+                java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
+                MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
 
-            return JAVA_MARSHALLER;
+                return (MethodDescriptor.Marshaller<T>) ProtoLiteUtils.marshaller(instance);
+            } catch (Exception e) {
+                String msg = String.format(
+                        "Attempting to use class %s, which is not a valid Protocol buffer message, with a default marshaller",
+                        clazz.getName());
+                throw new IllegalArgumentException(msg);
+            }
         }
     }
 }

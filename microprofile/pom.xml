@@ -47,5 +47,6 @@
         <module>openapi</module>
         <module>rest-client</module>
         <module>access-log</module>
+        <module>grpc</module>
     </modules>
 </project>
