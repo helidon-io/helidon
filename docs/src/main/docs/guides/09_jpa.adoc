@@ -88,8 +88,8 @@ specification itself.
 === Add the Provider-Specific Helidon JPA Integration to Your Helidon MP Application's Runtime Classpath
 
 The Helidon JPA support works in part by supplying JPA providers with
-information related to the transaction support in the environment.
-The way this is accomplished is necessarily provider-specific.
+information related to transaction support present in the environment.
+The way this is accomplished is necessarily JPA-provider-specific.
 Consequently you have to decide which JPA implementation you would
 like to use.
 
