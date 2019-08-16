@@ -100,7 +100,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
             queues.add(queue);
             requestContext = new RequestContext(new HttpRequestScopedPublisher(ctx, queue), request);
             // the only reason we have the 'ref' here is that the field might get assigned with null
-            HttpRequestScopedPublisher publisherRef = requestContext.publisher();
+            final HttpRequestScopedPublisher publisherRef = requestContext.publisher();
             long requestId = REQUEST_ID_GENERATOR.incrementAndGet();
 
             // If a problem with the request URI, return 400 response
@@ -128,6 +128,7 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
                             if (queue.release()) {
                                 queues.remove(queue);
                             }
+                            publisherRef.drain();
 
                             // Enable auto-read only after response has been completed
                             // to avoid a race condition with the next response

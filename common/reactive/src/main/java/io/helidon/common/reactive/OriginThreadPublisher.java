@@ -215,6 +215,47 @@ public abstract class OriginThreadPublisher<T, U> implements Publisher<T> {
     }
 
     /**
+     * If not subscribed to, consume all the items from this publisher.
+     */
+    public void drain() {
+        if (!hasSingleSubscriber.get() && !(completed && queue.isEmpty())) {
+            System.out.println("LEAK: no one registered to consume request");
+
+            // now if anyone races and wins, this subscriber is going to receive onError, and be done
+            // otherwise, this subscriber is going to release all the chunks, and anyone who
+            // attempts to subscribe is going to receive onError.
+            subscribe(new Subscriber<T>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(T item) {
+                    drain(item);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                }
+
+                @Override
+                public void onComplete() {
+                }
+            });
+        }
+    }
+
+    /**
+     * Process a drained item. This default implementation of this method is a no-op, it is meant to be overridden by sub-classes
+     * to customize the draining process.
+     *
+     * @param item drained item
+     */
+    protected void drain(T item){
+    }
+
+    /**
      * Synchronously trigger {@link Subscriber#onError(Throwable)}.
      *
      * @param throwable the exception to send

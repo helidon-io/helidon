@@ -134,4 +134,9 @@ class HttpRequestScopedPublisher extends OriginThreadPublisher<DataChunk, ByteBu
     protected DataChunk wrap(ByteBuf data) {
         return new ByteBufRequestChunk(data, referenceQueue);
     }
+
+    @Override
+    protected void drain(DataChunk item) {
+        item.release();
+    }
 }
