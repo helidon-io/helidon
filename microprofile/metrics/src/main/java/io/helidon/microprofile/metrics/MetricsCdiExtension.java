@@ -241,7 +241,8 @@ public class MetricsCdiExtension implements Extension {
     private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         Type type = pip.getInjectionPoint().getType();
         if (type.equals(Counter.class) || type.equals(Histogram.class)
-                || type.equals(Meter.class) || type.equals(Timer.class)) {
+                || type.equals(Meter.class) || type.equals(Timer.class)
+                || type.equals(org.eclipse.microprofile.metrics.ConcurrentGauge.class)) {
             pip.configureInjectionPoint().addQualifier(VendorDefined.Literal.INSTANCE);
         }
     }

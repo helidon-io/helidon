@@ -26,6 +26,7 @@ import javax.enterprise.inject.spi.InjectionPoint;
 
 import io.helidon.metrics.HelidonMetadata;
 
+import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -145,6 +146,18 @@ public class MetricProducer {
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return registry.histogram(newMetadata(ip, metric, MetricType.HISTOGRAM), tags(metric));
+    }
+
+    @Produces
+    private ConcurrentGauge produceConcurrentGaugeDefault(MetricRegistry registry, InjectionPoint ip) {
+        return produceConcurrentGauge(registry, ip);
+    }
+
+    @Produces
+    @VendorDefined
+    private ConcurrentGauge produceConcurrentGauge(MetricRegistry registry, InjectionPoint ip) {
+        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
+        return registry.concurrentGauge(newMetadata(ip, metric, MetricType.CONCURRENT_GAUGE), tags(metric));
     }
 
     /**
