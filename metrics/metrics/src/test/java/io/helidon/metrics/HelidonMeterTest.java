@@ -133,7 +133,7 @@ class HelidonMeterTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        meter.prometheusData(sb, meterID.getName(), meterID.getTags());
+        meter.prometheusData(sb, meterID);
         String data = sb.toString();
 
         assertThat(data, startsWith(EXPECTED_PROMETHEUS_START));

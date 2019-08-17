@@ -200,7 +200,7 @@ public final class MetricsSupport implements Service {
      */
     public static String toPrometheusData(MetricID metricID, Metric metric) {
         final StringBuilder sb = new StringBuilder();
-        checkMetricTypeThenRun(sb, metricID.getName(), metricID.getTags(), metric);
+        checkMetricTypeThenRun(sb, metricID, metric);
         return sb.toString();
     }
     /**
@@ -216,10 +216,10 @@ public final class MetricsSupport implements Service {
      * @return {@code String} containing the Prometheus data
      */
     static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric) {
-        checkMetricTypeThenRun(sb, metricID.getName(), metricID.getTags(), metric);
+        checkMetricTypeThenRun(sb, metricID, metric);
     }
 
-    private static void checkMetricTypeThenRun(StringBuilder sb, String name, Map<String,String> tags, Metric metric) {
+    private static void checkMetricTypeThenRun(StringBuilder sb, MetricID metricID, Metric metric) {
         Objects.requireNonNull(metric);
 
         if (!(metric instanceof HelidonMetric)) {
@@ -229,7 +229,7 @@ public final class MetricsSupport implements Service {
                     HelidonMetric.class.getName()));
         }
 
-        ((HelidonMetric) metric).prometheusData(sb, name, tags);
+        ((HelidonMetric) metric).prometheusData(sb, metricID);
     }
 
     // unit testable
@@ -380,7 +380,7 @@ public final class MetricsSupport implements Service {
                         res.send(builder.build());
                     } else {
                         final StringBuilder sb = new StringBuilder();
-                        metric.prometheusData(sb, metricName, Collections.emptyMap());
+                        metric.prometheusData(sb, new MetricID(metricName));
                         res.send(sb.toString());
                     }
                 }, () -> {

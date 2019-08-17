@@ -52,9 +52,8 @@ interface HelidonMetric extends Metric {
     /**
      * Return this metric data in prometheus format.
      *
-     * @param sb {@code StringBuilder} used for accumulating the output
-     * @param effectiveName metric name, possibly prefixed depending on the usage
-     * @param tags comma-separated tags expressed as name=value
+     * @param sb the {@code StringBuilder} used to accumulate the output
+     * @param metricID the {@code MetricID} for the metric to be formatted
      */
-    void prometheusData(StringBuilder sb, String effectiveName, Map<String,String> tags);
+    void prometheusData(StringBuilder sb, MetricID metricID);
 }

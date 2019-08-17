@@ -161,7 +161,7 @@ class HelidonHistogramTest {
     @Test
     void testPrometheus() {
         final StringBuilder sb = new StringBuilder();
-        histoInt.prometheusData(sb, histoIntID.getName(), histoIntID.getTags());
+        histoInt.prometheusData(sb, histoIntID);
         assertThat(sb.toString(), is(EXPECTED_PROMETHEUS_OUTPUT));
     }
 

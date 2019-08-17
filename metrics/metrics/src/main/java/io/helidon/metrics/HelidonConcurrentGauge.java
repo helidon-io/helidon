@@ -73,11 +73,8 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
-        String nameWithUnits = prometheusNameWithUnits(name, Optional.empty());
-        prometheusType(sb, nameWithUnits, getType());
-        prometheusHelp(sb, nameWithUnits);
-        sb.append(nameWithUnits).append(prometheusTags(tags)).append(" ").append(getCount()).append('\n');
+    public String prometheusValue() {
+        return Long.toString(getCount());
     }
 
     @Override

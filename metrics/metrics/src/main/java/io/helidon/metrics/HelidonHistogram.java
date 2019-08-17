@@ -71,9 +71,10 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, String name, Map<String,String> tagsMap) {
+    public void prometheusData(StringBuilder sb, MetricID metricID) {
         Units units = getUnits();
-        String tags = prometheusTags(tagsMap);
+        String tags = prometheusTags(metricID.getTags());
+        String name = metricID.getName();
 
         String nameUnits;
         Optional<String> unit = units.getPrometheusUnit();
@@ -142,6 +143,11 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         prometheusQuantile(sb, tags, units, nameUnits, "0.98", snap::get98thPercentile);
         prometheusQuantile(sb, tags, units, nameUnits, "0.99", snap::get99thPercentile);
         prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
+    }
+
+    @Override
+    public String prometheusValue() {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     /**

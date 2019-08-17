@@ -106,9 +106,10 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, String name, Map<String,String> tagsMap) {
+    public void prometheusData(StringBuilder sb, MetricID metricID) {
         String nameUnits;
-        String tags = prometheusTags(tagsMap);
+        String name = metricID.getName();
+        String tags = prometheusTags(metricID.getTags());
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
         prometheusType(sb, nameUnits, "gauge");
         sb.append(nameUnits)
@@ -196,6 +197,11 @@ final class HelidonTimer extends MetricImpl implements Timer {
         prometheusQuantile(sb, tags, units, nameUnits, "0.98", snap::get98thPercentile);
         prometheusQuantile(sb, tags, units, nameUnits, "0.99", snap::get99thPercentile);
         prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
+    }
+
+    @Override
+    public String prometheusValue() {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

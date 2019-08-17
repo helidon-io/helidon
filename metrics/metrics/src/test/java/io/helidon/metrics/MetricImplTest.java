@@ -62,10 +62,8 @@ class MetricImplTest {
 
         impl = new MetricImpl("base", meta) {
             @Override
-            public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
-                prometheusType(sb, name, "counter");
-                prometheusHelp(sb, name);
-                sb.append(name).append(" ").append("45");
+            public String prometheusValue() {
+                return "45";
             }
 
             @Override
@@ -73,16 +71,14 @@ class MetricImplTest {
                 builder.add(metricID.getName(), 45);
             }
         };
-        implID = new MetricID(impl.prometheusName("theName"));
+        implID = new MetricID(meta.getName());
 
         meta = new HelidonMetadata("counterWithoutDescription", MetricType.COUNTER);
 
         implWithoutDescription = new MetricImpl("base", meta) {
             @Override
-            public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
-                prometheusType(sb, name, "counter");
-                prometheusHelp(sb, name);
-                sb.append(name).append(" ").append("45");
+            public String prometheusValue() {
+                return "45";
             }
 
             @Override
@@ -90,7 +86,7 @@ class MetricImplTest {
                 builder.add(metricID.getName(), 45);
             }
         };
-        implWithoutDescriptionID = new MetricID("counterWithoutDescription");
+        implWithoutDescriptionID = new MetricID(meta.getName());
     }
 
     @Test
@@ -117,9 +113,9 @@ class MetricImplTest {
     void testPrometheus() {
         String expected = "# TYPE base_theName counter\n"
                 + "# HELP base_theName theDescription\n"
-                + "base_theName 45";
+                + "base_theName 45\n";
         final StringBuilder sb = new StringBuilder();
-        impl.prometheusData(sb, implID.getName(), implID.getTags());
+        impl.prometheusData(sb, implID);
         assertThat(sb.toString(), is(expected));
     }
 
@@ -127,9 +123,9 @@ class MetricImplTest {
     void testPrometheusWithoutDescription() {
         String expected = "# TYPE base_counterWithoutDescription counter\n"
                 + "# HELP base_counterWithoutDescription \n"
-                + "base_counterWithoutDescription 45";
+                + "base_counterWithoutDescription 45\n";
         final StringBuilder sb = new StringBuilder();
-        implWithoutDescription.prometheusData(sb, "base_" + implWithoutDescriptionID.getName(), implWithoutDescriptionID.getTags());
+        implWithoutDescription.prometheusData(sb, implWithoutDescriptionID);
         assertThat(sb.toString(), is(expected));
     }
 

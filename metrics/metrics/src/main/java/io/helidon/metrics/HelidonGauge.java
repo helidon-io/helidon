@@ -49,13 +49,13 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
-        Units units = getUnits();
+    String prometheusNameWithUnits(MetricID metricID) {
+        return prometheusNameWithUnits(metricID.getName(), getUnits().getPrometheusUnit());
+    }
 
-        String nameWithUnits = prometheusNameWithUnits(name, units.getPrometheusUnit());
-        prometheusType(sb, nameWithUnits, getType());
-        prometheusHelp(sb, nameWithUnits);
-        sb.append(nameWithUnits).append(prometheusTags(tags)).append(" ").append(units.convert(getValue())).append('\n');
+    @Override
+    public String prometheusValue() {
+        return getUnits().convert(getValue()).toString();
     }
 
     @Override
