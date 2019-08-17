@@ -16,8 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.JsonObjectBuilder;

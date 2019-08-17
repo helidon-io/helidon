@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,8 +47,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -251,7 +250,7 @@ public final class MetricsSupport implements Service {
         return toJson((builder, entry) -> entry.getValue().jsonMeta(builder), registry);
     }
 
-    private static JsonObject toJson(Function<Registry,JsonObject> fn, Registry... registries) {
+    private static JsonObject toJson(Function<Registry, JsonObject> fn, Registry... registries) {
         return Arrays.stream(registries)
                 .filter(r -> !r.empty())
                 .collect(JSON::createObjectBuilder,
@@ -261,7 +260,7 @@ public final class MetricsSupport implements Service {
     }
 
     private static JsonObject toJson(
-            BiConsumer<JsonObjectBuilder,? super Map.Entry<MetricID,MetricImpl>> accumulator,
+            BiConsumer<JsonObjectBuilder, ? super Map.Entry<MetricID, MetricImpl>> accumulator,
             Registry registry) {
         return registry.stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))

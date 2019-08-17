@@ -17,7 +17,6 @@
 package io.helidon.metrics;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -227,7 +226,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         return prometheusNameWithUnits(metricID.getName(), Optional.empty());
     }
 
-    abstract public String prometheusValue();
+    public abstract String prometheusValue();
 
     protected final void prometheusQuantile(StringBuilder sb,
                                             String tags,
@@ -280,7 +279,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
 
         return name;
     }
-    final String prometheusTags(Map<String,String> tags) {
+    final String prometheusTags(Map<String, String> tags) {
         return (tags == null || tags.isEmpty() ? "" : tags.entrySet().stream()
                 .filter(entry -> entry.getKey() != null)
                 .map(entry -> String.format("%s=\"%s\"",

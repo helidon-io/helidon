@@ -16,8 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.util.Map;
-
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metric;

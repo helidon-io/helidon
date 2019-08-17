@@ -18,7 +18,6 @@ package io.helidon.metrics;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.function.Supplier;
 
 import javax.json.JsonObjectBuilder;
