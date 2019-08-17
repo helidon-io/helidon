@@ -19,6 +19,7 @@ package io.helidon.metrics;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,6 +56,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -283,30 +285,37 @@ public final class MetricsSupport implements Service {
                                        Routing.Rules rules) {
         String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
 
+        /*
+         * For each metric, create the metric ID to harvest any config-generated tags.
+         */
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Counter totalCount = vendor.counter(new HelidonMetadata(metricPrefix + "count",
                                                          "Total number of HTTP requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
-                                                         MetricUnits.NONE));
+                                                         MetricUnits.NONE),
+                                            tags(metricPrefix + "count"));
 
         Meter totalMeter = vendor.meter(new HelidonMetadata(metricPrefix + "meter",
                                                      "Meter for overall HTTP requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
-                                                     MetricUnits.NONE));
+                                                     MetricUnits.NONE),
+                                            tags(metricPrefix + "meter"));
 
         vendor.counter(new HelidonMetadata("grpc.requests.count",
                                     "Total number of gRPC requests",
                                     "Each gRPC request (regardless of the method) will increase this counter",
                                     MetricType.COUNTER,
-                                    MetricUnits.NONE));
+                                    MetricUnits.NONE),
+                            tags("grpc.requests.count"));
 
         vendor.meter(new HelidonMetadata("grpc.requests.meter",
                                   "Meter for overall gRPC requests",
                                   "Each gRPC request will mark the meter to see overall throughput",
                                   MetricType.METERED,
-                                  MetricUnits.NONE));
+                                  MetricUnits.NONE),
+                            tags("grpc.requests.meter"));
 
         rules.any((req, res) -> {
             totalCount.inc();
@@ -422,6 +431,12 @@ public final class MetricsSupport implements Service {
                     res.status(Http.Status.NO_CONTENT_204);
                     res.send();
                 });
+    }
+
+    private Tag[] tags(String metricName) {
+        final MetricID metricID = new MetricID(metricName); // fills in automatic tags
+        final List<Tag> tags = metricID.getTagsAsList();
+        return tags.toArray(new Tag[tags.size()]);
     }
 
     /**
