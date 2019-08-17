@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,8 +77,9 @@ final class HelidonMeter extends MetricImpl implements Meter {
     application:requests_fifteen_min_rate_per_second 12.126
     */
     @Override
-    protected void prometheusData(StringBuilder sb, String name, String tags) {
+    public void prometheusData(StringBuilder sb, String name, Map<String,String> tagsMap) {
         String nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_total";
+        String tags = prometheusTags(tagsMap);
         prometheusType(sb, nameUnits, "counter");
         prometheusHelp(sb, nameUnits);
         sb.append(nameUnits)

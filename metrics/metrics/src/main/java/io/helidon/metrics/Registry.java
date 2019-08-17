@@ -187,7 +187,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public boolean remove(String name) {
-        return allMetrics.entrySet().removeIf(entry -> entry.getValue().getName().equals(name));
+        return allMetrics.entrySet().removeIf(entry -> entry.getKey().getName().equals(name));
     }
 
     @Override
@@ -392,13 +392,11 @@ class Registry extends MetricRegistry {
      * @return Metadata for name.
      */
     private Optional<Metadata> findMetadataForName(String name) {
-        for (MetricID metricID : allMetrics.keySet()) {
-            if (metricID.getName().equals(name)) {
-                return Optional.of(allMetrics.get(metricID));
-            }
-        }
-        return Optional.empty();
-    }
+        return allMetrics.entrySet().stream()
+                .filter(entry -> entry.getKey().getName().equals(name))
+                .findFirst()
+                .map(entry -> entry.getValue());
+     }
 
     /**
      * Returns a sorted map based ona filter a metric class.

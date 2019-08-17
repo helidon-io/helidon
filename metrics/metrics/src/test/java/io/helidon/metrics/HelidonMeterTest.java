@@ -49,6 +49,7 @@ class HelidonMeterTest {
             + "# TYPE application_requests_rate_per_second gauge\n"
             + "application_requests_rate_per_second ";
     private static HelidonMeter meter;
+    private static MetricID meterID;
 
     @BeforeAll
     static void initClass() throws InterruptedException {
@@ -74,6 +75,7 @@ class HelidonMeterTest {
             }
         };
         meter = HelidonMeter.create("application", meta, myClock);
+        meterID = new MetricID("requests");
 
         // now run the "load"
         int count = 100;
@@ -130,7 +132,9 @@ class HelidonMeterTest {
 
     @Test
     void testPrometheus() {
-        String data = meter.prometheusData();
+        final StringBuilder sb = new StringBuilder();
+        meter.prometheusData(sb, meterID.getName(), meterID.getTags());
+        String data = sb.toString();
 
         assertThat(data, startsWith(EXPECTED_PROMETHEUS_START));
         assertThat(data, containsString("# TYPE application_requests_one_min_rate_per_second gauge\n"

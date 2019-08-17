@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -70,8 +71,9 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    protected void prometheusData(StringBuilder sb, String name, String tags) {
+    public void prometheusData(StringBuilder sb, String name, Map<String,String> tagsMap) {
         Units units = getUnits();
+        String tags = prometheusTags(tagsMap);
 
         String nameUnits;
         Optional<String> unit = units.getPrometheusUnit();

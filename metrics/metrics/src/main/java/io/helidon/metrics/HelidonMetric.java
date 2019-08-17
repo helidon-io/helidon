@@ -16,6 +16,8 @@
 
 package io.helidon.metrics;
 
+import java.util.Map;
+
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metric;
@@ -50,7 +52,9 @@ interface HelidonMetric extends Metric {
     /**
      * Return this metric data in prometheus format.
      *
-     * @return data and metadata of this metric in Prometheus format
+     * @param sb {@code StringBuilder} used for accumulating the output
+     * @param effectiveName metric name, possibly prefixed depending on the usage
+     * @param tags comma-separated tags expressed as name=value
      */
-    String prometheusData();
+    void prometheusData(StringBuilder sb, String effectiveName, Map<String,String> tags);
 }

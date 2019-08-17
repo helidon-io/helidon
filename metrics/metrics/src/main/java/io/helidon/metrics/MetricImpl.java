@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -198,30 +199,6 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         return sb.toString();
     }
 
-    @Override
-    public String prometheusData() {
-        StringBuilder sb = new StringBuilder();
-
-        String name = prometheusName(getName());
-        String tags = "";       // TODO getTagsAsString();
-        if (!tags.isEmpty()) {
-            tags = "{" + tags + "}";
-        }
-
-        prometheusData(sb, name, tags);
-
-        return sb.toString();
-    }
-
-    /**
-     * Create prometheus data.
-     *
-     * @param sb   builder to append to
-     * @param name without unit suffix (as some metrics use multiple different)
-     * @param tags tags for all values
-     */
-    protected abstract void prometheusData(StringBuilder sb, String name, String tags);
-
     void prometheusType(StringBuilder sb, String nameWithUnits, String type) {
         sb.append("# TYPE ")
                 .append(nameWithUnits)
@@ -259,21 +236,20 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     }
 
     final String prometheusNameWithUnits(String name, Optional<String> unit) {
-        return name + unit.map((it) -> "_" + it).orElse("");
+        return prometheusName(name) + unit.map((it) -> "_" + it).orElse("");
     }
 
     final String prometheusName(String name) {
-        // spec 3.2.1
+        return prometheusClean(name, registryType + "_");
+    }
 
-        //Dot (.), Space ( ), Dash (-) are translated to underscore (_).
-        name = name.replace('.', '_');
-        name = name.replace(' ', '_');
-        name = name.replace('-', '_');
+    private String prometheusClean(String name, String prefix) {
+        name = name.replaceAll("[^a-zA-Z0-9_]", "_");
 
         //Scope is always specified at the start of the metric name.
         //Scope and name are separated by underscore (_) as of
         // metrics 2.0 (OpenMetrics).
-        name = registryType + "_" + name;
+        name = prefix + name;
 
         String orig;
         do {
@@ -289,6 +265,21 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         } while (!orig.equals(name));
 
         return name;
+    }
+    final String prometheusTags(Map<String,String> tags) {
+        return (tags == null || tags.isEmpty() ? "" : tags.entrySet().stream()
+                .filter(entry -> entry.getKey() != null)
+                .map(entry -> String.format("%s=\"%s\"",
+                        prometheusClean(entry.getKey(), ""),
+                        prometheusTagValue(entry.getValue())))
+                .collect(Collectors.joining(",", "{", "}")));
+    }
+
+    private String prometheusTagValue(String value) {
+        value = value.replace("\\", "\\\\");
+        value = value.replace("\"", "\\\"");
+        value = value.replace("\n", "\\n");
+        return value;
     }
 
     String camelToSnake(String name) {

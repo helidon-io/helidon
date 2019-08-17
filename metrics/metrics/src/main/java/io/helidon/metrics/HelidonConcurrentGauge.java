@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
@@ -72,11 +73,11 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     @Override
-    protected void prometheusData(StringBuilder sb, String name, String tags) {
+    public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
         String nameWithUnits = prometheusNameWithUnits(name, Optional.empty());
         prometheusType(sb, nameWithUnits, getType());
         prometheusHelp(sb, nameWithUnits);
-        sb.append(nameWithUnits).append(tags).append(" ").append(getCount()).append('\n');
+        sb.append(nameWithUnits).append(prometheusTags(tags)).append(" ").append(getCount()).append('\n');
     }
 
     @Override

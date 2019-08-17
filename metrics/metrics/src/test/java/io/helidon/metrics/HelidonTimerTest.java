@@ -59,6 +59,7 @@ class HelidonTimerTest {
 
     private static HelidonTimer timer;
     private static HelidonTimer dataSetTimer;
+    private static MetricID dataSetTimerID;
     private static TestClock timerClock = TestClock.create();
     private static Metadata meta;
     private static TestClock dataSetTimerClock = TestClock.create();
@@ -72,6 +73,7 @@ class HelidonTimerTest {
                             MetricUnits.NANOSECONDS);
 
         dataSetTimer = HelidonTimer.create("application", meta, dataSetTimerClock);
+        dataSetTimerID = new MetricID("response_time");
 
         for (long i : SAMPLE_LONG_DATA) {
             dataSetTimer.update(i, TimeUnit.NANOSECONDS);
@@ -170,7 +172,7 @@ class HelidonTimerTest {
         dataSetTimerClock.setMillis(System.currentTimeMillis());
 
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        dataSetTimer.jsonData(builder, new MetricID("response_time"));
+        dataSetTimer.jsonData(builder, dataSetTimerID);
 
         JsonObject json = builder.build();
         JsonObject metricData = json.getJsonObject("response_time");
@@ -195,7 +197,9 @@ class HelidonTimerTest {
 
     @Test
     void testPrometheus() {
-        String prometheusData = dataSetTimer.prometheusData();
+        final StringBuilder sb = new StringBuilder();
+        dataSetTimer.prometheusData(sb, dataSetTimerID.getName(), dataSetTimerID.getTags());
+        final String prometheusData = sb.toString();
         assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
                                                       + "application_response_time_rate_per_second 200.0\n"
                                                       + "# TYPE application_response_time_one_min_rate_per_second gauge\n"

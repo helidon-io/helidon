@@ -27,6 +27,7 @@ import io.helidon.metrics.MetricsSupport;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Meter;
+import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.Disabled;
@@ -125,7 +126,7 @@ public class MetricsTest extends MetricsBaseTest {
         bean.setValue(EXPECTED_VALUE);
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
-        String promData = MetricsSupport.toPrometheusData(gauge);
+        String promData = MetricsSupport.toPrometheusData(new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge);
 
         Pattern prometheusDataPattern = Pattern.compile("(?s)#\\s+TYPE\\s+([^_]+)_(\\w+)\\s*gauge.*#\\s*HELP.*\\{([^\\}]*)\\}\\s*(\\d*).*");
         Matcher m = prometheusDataPattern.matcher(promData);

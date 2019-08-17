@@ -16,15 +16,17 @@
 
 package io.helidon.metrics;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.json.Json;
@@ -44,6 +46,8 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -174,25 +178,31 @@ public final class MetricsSupport implements Service {
     }
 
     static String toPrometheusData(Registry... registries) {
-        StringBuilder result = new StringBuilder();
-
-        for (Registry registry : registries) {
-            result.append(toPrometheusData(registry));
-        }
-
-        return result.toString();
+        return Arrays.stream(registries)
+                .map(r -> toPrometheusData(r))
+                .collect(Collectors.joining());
     }
 
     static String toPrometheusData(Registry registry) {
-        StringBuilder result = new StringBuilder();
-
-        registry.stream()
+        return registry.stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
-                .forEach(mpMetric -> result.append(mpMetric.getValue().prometheusData()));
-
-        return result.toString();
+                .collect(StringBuilder::new,
+                        (sb, entry) -> toPrometheusData(sb, entry.getKey(), entry.getValue()),
+                        StringBuilder::append)
+                .toString();
     }
 
+    /**
+     * Formats a metric in Prometheus format.
+     * @param metricID the {@code MetricID} for the metric to be formatted
+     * @param metric the {@code Metric} containing the data to be formatted
+     * @return metric info in Prometheus format
+     */
+    public static String toPrometheusData(MetricID metricID, Metric metric) {
+        final StringBuilder sb = new StringBuilder();
+        checkMetricTypeThenRun(sb, metricID.getName(), metricID.getTags(), metric);
+        return sb.toString();
+    }
     /**
      * Returns the Prometheus data for the specified {@link Metric}.
      * <p>
@@ -201,14 +211,15 @@ public final class MetricsSupport implements Service {
      * throwing an {@code IllegalArgumentException} if the metric cannot be
      * converted.
      *
+     * @param metricID the {@code MetricID} for the metric to convert
      * @param metric the {@code Metric} to convert to Prometheus format
      * @return {@code String} containing the Prometheus data
      */
-    public static String toPrometheusData(Metric metric) {
-        return checkMetricTypeThenRun(metric, HelidonMetric::prometheusData);
+    static void toPrometheusData(StringBuilder sb, MetricID metricID, Metric metric) {
+        checkMetricTypeThenRun(sb, metricID.getName(), metricID.getTags(), metric);
     }
 
-    private static String checkMetricTypeThenRun(Metric metric, Function<HelidonMetric, String> fn) {
+    private static void checkMetricTypeThenRun(StringBuilder sb, String name, Map<String,String> tags, Metric metric) {
         Objects.requireNonNull(metric);
 
         if (!(metric instanceof HelidonMetric)) {
@@ -217,44 +228,48 @@ public final class MetricsSupport implements Service {
                     metric.getClass().getName(),
                     HelidonMetric.class.getName()));
         }
-        return fn.apply((HelidonMetric) metric);
+
+        ((HelidonMetric) metric).prometheusData(sb, name, tags);
     }
 
     // unit testable
     static JsonObject toJsonData(Registry... registries) {
-        JsonObjectBuilder builder = JSON.createObjectBuilder();
-        for (Registry registry : registries) {
-            if (!registry.empty()) {
-                builder.add(registry.type(), toJsonData(registry));
-            }
-        }
-        return builder.build();
+        return toJson(MetricsSupport::toJsonData, registries);
     }
 
     static JsonObject toJsonData(Registry registry) {
-        JsonObjectBuilder builder = JSON.createObjectBuilder();
-        registry.stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .forEach(mpMetric -> mpMetric.getValue().jsonData(builder, mpMetric.getKey()));
-        return builder.build();
+        return toJson(
+                (builder, entry) -> entry.getValue().jsonData(builder, entry.getKey()),
+                registry);
     }
 
     static JsonObject toJsonMeta(Registry... registries) {
-        JsonObjectBuilder builder = JSON.createObjectBuilder();
-        for (Registry registry : registries) {
-            if (!registry.empty()) {
-                builder.add(registry.type(), toJsonMeta(registry));
-            }
-        }
-        return builder.build();
+        return toJson(MetricsSupport::toJsonMeta, registries);
     }
 
     static JsonObject toJsonMeta(Registry registry) {
-        JsonObjectBuilder builder = JSON.createObjectBuilder();
-        registry.stream()
+        return toJson((builder, entry) -> entry.getValue().jsonMeta(builder), registry);
+    }
+
+    private static JsonObject toJson(Function<Registry,JsonObject> fn, Registry... registries) {
+        return Arrays.stream(registries)
+                .filter(r -> !r.empty())
+                .collect(JSON::createObjectBuilder,
+                        (builder, registry) -> builder.add(registry.type(), fn.apply(registry)),
+                        JsonObjectBuilder::addAll)
+                .build();
+    }
+
+    private static JsonObject toJson(
+            BiConsumer<JsonObjectBuilder,? super Map.Entry<MetricID,MetricImpl>> accumulator,
+            Registry registry) {
+        return registry.stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
-                .forEach(mpMetric -> mpMetric.getValue().jsonMeta(builder));
-        return builder.build();
+                .collect(JSON::createObjectBuilder,
+                        accumulator,
+                        JsonObjectBuilder::addAll
+                        )
+                .build();
     }
 
     /**
@@ -364,7 +379,9 @@ public final class MetricsSupport implements Service {
                         metric.jsonData(builder, new MetricID(metricName));
                         res.send(builder.build());
                     } else {
-                        res.send(metric.prometheusData());
+                        final StringBuilder sb = new StringBuilder();
+                        metric.prometheusData(sb, metricName, Collections.emptyMap());
+                        res.send(sb.toString());
                     }
                 }, () -> {
                     res.status(Http.Status.NOT_FOUND_404);

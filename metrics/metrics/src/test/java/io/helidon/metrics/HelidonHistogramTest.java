@@ -81,6 +81,7 @@ class HelidonHistogramTest {
 
     private static Metadata meta;
     private static HelidonHistogram histoInt;
+    private static MetricID histoIntID;
     private static HelidonHistogram delegatingHistoInt;
     private static HelidonHistogram histoLong;
     private static HelidonHistogram delegatingHistoLong;
@@ -94,6 +95,7 @@ class HelidonHistogramTest {
                             MetricUnits.KILOBYTES);
 
         histoInt = HelidonHistogram.create("application", meta);
+        histoIntID = new MetricID("file_sizes");
         delegatingHistoInt = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
         histoLong = HelidonHistogram.create("application", meta);
         delegatingHistoLong = HelidonHistogram.create("application", meta, HelidonHistogram.create("ignored", meta));
@@ -158,7 +160,9 @@ class HelidonHistogramTest {
 
     @Test
     void testPrometheus() {
-        assertThat(histoInt.prometheusData(), is(EXPECTED_PROMETHEUS_OUTPUT));
+        final StringBuilder sb = new StringBuilder();
+        histoInt.prometheusData(sb, histoIntID.getName(), histoIntID.getTags());
+        assertThat(sb.toString(), is(EXPECTED_PROMETHEUS_OUTPUT));
     }
 
     @Test

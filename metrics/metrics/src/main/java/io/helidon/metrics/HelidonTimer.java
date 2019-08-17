@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -105,9 +106,9 @@ final class HelidonTimer extends MetricImpl implements Timer {
     }
 
     @Override
-    protected void prometheusData(StringBuilder sb, String name, String tags) {
+    public void prometheusData(StringBuilder sb, String name, Map<String,String> tagsMap) {
         String nameUnits;
-
+        String tags = prometheusTags(tagsMap);
         nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_rate_per_second";
         prometheusType(sb, nameUnits, "gauge");
         sb.append(nameUnits)

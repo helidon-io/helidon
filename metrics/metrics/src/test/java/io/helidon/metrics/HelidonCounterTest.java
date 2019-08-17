@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import io.helidon.common.CollectionsHelper;
 import java.io.StringReader;
 
 import javax.json.Json;
@@ -27,6 +28,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +43,9 @@ import org.junit.jupiter.api.Disabled;
 class HelidonCounterTest {
     private static Metadata meta;
     private HelidonCounter counter;
+    private MetricID counterID;
     private HelidonCounter wrappingCounter;
+    private MetricID wrappingCounterID;
 
     @BeforeAll
     static void initClass() {
@@ -71,7 +75,9 @@ class HelidonCounterTest {
             }
         };
         counter = HelidonCounter.create("base", meta);
+        counterID = new MetricID("theName", new Tag("a", "b"), new Tag("c", "d"));
         wrappingCounter = HelidonCounter.create("base", meta, wrapped);
+        wrappingCounterID = new MetricID("theName");
     }
 
     @Test
@@ -96,8 +102,8 @@ class HelidonCounterTest {
     }
 
     @Test
-    @Disabled // TODO - remove disabled and fix tag-based expected values
     void testPrometheusData() {
+        StringBuilder sb = new StringBuilder();
         counter.inc(17);
         wrappingCounter.inc(17);
 
@@ -105,28 +111,31 @@ class HelidonCounterTest {
                 + "# HELP base_theName theDescription\n"
                 + "base_theName{a=\"b\",c=\"d\"} 17\n";
 
-        assertThat(counter.prometheusData(), is(expected));
+        counter.prometheusData(sb, counterID.getName(), counterID.getTags());
+        assertThat(sb.toString(), is(expected));
 
         expected = "# TYPE base_theName counter\n"
                 + "# HELP base_theName theDescription\n"
-                + "base_theName{a=\"b\",c=\"d\"} 49\n";
-        assertThat(wrappingCounter.prometheusData(), is(expected));
+                + "base_theName 49\n";
+        sb = new StringBuilder();
+        wrappingCounter.prometheusData(sb, wrappingCounterID.getName(), wrappingCounterID.getTags());
+        assertThat(sb.toString(), is(expected));
     }
+
 
     @Test
     void testJsonData() {
         counter.inc(47);
         wrappingCounter.inc(47);
 
-        final MetricID metricID = new MetricID("theName");
-        JsonObject expected = Json.createReader(new StringReader("{\"theName\": 47}")).readObject();
+        JsonObject expected = Json.createReader(new StringReader("{\"theName;a=b;c=d\": 47}")).readObject();
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        counter.jsonData(builder, metricID);
+        counter.jsonData(builder, counterID);
         assertThat(builder.build(), is(expected));
 
         expected = Json.createReader(new StringReader("{\"theName\": 49}")).readObject();
         builder = Json.createObjectBuilder();
-        wrappingCounter.jsonData(builder, metricID);
+        wrappingCounter.jsonData(builder, wrappingCounterID);
         assertThat(builder.build(), is(expected));
     }
 

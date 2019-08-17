@@ -17,6 +17,7 @@
 package io.helidon.metrics;
 
 import java.io.StringReader;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.json.Json;
@@ -47,7 +48,9 @@ class MetricImplTest {
             + "\"displayName\":\"theDisplayName\"}}";
 
     private static MetricImpl impl;
+    private static MetricID implID;
     private static MetricImpl implWithoutDescription;
+    private static MetricID implWithoutDescriptionID;
 
     @BeforeAll
     public static void initClass() {
@@ -59,7 +62,7 @@ class MetricImplTest {
 
         impl = new MetricImpl("base", meta) {
             @Override
-            protected void prometheusData(StringBuilder sb, String name, String tags) {
+            public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
                 prometheusType(sb, name, "counter");
                 prometheusHelp(sb, name);
                 sb.append(name).append(" ").append("45");
@@ -70,12 +73,13 @@ class MetricImplTest {
                 builder.add(metricID.getName(), 45);
             }
         };
+        implID = new MetricID(impl.prometheusName("theName"));
 
         meta = new HelidonMetadata("counterWithoutDescription", MetricType.COUNTER);
 
         implWithoutDescription = new MetricImpl("base", meta) {
             @Override
-            protected void prometheusData(StringBuilder sb, String name, String tags) {
+            public void prometheusData(StringBuilder sb, String name, Map<String,String> tags) {
                 prometheusType(sb, name, "counter");
                 prometheusHelp(sb, name);
                 sb.append(name).append(" ").append("45");
@@ -86,6 +90,7 @@ class MetricImplTest {
                 builder.add(metricID.getName(), 45);
             }
         };
+        implWithoutDescriptionID = new MetricID("counterWithoutDescription");
     }
 
     @Test
@@ -96,7 +101,7 @@ class MetricImplTest {
                   () -> assertThat(impl.prometheusName("a b c d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("a-b-c-d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("a2.b.cC.d"), is("base_a2_b_cC_d")),
-                  () -> assertThat(impl.prometheusName("a:b.c.d"), is("base_a:b_c_d")),
+                  () -> assertThat(impl.prometheusName("a:b.c.d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("a .b..c_.d"), is("base_a_b_c_d")),
                   () -> assertThat(impl.prometheusName("_aB..c_.d"), is("base_aB_c_d")));
     }
@@ -104,8 +109,8 @@ class MetricImplTest {
     @Test
     void testUtilMethods() {
         assertThat(impl.camelToSnake("ahojJakSeMate"), is("ahoj_jak_se_mate"));
-        assertThat(impl.prometheusNameWithUnits("the_name", Optional.empty()), is("the_name"));
-        assertThat(impl.prometheusNameWithUnits("the_name", Optional.of("seconds")), is("the_name_seconds"));
+        assertThat(impl.prometheusNameWithUnits("the_name", Optional.empty()), is("base_the_name"));
+        assertThat(impl.prometheusNameWithUnits("the_name", Optional.of("seconds")), is("base_the_name_seconds"));
     }
 
     @Test
@@ -113,7 +118,9 @@ class MetricImplTest {
         String expected = "# TYPE base_theName counter\n"
                 + "# HELP base_theName theDescription\n"
                 + "base_theName 45";
-        assertThat(impl.prometheusData(), is(expected));
+        final StringBuilder sb = new StringBuilder();
+        impl.prometheusData(sb, implID.getName(), implID.getTags());
+        assertThat(sb.toString(), is(expected));
     }
 
     @Test
@@ -121,7 +128,9 @@ class MetricImplTest {
         String expected = "# TYPE base_counterWithoutDescription counter\n"
                 + "# HELP base_counterWithoutDescription \n"
                 + "base_counterWithoutDescription 45";
-        assertThat(implWithoutDescription.prometheusData(), is(expected));
+        final StringBuilder sb = new StringBuilder();
+        implWithoutDescription.prometheusData(sb, "base_" + implWithoutDescriptionID.getName(), implWithoutDescriptionID.getTags());
+        assertThat(sb.toString(), is(expected));
     }
 
     @Test
