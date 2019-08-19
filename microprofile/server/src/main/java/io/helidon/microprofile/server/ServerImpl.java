@@ -20,10 +20,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,13 +60,14 @@ public class ServerImpl implements Server {
     private static final Logger LOGGER = Logger.getLogger(ServerImpl.class.getName());
     private static final Logger JERSEY_LOGGER = Logger.getLogger(ServerImpl.class.getName() + ".jersey");
     private static final Logger STARTUP_LOGGER = Logger.getLogger("io.helidon.microprofile.startup.server");
-    private static final AtomicReference<ServerImpl> STARTED_INSTANCE = new AtomicReference<>();
+    private static final StartedServers STARTED_SERVERS = new StartedServers();
 
     private final SeContainer container;
     private final boolean containerCreated;
     private final String host;
     private final WebServer server;
     private final Context context;
+    private final boolean supportParallelRun;
     private int port = -1;
 
     ServerImpl(Builder builder) {
@@ -73,6 +76,7 @@ public class ServerImpl implements Server {
         this.container = builder.cdiContainer();
         this.containerCreated = builder.containerCreated();
         this.context = builder.context();
+        this.supportParallelRun = builder.supportParallelRun();
 
         InetAddress listenHost;
         if (null == builder.host()) {
@@ -298,18 +302,7 @@ public class ServerImpl implements Server {
     public Server start() {
         STARTUP_LOGGER.entering(ServerImpl.class.getName(), "start");
 
-        ServerImpl existingServer = STARTED_INSTANCE
-                .getAndAccumulate(this, (server1, server2) -> ((null == server1) ? server2 : server1));
-        if (null != existingServer) {
-            LOGGER.warning("*****************************************************************");
-            LOGGER.warning("** WARNING                                                     **");
-            LOGGER.warning("** There is an existing server running on port " + existingServer.port + ".           **");
-            LOGGER.warning("** You are starting another server on configured port: " + port + ".     **");
-            LOGGER.warning("** This is NOT A SUPPORTED CONFIGURATION.                      **");
-            LOGGER.warning("** Some MP services will NOT WORK AS EXPECTED.                 **");
-            LOGGER.warning("** The servers use shared CDI and classloader!                 **");
-            LOGGER.warning("*****************************************************************");
-        }
+        STARTED_SERVERS.start(this);
 
         CountDownLatch cdl = new CountDownLatch(1);
         AtomicReference<Throwable> throwRef = new AtomicReference<>();
@@ -363,6 +356,7 @@ public class ServerImpl implements Server {
                     LOGGER.log(Level.SEVERE, "Container already closed", e);
                 }
             }
+            STARTED_SERVERS.stop(this);
         }
 
         return this;
@@ -403,5 +397,42 @@ public class ServerImpl implements Server {
     @Override
     public int port() {
         return port;
+    }
+
+    private static final class StartedServers {
+        private final Map<ServerImpl, Boolean> runningServers = new IdentityHashMap<>();
+        private boolean parallelSupported = false;
+
+        private StartedServers() {
+        }
+
+        synchronized void start(ServerImpl server) {
+            if (runningServers.isEmpty()) {
+                // this is the first server
+                runningServers.put(server, true);
+                parallelSupported = server.supportParallelRun;
+                return;
+            }
+
+            // check if parallel supported
+            if (parallelSupported && server.supportParallelRun) {
+                // parallel runtime is supported - explicitly enabled
+                LOGGER.info("You are using an unsupported configuration of running more than one MP Server in the same JVM");
+                runningServers.put(server, true);
+                return;
+            }
+
+            // parallel is not supported, throw an exception
+            throw new IllegalStateException("There is already a running MP server in this JVM. You are trying to start another "
+                                                    + "server on port " + server.port + ". This is not supported. "
+                                                    + "If you want to do it (even if not supported), you "
+                                                    + "can configure server.support-parallel configuration option"
+                                                    + " or explicitly call supportParallel method on builder to enable"
+                                                    + " this support on all Server instances.");
+        }
+
+        synchronized void stop(ServerImpl server) {
+            runningServers.remove(server);
+        }
     }
 }
