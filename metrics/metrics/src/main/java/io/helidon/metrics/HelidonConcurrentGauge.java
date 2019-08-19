@@ -17,7 +17,6 @@
 package io.helidon.metrics;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.JsonObjectBuilder;
 
@@ -86,15 +85,15 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {
-        private final LongAdder adder;
-        private AtomicLong lastMax;
-        private AtomicLong lastMin;
-        private AtomicLong currentMax;
-        private AtomicLong currentMin;
-        private AtomicLong lastMinute;
+        private final AtomicLong count;
+        private final AtomicLong lastMax;
+        private final AtomicLong lastMin;
+        private final AtomicLong currentMax;
+        private final AtomicLong currentMin;
+        private final AtomicLong lastMinute;
 
         ConcurrentGaugeImpl() {
-            adder = new LongAdder();
+            count = new AtomicLong(0L);
             lastMax = new AtomicLong(Long.MIN_VALUE);
             lastMin = new AtomicLong(Long.MAX_VALUE);
             currentMax = new AtomicLong(Long.MIN_VALUE);
@@ -104,7 +103,7 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
 
         @Override
         public long getCount() {
-            return adder.sum();
+            return count.get();
         }
 
         @Override
@@ -122,9 +121,9 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         }
 
         @Override
-        public void inc() {
+        public synchronized void inc() {
             updateState();
-            adder.increment();
+            count.incrementAndGet();
             final long count = getCount();
             if (count > currentMax.get()) {
                 currentMax.set(count);
@@ -132,9 +131,9 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         }
 
         @Override
-        public void dec() {
+        public synchronized void dec() {
             updateState();
-            adder.decrement();
+            count.decrementAndGet();
             final long count = getCount();
             if (count < currentMin.get()) {
                 currentMin.set(count);
