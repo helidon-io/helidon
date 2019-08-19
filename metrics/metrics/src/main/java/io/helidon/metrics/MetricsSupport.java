@@ -293,29 +293,25 @@ public final class MetricsSupport implements Service {
                                                          "Total number of HTTP requests",
                                                          "Each request (regardless of HTTP method) will increase this counter",
                                                          MetricType.COUNTER,
-                                                         MetricUnits.NONE),
-                                            tags(metricPrefix + "count"));
+                                                         MetricUnits.NONE));
 
         Meter totalMeter = vendor.meter(new HelidonMetadata(metricPrefix + "meter",
                                                      "Meter for overall HTTP requests",
                                                      "Each request will mark the meter to see overall throughput",
                                                      MetricType.METERED,
-                                                     MetricUnits.NONE),
-                                            tags(metricPrefix + "meter"));
+                                                     MetricUnits.NONE));
 
         vendor.counter(new HelidonMetadata("grpc.requests.count",
                                     "Total number of gRPC requests",
                                     "Each gRPC request (regardless of the method) will increase this counter",
                                     MetricType.COUNTER,
-                                    MetricUnits.NONE),
-                            tags("grpc.requests.count"));
+                                    MetricUnits.NONE));
 
         vendor.meter(new HelidonMetadata("grpc.requests.meter",
                                   "Meter for overall gRPC requests",
                                   "Each gRPC request will mark the meter to see overall throughput",
                                   MetricType.METERED,
-                                  MetricUnits.NONE),
-                            tags("grpc.requests.meter"));
+                                  MetricUnits.NONE));
 
         rules.any((req, res) -> {
             totalCount.inc();
@@ -431,12 +427,6 @@ public final class MetricsSupport implements Service {
                     res.status(Http.Status.NO_CONTENT_204);
                     res.send();
                 });
-    }
-
-    private Tag[] tags(String metricName) {
-        final MetricID metricID = new MetricID(metricName); // fills in automatic tags
-        final List<Tag> tags = metricID.getTagsAsList();
-        return tags.toArray(new Tag[tags.size()]);
     }
 
     /**

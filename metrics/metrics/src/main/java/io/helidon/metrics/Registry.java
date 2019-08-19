@@ -18,6 +18,7 @@ package io.helidon.metrics;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
@@ -65,7 +66,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
-        return register(metadata, metric, (Tag[]) null);
+        return register(metadata, metric, tags(metadata.getName()));
     }
 
     @SuppressWarnings("unchecked")
@@ -81,7 +82,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata) {
-        return counter(metadata, (Tag[]) null);
+        return counter(metadata, tags(metadata.getName()));
     }
 
     @Override
@@ -103,7 +104,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata) {
-        return histogram(metadata, (Tag[]) null);
+        return histogram(metadata, tags(metadata.getName()));
     }
 
     @Override
@@ -125,7 +126,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Meter meter(Metadata metadata) {
-        return meter(metadata, (Tag[]) null);
+        return meter(metadata, tags(metadata.getName()));
     }
 
     @Override
@@ -147,7 +148,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public Timer timer(Metadata metadata) {
-        return timer(metadata, (Tag[]) null);
+        return timer(metadata, tags(metadata.getName()));
     }
 
     @Override
@@ -169,7 +170,7 @@ class Registry extends MetricRegistry {
 
     @Override
     public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return concurrentGauge(metadata, (Tag[]) null);
+        return concurrentGauge(metadata, tags(metadata.getName()));
     }
 
     @Override
@@ -414,5 +415,11 @@ class Registry extends MetricRegistry {
                 .collect(Collectors.toMap(Map.Entry::getKey, it -> metricClass.cast(it.getValue())));
 
         return new TreeMap<>(collected);
+    }
+
+    private Tag[] tags(String metricName) {
+        final MetricID metricID = new MetricID(metricName); // fills in automatic tags
+        final List<Tag> tags = metricID.getTagsAsList();
+        return tags.toArray(new Tag[tags.size()]);
     }
 }
