@@ -37,8 +37,8 @@ within a Helidon MP application.
 
 By following this guide, you’ll enhance a bare-bones Helidon MP
 application to use JPA, backed by
-https://www.eclipse.org/eclipselink/#jpa[EclipseLink]EclipseLink, to
-access an in-memory https://www.h2database.com/html/main.html[H2
+https://www.eclipse.org/eclipselink/#jpa[EclipseLink], to access an
+in-memory https://www.h2database.com/html/main.html[H2
 database]. You’ll see how to install the relevant dependencies and add
 JPA-related code to your application.
 
@@ -85,7 +85,6 @@ Add the following dependency in your `pom.xml`:
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-jpa</artifactId>
-    <version>{helidon-version}</version>
     <scope>runtime</scope>
 </dependency>
 ----
@@ -99,8 +98,10 @@ Add the following dependency in your `pom.xml`:
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
-    <version>{helidon-version}</version>
-    <scope>runtime</scope>
+    <scope>compile</scope> <!--1-->
 </dependency>
 ----
+
+<1> Note that the scope is `compile`.  We'll see why shortly.
+
 
