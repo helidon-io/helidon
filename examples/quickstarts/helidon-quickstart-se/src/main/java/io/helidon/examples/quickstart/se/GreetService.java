@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonException;
 
@@ -48,6 +49,7 @@ import io.helidon.webserver.Service;
 
 public class GreetService implements Service {
 
+<<<<<<< HEAD
 		/**
 		 * The config value for the key {@code greeting}.
 		 */
@@ -144,5 +146,103 @@ public class GreetService implements Service {
 								return null;
 						});
 		}
+=======
+    /**
+     * The config value for the key {@code greeting}.
+     */
+    private final AtomicReference<String> greeting = new AtomicReference<>();
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    GreetService(Config config) {
+        greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
+    }
+
+    /**
+     * A service registers itself by updating the routine rules.
+     * @param rules the routing rules.
+     */
+    @Override
+    public void update(Routing.Rules rules) {
+        rules
+            .get("/", this::getDefaultMessageHandler)
+            .get("/{name}", this::getMessageHandler)
+            .put("/greeting", this::updateGreetingHandler);
+    }
+
+    /**
+     * Return a wordly greeting message.
+     * @param request the server request
+     * @param response the server response
+     */
+    private void getDefaultMessageHandler(ServerRequest request,
+                                   ServerResponse response) {
+        sendResponse(response, "World");
+    }
+
+    /**
+     * Return a greeting message using the name that was provided.
+     * @param request the server request
+     * @param response the server response
+     */
+    private void getMessageHandler(ServerRequest request,
+                            ServerResponse response) {
+        String name = request.path().param("name");
+        sendResponse(response, name);
+    }
+
+    private void sendResponse(ServerResponse response, String name) {
+        String msg = String.format("%s %s!", greeting.get(), name);
+
+        JsonObject returnObject = JSON.createObjectBuilder()
+                .add("message", msg)
+                .build();
+        response.send(returnObject);
+    }
+
+    private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
+
+        if (!jo.containsKey("greeting")) {
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                    .add("error", "No greeting provided")
+                    .build();
+            response.status(Http.Status.BAD_REQUEST_400)
+                    .send(jsonErrorObject);
+            return;
+        }
+
+        greeting.set(jo.getString("greeting"));
+        response.status(Http.Status.NO_CONTENT_204).send();
+    }
+
+    /**
+     * Set the greeting to use in future messages.
+     * @param request the server request
+     * @param response the server response
+     */
+    private void updateGreetingHandler(ServerRequest request,
+                                       ServerResponse response) {
+        request.content().as(JsonObject.class)
+            .thenAccept(jo -> updateGreetingFromJson(jo, response))
+            .exceptionally((Throwable ex) -> {
+                if (ex.getCause() instanceof JsonException){
+                    String error = String.format("Error with JSON: %s", ex.getCause().toString());
+                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                        .add("error", error)
+                        .build();
+                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+                } else {
+                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                        .add("error", ex.getLocalizedMessage())
+                        .build();
+                    request.next(ex);
+                }
+
+                ex.printStackTrace();
+
+                return null;
+            });
+    }
+>>>>>>> temporary-work
 
 }
