@@ -25,7 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -423,7 +422,13 @@ public class ServerImpl implements Server {
             }
 
             // parallel is not supported, throw an exception
-            throw new IllegalStateException("There is already a running MP server in this JVM. You are trying to start another "
+            List<Integer> ports = runningServers.keySet()
+                    .stream()
+                    .map(ServerImpl::port)
+                    .collect(Collectors.toList());
+
+            throw new IllegalStateException("There are already running MP servers on ports " + ports + " in this JVM. You are"
+                                                    + " trying to start another "
                                                     + "server on port " + server.port + ". This is not supported. "
                                                     + "If you want to do it (even if not supported), you "
                                                     + "can configure server.support-parallel configuration option"

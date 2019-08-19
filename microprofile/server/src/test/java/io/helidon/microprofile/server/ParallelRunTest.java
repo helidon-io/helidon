@@ -70,11 +70,11 @@ class ParallelRunTest {
 
     @Test
     void testParallelRunEnabled() {
-        server = Server.builder()
+        Server server2 = Server.builder()
                 .port(0)
                 .supportParallel(true)
                 .build();
-        server.start();
-        server.stop();
+        server2.start();
+        server2.stop();
     }
 }
