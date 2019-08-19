@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonException;
 import javax.json.JsonObject;
 
 import io.helidon.common.http.Http;
@@ -125,10 +126,23 @@ public class GreetService implements Service {
         request.content()
                .as(JsonObject.class)
                .thenAccept(jo -> updateGreetingFromJson(jo, response))
-               .exceptionally(t -> {
-                   JsonObject jsonErrorObject = JSON.createObjectBuilder().add("error", "No body provided").build();
+               .exceptionally((Throwable ex) -> {
+                 if (ex.getCause() instanceof JsonException){
+                   String error = String.format("Error with JSON: %s", ex.getCause().toString());
+                   JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                     .add("error", error)
+                     .build();
                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-                   return null;
+                 } else {
+                   JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                     .add("error", ex.getLocalizedMessage())
+                     .build();
+                   request.next(ex);
+                 }
+
+                 ex.printStackTrace();
+
+                 return null;
                });
     }
 
