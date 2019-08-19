@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.metrics;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -48,6 +46,13 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonValue;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -56,14 +61,13 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Support for metrics for Helidon Web Server.
  *
  * <p>
- * By defaults cretes the /metrics endpoint with three
- * sub-paths: application, vendor and base.
+ * By defaults cretes the /metrics endpoint with three sub-paths: application,
+ * vendor and base.
  * <p>
  * To register with web server:
  * <pre>{@code
@@ -71,15 +75,16 @@ import org.eclipse.microprofile.metrics.Tag;
  *        .register(MetricsSupport.create())
  * }</pre>
  * <p>
- * This class supports finer grained configuration using Helidon Config: {@link #create(Config)}.
- * The following configuration parameters can be used:
+ * This class supports finer grained configuration using Helidon Config:
+ * {@link #create(Config)}. The following configuration parameters can be used:
  * <table border="1">
  * <caption>Configuration parameters</caption>
  * <tr><th>key</th><th>default value</th><th>description</th></tr>
- * <tr><td>helidon.metrics.context</td><td>/metrics</td><td>Context root under which the rest endpoints are available</td></tr>
- * <tr><td>helidon.metrics.base.${metricName}.enabled</td><td>true</td><td>Can control which base metrics are exposed, set to
- * false
- * to disable a base metric</td></tr>
+ * <tr><td>helidon.metrics.context</td><td>/metrics</td><td>Context root under
+ * which the rest endpoints are available</td></tr>
+ * <tr><td>helidon.metrics.base.${metricName}.enabled</td><td>true</td><td>Can
+ * control which base metrics are exposed, set to false to disable a base
+ * metric</td></tr>
  * </table>
  * <p>
  * The application metrics registry is then available as follows:
@@ -88,6 +93,7 @@ import org.eclipse.microprofile.metrics.Tag;
  * }</pre>
  */
 public final class MetricsSupport implements Service {
+
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_CONTEXT = "/metrics";
     private final String context;
@@ -103,18 +109,19 @@ public final class MetricsSupport implements Service {
     /**
      * Create an instance to be registered with Web Server with all defaults.
      *
-     * @return a new instance built with default values (for context, base metrics enabled)
+     * @return a new instance built with default values (for context, base
+     * metrics enabled)
      */
     public static MetricsSupport create() {
         return MetricsSupport.builder().build();
     }
 
     /**
-     * Create an instance to be registered with Web Server maybe overriding default values with
-     * configured values.
+     * Create an instance to be registered with Web Server maybe overriding
+     * default values with configured values.
      *
-     * @param config Config instance to use to (maybe) override configuration of this component. See class javadoc for supported
-     *               configuration keys.
+     * @param config Config instance to use to (maybe) override configuration of
+     * this component. See class javadoc for supported configuration keys.
      * @return a new instance configured withe config provided
      */
     public static MetricsSupport create(Config config) {
@@ -131,8 +138,8 @@ public final class MetricsSupport implements Service {
     }
 
     /**
-     * Check if the passed headers (specifically Accept) prefer
-     * data in JSON format.
+     * Check if the passed headers (specifically Accept) prefer data in JSON
+     * format.
      *
      * @return true if passed headers prefer data in JSON format.
      */
@@ -142,7 +149,7 @@ public final class MetricsSupport implements Service {
 
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("Generating metrics for media type " + mediaType
-                + ". requestsJson=" + requestsJson);
+                    + ". requestsJson=" + requestsJson);
         }
         return requestsJson;
     }
@@ -195,6 +202,7 @@ public final class MetricsSupport implements Service {
 
     /**
      * Formats a metric in Prometheus format.
+     *
      * @param metricID the {@code MetricID} for the metric to be formatted
      * @param metric the {@code Metric} containing the data to be formatted
      * @return metric info in Prometheus format
@@ -204,13 +212,13 @@ public final class MetricsSupport implements Service {
         checkMetricTypeThenRun(sb, metricID, metric);
         return sb.toString();
     }
+
     /**
      * Returns the Prometheus data for the specified {@link Metric}.
      * <p>
      * Not every {@code Metric} supports conversion to Prometheus data. This
-     * method checks the metric first before performing the conversion,
-     * throwing an {@code IllegalArgumentException} if the metric cannot be
-     * converted.
+     * method checks the metric first before performing the conversion, throwing
+     * an {@code IllegalArgumentException} if the metric cannot be converted.
      *
      * @param metricID the {@code MetricID} for the metric to convert
      * @param metric the {@code Metric} to convert to Prometheus format
@@ -264,54 +272,67 @@ public final class MetricsSupport implements Service {
     private static JsonObject toJson(
             BiConsumer<JsonObjectBuilder, ? super Map.Entry<MetricID, MetricImpl>> accumulator,
             Registry registry) {
-        return registry.stream()
+
+        JsonObjectBuilder builder = new MergingJsonObjectBuilder(JSON.createObjectBuilder());
+//        return registry.stream()
+        registry.stream()
                 .sorted(Comparator.comparing(Map.Entry::getKey))
-                .collect(JSON::createObjectBuilder,
-                        accumulator,
-                        JsonObjectBuilder::addAll
-                        )
-                .build();
+                .peek(entry -> {
+                    org.eclipse.microprofile.metrics.MetricID metricID = entry.getKey();
+                    MetricImpl metric = entry.getValue();
+                })
+                .forEach(entry -> {
+                    entry.getValue().jsonData(builder, entry.getKey());
+                });
+//                .collect(JSON::createObjectBuilder,
+//                        accumulator,
+//                        JsonObjectBuilder::addAll
+//                        )
+//                .build();
+        JsonObject jo = builder.build();
+        return jo;
     }
 
     /**
-     * Configure vendor metrics on the provided routing.
-     * This method is exclusive to {@link #update(io.helidon.webserver.Routing.Rules)}
-     * (e.g. you should not use both, as otherwise you would duplicate the metrics)
+     * Configure vendor metrics on the provided routing. This method is
+     * exclusive to {@link #update(io.helidon.webserver.Routing.Rules)} (e.g.
+     * you should not use both, as otherwise you would duplicate the metrics)
      *
      * @param routingName name of the routing (may be null)
-     * @param rules       routing builder or routing rules
+     * @param rules routing builder or routing rules
      */
     public void configureVendorMetrics(String routingName,
-                                       Routing.Rules rules) {
+            Routing.Rules rules) {
         String metricPrefix = (null == routingName ? "" : routingName + ".") + "requests.";
 
         /*
-         * For each metric, create the metric ID to harvest any config-generated tags.
+         * For each metric, create the metric ID to harvest any config-generated
+         * tags.
          */
         Registry vendor = rf.getARegistry(MetricRegistry.Type.VENDOR);
         Counter totalCount = vendor.counter(new HelidonMetadata(metricPrefix + "count",
-                                                         "Total number of HTTP requests",
-                                                         "Each request (regardless of HTTP method) will increase this counter",
-                                                         MetricType.COUNTER,
-                                                         MetricUnits.NONE));
+                "Total number of HTTP requests",
+                "Each request (regardless of HTTP method) will increase this counter",
+                MetricType.COUNTER,
+                MetricUnits.NONE));
 
         Meter totalMeter = vendor.meter(new HelidonMetadata(metricPrefix + "meter",
-                                                     "Meter for overall HTTP requests",
-                                                     "Each request will mark the meter to see overall throughput",
-                                                     MetricType.METERED,
-                                                     MetricUnits.NONE));
+                "Meter for overall HTTP requests",
+                "Each request will mark the meter to see overall throughput",
+                MetricType.METERED,
+                MetricUnits.NONE));
 
         vendor.counter(new HelidonMetadata("grpc.requests.count",
-                                    "Total number of gRPC requests",
-                                    "Each gRPC request (regardless of the method) will increase this counter",
-                                    MetricType.COUNTER,
-                                    MetricUnits.NONE));
+                "Total number of gRPC requests",
+                "Each gRPC request (regardless of the method) will increase this counter",
+                MetricType.COUNTER,
+                MetricUnits.NONE));
 
         vendor.meter(new HelidonMetadata("grpc.requests.meter",
-                                  "Meter for overall gRPC requests",
-                                  "Each gRPC request will mark the meter to see overall throughput",
-                                  MetricType.METERED,
-                                  MetricUnits.NONE));
+                "Meter for overall gRPC requests",
+                "Each gRPC request will mark the meter to see overall throughput",
+                MetricType.METERED,
+                MetricUnits.NONE));
 
         rules.any((req, res) -> {
             totalCount.inc();
@@ -321,14 +342,15 @@ public final class MetricsSupport implements Service {
     }
 
     /**
-     * Configure metrics endpoint on the provided routing rules.
-     * This method just adds the endpoint {@code /metrics} (or appropriate
-     * one as configured).
-     * For simple routings, just register {@code MetricsSupport} instance.
-     * This method is exclusive to {@link #update(io.helidon.webserver.Routing.Rules)}
-     * (e.g. you should not use both, as otherwise you would register the endpoint twice)
+     * Configure metrics endpoint on the provided routing rules. This method
+     * just adds the endpoint {@code /metrics} (or appropriate one as
+     * configured). For simple routings, just register {@code MetricsSupport}
+     * instance. This method is exclusive to
+     * {@link #update(io.helidon.webserver.Routing.Rules)} (e.g. you should not
+     * use both, as otherwise you would register the endpoint twice)
      *
-     * @param rules routing rules (also accepts {@link io.helidon.webserver.Routing.Builder}
+     * @param rules routing rules (also accepts
+     * {@link io.helidon.webserver.Routing.Builder}
      */
     public void configureEndpoint(Routing.Rules rules) {
         Registry base = rf.getARegistry(MetricRegistry.Type.BASE);
@@ -338,7 +360,7 @@ public final class MetricsSupport implements Service {
         rules.any(new MetricsContextHandler(app, rf));
 
         rules.anyOf(CollectionsHelper.listOf(Http.Method.GET, Http.Method.OPTIONS),
-                    JsonSupport.create());
+                JsonSupport.create());
 
         // routing to root of metrics
         rules.get(context, (req, res) -> getMultiple(req, res, base, app, vendor))
@@ -357,13 +379,14 @@ public final class MetricsSupport implements Service {
     }
 
     /**
-     * Method invoked by the web server to update routing rules.
-     * Register this instance with webserver through
+     * Method invoked by the web server to update routing rules. Register this
+     * instance with webserver through
      * {@link io.helidon.webserver.Routing.Builder#register(io.helidon.webserver.Service...)}
-     * rather than calling this method directly.
-     * If multiple sockets (and routings) should be supported, you can use
-     * the {@link #configureEndpoint(io.helidon.webserver.Routing.Rules)}, and
-     * {@link #configureVendorMetrics(String, io.helidon.webserver.Routing.Rules)} methods.
+     * rather than calling this method directly. If multiple sockets (and
+     * routings) should be supported, you can use the
+     * {@link #configureEndpoint(io.helidon.webserver.Routing.Rules)}, and
+     * {@link #configureVendorMetrics(String, io.helidon.webserver.Routing.Rules)}
+     * methods.
      *
      * @param rules a routing rules to update
      */
@@ -433,6 +456,7 @@ public final class MetricsSupport implements Service {
      * A fluent API builder to build instances of {@link MetricsSupport}.
      */
     public static final class Builder implements io.helidon.common.Builder<MetricsSupport> {
+
         private Supplier<RegistryFactory> registryFactory;
         private String context = DEFAULT_CONTEXT;
         private Config config = Config.empty();
@@ -463,18 +487,21 @@ public final class MetricsSupport implements Service {
             // backward compatibility
             config.get("context").asString().ifPresent(this::context);
 
-
             return this;
         }
 
         /**
-         * If you want to have mutliple registry factories with different endpoints, you may
-         * create them using {@link RegistryFactory#create(io.helidon.config.Config)} or
-         * {@link RegistryFactory#create()} and create multiple {@link io.helidon.metrics.MetricsSupport} instances
-         * with different {@link #context(String) contexts}.
+         * If you want to have mutliple registry factories with different
+         * endpoints, you may create them using
+         * {@link RegistryFactory#create(io.helidon.config.Config)} or
+         * {@link RegistryFactory#create()} and create multiple
+         * {@link io.helidon.metrics.MetricsSupport} instances with different
+         * {@link #context(String) contexts}.
          * <p>
-         * If this method is not called, {@link io.helidon.metrics.MetricsSupport} would use the shared instance as
-         * provided by {@link io.helidon.metrics.RegistryFactory#getInstance(io.helidon.config.Config)}
+         * If this method is not called,
+         * {@link io.helidon.metrics.MetricsSupport} would use the shared
+         * instance as provided by
+         * {@link io.helidon.metrics.RegistryFactory#getInstance(io.helidon.config.Config)}
          *
          * @param factory factory to use in this metric support
          * @return updated builder instance
@@ -489,7 +516,8 @@ public final class MetricsSupport implements Service {
          *
          * @param newContext context to use
          * @return updated builder instance
-         * @deprecated use {@link #webContext(String)} instead, aligned with API of heatlh checks
+         * @deprecated use {@link #webContext(String)} instead, aligned with API
+         * of heatlh checks
          */
         @Deprecated
         public Builder context(String newContext) {
@@ -514,6 +542,7 @@ public final class MetricsSupport implements Service {
 
     // this class is created for cleaner tracing of web server handlers
     private static final class MetricsContextHandler implements Handler {
+
         private final Registry appRegistry;
         private final RegistryFactory registryFactory;
 
@@ -527,6 +556,128 @@ public final class MetricsSupport implements Service {
             req.context().register(appRegistry);
             req.context().register(registryFactory);
             req.next();
+        }
+    }
+
+    private static final class MergingJsonObjectBuilder implements JsonObjectBuilder {
+
+        private final JsonObjectBuilder delegate;
+
+        private final Map<String, List<JsonObject>> subValuesMap = new HashMap<>();
+
+        private MergingJsonObjectBuilder(JsonObjectBuilder delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String name, JsonObjectBuilder subBuilder) {
+            final JsonObject ob = subBuilder.build();
+            delegate.add(name, JSON.createObjectBuilder(ob));
+            List<JsonObject> subValues;
+            if (subValuesMap.containsKey(name)) {
+                subValues = subValuesMap.get(name);
+            } else {
+                subValues = new ArrayList<>();
+                subValuesMap.put(name, subValues);
+            }
+            subValues.add(ob);
+            return this;
+        }
+
+
+        @Override
+        public JsonObjectBuilder add(String arg0, JsonValue arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, String arg1) {
+            return delegate.add(arg0, arg1);
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, BigInteger arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, BigDecimal arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, int arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, long arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, double arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, boolean arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder addNull(String arg0) {
+            delegate.addNull(arg0);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder add(String arg0, JsonArrayBuilder arg1) {
+            delegate.add(arg0, arg1);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder addAll(JsonObjectBuilder builder) {
+            delegate.addAll(builder);
+            return this;
+        }
+
+        @Override
+        public JsonObjectBuilder remove(String name) {
+            delegate.remove(name);
+            return this;
+        }
+
+        @Override
+        public JsonObject build() {
+            final JsonObject beforeMerging = delegate.build();
+            if (subValuesMap.isEmpty()) {
+                return beforeMerging;
+            }
+            final JsonObjectBuilder mainBuilder = JSON.createObjectBuilder(beforeMerging);
+            subValuesMap.entrySet().stream()
+                    .forEach(entry -> {
+                        final JsonObjectBuilder metricBuilder = JSON.createObjectBuilder();
+                        for(JsonObject subObject : entry.getValue()) {
+                            final JsonObjectBuilder subBuilder = JSON.createObjectBuilder(subObject);
+                            metricBuilder.addAll(subBuilder);
+                        }
+                        mainBuilder.add(entry.getKey(), metricBuilder);
+                    });
+            return mainBuilder.build();
+        }
+
+        @Override
+        public String toString() {
+            return delegate.toString();
         }
     }
 }
