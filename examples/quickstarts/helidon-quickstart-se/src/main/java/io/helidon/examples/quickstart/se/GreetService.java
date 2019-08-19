@@ -123,27 +123,26 @@ public class GreetService implements Service {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        request.content()
-               .as(JsonObject.class)
-               .thenAccept(jo -> updateGreetingFromJson(jo, response))
-               .exceptionally((Throwable ex) -> {
-                 if (ex.getCause() instanceof JsonException){
-                   String error = String.format("Error with JSON: %s", ex.getCause().toString());
-                   JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                     .add("error", error)
-                     .build();
-                   response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-                 } else {
-                   JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                     .add("error", ex.getLocalizedMessage())
-                     .build();
-                   request.next(ex);
-                 }
+        request.content().as(JsonObject.class)
+            .thenAccept(jo -> updateGreetingFromJson(jo, response))
+            .exceptionally((Throwable ex) -> {
+                if (ex.getCause() instanceof JsonException){
+                    String error = String.format("Error with JSON: %s", ex.getCause().toString());
+                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                        .add("error", error)
+                        .build();
+                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+                } else {
+                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                        .add("error", ex.getLocalizedMessage())
+                        .build();
+                    request.next(ex);
+                }
 
-                 ex.printStackTrace();
+                ex.printStackTrace();
 
-                 return null;
-               });
+                return null;
+            });
     }
 
 }
