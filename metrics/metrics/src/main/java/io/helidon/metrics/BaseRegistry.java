@@ -98,13 +98,13 @@ final class BaseRegistry extends Registry {
                                                               "Thread Count",
                                                               "Displays the current number of live threads including both "
                                                                       + "daemon and nondaemon threads",
-                                                              MetricType.COUNTER,
+                                                              MetricType.GAUGE,
                                                               MetricUnits.NONE);
 
     private static final Metadata THREAD_DAEMON_COUNT = new HelidonMetadata("thread.daemon.count",
                                                                      "Daemon Thread Count",
                                                                      "Displays the current number of live daemon threads.",
-                                                                     MetricType.COUNTER,
+                                                                     MetricType.GAUGE,
                                                                      MetricUnits.NONE);
 
     private static final Metadata THREAD_MAX_COUNT = new HelidonMetadata("thread.max.count",
@@ -113,30 +113,27 @@ final class BaseRegistry extends Registry {
                                                                           + "virtual machine started or "
                                                                           + "peak was reset. This includes daemon and "
                                                                           + "non-daemon threads.",
-                                                                  MetricType.COUNTER,
+                                                                  MetricType.GAUGE,
                                                                   MetricUnits.NONE);
 
-    private static final Metadata CL_LOADED_COUNT = new HelidonMetadata("classloader.currentLoadedClass.count",
+    private static final Metadata CL_LOADED_COUNT = new HelidonMetadata("classloader.loadedClasses.count",
                                                                  "Current Loaded Class Count",
                                                                  "Displays the number of classes that are currently loaded in "
-                                                                         + "the Java virtual "
-                                                                         + "machine.",
-                                                                 MetricType.COUNTER,
+                                                                         + "the Java virtual machine.",
+                                                                 MetricType.GAUGE,
                                                                  MetricUnits.NONE);
 
-    private static final Metadata CL_LOADED_TOTAL = new HelidonMetadata("classloader.totalLoadedClass.count",
+    private static final Metadata CL_LOADED_TOTAL = new HelidonMetadata("classloader.loadedClasses.total",
                                                                  "Total Loaded Class Count",
                                                                  "Displays the total number of classes that have been loaded "
-                                                                         + "since the Java "
-                                                                         + "virtual machine has started execution.",
+                                                                         + "since the Java virtual machine has started execution.",
                                                                  MetricType.COUNTER,
                                                                  MetricUnits.NONE);
 
-    private static final Metadata CL_UNLOADED_COUNT = new HelidonMetadata("classloader.totalUnloadedClass.count",
+    private static final Metadata CL_UNLOADED_COUNT = new HelidonMetadata("classloader.unloadedClasses.total",
                                                                    "Total Unloaded Class Count",
                                                                    "Displays the total number of classes unloaded since the Java "
-                                                                           + "virtual machine "
-                                                                           + "has started execution.",
+                                                                           + "virtual machine has started execution.",
                                                                    MetricType.COUNTER,
                                                                    MetricUnits.NONE);
 
@@ -193,12 +190,12 @@ final class BaseRegistry extends Registry {
         register(result, JVM_UPTIME, (Gauge<Long>) runtimeBean::getUptime);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        register(result, THREAD_COUNT, (SimpleCounter) threadBean::getThreadCount);
-        register(result, THREAD_DAEMON_COUNT, (SimpleCounter) threadBean::getDaemonThreadCount);
-        register(result, THREAD_MAX_COUNT, (SimpleCounter) threadBean::getPeakThreadCount);
+        register(result, THREAD_COUNT, (Gauge<Integer>) threadBean::getThreadCount);
+        register(result, THREAD_DAEMON_COUNT, (Gauge<Integer>) threadBean::getDaemonThreadCount);
+        register(result, THREAD_MAX_COUNT, (Gauge<Integer>) threadBean::getPeakThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        register(result, CL_LOADED_COUNT, (SimpleCounter) clBean::getLoadedClassCount);
+        register(result, CL_LOADED_COUNT, (Gauge<Integer>) clBean::getLoadedClassCount);
         register(result, CL_LOADED_TOTAL, (SimpleCounter) clBean::getTotalLoadedClassCount);
         register(result, CL_UNLOADED_COUNT, (SimpleCounter) clBean::getUnloadedClassCount);
 
@@ -209,7 +206,7 @@ final class BaseRegistry extends Registry {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            register(result, gcCountMeta(poolName), (Gauge<Long>) gcBean::getCollectionCount);
+            register(result, gcCountMeta(poolName), (SimpleCounter) gcBean::getCollectionCount);
             register(result, gcTimeMeta(poolName), (Gauge<Long>) gcBean::getCollectionTime);
         }
 
@@ -230,11 +227,11 @@ final class BaseRegistry extends Registry {
     }
 
     static Metadata gcCountMeta(String poolName) {
-        return new HelidonMetadata("gc." + poolName + ".count",
+        return new HelidonMetadata("gc." + poolName + ".total",
                             "Garbage Collection Count",
                             "Displays the total number of collections that have occurred. This attribute lists "
                                     + "-1 if the collection count is undefined for this collector.",
-                            MetricType.GAUGE,
+                            MetricType.COUNTER,
                             MetricUnits.NONE);
     }
 

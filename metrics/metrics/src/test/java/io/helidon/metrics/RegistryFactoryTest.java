@@ -82,14 +82,6 @@ public class RegistryFactoryTest {
     }
 
     @Test
-    void testBaseCounters() {
-        Counter counter = base.counter("thread.count");
-
-        assertThrows(IllegalStateException.class, counter::inc);
-        assertThrows(IllegalStateException.class, () -> counter.inc(1400));
-    }
-
-    @Test
     void testBaseFinal() {
         assertThrows(UnsupportedOperationException.class, () -> base.counter("new.counter"));
         assertThrows(UnsupportedOperationException.class, () -> baseUn.counter("new.counter"));
