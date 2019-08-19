@@ -204,7 +204,7 @@ class Registry extends MetricRegistry {
     @Override
     public SortedSet<String> getNames() {
         return allMetrics.keySet().stream()
-                .map(id -> id.getName())
+                .map(MetricID::getName)
                 .collect(Collectors.toCollection(TreeSet::new));
     }
 
@@ -373,7 +373,7 @@ class Registry extends MetricRegistry {
         Class<?> clazz = metric.getClass();
         do {
             Optional<Class<?>> optionalClass = Arrays.stream(clazz.getInterfaces())
-                    .filter(c -> Metric.class.isAssignableFrom(c))
+                    .filter(Metric.class::isAssignableFrom)
                     .findFirst();
             if (optionalClass.isPresent()) {
                 clazz = optionalClass.get();
@@ -396,7 +396,7 @@ class Registry extends MetricRegistry {
         return allMetrics.entrySet().stream()
                 .filter(entry -> entry.getKey().getName().equals(name))
                 .findFirst()
-                .map(entry -> entry.getValue());
+                .map(Map.Entry::getValue);
      }
 
     /**
@@ -420,6 +420,6 @@ class Registry extends MetricRegistry {
     private Tag[] tags(String metricName) {
         final MetricID metricID = new MetricID(metricName); // fills in automatic tags
         final List<Tag> tags = metricID.getTagsAsList();
-        return tags.toArray(new Tag[tags.size()]);
+        return tags.toArray(new Tag[0]);
     }
 }

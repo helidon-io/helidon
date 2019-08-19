@@ -305,7 +305,8 @@ public class MetricsCdiExtension implements Extension {
      * @param adv After deployment validation event.
      * @param bm  Bean manager.
      */
-    private void registerProducers(@Observes AfterDeploymentValidation adv, BeanManager bm) {
+    private <T extends org.eclipse.microprofile.metrics.Metric> void registerProducers(
+            @Observes AfterDeploymentValidation adv, BeanManager bm) {
         LOGGER.log(Level.FINE, () -> "registerProducers");
 
         MetricRegistry registry = getMetricRegistry();
@@ -316,10 +317,34 @@ public class MetricsCdiExtension implements Extension {
                                                   entry.getValue().getDeclaringType().getJavaClass(),
                                                   MetricUtil.MatchingType.METHOD,
                                                   metric.name(), metric.absolute());
-                registry.register(metricName, getReference(bm, entry.getValue().getBaseType(), entry.getKey()));
+                T instance = getReference(bm, entry.getValue().getBaseType(), entry.getKey());
+                Metadata md = new HelidonMetadata(metricName,
+                        metric.displayName(),
+                        metric.description(),
+                        getMetricType(instance),
+                        metric.unit(),
+                        false);
+                registry.register(md, instance);
             }
         });
         producers.clear();
+    }
+
+    private static <T extends org.eclipse.microprofile.metrics.Metric> MetricType getMetricType(T metric) {
+        // Find subtype of Metric, needed for user-defined metrics
+        Class<?> clazz = metric.getClass();
+        do {
+            Optional<Class<?>> optionalClass = Arrays.stream(clazz.getInterfaces())
+                    .filter(org.eclipse.microprofile.metrics.Metric.class::isAssignableFrom)
+                    .findFirst();
+            if (optionalClass.isPresent()) {
+                clazz = optionalClass.get();
+                break;
+            }
+            clazz = clazz.getSuperclass();
+        } while (clazz != null);
+
+        return MetricType.from(clazz == null ? metric.getClass() : clazz);
     }
 
     private void recordAnnotatedGaugeSite(@Observes @WithAnnotations(Gauge.class) ProcessAnnotatedType<?> pat) {
