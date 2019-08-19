@@ -35,7 +35,7 @@ application logic without needing to write a lot of boilerplate gRPC code.
 The <<about/04_managing-dependencies.adoc, Managing Dependencies>> page describes how you
 should declare dependency management for Helidon applications. Then declare the following dependency in your project:
 
-[source,xml,subs="verbatim,attributes"]
+[source,xml]
 ----
 <dependency>
     <groupId>io.helidon.microprofile.grpc</groupId>
@@ -255,7 +255,7 @@ with the `@ApplicationScoped` annotation they become discoverable and will be de
 ----
 @ApplicationScoped
 public class StringService 
-    extends extends StringServiceGrpc.StringServiceImplBase {
+    extends StringServiceGrpc.StringServiceImplBase {
 ----
 
 In exactly the same way, if a class is an implementation of `io.helidon.grpc.server.GrpcService` then by annotating the class with

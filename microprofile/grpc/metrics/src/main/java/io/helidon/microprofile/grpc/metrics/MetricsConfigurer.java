@@ -132,7 +132,7 @@ public class MetricsConfigurer
     /**
      * A {@link GrpcMetrics.NamingFunction} that returns a constant name.
      */
-    private class ConstantNamingFunction
+    private static class ConstantNamingFunction
             implements GrpcMetrics.NamingFunction {
         private final String name;
 
