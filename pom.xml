@@ -158,9 +158,9 @@
         <version.lib.narayana>5.9.3.Final</version.lib.narayana>
         <version.lib.netty>4.1.39.Final</version.lib.netty>
         <version.netty.tcnative>2.0.25.Final</version.netty.tcnative>
-        <version.lib.oci-java-sdk-common>1.5.9</version.lib.oci-java-sdk-common>
-        <version.lib.oci-java-sdk-objectstorage>1.5.9</version.lib.oci-java-sdk-objectstorage>
-        <version.lib.oci-java-sdk-streaming>1.5.9</version.lib.oci-java-sdk-streaming>
+        <version.lib.oci-java-sdk-common>1.6.0</version.lib.oci-java-sdk-common>
+        <version.lib.oci-java-sdk-objectstorage>1.6.0</version.lib.oci-java-sdk-objectstorage>
+        <version.lib.oci-java-sdk-streaming>1.6.0</version.lib.oci-java-sdk-streaming>
         <version.lib.ojdbc8>19.3.0.0</version.lib.ojdbc8>
         <version.lib.opentracing>0.31.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.0.12</version.lib.opentracing.grpc>
