@@ -193,6 +193,8 @@
         -->
 
         <!-- maven plugin versions -->
+        <version.plugin.archetype-packaging>3.0.1</version.plugin.archetype-packaging>
+        <version.plugin.archetype>3.0.1</version.plugin.archetype>
         <version.plugin.build-helper>1.12</version.plugin.build-helper>
         <version.plugin.checkstyle>2.17</version.plugin.checkstyle>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
@@ -234,6 +236,7 @@
     </properties>
 
     <modules>
+        <module>archetypes</module>
         <module>common</module>
         <module>config</module>
         <module>media</module>
@@ -591,6 +594,16 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${version.plugin.shade}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.archetype</groupId>
+                    <artifactId>archetype-packaging</artifactId>
+                    <version>${version.plugin.archetype-packaging}</version>
+                </plugin>
+              <plugin>
+                    <groupId>org.apache.maven.archetype</groupId>
+                    <artifactId>maven-archetype-plugin</artifactId>
+                    <version>${version.plugin.archetype}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
