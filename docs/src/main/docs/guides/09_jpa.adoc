@@ -116,6 +116,26 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
+== Add the JTA and JPA Dependencies to the Provided Classpath
+
+Add the following dependencies in your `pom.xml`:
+
+[source,xml]
+----
+<dependency>
+    <groupId>jakarta.persistence</groupId>
+    <artifactId>jakarta.persistence-api</artifactId>
+    <version>2.2.2</version>
+    <scope>provided</scope>
+</dependency>
+<dependency>
+    <groupId>javax.transaction</groupId>
+    <artifactId>javax.transaction-api</artifactId>
+    <version>1.2</version>
+    <scope>provided</scope>
+</dependency>
+----
+
 == Add DDL to Create the Relevant Database Tables
 
 Add the following file under `src/main/resources`:
