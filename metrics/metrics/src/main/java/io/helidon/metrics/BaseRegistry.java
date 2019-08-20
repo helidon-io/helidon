@@ -33,6 +33,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Registry for base metrics as required by Microprofile metrics specification.
@@ -221,15 +222,17 @@ final class BaseRegistry extends Registry {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            register(result, gcCountMeta(poolName), (SimpleCounter) gcBean::getCollectionCount);
-            register(result, gcTimeMeta(poolName), (Gauge<Long>) gcBean::getCollectionTime);
+            register(result, gcCountMeta(), (SimpleCounter) gcBean::getCollectionCount,
+                    new Tag("name", poolName));
+            register(result, gcTimeMeta(), (Gauge<Long>) gcBean::getCollectionTime,
+                    new Tag("name", poolName));
         }
 
         return result;
     }
 
-    static Metadata gcTimeMeta(String poolName) {
-        return new HelidonMetadata("gc." + poolName + ".time",
+    private static Metadata gcTimeMeta() {
+        return new HelidonMetadata("gc.time",
                             "Garbage Collection Time",
                             "Displays the approximate accumulated collection elapsed time in milliseconds. "
                                     + "This attribute displays -1 if the collection elapsed time is undefined for this "
@@ -241,8 +244,8 @@ final class BaseRegistry extends Registry {
                             MetricUnits.MILLISECONDS);
     }
 
-    static Metadata gcCountMeta(String poolName) {
-        return new HelidonMetadata("gc." + poolName + ".total",
+    private static Metadata gcCountMeta() {
+        return new HelidonMetadata("gc.total",
                             "Garbage Collection Count",
                             "Displays the total number of collections that have occurred. This attribute lists "
                                     + "-1 if the collection count is undefined for this collector.",
@@ -250,12 +253,9 @@ final class BaseRegistry extends Registry {
                             MetricUnits.NONE);
     }
 
-    private static void register(BaseRegistry registry,
-                                 Metadata meta,
-                                 Metric metric) {
-
+    private static void register(BaseRegistry registry, Metadata meta, Metric metric, Tag... tags) {
         if (registry.config.get(CONFIG_METRIC_ENABLED_BASE + meta.getName() + ".enabled").asBoolean().orElse(true)) {
-            registry.register(meta, metric);
+            registry.register(meta, metric, tags);
         }
     }
 
