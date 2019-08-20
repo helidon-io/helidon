@@ -137,39 +137,30 @@ public final class MetricsSupport implements Service {
         return new Builder();
     }
 
-    /**
-     * Check if the passed headers (specifically Accept) prefer data in JSON
-     * format.
-     *
-     * @return true if passed headers prefer data in JSON format.
-     */
-    static boolean requestsJsonData(RequestHeaders headers) {
+    private static MediaType findBestAccepted(RequestHeaders headers) {
         Optional<MediaType> mediaType = headers.bestAccepted(MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON);
-        boolean requestsJson = mediaType.isPresent() && mediaType.get().equals(MediaType.APPLICATION_JSON);
-
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Generating metrics for media type " + mediaType
-                    + ". requestsJson=" + requestsJson);
-        }
-        return requestsJson;
+        return mediaType.orElse(null);
     }
 
     private static void getAll(ServerRequest req, ServerResponse res, Registry registry) {
-
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
             return;
         }
 
-        if (requestsJsonData(req.headers())) {
+        MediaType mediaType = findBestAccepted(req.headers());
+        if (mediaType == MediaType.APPLICATION_JSON) {
             res.send(toJsonData(registry));
-        } else {
+        } else if (mediaType == MediaType.TEXT_PLAIN) {
             res.send(toPrometheusData(registry));
+        } else {
+            res.status(Http.Status.NOT_ACCEPTABLE_406);
+            res.send();
         }
     }
 
-    private static void optionsAll(ServerRequest req, ServerResponse res, Registry registry) {
+    private void optionsAll(ServerRequest req, ServerResponse res, Registry registry) {
         if (registry.empty()) {
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
@@ -187,7 +178,7 @@ public final class MetricsSupport implements Service {
 
     static String toPrometheusData(Registry... registries) {
         return Arrays.stream(registries)
-                .map(r -> toPrometheusData(r))
+                .map(MetricsSupport::toPrometheusData)
                 .collect(Collectors.joining());
     }
 
@@ -390,14 +381,18 @@ public final class MetricsSupport implements Service {
 
         OptionalHelper.from(registry.getOptionalMetric(metricName))
                 .ifPresentOrElse(metric -> {
-                    if (requestsJsonData(req.headers())) {
+                    MediaType mediaType = findBestAccepted(req.headers());
+                    if (mediaType == MediaType.APPLICATION_JSON) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
                         metric.jsonData(builder, new MetricID(metricName));
                         res.send(builder.build());
-                    } else {
+                    } else if (mediaType == MediaType.TEXT_PLAIN) {
                         final StringBuilder sb = new StringBuilder();
                         metric.prometheusData(sb, new MetricID(metricName));
                         res.send(sb.toString());
+                    } else {
+                        res.status(Http.Status.NOT_ACCEPTABLE_406);
+                        res.send();
                     }
                 }, () -> {
                     res.status(Http.Status.NOT_FOUND_404);
@@ -406,15 +401,19 @@ public final class MetricsSupport implements Service {
     }
 
     private void getMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
-        if (requestsJsonData(req.headers())) {
+        MediaType mediaType = findBestAccepted(req.headers());
+        if (mediaType == MediaType.APPLICATION_JSON) {
             res.send(toJsonData(registries));
-        } else {
+        } else if (mediaType == MediaType.TEXT_PLAIN) {
             res.send(toPrometheusData(registries));
+        } else {
+            res.status(Http.Status.NOT_ACCEPTABLE_406);
+            res.send();
         }
     }
 
     private void optionsMultiple(ServerRequest req, ServerResponse res, Registry... registries) {
-        if (requestsJsonData(req.headers())) {
+        if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
             res.send(toJsonMeta(registries));
         } else {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
