@@ -138,7 +138,7 @@ CREATE TABLE GREETING (
 INSERT INTO GREETING (SALUTATION, RESPONSE) VALUES('Marco', 'Polo');
 ----
 
-== Add a Java Class to Represent a Greeting
+== Add a Java Class to Represent a Greeting JPA Entity
 
 Add the following Java class under `src/main/java/com/example/entity`:
 
@@ -213,7 +213,7 @@ public class Greeting implements Serializable { <4>
 
 <1> (Some of the annotations in this example, like this one, have
 sensible defaults, but the example specifies them explicitly for
-clarity.)  The
+clarity.)  This
 https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Access.html[`Access`
 annotation] says that JPA will access this class' fields directly,
 rather than via getter and setter methods.
