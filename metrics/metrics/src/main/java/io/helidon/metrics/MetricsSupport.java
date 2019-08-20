@@ -15,24 +15,30 @@
  */
 package io.helidon.metrics;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 
 import io.helidon.common.CollectionsHelper;
 import io.helidon.common.OptionalHelper;
@@ -46,13 +52,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonValue;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -654,7 +653,7 @@ public final class MetricsSupport implements Service {
             subValuesMap.entrySet().stream()
                     .forEach(entry -> {
                         final JsonObjectBuilder metricBuilder = JSON.createObjectBuilder();
-                        for(JsonObject subObject : entry.getValue()) {
+                        for (JsonObject subObject : entry.getValue()) {
                             final JsonObjectBuilder subBuilder = JSON.createObjectBuilder(subObject);
                             metricBuilder.addAll(subBuilder);
                         }
