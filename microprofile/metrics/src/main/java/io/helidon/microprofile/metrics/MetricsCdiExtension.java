@@ -370,8 +370,10 @@ public class MetricsCdiExtension implements Extension {
                     Method javaMethod = method.getAnnotated().getJavaMember();
                     Gauge gaugeAnnotation = method.getAnnotated().getAnnotation(Gauge.class);
                     String explicitGaugeName = gaugeAnnotation.name();
-                    String gaugeName = String.format("%s.%s", clazz.getName(),
-                            explicitGaugeName.length() > 0 ? explicitGaugeName : javaMethod.getName());
+                    String gaugeNameSuffix = (explicitGaugeName.length() > 0 ? explicitGaugeName
+                            : javaMethod.getName());
+                    String gaugeName = (gaugeAnnotation.absolute() ? gaugeNameSuffix
+                            : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
                     annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
                     LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
                 });
