@@ -90,7 +90,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add the Provider-Independent Helidon JPA Integration to the Runtime Classpath
+== Add the Provider-Independent Helidon JPA Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -103,7 +103,7 @@ Add the following dependency in your `pom.xml`:
 </dependency>
 ----
 
-== Add the EclipseLink JPA Integration to the Runtime Classpath
+== Add the EclipseLink JPA Extension to the Runtime Classpath
 
 Add the following dependency in your `pom.xml`:
 
@@ -323,7 +323,7 @@ Add the following file under `src/main/resources/META-INF`:
 </persistence>
 ----
 
-<1> Helidon MP's JPA integration supports JPA 2.2.
+<1> Helidon MP's JPA extension supports JPA 2.2.
 
 <2> Note that `JTA` is the transaction type.  JTA transactions are
 fully supported.
