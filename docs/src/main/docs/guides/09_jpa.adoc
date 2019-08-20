@@ -128,7 +128,7 @@ CREATE TABLE GREETING (
     RESPONSE VARCHAR(64) NOT NULL
 );
 
-INSERT INTO GREETING (SALUTATION, RESPONSE) VALUES('Marco', 'Polo');
+INSERT INTO GREETING (SALUTATION, RESPONSE) VALUES ('Marco', 'Polo');
 ----
 
 == Add an `application.yaml` File With Database Connectivity Information
@@ -279,8 +279,6 @@ Add the following file under `src/main/resources/META-INF`:
 
 [source,xml]
 .`persistence.xml`
-----
-
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="2.2" <1>
