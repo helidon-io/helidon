@@ -273,24 +273,13 @@ public final class MetricsSupport implements Service {
             BiConsumer<JsonObjectBuilder, ? super Map.Entry<MetricID, MetricImpl>> accumulator,
             Registry registry) {
 
-        JsonObjectBuilder builder = new MergingJsonObjectBuilder(JSON.createObjectBuilder());
         return registry.stream()
-//        registry.stream()
-//                .sorted(Comparator.comparing(Map.Entry::getKey))
-//                .peek(entry -> {
-//                    org.eclipse.microprofile.metrics.MetricID metricID = entry.getKey();
-//                    MetricImpl metric = entry.getValue();
-//                })
-//                .forEach(entry -> {
-//                    entry.getValue().jsonData(builder, entry.getKey());
-//                });
-                .collect(JSON::createObjectBuilder,
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .collect(() -> new MergingJsonObjectBuilder(JSON.createObjectBuilder()),
                         accumulator,
                         JsonObjectBuilder::addAll
                         )
                 .build();
-//        JsonObject jo = builder.build();
-//        return jo;
     }
 
     /**
