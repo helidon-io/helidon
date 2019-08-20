@@ -31,6 +31,7 @@ within a Helidon MP application.
 |<<about/03_prerequisites.adoc,Helidon Prerequisites>>
 |<<07_datasources.adoc,An understanding of named data source support in Helidon MP>>
 |<<08_jta.adoc,An understanding of transaction support in Helidon MP>>
+|An understanding of JPA itself
 |===
 
 == What You'll Do
@@ -104,4 +105,138 @@ Add the following dependency in your `pom.xml`:
 
 <1> Note that the scope is `compile`.  We'll see why shortly.
 
+== Add an `application.yaml` File With Database Connectivity Information
+
+Add the following file under `src/main/resources`:
+
+[source,yaml]
+.`application.yaml`
+----
+javax:
+    sql:
+        DataSource:
+            greetingDataSource:
+                dataSourceClassName: org.h2.jdbcx.JdbcDataSource
+                dataSource:
+                    url: jdbc:h2:mem:greeting;INIT=RUNSCRIPT FROM 'classpath:greeting.ddl'
+                    user: sa
+                    password: ""
+----
+
+== Add DDL to Create the Relevant Database Tables
+
+Add the following file under `src/main/resources`:
+
+[source,sql]
+.`greeting.ddl`
+----
+CREATE TABLE GREETING (
+    SALUTATION VARCHAR(64) NOT NULL PRIMARY KEY,
+    RESPONSE VARCHAR(64) NOT NULL
+);
+
+INSERT INTO GREETING (SALUTATION, RESPONSE) VALUES('Marco', 'Polo');
+----
+
+== Add a Java Class to Represent a Greeting
+
+Add the following Java class under `src/main/java/com/example/entity`:
+
+[source,java]
+.`Greeting.java`
+----
+package com.example.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.Access;
+import javax.persistence.AccessType;
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Access(value = AccessType.FIELD) <1>
+@Entity(name = "Greeting") <2>
+@Table(name = "GREETING") <3>
+public class Greeting implements Serializable { <4>
+
+    @Column(
+        insertable = true,
+        name = "SALUTATION", <5>
+        nullable = false,
+        updatable = false
+    )
+    @Id <6>
+    private String salutation;
+
+    @Basic(optional = false) <7>
+    @Column(
+        insertable = true,
+        name = "RESPONSE",
+        nullable = false,
+        updatable = true
+    )
+    private String response;
+
+    @Deprecated
+    protected Greeting() { <8>
+        super();
+    }
+
+    public Greeting(String salutation, String response) { <9>
+        super();
+        this.salutation = Objects.requireNonNull(salutation);
+        this.setResponse(response);
+    }
+
+    public String getSalutation() {
+        return this.salutation;
+    }
+
+    public String getResponse() {
+        return this.response;
+    }
+
+    public void setResponse(String response) {
+        this.response = Objects.requireNonNull(response);
+    }
+
+    @Override
+    public String toString() {
+        return this.getSalutation() + " " + this.getResponse();
+    }
+
+}
+----
+
+<1> Some of the annotations in this example have sensible defaults,
+but the example specifies them explicitly for clarity.  This
+annotation says that JPA will access this class' fields directly,
+rather than via getter and setter methods.
+
+<2> The `@Entity` annotation identifies this class as a JPA entity.
+The `name` element's value can be used in JPQL queries.
+
+<3> The `@Table` annotation identifies the database table to which
+this class will be mapped.
+
+<4> JPA entities should be `Serializable`.
+
+<5> The `@Column` annotation specifies what column in the database the
+annotated field maps to.  The elements of the `@Column` annotation
+further describe the column's semantics.
+
+<6> This field will be mapped to the primary key of the database table.
+
+<7> This field will be mapped to an ordinary (basic) column.
+
+<8> All JPA entities need a zero-argument constructor, but it doesn't
+have to be `public`.  This constructor satisfies this requirement.  It
+is marked `@Deprecated` and is non-`public` so that normal users have
+to supply data for the `salutation` and `response` fields via the
+other constructor.
+
+<9> This is the constructor normal users will use.
 
