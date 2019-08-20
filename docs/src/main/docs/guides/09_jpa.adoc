@@ -211,30 +211,45 @@ public class Greeting implements Serializable { <4>
 }
 ----
 
-<1> Some of the annotations in this example have sensible defaults,
-but the example specifies them explicitly for clarity.  This
-annotation says that JPA will access this class' fields directly,
+<1> (Some of the annotations in this example, like this one, have
+sensible defaults, but the example specifies them explicitly for
+clarity.)  The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Access.html[`Access`
+annotation] says that JPA will access this class' fields directly,
 rather than via getter and setter methods.
 
-<2> The `@Entity` annotation identifies this class as a JPA entity.
-The `name` element's value can be used in JPQL queries.
+<2> The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Entity.html[`Entity`
+annotation] identifies this class as a JPA entity.  The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Entity.html#name--[`name`
+element] value can be used in JPQL queries.
 
-<3> The `@Table` annotation identifies the database table to which
-this class will be mapped.
+<3> The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Table.html[`Table`
+annotation] identifies the database table to which this class will be
+mapped.
 
 <4> JPA entities should be `Serializable`.
 
-<5> The `@Column` annotation specifies what column in the database the
-annotated field maps to.  The elements of the `@Column` annotation
-further describe the column's semantics.
+<5> The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Column.html[`Column`
+annotation] specifies what column in the database the annotated field
+maps to.  The elements of the `Column` annotation further describe the
+column.
 
-<6> This field will be mapped to the primary key of the database table.
+<6> The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Id.html[`Id`
+annotation] indicates this field will be mapped to the primary key of
+the database table.
 
-<7> This field will be mapped to an ordinary (basic) column.
+<7> The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/Basic.html[`Basic`
+annotation] indicates this field will be mapped to an ordinary
+("basic") column.
 
 <8> All JPA entities need a zero-argument constructor, but it doesn't
 have to be `public`.  This constructor satisfies this requirement.  It
-is marked `@Deprecated` and is non-`public` so that normal users have
+is marked `Deprecated` and is non-`public` so that normal users have
 to supply data for the `salutation` and `response` fields via the
 other constructor.
 
