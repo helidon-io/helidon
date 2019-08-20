@@ -165,6 +165,7 @@ public interface Server {
         private Supplier<? extends ExecutorService> defaultExecutorService;
         private Context parentContext;
         private Context serverContext;
+        private Boolean supportParallelRun;
 
         private Builder() {
             extensionBuilder = HelidonServiceLoader.builder(ServiceLoader.load(MpService.class));
@@ -214,9 +215,9 @@ public interface Server {
 
             if (null == defaultExecutorService) {
                 defaultExecutorService = ServerThreadPoolSupplier.builder()
-                        .name("server")
-                        .config(config.helidonConfig().get("server.executor-service"))
-                        .build();
+                                                                 .name("server")
+                                                                 .config(config.helidonConfig().get("server.executor-service"))
+                                                                 .build();
             }
 
             STARTUP_LOGGER.finest("Configuration obtained");
@@ -254,6 +255,10 @@ public interface Server {
 
             if (port == -1) {
                 port = config.getOptionalValue("server.port", Integer.class).orElse(7001);
+            }
+
+            if (null == supportParallelRun) {
+                supportParallelRun = config.getOptionalValue("server.support-parallel", Boolean.class).orElse(false);
             }
 
             return new ServerImpl(this);
@@ -602,7 +607,21 @@ public interface Server {
             return this;
         }
 
-        public List<JaxRsApplication> applications() {
+        /**
+         * Enabled (or disable) support for more than one MP Server running in parallel.
+         * By default this is not supported, as a single JVM shares class loader and CDI, so running
+         * more than one server in a single JVM can lead to unexpected behavior.
+         *
+         * @param supportParallelRun set to {@code true} to start more than one {@link io.helidon.microprofile.server.Server}
+         *                           in the same JVM
+         * @return updated builder instance
+         */
+        public Builder supportParallel(boolean supportParallelRun) {
+            this.supportParallelRun = supportParallelRun;
+            return this;
+        }
+
+        List<JaxRsApplication> applications() {
             return new LinkedList<>(applications);
         }
 
@@ -640,6 +659,10 @@ public interface Server {
 
         Context context() {
             return serverContext;
+        }
+
+        boolean supportParallelRun() {
+            return supportParallelRun;
         }
     }
 }

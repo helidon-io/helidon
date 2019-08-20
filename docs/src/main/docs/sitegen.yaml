@@ -138,14 +138,6 @@ backend:
               items:
                 - includes:
                     - "health/*.adoc"
-            - title: "Guides"
-              pathprefix: "/guides"
-              glyph:
-                type: "icon"
-                value: "explore"
-              items:
-                - includes:
-                    - "guides/*.adoc"
             - title: "OpenAPI"
               pathprefix: "/openapi"
               glyph:
@@ -154,6 +146,14 @@ backend:
               items:
                 - includes:
                     - "openapi/*.adoc"
+            - title: "Guides"
+              pathprefix: "/guides"
+              glyph:
+                type: "icon"
+                value: "explore"
+              items:
+                - includes:
+                    - "guides/*.adoc"
             - title: "Javadocs"
               glyph:
                 type: "icon"

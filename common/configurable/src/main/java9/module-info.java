@@ -21,9 +21,9 @@
  */
 module io.helidon.common.configurable {
     requires java.logging;
+    requires java.management;
     requires transitive io.helidon.config;
     requires io.helidon.common;
     requires io.helidon.common.context;
-
     exports io.helidon.common.configurable;
 }

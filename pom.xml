@@ -187,6 +187,7 @@
         <version.lib.failsafe>1.1.0</version.lib.failsafe>
         <version.lib.yasson>1.0.3</version.lib.yasson>
         <version.lib.okhttp3>3.14.1</version.lib.okhttp3>
+        <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <!--
         !Version statement! - end
         -->
@@ -247,6 +248,7 @@
         <module>grpc</module>
         <module>openapi</module>
         <module>jersey</module>
+        <module>webclient</module>
     </modules>
 
     <build>
@@ -1339,6 +1341,11 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${version.lib.okhttp3}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${version.lib.awaitility}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
