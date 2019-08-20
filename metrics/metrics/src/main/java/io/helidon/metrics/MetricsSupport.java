@@ -274,23 +274,23 @@ public final class MetricsSupport implements Service {
             Registry registry) {
 
         JsonObjectBuilder builder = new MergingJsonObjectBuilder(JSON.createObjectBuilder());
-//        return registry.stream()
-        registry.stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey))
-                .peek(entry -> {
-                    org.eclipse.microprofile.metrics.MetricID metricID = entry.getKey();
-                    MetricImpl metric = entry.getValue();
-                })
-                .forEach(entry -> {
-                    entry.getValue().jsonData(builder, entry.getKey());
-                });
-//                .collect(JSON::createObjectBuilder,
-//                        accumulator,
-//                        JsonObjectBuilder::addAll
-//                        )
-//                .build();
-        JsonObject jo = builder.build();
-        return jo;
+        return registry.stream()
+//        registry.stream()
+//                .sorted(Comparator.comparing(Map.Entry::getKey))
+//                .peek(entry -> {
+//                    org.eclipse.microprofile.metrics.MetricID metricID = entry.getKey();
+//                    MetricImpl metric = entry.getValue();
+//                })
+//                .forEach(entry -> {
+//                    entry.getValue().jsonData(builder, entry.getKey());
+//                });
+                .collect(JSON::createObjectBuilder,
+                        accumulator,
+                        JsonObjectBuilder::addAll
+                        )
+                .build();
+//        JsonObject jo = builder.build();
+//        return jo;
     }
 
     /**
