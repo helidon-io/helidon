@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.server;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit test for {@link Server}.
+ * Test running servers in sequence within the same VM.
  */
-class ServerTest {
+public class SequentialRunTest {
     @Test
-    void testMultiRun() {
-        Server server = Server.builder().port(-1).build();
-        server.start();
-        int port = server.port();
-        server.stop();
+    void testSequentialRun() {
+        // sequential must always work, as we do not compete for resources (even on same port)
+        Server server1 = Server.builder().port(-1).build();
+        server1.start();
+        int port = server1.port();
+        server1.stop();
 
-        server = Server.builder().port(port).build();
-        server.start();
-        server.stop();
+        Server server2 = Server.builder().port(port).build();
+        server2.start();
+        server2.stop();
     }
+
 }
