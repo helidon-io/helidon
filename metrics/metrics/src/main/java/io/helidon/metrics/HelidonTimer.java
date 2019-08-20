@@ -224,7 +224,7 @@ final class HelidonTimer extends MetricImpl implements Timer {
         myBuilder.add(jsonFullKey("p99", metricID), snapshot.get99thPercentile());
         myBuilder.add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
 
-        builder.add(metricID.getName(), myBuilder.build());
+        builder.add(metricID.getName(), myBuilder);
     }
 
     private static final class ContextImpl implements Context {

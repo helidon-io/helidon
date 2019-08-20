@@ -148,7 +148,7 @@ final class HelidonMeter extends MetricImpl implements Meter {
         myBuilder.add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate());
         myBuilder.add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
 
-        builder.add(metricID.getName(), myBuilder.build());
+        builder.add(metricID.getName(), myBuilder);
     }
 
     @Override
