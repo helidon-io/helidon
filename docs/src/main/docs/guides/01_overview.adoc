@@ -66,4 +66,11 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
 
+[CARD]
+.SE Health Check Guide
+[link=guides/07_health_se_guide.adoc]
+--
+Learn how to use Helidon built-in and custom health checks.
+--
+
 ====
