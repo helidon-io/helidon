@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +51,7 @@ class Registry extends MetricRegistry {
 
     private final Type type;
     private final Map<MetricID, MetricImpl> allMetrics = new ConcurrentHashMap<>();
+    private final Map<String, List<MetricID>> allMetricIDsByName = new ConcurrentHashMap<>();
 
     protected Registry(Type type) {
         this.type = type;
@@ -188,17 +190,32 @@ class Registry extends MetricRegistry {
 
     @Override
     public boolean remove(String name) {
-        return allMetrics.entrySet().removeIf(entry -> entry.getKey().getName().equals(name));
+        final boolean result = allMetricIDsByName.get(name).stream()
+                .map(metricID -> allMetrics.remove(metricID) != null)
+                .reduce((a, b) -> a || b)
+                .orElse(false);
+        allMetricIDsByName.remove(name);
+        return result;
     }
 
     @Override
     public boolean remove(MetricID metricID) {
+        final List<MetricID> likeNamedMetrics = allMetricIDsByName.get(metricID.getName());
+        likeNamedMetrics.remove(metricID);
+        if (likeNamedMetrics.isEmpty()) {
+            allMetricIDsByName.remove(metricID.getName());
+        }
+
         return allMetrics.remove(metricID) != null;
     }
 
     @Override
     public void removeMatching(MetricFilter filter) {
-        allMetrics.entrySet().removeIf(entry -> filter.matches(entry.getKey(), entry.getValue()));
+        allMetrics.entrySet().stream()
+                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .map(entry -> remove(entry.getKey()))
+                .reduce((a, b) -> a || b)
+                .orElse(false);
     }
 
     @Override
@@ -343,6 +360,12 @@ class Registry extends MetricRegistry {
         if (metric == null) {
             metric = toImpl(metadata, newMetric);
             allMetrics.put(metricID, metric);
+            List<MetricID> metricIDsWithSameName = allMetricIDsByName.get(metadata.getName());
+            if (metricIDsWithSameName == null) {
+                metricIDsWithSameName = new ArrayList<>();
+                allMetricIDsByName.put(metadata.getName(), metricIDsWithSameName);
+            }
+             metricIDsWithSameName.add(metricID);
         }
         return metric;
     }

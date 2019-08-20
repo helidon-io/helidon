@@ -52,6 +52,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
+import javax.json.JsonArray;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -125,6 +126,10 @@ public final class MetricsSupport implements Service {
      */
     public static MetricsSupport create(Config config) {
         return builder().config(config).build();
+    }
+
+    public static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
+        return new MergingJsonObjectBuilder(delegate);
     }
 
     /**
@@ -268,7 +273,7 @@ public final class MetricsSupport implements Service {
                 .collect(() -> new MergingJsonObjectBuilder(JSON.createObjectBuilder()),
                         accumulator,
                         JsonObjectBuilder::addAll
-                        )
+                )
                 .build();
     }
 
@@ -546,11 +551,58 @@ public final class MetricsSupport implements Service {
         }
     }
 
-    private static final class MergingJsonObjectBuilder implements JsonObjectBuilder {
+    /**
+     * A {@code JsonObjectBuilder} that aggregates, rather than overwrites, when
+     * the caller adds objects or arrays with the same name.
+     * <p>
+     * This builder is tuned to the needs of reporting metrics metadata. Metrics
+     * which share the same name but have different tags and have multiple
+     * values (called sampled) need to appear in the data output as one
+     * object with the common name. The name of each sample in the output is
+     * decorated with the tags for the sample's parent metric. For example:
+     * <p>
+     * <pre><code>
+     * "carsMeter": {
+     * "count;colour=red" : 0,
+     * "meanRate;colour=red" : 0,
+     * "oneMinRate;colour=red" : 0,
+     * "fiveMinRate;colour=red" : 0,
+     * "fifteenMinRate;colour=red" : 0,
+     * "count;colour=blue" : 0,
+     * "meanRate;colour=blue" : 0,
+     * "oneMinRate;colour=blue" : 0,
+     * "fiveMinRate;colour=blue" : 0,
+     * "fifteenMinRate;colour=blue" : 0
+     * }
+     * </code></pre>
+     * <p>
+     * The metadata output (as opposed to the data output) must collect tag
+     * information from actual instances of the metric under the overall metadata
+     * object. This example reflects two instances of the {@code barVal} gauge
+     * which have tags of "store" and "component."
+     * <pre><code>
+     * "barVal": {
+     * "unit": "megabytes",
+     * "type": "gauge",
+     * "tags": [
+     *   [
+     *     "store=webshop",
+     *     "component=backend"
+     *   ],
+     *   [
+     *     "store=webshop",
+     *     "component=frontend"
+     *   ]
+     * ]
+     * }
+     * </code></pre>
+     */
+    static final class MergingJsonObjectBuilder implements JsonObjectBuilder {
 
         private final JsonObjectBuilder delegate;
 
         private final Map<String, List<JsonObject>> subValuesMap = new HashMap<>();
+        private final Map<String, List<JsonArray>> subArraysMap = new HashMap<>();
 
         private MergingJsonObjectBuilder(JsonObjectBuilder delegate) {
             this.delegate = delegate;
@@ -571,6 +623,20 @@ public final class MetricsSupport implements Service {
             return this;
         }
 
+        @Override
+        public JsonObjectBuilder add(String name, JsonArrayBuilder arrayBuilder) {
+            final JsonArray array = arrayBuilder.build();
+            delegate.add(name, JSON.createArrayBuilder(array));
+            List<JsonArray> subArrays;
+            if (subArraysMap.containsKey(name)) {
+                subArrays = subArraysMap.get(name);
+            } else {
+                subArrays = new ArrayList<>();
+                subArraysMap.put(name, subArrays);
+            }
+            subArrays.add(array);
+            return this;
+        }
 
         @Override
         public JsonObjectBuilder add(String arg0, JsonValue arg1) {
@@ -580,7 +646,8 @@ public final class MetricsSupport implements Service {
 
         @Override
         public JsonObjectBuilder add(String arg0, String arg1) {
-            return delegate.add(arg0, arg1);
+            delegate.add(arg0, arg1);
+            return this;
         }
 
         @Override
@@ -626,12 +693,6 @@ public final class MetricsSupport implements Service {
         }
 
         @Override
-        public JsonObjectBuilder add(String arg0, JsonArrayBuilder arg1) {
-            delegate.add(arg0, arg1);
-            return this;
-        }
-
-        @Override
         public JsonObjectBuilder addAll(JsonObjectBuilder builder) {
             delegate.addAll(builder);
             return this;
@@ -646,7 +707,7 @@ public final class MetricsSupport implements Service {
         @Override
         public JsonObject build() {
             final JsonObject beforeMerging = delegate.build();
-            if (subValuesMap.isEmpty()) {
+            if (subValuesMap.isEmpty() && subArraysMap.isEmpty()) {
                 return beforeMerging;
             }
             final JsonObjectBuilder mainBuilder = JSON.createObjectBuilder(beforeMerging);
@@ -659,6 +720,17 @@ public final class MetricsSupport implements Service {
                         }
                         mainBuilder.add(entry.getKey(), metricBuilder);
                     });
+
+            subArraysMap.entrySet().stream()
+                    .forEach(entry -> {
+                        final JsonArrayBuilder arrayBuilder = JSON.createArrayBuilder();
+                        for (JsonArray subArray : entry.getValue()) {
+                            final JsonArrayBuilder subArrayBuilder = JSON.createArrayBuilder(subArray);
+                            arrayBuilder.add(subArrayBuilder);
+                        }
+                        mainBuilder.add(entry.getKey(), arrayBuilder);
+                    });
+
             return mainBuilder.build();
         }
 

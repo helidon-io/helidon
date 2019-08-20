@@ -16,12 +16,17 @@
 
 package io.helidon.metrics;
 
+import java.util.Collections;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,6 +38,9 @@ class MetricsSupportTest {
     private static Registry base;
     private static Registry vendor;
     private static Registry app;
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
 
     @BeforeAll
     static void initClass() {
@@ -86,6 +94,37 @@ class MetricsSupportTest {
     void testJsonDataWithTags() {
         JsonObject jsonObject = MetricsSupport.toJsonData(app);
         // Check for presence of tags and correct ordering.
-        Assertions.assertTrue(jsonObject.containsKey("appCounter;brightness=dim;color=blue"));
+        assertTrue(jsonObject.containsKey("appCounter;brightness=dim;color=blue"));
+    }
+
+    @Test
+    void testMergingJsonObjectBuilder() {
+        JsonObjectBuilder builder = MetricsSupport.createMergingJsonObjectBuilder(JSON.createObjectBuilder());
+        builder.add("commonObj", JSON.createObjectBuilder()
+                        .add("intA", 4)
+                        .add("longB", 6l))
+                .add("commonArray", JSON.createArrayBuilder()
+                        .add("integration")
+                        .add(6))
+                .add("otherStuff", "this really is other stuff")
+                .add("commonArray", JSON.createArrayBuilder()
+                        .add("demo")
+                        .add(7))
+                .add("commonObj", JSON.createObjectBuilder()
+                        .add("doubleA", 8d)
+                        .add("differentStuff", "this is even more different"));
+        JsonObject jo = builder.build();
+
+        JsonObject commonObj = jo.getJsonObject("commonObj");
+        assertEquals(4, commonObj.getInt("intA"));
+        assertEquals(8d, commonObj.getJsonNumber("doubleA").doubleValue());
+
+        assertEquals("this really is other stuff", jo.getString("otherStuff"));
+        
+        JsonArray commonArray = jo.getJsonArray("commonArray");
+        assertEquals("integration", commonArray.getJsonArray(0).getString(0));
+        assertEquals(6, commonArray.getJsonArray(0).getInt(1));
+        assertEquals("demo", commonArray.getJsonArray(1).getString(0));
+        assertEquals(7, commonArray.getJsonArray(1).getInt(1));
     }
 }

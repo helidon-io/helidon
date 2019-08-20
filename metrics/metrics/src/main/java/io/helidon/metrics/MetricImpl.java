@@ -120,28 +120,8 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
               metadata.getDescription().orElse(null),
               metadata.getTypeRaw(),
               metadata.getUnit().orElse(null),
-              true);        // TODO tagsToSimpleString(metadata));
+              true);
         this.registryType = registryType;
-    }
-
-    private static String tagsToSimpleString(Metadata metadata) {
-        // add tags
-        HashMap<String, String> tags = new HashMap<>();     // TODO metadata.getTags();
-
-        if (tags.isEmpty()) {
-            return "";
-        } else {
-            StringBuilder sb = new StringBuilder();
-
-            for (Map.Entry<String, String> entry : tags.entrySet()) {
-                sb.append(entry.getKey()).append("=").append(entry.getValue());
-                sb.append(",");
-            }
-
-            sb.delete(sb.length() - 1, sb.length());
-
-            return sb.toString();
-        }
     }
 
     private static void addByteConverter(String metricUnit, long toByteRatio) {
@@ -167,7 +147,7 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
         addNonEmpty(metaBuilder, "type", getType());
         addNonEmpty(metaBuilder, "description", getDescription().orElse(null));
         addNonEmpty(metaBuilder, "displayName", getDisplayName());
-        addNonEmpty(metaBuilder, "tags", tagsToSimpleString(this));
+//        addNonEmpty(metaBuilder, "tags", tagsToJson(this));
 
         builder.add(getName(), metaBuilder);
     }
