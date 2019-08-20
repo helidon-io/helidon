@@ -112,11 +112,9 @@ Add the following dependency in your `pom.xml`:
 <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
-    <scope>compile</scope> <!--1-->
+    <scope>runtime</scope>
 </dependency>
 ----
-
-<1> Note that the scope is `compile`.  We'll see why shortly.
 
 == Add DDL to Create the Relevant Database Tables
 
