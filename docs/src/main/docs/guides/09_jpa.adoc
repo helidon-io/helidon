@@ -339,7 +339,7 @@ set to `false`.
 _Weaving_ is the term that describes the bytecode manipulation that
 JPA providers perform upon your otherwise simple Java classes (like
 the `Greeting` class you created above).  In Helidon MicroProfile's
-JPA extension, weaving must be performed statically at build time.
+JPA extension, weaving must be performed statically (at build time).
 Here we modify the `pom.xml` to make that happen.
 
 Add the following plugin configuration in your `pom.xml`:
