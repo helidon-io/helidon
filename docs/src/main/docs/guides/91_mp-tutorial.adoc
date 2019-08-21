@@ -1,0 +1,511 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon MP Tutorial
+:description: Helidon MP Tutorial
+:keywords: helidon
+
+This tutorial describes how to build an Helidon MP application from scratch 
+ including JSON REST endpoints, metrics, health check, and configuration.
+
+== What you need
+
+[width=50%,role="flex, sm7"]
+|===
+|About 30 minutes
+|<<about/03_prerequisites.adoc,Helidon Prerequisites>>
+|===
+
+== Create The Project
+
+This tutorial demonstrates how to create the application from scratch, without
+ using the Maven archetypes as a quickstart. 
+ 
+Create a new empty directory for the project (for example, `helidon-mp-tutorial`).  Change into this directory.
+
+Create a new Maven POM file (called `pom.xml`) and add the following
+ content: 
+ 
+[source,xml,subs="attributes+"]
+.Initial Maven POM file
+----
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.helidon.examples</groupId>
+    <artifactId>helidon-mp-tutorial</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+
+    <properties>
+        <helidon.version>1.2.0</helidon.version>
+        <mainClass>io.helidon.examples.Main</mainClass>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${helidon.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-2.2</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
+----
+
+This POM files contains just the basics that we need to get started.  It
+ establishes the Maven coordinates for the new project, it includes 
+ the Helidon BOM POM (in the `dependencyManagement` section) and adds a 
+ dependecny for the MicroProfile 2.2 bundle which allows the use of
+ MicroProfile 2.2 features in the application.
+
+The `properties` section tells Maven to use Java 8 for the srouce
+ and target version, and sets the `mainClass` which will be used later
+ when building a JAR file.  The class will be created later in the
+ tutorial.
+
+With this POM file, the application can be built successfully with Maven:
+
+[source,bash]
+----
+mvn clean package
+----
+
+This will create a JAR file in the `target` directory.
+
+TIP: The warning message `JAR will be empty - 
+ no content was marked for inclusion!` can be ignored for now 
+ because there is no actual content in the application yet.
+
+== Create the MicroProfile application
+
+The actual application logic can be created now.
+ The first step is to add the application class. Create a directory
+ for your source code, and then create directories for the package 
+ hierarchy:
+
+[source,bash]
+.Create directories for source code
+----
+mkdir -p src/main/java/io/helidon/examples
+----
+
+The application will be a simple REST service that will return a 
+ greeting to the caller.  The first iteration of the application will 
+ contain a MicroProfile Application class, a resource class and a 
+ Main class which will be used to start up the Helidon server 
+ and the application.
+
+Create a new Java class inside that directory called `GreetApplication.java`
+ and add the following content:
+
+[source,java]
+.Initial application class
+----
+package io.helidon.examples;
+
+import io.helidon.common.CollectionsHelper;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
+import java.util.Set;
+
+@ApplicationScoped
+@ApplicationPath("/")
+public class GreetApplication extends Application {
+
+    @Override
+    public Set<Class<?>> getClasses() {
+        return CollectionsHelper.setOf(GreetResource.class);
+    }
+
+}
+----
+
+This class is annotated with the MicroProfile annotation `ApplicationScoped`
+ which specifies that this bean is "application scoped". The application scope
+ is shared between all web service invocations that execute within the same
+ application. 
+
+The `ApplicationPath` annotation sets the URL path that will be used to 
+ access the application.
+
+In the application class, we need to override the 
+ `public Set<Class<?>> getClasses()` method.  This method must return
+ a Set of Class objects, one for each resource that the application 
+ will serve.  Currently, the application only has one resource, the
+ `GreetResource`.
+
+The `GreetResource` is defined in the `GreetResource.java` class as shown
+below: 
+
+[source,java]
+.Initial resource class
+----
+package io.helidon.examples;
+
+import javax.enterprise.context.RequestScoped;
+import javax.json.Json;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.util.Collections;
+
+@Path("/greet")
+@RequestScoped
+public class GreetResource {
+
+    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessage() {
+        return JSON.createObjectBuilder()
+                .add("message", "Hello World")
+                .build();
+    }
+
+}
+----
+
+This class is annotated with `Path` which sets the path for this resource
+ as `/greet`.  The `RequestScoped` annotation defines that this bean is
+ request scoped.  The request scope is active only for the duration of
+ one web service invocation and it is destroyed at the end of that
+ invocation.
+
+In this class a `public JsonObject getDefaulMessage()` method is defined
+ which is annotated with `GET`, meaning it will accept the HTTP GET method.
+ It is also annotated with `Produces(MediaType.APPLICATION_JSON)` which
+ declares that this method will return JSON data. The method body creates
+ a JSON object containing a single object named "message" with the content
+ "Hello World".  This method will be expanded and improved
+ later in the tutorial.
+
+A main class is also required to start up the server and run the
+ application.  Here is the initial main class:
+
+[source,java]
+.Initial Main class
+----
+package io.helidon.examples;
+
+import io.helidon.microprofile.server.Server;
+import java.io.IOException;
+
+public final class Main {
+
+    private Main() { }
+
+    public static void main(final String[] args) throws IOException {
+        Server server = startServer();
+        System.out.println("http://localhost:" + server.port() + "/greet");
+    }
+
+    static Server startServer() {
+        return Server.create().start();
+    }
+    
+}
+----
+
+In this class, a `main` method is defined which starts the Helidon MP 
+ server and prints out a message with the listen address.  Notice that
+ this class has an empty no-args constructor to make sure this class
+ cannot be instantiated.
+
+Helidon MP applications also require a `beans.xml` resource file to
+ tell Helidon to use the annotations discussed above to discover Java
+ beans in the application.
+
+Create a `beans.xml` in the `src/main/resources/META-INF` directory
+ with the following content:
+
+[source,xml]
+.beans.xml file
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                           http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
+       version="2.0"
+       bean-discovery-mode="annotated">
+</beans>
+----
+
+The `bean-discovery-mode` tells Helidon to look for the annotations
+ to discover Java beans in the application.
+
+== Update the POM to build the application
+
+Helidon MP applications are packaged into a JAR file and the dependencies
+ are copied into a `libs` directory.  Update the Maven POM file to create
+ the correct packaging.  Here is the updated file:
+
+[source,xml]
+.Updated POM file
+----
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.helidon.examples</groupId>
+    <artifactId>helidon-mp-tutorial</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+
+    <properties>
+        <helidon.version>1.2.0</helidon.version>
+        <mainClass>io.helidon.examples.Main</mainClass>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
+        <libs.classpath.prefix>libs</libs.classpath.prefix>
+        <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon-bom</artifactId>
+                <version>${helidon.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-2.2</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.5</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+                                <classpathPrefix>${libs.classpath.prefix}</classpathPrefix>
+                                <mainClass>${mainClass}</mainClass>
+                                <useUniqueVersions>false</useUniqueVersions>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${copied.libs.dir}</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                            <excludeScope>test</excludeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+---- 
+
+New entries are created in the `properties` to set the name of the `libs`
+ directory where the dependencies will be placed.   In the `build` section,
+ a `plugin` entry is added to configure the `maven-jar-plugin` to set the
+ main class in the manifest, and to add the `libs` directory to the
+ manifest classpath.  Additionally, the `maven-dependency-plugin` is
+ configured to copy the dependencies into the `libs` directory.
+
+With these updates in place, build the application with Maven:
+
+[source,bash]
+.Build the Application
+----
+mvn package
+----
+
+This will build the application jar and save all runtime 
+dependencies in the `target/libs` directory. This means you can easily start the
+ application by running the application jar file:
+
+[source,bash]
+.Run the application
+----
+java -jar target/helidon-mp-tutorial-1.0-SNAPSHOT.jar
+----
+
+At this stage, the application is a very simple "Hello World" greeting service. 
+ It supports a single GET request for generating a greeting message.
+ The response is encoded using JSON.
+ For example:
+
+[source,bash]
+.Try the Application
+----
+curl -X GET http://localhost:7001/greet
+{"message":"Hello World!"}
+----
+
+In the output you can see the JSON output from the `getDefaultMessage()`
+ method that was discussed earlier.  The server has used a default port
+ `7001`.  Later we will see how to configure the port.
+
+== Configuration
+
+STOP READING HERE!!! 
+
+write me
+change the port number
+set the default greeting
+
+
+== Health and Metrics
+
+Helidon provides built-in support for health and metrics endpoints.
+
+[source,bash]
+.Health
+----
+curl -s -X GET http://localhost:8080/health
+----
+
+[source,bash]
+.Metrics in Prometheus Format
+----
+curl -s -X GET http://localhost:8080/metrics
+----
+
+[source,bash]
+.Metrics in JSON Format
+----
+curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+----
+
+== Build a Docker Image
+
+The project also contains a Dockerfile so that you can easily build and run a
+ Docker image. To build the Docker image, you need to have Docker installed and
+ running on your system.
+
+[source,bash]
+.Docker build
+----
+docker build -t helidon-quickstart-se .
+----
+
+[source,bash]
+.Run Docker Image
+----
+docker run --rm -p 8080:8080 helidon-quickstart-se:latest
+----
+
+Then you can try the application as you did before.
+
+== Deploy the application to Kubernetes
+
+If you don't have access to a Kubernetes cluster, you can
+<<getting-started/05_kubernetes.adoc,install one on your desktop>>.
+Then deploy the example:
+
+[source,bash]
+.Verify connectivity to cluster
+----
+kubectl cluster-info
+kubectl get nodes
+----
+
+[source,bash]
+.Deploy the application to Kubernetes
+----
+kubectl create -f app.yaml
+kubectl get pods                    # Wait for quickstart pod to be RUNNING
+----
+
+The step above created a service that is exposed into any node port. Lookup
+ the service to find the port.
+
+[source,bash]
+.Lookup the service
+----
+kubectl get service helidon-quickstart-se
+----
+
+Note the PORTs. You can now exercise the application as you did before but use
+ the second port number (the NodePort) instead of 8080. For example:
+
+[source,bash]
+curl -X GET http://localhost:31431/greet
+
+After you're done, cleanup.
+
+[source,bash]
+.Remove the application from Kubernetes
+----
+kubectl delete -f app.yaml
+----
