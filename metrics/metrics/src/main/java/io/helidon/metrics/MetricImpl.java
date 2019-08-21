@@ -35,6 +35,7 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -229,6 +230,9 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     }
 
     final String prometheusNameWithUnits(String name, Optional<String> unit) {
+        if (getTypeRaw() == MetricType.COUNTER) {
+            return name.endsWith("_total") ? prometheusName(name) : prometheusName(name) + "_total";
+        }
         return prometheusName(name) + unit.map((it) -> "_" + it).orElse("");
     }
 
