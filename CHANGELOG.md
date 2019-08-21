@@ -5,28 +5,28 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] 
+## [1.2.1] - 2019-08-21
 
 ### Notes
 
-### Improvements
-
-- JPA: Add support for unitName-less PersistenceContext injection points [914](https://github.com/oracle/helidon/pull/914)
-- JPA: Promoting JPA integration to supported status [908](https://github.com/oracle/helidon/pull/908)
+This release contains bug and performance fixes as well as support for
+the latest releases of GraalVM (19.1.1 and 19.2.0)
 
 ### Fixes
 
 - Tracing: Zipkin integration no longer fails in MP due to class cast exception. [901](https://github.com/oracle/helidon/pull/901)
 - Jersey client to automatically propagate context when using asynchronous operations. [905](https://github.com/oracle/helidon/pull/905)
+- Smart resizing of Jersey thread pool [871](https://github.com/oracle/helidon/pull/871)
 - WebServer: Upgrade Netty to 4.1.39 [899](https://github.com/oracle/helidon/pull/899)
 - WebServer: Change Netty workers default to equal available processors. [874](https://github.com/oracle/helidon/pull/874)
-- Smart resizing of Jersey thread pool [871](https://github.com/oracle/helidon/pull/871)
+- JPA: Add support for unitName-less PersistenceContext injection points [914](https://github.com/oracle/helidon/pull/914)
+- JPA: Promoting JPA integration to supported status [908](https://github.com/oracle/helidon/pull/908)
 - Health: Healthchecks moved to liveness checks. [903](https://github.com/oracle/helidon/pull/903)
 - MP Server: Logging a warning when more than one MP server is started. [902](https://github.com/oracle/helidon/pull/902)
 - GraalVM: Changes for Zipkin and Netty to run with latest Graal VM native-image [915](https://github.com/oracle/helidon/pull/915)
-- Correct erroneous assert statement in JedisExtension [917](https://github.com/oracle/helidon/pull/917)
 - Security: Properly log audit event [886](https://github.com/oracle/helidon/pull/886)
 - OpenAPI: Allow different servers within an app to report different OpenAPI doc [883](Allow different servers within an app to report different OpenAPI doc)
+- Correct erroneous assert statement in JedisExtension [917](https://github.com/oracle/helidon/pull/917)
 - UCP Unit test [889](https://github.com/oracle/helidon/pull/889)
 - Examples: Add H2-based example for the Hikari connection pool [898](https://github.com/oracle/helidon/pull/898)
 - Documentation fixes [892](https://github.com/oracle/helidon/pull/892) [898](https://github.com/oracle/helidon/pull/898) [906](https://github.com/oracle/helidon/pull/906)
@@ -415,7 +415,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
-[Unreleased]: https://github.com/oracle/helidon/compare/1.2.0...HEAD
+[1.2.1]: https://github.com/oracle/helidon/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/oracle/helidon/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/oracle/helidon/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/oracle/helidon/compare/1.1.0...1.1.1
