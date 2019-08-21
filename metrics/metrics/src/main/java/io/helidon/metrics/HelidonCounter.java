@@ -60,6 +60,12 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
+    public String prometheusNameWithUnits(MetricID metricID) {
+        String metricName = prometheusName(metricID.getName());
+        return metricName.endsWith("total") ? metricName : metricName + "_total";
+    }
+
+    @Override
     public String prometheusValue() {
         return Long.toString(getCount());
     }

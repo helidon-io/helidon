@@ -70,6 +70,11 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
     }
 
     @Override
+    public String prometheusNameWithUnits(MetricID metricID) {
+        return prometheusName(metricID.getName());
+    }
+
+    @Override
     public String prometheusValue() {
         return Long.toString(getCount());
     }
@@ -80,8 +85,25 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         myBuilder.add(jsonFullKey("current", metricID), getCount())
                 .add(jsonFullKey("max", metricID), getMax())
                 .add(jsonFullKey("min", metricID), getMin());
-
         builder.add(metricID.getName(), myBuilder);
+    }
+
+    @Override
+    public void prometheusData(StringBuilder sb, MetricID metricID) {
+        String name = prometheusNameWithUnits(metricID);
+        final String nameCurrent = name + "_current";
+        prometheusType(sb, nameCurrent, getType());
+        prometheusHelp(sb, nameCurrent);
+        sb.append(nameCurrent).append(prometheusTags(metricID.getTags()))
+                .append(" ").append(prometheusValue()).append('\n');
+        final String nameMin = name + "_min";
+        prometheusType(sb, nameMin, getType());
+        sb.append(nameMin).append(prometheusTags(metricID.getTags()))
+                .append(" ").append(getMin()).append('\n');
+        final String nameMax = name + "_max";
+        prometheusType(sb, nameMax, getType());
+        sb.append(nameMax).append(prometheusTags(metricID.getTags()))
+                .append(" ").append(getMax()).append('\n');
     }
 
     static class ConcurrentGaugeImpl implements ConcurrentGauge {

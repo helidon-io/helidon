@@ -197,13 +197,14 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
 
     @Override
     public void prometheusData(StringBuilder sb, MetricID metricID) {
-        String nameWithUnits = prometheusNameWithUnits(metricID.getName(), getUnits().getPrometheusUnit());
+        String nameWithUnits = prometheusNameWithUnits(metricID);
         prometheusType(sb, nameWithUnits, getType());
         prometheusHelp(sb, nameWithUnits);
         sb.append(nameWithUnits).append(prometheusTags(metricID.getTags())).append(" ").append(prometheusValue()).append('\n');
     }
 
-    String prometheusNameWithUnits(MetricID metricID) {
+    @Override
+    public String prometheusNameWithUnits(MetricID metricID) {
         return prometheusNameWithUnits(metricID.getName(), getUnits().getPrometheusUnit());
     }
 
@@ -230,9 +231,6 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     }
 
     final String prometheusNameWithUnits(String name, Optional<String> unit) {
-        if (getTypeRaw() == MetricType.COUNTER) {
-            return name.endsWith("_total") ? prometheusName(name) : prometheusName(name) + "_total";
-        }
         return prometheusName(name) + unit.map((it) -> "_" + it).orElse("");
     }
 
