@@ -37,5 +37,10 @@
         <Method name="removeMatching" />
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
     </Match>
+    <Match>
+        <Class name="io.helidon.metrics.MetricsSupport" />
+        <Method name="accumulateJson" />
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
+    </Match>
     
 </FindBugsFilter>

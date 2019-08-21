@@ -264,9 +264,14 @@ public final class MetricsSupport implements Service {
         return Arrays.stream(registries)
                 .filter(r -> !r.empty())
                 .collect(JSON::createObjectBuilder,
-                        (builder, registry) -> builder.add(registry.type(), fn.apply(registry)),
+                        (builder, registry) -> accumulateJson(builder, registry, fn),
                         JsonObjectBuilder::addAll)
                 .build();
+    }
+
+    private static void accumulateJson(JsonObjectBuilder builder, Registry registry,
+            Function<Registry, JsonObject> fn) {
+        builder.add(registry.type(), fn.apply(registry));
     }
 
     private static JsonObject toJson(
