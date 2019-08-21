@@ -430,3 +430,41 @@ Then add the following annotated field declaration:
 @PersistenceContext
 private EntityManager em;
 ----
+
+== Use the Injected `EntityManager`
+
+In the `ResourceClassNameGoesHere.java` file, add the following import:
+
+[source,java]
+.`ResourceClassNameGoesHere.java`
+----
+import javax.transaction.Transactional;
+----
+
+Add the following resource method to the `ResourceClassNameGoesHere` class:
+
+[source,java]
+.`ResourceClassNameGoesHere.java`
+----
+@GET
+@Path("response/{salutation}")
+@Produces("text/plain")
+@Transactional <1>
+public String getResponse(@PathParam("salutation") String salutation) {
+    final Greeting greeting = this.em.find(Greeting.class, salutation);
+    final String returnValue;
+    if (greeting == null) {
+       returnValue = null;
+    } else {
+       returnValue = greeting.getResponse();
+    }
+    return returnValue;
+}
+----
+
+<1> A JTA transaction will be automatically started at the beginning
+of this method when it is invoked as a result of an incoming HTTP
+request, and committed or rolled back when the method terminates
+normally or exceptionally.  The injected `EntityManager` will join the
+transaction automatically.
+
