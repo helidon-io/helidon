@@ -18,8 +18,8 @@ package io.helidon.examples.quickstart.se;
 
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
