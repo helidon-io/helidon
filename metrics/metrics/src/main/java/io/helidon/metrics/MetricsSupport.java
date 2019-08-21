@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -52,7 +53,6 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
-import javax.json.JsonArray;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Meter;
@@ -128,7 +128,7 @@ public final class MetricsSupport implements Service {
         return builder().config(config).build();
     }
 
-    public static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
+    static JsonObjectBuilder createMergingJsonObjectBuilder(JsonObjectBuilder delegate) {
         return new MergingJsonObjectBuilder(delegate);
     }
 
@@ -557,7 +557,7 @@ public final class MetricsSupport implements Service {
      * <p>
      * This builder is tuned to the needs of reporting metrics metadata. Metrics
      * which share the same name but have different tags and have multiple
-     * values (called sampled) need to appear in the data output as one
+     * values (called samples) need to appear in the data output as one
      * object with the common name. The name of each sample in the output is
      * decorated with the tags for the sample's parent metric. For example:
      * <p>
@@ -658,7 +658,7 @@ public final class MetricsSupport implements Service {
 
         @Override
         public JsonObjectBuilder add(String arg0, BigDecimal arg1) {
-            delegate.add(arg0, arg1);
+            JsonObjectBuilder ob = delegate.add(arg0, arg1);
             return this;
         }
 
