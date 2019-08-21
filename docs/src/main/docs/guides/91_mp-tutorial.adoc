@@ -435,9 +435,9 @@ Rebuild the application and run it again, notice that it now uses port
  8080 as specified in the configuration file.
 
 In addition to predefined server properties, application-specific 
- configuration information can be added to this file.  Add the following
- entry to the file, that will be used to set the content of greeting
- message.
+ configuration information can be added to this file.  Add the `app.greeting`
+ property to the file as shown below. This property will be used to set the
+ content of greeting message.
 
 [source,bash] 
 .Updated microprofile-config.properties
@@ -550,12 +550,14 @@ This updated class adds a `GreetingProvider` and uses constructor injection
  response message is refactored into a `createResponse` method and the 
  `getDefaultMessage()` method is updated to use this new method.
 
-In `createResponse` the message is obtained from the `GreetingProvider`
+In `createResponse()`, the message is obtained from the `GreetingProvider`
  which in turn got it from the configuration. 
 
 Rebuild and run the application and notice that it now uses the greeting
  from the configuration file.  Change the configuration file and restart
  the application, notice that it uses the changed value.
+
+==== Dynamic configuration
 
 Helidon also allows applications to consume configuration from multiple
  sources and to consume changes to the configuration dynamically, without requiring a restart. Update the main class as follows:
@@ -617,7 +619,7 @@ app:
   greeting: "Hallo"
 ----
 
-Also notice that the `startServer()` method has been updated to use a
+Notice that the `startServer()` method has been updated to use a
  Config Builder, which is implemented in the new method `buildConfig()`.
  This method defines two sources for configuration information, first the
  new `mp.yaml` file, and this is marked as optional, and has a "polling
@@ -630,12 +632,85 @@ Rebuild the application and run it.  After making some requests, update
  the greeting in the `mp.yaml` and observe that new requests pick up
  the new value without the need for a restart of the application.
 
+TODO TODO TODO
 
-STOP READING HERE!!! 
+THIS IS NOT WORKING AS EXPECTED
+
+TODO TODO TODO
+
+== Extending the application
+
+In this section, the application will be extended to add a POST 
+ service which will allow users to update the greeting and a
+ second GET service which will accept a parameter.
+
+Here are the two new methods to add to `GreetResource.java`:
+
+[source,java]
+.New methods for GreetResource.java
+----
+    @Path("/{name}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getMessage(@PathParam("name") String name) {
+        return createResponse(name);
+    }
+    
+    @Path("/greeting")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateGreeting(JsonObject jsonObject) {
+
+        if (!jsonObject.containsKey("greeting")) {
+            JsonObject entity = JSON.createObjectBuilder()
+                    .add("error", "No greeting provided")
+                    .build();
+            return Response.status(Response.Status.BAD_REQUEST).entity(entity).build();
+        }
+
+        String newGreeting = jsonObject.getString("greeting");
+
+        greetingProvider.setMessage(newGreeting);
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+----
+
+The first of these two methods implements a new HTTP GET service 
+ that returns JSON and it has a path parameter.  The `Path` annotation
+ defines the next part of the path to be a parameter named `name`.
+ In the method arguments the `PathParam("name")` annotation on 
+ `String name` has the effect of passing the parameter from the 
+ URL into this method as `name`.
+
+The second method implements a new HTTP POST service which produces
+ and consumes JSON, note the `Consumes` and `PUT` annotations.
+ It also defines a path of "/greeting".  Notice that the method
+ argument is a `JsonObject`. Inside the method body there is code
+ to check for the expected JSON, extract the value and update the
+ message in the `GreetingProvider`.
+
+Rebuild and run the application.  Test the new services using curl
+ commands similar to those shown below:
+
+[source,bash]
+.Testing the new services
+----
+curl -X GET http://localhost:8080/greet
+{"message":"Hello World!"}
+
+curl -X GET http://localhost:8080/greet/Joe
+{"message":"Hello Joe!"}
+
+curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
+
+curl -X GET http://localhost:8080/greet/Jose
+{"message":"Hola Jose!"}
+----
 
 write me
-change the port number
-set the default greeting
+
+STOP READING HERE!!! 
 
 
 == Health and Metrics
