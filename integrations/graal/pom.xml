@@ -30,10 +30,6 @@
     <packaging>pom</packaging>
     <name>Helidon Integrations Graal Project</name>
 
-    <properties>
-
-    </properties>
-
     <modules>
         <module>native-image-extension</module>
     </modules>
