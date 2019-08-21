@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.examples.grpc</groupId>
         <artifactId>helidon-examples-grpc-project</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.1</version>
     </parent>
     <artifactId>helidon-examples-grpc-metrics</artifactId>
     <name>Helidon gRPC Server Examples Metrics</name>
