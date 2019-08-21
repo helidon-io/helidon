@@ -18,6 +18,8 @@ package io.helidon.examples.quickstart.se;
 
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
@@ -54,6 +56,8 @@ public class GreetService implements Service {
     private final AtomicReference<String> greeting = new AtomicReference<>();
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    private static final Logger LOGGER = Logger.getLogger(GreetService.class.getName());
 
     GreetService(Config config) {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
@@ -101,6 +105,27 @@ public class GreetService implements Service {
         response.send(returnObject);
     }
 
+    private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
+                if (ex.getCause() instanceof JsonException){
+
+                LOGGER.log(Level.FINE, "Exception occurred while processing payload", ex);
+                    String error = String.format("Error with JSON: %s", ex.getCause().toString());
+                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                        .add("error", error)
+                        .build();
+                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+                } else {
+
+                LOGGER.log(Level.FINE, "Exception occurred while processing payload", ex);
+                    JsonObject jsonErrorObject = JSON.createObjectBuilder() .add("error", ex.getLocalizedMessage()) .build();
+                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
+                    request.next(ex);
+                }
+
+                LOGGER.log(Level.FINE, "Exception occurred while processing payload", ex);
+                return null;
+    }
+
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
         if (!jo.containsKey("greeting")) {
@@ -125,24 +150,7 @@ public class GreetService implements Service {
                                        ServerResponse response) {
         request.content().as(JsonObject.class)
             .thenAccept(jo -> updateGreetingFromJson(jo, response))
-            .exceptionally((Throwable ex) -> {
-                if (ex.getCause() instanceof JsonException){
-                    String error = String.format("Error with JSON: %s", ex.getCause().toString());
-                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                        .add("error", error)
-                        .build();
-                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-                } else {
-                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                        .add("error", ex.getLocalizedMessage())
-                        .build();
-                    request.next(ex);
-                }
-
-                ex.printStackTrace();
-
-                return null;
-            });
+            .exceptionally(ex -> processErrors(ex, request, response));
     }
 
 }
