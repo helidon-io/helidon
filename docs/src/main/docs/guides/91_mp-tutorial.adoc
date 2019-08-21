@@ -90,11 +90,11 @@ Create a new Maven POM file (called `pom.xml`) and add the following
 This POM files contains just the basics that we need to get started.  It
  establishes the Maven coordinates for the new project, it includes 
  the Helidon BOM POM (in the `dependencyManagement` section) and adds a 
- dependecny for the MicroProfile 2.2 bundle which allows the use of
+ dependency for the MicroProfile 2.2 bundle which allows the use of
  MicroProfile 2.2 features in the application.
 
-The `properties` section tells Maven to use Java 8 for the srouce
- and target version, and sets the `mainClass` which will be used later
+The `properties` section tells Maven to use Java 8 for the source
+ and target versions, and sets the `mainClass` which will be used later
  when building a JAR file.  The class will be created later in the
  tutorial.
 
@@ -107,9 +107,9 @@ mvn clean package
 
 This will create a JAR file in the `target` directory.
 
-TIP: The warning message `JAR will be empty - 
- no content was marked for inclusion!` can be ignored for now 
- because there is no actual content in the application yet.
+TIP: The warning message `JAR will be empty - no content was marked for inclusion!` 
+ can be ignored for now  because there is no actual content in the 
+ application yet.
 
 == Create the MicroProfile application
 
@@ -126,7 +126,7 @@ mkdir -p src/main/java/io/helidon/examples
 
 The application will be a simple REST service that will return a 
  greeting to the caller.  The first iteration of the application will 
- contain a MicroProfile Application class, a resource class and a 
+ contain a MicroProfile application class, a resource class and a 
  Main class which will be used to start up the Helidon server 
  and the application.
 
@@ -157,7 +157,8 @@ public class GreetApplication extends Application {
 }
 ----
 
-This class is annotated with the MicroProfile annotation `ApplicationScoped`
+The application class must extend `javax.ws.rs.core.Application`. 
+ The class is annotated with `ApplicationScoped` 
  which specifies that this bean is "application scoped". The application scope
  is shared between all web service invocations that execute within the same
  application. 
@@ -165,9 +166,9 @@ This class is annotated with the MicroProfile annotation `ApplicationScoped`
 The `ApplicationPath` annotation sets the URL path that will be used to 
  access the application.
 
-In the application class, we need to override the 
+In the application class, override the 
  `public Set<Class<?>> getClasses()` method.  This method must return
- a Set of Class objects, one for each resource that the application 
+ a `Set` of `Class` objects, one for each resource that the application 
  will serve.  Currently, the application only has one resource, the
  `GreetResource`.
 
