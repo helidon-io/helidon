@@ -16,8 +16,9 @@
 
 package io.helidon.metrics;
 
+import io.helidon.common.CollectionsHelper;
 import java.io.StringReader;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 import javax.json.Json;
@@ -28,6 +29,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -39,13 +41,27 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  * Unit test for {@link MetricImpl}.
  */
 class MetricImplTest {
-    private static final String JSON_META = "{"
-            + "\"theName\":"
+    private static final String JSON_META_MOST = "\"theName\":"
             + "{"
             + "\"unit\":\"none\","
             + "\"type\":\"counter\","
             + "\"description\":\"theDescription\","
-            + "\"displayName\":\"theDisplayName\"}}";
+            + "\"displayName\":\"theDisplayName\"";
+
+    private static final String JSON_META = "{" + JSON_META_MOST + "}}";
+    private static final String JSON_META_WITH_TAGS = "{" + JSON_META_MOST
+            + ","
+            + "\"tags\": ["
+            + "  [\"a=b\","
+            + "   \"c=d\" ],"
+            + "  [\"e=f\","
+            + "   \"g=h\" ]"
+            + "]"
+            + "}}";
+
+    private static final List<MetricID> METRIC_IDS = CollectionsHelper.listOf(
+        new MetricID("name1", new Tag("a", "b"), new Tag("c", "d")),
+        new MetricID("name2", new Tag("e", "f"), new Tag("g", "h")));
 
     private static MetricImpl impl;
     private static MetricID implID;
@@ -145,7 +161,16 @@ class MetricImplTest {
         JsonObject expected = Json.createReader(new StringReader(JSON_META)).readObject();
 
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        impl.jsonMeta(builder);
+        impl.jsonMeta(builder, null);
+        assertThat(builder.build(), is(expected));
+    }
+
+    @Test
+    void testJsonMetaWithTags() {
+        JsonObject expected = Json.createReader(new StringReader(JSON_META_WITH_TAGS)).readObject();
+
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        impl.jsonMeta(builder, METRIC_IDS);
         assertThat(builder.build(), is(expected));
     }
 

@@ -252,7 +252,12 @@ public final class MetricsSupport implements Service {
     }
 
     static JsonObject toJsonMeta(Registry registry) {
-        return toJson((builder, entry) -> entry.getValue().jsonMeta(builder), registry);
+        return toJson((builder, entry) -> {
+            final MetricID metricID = entry.getKey();
+            final MetricImpl metric = entry.getValue();
+            final List<MetricID> sameNamedIDs = registry.metricIDsForName(metricID.getName());
+            metric.jsonMeta(builder, sameNamedIDs);
+                }, registry);
     }
 
     private static JsonObject toJson(Function<Registry, JsonObject> fn, Registry... registries) {
@@ -428,11 +433,11 @@ public final class MetricsSupport implements Service {
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getOptionalMetric(metricName))
+        OptionalHelper.from(registry.getOptionalMetadata(metricName))
                 .ifPresentOrElse(metric -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        metric.jsonMeta(builder);
+                        metric.jsonMeta(builder, registry.metricIDsForName(metricName));
                         res.send(builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -604,7 +609,7 @@ public final class MetricsSupport implements Service {
         private final Map<String, List<JsonObject>> subValuesMap = new HashMap<>();
         private final Map<String, List<JsonArray>> subArraysMap = new HashMap<>();
 
-        private MergingJsonObjectBuilder(JsonObjectBuilder delegate) {
+        MergingJsonObjectBuilder(JsonObjectBuilder delegate) {
             this.delegate = delegate;
         }
 

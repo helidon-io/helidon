@@ -16,6 +16,8 @@
 
 package io.helidon.metrics;
 
+import java.util.List;
+
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metric;
@@ -44,8 +46,9 @@ interface HelidonMetric extends Metric {
      * Add this metrics metadata to the JSON builder.
      *
      * @param builder builder of the registry (or of a single metric) result
+     * @param metricIDs IDs from which to harvest tags (if present)
      */
-    void jsonMeta(JsonObjectBuilder builder);
+    void jsonMeta(JsonObjectBuilder builder, List<MetricID> metricIDs);
 
     /**
      * Return this metric data in prometheus format.

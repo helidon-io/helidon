@@ -19,6 +19,7 @@ package io.helidon.metrics;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -30,11 +31,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -139,16 +142,27 @@ abstract class MetricImpl extends HelidonMetadata implements HelidonMetric {
     }
 
     @Override
-    public void jsonMeta(JsonObjectBuilder builder) {
-        JsonObjectBuilder metaBuilder = JSON.createObjectBuilder();
+    public void jsonMeta(JsonObjectBuilder builder, List<MetricID> metricIDs) {
+        JsonObjectBuilder metaBuilder =
+                new MetricsSupport.MergingJsonObjectBuilder(JSON.createObjectBuilder());
 
-        addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
         addNonEmpty(metaBuilder, "unit", getUnit().orElse(null));
         addNonEmpty(metaBuilder, "type", getType());
         addNonEmpty(metaBuilder, "description", getDescription().orElse(null));
         addNonEmpty(metaBuilder, "displayName", getDisplayName());
-//        addNonEmpty(metaBuilder, "tags", tagsToJson(this));
-
+        if (metricIDs != null) {
+            for (MetricID metricID : metricIDs) {
+                boolean tagAdded = false;
+                JsonArrayBuilder ab = JSON.createArrayBuilder();
+                for (Tag tag : metricID.getTagsAsList()) {
+                    tagAdded = true;
+                    ab.add(tagForJsonKey(tag));
+                }
+                if (tagAdded) {
+                    metaBuilder.add("tags", ab);
+                }
+            }
+        }
         builder.add(getName(), metaBuilder);
     }
 

@@ -329,12 +329,20 @@ class Registry extends MetricRegistry {
         return Optional.ofNullable(allMetrics.get(new MetricID(metricName)));
     }
 
+    Optional<HelidonMetric> getOptionalMetadata(String metricName) {
+        return Optional.of(allMetrics.get(allMetricIDsByName.get(metricName).get(0)));
+    }
+
     Optional<HelidonMetric> getOptionalMetric(MetricID metricID) {
         return Optional.ofNullable(allMetrics.get(metricID));
     }
 
     Type registryType() {
         return type;
+    }
+
+    List<MetricID> metricIDsForName(String metricName) {
+        return allMetricIDsByName.get(metricName);
     }
 
     // -- Private methods -----------------------------------------------------
@@ -416,14 +424,14 @@ class Registry extends MetricRegistry {
      * @return Metadata for name.
      */
     private Optional<Metadata> findMetadataForName(String name) {
-        return allMetrics.entrySet().stream()
-                .filter(entry -> entry.getKey().getName().equals(name))
-                .findFirst()
-                .map(Map.Entry::getValue);
+        if (!allMetricIDsByName.containsKey(name)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(allMetrics.get(allMetricIDsByName.get(name).get(0)));
      }
 
     /**
-     * Returns a sorted map based ona filter a metric class.
+     * Returns a sorted map based on a filter a metric class.
      *
      * @param filter The filter.
      * @param metricClass The class.
