@@ -388,16 +388,16 @@ public final class MetricsSupport implements Service {
     private void getOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getOptionalMetric(metricName))
-                .ifPresentOrElse(metric -> {
+        OptionalHelper.from(registry.getOptionalMetricEntry(metricName))
+                .ifPresentOrElse(entry -> {
                     MediaType mediaType = findBestAccepted(req.headers());
                     if (mediaType == MediaType.APPLICATION_JSON) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        metric.jsonData(builder, new MetricID(metricName));
+                        entry.getValue().jsonData(builder, entry.getKey());
                         res.send(builder.build());
                     } else if (mediaType == MediaType.TEXT_PLAIN) {
                         final StringBuilder sb = new StringBuilder();
-                        metric.prometheusData(sb, new MetricID(metricName));
+                        entry.getValue().prometheusData(sb, entry.getKey());
                         res.send(sb.toString());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);
@@ -433,11 +433,11 @@ public final class MetricsSupport implements Service {
     private void optionsOne(ServerRequest req, ServerResponse res, Registry registry) {
         String metricName = req.path().param("metric");
 
-        OptionalHelper.from(registry.getOptionalMetadata(metricName))
-                .ifPresentOrElse(metric -> {
+        OptionalHelper.from(registry.getOptionalMetricWithIDsEntry(metricName))
+                .ifPresentOrElse(entry -> {
                     if (req.headers().isAccepted(MediaType.APPLICATION_JSON)) {
                         JsonObjectBuilder builder = JSON.createObjectBuilder();
-                        metric.jsonMeta(builder, registry.metricIDsForName(metricName));
+                        entry.getKey().jsonMeta(builder, entry.getValue());
                         res.send(builder.build());
                     } else {
                         res.status(Http.Status.NOT_ACCEPTABLE_406);

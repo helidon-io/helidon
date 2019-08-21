@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -325,12 +326,25 @@ class Registry extends MetricRegistry {
 
     // -- Package private -----------------------------------------------------
 
-    Optional<HelidonMetric> getOptionalMetric(String metricName) {
-        return Optional.ofNullable(allMetrics.get(new MetricID(metricName)));
+    Optional<Map.Entry<MetricID, MetricImpl>> getOptionalMetricEntry(String metricName) {
+        return getOptionalMetricWithIDsEntry(metricName).map(entry -> {
+                final MetricID metricID = entry.getValue().get(0);
+                return new AbstractMap.SimpleImmutableEntry<>(metricID,
+                        allMetrics.get(metricID));
+        });
     }
 
-    Optional<HelidonMetric> getOptionalMetadata(String metricName) {
-        return Optional.of(allMetrics.get(allMetricIDsByName.get(metricName).get(0)));
+    Optional<Map.Entry<MetricImpl, List<MetricID>>> getOptionalMetricWithIDsEntry(String metricName) {
+        final List<MetricID> metricIDs = allMetricIDsByName.get(metricName);
+        if (metricIDs == null || metricIDs.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(
+                new AbstractMap.SimpleEntry<>(allMetrics.get(metricIDs.get(0)), metricIDs));
+    }
+
+    Optional<HelidonMetric> getOptionalMetric(String metricName) {
+        return getOptionalMetricEntry(metricName).map(Map.Entry::getValue);
     }
 
     Optional<HelidonMetric> getOptionalMetric(MetricID metricID) {
