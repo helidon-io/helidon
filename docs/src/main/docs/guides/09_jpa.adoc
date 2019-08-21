@@ -468,3 +468,31 @@ request, and committed or rolled back when the method terminates
 normally or exceptionally.  The injected `EntityManager` will join the
 transaction automatically.
 
+== Build the Application
+
+Execute the following from the root directory of your application:
+
+[source,sh]
+----
+mvn package
+----
+
+== Run the Application
+
+Execute the following from the root directory of your application:
+
+[source,sh]
+----
+java -jar target/helidon*.jar
+----
+
+== Test the Application
+
+Execute the following:
+
+[source,sh]
+----
+curl http://localhost:7001/archetypeInfoGoesHere/response/Marco
+----
+
+Observe that `Polo` is returned.
