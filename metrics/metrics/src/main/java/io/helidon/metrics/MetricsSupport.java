@@ -663,7 +663,7 @@ public final class MetricsSupport implements Service {
 
         @Override
         public JsonObjectBuilder add(String arg0, BigDecimal arg1) {
-            JsonObjectBuilder ob = delegate.add(arg0, arg1);
+            delegate.add(arg0, arg1);
             return this;
         }
 

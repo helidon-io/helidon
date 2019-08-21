@@ -33,6 +33,10 @@
         Metrics APIs and implementation necessary for Java SE using Helidon Web Server
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>

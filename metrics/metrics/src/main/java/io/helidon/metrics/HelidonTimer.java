@@ -205,24 +205,23 @@ final class HelidonTimer extends MetricImpl implements Timer {
 
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
-
-        myBuilder.add(jsonFullKey("count", metricID), getCount());
-        myBuilder.add(jsonFullKey("meanRate", metricID), getMeanRate());
-        myBuilder.add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate());
-        myBuilder.add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate());
-        myBuilder.add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
+                .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("meanRate", metricID), getMeanRate())
+                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
+                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
+                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
         Snapshot snapshot = getSnapshot();
-        myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin());
-        myBuilder.add(jsonFullKey("max", metricID), snapshot.getMax());
-        myBuilder.add(jsonFullKey("mean", metricID), snapshot.getMean());
-        myBuilder.add(jsonFullKey("stddev", metricID), snapshot.getStdDev());
-        myBuilder.add(jsonFullKey("p50", metricID), snapshot.getMedian());
-        myBuilder.add(jsonFullKey("p75", metricID), snapshot.get75thPercentile());
-        myBuilder.add(jsonFullKey("p95", metricID), snapshot.get95thPercentile());
-        myBuilder.add(jsonFullKey("p98", metricID), snapshot.get98thPercentile());
-        myBuilder.add(jsonFullKey("p99", metricID), snapshot.get99thPercentile());
-        myBuilder.add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
+        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
+                .add(jsonFullKey("max", metricID), snapshot.getMax())
+                .add(jsonFullKey("mean", metricID), snapshot.getMean())
+                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev())
+                .add(jsonFullKey("p50", metricID), snapshot.getMedian())
+                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile())
+                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile())
+                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile())
+                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile())
+                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
 
         builder.add(metricID.getName(), myBuilder);
     }
