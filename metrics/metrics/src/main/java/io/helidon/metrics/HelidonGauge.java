@@ -48,7 +48,7 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
     }
 
     @Override
-    String prometheusNameWithUnits(MetricID metricID) {
+    public String prometheusNameWithUnits(MetricID metricID) {
         return prometheusNameWithUnits(metricID.getName(), getUnits().getPrometheusUnit());
     }
 

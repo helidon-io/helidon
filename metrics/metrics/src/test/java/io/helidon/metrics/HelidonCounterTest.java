@@ -16,7 +16,6 @@
 
 package io.helidon.metrics;
 
-import io.helidon.common.CollectionsHelper;
 import java.io.StringReader;
 
 import javax.json.Json;
@@ -35,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import org.junit.jupiter.api.Disabled;
 
 /**
  * Unit test for {@link HelidonCounter}.
@@ -107,21 +105,20 @@ class HelidonCounterTest {
         counter.inc(17);
         wrappingCounter.inc(17);
 
-        String expected = "# TYPE base_theName counter\n"
-                + "# HELP base_theName theDescription\n"
-                + "base_theName{a=\"b\",c=\"d\"} 17\n";
+        String expected = "# TYPE base_theName_total counter\n"
+                + "# HELP base_theName_total theDescription\n"
+                + "base_theName_total{a=\"b\",c=\"d\"} 17\n";
 
         counter.prometheusData(sb, counterID);
         assertThat(sb.toString(), is(expected));
 
-        expected = "# TYPE base_theName counter\n"
-                + "# HELP base_theName theDescription\n"
-                + "base_theName 49\n";
+        expected = "# TYPE base_theName_total counter\n"
+                + "# HELP base_theName_total theDescription\n"
+                + "base_theName_total 49\n";
         sb = new StringBuilder();
         wrappingCounter.prometheusData(sb, wrappingCounterID);
         assertThat(sb.toString(), is(expected));
     }
-
 
     @Test
     void testJsonData() {

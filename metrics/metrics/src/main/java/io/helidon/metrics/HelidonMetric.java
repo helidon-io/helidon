@@ -57,4 +57,12 @@ interface HelidonMetric extends Metric {
      * @param metricID the {@code MetricID} for the metric to be formatted
      */
     void prometheusData(StringBuilder sb, MetricID metricID);
+
+    /**
+     * Return a name for this metric, possibly including a unit suffix.
+     *
+     * @param metricID the {@code MetricID} for the metric to be formatted
+     * @return Name for metric.
+     */
+    String prometheusNameWithUnits(MetricID metricID);
 }
