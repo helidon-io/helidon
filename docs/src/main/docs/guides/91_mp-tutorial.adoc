@@ -182,8 +182,7 @@ public class GreetApplication extends Application { <3>
  will serve.  Currently, the application only has one resource, the
  `GreetResource`.
 
-TIP:  You can learn more about scopes and contexts; and how they are used from the https://javaee.github.io/javaee-spec/javadocs/javax/enterprise/context/package-summary.html[Java EE
- Specification].
+TIP:  You can learn more about scopes and contexts; and how they are used from the https://docs.jboss.org/cdi/api/2.0/index.html[Specification].
 
 The `GreetResource` is defined in the `GreetResource.java` class as shown
 below: 
@@ -234,6 +233,10 @@ public class GreetResource {
  a JSON object containing a single object named "message" with the content
  "Hello World".  This method will be expanded and improved
  later in the tutorial.
+
+TIP: So far this is just a JAX-WS application, with no Helidon or MicroProfile
+ specific code in it.  There are many JAX-WS tutorials available if you 
+ want to learn more about this kind of application.
 
 A main class is also required to start up the server and run the
  application.  Here is the initial main class:
@@ -441,9 +444,9 @@ In the output you can see the JSON output from the `getDefaultMessage()`
 
 == Configuration
 
-Helidon MP applications can use the `microprofile-config.properties` 
- file to specify configuration data.  This file is read by default 
- if it is present. Create this file in  
+Helidon MP applications can use the `META-INF/microprofile-config.properties` 
+ file to specify configuration data.  This file (resource) is read by default 
+ if it is present on the classpath. Create this file in  
  `src/main/resources/META-INF` with the following content:
 
 [source,bash] 
