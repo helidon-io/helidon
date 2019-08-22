@@ -664,7 +664,7 @@ TIP: To learn more about Helidon MP configuration please see the
 
 == Extending the application
 
-In this section, the application will be extended to add a POST 
+In this section, the application will be extended to add a PUT 
  service which will allow users to update the greeting and a
  second GET service which will accept a parameter.
 
