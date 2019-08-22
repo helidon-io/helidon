@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.JsonObjectBuilder;
@@ -92,5 +93,39 @@ final class HelidonCounter extends MetricImpl implements Counter {
         public long getCount() {
             return adder.sum();
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), getCount());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            CounterImpl that = (CounterImpl) o;
+            return getCount() == that.getCount();
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonCounter that = (HelidonCounter) o;
+        return Objects.equals(delegate, that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delegate);
     }
 }

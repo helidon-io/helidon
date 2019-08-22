@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -265,5 +266,39 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 }
             }
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), getCount());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MeterImpl that = (MeterImpl) o;
+            return getCount() == that.getCount();
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonMeter that = (HelidonMeter) o;
+        return Objects.equals(delegate, that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delegate);
     }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.metrics;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.json.JsonObjectBuilder;
@@ -175,5 +176,39 @@ final class HelidonConcurrentGauge extends MetricImpl implements ConcurrentGauge
         private static long currentTimeMinute() {
             return System.currentTimeMillis() / 1000 / 60;
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), count, lastMin, lastMax);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ConcurrentGaugeImpl that = (ConcurrentGaugeImpl) o;
+            return count.equals(that.count) && lastMin.equals(that.lastMin) && lastMax.equals(that.lastMax);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonConcurrentGauge that = (HelidonConcurrentGauge) o;
+        return Objects.equals(delegate, that.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delegate);
     }
 }

@@ -18,6 +18,7 @@ package io.helidon.metrics;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.json.JsonObjectBuilder;
@@ -79,6 +80,22 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
         } else {
             builder.add(nameWithTags, String.valueOf(value));
         }
+    }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonGauge<?> that = (HelidonGauge<?>) o;
+        return getValue().equals(that.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getValue());
     }
 }
