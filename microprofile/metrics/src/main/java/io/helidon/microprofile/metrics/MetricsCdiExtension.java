@@ -22,7 +22,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -50,18 +49,13 @@ import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Qualifier;
 import javax.interceptor.Interceptor;
 
-import io.helidon.metrics.HelidonMetadata;
-
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Metered;
@@ -79,11 +73,11 @@ public class MetricsCdiExtension implements Extension {
     private static final Logger LOGGER = Logger.getLogger(MetricsCdiExtension.class.getName());
 
     private static final List<Class<? extends Annotation>> METRIC_ANNOTATIONS
-            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class, ConcurrentGauge.class);
+            = Arrays.asList(Counted.class, Metered.class, Timed.class, Gauge.class);
 
     private final Map<Bean<?>, AnnotatedMember<?>> producers = new HashMap<>();
 
-    private final Map<MetricID, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
+    private final Map<String, AnnotatedMethodConfigurator<?>> annotatedGaugeSites = new HashMap<>();
 
     @SuppressWarnings("unchecked")
     private static <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
@@ -98,62 +92,44 @@ public class MetricsCdiExtension implements Extension {
         if (annotation instanceof Counted) {
             Counted counted = (Counted) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), counted.name(), counted.absolute());
-            Metadata meta = new HelidonMetadata(metricName,
+            Metadata meta = new Metadata(metricName,
                                          counted.displayName(),
                                          counted.description(),
                                          MetricType.COUNTER,
                                          counted.unit(),
-                                         false);
-            registry.counter(meta, tags(counted.tags()));
-            LOGGER.log(Level.FINE, () -> "Registered counter " + metricName);
+                                         toTags(counted.tags()));
+            registry.counter(meta);
+            LOGGER.log(Level.FINE, () -> "### Registered counter " + metricName);
         } else if (annotation instanceof Metered) {
             Metered metered = (Metered) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), metered.name(), metered.absolute());
-            Metadata meta = new HelidonMetadata(metricName,
+            Metadata meta = new Metadata(metricName,
                                          metered.displayName(),
                                          metered.description(),
                                          MetricType.METERED,
                                          metered.unit(),
-                                        false);
-            registry.meter(meta, tags(metered.tags()));
-            LOGGER.log(Level.FINE, () -> "Registered meter " + metricName);
+                                         toTags(metered.tags()));
+            registry.meter(meta);
+            LOGGER.log(Level.FINE, () -> "### Registered meter " + metricName);
         } else if (annotation instanceof Timed) {
             Timed timed = (Timed) annotation;
             String metricName = getMetricName(element, clazz, lookupResult.getType(), timed.name(), timed.absolute());
-            Metadata meta = new HelidonMetadata(metricName,
+            Metadata meta = new Metadata(metricName,
                                          timed.displayName(),
                                          timed.description(),
                                          MetricType.TIMER,
                                          timed.unit(),
-                                        false);
-            registry.timer(meta, tags(timed.tags()));
-            LOGGER.log(Level.FINE, () -> "Registered timer " + metricName);
-        } else if (annotation instanceof ConcurrentGauge) {
-            ConcurrentGauge concurrentGauge = (ConcurrentGauge) annotation;
-            String metricName = getMetricName(element, clazz, lookupResult.getType(), concurrentGauge.name(),
-                    concurrentGauge.absolute());
-            Metadata meta = new HelidonMetadata(metricName,
-                    concurrentGauge.displayName(),
-                    concurrentGauge.description(),
-                    MetricType.CONCURRENT_GAUGE,
-                    concurrentGauge.unit(),
-                    false);
-            registry.concurrentGauge(meta, tags(concurrentGauge.tags()));
-            LOGGER.log(Level.FINE, () -> "Registered concurrent gauge " + metricName);
+                                         toTags(timed.tags()));
+            registry.timer(meta);
+            LOGGER.log(Level.FINE, () -> "### Registered timer " + metricName);
         }
     }
 
-    private static Tag[] tags(String[] tagStrings) {
-        final List<Tag> result = new ArrayList<>();
-        for (int i = 0; i < tagStrings.length; i++) {
-            final int eq = tagStrings[i].indexOf("=");
-            if (eq > 0) {
-                final String tagName = tagStrings[i].substring(0, eq);
-                final String tagValue = tagStrings[i].substring(eq + 1);
-                result.add(new Tag(tagName, tagValue));
-            }
+    static String toTags(String[] tags) {
+        if (null == tags || tags.length == 0) {
+            return "";
         }
-        return result.toArray(new Tag[result.size()]);
+        return String.join(",", tags);
     }
 
     /**
@@ -180,7 +156,7 @@ public class MetricsCdiExtension implements Extension {
      * @param discovery bean discovery event
      */
     public void before(@Observes BeforeBeanDiscovery discovery) {
-        LOGGER.log(Level.FINE, () -> "Before bean discovery " + discovery);
+        LOGGER.log(Level.FINE, () -> "### Before bean discovery " + discovery);
 
         // Initialize our implementation
         RegistryProducer.clearApplicationRegistry();
@@ -191,10 +167,9 @@ public class MetricsCdiExtension implements Extension {
         discovery.addAnnotatedType(InterceptorCounted.class, "InterceptorCounted");
         discovery.addAnnotatedType(InterceptorMetered.class, "InterceptorMetered");
         discovery.addAnnotatedType(InterceptorTimed.class, "InterceptorTimed");
-        discovery.addAnnotatedType(InterceptorConcurrentGauge.class, "InterceptorConcurrentGauge");
     }
 
-    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class, ConcurrentGauge.class})
+    private void registerMetrics(@Observes @WithAnnotations({Counted.class, Metered.class, Timed.class})
                                          ProcessAnnotatedType<?> pat) {
         // Filter out interceptors
         AnnotatedType<?> type = pat.getAnnotatedType();
@@ -203,7 +178,7 @@ public class MetricsCdiExtension implements Extension {
             return;
         }
 
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + pat.getAnnotatedType().getJavaClass().getName());
+        LOGGER.log(Level.FINE, () -> "### Processing annotations for " + pat.getAnnotatedType().getJavaClass().getName());
 
         // Register metrics based on annotations
         AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
@@ -242,8 +217,7 @@ public class MetricsCdiExtension implements Extension {
     private void processInjectionPoints(@Observes ProcessInjectionPoint<?, ?> pip) {
         Type type = pip.getInjectionPoint().getType();
         if (type.equals(Counter.class) || type.equals(Histogram.class)
-                || type.equals(Meter.class) || type.equals(Timer.class)
-                || type.equals(org.eclipse.microprofile.metrics.ConcurrentGauge.class)) {
+                || type.equals(Meter.class) || type.equals(Timer.class)) {
             pip.configureInjectionPoint().addQualifier(VendorDefined.Literal.INSTANCE);
         }
     }
@@ -255,7 +229,7 @@ public class MetricsCdiExtension implements Extension {
      * @param ppf Producer field.
      */
     private void recordProducerFields(@Observes ProcessProducerField<? extends org.eclipse.microprofile.metrics.Metric, ?> ppf) {
-        LOGGER.log(Level.FINE, () -> "recordProducerFields " + ppf.getBean().getBeanClass());
+        LOGGER.log(Level.FINE, () -> "### recordProducerFields " + ppf.getBean().getBeanClass());
         if (!MetricProducer.class.equals(ppf.getBean().getBeanClass())) {
             Metric metric = ppf.getAnnotatedProducerField().getAnnotation(Metric.class);
             if (metric != null) {
@@ -273,15 +247,17 @@ public class MetricsCdiExtension implements Extension {
         }
     }
 
+    // -- Utility classes and methods -----------------------------------------
+
     /**
      * Records metric producer methods defined by the application. Ignores producers
      * with non-default qualifiers and library producers.
      *
      * @param ppm Producer method.
      */
-    private void recordProducerMethods(@Observes ProcessProducerMethod<?
-            extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
-        LOGGER.log(Level.FINE, () -> "recordProducerMethods " + ppm.getBean().getBeanClass());
+    private void recordProducerMethods(@Observes
+                                               ProcessProducerMethod<? extends org.eclipse.microprofile.metrics.Metric, ?> ppm) {
+        LOGGER.log(Level.FINE, () -> "### recordProducerMethods " + ppm.getBean().getBeanClass());
         if (!MetricProducer.class.equals(ppm.getBean().getBeanClass())) {
             Metric metric = ppm.getAnnotatedProducerMethod().getAnnotation(Metric.class);
             if (metric != null) {
@@ -305,9 +281,8 @@ public class MetricsCdiExtension implements Extension {
      * @param adv After deployment validation event.
      * @param bm  Bean manager.
      */
-    private <T extends org.eclipse.microprofile.metrics.Metric> void registerProducers(
-            @Observes AfterDeploymentValidation adv, BeanManager bm) {
-        LOGGER.log(Level.FINE, () -> "registerProducers");
+    private void registerProducers(@Observes AfterDeploymentValidation adv, BeanManager bm) {
+        LOGGER.log(Level.FINE, () -> "### registerProducers");
 
         MetricRegistry registry = getMetricRegistry();
         producers.entrySet().forEach(entry -> {
@@ -317,41 +292,17 @@ public class MetricsCdiExtension implements Extension {
                                                   entry.getValue().getDeclaringType().getJavaClass(),
                                                   MetricUtil.MatchingType.METHOD,
                                                   metric.name(), metric.absolute());
-                T instance = getReference(bm, entry.getValue().getBaseType(), entry.getKey());
-                Metadata md = new HelidonMetadata(metricName,
-                        metric.displayName(),
-                        metric.description(),
-                        getMetricType(instance),
-                        metric.unit(),
-                        false);
-                registry.register(md, instance);
+                registry.register(metricName, getReference(bm, entry.getValue().getBaseType(), entry.getKey()));
             }
         });
         producers.clear();
     }
 
-    private static <T extends org.eclipse.microprofile.metrics.Metric> MetricType getMetricType(T metric) {
-        // Find subtype of Metric, needed for user-defined metrics
-        Class<?> clazz = metric.getClass();
-        do {
-            Optional<Class<?>> optionalClass = Arrays.stream(clazz.getInterfaces())
-                    .filter(org.eclipse.microprofile.metrics.Metric.class::isAssignableFrom)
-                    .findFirst();
-            if (optionalClass.isPresent()) {
-                clazz = optionalClass.get();
-                break;
-            }
-            clazz = clazz.getSuperclass();
-        } while (clazz != null);
-
-        return MetricType.from(clazz == null ? metric.getClass() : clazz);
-    }
-
     private void recordAnnotatedGaugeSite(@Observes @WithAnnotations(Gauge.class) ProcessAnnotatedType<?> pat) {
-        LOGGER.log(Level.FINE, () -> "recordAnnoatedGaugeSite for class " + pat.getAnnotatedType().getJavaClass());
+        LOGGER.log(Level.FINE, () -> "### recordAnnoatedGaugeSite for class " + pat.getAnnotatedType().getJavaClass());
         AnnotatedType<?> type = pat.getAnnotatedType();
 
-        LOGGER.log(Level.FINE, () -> "Processing annotations for " + type.getJavaClass().getName());
+        LOGGER.log(Level.FINE, () -> "### Processing annotations for " + type.getJavaClass().getName());
 
         // Register metrics based on annotations
         AnnotatedTypeConfigurator<?> configurator = pat.configureAnnotatedType();
@@ -368,36 +319,34 @@ public class MetricsCdiExtension implements Extension {
                 && method.isAnnotationPresent(Gauge.class))
                 .forEach(method -> {
                     Method javaMethod = method.getAnnotated().getJavaMember();
-                    Gauge gaugeAnnotation = method.getAnnotated().getAnnotation(Gauge.class);
-                    String explicitGaugeName = gaugeAnnotation.name();
-                    String gaugeNameSuffix = (explicitGaugeName.length() > 0 ? explicitGaugeName
-                            : javaMethod.getName());
-                    String gaugeName = (gaugeAnnotation.absolute() ? gaugeNameSuffix
-                            : String.format("%s.%s", clazz.getName(), gaugeNameSuffix));
-                    annotatedGaugeSites.put(new MetricID(gaugeName, tags(gaugeAnnotation.tags())), method);
-                    LOGGER.log(Level.FINE, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
+                    String explicitGaugeName = method.getAnnotated().getAnnotation(Gauge.class).name();
+                    String gaugeName = String.format("%s.%s", clazz.getName(),
+                                                     explicitGaugeName != null && explicitGaugeName.length() > 0
+                                                             ? explicitGaugeName : javaMethod.getName());
+                    annotatedGaugeSites.put(gaugeName, method);
+                    LOGGER.log(Level.FINE, () -> String.format("### Recorded annotated gauge with name %s", gaugeName));
                 });
     }
 
     private void registerAnnotatedGauges(@Observes AfterDeploymentValidation adv, BeanManager bm) {
-        LOGGER.log(Level.FINE, () -> "registerGauges");
+        LOGGER.log(Level.FINE, () -> "### registerGauges");
         MetricRegistry registry = getMetricRegistry();
 
         annotatedGaugeSites.entrySet().forEach(gaugeSite -> {
-            LOGGER.log(Level.FINE, () -> "gaugeSite " + gaugeSite.toString());
-            MetricID gaugeID = gaugeSite.getKey();
+            LOGGER.log(Level.FINE, () -> "### gaugeSite " + gaugeSite.toString());
+            String gaugeName = gaugeSite.getKey();
 
             AnnotatedMethodConfigurator<?> site = gaugeSite.getValue();
-            DelegatingGauge<?> dg = buildDelegatingGauge(gaugeID.getName(), site, bm);
+            DelegatingGauge<?> dg = buildDelegatingGauge(gaugeName, site, bm);
             Gauge gaugeAnnotation = site.getAnnotated().getAnnotation(Gauge.class);
-            Metadata md = new HelidonMetadata(gaugeID.getName(),
+            Metadata md = new Metadata(gaugeName,
                     gaugeAnnotation.displayName(),
                     gaugeAnnotation.description(),
                     MetricType.GAUGE,
                     gaugeAnnotation.unit(),
-                    false);
-            LOGGER.log(Level.FINE, () -> String.format("Registering gauge with metadata %s", md.toString()));
-            registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
+                    toTags(gaugeAnnotation.tags()));
+            LOGGER.log(Level.FINE, () -> String.format("### Registering gauge with metadata %s", md.toString()));
+            registry.register(md, dg);
         });
 
         annotatedGaugeSites.clear();

@@ -33,10 +33,6 @@
         Metrics APIs and implementation necessary for Java SE using Helidon Web Server
     </description>
 
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
-    
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -60,12 +56,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.config</groupId>
-            <artifactId>helidon-microprofile-config</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

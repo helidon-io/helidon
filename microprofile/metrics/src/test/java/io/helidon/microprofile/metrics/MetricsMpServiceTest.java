@@ -20,7 +20,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 
 import io.helidon.config.Config;
-import io.helidon.metrics.HelidonMetadata;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.microprofile.config.MpConfig;
 import io.helidon.microprofile.server.Server;
@@ -71,11 +70,12 @@ public class MetricsMpServiceTest {
     }
 
     protected static void registerCounter(String name) {
-        Metadata meta = new HelidonMetadata(name,
+        Metadata meta = new Metadata(name,
                                      name,
                                      name,
                                      MetricType.COUNTER,
-                                     MetricUnits.NONE);
+                                     MetricUnits.NONE,
+                                     "");
         registry.counter(meta);
     }
 

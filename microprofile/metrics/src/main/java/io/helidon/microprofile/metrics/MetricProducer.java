@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,11 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 
-import io.helidon.metrics.HelidonMetadata;
-
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -35,7 +30,6 @@ import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
 
@@ -46,32 +40,21 @@ import org.eclipse.microprofile.metrics.annotation.Metric;
 public class MetricProducer {
 
     private static Metadata newMetadata(InjectionPoint ip, Metric metric, MetricType metricType) {
-        return metric == null ? new HelidonMetadata(getName(ip),
+        return metric == null ? new Metadata(getName(ip),
                                              "",
                                              "",
                                              metricType,
                                              MetricUnits.NONE)
-                : new HelidonMetadata(getName(metric, ip),
+                : new Metadata(getName(metric, ip),
                                metric.displayName(),
                                metric.description(),
                                metricType,
-                               metric.unit());
+                               metric.unit(),
+                               toTags(metric.tags()));
     }
 
-    private static Tag[] tags(Metric metric) {
-        if (metric == null || metric.tags() == null) {
-            return null;
-        }
-        final List<Tag> result = new ArrayList<>();
-        for (String tag : metric.tags()) {
-            if (tag != null) {
-                final int eq = tag.indexOf("=");
-                if (eq > 0) {
-                    result.add(new Tag(tag.substring(0, eq), tag.substring(eq + 1)));
-                }
-            }
-        }
-        return result.toArray(new Tag[result.size()]);
+    private static String toTags(String[] tags) {
+        return tags.length == 0 ? "" : String.join(",", tags);
     }
 
     private static String getName(InjectionPoint ip) {
@@ -108,7 +91,7 @@ public class MetricProducer {
     @VendorDefined
     private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.counter(newMetadata(ip, metric, MetricType.COUNTER), tags(metric));
+        return registry.counter(newMetadata(ip, metric, MetricType.COUNTER));
     }
 
     @Produces
@@ -120,7 +103,7 @@ public class MetricProducer {
     @VendorDefined
     private Meter produceMeter(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.meter(newMetadata(ip, metric, MetricType.METERED), tags(metric));
+        return registry.meter(newMetadata(ip, metric, MetricType.METERED));
     }
 
     @Produces
@@ -132,7 +115,7 @@ public class MetricProducer {
     @VendorDefined
     private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.timer(newMetadata(ip, metric, MetricType.TIMER), tags(metric));
+        return registry.timer(newMetadata(ip, metric, MetricType.TIMER));
     }
 
     @Produces
@@ -144,19 +127,7 @@ public class MetricProducer {
     @VendorDefined
     private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.histogram(newMetadata(ip, metric, MetricType.HISTOGRAM), tags(metric));
-    }
-
-    @Produces
-    private ConcurrentGauge produceConcurrentGaugeDefault(MetricRegistry registry, InjectionPoint ip) {
-        return produceConcurrentGauge(registry, ip);
-    }
-
-    @Produces
-    @VendorDefined
-    private ConcurrentGauge produceConcurrentGauge(MetricRegistry registry, InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        return registry.concurrentGauge(newMetadata(ip, metric, MetricType.CONCURRENT_GAUGE), tags(metric));
+        return registry.histogram(newMetadata(ip, metric, MetricType.HISTOGRAM));
     }
 
     /**
@@ -173,7 +144,7 @@ public class MetricProducer {
     private <T> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
-                .filter(entry -> entry.getKey().getName().equals(metric.name()))
+                .filter(entry -> entry.getKey().equals(metric.name()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString()))
                 .getValue();

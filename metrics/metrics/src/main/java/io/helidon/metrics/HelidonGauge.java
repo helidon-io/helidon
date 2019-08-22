@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,12 @@ package io.helidon.metrics;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Gauge implementation.
@@ -49,53 +47,37 @@ final class HelidonGauge<T> extends MetricImpl implements Gauge<T> {
     }
 
     @Override
-    public String prometheusNameWithUnits(MetricID metricID) {
-        return prometheusNameWithUnits(metricID.getName(), getUnits().getPrometheusUnit());
+    protected void prometheusData(StringBuilder sb, String name, String tags) {
+        Units units = getUnits();
+
+        String nameWithUnits = prometheusNameWithUnits(name, units.getPrometheusUnit());
+        prometheusType(sb, nameWithUnits, getType());
+        prometheusHelp(sb, nameWithUnits);
+        sb.append(nameWithUnits).append(tags).append(" ").append(units.convert(getValue())).append('\n');
     }
 
     @Override
-    public String prometheusValue() {
-        return getUnits().convert(getValue()).toString();
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
+    public void jsonData(JsonObjectBuilder builder) {
         T value = getValue();
-        String nameWithTags = jsonFullKey(metricID);
+        String name = getName();
 
         if (value instanceof String) {
-            builder.add(nameWithTags, (String) value);
+            builder.add(name, (String) value);
         } else if (value instanceof BigInteger) {
-            builder.add(nameWithTags, (BigInteger) value);
+            builder.add(name, (BigInteger) value);
         } else if (value instanceof BigDecimal) {
-            builder.add(nameWithTags, (BigDecimal) value);
+            builder.add(name, (BigDecimal) value);
         } else if (value instanceof Integer) {
-            builder.add(nameWithTags, (Integer) value);
+            builder.add(name, (Integer) value);
         } else if (value instanceof Long) {
-            builder.add(nameWithTags, (Long) value);
+            builder.add(name, (Long) value);
         } else if (value instanceof Double) {
-            builder.add(nameWithTags, (Double) value);
+            builder.add(name, (Double) value);
         } else if (value instanceof Boolean) {
-            builder.add(nameWithTags, (Boolean) value);
+            builder.add(name, (Boolean) value);
         } else {
-            builder.add(nameWithTags, String.valueOf(value));
+            builder.add(name, String.valueOf(value));
         }
-    }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
-            return false;
-        }
-        HelidonGauge<?> that = (HelidonGauge<?>) o;
-        return getValue().equals(that.getValue());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getValue());
     }
 }

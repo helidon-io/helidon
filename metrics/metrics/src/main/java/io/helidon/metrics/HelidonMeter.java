@@ -16,7 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,7 +25,6 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /*
  * This class is inspired by:
@@ -77,10 +75,8 @@ final class HelidonMeter extends MetricImpl implements Meter {
     application:requests_fifteen_min_rate_per_second 12.126
     */
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
-        String name = metricID.getName();
+    protected void prometheusData(StringBuilder sb, String name, String tags) {
         String nameUnits = prometheusNameWithUnits(name, Optional.empty()) + "_total";
-        String tags = prometheusTags(metricID.getTags());
         prometheusType(sb, nameUnits, "counter");
         prometheusHelp(sb, nameUnits);
         sb.append(nameUnits)
@@ -122,11 +118,6 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 .append("\n");
     }
 
-    @Override
-    public String prometheusValue() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
     /*
     From spec:
     {
@@ -140,16 +131,16 @@ final class HelidonMeter extends MetricImpl implements Meter {
     }
     */
     @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
+    public void jsonData(JsonObjectBuilder builder) {
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
-                .add(jsonFullKey("count", metricID), getCount())
-                .add(jsonFullKey("meanRate", metricID), getMeanRate())
-                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
-                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
-                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
+        myBuilder.add("count", getCount());
+        myBuilder.add("meanRate", getMeanRate());
+        myBuilder.add("oneMinRate", getOneMinuteRate());
+        myBuilder.add("fiveMinRate", getFiveMinuteRate());
+        myBuilder.add("fifteenMinRate", getFifteenMinuteRate());
 
-        builder.add(metricID.getName(), myBuilder);
+        builder.add(getName(), myBuilder.build());
     }
 
     @Override
@@ -266,39 +257,5 @@ final class HelidonMeter extends MetricImpl implements Meter {
                 }
             }
         }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getCount());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            MeterImpl that = (MeterImpl) o;
-            return getCount() == that.getCount();
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
-            return false;
-        }
-        HelidonMeter that = (HelidonMeter) o;
-        return Objects.equals(delegate, that.delegate);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), delegate);
     }
 }

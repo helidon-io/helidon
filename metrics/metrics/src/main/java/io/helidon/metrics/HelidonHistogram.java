@@ -16,7 +16,6 @@
 
 package io.helidon.metrics;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -24,7 +23,6 @@ import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
@@ -71,10 +69,8 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void prometheusData(StringBuilder sb, MetricID metricID) {
+    protected void prometheusData(StringBuilder sb, String name, String tags) {
         Units units = getUnits();
-        String tags = prometheusTags(metricID.getTags());
-        String name = metricID.getName();
 
         String nameUnits;
         Optional<String> unit = units.getPrometheusUnit();
@@ -145,11 +141,6 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         prometheusQuantile(sb, tags, units, nameUnits, "0.999", snap::get999thPercentile);
     }
 
-    @Override
-    public String prometheusValue() {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
     /**
      * Returns underlying delegate. For testing purposes only.
      *
@@ -162,22 +153,23 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
     }
 
     @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), getCount());
-        Snapshot snapshot = getSnapshot();
-        myBuilder = myBuilder.add(jsonFullKey("min", metricID), snapshot.getMin())
-                .add(jsonFullKey("max", metricID), snapshot.getMax())
-                .add(jsonFullKey("mean", metricID), snapshot.getMean())
-                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev())
-                .add(jsonFullKey("p50", metricID), snapshot.getMedian())
-                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile())
-                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile())
-                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile())
-                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile())
-                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile());
+    public void jsonData(JsonObjectBuilder builder) {
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
 
-        builder.add(metricID.getName(), myBuilder);
+        myBuilder.add("count", getCount());
+        Snapshot snapshot = getSnapshot();
+        myBuilder.add("min", snapshot.getMin());
+        myBuilder.add("max", snapshot.getMax());
+        myBuilder.add("mean", snapshot.getMean());
+        myBuilder.add("stddev", snapshot.getStdDev());
+        myBuilder.add("p50", snapshot.getMedian());
+        myBuilder.add("p75", snapshot.get75thPercentile());
+        myBuilder.add("p95", snapshot.get95thPercentile());
+        myBuilder.add("p98", snapshot.get98thPercentile());
+        myBuilder.add("p99", snapshot.get99thPercentile());
+        myBuilder.add("p999", snapshot.get999thPercentile());
+
+        builder.add(getName(), myBuilder.build());
     }
 
     static final class HistogramImpl implements Histogram {
@@ -212,39 +204,5 @@ final class HelidonHistogram extends MetricImpl implements Histogram {
         public Snapshot getSnapshot() {
             return reservoir.getSnapshot();
         }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getCount());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            HistogramImpl that = (HistogramImpl) o;
-            return getCount() == that.getCount();
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
-            return false;
-        }
-        HelidonHistogram that = (HelidonHistogram) o;
-        return Objects.equals(delegate, that.delegate);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), delegate);
     }
 }

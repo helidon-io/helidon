@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package io.helidon.metrics;
 
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.LongAdder;
 
 import javax.json.JsonObjectBuilder;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * Implementation of {@link Counter}.
@@ -56,24 +55,31 @@ final class HelidonCounter extends MetricImpl implements Counter {
     }
 
     @Override
+    public void dec() {
+        delegate.dec();
+    }
+
+    @Override
+    public void dec(long n) {
+        delegate.dec(n);
+    }
+
+    @Override
     public long getCount() {
         return delegate.getCount();
     }
 
     @Override
-    public String prometheusNameWithUnits(MetricID metricID) {
-        String metricName = prometheusName(metricID.getName());
-        return metricName.endsWith("total") ? metricName : metricName + "_total";
+    protected void prometheusData(StringBuilder sb, String name, String tags) {
+        String nameWithUnits = prometheusNameWithUnits(name, Optional.empty());
+        prometheusType(sb, nameWithUnits, getType());
+        prometheusHelp(sb, nameWithUnits);
+        sb.append(nameWithUnits).append(tags).append(" ").append(getCount()).append('\n');
     }
 
     @Override
-    public String prometheusValue() {
-        return Long.toString(getCount());
-    }
-
-    @Override
-    public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        builder.add(jsonFullKey(metricID), getCount());
+    public void jsonData(JsonObjectBuilder builder) {
+        builder.add(getName(), getCount());
     }
 
     private static class CounterImpl implements Counter {
@@ -90,42 +96,18 @@ final class HelidonCounter extends MetricImpl implements Counter {
         }
 
         @Override
+        public void dec() {
+            adder.decrement();
+        }
+
+        @Override
+        public void dec(long n) {
+            adder.add(-n);
+        }
+
+        @Override
         public long getCount() {
             return adder.sum();
         }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getCount());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CounterImpl that = (CounterImpl) o;
-            return getCount() == that.getCount();
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
-            return false;
-        }
-        HelidonCounter that = (HelidonCounter) o;
-        return Objects.equals(delegate, that.delegate);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), delegate);
     }
 }

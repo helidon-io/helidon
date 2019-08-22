@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package io.helidon.metrics;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.stream.Stream;
 
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -29,17 +27,12 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * A registry that cannot be modified.
  */
 final class FinalRegistry extends Registry {
-
-    private static final Tag[] EMPTY_TAGS = new Tag[0];
-
     private final Registry delegate;
 
     private FinalRegistry(Registry delegate) {
@@ -57,133 +50,66 @@ final class FinalRegistry extends Registry {
     }
 
     @Override
+    public <T extends Metric> T register(String name, T metric, Metadata metadata) throws IllegalArgumentException {
+        throw cannotRegister(name);
+    }
+
+    @Override
     public <T extends Metric> T register(Metadata metadata, T metric) throws IllegalArgumentException {
         throw cannotRegister(metadata.getName());
     }
 
     @Override
-    public <T extends Metric> T register(Metadata metadata, T metric, Tag... tags) throws IllegalArgumentException {
-        throw cannotRegister(metadata.getName());
-    }
-
-    @Override
     public Counter counter(String name) {
-        return counter(name, EMPTY_TAGS);
-    }
-
-    @Override
-    public Counter counter(Metadata metadata) {
-        return counter(metadata.getName(), EMPTY_TAGS);
-    }
-
-    @Override
-    public Counter counter(Metadata metadata, Tag... tags) {
-        return counter(metadata.getName(), tags);
-    }
-
-    @Override
-    public Counter counter(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
+        return delegate.getMetric(name)
                 .map(Counter.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
     @Override
+    public Counter counter(Metadata metadata) {
+        return counter(metadata.getName());
+    }
+
+    @Override
     public Histogram histogram(String name) {
-        return histogram(name, EMPTY_TAGS);
-    }
-
-    @Override
-    public Histogram histogram(Metadata metadata) {
-        return histogram(metadata.getName(), EMPTY_TAGS);
-    }
-
-    @Override
-    public Histogram histogram(Metadata metadata, Tag... tags) {
-        return histogram(metadata.getName(), tags);
-    }
-
-    @Override
-    public Histogram histogram(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
+        return delegate.getMetric(name)
                 .map(Histogram.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
     @Override
+    public Histogram histogram(Metadata metadata) {
+        return histogram(metadata.getName());
+    }
+
+    @Override
     public Meter meter(String name) {
-        return meter(name, EMPTY_TAGS);
-    }
-
-    @Override
-    public Meter meter(Metadata metadata) {
-        return meter(metadata.getName(), EMPTY_TAGS);
-    }
-
-    @Override
-    public Meter meter(Metadata metadata, Tag... tags) {
-        return meter(metadata.getName(), tags);
-    }
-
-    @Override
-    public Meter meter(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
+        return delegate.getMetric(name)
                 .map(Meter.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
     @Override
+    public Meter meter(Metadata metadata) {
+        return meter(metadata.getName());
+    }
+
+    @Override
     public Timer timer(String name) {
-        return timer(name, EMPTY_TAGS);
-    }
-
-    @Override
-    public Timer timer(Metadata metadata) {
-        return timer(metadata.getName(), EMPTY_TAGS);
-    }
-
-    @Override
-    public Timer timer(Metadata metadata, Tag... tags) {
-        return timer(metadata.getName(), tags);
-    }
-
-    @Override
-    public Timer timer(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
+        return delegate.getMetric(name)
                 .map(Timer.class::cast)
                 .orElseThrow(() -> cannotRegister(name));
     }
 
     @Override
-    public ConcurrentGauge concurrentGauge(String name) {
-        return concurrentGauge(name, EMPTY_TAGS);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(Metadata metadata) {
-        return concurrentGauge(metadata.getName(), EMPTY_TAGS);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(Metadata metadata, Tag... tags) {
-        return concurrentGauge(metadata.getName(), tags);
-    }
-
-    @Override
-    public ConcurrentGauge concurrentGauge(String name, Tag... tags) {
-        return delegate.getOptionalMetric(new MetricID(name, tags))
-                .map(ConcurrentGauge.class::cast)
-                .orElseThrow(() -> cannotRegister(name));
+    public Timer timer(Metadata metadata) {
+        return timer(metadata.getName());
     }
 
     @Override
     public boolean remove(String name) {
         throw cannotDelete(name);
-    }
-
-    @Override
-    public boolean remove(MetricID metricID) {
-        throw cannotDelete(metricID.getName());
     }
 
     @Override
@@ -197,103 +123,63 @@ final class FinalRegistry extends Registry {
     }
 
     @Override
-    public SortedSet<MetricID> getMetricIDs() {
-        return delegate.getMetricIDs();
-    }
-
-    @Override
-    public SortedMap<MetricID, Gauge> getGauges() {
+    public SortedMap<String, Gauge> getGauges() {
         return delegate.getGauges();
     }
 
     @Override
-    public SortedMap<MetricID, Gauge> getGauges(MetricFilter filter) {
+    public SortedMap<String, Gauge> getGauges(MetricFilter filter) {
         return delegate.getGauges(filter);
     }
 
     @Override
-    public SortedMap<MetricID, Counter> getCounters() {
+    public SortedMap<String, Counter> getCounters() {
         return delegate.getCounters();
     }
 
     @Override
-    public SortedMap<MetricID, Counter> getCounters(MetricFilter filter) {
+    public SortedMap<String, Counter> getCounters(MetricFilter filter) {
         return delegate.getCounters(filter);
     }
 
     @Override
-    public SortedMap<MetricID, Histogram> getHistograms() {
+    public SortedMap<String, Histogram> getHistograms() {
         return delegate.getHistograms();
     }
 
     @Override
-    public SortedMap<MetricID, Histogram> getHistograms(MetricFilter filter) {
+    public SortedMap<String, Histogram> getHistograms(MetricFilter filter) {
         return delegate.getHistograms(filter);
     }
 
     @Override
-    public SortedMap<MetricID, Meter> getMeters() {
+    public SortedMap<String, Meter> getMeters() {
         return delegate.getMeters();
     }
 
     @Override
-    public SortedMap<MetricID, Meter> getMeters(MetricFilter filter) {
+    public SortedMap<String, Meter> getMeters(MetricFilter filter) {
         return delegate.getMeters(filter);
     }
 
     @Override
-    public SortedMap<MetricID, Timer> getTimers() {
+    public SortedMap<String, Timer> getTimers() {
         return delegate.getTimers();
     }
 
     @Override
-    public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
+    public SortedMap<String, Timer> getTimers(MetricFilter filter) {
         return delegate.getTimers(filter);
     }
 
     @Override
-    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges() {
-        return delegate.getConcurrentGauges();
-    }
-
-    @Override
-    public SortedMap<MetricID, ConcurrentGauge> getConcurrentGauges(MetricFilter filter) {
-        return delegate.getConcurrentGauges(filter);
+    public Map<String, Metric> getMetrics() {
+        return delegate.getMetrics();
     }
 
     @Override
     public Map<String, Metadata> getMetadata() {
         return delegate.getMetadata();
-    }
-
-    @Override
-    public Map<MetricID, Metric> getMetrics() {
-        return delegate.getMetrics();
-    }
-
-    @Override
-    public Stream<Map.Entry<MetricID, MetricImpl>> stream() {
-        return delegate.stream();
-    }
-
-    @Override
-    public String type() {
-        return delegate.type();
-    }
-
-    @Override
-    public boolean empty() {
-        return delegate.empty();
-    }
-
-    @Override
-    Type registryType() {
-        return delegate.registryType();
-    }
-
-    @Override
-    public String toString() {
-        return delegate.toString();
     }
 
     private UnsupportedOperationException cannotDelete(String name) {

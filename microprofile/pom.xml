@@ -35,6 +35,7 @@
         <module>config</module>
         <module>health</module>
         <module>metrics</module>
+        <module>metrics2</module>
         <module>oidc</module>
         <module>server</module>
         <module>security</module>

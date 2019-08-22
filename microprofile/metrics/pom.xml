@@ -31,7 +31,7 @@
     <name>Helidon Microprofile Metrics</name>
 
     <description>
-        Helidon Microprofile Metrics
+        Helidon Microprofile Metrics 1.1
     </description>
 
     <dependencies>
@@ -55,6 +55,11 @@
             <artifactId>helidon-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>
+	<dependency>
+	    <groupId>org.eclipse.microprofile.metrics</groupId>
+	    <artifactId>microprofile-metrics-api</artifactId>
+	    <version>${version.lib.microprofile-metrics-api}</version>
+	</dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>internal-test-libs</artifactId>
