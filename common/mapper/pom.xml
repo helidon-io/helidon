@@ -19,30 +19,39 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.helidon.integrations.graal</groupId>
-        <artifactId>helidon-integrations-graal-project</artifactId>
+        <artifactId>helidon-common-project</artifactId>
+        <groupId>io.helidon.common</groupId>
         <version>1.2.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-graal-native-image-extension</artifactId>
-    <name>Helidon Integrations Graal Native Image Extension</name>
+    <artifactId>helidon-common-mapper</artifactId>
+    <name>Helidon Common Mapper</name>
+
+    <description>
+        A generic mapper to convert types.
+    </description>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
-            <scope>provided</scope>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-service-loader</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.oracle.substratevm</groupId>
-            <artifactId>svm</artifactId>
-            <scope>provided</scope>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

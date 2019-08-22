@@ -14,25 +14,5 @@
 # limitations under the License.
 #
 
-FROM debian:stretch as build
-
-WORKDIR /build
-
-RUN set -x \
-    && apt-get -y update \
-    && apt-get -y install curl unzip
-
-RUN set -x && \
-    curl -O https://archive.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.zip && \
-    unzip apache-maven-*-bin.zip && \
-    rm apache-maven-*-bin.zip && \
-    mv apache-maven-* maven
-
-RUN echo "done!"
-
-FROM helidon/jdk8-graalvm:19.2.0
-
-COPY --from=build /build/maven /usr/share/maven
-RUN ln -s /usr/share/maven/bin/mvn /bin/
-
-ENV JAVA_HOME /graal/graalvm
+io.helidon.common.mapper.ServiceLoaderMapper1
+io.helidon.common.mapper.ServiceLoaderMapper2

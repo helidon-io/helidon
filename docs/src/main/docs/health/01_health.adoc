@@ -129,7 +129,7 @@ The HTTP response also contains a JSON payload that describes the statuses for
 .Create the health support service:
 ----
 HealthSupport health = HealthSupport.builder()
-    .add(hc)
+    .addLiveness(hc)
     .build();
 ----
 
@@ -142,7 +142,7 @@ NOTE: Health check requires the `JSON-P` support to be enabled. See the example
 .Register a custom health check:
 ----
 HealthSupport health = HealthSupport.builder()
-    .add(() -> HealthCheckResponse.named("exampleHealthCheck")
+    .addLiveness(() -> HealthCheckResponse.named("exampleHealthCheck")
                  .up()
                  .withData("time", System.currentTimeMillis())
                  .build()) // <1>
@@ -190,7 +190,7 @@ A set of built-in health checks can be optionally enabled to report various
 [source,java]
 ----
 HealthSupport health = HealthSupport.builder()
-    .add(HealthChecks.healthChecks()) // <1>
+    .addLiveness(HealthChecks.healthChecks()) // <1>
     .build();
 
 Routing.builder()
