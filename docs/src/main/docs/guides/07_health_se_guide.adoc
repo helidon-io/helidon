@@ -487,9 +487,8 @@ curl http://localhost:8080/health/live
 
 === Using Liveness and Readiness health checks with Kubernetes
 
-This example shows how to integrate the  of the Helidon health API in an application that implements
-health endpoints for the Kubernetes liveness and readiness probes. Note that the application uses custom port and URL for health
-endpoints.
+This example shows how to integrate the Helidon health API in an application that implements
+health endpoints for the Kubernetes liveness and readiness probes.
 
 [source,java]
 .Change the HealthSupport builder in the Main.createRouting method to use the built-in liveness checks, a custom liveness check, and a readiness check

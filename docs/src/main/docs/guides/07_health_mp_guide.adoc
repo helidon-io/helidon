@@ -57,7 +57,7 @@ health check statuses that are commonly used:
 * available heap memory
 
 This example will demonstrate how to use the built-in health checks.  These examples are all executed
-from the root directory of your project (helidon-quickstart-se)
+from the root directory of your project (helidon-quickstart-mp)
 
 
 [source,bash]
@@ -118,7 +118,7 @@ curl http://localhost:8080/health
 === Custom liveness health-checks
 
 You can create application specific custom health checks and integrate them with Helidon
-using the CDI.  The following example shows how to add a custom liveness health check
+using the CDI.  The following example shows how to add a custom liveness health check.
 
 [source,java]
 .Create a new class GreetLivenessCheck with the following content
@@ -294,7 +294,7 @@ When using the health check URLs, you can get the following health check data
 
 
 [source,bash]
-.Get all the health check data, including custom, single query
+.Get all the health check data, including custom
 ----
 curl http://localhost:8080/health
 ----
@@ -357,15 +357,75 @@ curl http://localhost:8080/health
 }
 ----
 
-=== Using Liveness and Readiness health checks with Kubernetes
 
-This example shows how to integrate the  of the Helidon health API in an application that implements
-health endpoints for the Kubernetes liveness and readiness probes. Note that the application uses custom port and URL for health
-endpoints.
+=== Custom health root path and port
 
-.Build the docker image
+You can specify a custom port and root context for the health endpoint  You can only change the
+root path and port for the overall health endpoint.  For example, you cannot use different ports
+as in http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.  Likewise, you
+cannot use different paths like http://localhost:8080/health and http://localhost:8080/probe/live.
+
+This example below will change the root path.
+
+[source,yaml]
+.Create a file named application.yaml in the resources directory with the following contents
+----
+health:
+  web-context: "myhealth"  // <1>
+----
+<1> The web-context specifies a new root path for the health endpoint
 
 [source,bash]
+.Build and restart the application, then verify the health endpoint using the new 'myhealth' root
+----
+curl http://localhost:8080/myhealth
+curl http://localhost:8080/myhealth/live
+curl http://localhost:8080/myhealth/ready
+----
+
+The following example will change the root path and the health port.
+
+[source,yaml]
+.Update application.yaml to use a different port and root path for the health endpoint
+----
+server:
+  port: 8080  // <1>
+  host: "localhost"
+  sockets:
+    health: // <2>
+      port: 8081 // <3>
+      bind-address: "localhost"
+health:
+  routing: "health" // <4>
+  web-context: "myhealth"
+----
+<1> The default port for the application
+<2> The name of the new socket, it can be any name, we are using 'health'
+<3> The port for the new health socket
+<4> The health endpoint routing uses the new socket 'health'
+
+
+[source,bash]
+.Build and restart the application, then verify the health endpoint using port 8081 and 'myhealth'
+----
+curl http://localhost:8081/myhealth
+curl http://localhost:8081/myhealth/live
+curl http://localhost:8081/myhealth/ready
+----
+
+=== Using Liveness and Readiness health checks with Kubernetes
+
+This example shows how to integrate the Helidon health API in an application that implements
+health endpoints for the Kubernetes liveness and readiness probes.
+
+[source,bash]
+.Delete the contents of application.yaml so that the default health endpoint path and port are used. Rebuild and start the application, then verify the health endpoint
+----
+curl http://localhost:8080/health
+----
+
+[source,bash]
+.Build the docker image
 ----
 docker build -t helidon-quickstart-mp .
 ----
