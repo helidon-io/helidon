@@ -59,7 +59,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following
     <name>${project.artifactId}</name>
 
     <properties>
-        <helidon.version>1.2.0</helidon.version>
+        <helidon.version>{helidon-version}</helidon.version>
         <mainClass>io.helidon.examples.Main</mainClass>
         <maven.compiler.source>8</maven.compiler.source> <2>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
@@ -673,6 +673,13 @@ Here are the two new methods to add to `GreetResource.java`:
 [source,java]
 .New methods for GreetResource.java
 ----
+import javax.ws.rs.Consumes;
+import javax.ws.rs.PUT;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.Response;
+
+    // some lines omitted
+
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -770,6 +777,8 @@ Update the main class to configure logging as shown below:
 [source,java]
 .Updated main class with logging 
 ----
+import java.util.logging.LogManager;
+
     // some lines omitted
 
     public static void main(final String[] args) throws IOException {
@@ -780,7 +789,7 @@ Update the main class to configure logging as shown below:
 
     private static void setupLogging() throws IOException { <2>
         LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+                Main.class.getResourceAsStream("/META-INF/logging.properties"));
     }
 ----
 
