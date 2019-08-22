@@ -746,7 +746,7 @@ The application logging can be customized.  The default logging provider
  is `java.util.logging`, however it is possible to use other providers.
  In this tutorial the default provider is used.
 
-Create a `logging.properties` file in `src/main/resources/META-INF` with
+Create a `logging.properties` file in `src/main/resources` with
  the following content:
 
 [source,java]
@@ -789,7 +789,7 @@ import java.util.logging.LogManager;
 
     private static void setupLogging() throws IOException { <2>
         LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/META-INF/logging.properties"));
+                Main.class.getResourceAsStream("/logging.properties"));
     }
 ----
 
