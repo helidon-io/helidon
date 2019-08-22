@@ -758,7 +758,7 @@ Update the main class to configure logging as shown below:
 [source,java]
 .Updated main class with logging 
 ----
-    // some lines ommited
+    // some lines omitted
 
     public static void main(final String[] args) throws IOException {
         setupLogging(); <1>
@@ -795,17 +795,11 @@ http://localhost:8080/greet
 http://localhost:8080/greet
 ----
 
-TODO write something here
+Learn more about logging in the <<guides/xx_logging.adoc,Logging Guide>>.
 
-== Health and Metrics
+== Metrics
 
-Helidon provides built-in support for health and metrics endpoints.
-
-[source,bash]
-.Health
-----
-curl -s -X GET http://localhost:8080/health
-----
+Helidon provides built-in support for metrics endpoints.
 
 [source,bash]
 .Metrics in Prometheus Format
@@ -818,6 +812,76 @@ curl -s -X GET http://localhost:8080/metrics
 ----
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ----
+
+Helidon also support custom metrics.  To add a new metric, annotate the 
+ JAX-RS resource with one of the metric annotations as shown in the example
+ below:
+
+TIP:  You can find details of the available annotations in the 
+ https://microprofile.io/project/eclipse/microprofile-metrics[MicroProfile Metrics
+ Specification].
+
+[source,java]
+.Updated GreetResource.java with custom metrics
+----
+import org.eclipse.microprofile.metrics.annotation.Timed;
+
+    // some lines omitted
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Timed <1>
+    public JsonObject getDefaultMessage() {
+        return createResponse("World");
+    }
+----
+
+<1> The `Timed` annotation is added to the `getDefaultMessage()` method.
+
+Rebuild and run the application.  Make some calls to the endpoint 
+ (http://localhost:8080/greet) so there will be some data to report.
+ Then obtain the application metrics as follows:
+
+[source,bash]
+.Checking the application metrics
+----
+curl -H "Accept: application/json" http://localhost:8080/metrics/application
+{
+  "io.helidon.examples.GreetResource.getDefaultMessage": {
+    "count": 2,
+    "meanRate": 0.036565171873527716,
+    "oneMinRate": 0.015991117074135343,
+    "fiveMinRate": 0.0033057092356765017,
+    "fifteenMinRate": 0.0011080303990206543,
+    "min": 78658,
+    "max": 1614077,
+    "mean": 811843.8728029992,
+    "stddev": 766932.8494434259,
+    "p50": 78658,
+    "p75": 1614077,
+    "p95": 1614077,
+    "p98": 1614077,
+    "p99": 1614077,
+    "p999": 1614077
+  }
+}
+----
+
+Learn more about using Helidon and MicroProfile metrics in the <<guides/09_metrics_mp_guide.adoc,Metrics Guide>>.
+
+
+== Health Check
+
+Helidon provides built-in support for health heck endpoints.
+
+[source,bash]
+.Health
+----
+curl -s -X GET http://localhost:8080/health
+----
+
+
+STOP READING HERE
 
 == Build a Docker Image
 
