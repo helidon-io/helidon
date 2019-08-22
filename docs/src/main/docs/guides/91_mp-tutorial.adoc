@@ -1148,6 +1148,66 @@ kubectl cluster-info
 kubectl get nodes
 ----
 
+To deploy the application to Kubernetes, a Kubernetes YAML file that 
+ defines the deployment and associated resources is needed.  In this 
+ case all that is required is the deployment and a service. 
+
+Create a file called `app.yaml` in the project's root directory with 
+ the following content: 
+
+[source,yaml]
+.Kubernetes YAML file
+----
+---
+kind: Service <1>
+apiVersion: v1
+metadata:
+  name: helidon-mp-tutorial
+  labels:
+    app: helidon-mp-tutorial
+spec:
+  type: NodePort <2>
+  selector:
+    app: helidon-mp-tutorial
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+---
+kind: Deployment <3>
+apiVersion: extensions/v1beta1
+metadata:
+  name: helidon-mp-tutorial
+spec:
+  replicas: 1 <4>
+  template:
+    metadata:
+      labels:
+        app: helidon-mp-tutorial
+        version: v1
+    spec:
+      containers:
+        - name: helidon-mp-tutorial
+          image: helidon-mp-tutorial <5>
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+----
+
+<1> Define a Service to provide access to the application. 
+<2> Define a NodePort to expose the application outside the Kubernetes 
+ cluster.
+<3> Define a Deployment of the application.
+<4> Define how many replicas of the application to run.
+<5> Define the Docker image to use - this must be the one that was built
+ in the previous step.  If the image was built on a different machine to the
+ one where Kubernetes is running, or if Kubernetes is running on multiple 
+ machines (worker nodes) then the image must either be manually copied to
+ each node or otherwise pushed to a Docker registry that is accessible to
+ the worker nodes.
+
+This Kubernetes YAML file can be used to deploy the application to Kubernetes:
+
 [source,bash]
 .Deploy the application to Kubernetes
 ----
@@ -1155,25 +1215,40 @@ kubectl create -f app.yaml
 kubectl get pods                    # Wait for quickstart pod to be RUNNING
 ----
 
-The step above created a service that is exposed into any node port. Lookup
- the service to find the port.
+The step above created a service that is exposed using any available node 
+ port. Kubernetes allocates a free port. Lookup the service to find the port.
 
 [source,bash]
 .Lookup the service
 ----
-kubectl get service helidon-quickstart-se
+kubectl get service helidon-mp-tutorial
 ----
 
-Note the PORTs. You can now exercise the application as you did before but use
+Note the PORTs. The application canbe exercised as before but use
  the second port number (the NodePort) instead of 8080. For example:
 
 [source,bash]
+.Access the application
+----
 curl -X GET http://localhost:31431/greet
+----
 
-After you're done, cleanup.
+If desired, the Kubernetes YAML file can also be used to remove the 
+ application from Kubernetes as follows:
 
 [source,bash]
 .Remove the application from Kubernetes
 ----
 kubectl delete -f app.yaml
 ----
+
+== Conclusion
+
+That concludes this tutorial.  The tutorial has demonstrated how to build
+ a Helidon MP application from scratch, how to use Helidon and MicroProfile
+ configuration, logging, metrics, and health checks.  It also demonstrated
+ how to package the application in a Docker image and run it in Kubernetes.
+
+There were several links to more detailed information included in the
+ tutorial.  These links can be explored to learn more details about Helidon
+ application development.
