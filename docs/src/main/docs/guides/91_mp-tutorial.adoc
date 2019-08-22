@@ -432,7 +432,8 @@ In the output you can see the JSON output from the `getDefaultMessage()`
 == Configuration
 
 Helidon MP applications can use the `microprofile-config.properties` 
- file to specify configuration data.  Create this file in  
+ file to specify configuration data.  This file is read by default 
+ if it is present. Create this file in  
  `src/main/resources/META-INF` with the following content:
 
 [source,bash] 
@@ -624,6 +625,13 @@ These updates introduce a new configuration file `conf/mp.yaml` which
  can be kept outside of the JAR file, and which can be used to provide
  additional configuration data and/or to override the data in the
  `microprofile-config.properties` which will be packaged in the JAR file.
+
+Layered configuration like this, where the configuration is read from 
+ more than one source with overrides, is commonly used in cases where 
+ you want to have different configurations for different environments
+ like development, test and production.
+
+TIP: Learn much more about configuration in <<config/06_advanced-configuration.adoc,Advanced Configurtion Topics>>.
 
 Create this file with the following content: 
 
@@ -872,16 +880,184 @@ Learn more about using Helidon and MicroProfile metrics in the <<guides/09_metri
 
 == Health Check
 
-Helidon provides built-in support for health heck endpoints.
+Helidon provides built-in support for health check endpoints.  Obtain 
+ the built-in health check using the following URL: 
 
 [source,bash]
-.Health
+.Health check
 ----
 curl -s -X GET http://localhost:8080/health
+{
+  "outcome": "UP",
+  "status": "UP",
+  "checks": [
+    {
+      "name": "deadlock",
+      "state": "UP",
+      "status": "UP"
+    },
+    {
+      "name": "diskSpace",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "381.23 GB",
+        "freeBytes": 409340088320,
+        "percentFree": "43.39%",
+        "total": "878.70 GB",
+        "totalBytes": 943491723264
+      }
+    },
+    {
+      "name": "heapMemory",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "324.90 MB",
+        "freeBytes": 340682920,
+        "max": "3.46 GB",
+        "maxBytes": 3715629056,
+        "percentFree": "97.65%",
+        "total": "408.00 MB",
+        "totalBytes": 427819008
+      }
+    }
+  ]
+}
 ----
 
+Endpoints for readiness and liveness checks are also provided by default.
+ Obtain the default results using these URLs:
 
-STOP READING HERE
+[source,bash]
+.Default readiness and liveness endpoints
+----
+# readiness
+curl -i  -X GET http://localhost:8080/health/ready
+HTTP/1.1 200 OK <1>
+Content-Type: application/json
+Date: Thu, 22 Aug 2019 13:06:37 -0400
+connection: keep-alive
+content-length: 42
+
+{"outcome":"UP","status":"UP","checks":[]} <2>
+
+# liveness
+curl -i  -X GET http://localhost:8080/health/live
+HTTP/1.1 200 OK <1>
+Content-Type: application/json
+Date: Thu, 22 Aug 2019 13:06:46 -0400
+connection: keep-alive
+content-length: 42
+
+{"outcome":"UP","status":"UP","checks":[]} <2>
+----
+
+<1> Both endpoints return a HTTP 200 return code.
+<2> Both endpoints report a status of "UP" but neither report any
+ checks currently.
+
+Helidon allows the addition of custom health checks to applications.
+ Create a new class `GreetHealthcheck.java` with the following content:
+
+[source,java]
+.New GreetHealthcheck.java custom health check class
+----
+package io.helidon.examples;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
+
+@Liveness <1>
+@ApplicationScoped <2> 
+public class GreetHealthcheck implements HealthCheck {
+  private GreetingProvider provider;
+
+  @Inject <3>
+  public GreetHealthcheck(GreetingProvider provider) {
+    this.provider = provider;
+  }
+
+  @Override
+  public HealthCheckResponse call() { <4>
+    String message = provider.getMessage();
+    return HealthCheckResponse.named("greeting") <5>
+        .state("Hello".equals(message))
+        .withData("greeting", message)
+        .build();
+  }
+}
+----
+
+<1> This class has the MicroProfile `Liveness` annotation which tells
+ Helidon that this class provides a custom health check.  You can 
+ learn more about the available annotations in the https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[MicroProfile Health Protocol and Wireformat] document.
+<2> This class also has the `ApplicationScoped` annotation, as seen previously.
+<3> The `GreetingProvider` is injected using Context and Dependency
+ Injection.  This example will use the greeting to determine whether
+ the application is healthy, this is a contrived example for demonstration
+ purposes.
+<4> Health checks must implement the `HealthCheck` functional interface, which
+ includes the method `HealthCheckResponse call()`.  Helidon will invoke the
+ `call()` method to verify the healthiness of the application.
+<5> In this example, the application is deemed to be healthy if the 
+ `GreetingProvider,getMessage()` method returns the string `"Hello"`
+ and unhealthy otherwise.
+
+Rebuild the application, make sure that the `mp.conf` has the `greeting` set
+ to something other than `"Hello"` and then run the application and check 
+ the health:
+
+[source,bash]
+.Custom health check reporting unhealthy state
+----
+curl -i  -X GET http://localhost:8080/health/live 
+HTTP/1.1 503 Service Unavailable <1>
+Content-Type: application/json
+Date: Thu, 22 Aug 2019 13:25:37 -0400
+transfer-encoding: chunked
+connection: keep-alive
+
+{"outcome":"DOWN","status":"DOWN","checks":[{"name":"greeting","state":"DOWN","status":"DOWN","data":{"greeting":"Hey"}}]} <2>
+----
+
+<1> The HTTP return code is now 503 Service Unavailable.
+<2> The status is reported as "DOWN" and the custom check is included in 
+ the output.
+
+Now update the greeting to `"Hello"` using the following request, and then 
+ check health again:
+
+[source,bash]
+.Update the greeting and check health again
+----
+curl -i -X PUT -H "Content-Type: application/json" -d '{"greeting": "Hello"}' http://localhost:8080/greet/greeting
+HTTP/1.1 204 No Content <1>
+Date: Thu, 22 Aug 2019 13:29:57 -0400
+connection: keep-alive
+
+
+curl -i  -X GET http://localhost:8080/health/live 
+HTTP/1.1 200 OK <2>
+Content-Type: application/json
+Date: Thu, 22 Aug 2019 13:29:58 -0400
+connection: keep-alive
+content-length: 116
+
+{"outcome":"UP","status":"UP","checks":[{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}}]} <3>
+----
+
+<1> The POST returns a HTTP 204.
+<2> The health check now returns a HTTP 200.
+<3> The status is now reported as "UP" and the details are provided in the
+ checks.
+
+Learn more about health checks in the <<xx_health-checks.adoc,Health Check
+ Guide>>.
 
 == Build a Docker Image
 
