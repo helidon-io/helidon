@@ -53,7 +53,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-mp-tutorial</artifactId>
+    <artifactId>helidon-mp-tutorial</artifactId>  <1>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
@@ -61,7 +61,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following
     <properties>
         <helidon.version>1.2.0</helidon.version>
         <mainClass>io.helidon.examples.Main</mainClass>
-        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.source>8</maven.compiler.source> <2>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
     </properties>
 
@@ -69,7 +69,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following
         <dependencies>
             <dependency>
                 <groupId>io.helidon</groupId>
-                <artifactId>helidon-bom</artifactId>
+                <artifactId>helidon-bom</artifactId> <3>
                 <version>${helidon.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -80,23 +80,23 @@ Create a new Maven POM file (called `pom.xml`) and add the following
     <dependencies>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId>
+            <artifactId>helidon-microprofile-2.2</artifactId> <4>
         </dependency>
     </dependencies>
 
 </project>
 ----
 
-This POM files contains just the basics that we need to get started.  It
- establishes the Maven coordinates for the new project, it includes 
- the Helidon BOM POM (in the `dependencyManagement` section) and adds a 
- dependency for the MicroProfile 2.2 bundle which allows the use of
- MicroProfile 2.2 features in the application.
+This POM files contains just the basics that we need to get started.  
 
-The `properties` section tells Maven to use Java 8 for the source
+<1> It establishes the Maven coordinates for the new project.
+<2> The `properties` section tells Maven to use Java 8 for the source
  and target versions, and sets the `mainClass` which will be used later
  when building a JAR file.  The class will be created later in the
  tutorial.
+<3> It includes the Helidon BOM POM  (in the `dependencyManagement` section).
+<4> It adds a dependency for the MicroProfile 2.2 bundle which allows the use of
+ MicroProfile 2.2 features in the application.
 
 With this POM file, the application can be built successfully with Maven:
 
@@ -145,28 +145,27 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 import java.util.Set;
 
-@ApplicationScoped
-@ApplicationPath("/")
-public class GreetApplication extends Application {
+@ApplicationScoped <1>
+@ApplicationPath("/") <2>
+public class GreetApplication extends Application { <3>
 
-    @Override
-    public Set<Class<?>> getClasses() {
+    @Override 
+    public Set<Class<?>> getClasses() { <4>
         return CollectionsHelper.setOf(GreetResource.class);
     }
 
 }
 ----
 
-The application class must extend `javax.ws.rs.core.Application`. 
- The class is annotated with `ApplicationScoped` 
+
+<1> The class is annotated with `ApplicationScoped` 
  which specifies that this bean is "application scoped". The application scope
  is shared between all web service invocations that execute within the same
  application. 
-
-The `ApplicationPath` annotation sets the URL path that will be used to 
+<2> The `ApplicationPath` annotation sets the URL path that will be used to 
  access the application.
-
-In the application class, override the 
+<3> The application class must extend `javax.ws.rs.core.Application`. 
+<4> In the application class, override the 
  `public Set<Class<?>> getClasses()` method.  This method must return
  a `Set` of `Class` objects, one for each resource that the application 
  will serve.  Currently, the application only has one resource, the
@@ -190,33 +189,34 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.Collections;
 
-@Path("/greet")
-@RequestScoped
+@Path("/greet") <1>
+@RequestScoped <2>
 public class GreetResource {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() {
+    public JsonObject getDefaultMessage() { <3>
         return JSON.createObjectBuilder()
                 .add("message", "Hello World")
-                .build();
+                .build(); <4>
     }
 
 }
 ----
 
-This class is annotated with `Path` which sets the path for this resource
- as `/greet`.  The `RequestScoped` annotation defines that this bean is
+<1> This class is annotated with `Path` which sets the path for this resource
+ as `/greet`.  
+<2> The `RequestScoped` annotation defines that this bean is
  request scoped.  The request scope is active only for the duration of
  one web service invocation and it is destroyed at the end of that
  invocation.
-
-In this class a `public JsonObject getDefaulMessage()` method is defined
+<3> A `public JsonObject getDefaultMessage()` method is defined
  which is annotated with `GET`, meaning it will accept the HTTP GET method.
  It is also annotated with `Produces(MediaType.APPLICATION_JSON)` which
- declares that this method will return JSON data. The method body creates
+ declares that this method will return JSON data. 
+<4> The method body creates
  a JSON object containing a single object named "message" with the content
  "Hello World".  This method will be expanded and improved
  later in the tutorial.
@@ -234,7 +234,7 @@ import java.io.IOException;
 
 public final class Main {
 
-    private Main() { }
+    private Main() { } <1>
 
     public static void main(final String[] args) throws IOException {
         Server server = startServer();
@@ -249,7 +249,9 @@ public final class Main {
 ----
 
 In this class, a `main` method is defined which starts the Helidon MP 
- server and prints out a message with the listen address.  Notice that
+ server and prints out a message with the listen address. 
+
+<1> Notice that
  this class has an empty no-args constructor to make sure this class
  cannot be instantiated.
 
@@ -269,11 +271,11 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
                            http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
        version="2.0"
-       bean-discovery-mode="annotated">
+       bean-discovery-mode="annotated"> <1>
 </beans>
 ----
 
-The `bean-discovery-mode` tells Helidon to look for the annotations
+<1> The `bean-discovery-mode` tells Helidon to look for the annotations
  to discover Java beans in the application.
 
 == Update the POM to build the application
@@ -303,7 +305,7 @@ Helidon MP applications are packaged into a JAR file and the dependencies
         <mainClass>io.helidon.examples.Main</mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
-        <libs.classpath.prefix>libs</libs.classpath.prefix>
+        <libs.classpath.prefix>libs</libs.classpath.prefix> <1>
         <copied.libs.dir>${project.build.directory}/${libs.classpath.prefix}</copied.libs.dir>
     </properties>
 
@@ -330,7 +332,7 @@ Helidon MP applications are packaged into a JAR file and the dependencies
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
+                    <groupId>org.apache.maven.plugins</groupId> <2>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>2.5</version>
                     <configuration>
@@ -350,7 +352,7 @@ Helidon MP applications are packaged into a JAR file and the dependencies
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-dependency-plugin</artifactId> <3>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -376,11 +378,13 @@ Helidon MP applications are packaged into a JAR file and the dependencies
 </project>
 ---- 
 
-New entries are created in the `properties` to set the name of the `libs`
- directory where the dependencies will be placed.   In the `build` section,
+<1> New entries are created in the `properties` to set the name of the `libs`
+ directory where the dependencies will be placed.   
+<2> In the `build` section,
  a `plugin` entry is added to configure the `maven-jar-plugin` to set the
  main class in the manifest, and to add the `libs` directory to the
- manifest classpath.  Additionally, the `maven-dependency-plugin` is
+ manifest classpath.  
+<3> Additionally, the `maven-dependency-plugin` is
  configured to copy the dependencies into the `libs` directory.
 
 With these updates in place, build the application with Maven:
@@ -465,11 +469,11 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.concurrent.atomic.AtomicReference;
 
-@ApplicationScoped
+@ApplicationScoped <1>
 public class GreetingProvider {
-  private final AtomicReference<String> message = new AtomicReference<>();
+  private final AtomicReference<String> message = new AtomicReference<>(); <2>
 
-  @Inject
+  @Inject <3>
   public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {
     this.message.set(message);
   }
@@ -484,12 +488,12 @@ public class GreetingProvider {
 }
 ----
 
-This class also has the `ApplicationScoped` annotation, so it will persist
- for the life of the application.  The class contains an `AtomicReference` 
+<1> This class also has the `ApplicationScoped` annotation, so it will persist
+ for the life of the application.  
+<2> The class contains an `AtomicReference` 
  to a `String` where the greeting will be stored.  The `AtomicReference` 
  provides lock-free thread-safe access to the underlying `String`.
-
-The `public GreetingProvider(...)` constructor is annotated with `Inject`
+<3> The `public GreetingProvider(...)` constructor is annotated with `Inject`
  which tells Helidon to use Contexts and Dependency Injection to provide
  the needed values.  In this case, the `String message` is annotated with
  `ConfigProperty(name = "app.greeting")` so Helidon will inject the 
@@ -523,7 +527,7 @@ public class GreetResource {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private final GreetingProvider greetingProvider;
 
-    @Inject
+    @Inject <1>
     public GreetResource(GreetingProvider greetingConfig) {
         this.greetingProvider = greetingConfig;
     }
@@ -531,10 +535,10 @@ public class GreetResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
-        return createResponse("World");
+        return createResponse("World"); <2>
     }
 
-    private JsonObject createResponse(String who) {
+    private JsonObject createResponse(String who) { <3>
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
 
         return JSON.createObjectBuilder()
@@ -545,12 +549,12 @@ public class GreetResource {
 }
 ---- 
 
-This updated class adds a `GreetingProvider` and uses constructor injection
- to get the value from the configuration file.  The logic to create the 
+<1> This updated class adds a `GreetingProvider` and uses constructor injection
+ to get the value from the configuration file.  
+<2> The logic to create the 
  response message is refactored into a `createResponse` method and the 
  `getDefaultMessage()` method is updated to use this new method.
-
-In `createResponse()`, the message is obtained from the `GreetingProvider`
+<3> In `createResponse()`, the message is obtained from the `GreetingProvider`
  which in turn got it from the configuration. 
 
 Rebuild and run the application and notice that it now uses the greeting
@@ -588,7 +592,7 @@ public final class Main {
     private static Config buildConfig() {
         return Config.builder()
                 .sources(
-                        file("conf/mp.yaml")
+                        file("conf/mp.yaml") <1>
                             .pollingStrategy(PollingStrategies::watch)
                             .optional(),
                         classpath("META-INF/microprofile-config.properties"))
@@ -597,7 +601,7 @@ public final class Main {
 
     static Server startServer() {
         return Server.builder()
-                     .config(buildConfig())
+                     .config(buildConfig()) <2>
                      .build()
                      .start();
     }
@@ -619,14 +623,14 @@ app:
   greeting: "Hallo"
 ----
 
-Notice that the `startServer()` method has been updated to use a
- Config Builder, which is implemented in the new method `buildConfig()`.
- This method defines two sources for configuration information, first the
+<1> The new `buildConfig()` method defines two sources for configuration information, first the
  new `mp.yaml` file, and this is marked as optional, and has a "polling
  strategy" of "watch".  The polling strategy tells Helidon to watch for 
  any updates to this file and to dynamically update the configuration.
  The second entry is the `microprofile-config.properties` file from the
  classpath.
+<2> Notice that the `startServer()` method has been updated to use a
+ Config Builder, which is implemented in the new method `buildConfig()`.
 
 Rebuild the application and run it.  After making some requests, update
  the greeting in the `mp.yaml` and observe that new requests pick up
@@ -652,7 +656,7 @@ Here are the two new methods to add to `GreetResource.java`:
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getMessage(@PathParam("name") String name) {
+    public JsonObject getMessage(@PathParam("name") String name) { <1>
         return createResponse(name);
     }
     
@@ -660,7 +664,7 @@ Here are the two new methods to add to `GreetResource.java`:
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateGreeting(JsonObject jsonObject) {
+    public Response updateGreeting(JsonObject jsonObject) { <2>
 
         if (!jsonObject.containsKey("greeting")) {
             JsonObject entity = JSON.createObjectBuilder()
@@ -676,14 +680,13 @@ Here are the two new methods to add to `GreetResource.java`:
     }
 ----
 
-The first of these two methods implements a new HTTP GET service 
+<1> The first of these two methods implements a new HTTP GET service 
  that returns JSON and it has a path parameter.  The `Path` annotation
  defines the next part of the path to be a parameter named `name`.
  In the method arguments the `PathParam("name")` annotation on 
  `String name` has the effect of passing the parameter from the 
  URL into this method as `name`.
-
-The second method implements a new HTTP POST service which produces
+<2> The second method implements a new HTTP POST service which produces
  and consumes JSON, note the `Consumes` and `PUT` annotations.
  It also defines a path of "/greeting".  Notice that the method
  argument is a `JsonObject`. Inside the method body there is code
