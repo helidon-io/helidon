@@ -22,15 +22,11 @@
 .dat
 .md
 .p12
+.txt
 jaxb.index
 /MANIFEST.MF
 /README
 /CONTRIBUTING.md
-/NOTICE.txt
-/LICENSE.txt
-/copyright.txt
-/THIRD_PARTY_LICENSES.txt
-/3RD-PARTY.txt
 .pem
 .p8
 .pkcs8.pem
@@ -41,7 +37,5 @@ src/test/resources/keystore/
 conf/secrets/
 .dockerignore
 empty_file
-/_plantuml-config.txt
-copyright-exclude.txt
-src/test/resources/sample.txt
 src/main/resources/WEB/node
+archetype-resources/
