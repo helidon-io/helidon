@@ -606,67 +606,9 @@ helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s //
 <1> A service of type `NodePort` that serves the default routes on port `30116`
 
 [source,bash]
-.Verify the health endpoints using port '30116'.  NOTE: your port may be different.  For example
+.Verify the health endpoints using port '30116', the JSON response will be the same as your previous test.  NOTE: your port may be different.  For example
 ----
 curl http://localhost:30116/health
-----
-
-[source,json]
-.JSON response:
-----
-{
-  "outcome": "UP",
-  "status": "UP",
-  "checks": [
-    {
-      "name": "LivenessCheck",
-      "state": "UP",
-      "status": "UP",
-      "data": {
-        "time": 1566245527673
-      }
-    },
-    {
-      "name": "ReadinessCheck",
-      "state": "UP",
-      "status": "UP",
-      "data": {
-        "time,": 1566245527620
-      }
-    },
-    {
-      "name": "deadlock",
-      "state": "UP",
-      "status": "UP"
-    },
-    {
-      "name": "diskSpace",
-      "state": "UP",
-      "status": "UP",
-      "data": {
-        "free": "326.17 GB",
-        "freeBytes": 350224424960,
-        "percentFree": "70.05%",
-        "total": "465.63 GB",
-        "totalBytes": 499963174912
-      }
-    },
-    {
-      "name": "heapMemory",
-      "state": "UP",
-      "status": "UP",
-      "data": {
-        "free": "247.76 MB",
-        "freeBytes": 259791680,
-        "max": "4.00 GB",
-        "maxBytes": 4294967296,
-        "percentFree": "99.80%",
-        "total": "256.00 MB",
-        "totalBytes": 268435456
-      }
-    }
-  ]
-}
 ----
 
 
