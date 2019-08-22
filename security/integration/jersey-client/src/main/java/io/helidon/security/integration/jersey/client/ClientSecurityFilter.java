@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.security.integration.jersey;
+package io.helidon.security.integration.jersey.client;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +22,9 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
 import javax.ws.rs.ConstrainedTo;
+import javax.ws.rs.Priorities;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
@@ -45,13 +47,10 @@ import io.helidon.security.integration.common.SecurityTracing;
  * <p>
  * Only works as part of integration with Security component.
  * This class is public to allow unit testing from providers (without invoking an HTTP request)
- *
- * @deprecated This class should not be used directly anyway, yet if you needed it, it is available in
- *  the new {@code helidon-security-integration-jersey-client} module.
  */
 @Provider
 @ConstrainedTo(RuntimeType.CLIENT)
-@Deprecated
+@Priority(Priorities.AUTHENTICATION)
 public class ClientSecurityFilter implements ClientRequestFilter {
 
     private static final Logger LOGGER = Logger.getLogger(ClientSecurityFilter.class.getName());
@@ -74,22 +73,22 @@ public class ClientSecurityFilter implements ClientRequestFilter {
     }
 
     private void doFilter(ClientRequestContext requestContext) {
-        //Try to have a look for @AuthenticatedClient annotation on client (if constructed as such) and use explicit provider
-        // from there
+        // find the context - if not cannot propagate
+        Optional<SecurityContext> securityContext = findContext(requestContext);
 
-        // first try to find the context on request configuration
-        OptionalHelper.from(findContext(requestContext))
-                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)))
-                .ifPresentOrElse(securityContext -> outboundSecurity(requestContext, securityContext),
-                                 () -> LOGGER.finest("Security not propagated, as security context is not available "
-                                                             + "neither in context, nor as the property \""
-                                                             + ClientSecurityFeature.PROPERTY_CONTEXT + "\" on request"));
+        if (securityContext.isPresent()) {
+            outboundSecurity(requestContext, securityContext.get());
+        } else {
+            LOGGER.finest("Security not propagated, as security context is not available "
+                                  + "neither in context, nor as the property \""
+                                  + ClientSecurity.PROPERTY_CONTEXT + "\" on request");
+        }
     }
 
     private void outboundSecurity(ClientRequestContext requestContext, SecurityContext securityContext) {
         OutboundTracing tracing = SecurityTracing.get().outboundTracing();
 
-        String explicitProvider = (String) requestContext.getProperty(ClientSecurityFeature.PROPERTY_PROVIDER);
+        Optional<String> explicityProvider = property(requestContext, String.class, ClientSecurity.PROPERTY_PROVIDER);
 
         try {
             SecurityEnvironment.Builder outboundEnv = securityContext.env().derive();
@@ -112,8 +111,9 @@ public class ClientSecurityFilter implements ClientRequestFilter {
                     .outboundEnvironment(outboundEnv)
                     .tracingSpan(tracing.findParent().orElse(null))
                     .tracingSpan(tracing.findParentSpan().orElse(null))
-                    .outboundEndpointConfig(outboundEp)
-                    .explicitProvider(explicitProvider);
+                    .outboundEndpointConfig(outboundEp);
+
+            explicityProvider.ifPresent(clientBuilder::explicitProvider);
 
             OutboundSecurityResponse providerResponse = clientBuilder.buildAndGet();
             SecurityResponse.SecurityStatus status = providerResponse.status();
@@ -132,8 +132,6 @@ public class ClientSecurityFilter implements ClientRequestFilter {
             default:
                 break;
             }
-            // TODO check response status - maybe entity was updated?
-            // see MIC-6785;
 
             Map<String, List<String>> newHeaders = providerResponse.requestHeaders();
 
@@ -157,10 +155,21 @@ public class ClientSecurityFilter implements ClientRequestFilter {
     }
 
     private Optional<SecurityContext> findContext(ClientRequestContext requestContext) {
-        Object value = requestContext.getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
-        if (null == value) {
-            value = requestContext.getConfiguration().getProperty(ClientSecurityFeature.PROPERTY_CONTEXT);
-        }
-        return Optional.ofNullable((SecurityContext) value);
+        return OptionalHelper
+                // from client property
+                .from(property(requestContext, SecurityContext.class, ClientSecurity.PROPERTY_CONTEXT))
+                // then look for security context in context
+                .or(() -> Contexts.context().flatMap(ctx -> ctx.get(SecurityContext.class)))
+                .asOptional();
+    }
+
+    private static <T> Optional<T> property(ClientRequestContext requestContext, Class<T> clazz, String propertyName) {
+        return OptionalHelper.from(Optional.empty())
+                .or(() -> Optional.ofNullable(requestContext.getProperty(propertyName))
+                        .filter(clazz::isInstance))
+                .or(() -> Optional.ofNullable(requestContext.getConfiguration().getProperty(propertyName))
+                        .filter(clazz::isInstance))
+                .asOptional()
+                .map(clazz::cast);
     }
 }

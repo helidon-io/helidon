@@ -44,11 +44,14 @@ import org.glassfish.jersey.server.ClientBinding;
  *
  *
  * </pre>
+ *
+ * @deprecated Use the new module {@code helidon-security-integration-jersey-client} that adds security support without coding
  */
 @ClientBinding(configClass = SecureClient.SecureClientConfig.class, inheritServerProviders = false)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
+@Deprecated
 public @interface SecureClient {
     /**
      * Configuration class for client security.
