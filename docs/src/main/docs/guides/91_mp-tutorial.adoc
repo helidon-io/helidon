@@ -98,6 +98,11 @@ This POM files contains just the basics that we need to get started.
 <4> It adds a dependency for the MicroProfile 2.2 bundle which allows the use of
  MicroProfile 2.2 features in the application.
 
+TIP: MicroProfile 2.2 contains features like Metrics, Health Check,
+ Streams Operators, Open Tracing, OpenAPI, REST client, and fault
+ tolerance. You can find detailed information about MicroProfile 2.2 on the
+ https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-2.2[Eclipse MicroProfile 2.2] site.
+
 With this POM file, the application can be built successfully with Maven:
 
 [source,bash]
@@ -170,6 +175,9 @@ public class GreetApplication extends Application { <3>
  a `Set` of `Class` objects, one for each resource that the application 
  will serve.  Currently, the application only has one resource, the
  `GreetResource`.
+
+TIP:  You can learn more about scopes and contexts; and how they are used from the https://javaee.github.io/javaee-spec/javadocs/javax/enterprise/context/package-summary.html[Java EE
+ Specification].
 
 The `GreetResource` is defined in the `GreetResource.java` class as shown
 below: 
@@ -438,6 +446,9 @@ server.host=0.0.0.0
 Rebuild the application and run it again, notice that it now uses port
  8080 as specified in the configuration file.
 
+TIP: You can learn more about options for configuring the Helidon Server on the
+ <<miroprofile/02_server-configuration,Configuring the Server>> page. 
+
 In addition to predefined server properties, application-specific 
  configuration information can be added to this file.  Add the `app.greeting`
  property to the file as shown below. This property will be used to set the
@@ -636,11 +647,8 @@ Rebuild the application and run it.  After making some requests, update
  the greeting in the `mp.yaml` and observe that new requests pick up
  the new value without the need for a restart of the application.
 
-TODO TODO TODO
-
-THIS IS NOT WORKING AS EXPECTED
-
-TODO TODO TODO
+TIP: To learn more about Helidon MP configuration please see the 
+ <<config/01_introduction.adoc,Config>> section of the documentation.
 
 == Extending the application
 
@@ -711,10 +719,83 @@ curl -X GET http://localhost:8080/greet/Jose
 {"message":"Hola Jose!"}
 ----
 
-write me
+Helidon MP provides many other features which can be added to the application.
 
-STOP READING HERE!!! 
+== Logging
 
+The application logging can be customized.  The default logging provider
+ is `java.util.logging`, however it is possible to use other providers.
+ In this tutorial the default provider is used.
+
+Create a `logging.properties` file in `src/main/resources/META-INF` with
+ the following content:
+
+[source,java]
+.Example logging.properties file
+----
+# Send messages to the console
+handlers=java.util.logging.ConsoleHandler <1>
+
+# Global default logging level. Can be overriden by specific handlers and loggers
+.level=INFO <2>
+
+# Helidon Web Server has a custom log formatter that extends SimpleFormatter.
+# It replaces "!thread!" with the current thread name
+java.util.logging.ConsoleHandler.level=INFO
+java.util.logging.ConsoleHandler.formatter=io.helidon.webserver.WebServerLogFormatter <3>
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n <4>
+----
+
+<1> The console logging handler is configured.
+<2> The default logging level is set to `INFO`.
+<3> The Helidon custom log formatter is used, this formatter extends the 
+ `SimpleFormatter`.
+<4> The format string is set using the standard options to include the timestamp,
+ thread name and message.
+
+Update the main class to configure logging as shown below:
+
+[source,java]
+.Updated main class with logging 
+----
+    // some lines ommited
+
+    public static void main(final String[] args) throws IOException {
+        setupLogging(); <1>
+        Server server = startServer();
+        System.out.println("http://localhost:" + server.port() + "/greet");
+    }
+
+    private static void setupLogging() throws IOException { <2>
+        LogManager.getLogManager().readConfiguration(
+                Main.class.getResourceAsStream("/logging.properties"));
+    }
+----
+
+<1> In the `main()` method introduce a call to a new `setupLogging()` method.
+<2> This new method reads the logging configuration from the `logging.properties`
+ file and updates the `LogManager` to use that configuration.
+
+Rebuild and run the application and notice the new logging format takes effect.
+
+[source,bash]
+.Log output
+----
+// before
+Aug 22, 2019 11:10:11 AM io.helidon.webserver.NettyWebServer lambda$start$8
+INFO: Channel '@default' started: [id: 0xd0afba31, L:/0:0:0:0:0:0:0:0:8080]
+Aug 22, 2019 11:10:11 AM io.helidon.microprofile.server.ServerImpl lambda$start$10
+INFO: Server started on http://localhost:8080 (and all other host addresses) in 182 milliseconds.
+http://localhost:8080/greet
+
+// after
+2019.08.22 11:24:42 INFO io.helidon.webserver.NettyWebServer Thread[main,5,main]: Version: 1.2.0
+2019.08.22 11:24:42 INFO io.helidon.webserver.NettyWebServer Thread[nioEventLoopGroup-2-1,10,main]: Channel '@default' started: [id: 0x8f652dfe, L:/0:0:0:0:0:0:0:0:8080]
+2019.08.22 11:24:42 INFO io.helidon.microprofile.server.ServerImpl Thread[nioEventLoopGroup-2-1,10,main]: Server started on http://localhost:8080 (and all other host addresses) in 237 milliseconds.
+http://localhost:8080/greet
+----
+
+TODO write something here
 
 == Health and Metrics
 
