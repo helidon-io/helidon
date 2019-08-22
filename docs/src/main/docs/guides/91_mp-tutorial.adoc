@@ -706,7 +706,7 @@ Here are the two new methods to add to `GreetResource.java`:
  In the method arguments the `PathParam("name")` annotation on 
  `String name` has the effect of passing the parameter from the 
  URL into this method as `name`.
-<2> The second method implements a new HTTP POST service which produces
+<2> The second method implements a new HTTP PUT service which produces
  and consumes JSON, note the `Consumes` and `PUT` annotations.
  It also defines a path of "/greeting".  Notice that the method
  argument is a `JsonObject`. Inside the method body there is code
@@ -1055,7 +1055,7 @@ content-length: 116
 {"outcome":"UP","status":"UP","checks":[{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}}]} <3>
 ----
 
-<1> The POST returns a HTTP 204.
+<1> The PUT returns a HTTP 204.
 <2> The health check now returns a HTTP 200.
 <3> The status is now reported as "UP" and the details are provided in the
  checks.
