@@ -135,6 +135,12 @@ The application will be a simple REST service that will return a
  Main class which will be used to start up the Helidon server 
  and the application.
 
+TIP: Technically, the main class is not needed unless you want to control
+ the startup sequence.  You can set the `mainClass` to 
+ `io.helidon.microprofile.Main` and it will find the application
+ annotated with `ApplicationScoped`.  Though it is likely that
+ almost any "real" application would want its own main class.
+
 Create a new Java class inside that directory called `GreetApplication.java`
  and add the following content:
 
@@ -262,7 +268,7 @@ In this class, a `main` method is defined which starts the Helidon MP
 <1> Notice that
  this class has an empty no-args constructor to make sure this class
  cannot be instantiated.
-<2> The Helidon reactive web server is started with the default configuration.
+<2> The MicroProfile server is started with the default configuration.
 
 Helidon MP applications also require a `beans.xml` resource file to
  tell Helidon to use the annotations discussed above to discover Java
