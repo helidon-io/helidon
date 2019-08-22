@@ -140,13 +140,13 @@ final class HelidonMeter extends MetricImpl implements Meter {
     */
     @Override
     public void jsonData(JsonObjectBuilder builder, MetricID metricID) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder();
+        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
 
-        myBuilder.add(jsonFullKey("count", metricID), getCount());
-        myBuilder.add(jsonFullKey("meanRate", metricID), getMeanRate());
-        myBuilder.add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate());
-        myBuilder.add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate());
-        myBuilder.add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
+                .add(jsonFullKey("count", metricID), getCount())
+                .add(jsonFullKey("meanRate", metricID), getMeanRate())
+                .add(jsonFullKey("oneMinRate", metricID), getOneMinuteRate())
+                .add(jsonFullKey("fiveMinRate", metricID), getFiveMinuteRate())
+                .add(jsonFullKey("fifteenMinRate", metricID), getFifteenMinuteRate());
 
         builder.add(metricID.getName(), myBuilder);
     }

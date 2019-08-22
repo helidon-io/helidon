@@ -42,5 +42,15 @@
         <Method name="accumulateJson" />
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
     </Match>
+    <Match>
+        <Class name="io.helidon.metrics.HelidonGauge" />
+        <Method name="jsonData" />
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
+    </Match>
+    <Match>
+        <Class name="io.helidon.metrics.HelidonCounter" />
+        <Method name="jsonData" />
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
+    </Match>
     
 </FindBugsFilter>
