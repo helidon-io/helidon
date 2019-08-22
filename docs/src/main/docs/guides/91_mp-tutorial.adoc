@@ -1061,23 +1061,79 @@ Learn more about health checks in the <<xx_health-checks.adoc,Health Check
 
 == Build a Docker Image
 
-The project also contains a Dockerfile so that you can easily build and run a
- Docker image. To build the Docker image, you need to have Docker installed and
- running on your system.
+To run the application in Docker (or Kubernetes), a `Dockerfile` is needed
+ to build a Docker image. To build the Docker image, you need to have Docker installed and running on your system.
+
+Add a new `Dockerfile` in the project root directory with the following content:
+
+[source,bash]
+.Dockerfile content
+----
+FROM maven:3.5.4-jdk-9 as build <1>
+WORKDIR /helidon
+
+ADD pom.xml .
+RUN mvn package -DskipTests <2>
+
+ADD src src
+RUN mvn package -DskipTests <3> 
+RUN echo "done!"
+
+FROM openjdk:8-jre-slim <4>
+WORKDIR /helidon
+
+COPY --from=build /helidon/target/helidon-mp-tutorial-1.0-SNAPSHOT.jar ./ <5>
+COPY --from=build /helidon/target/libs ./libs
+
+CMD ["java", "-jar", "helidon-mp-tutorial-1.0-SNAPSHOT.jar"] <6>
+EXPOSE 8080
+----
+
+<1> This Dockerfile uses Docker's multi-stage build feature.  The `FROM`
+ keyword creates the first stage.  In this stage, the base container has
+ the build tools needed to build the application.  These are not required
+ to run the application, so the second stage uses a smaller container.
+<2> Add the `pom.xml` and running an "empty" maven build will download
+ all of the dependencies and plugins in this layer.  This will make future
+ builds faster because they will use this cached layer rather than downloading
+ everything again.
+<3> Add the source code and do the real build.
+<4> Start a second stage using a much smaller runtime image.
+<5> Copy the binary and libraries from the first stage.
+<6> Set the initial command and expose port 8080.
+
+To create the Docker image, use the following command: 
 
 [source,bash]
 .Docker build
 ----
-docker build -t helidon-quickstart-se .
+docker build -t helidon-mp-tutorial .
 ----
+
+Make sure the application is shutdown if it was still running
+ locally so that port 8080 will not be in use, then start the application
+ in Docker using the following command:
 
 [source,bash]
 .Run Docker Image
 ----
-docker run --rm -p 8080:8080 helidon-quickstart-se:latest
+docker run --rm -p 8080:8080 helidon-mp-tutorial:latest
 ----
 
-Then you can try the application as you did before.
+Try the application as before.
+
+[source,bash]
+.Try the application
+----
+curl http://localhost:8080/greet/bob
+{"message":"Howdee bob!"}
+
+curl http://localhost:8080/health/ready
+{"outcome":"UP","status":"UP","checks":[]}
+----
+
+Learn more about creating Docker images for Helidon applications at
+ <<guides/04_dockerfile.adoc,Creating Docker Images>>.
 
 == Deploy the application to Kubernetes
 
