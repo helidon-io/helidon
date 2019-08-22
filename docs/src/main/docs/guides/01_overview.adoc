@@ -72,12 +72,6 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
 
 [PILLARS]
 ====
-[CARD]
-.Helidon SE Tutorial
-[link=guides/90_se-tutorial.adoc]
---
-Learn how to build an Helidon SE application from scratch.
---
 
 [CARD]
 .Helidion MP Tutorial
