@@ -69,7 +69,6 @@ public class MainTest {
 
         conn = getURLConnection("GET","/greet");
         Assertions.assertEquals(200, conn.getResponseCode(), "HTTP response1");
-
         JsonReader jsonReader = JSON.createReader(conn.getInputStream());
         JsonObject jsonObject = jsonReader.readObject();
         Assertions.assertEquals("Hello World!", jsonObject.getString("message"),

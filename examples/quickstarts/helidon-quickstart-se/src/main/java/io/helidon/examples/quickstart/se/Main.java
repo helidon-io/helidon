@@ -58,7 +58,6 @@ public final class Main {
         LogManager.getLogManager().readConfiguration(
                 Main.class.getResourceAsStream("/logging.properties"));
 
-        Character.toUpperCase("".charAt(0)) + "".substring(1);
         // By default this will pick up application.yaml from the classpath
         Config config = Config.create();
 
