@@ -957,35 +957,17 @@ curl -s -X GET http://localhost:8080/health
 ----
 
 Endpoints for readiness and liveness checks are also provided by default.
- Obtain the default results using these URLs:
+ Obtain the default results using these URLs, which return the same result as the previous example.:
 
 [source,bash]
 .Default readiness and liveness endpoints
 ----
 # readiness
 curl -i  -X GET http://localhost:8080/health/ready
-HTTP/1.1 200 OK <1>
-Content-Type: application/json
-Date: Thu, 22 Aug 2019 13:06:37 -0400
-connection: keep-alive
-content-length: 42
-
-{"outcome":"UP","status":"UP","checks":[]} <2>
 
 # liveness
 curl -i  -X GET http://localhost:8080/health/live
-HTTP/1.1 200 OK <1>
-Content-Type: application/json
-Date: Thu, 22 Aug 2019 13:06:46 -0400
-connection: keep-alive
-content-length: 42
-
-{"outcome":"UP","status":"UP","checks":[]} <2>
 ----
-
-<1> Both endpoints return a HTTP 200 return code.
-<2> Both endpoints report a status of "UP" but neither report any
- checks currently.
 
 Helidon allows the addition of custom health checks to applications.
  Create a new class `GreetHealthcheck.java` with the following content:
@@ -1045,14 +1027,14 @@ Rebuild the application, make sure that the `mp.conf` has the `greeting` set
 [source,bash]
 .Custom health check reporting unhealthy state
 ----
-curl -i  -X GET http://localhost:8080/health/live 
+curl -i -X GET http://localhost:8080/health/live 
 HTTP/1.1 503 Service Unavailable <1>
 Content-Type: application/json
-Date: Thu, 22 Aug 2019 13:25:37 -0400
+Date: Fri, 23 Aug 2019 10:07:23 -0400
 transfer-encoding: chunked
 connection: keep-alive
 
-{"outcome":"DOWN","status":"DOWN","checks":[{"name":"greeting","state":"DOWN","status":"DOWN","data":{"greeting":"Hey"}}]} <2>
+{"outcome":"DOWN","status":"DOWN","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409182306304,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"DOWN","status":"DOWN","data":{"greeting":"Hey"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"243.81 MB","freeBytes":255651048,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.58%","total":"294.00 MB","totalBytes":308281344}}]} <2>
 ----
 
 <1> The HTTP return code is now 503 Service Unavailable.
@@ -1065,20 +1047,21 @@ Now update the greeting to `"Hello"` using the following request, and then
 [source,bash]
 .Update the greeting and check health again
 ----
+# update greeting
 curl -i -X PUT -H "Content-Type: application/json" -d '{"greeting": "Hello"}' http://localhost:8080/greet/greeting
 HTTP/1.1 204 No Content <1>
 Date: Thu, 22 Aug 2019 13:29:57 -0400
 connection: keep-alive
 
-
-curl -i  -X GET http://localhost:8080/health/live 
+# check health
+curl -i -X GET http://localhost:8080/health/live 
 HTTP/1.1 200 OK <2>
 Content-Type: application/json
-Date: Thu, 22 Aug 2019 13:29:58 -0400
+Date: Fri, 23 Aug 2019 10:08:09 -0400
 connection: keep-alive
-content-length: 116
+content-length: 536
 
-{"outcome":"UP","status":"UP","checks":[{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}}]} <3>
+{"outcome":"UP","status":"UP","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409179811840,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"237.25 MB","freeBytes":248769720,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.40%","total":"294.00 MB","totalBytes":308281344}}]} <3>
 ----
 
 <1> The PUT returns a HTTP 204.
