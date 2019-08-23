@@ -49,7 +49,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics-prometheus</artifactId>
+                <artifactId>helidon-metrics2-prometheus</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -311,7 +311,7 @@
             <!-- metrics -->
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics</artifactId>
+                <artifactId>helidon-metrics2</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- health checks -->

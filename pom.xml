@@ -300,8 +300,8 @@
                             <link>https://static.javadoc.io/javax.transaction/javax.transaction-api/${version.lib.transaction-api}</link>
                             <link>https://static.javadoc.io/javax.xml.bind/jaxb-api/${version.lib.jaxb-api}/</link>
                             <link>https://static.javadoc.io/org.eclipse.microprofile.config/microprofile-config-api/${version.lib.microprofile-config-api}</link>
-                            <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health-api}</link>
-                            <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics-api}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.health/microprofile-health-api/${version.lib.microprofile-health}</link>
+                            <link>https://static.javadoc.io/org.eclipse.microprofile.metrics/microprofile-metrics-api/${version.lib.microprofile-metrics2-api}</link>
                             <link>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</link>
                             <link>http://narayana.io/docs/api/</link>
                             <link>https://www.eclipse.org/eclipselink/api/2.7/</link>
