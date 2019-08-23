@@ -97,7 +97,7 @@ private static Routing createRouting(Config config) {
 
 
 [source,bash]
-.Build the application, skipping unit tests, then restart it
+.Build the application, skipping unit tests, then run it
 ----
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-se.jar
@@ -178,7 +178,7 @@ HealthSupport health = HealthSupport.builder()
 <1> Add a custom liveness health check. This example returns `UP` and current time.
 
 [source,bash]
-.Build and restart the application, then verify the custom health endpoint
+.Build and run the application, then verify the custom health endpoint
 ----
 curl http://localhost:8080/health
 ----
@@ -252,7 +252,7 @@ HealthSupport health = HealthSupport.builder()
 <1> Add the readiness check.
 
 [source,bash]
-.Build and restart the application.  Issue the curl command with -v within 5 seconds and you see the application is not ready
+.Build and run the application.  Issue the curl command with -v within 5 seconds and you see the application is not ready
 ----
 curl -v  http://localhost:8080/health/ready
 ----
@@ -371,7 +371,7 @@ HealthSupport health = HealthSupport.builder()
 <1> Add the built-in health checks back to HealthSupport builder
 
 [source,bash]
-.Build and restart the application, then verify the health endpoint.  You will see both the built-in and custom health check data
+.Build and run the application, then verify the health endpoint.  You will see both the built-in and custom health check data
 ----
 curl http://localhost:8080/health
 ----
@@ -456,7 +456,7 @@ HealthSupport health = HealthSupport.builder()
 <1> Change the liveness URL path using a WebContext
 
 [source,bash]
-.Build and restart the application, then verify the health endpoint.  Verify the custom health endpoint is at the new URL path
+.Build and run the application, then verify the health endpoint.  Verify the custom health endpoint is at the new URL path
 ----
 curl http://localhost:8080/probe/live
 ----
@@ -509,7 +509,7 @@ HealthSupport health = HealthSupport.builder()
 <2> Add custom liveness check
 <2> Add custom readiness check
 
-.Build and restart the application, then verify the live and ready health endpoints
+.Build and run the application, then verify the live and ready health endpoints
 
 [source,bash]
 ----
@@ -586,7 +586,7 @@ spec:
 
 
 [source,bash]
-.Create and deploy the application into kubernetes
+.Create and deploy the application into Kubernetes
 ----
 kubectl apply -f ./health.yaml
 ----
@@ -612,7 +612,7 @@ curl http://localhost:30116/health
 
 
 [source,bash]
-.Delete the application, cleaning up kubernetes resources
+.Delete the application, cleaning up Kubernetes resources
 ----
 kubectl delete -f ./health.yaml
 ----

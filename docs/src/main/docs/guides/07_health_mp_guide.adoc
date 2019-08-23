@@ -61,7 +61,7 @@ from the root directory of your project (helidon-quickstart-mp)
 
 
 [source,bash]
-.Build the application, skipping unit tests, then restart it
+.Build the application, skipping unit tests, then run it
 ----
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp.jar
@@ -121,7 +121,7 @@ You can create application specific custom health checks and integrate them with
 using the CDI.  The following example shows how to add a custom liveness health check.
 
 [source,java]
-.Create a new class GreetLivenessCheck with the following content
+.Create a new class *GreetLivenessCheck* with the following content
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -149,7 +149,7 @@ public class GreetLivenessCheck implements HealthCheck {
 <3> Build the HealthCheckResponse with status UP and the current time
 
 [source,bash]
-.Build and restart the application, then verify the custom liveness health endpoint
+.Build and run the application, then verify the custom liveness health endpoint
 ----
 curl http://localhost:8080/health/live
 ----
@@ -179,7 +179,7 @@ You can add a readiness check to indicate that the application is ready to be us
 example, the server will wait 5 seconds before it becomes ready.
 
 [source,java]
-.Create a new class GreetReadinessCheck with the following content
+.Create a new class *GreetReadinessCheck* with the following content
 ----
 
 package io.helidon.examples.quickstart.mp;
@@ -229,7 +229,7 @@ public class GreetReadinessCheck implements HealthCheck {
 <4> Initialize the time at startup
 
 [source,bash]
-.Build and restart the application.  Issue the curl command with -v within 5 seconds and you see the application is not ready
+.Build and run the application.  Issue the curl command with -v within 5 seconds and you see the application is not ready
 ----
 curl -v  http://localhost:8080/health/ready
 ----
@@ -376,7 +376,7 @@ health:
 <1> The web-context specifies a new root path for the health endpoint
 
 [source,bash]
-.Build and restart the application, then verify the health endpoint using the new 'myhealth' root
+.Build and run the application, then verify the health endpoint using the new 'myhealth' root
 ----
 curl http://localhost:8080/myhealth
 curl http://localhost:8080/myhealth/live
@@ -406,7 +406,7 @@ health:
 
 
 [source,bash]
-.Build and restart the application, then verify the health endpoint using port 8081 and 'myhealth'
+.Build and run the application, then verify the health endpoint using port 8081 and 'myhealth'
 ----
 curl http://localhost:8081/myhealth
 curl http://localhost:8081/myhealth/live
@@ -492,7 +492,7 @@ spec:
 
 
 [source,bash]
-.Create and deploy the application into kubernetes
+.Create and deploy the application into Kubernetes
 ----
 kubectl apply -f ./health.yaml
 ----
@@ -518,7 +518,7 @@ curl http://localhost:30116/health
 
 
 [source,bash]
-.Delete the application, cleaning up kubernetes resources
+.Delete the application, cleaning up Kubernetes resources
 ----
 kubectl delete -f ./health.yaml
 ----
