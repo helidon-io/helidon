@@ -80,8 +80,6 @@ public class CDISEPlatform extends JMXServerPlatformBase {
      */
     public CDISEPlatform(final DatabaseSession session) {
         super(session);
-        // too early
-
     }
 
 
