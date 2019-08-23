@@ -234,16 +234,11 @@ public class CDISEPlatform extends JMXServerPlatformBase {
                     if (dataSourceName == null) {
                         throw ValidationException.invalidDataSourceName(null, null);
                     }
-                    final DataSource dataSource;
-                    DataSource temp = null;
                     try {
-                        temp = cdi.select(DataSource.class, NamedLiteral.of(jndiConnector.getName())).get();
+                        jndiConnector.setDataSource(cdi.select(DataSource.class, NamedLiteral.of(jndiConnector.getName())).get());
                     } catch (final InjectionException injectionExceptionOfAnyKind) {
                         throw ValidationException.cannotAcquireDataSource(dataSourceName, injectionExceptionOfAnyKind);
-                    } finally {
-                        dataSource = temp;
                     }
-                    jndiConnector.setDataSource(dataSource);
                 }
             }
         }
