@@ -63,10 +63,7 @@ public final class MpConfig implements org.eclipse.microprofile.config.Config {
              Map<Class<?>, Converter<?>> converters) {
 
         final AtomicReference<Config> ref = new AtomicReference<>(config);
-        config.onChange(newConfig -> {
-            ref.set(newConfig);
-            return true;
-        });
+        config.onChange(ref::set);
 
         this.config = ref::get;
 
