@@ -121,7 +121,7 @@ You can create application specific custom health checks and integrate them with
 using the CDI.  The following example shows how to add a custom liveness health check.
 
 [source,java]
-.Create a new class *GreetLivenessCheck* with the following content
+.Create a new class `GreetLivenessCheck` with the following content
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -179,7 +179,7 @@ You can add a readiness check to indicate that the application is ready to be us
 example, the server will wait 5 seconds before it becomes ready.
 
 [source,java]
-.Create a new class *GreetReadinessCheck* with the following content
+.Create a new class `GreetReadinessCheck` with the following content
 ----
 
 package io.helidon.examples.quickstart.mp;
