@@ -95,6 +95,10 @@ This POM file contains just the basics that we need to get started.
  when building a JAR file.  The class will be created later in the
  tutorial.
 <3> Include the Helidon BOM POM  (in the `dependencyManagement` section).
+ A BOM is a special kind of POM that is used to control the versions of a
+ project's dependencies and provide a central place to define and update
+ those versions. The BOM provides the flexibility to add a dependency to a
+ module without worrying about the version it should depend on.
 <4> Add a dependency for the MicroProfile 2.2 bundle which allows the use of
  MicroProfile 2.2 features in the application.
 
