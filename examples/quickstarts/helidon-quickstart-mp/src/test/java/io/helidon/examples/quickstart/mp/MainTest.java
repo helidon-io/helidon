@@ -81,6 +81,7 @@ class MainTest {
                 .target(getConnectionString("/health"))
                 .request()
                 .get();
+        r.
         Assertions.assertEquals(200, r.getStatus(), "GET health status code");
     }
 

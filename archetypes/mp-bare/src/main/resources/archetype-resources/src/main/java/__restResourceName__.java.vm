@@ -3,6 +3,9 @@ package ${package};
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
+/**
+ * Simple JAXRS resource class.
+ */
 @Path("${restResourcePath}")
 public class ${restResourceName} {
 

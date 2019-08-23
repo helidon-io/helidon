@@ -12,11 +12,10 @@
 
     <properties>
         <helidon.version>1.2.1-SNAPSHOT</helidon.version>
-#if( $mainClass.matches("y|yes|true") )
-        <mainClass>${package}.Main</mainClass>
-#else
-        <mainClass>io.helidon.microprofile.server.Main</mainClass>
+#if( $nativeImageSupport.matches("y|yes|true") )
+        <helidon.plugin.version>1.0.10</helidon.plugin.version>
 #end
+        <mainClass>${package}.Main</mainClass>
         <exec.mainClass>${symbol_dollar}{mainClass}</exec.mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${symbol_dollar}{maven.compiler.source}</maven.compiler.target>
@@ -37,11 +36,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.jboss.jandex</groupId>
-                    <artifactId>jandex-maven-plugin</artifactId>
-                    <version>1.0.6</version>
                 </plugin>
 #if( $unitTest.matches("y|yes|true") )
                 <plugin>
@@ -82,6 +76,13 @@
                         </archive>
                     </configuration>
                 </plugin>
+#if( $nativeImageSupport.matches("y|yes|true") )
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-maven-plugin</artifactId>
+                    <version>${symbol_dollar}{helidon.plugin.version}</version>
+                </plugin>
+#end
             </plugins>
         </pluginManagement>
 
@@ -108,19 +109,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.jboss.jandex</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                        <goals>
-                            <goal>jandex</goal>
-                        </goals>
-                        <phase>process-classes</phase>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
@@ -133,52 +121,42 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>jandex</artifactId>
-                <version>2.1.1.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>javax.activation-api</artifactId>
-                <version>1.2.0</version>
-            </dependency>
-#if( $unitTest.matches("y|yes|true") )
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>5.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
-                <version>1.3</version>
-            </dependency>
-#end
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile-2.2</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+#if( $jsonSupport.matches("y|yes|true") )
+        <dependency>
+            <groupId>io.helidon.media.jsonp</groupId>
+            <artifactId>helidon-media-jsonp-server</artifactId>
+        </dependency>
+#end
+#if( $applicationYaml.matches("y|yes|true") )
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+#end
+#if( $healthSupport.matches("y|yes|true") )
+        <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
-            <artifactId>jandex</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health-checks</artifactId>
         </dependency>
+#end
+#if( $metricsSupport.matches("y|yes|true") )
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
-            <scope>runtime</scope>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
         </dependency>
+#end
 #if( $unitTest.matches("y|yes|true") )
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -192,4 +170,33 @@
         </dependency>
 #end
     </dependencies>
+
+#if( $nativeImageSupport.matches("y|yes|true") )
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>io.helidon.integrations.graal</groupId>
+                    <artifactId>helidon-graal-native-image-extension</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+#end
 </project>

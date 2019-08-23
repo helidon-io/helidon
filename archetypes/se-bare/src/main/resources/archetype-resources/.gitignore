@@ -1,0 +1,20 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+hs_err_pid*
+target/
+.DS_Store
+.idea/
+*.iws
+*.ipr
+*.iml
+atlassian-ide-plugin.xml
+nbactions.xml
+nb-configuration.xml
+.settings
+.settings/
+.project
+.classpath
+*.swp
+*~
+

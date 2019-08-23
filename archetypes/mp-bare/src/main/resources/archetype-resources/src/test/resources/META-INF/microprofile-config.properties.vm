@@ -1,0 +1,4 @@
+# Override configuration in main source branch, so we do not use 8080 port for tests
+config_ordinal=1000
+server.port=-1
+server.host=0.0.0.0

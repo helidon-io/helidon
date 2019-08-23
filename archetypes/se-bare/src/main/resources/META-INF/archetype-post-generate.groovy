@@ -19,11 +19,10 @@ def javaPackage = request.getProperties().get("package")
 def javaPkgDir = new File(rootDir, "src/main/java/" + javaPackage.replace('.','/'))
 def testJavaPkgDir = new File(rootDir, "src/test/java/" + javaPackage.replace('.','/'))
 def resourcesDir = new File(rootDir, "src/main/resources")
-def testResourcesDir = new File(rootDir, "src/test/resources")
 
 def optionalFiles = [
-  restResource: [ "${javaPkgDir}/__applicationName__.java", "${javaPkgDir}/__restResourceName__.java" ],
-  unitTest: [ "${testJavaPkgDir}/MainTest.java", "${testResourcesDir}/microprofile-config.properties" ],
+  restService: [ "${javaPkgDir}/__restServiceName__.java" ],
+  unitTest: [ "${testJavaPkgDir}/MainTest.java" ],
   loggingConfig: [ "${resourcesDir}/logging.properties" ],
   applicationYaml: [ "${resourcesDir}/application.yaml" ]
 ]

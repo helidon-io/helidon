@@ -236,7 +236,6 @@
     </properties>
 
     <modules>
-        <module>archetypes</module>
         <module>common</module>
         <module>config</module>
         <module>media</module>
@@ -1380,6 +1379,12 @@
             <id>integrations</id>
             <modules>
                 <module>integrations</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>archetypes</id>
+            <modules>
+                <module>archetypes</module>
             </modules>
         </profile>
         <profile>
