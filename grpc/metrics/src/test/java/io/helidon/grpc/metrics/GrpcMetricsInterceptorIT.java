@@ -48,6 +48,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.jupiter.api.Disabled;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -171,6 +172,7 @@ public class GrpcMetricsInterceptorIT {
         assertThat(appTimer.getCount(), is(1L));
     }
 
+    @Disabled // TODO need a different way to check that tags are correct
     @Test
     public void shouldApplyTags() throws Exception {
         ServiceDescriptor descriptor = ServiceDescriptor.builder(createMockService())

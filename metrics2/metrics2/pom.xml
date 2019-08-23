@@ -68,7 +68,7 @@
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

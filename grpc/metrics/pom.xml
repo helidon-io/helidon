@@ -45,10 +45,15 @@
 
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-metrics2</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>${version.lib.microprofile-metrics2-api}</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
