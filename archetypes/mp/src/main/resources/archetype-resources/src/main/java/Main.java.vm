@@ -3,13 +3,18 @@
 #set( $symbol_escape = '\' )
 package ${package};
 
+#if( $loggingConfig.matches("y|yes|true") )
+import java.io.InputStream;
+#end
 import java.io.IOException;
+#if( $loggingConfig.matches("y|yes|true") )
 import java.util.logging.LogManager;
+#end
 
 import io.helidon.microprofile.server.Server;
 
 /**
- * Main method simulating trigger of main method of the server.
+ * The application main class.
  */
 public final class Main {
 
@@ -25,8 +30,11 @@ public final class Main {
      */
     public static void main(final String[] args) throws IOException {
 #if( $loggingConfig.matches("y|yes|true") )
+        // load logging configuration
         setupLogging();
+
 #end
+        // start the server
         Server server = startServer();
 #if( $restResource.matches("y|yes|true") )
         System.out.println("http://localhost:" + server.port() + "${restResourcePath}");
@@ -43,15 +51,15 @@ public final class Main {
         // and Application classes annotated as @ApplicationScoped
         return Server.create().start();
     }
-
 #if( $loggingConfig.matches("y|yes|true") )
+
     /**
      * Configure logging from logging.properties file.
      */
     private static void setupLogging() throws IOException {
-        // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
+            LogManager.getLogManager().readConfiguration(is);
+        }
     }
 #end
 }

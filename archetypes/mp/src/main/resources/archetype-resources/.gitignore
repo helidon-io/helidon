@@ -1,6 +1,3 @@
-#set( $symbol_pound = '#' )
-#set( $symbol_dollar = '$' )
-#set( $symbol_escape = '\' )
 hs_err_pid*
 target/
 .DS_Store
@@ -17,4 +14,3 @@ nb-configuration.xml
 .classpath
 *.swp
 *~
-

@@ -16,13 +16,14 @@
 
 package io.helidon.examples.quickstart.mp;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
 import io.helidon.microprofile.server.Server;
 
 /**
- * Main method simulating trigger of main method of the server.
+ * The application main class.
  */
 public final class Main {
 
@@ -37,8 +38,10 @@ public final class Main {
      * @throws IOException if there are problems reading logging properties
      */
     public static void main(final String[] args) throws IOException {
+        // load logging configuration
         setupLogging();
 
+        // start the server
         Server server = startServer();
 
         System.out.println("http://localhost:" + server.port() + "/greet");
@@ -59,8 +62,8 @@ public final class Main {
      * Configure logging from logging.properties file.
      */
     private static void setupLogging() throws IOException {
-        // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
+            LogManager.getLogManager().readConfiguration(is);
+        }
     }
 }

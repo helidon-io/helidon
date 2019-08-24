@@ -31,22 +31,22 @@ class MainTest {
     void testRestResource() {
         Client client = ClientBuilder.newClient();
 
-        String rsp = client
+        String response = client
                 .target(getConnectionString("${restResourcePath}"))
                 .request()
                 .get(String.class);
-        Assertions.assertEquals("It works!", rsp);
+        Assertions.assertEquals("It works!", response);
     }
 
 #end
     @Test
     void testRoot(){
         Client client = ClientBuilder.newClient();
-        Response rsp = client
+        Response response = client
                 .target(getConnectionString("/"))
                 .request()
                 .get();
-        Assertions.assertEquals(404, rsp.getStatus());
+        Assertions.assertEquals(404, response.getStatus());
     }
 
     private static String getConnectionString(String path) {

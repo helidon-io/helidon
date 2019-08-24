@@ -1,5 +1,8 @@
 package ${package};
 
+#if( $loggingConfig.matches("y|yes|true") )
+import java.io.InputStream;
+#end
 import java.io.IOException;
 #if( $loggingConfig.matches("y|yes|true") )
 import java.util.logging.LogManager;
@@ -25,7 +28,7 @@ import io.helidon.webserver.ServerConfiguration;
 import io.helidon.webserver.WebServer;
 
 /**
- * Simple Helidon SE application.
+ * The application main class.
  */
 public final class Main {
 
@@ -51,8 +54,7 @@ public final class Main {
     static WebServer startServer() throws IOException {
 #if( $loggingConfig.matches("y|yes|true") )
         // load logging configuration
-        LogManager.getLogManager().readConfiguration(
-                Main.class.getResourceAsStream("/logging.properties"));
+        setupLogging();
 #end
 
 #if( $applicationYaml.matches("y|yes|true") )
@@ -124,5 +126,15 @@ public final class Main {
 #end
                 .build();
     }
+#if( $loggingConfig.matches("y|yes|true") )
 
+    /**
+     * Configure logging from logging.properties file.
+     */
+    private static void setupLogging() throws IOException {
+        try (InputStream is = Main.class.getResourceAsStream("/logging.properties")) {
+            LogManager.getLogManager().readConfiguration(is);
+        }
+    }
+#end
 }

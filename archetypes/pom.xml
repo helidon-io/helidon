@@ -31,7 +31,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>mp-bare</module>
-        <module>se-bare</module>
+        <module>mp</module>
+        <module>se</module>
     </modules>
 </project>
