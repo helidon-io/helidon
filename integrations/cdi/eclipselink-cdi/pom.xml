@@ -42,11 +42,28 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-core</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
         <!-- Runtime-scoped dependencies. -->
         <dependency>
             <groupId>org.jboss</groupId>
@@ -88,6 +105,16 @@
                         <phase>process-classes</phase>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+              <artifactId>maven-surefire-plugin</artifactId>
+              <configuration>
+                <systemPropertyVariables>
+                  <javax.sql.DataSource.test.dataSourceClassName>org.h2.jdbcx.JdbcDataSource</javax.sql.DataSource.test.dataSourceClassName>
+                  <javax.sql.DataSource.test.dataSource.url>jdbc:h2:mem:test</javax.sql.DataSource.test.dataSource.url>
+                  <javax.sql.DataSource.test.dataSource.user>jdbc:h2:mem:test</javax.sql.DataSource.test.dataSource.user>
+                </systemPropertyVariables>
+              </configuration>
             </plugin>
         </plugins>
     </build>
