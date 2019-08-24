@@ -34,16 +34,4 @@
         <module>mp-bare</module>
         <module>se-bare</module>
     </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.archetype</groupId>
-                <artifactId>maven-archetype-plugin</artifactId>
-                <configuration>
-                    <skip>${skipTests}</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>
