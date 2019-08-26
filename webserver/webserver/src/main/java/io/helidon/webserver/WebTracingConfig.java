@@ -258,6 +258,22 @@ public abstract class WebTracingConfig {
             SpanContext inboundSpanContext = tracer.extract(Format.Builtin.HTTP_HEADERS, new TextMapExtractAdapter(headersMap));
 
             if (inboundSpanContext instanceof NoopSpanBuilder) {
+                // this is all a noop stuff, does not matter what I do here - this is to prevent null pointers
+                // when span is used
+                // TODO once we return Optional from ServerRequest.spanContext(), we can also remove the
+                // following codeblock and we do not need to create teh span and register it with context
+                Span span = tracer.buildSpan("helidon-webserver")
+                        .asChildOf(inboundSpanContext)
+                        .start();
+
+                context.register(span);
+                context.register(span.context());
+                context.register(ServerRequest.class, span);
+                context.register(ServerRequest.class, span.context());
+
+                res.whenSent()
+                        .thenRun(span::finish);
+
                 // no tracing
                 return;
             }
