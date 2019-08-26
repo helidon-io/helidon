@@ -38,7 +38,7 @@ import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.grpc.GrpcClientSecurity;
 import io.helidon.security.integration.grpc.GrpcSecurity;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
+import io.helidon.security.integration.jersey.client.ClientSecurity;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webserver.Routing;
@@ -161,7 +161,6 @@ public class SecureServer {
 
         private GreetService() {
             client = ClientBuilder.newBuilder()
-                                    .register(new ClientSecurityFeature())
                                     .build();
         }
 
@@ -191,7 +190,7 @@ public class SecureServer {
                                       .path("lower")
                                       .queryParam("value", name)
                                       .request()
-                                      .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
+                                      .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
                                       .get();
 
             int status = response.getStatus();
@@ -226,7 +225,7 @@ public class SecureServer {
                                       .path("upper")
                                       .queryParam("value", name)
                                       .request()
-                                      .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
+                                      .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
                                       .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Ted")
                                       .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "secret")
                                       .get();

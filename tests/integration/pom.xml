@@ -21,6 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <modules>
         <module>zipkin-mp-2.2</module>
+        <module>mp-security-client</module>
     </modules>
 
     <parent>

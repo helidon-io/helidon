@@ -60,5 +60,10 @@
             <artifactId>helidon-microprofile-jwt-auth-cdi</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-jersey-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>
