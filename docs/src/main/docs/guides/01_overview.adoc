@@ -66,4 +66,11 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
 
+[CARD]
+.Build Native Images with GraalVM
+[link=guides/15_graalnative.adoc]
+--
+Learn how to use GraalVM to build a native executable for your Helidon SE application.
+--
+
 ====
