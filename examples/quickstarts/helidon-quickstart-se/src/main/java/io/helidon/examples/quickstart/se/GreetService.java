@@ -25,6 +25,7 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
 import javax.json.JsonObject;
+import javax.json.stream.JsonParsingException;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -106,24 +107,23 @@ public class GreetService implements Service {
     }
 
     private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
-                if (ex.getCause() instanceof JsonException){
+         if (ex.getCause() instanceof JsonParsingException) {
 
-                LOGGER.log(Level.FINE, "Exception occurred while processing payload", ex);
-                    String error = String.format("Error with JSON: %s", ex.getCause().toString());
-                    JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                        .add("error", error)
-                        .build();
-                    response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-                } else {
+            LOGGER.log(Level.FINE, "Error parsing JSON body", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                .add("error", "Error parsing JSON body")
+                .build();
+            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
+        } else if (ex.getCause() instanceof JsonException){
 
-                LOGGER.log(Level.FINE, "Exception occurred while processing payload", ex);
-                    JsonObject jsonErrorObject = JSON.createObjectBuilder() .add("error", ex.getLocalizedMessage()) .build();
-                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
-                    request.next(ex);
-                }
+            LOGGER.log(Level.FINE, "Empty request body", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                .add("error", "Empty request body")
+                .build();
+            response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+        }
 
-                LOGGER.log(Level.FINE, "Exception occurred while processing payload", ex);
-                return null;
+        return null;
     }
 
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
