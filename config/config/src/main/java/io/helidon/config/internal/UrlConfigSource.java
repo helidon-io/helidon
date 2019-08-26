@@ -167,16 +167,20 @@ public class UrlConfigSource extends AbstractParsableConfigSource<Instant> {
             URLConnection urlConnection = url.openConnection();
             if (urlConnection instanceof HttpURLConnection) {
                 HttpURLConnection connection = (HttpURLConnection) urlConnection;
-                connection.setRequestMethod(HEAD_METHOD);
+                try {
+                    connection.setRequestMethod(HEAD_METHOD);
 
-                if (connection.getLastModified() != 0) {
-                    return Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+                    if (connection.getLastModified() != 0) {
+                        return Optional.of(Instant.ofEpochMilli(connection.getLastModified()));
+                    }
+                } finally {
+                    connection.disconnect();
                 }
-                connection.disconnect();
             }
         } catch (IOException ex) {
             LOGGER.log(Level.FINE, ex, () -> "Configuration at url '" + url + "' HEAD is not accessible.");
         }
+
         Optional<Instant> timestamp = Optional.of(Instant.MAX);
         LOGGER.finer("Missing HEAD '" + url + "' response header 'Last-Modified'. Used time '"
                              + timestamp + "' as a content timestamp.");
