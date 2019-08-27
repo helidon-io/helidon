@@ -66,4 +66,11 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
 
+[CARD]
+.MP Metrics Guide
+[link=guides/09_metrics_mp_guide.adoc]
+--
+Learn how to use Helidon MP built-in and application metrics.
+--
+
 ====
