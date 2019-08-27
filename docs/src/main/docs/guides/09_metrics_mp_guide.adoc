@@ -56,9 +56,9 @@ there is no configuration or code required by the application.  Here are the met
 2. `/metrics/vendor` - Helidon-specific metrics data
 3. `/metrics/application` - Application-specific metrics data
 
-NOTE: The /metrics endpoint will return data for all scopes.
+NOTE: The `/metrics` endpoint will return data for all scopes.
 
-The following example will demonstrate how to use the built-in metrics.  All examples are all executed
+The following example will demonstrate how to use the built-in metrics.  All examples are executed
 from the root directory of your project (helidon-quickstart-mp).
 
 [source,bash]
@@ -168,9 +168,9 @@ NOTE: You cannot get the individual fields of a metric. For example, you cannot 
 
 Each metric has associated metadata that describes:
 
-1. name: The name of the metric
+1. name: The name of the metric.
 2. units: The unit of the metric such as time (seconds, millisecond), size (bytes, megabytes), etc.
-3. type: The type of metric: counter, timer, meter, histogram, or gauge
+3. type: The type of metric: `Counter`, `Timer`, `Meter`, `Histogram`, or `Gauge`.
 
 You can get the metadata for any scope, such as `/metrics/base`, as shown below:
 
@@ -216,15 +216,15 @@ be injected at the class, method, and field-levels.  This document shows example
 
 Helidon will automatically create and register annotated application metrics and store them in the application `MetricRegistry`, which
 also contains the metric metadata. The metrics will exist for the lifetime of the application. Each metric annotation has a set of fields,
-where some are optional and others are mandatory. For example, 'name' is an optional metric field.
+where some are optional and others are mandatory. For example, `name` is an optional metric field.
 
 ==== Method level metrics
 
 There are three metrics that you can use by annotating a method:
 
-1. `@Counted` - Register a Counter metric
-2. `@Timed` - Register a Timer metric
-3. `@Metered` - Register a Meter metric
+1. `@Counted` - Register a `Counter` metric
+2. `@Timed` - Register a `Timer` metric
+3. `@Metered` - Register a `Meter` metric
 
 The following example will demonstrate how to use the `@Counted` annotation to track the number of times
 the `/cards` endpoint is called.
@@ -269,10 +269,10 @@ as `/cards`.
 request scoped.  The request scope is active only for the duration of
 one web service invocation and it is destroyed at the end of that
 invocation.
-<3> The annotation `@Counted` will register a counter metric for this method, creating it if neccessary.
-The counter is incremened each time the anyCards method is called.  The `name` attribute is optional.
+<3> The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed.
+The counter is incremented each time the anyCards method is called.  The `name` attribute is optional.
 
-NOTE: You must set @Counted monotonic field to `true` to force the count to increment rather than decrement.
+NOTE: You must set `monotonic` field to `true` to force the count to increment rather than decrement.
 
 
 [source,java]
@@ -283,11 +283,11 @@ public Set<Class<?>> getClasses() {
     return CollectionsHelper.setOf(GreetResource.class, GreetingCards.class); // <1>
 }
 ----
-<1> Add the GreetingCards class to the set of classes managed by Helidon for this application.
+<1> Add the `GreetingCards` class to the set of classes managed by Helidon for this application.
 
 
 [source,bash]
-.Build and run the application, then invoke the application endpoints below:
+.Build and run the application, then invoke the application endpoints below
 ----
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
@@ -301,14 +301,14 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 // <1>
 }
 ----
-<1> The any-card count will be 2, since you invoked the endpoint twice.
+<1> The any-card count is two, since you invoked the endpoint twice.
 
 NOTE: Notice the counter is fully qualified.  You can remove the package prefix by using the `absolute=true` field in the `@Counted` annotation.
 You must use  `absolute=false` for class-level annotations.
 
 ==== Additional method-level metrics
 
-The @Timed and @Metered can also be used to annotate a method.  For this example. you can just annotate the same method with these metrics.
+The `@Timed` and `@Metered` can also be used to annotate a method.  For this example. you can just annotate the same method with these metrics.
 When using multiple annoations on a method, you *must* give the metrics different names as shown below.
 
 [source,java]
@@ -351,9 +351,9 @@ public class GreetingCards {
 }
 
 ----
-<1> Specify a custom name for the Counter metric and set `absolute=true` to remove the path prefix from the name.
-<1> Add the `@Metered` annotation to get a Meter metric.
-<2> Add the `@Timed` annotation to get a Timer metric.
+<1> Specify a custom name for the `Counter` metric and set `absolute=true` to remove the path prefix from the name.
+<2> Add the `@Metered` annotation to get a `Meter` metric.
+<3> Add the `@Timed` annotation to get a `Timer` metric.
 
 [source,bash]
 .Build and run the application, then invoke the application endpoints below
@@ -395,14 +395,14 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   }
 }
 ----
-<1> The Meter metric includes the count field (it is a superset of Counter).
-<2> The Timer metric includes the Meter fields (it is a superset of Meter).
+<1> The `Meter` metric includes the count field (it is a superset of `Counter`).
+<2> The `Timer` metric includes the `Meter` fields (it is a superset of `Meter`).
 
 
 ==== Reusing metrics
 
 You can share a metric across multiple endpoints by specifying the reusable field in the metric annotation as
-demonstrated below:
+demonstrated below.
 
 [source,java]
 .Update the `GreetingCards` class with the following code
@@ -454,8 +454,8 @@ public class GreetingCards {
   }
 }
 ----
-<1>  The /birthday endpoint uses a Counter metric, named `specialEventCard`.
-<2>  The /wedding endpoint uses the same Counter metric, named `specialEventCard`.
+<1>  The `/birthday` endpoint uses a `Counter` metric, named `specialEventCard`.
+<2>  The `/wedding` endpoint uses the same `Counter` metric, named `specialEventCard`.
 
 
 [source,bash]
@@ -475,12 +475,12 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 "specialEventCard": 2  // <1>
 }
 ----
-<1> Notice that `specialEventCard` count is 2, since you accessed `/cards/wedding` and `/cards/birthday`.
+<1> Notice that `specialEventCard` count is two, since you accessed `/cards/wedding` and `/cards/birthday`.
 
 
 ==== Class-level metrics
 
-You can collect metrics at the class-level to aggregate data from all methods in that class using that same metric.
+You can collect metrics at the class-level to aggregate data from all methods in that class using the same metric.
 The following example introduces a metric to count all card queries.  In this example, the method-level metrics are not
 needed to aggregate the counts, but they are left in the example to demonstrate the combined output of all three metrics.
 
@@ -527,9 +527,9 @@ public class GreetingCards {
   }
 }
 ----
-<1> This class is annotated with `@Counted` which aggregates data from all the method-level method counts.
+<1> This class is annotated with `@Counted`, which aggregates count data from all the method that have a `Count` annotation.
 <2> Use `absolute=true` to remove path prefix for method-level annotations.
-<3> Add a method with a Counter metric to get birthday cards.
+<3> Add a method with a `Counter` metric to get birthday cards.
 
 [source,bash]
 .Build and run the application, then invoke the following endpoints
@@ -548,7 +548,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
   "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2  // <1>
 }
 ----
-<1> The totalCards count is a total of all the method-level counter metrics.  Class level metric names are always
+<1> The `totalCards` count is a total of all the method-level `Counter` metrics.  Class level metric names are always
 fully qualified.
 
 
@@ -557,7 +557,7 @@ fully qualified.
 Field level metrics can be injected into managed objects, but they need to be updated by the application code.
 This annotation can be used on fields of type `Meter`, `Timer`, `Counter`, and `Histogram`.
 
-This example shows how to use a field-level counter metric to track cache hits.
+This example shows how to use a field-level `Counter` metric to track cache hits.
 
 [source,java]
 .Update the `GreetingCards` class with the following code
@@ -618,10 +618,10 @@ public class GreetingCards {
   }
 }
 ----
-<1> A Counter metric field, `cacheHits`, is automatically injected by Helidon.
+<1> A `Counter` metric field, `cacheHits`, is automatically injected by Helidon.
 <2> Call `updateStats()` to update the cache hits.
 <3> Call `updateStats()` to update the cache hits.
-<4> Randomly increment the `cacheHits` Counter.
+<4> Randomly increment the `cacheHits` counter.
 
 [source,bash]
 .Build and run the application, then invoke the following endpoints
@@ -648,15 +648,15 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 ==== Gauge metric
 
-The metrics we have examined so far are updated in response to an application REST request, i.e GET `/cards`.  These
+The metrics you have tested so far are updated in response to an application REST request, i.e GET `/cards`.  These
 metrics can be declared in a request scoped class and Helidon will store the metric in the `MetricRegistry`, so the value persists
 across requests. When GET `/metrics/application` is invoked, Helidon will return the current value of the metric stored in the `MetricRegistry`.
-The Gauge metric is different from all the other metrics. The application must provide a getter to return the gauge value in an
-application scoped class. When GET `/metrics/application` is invoked, Helidon will call the Gauge getter, store that value
-in the MetricsRegistry, and return it as part of the metrics response payload.  So, the Gauge metric value is updated real-time in response to the
+The `Gauge` metric is different from all the other metrics. The application must provide a getter to return the gauge value in an
+application scoped class. When GET `/metrics/application` is invoked, Helidon will call the `Gauge` getter, store that value
+in the `MetricsRegistry`, and return it as part of the metrics response payload.  So, the `Gauge` metric value is updated real-time, in response to the
 get metrics request.
 
-The following example demonstrates how to use a Gauge to track application up-time.
+The following example demonstrates how to use a `Gauge` to track application up-time.
 
 [source,java]
 .Create a new `GreetingCardsAppMetrics` class with the following code
@@ -685,8 +685,8 @@ public class GreetingCardsAppMetrics {
   }
 }
 ----
-<1> This managed object must be application scoped to properly register and use the Gauge metric.
-<2> Declare an AtomicLong to hold the start time of the application.
+<1> This managed object must be application scoped to properly register and use the `Gauge` metric.
+<2> Declare an `AtomicLong` field to hold the start time of the application.
 <3> Initialize the application start time.
 <4> Return the application `appUpTimeSeconds` metric, which will be included in the application metrics.
 
@@ -816,7 +816,7 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // 
 <1> A service of type `NodePort` that serves the default routes on port `31143`
 
 [source,bash]
-.Verify the metrics endpoint using port '30116'. NOTE: your port will likely be different.
+.Verify the metrics endpoint using port `30116`, your port will likely be different
 ----
 curl http://localhost:31143/metrics
 ----
@@ -830,17 +830,17 @@ Prometheus to discover the service and scrape the metrics.  In this exercise, yo
 into Kubernetes, then verify it discovered the Helidon metrics in your application.
 
 [source,bash]
-.Install Prometheus and wait until the pod is ready.
+.Install Prometheus and wait until the pod is ready
 ----
 helm install stable/prometheus --name metrics
 export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
 kubectl get pod $POD_NAME
 ----
 
-[source,bash]
-.You will see an output similar to this.  Repeat the `kubectl get pod` command until you get 2/2 and Running. This may take up to 1 minute.
-----
+You will see an output similar to this.  Repeat the `kubectl get pod` command until you get 2/2 and Running. This may take up to 1 minute.
 
+[source,bash]
+----
 metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
 ----
 
@@ -853,13 +853,12 @@ kubectl --namespace default port-forward $POD_NAME 7090:9090
 Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page and you will see your
 Helidon application as one of the Prometheus targets.
 
-
 ==== Final cleanup
 
 You can now delete the Kubernetes resources that were just created during this example.
 
 [source,bash]
-.Delete the prometheus Kubernetes resources
+.Delete the Prometheus Kubernetes resources
 ----
 helm delete --purge metrics
 ----
@@ -883,5 +882,5 @@ Refer to the following references for additional information:
 
 * MicroProfile Metrics specification at https://github.com/eclipse/microprofile-metrics/releases/tag/1.1
 * MicroProfile Metrics Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.metrics/microprofile-metrics-api/1.1.1
-* Heldidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
+* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
 
