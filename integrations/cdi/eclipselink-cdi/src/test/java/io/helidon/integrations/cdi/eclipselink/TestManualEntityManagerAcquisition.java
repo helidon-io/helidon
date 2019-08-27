@@ -63,10 +63,6 @@ class TestManualEntityManagerAcquisition {
     void testIt() {
         final EntityManagerFactory emf = Persistence.createEntityManagerFactory("test");
         assertNotNull(emf);
-        final Map<?, ?> properties = emf.getProperties();
-        assertNotNull(properties);
-        assertEquals(CDISEPlatform.class.getName(),
-                     properties.get("eclipselink.target-server"));
     }
   
 }
