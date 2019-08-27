@@ -228,9 +228,9 @@ public class StaticContentSupport implements Service {
             ContentTypeSelector selector = new ContentTypeSelector(specificContentTypes);
             StaticContentHandler handler;
             if (fsRoot != null) {
-                handler = new FileSystemContentHandler(welcomeFileName, selector, fsRoot);
+                handler = FileSystemContentHandler.create(welcomeFileName, selector, fsRoot);
             } else if (clRoot != null) {
-                handler = new ClassPathContentHandler(welcomeFileName, selector, clRoot, classLoader);
+                handler = ClassPathContentHandler.create(welcomeFileName, selector, clRoot, classLoader);
             } else {
                 throw new IllegalArgumentException("Builder was created without specified static content root!");
             }
