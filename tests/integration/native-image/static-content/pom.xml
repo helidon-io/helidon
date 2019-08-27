@@ -18,31 +18,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
     <parent>
-        <groupId>io.helidon.tests</groupId>
-        <artifactId>helidon-tests-project</artifactId>
+        <groupId>io.helidon.tests.integration</groupId>
+        <artifactId>helidon-tests-integration-native-image</artifactId>
         <version>1.2.2-SNAPSHOT</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.helidon.tests.integration</groupId>
-    <artifactId>helidon-tests-integration</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>helidon-tests-native-image-static-content</artifactId>
 
-    <name>Integration Tests</name>
+    <description>
+        Static content jar file to use in other tests (to make sure we access a jar file and not a path).
+    </description>
 
-    <modules>
-        <module>zipkin-mp-2.2</module>
-        <module>mp-security-client</module>
-    </modules>
-
-    <profiles>
-        <profile>
-            <id>native-image</id>
-            <modules>
-                <module>native-image</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
