@@ -35,7 +35,7 @@ Install
 https://docs.docker.com/docker-for-mac/install/[Docker for Mac] or
 https://docs.docker.com/docker-for-windows/install/[Docker for Windows].
 
-To use the Kubernetes support you'll want to get the Edge Channel installer.
+Starting with version 18.06 Docker for Desktop includes Kubernetes support.
 
 == Enable Kubernetes Support
 
