@@ -272,7 +272,8 @@ invocation.
 <3> The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed.
 The counter is incremented each time the anyCards method is called.  The `name` attribute is optional.
 
-NOTE: You must set `monotonic` field to `true` to force the count to increment rather than decrement.
+NOTE: You must set `monotonic` field to `true` to force the count to increment when entering the method.
+The default behavior is to decrement when exiting the method.
 
 
 [source,java]
@@ -308,7 +309,7 @@ You must use  `absolute=false` for class-level annotations.
 
 ==== Additional method-level metrics
 
-The `@Timed` and `@Metered` can also be used to annotate a method.  For this example. you can just annotate the same method with these metrics.
+The `@Timed` and `@Metered` annotations can also be used with a method.  For this example. you can just annotate the same method with these metrics.
 When using multiple annoations on a method, you *must* give the metrics different names as shown below.
 
 [source,java]
@@ -837,7 +838,7 @@ export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,compon
 kubectl get pod $POD_NAME
 ----
 
-You will see an output similar to this.  Repeat the `kubectl get pod` command until you get 2/2 and Running. This may take up to 1 minute.
+You will see output similar to the following.  Repeat the `kubectl get pod` command until you see `2/2` and `Running`. This may take up to one minute.
 
 [source,bash]
 ----
