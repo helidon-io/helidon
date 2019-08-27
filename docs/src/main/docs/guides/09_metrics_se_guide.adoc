@@ -64,6 +64,15 @@ NOTE: The /metrics endpoint will return data for all scopes.
 The following example will demonstrate how to use the built-in metrics.  All examples are all executed
 from the root directory of your project (helidon-quickstart-se)
 
+[source,xml]
+Notice that the Helidon metrics dependency is already in the project’s pom.xml file
+----
+<dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics</artifactId>
+</dependency>
+----
+
 [source,bash]
 .Build the application, skipping unit tests, then run it
 ----
@@ -169,7 +178,7 @@ NOTE: You cannot get the individual fields of a metric. For example, you cannot 
 
 === Metrics metadata
 
-Each metric has a associated metadata that describes:
+Each metric has associated metadata that describes:
 
 1. name: The name of the metric
 2. units: The unit of the metric such as time (seconds, millisecond), size (bytes, megabytes), etc
