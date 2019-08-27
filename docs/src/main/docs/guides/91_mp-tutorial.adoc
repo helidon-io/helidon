@@ -20,7 +20,7 @@
 :description: Helidon MP Tutorial
 :keywords: helidon
 
-This tutorial describes how to build an Helidon MP application from scratch 
+This tutorial describes how to build an Helidon MicroProfile (MP) application from scratch 
  including JSON REST endpoints, metrics, health check, and configuration.
 
 == What you need
@@ -87,19 +87,21 @@ Create a new Maven POM file (called `pom.xml`) and add the following
 </project>
 ----
 
-This POM file contains just the basics that we need to get started.  
+The POM file contains the basic project information and configurations 
+ needed to get started and does the following:  
 
-<1> Establish the Maven coordinates for the new project.
-<2> The `properties` section tells Maven to use Java 8 for the source
- and target versions, and sets the `mainClass` which will be used later
- when building a JAR file.  The class will be created later in the
+<1> Establishes the Maven coordinates for the new project.
+<2> Tells Maven to use Java 8 for the source
+ and target versions as defined in the `properties` section, and 
+ sets the `mainClass` which will be used later
+ when building a JAR file.  The class will be created later in this
  tutorial.
-<3> Include the Helidon BOM POM  (in the `dependencyManagement` section).
+<3> Include the Helidon BOM POM in the `dependencyManagement` section.
  A BOM is a special kind of POM that is used to control the versions of a
  project's dependencies and provide a central place to define and update
  those versions. The BOM provides the flexibility to add a dependency to a
  module without worrying about the version it should depend on.
-<4> Add a dependency for the MicroProfile 2.2 bundle which allows the use of
+<4> Adds a dependency for the MicroProfile 2.2 bundle which allows the use of
  MicroProfile 2.2 features in the application.
 
 TIP: MicroProfile 2.2 contains features like Metrics, Health Check,
@@ -174,7 +176,7 @@ public class GreetApplication extends Application { <3>
 
 
 <1> The class is annotated with `ApplicationScoped` 
- which specifies that this bean is "application scoped". The application scope
+ which specifies that this bean is application scoped. The application scope
  is shared between all web service invocations that execute within the same
  application. 
 <2> The `ApplicationPath` annotation sets the URL path that will be used to 
@@ -186,7 +188,8 @@ public class GreetApplication extends Application { <3>
  will serve.  Currently, the application only has one resource, the
  `GreetResource`.
 
-TIP:  You can learn more about scopes and contexts; and how they are used from the https://docs.jboss.org/cdi/api/2.0/index.html[Specification].
+TIP:  You can learn more about scopes and contexts, and how they are used 
+ from the https://docs.jboss.org/cdi/api/2.0/index.html[Specification].
 
 The `GreetResource` is defined in the `GreetResource.java` class as shown
 below: 
@@ -238,8 +241,8 @@ public class GreetResource {
  "Hello World".  This method will be expanded and improved
  later in the tutorial.
 
-TIP: So far this is just a JAX-WS application, with no Helidon or MicroProfile
- specific code in it.  There are many JAX-WS tutorials available if you 
+TIP: So far this is just a JAX-RS application, with no Helidon or MicroProfile
+ specific code in it.  There are many JAX-RS tutorials available if you 
  want to learn more about this kind of application.
 
 A main class is also required to start up the server and run the
@@ -303,7 +306,7 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory
 == Update the POM to build the application
 
 Helidon MP applications are packaged into a JAR file and the dependencies
- are copied into a `libs` directory.  Some more detailed explanation of 
+ are copied into a `libs` directory.  A detailed explanation of 
  why this particular packaging approach is recommended is provided on the 
  <<guides/04_dockerfile,Creating Docker Images>> page. 
  Update the Maven POM file to create the correct packaging.  Here is 
@@ -855,6 +858,34 @@ curl -s -X GET http://localhost:8080/metrics
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ----
 
+
+It is possible to disable metrics by adding properties to the 
+`microprofile-config.properties` file, for example:
+
+[source,bash]
+.Disable a metric
+----
+metrics.base.classloader.currentLoadedClass.count.enabled=false
+----
+
+Call the metrics endpoint before adding this change to confirm that the metric
+is included, then add the property to disable the metric, rebuild and restart
+the application and check again:
+
+[source,bash]
+.Checking metrics before and after disabling the metric
+----
+# before
+curl -s http://localhost:8080/metrics | grep classloader_current
+# TYPE base:classloader_current_loaded_class_count counter
+# HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
+base:classloader_current_loaded_class_count 7936
+
+# after
+curl -s http://localhost:8080/metrics | grep classloader_current
+# (no output)
+----
+
 Helidon also support custom metrics.  To add a new metric, annotate the 
  JAX-RS resource with one of the metric annotations as shown in the example
  below:
@@ -1232,6 +1263,13 @@ kubectl create -f app.yaml
 kubectl get pods                    # Wait for quickstart pod to be RUNNING
 ----
 
+TIP: Remember, if Kubernetes is running on a different machine, or inside 
+ a VM (as in Docker for Desktop) then the Docker image must either be manually
+ copied to the Kubernetes worker nodes or pushed to a Docker registry that 
+ is accessible to those worker nodes.  Update the `image` entry in the 
+ example above to include the Docker registry name.  If the registry is
+ private a Docker registry secret will also be required.
+
 The step above created a service that is exposed using any available node 
  port. Kubernetes allocates a free port. Lookup the service to find the port.
 
@@ -1241,7 +1279,7 @@ The step above created a service that is exposed using any available node
 kubectl get service helidon-mp-tutorial
 ----
 
-Note the PORTs. The application canbe exercised as before but use
+Note the PORTs. The application can be exercised as before but use
  the second port number (the NodePort) instead of 8080. For example:
 
 [source,bash]
@@ -1261,11 +1299,24 @@ kubectl delete -f app.yaml
 
 == Conclusion
 
-That concludes this tutorial.  The tutorial has demonstrated how to build
+This concludes the tutorial.  The tutorial has demonstrated how to build
  a Helidon MP application from scratch, how to use Helidon and MicroProfile
  configuration, logging, metrics, and health checks.  It also demonstrated
  how to package the application in a Docker image and run it in Kubernetes.
 
 There were several links to more detailed information included in the
- tutorial.  These links can be explored to learn more details about Helidon
- application development.
+ tutorial.  These links are repeated below and can be explored to learn 
+ more details about Helidon application development.
+
+==== Related links
+
+* https://projects.eclipse.org/projects/technology.microprofile/releases/microprofile-2.2[Eclipse MicroProfile 2.2]
+* https://docs.jboss.org/cdi/api/2.0/index.html[Contexts and Dependency Injection Specification]
+* <<guides/04_dockerfile,Creating Docker Images>>
+* <<miroprofile/02_server-configuration,Configuring the Server>>
+* <<config/01_introduction.adoc,Config>>
+* <<guides/xx_logging.adoc,Logging Guide>>
+* https://microprofile.io/project/eclipse/microprofile-metrics[MicroProfile Metrics Specification]
+* <<guides/09_metrics_mp_guide.adoc,Metrics Guide>>
+* https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[MicroProfile Health Protocol and Wireformat]
+* <<getting-started/05_kubernetes.adoc,Install Kubernetes on your desktop>>
