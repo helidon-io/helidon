@@ -18,8 +18,11 @@ package io.helidon.microprofile.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.metrics.MetricsSupport;
@@ -30,10 +33,12 @@ import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
@@ -119,60 +124,26 @@ public class MetricsTest extends MetricsBaseTest {
         assertThat(valueViaGauge, is(EXPECTED_VALUE));
     }
 
-    @Test @Disabled
+    @Test
     public void testGaugeMetadata() {
-        final int EXPECTED_VALUE = 42;
+        final int expectedValue = 42;
         GaugedBean bean = newBean(GaugedBean.class);
-        bean.setValue(EXPECTED_VALUE);
+        bean.setValue(expectedValue);
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
-        String promData = MetricsSupport.toPrometheusData(new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge);
+        String promData = MetricsSupport.toPrometheusData(
+                new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), gauge).trim();
 
-        Pattern prometheusDataPattern = Pattern.compile("(?s)#\\s+TYPE\\s+([^_]+)_(\\w+)\\s*gauge.*#\\s*HELP.*\\{([^\\}]*)\\}\\s*(\\d*).*");
-        Matcher m = prometheusDataPattern.matcher(promData);
-        assertThat("Prometheus data " + promData + " for gauge bean did not match regex pattern", m.matches(), is(true));
-        assertThat("Expected to find metric metadata and data in Prometheus data as 4 groups", m.groupCount(), is(4));
-        String beanScope = m.group(1);
-        String promName = m.group(2);
-        String tags = m.group(3);
-        String value = m.group(4);
-        String gaugeUnitsFromName = promName.substring(promName.lastIndexOf('_')+1);
-        assertThat("Unexpected bean scope for injected gauge", beanScope, is("application"));
-        assertThat("Unexpected units for injected gauge in Prometheus data", gaugeUnitsFromName, is(MetricUnits.SECONDS));
-
-        assertThat("Unexpected tags for injected gauge in Prometheus data",
-                   tagsStringToMap(tags),
-                   is(tagsStringToMap(GaugedBean.TAGS)));
-
-        assertThat("Unexpected gauge value (in seconds)",
-                   Integer.parseInt(value),
-                   is(EXPECTED_VALUE * 60));
-        /*
-         * Here is an example of the Prometheus data:
-         *
-# TYPE application_io_helidon_microprofile_metrics_cdi_GaugedBean_gaugeForInjectionTest_seconds gauge
-# HELP application_io_helidon_microprofile_metrics_cdi_GaugedBean_gaugeForInjectionTestSeconds
-application_io_helidon_microprofile_metrics_cdi_GaugedBean_gaugeForInjectionTest_seconds{tag1="valA",tag2="valB"} 2520
-         *
-         */
+        assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
+        assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));
+        assertThat(promData, containsString("\napplication_gaugeForInjectionTest_seconds "
+                + (expectedValue * 60)));
     }
 
-    /**
-     * Converts a tag string to a Map.
-     * <p>
-     * The tag string contains comma-separated substrings of the form key=value
-     * Each value can (but does not have to be) enclosed in double quotes (key="value")
-     *
-     * @param tagString String as described above
-     * @return Map
-     */
-    private Map<String, String> tagsStringToMap(String tagString) {
-        Map<String, String> result = new HashMap<>();
-        Pattern tagPattern = Pattern.compile("(\\w+)=\"?(\\w+)\"?");
-        Matcher m = tagPattern.matcher(tagString);
-        while (m.find()) {
-            result.put(m.group(1), m.group(2));
-        }
-        return result;
+    @Test
+    public void testAbsoluteGaugeBeanName() {
+        Set<String> gauges =  getMetricRegistry().getGauges()
+                .keySet().stream().map(MetricID::getName).collect(Collectors.toSet());
+        assertThat(gauges, CoreMatchers.hasItem("myGauge"));
     }
 }

@@ -22,7 +22,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
 
 /**
- *
+ * Class GaugedBean.
  */
 @ApplicationScoped
 public class GaugedBean {
@@ -30,7 +30,6 @@ public class GaugedBean {
     static final String LOCAL_INJECTABLE_GAUGE_NAME = "gaugeForInjectionTest";
     static final String INJECTABLE_GAUGE_NAME = "io.helidon.microprofile.metrics.GaugedBean." + LOCAL_INJECTABLE_GAUGE_NAME;
     static final String INJECTABLE_GAUGE_UNIT = MetricUnits.MINUTES;
-    static final String TAGS = "tag1=valA,tag2=valB";
 
     private int measuredValue = 1;
 
@@ -48,7 +47,7 @@ public class GaugedBean {
         return measuredValue;
     }
 
-    @Gauge(unit = INJECTABLE_GAUGE_UNIT, name = LOCAL_INJECTABLE_GAUGE_NAME, tags = TAGS)
+    @Gauge(unit = INJECTABLE_GAUGE_UNIT, name = LOCAL_INJECTABLE_GAUGE_NAME)
     public int fetch() {
         return measuredValue;
     }

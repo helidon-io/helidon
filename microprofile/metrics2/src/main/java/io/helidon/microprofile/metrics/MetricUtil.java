@@ -23,11 +23,13 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Class MetricUtil.
  */
 final class MetricUtil {
+    private static final Logger LOGGER = Logger.getLogger(MetricUtil.class.getName());
 
     private MetricUtil() {
     }
@@ -73,7 +75,10 @@ final class MetricUtil {
                     result = clazz.getName() + "." + result;
                 }
             } else {
-                // absolute?
+                // Absolute must be false at class level, issue warning here
+                if (absolute) {
+                    LOGGER.warning(() -> "Attribute 'absolute=true' in metric annotation ignored at class level");
+                }
                 result = clazz.getPackage().getName() + "." + explicitName
                         + "." + getElementName(element, clazz);
             }
