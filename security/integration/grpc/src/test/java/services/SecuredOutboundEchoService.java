@@ -25,7 +25,7 @@ import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.grpc.GrpcSecurity;
-import io.helidon.security.integration.jersey.ClientSecurityFeature;
+import io.helidon.security.integration.jersey.client.ClientSecurity;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -43,7 +43,7 @@ public class SecuredOutboundEchoService
 
     public SecuredOutboundEchoService(String url) {
         this.url = url;
-        this.client = ClientBuilder.newBuilder().build().register(new ClientSecurityFeature());
+        this.client = ClientBuilder.newClient();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class SecuredOutboundEchoService
                     .path("/test")
                     .queryParam("message", message)
                     .request()
-                    .property(ClientSecurityFeature.PROPERTY_CONTEXT, securityContext)
+                    .property(ClientSecurity.PROPERTY_CONTEXT, securityContext)
                     .get();
 
             if (webResponse.getStatus() == 200) {
