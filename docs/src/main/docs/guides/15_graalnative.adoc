@@ -44,7 +44,8 @@ In this guide you will learn how to build a native image locally on your machine
 
 == Install GraalVM and the Native Image Command
 
-After https://github.com/oracle/graal/releases[downloading and installing] GraalVM, set the environment:
+After https://github.com/oracle/graal/releases[downloading and installing] GraalVM,
+set the `GRAALVM_HOME` environment variable to point at your GraalVM installation.
 
 [source,bash]
 ----
@@ -63,6 +64,7 @@ And verify:
 
 [source,bash]
 ----
+$GRAALVM_HOME/bin/java -version
 $GRAALVM_HOME/bin/native-image --version
 ----
 
@@ -87,10 +89,6 @@ The archetype generates a Maven project in your current directory
 [source,bash]
 ----
 cd helidon-quickstart-se
-----
-
-[source,bash]
-----
 mvn package
 ----
 
@@ -108,7 +106,9 @@ In another shell test an endpoint:
 curl -X GET http://localhost:8080/greet
 ----
 
-Now stop the running application.
+The application should respond with `{"message":"Hello World!"}`
+
+Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other enpoints it supports see the
 <<guides/02_quickstart-se.adoc,Helidon SE Quickstart Guide>>.
@@ -129,7 +129,7 @@ Make sure you have GraalVM locally installed:
 $GRAALVM_HOME/bin/native-image --version
 ----
 
-Build the native image:
+Build the native image using the native image profile:
 
 [source,bash]
 ----
@@ -161,10 +161,10 @@ docker build -t helidon-quickstart-se-native -f Dockerfile.native .
 [TIP]
 This does a full build inside the Docker container. The first
 time you run it, it will take a while because it is downloading all
-off the Maven dependencies and caching them in a Docker layer.
+of the Maven dependencies and caching them in a Docker layer.
 Subsequent builds will be much faster as long as you don't change
 the `pom.xml` file. If the pom is modified then the dependencies
-will be re-downloaded again.
+will be re-downloaded.
 
 Start the application:
 
@@ -189,8 +189,8 @@ REPOSITORY             TAG       IMAGE ID       CREATED        SIZE
 quickstart-se-native   latest    1227ac82d199   5 days ago     21.4MB
 ----
 
-That's much smaller than a Docker image with a JRE plus
-application code plus OS needed to run it.
+That's much smaller than a Docker image with the application code plus
+the JRE and operating system files needed to run it.
 
 Startup times are quite impressive. These are just some informal numbers
 to show the magnitude of speed-up. Your mileage may vary:
@@ -206,8 +206,8 @@ faster. Memory footprint is similarly improved.
 
 == When should I use Native Images?
 
-Native images are ideal for applications with high horizontally scalability where the ability
-to rapidly scale out to numerous instances is important.
+Native images are ideal for applications with high horizontal scalability requirements where
+the ability to rapidly scale out to numerous instances is important.
 
 That said, native images do have some https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md[limitations],
 and for long running applications where startup and footprint are less of a priority, the Java SE
