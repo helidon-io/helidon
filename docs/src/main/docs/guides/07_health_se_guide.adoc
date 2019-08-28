@@ -57,7 +57,7 @@ Helidon has a set of built-in health-checks that can be optionally enabled to re
 * available heap memory
 
 This example will demonstrate how to use the built-in health-checks.  These examples are all executed
-from the root directory of your project (helidon-quickstart-se)
+from the root directory of your project (helidon-quickstart-se).
 
 [source,xml]
 .Notice that the built-in health-check dependency is already in the project's pom.xml file
