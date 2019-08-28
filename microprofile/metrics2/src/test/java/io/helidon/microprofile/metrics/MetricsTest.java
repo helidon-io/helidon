@@ -137,6 +137,6 @@ public class MetricsTest extends MetricsBaseTest {
     public void testAbsoluteGaugeBeanName() {
         Set<String> gauges =  getMetricRegistry().getGauges()
                 .keySet().stream().map(MetricID::getName).collect(Collectors.toSet());
-        assertThat(gauges, CoreMatchers.hasItem("myGauge"));
+        assertThat(gauges, CoreMatchers.hasItem("secondsSinceBeginningOfTime"));
     }
 }
