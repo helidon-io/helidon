@@ -71,20 +71,7 @@ class FileSystemContentHandler extends StaticContentHandler {
             return false;
         }
 
-        //First doHandle a directory case
-        if (Files.isDirectory(path)) {
-            String rawFullPath = request.uri().getRawPath();
-            if (rawFullPath.endsWith("/")) {
-                // Try to found welcome file
-                path = findWelcomeFile(path);
-            } else {
-                // Or redirect to slash ended
-                redirect(response, rawFullPath + "/");
-                return true;
-            }
-        }
-
-        sendFile(method, path, request, response, contentTypeSelector());
+        sendFile(method, path, request, response, contentTypeSelector(), welcomePageName());
 
         return true;
     }
@@ -93,8 +80,25 @@ class FileSystemContentHandler extends StaticContentHandler {
                          Path path,
                          ServerRequest request,
                          ServerResponse response,
-                         ContentTypeSelector contentTypeSelector)
+                         ContentTypeSelector contentTypeSelector,
+                         String welcomePage)
             throws IOException {
+
+        // we know the file exists, though it may be a directory
+        //First doHandle a directory case
+        if (Files.isDirectory(path)) {
+            String rawFullPath = request.uri().getRawPath();
+            if (rawFullPath.endsWith("/")) {
+                // Try to found welcome file
+                path = resolveWelcomeFile(path, welcomePage);
+            } else {
+                // Or redirect to slash ended
+                redirect(response, rawFullPath + "/");
+                return;
+            }
+        }
+
+        // now it exists and is a file
         if (!Files.isRegularFile(path) || !Files.isReadable(path) || Files.isHidden(path)) {
             throw new HttpException("File is not accessible", Http.Status.FORBIDDEN_403);
         }
@@ -120,11 +124,11 @@ class FileSystemContentHandler extends StaticContentHandler {
      * Find welcome file in provided directory or throw not found {@link HttpException}.
      *
      * @param directory a directory to find in
+     * @param name welcome file name
      * @return a path of the welcome file
      * @throws HttpException if welcome file doesn't exists
      */
-    private Path findWelcomeFile(Path directory) {
-        String name = welcomePageName();
+    private static Path resolveWelcomeFile(Path directory, String name) {
         throwNotFoundIf(name == null || name.isEmpty());
         Path result = directory.resolve(name);
         throwNotFoundIf(!Files.exists(result));

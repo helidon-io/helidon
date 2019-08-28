@@ -127,7 +127,8 @@ class ClassPathContentHandler extends StaticContentHandler {
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
         switch (url.getProtocol()) {
         case "file":
-            FileSystemContentHandler.sendFile(method, Paths.get(url.toURI()), request, response, contentTypeSelector());
+            FileSystemContentHandler
+                    .sendFile(method, Paths.get(url.toURI()), request, response, contentTypeSelector(), welcomePageName());
             break;
         case "jar":
             return sendJar(method, requestedResource, url, request, response);
