@@ -77,6 +77,6 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
 .Helidion MP Tutorial
 [link=guides/91_mp-tutorial.adoc]
 --
-Learn how to build an Helidon MP application from scratch.
+Learn how to build an Helidon MicroProfile (MP) application from scratch.
 --
 ====
