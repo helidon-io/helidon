@@ -36,7 +36,7 @@ Generate the project sources using the Helidon MP Maven archetype.
 The result is a simple project that can be used for the examples in this guide.
 
 [source,bash,subs="attributes+"]
-.Run the Maven archetype
+.Run the Maven archetype:
 ----
 mvn archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
@@ -60,20 +60,20 @@ This example will demonstrate how to use the built-in health-checks.  These exam
 from the root directory of your project (helidon-quickstart-mp).
 
 [source,bash]
-.Build the application, skipping unit tests, then run it
+.Build the application, skipping unit tests, then run it:
 ----
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp.jar
 ----
 
 [source,bash]
-.Verify the health endpoint in a new terminal window
+.Verify the health endpoint in a new terminal window:
 ----
 curl http://localhost:8080/health
 ----
 
 [source,json]
-.JSON response.
+.JSON response:
 ----
 {
   "outcome": "UP",
@@ -120,7 +120,7 @@ You can create application-specific custom health-checks and integrate them with
 using CDI.  The following example shows how to add a custom liveness health-check.
 
 [source,java]
-.Create a new `GreetLivenessCheck` class with the following content
+.Create a new `GreetLivenessCheck` class with the following content:
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -148,13 +148,13 @@ public class GreetLivenessCheck implements HealthCheck {
 <3> Build the HealthCheckResponse with status `UP` and the current time.
 
 [source,bash]
-.Build and run the application, then verify the custom liveness health endpoint
+.Build and run the application, then verify the custom liveness health endpoint:
 ----
 curl http://localhost:8080/health/live
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "outcome": "UP",
@@ -178,7 +178,7 @@ You can add a readiness check to indicate that the application is ready to be us
 example, the server will wait five seconds before it becomes ready.
 
 [source,java]
-.Create a new `GreetReadinessCheck` class with the following content
+.Create a new `GreetReadinessCheck` class with the following content:
 ----
 
 package io.helidon.examples.quickstart.mp;
@@ -229,13 +229,13 @@ public class GreetReadinessCheck implements HealthCheck {
 
 
 [source,bash]
-.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready.
+.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready:
 ----
 curl -v  http://localhost:8080/health/ready
 ----
 
 [source,json]
-.HTTP response
+.HTTP response:
 ----
 ...
 < HTTP/1.1 503 Service Unavailable // <1>
@@ -255,16 +255,16 @@ curl -v  http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is `503` since the application is not ready
+<1> The HTTP status is `503` since the application is not ready.
 
 [source,bash]
-.After five seconds you will see the application is ready
+.After five seconds you will see the application is ready:
 ----
 curl -v http://localhost:8080/health/ready
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 ...
 < HTTP/1.1 200 OK // <1>
@@ -293,13 +293,13 @@ When using the health-check URLs, you can get the following health-check data:
 * all health-check data -  http://localhost:8080/health
 
 [source,bash]
-.Get all the health-check data, including custom data
+.Get all the health-check data, including custom data:
 ----
 curl http://localhost:8080/health
 ----
 
 [source,json]
-.JSON response
+.JSON response:
 ----
 {
   "outcome": "UP",
@@ -366,7 +366,7 @@ Likewise, you cannot use different paths, such as http://localhost:8080/health a
 The example below will change the root path.
 
 [source,yaml]
-.Create a file named application.yaml in the resources directory with the following contents
+.Create a file named application.yaml in the resources directory with the following contents:
 ----
 health:
   web-context: "myhealth"  // <1>
@@ -374,7 +374,7 @@ health:
 <1> The web-context specifies a new root path for the health endpoint.
 
 [source,bash]
-.Build and run the application, then verify that the health endpoint is using the new `/myhealth` root
+.Build and run the application, then verify that the health endpoint is using the new `/myhealth` root:
 ----
 curl http://localhost:8080/myhealth
 curl http://localhost:8080/myhealth/live
@@ -384,7 +384,7 @@ curl http://localhost:8080/myhealth/ready
 The following example will change the root path and the health port.
 
 [source,yaml]
-.Update application.yaml to use a different port and root path for the health endpoint
+.Update application.yaml to use a different port and root path for the health endpoint:
 ----
 server:
   port: 8080  // <1>
@@ -404,7 +404,7 @@ health:
 
 
 [source,bash]
-.Build and run the application, then verify the health endpoint using port `8081` and `/myhealth`
+.Build and run the application, then verify the health endpoint using port `8081` and `/myhealth`:
 ----
 curl http://localhost:8081/myhealth
 curl http://localhost:8081/myhealth/live
@@ -419,19 +419,19 @@ health endpoints for the Kubernetes liveness and readiness probes.
 *Delete the contents of application.yaml so that the default health endpoint path and port are used.*
 
 [source,bash]
-.Rebuild and start the application, then verify the health endpoint
+.Rebuild and start the application, then verify the health endpoint:
 ----
 curl http://localhost:8080/health
 ----
 
 [source,bash]
-.Stop the application and build the docker image
+.Stop the application and build the docker image:
 ----
 docker build -t helidon-quickstart-mp .
 ----
 
 [source,yaml]
-.Create the Kubernetes YAML specification, named health.yaml, with the following content
+.Create the Kubernetes YAML specification, named health.yaml, with the following content:
 ----
 kind: Service
 apiVersion: v1
@@ -492,13 +492,13 @@ spec:
 
 
 [source,bash]
-.Create and deploy the application into Kubernetes
+.Create and deploy the application into Kubernetes:
 ----
 kubectl apply -f ./health.yaml
 ----
 
 [source,bash]
-.Get the service information
+.Get the service information:
 ----
 kubectl get service/helidon-health
 ----
@@ -511,13 +511,13 @@ helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s //
 <1> A service of type `NodePort` that serves the default routes on port `30116`.
 
 [source,bash]
-.Verify the health endpoints using port '30116', your port may be different. The JSON response will be the same as your previous test.
+.Verify the health endpoints using port '30116', your port may be different. The JSON response will be the same as your previous test:
 ----
 curl http://localhost:30116/health
 ----
 
 [source,bash]
-.Delete the application, cleaning up Kubernetes resources
+.Delete the application, cleaning up Kubernetes resources:
 ----
 kubectl delete -f ./health.yaml
 ----
