@@ -20,7 +20,8 @@
 :description: Helidon health-checks
 :keywords: helidon, health-checks, health, check
 
-This document describes basic examples that use both built-in and custom health-checks with Helidon MP.
+This guide describes how to create a sample MicroProfile (MP) project
+that can be used to run some basic examples using both built-in and custom health-checks with Helidon MP.
 
 == What you need
 
