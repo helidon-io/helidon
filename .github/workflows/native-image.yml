@@ -1,6 +1,6 @@
 name: Native image integration test
 
-on: [pull_request]
+on: [push, pull_request]
 
 pull_request:
   paths:
