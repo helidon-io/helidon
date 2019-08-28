@@ -125,7 +125,9 @@
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hikaricp>2.7.8</version.lib.hikaricp>
         <version.lib.inject>1</version.lib.inject>
+        <!-- Jackson databind 2.9.9 has patch versions. This bomb has databind 2.9.9.3 -->
         <version.lib.jackson>2.9.9</version.lib.jackson>
+        <version.lib.jackson-bom>2.9.9.20190807</version.lib.jackson-bom>
         <version.lib.jaegertracing>0.34.0</version.lib.jaegertracing>
         <version.lib.jakarta-persistence-api>2.2.2</version.lib.jakarta-persistence-api>
         <version.lib.jandex>2.1.1.Final</version.lib.jandex>
@@ -659,7 +661,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
-                <version>${version.lib.jackson}</version>
+                <version>${version.lib.jackson-bom}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
