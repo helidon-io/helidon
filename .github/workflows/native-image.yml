@@ -2,22 +2,22 @@ name: Native image integration test
 
 on: [push, pull_request]
 
-pull_request:
-  paths:
-    - 'native-image/*'
-    - 'webserver/*'
-    - 'security/*'
-    - 'common/*'
-    - 'config/*'
-    - 'health'
-    - 'integrations/graal/*'
-    - 'media/*'
-    - 'metrics/*'
-    - 'security/*'
-    - 'tests/integration/native-image'
-    - 'tracing/*'
-    - 'webserver/*'
-    - 'pom.xml'
+#pull_request:
+#  paths:
+#    - 'native-image/*'
+#    - 'webserver/*'
+#    - 'security/*'
+#    - 'common/*'
+#    - 'config/*'
+#    - 'health'
+#    - 'integrations/graal/*'
+#    - 'media/*'
+#    - 'metrics/*'
+#    - 'security/*'
+#    - 'tests/integration/native-image'
+#    - 'tracing/*'
+#    - 'webserver/*'
+#    - 'pom.xml'
 
 jobs:
 #  native_image_test_linux:
