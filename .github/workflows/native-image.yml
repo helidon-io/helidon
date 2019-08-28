@@ -1,0 +1,46 @@
+name: Native image integration test
+
+on: [pull_request]
+
+pull_request:
+  paths:
+    - 'native-image/*'
+    - 'webserver/*'
+    - 'security/*'
+    - 'common/*'
+    - 'config/*'
+    - 'health'
+    - 'integrations/graal/*'
+    - 'media/*'
+    - 'metrics/*'
+    - 'security/*'
+    - 'tests/integration/native-image'
+    - 'tracing/*'
+    - 'webserver/*'
+    - 'pom.xml'
+
+jobs:
+#  native_image_test_linux:
+#    name: 'Test native image on Linux'
+#    runs-on: ubuntu-latest
+  native_image_test_mac:
+    name: 'Test native image on Mac OS-X'
+    runs-on: macOS-latest
+    steps:
+      # TODO this will be changed to helidon native image integration test
+      working-directory: examples/quickstarts/helidon-quickstart-se
+      - uses: actions/checkout@v1
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Download GraalVM
+        run: wget https://github.com/oracle/graal/releases/download/vm-19.2.0/graalvm-ce-darwin-amd64-19.2.0.tar.gz
+      - name: Extract GraalVM
+        run: gunzip ./graalvm-ce-darwin-amd64-19.2.0.tar.gz && tar -xvf ./graalvm-ce-darwin-amd64-19.2.0.tar
+      - name: Download native-image
+        run: cd graalvm-ce-19.2.0/Contents/Home/bin && ./gu install native-image
+      - name: Build native image
+        run: GRAALVM_HOME=./graalvm-ce-19.2.0/Contents/Home && mvn package --file pom.xml -P native-image
+      - name: Run native image
+        run: ./target/helidon-quickstart-se
