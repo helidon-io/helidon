@@ -17,10 +17,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Health Check MP Guide
-:description: Helidon health checks
+:description: Helidon health-checks
 :keywords: helidon, health-checks, health, check
 
-This document describes basic examples that use both built-in and custom health checks with Helidon MP.
+This document describes basic examples that use both built-in and custom health-checks with Helidon MP.
 
 == What you need
 
@@ -49,16 +49,15 @@ mvn archetype:generate -DinteractiveMode=false \
 
 === Using the built-in health-checks
 
-Helidon has a set of built-in health checks that are automatically enabled to report various
-health check statuses that are commonly used:
+Helidon has a set of built-in health-checks that are automatically enabled to report various
+health-check statuses that are commonly used:
 
 * deadlock detection
 * available disk space
 * available heap memory
 
-This example will demonstrate how to use the built-in health checks.  These examples are all executed
-from the root directory of your project (helidon-quickstart-mp)
-
+This example will demonstrate how to use the built-in health-checks.  These examples are all executed
+from the root directory of your project (helidon-quickstart-mp).
 
 [source,bash]
 .Build the application, skipping unit tests, then run it
@@ -117,11 +116,11 @@ curl http://localhost:8080/health
 
 === Custom liveness health-checks
 
-You can create application specific custom health checks and integrate them with Helidon
-using the CDI.  The following example shows how to add a custom liveness health check.
+You can create application-specific custom health-checks and integrate them with Helidon
+using CDI.  The following example shows how to add a custom liveness health-check.
 
 [source,java]
-.Create a new class `GreetLivenessCheck` with the following content
+.Create a new `GreetLivenessCheck` class with the following content
 ----
 package io.helidon.examples.quickstart.mp;
 
@@ -144,9 +143,9 @@ public class GreetLivenessCheck implements HealthCheck {
   }
 }
 ----
-<1> Annotion specifies that this is a liveness health check
-<2> Annotion specifies that there is a single LivenessCheck object during the lifetime of the application
-<3> Build the HealthCheckResponse with status UP and the current time
+<1> Annotation indicating this is a liveness health-check.
+<2> Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
+<3> Build the HealthCheckResponse with status `UP` and the current time.
 
 [source,bash]
 .Build and run the application, then verify the custom liveness health endpoint
@@ -155,7 +154,7 @@ curl http://localhost:8080/health/live
 ----
 
 [source,json]
-.JSON response:
+.JSON response
 ----
 {
   "outcome": "UP",
@@ -176,10 +175,10 @@ curl http://localhost:8080/health/live
 === Custom readiness health-check
 
 You can add a readiness check to indicate that the application is ready to be used.  In this
-example, the server will wait 5 seconds before it becomes ready.
+example, the server will wait five seconds before it becomes ready.
 
 [source,java]
-.Create a new class `GreetReadinessCheck` with the following content
+.Create a new `GreetReadinessCheck` class with the following content
 ----
 
 package io.helidon.examples.quickstart.mp;
@@ -223,19 +222,20 @@ public class GreetReadinessCheck implements HealthCheck {
   }
 }
 ----
-<1> Include additional imports
-<2> Annotion specifies that this is a readiness health check
-<3> Build the HealthCheckResponse with status UP after 5 seconds else DOWN
-<4> Initialize the time at startup
+<1> Include additional imports.
+<2> Annotation indicating that this is a readiness health-check.
+<3> Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
+<4> Initialize the time at startup.
+
 
 [source,bash]
-.Build and run the application.  Issue the curl command with -v within 5 seconds and you see the application is not ready
+.Build and run the application.  Issue the curl command with -v within five seconds and you will see that the application is not ready.
 ----
 curl -v  http://localhost:8080/health/ready
 ----
 
 [source,json]
-.HTTP response:
+.HTTP response
 ----
 ...
 < HTTP/1.1 503 Service Unavailable // <1>
@@ -255,16 +255,16 @@ curl -v  http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is 503 since the application is not ready
+<1> The HTTP status is `503` since the application is not ready
 
 [source,bash]
-.After 5 seconds you will see the application is ready
+.After five seconds you will see the application is ready
 ----
 curl -v http://localhost:8080/health/ready
 ----
 
 [source,json]
-.JSON response:
+.JSON response
 ----
 ...
 < HTTP/1.1 200 OK // <1>
@@ -284,23 +284,22 @@ curl -v http://localhost:8080/health/ready
   ]
 }
 ----
-<1> The HTTP status is 200 indicating that the application is ready
+<1> The HTTP status is `200` indicating that the application is ready.
 
-When using the health check URLs, you can get the following health check data
+When using the health-check URLs, you can get the following health-check data:
 
 * custom liveness only - http://localhost:8080/health/live
 * custom readiness only -  http://localhost:8080/health/ready
-* all health check data -  http://localhost:8080/health
-
+* all health-check data -  http://localhost:8080/health
 
 [source,bash]
-.Get all the health check data, including custom
+.Get all the health-check data, including custom data
 ----
 curl http://localhost:8080/health
 ----
 
 [source,json]
-.JSON response:
+.JSON response
 ----
 {
   "outcome": "UP",
@@ -360,12 +359,11 @@ curl http://localhost:8080/health
 
 === Custom health root path and port
 
-You can specify a custom port and root context for the health endpoint  You can only change the
-root path and port for the overall health endpoint.  For example, you cannot use different ports
-as in http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.  Likewise, you
-cannot use different paths like http://localhost:8080/health and http://localhost:8080/probe/live.
+You can specify a custom port and root context for the root health endpoint path.
+However, you cannot use different ports, such as http://localhost:8080/myhealth and http://localhost:8081/myhealth/live.
+Likewise, you cannot use different paths, such as http://localhost:8080/health and http://localhost:8080/probe/live.
 
-This example below will change the root path.
+The example below will change the root path.
 
 [source,yaml]
 .Create a file named application.yaml in the resources directory with the following contents
@@ -373,10 +371,10 @@ This example below will change the root path.
 health:
   web-context: "myhealth"  // <1>
 ----
-<1> The web-context specifies a new root path for the health endpoint
+<1> The web-context specifies a new root path for the health endpoint.
 
 [source,bash]
-.Build and run the application, then verify the health endpoint using the new 'myhealth' root
+.Build and run the application, then verify that the health endpoint is using the new `/myhealth` root
 ----
 curl http://localhost:8080/myhealth
 curl http://localhost:8080/myhealth/live
@@ -399,33 +397,35 @@ health:
   routing: "health" // <4>
   web-context: "myhealth"
 ----
-<1> The default port for the application
-<2> The name of the new socket, it can be any name, we are using 'health'
-<3> The port for the new health socket
-<4> The health endpoint routing uses the new socket 'health'
+<1> The default port for the application.
+<2> The name of the new socket, it can be any name, this example uses `health`.
+<3> The port for the new health socket.
+<4> The health endpoint routing uses the new socket `health`.
 
 
 [source,bash]
-.Build and run the application, then verify the health endpoint using port 8081 and 'myhealth'
+.Build and run the application, then verify the health endpoint using port `8081` and `/myhealth`
 ----
 curl http://localhost:8081/myhealth
 curl http://localhost:8081/myhealth/live
 curl http://localhost:8081/myhealth/ready
 ----
 
-=== Using Liveness and Readiness health checks with Kubernetes
+=== Using Liveness and Readiness health-checks with Kubernetes
 
-This example shows how to integrate the Helidon health API in an application that implements
+This example shows how to integrate the Helidon health API with an application that implements
 health endpoints for the Kubernetes liveness and readiness probes.
 
+*Delete the contents of application.yaml so that the default health endpoint path and port are used.*
+
 [source,bash]
-.Delete the contents of application.yaml so that the default health endpoint path and port are used. Rebuild and start the application, then verify the health endpoint
+.Rebuild and start the application, then verify the health endpoint
 ----
 curl http://localhost:8080/health
 ----
 
 [source,bash]
-.Build the docker image
+.Stop the application and build the docker image
 ----
 docker build -t helidon-quickstart-mp .
 ----
@@ -498,7 +498,7 @@ kubectl apply -f ./health.yaml
 ----
 
 [source,bash]
-.Get the service informmation
+.Get the service information
 ----
 kubectl get service/helidon-health
 ----
@@ -508,17 +508,30 @@ kubectl get service/helidon-health
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s // <1>
 ----
-<1> A service of type `NodePort` that serves the default routes on port `30116`
+<1> A service of type `NodePort` that serves the default routes on port `30116`.
 
 [source,bash]
-.Verify the health endpoints using port '30116'.  the JSON response will be the same as your previous test. NOTE: your port may be different.  For example
+.Verify the health endpoints using port '30116', your port may be different. The JSON response will be the same as your previous test.
 ----
 curl http://localhost:30116/health
 ----
-
 
 [source,bash]
 .Delete the application, cleaning up Kubernetes resources
 ----
 kubectl delete -f ./health.yaml
 ----
+
+=== Summary
+This guide demonstrated how to use health-check in a Helidon MP application as follows:
+
+* Access the default health-check
+* Create and use custom readiness and liveness checks
+* Customize the health-check root path and port
+* Integrate Helidon health-check with Kubernetes
+
+Please refer to the following references for additional information:
+
+* MicroProfile health-check specification at https://github.com/eclipse/microprofile-health/releases/tag/2.0
+* MicroProfile health-check Javadoc at https://javadoc.io/doc/org.eclipse.microprofile.health/microprofile-health-api/2.0
+* Helidon Javadoc at https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html
