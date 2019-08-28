@@ -329,7 +329,7 @@ Helidon MP applications are packaged into a JAR file and the dependencies
     <name>${project.artifactId}</name>
 
     <properties>
-        <helidon.version>1.2.0</helidon.version>
+        <helidon.version>{helidon-version}</helidon.version>
         <mainClass>io.helidon.examples.Main</mainClass>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
