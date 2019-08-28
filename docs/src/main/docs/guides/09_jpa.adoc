@@ -447,18 +447,35 @@ imports:
 [source,java]
 .`src/main/java/io/helidon/example/jpa/ExampleResource.java`
 ----
+import javax.enterprise.context.Dependent;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 ----
+
+Annotate the resource class declaration with `@Dependent`:
+
+[source,java]
+.`src/main/java/io/helidon/example/jpa/ExampleResource.java`
+----
+@Dependent <1>
+public class ExampleResource {
+----
+
+<1> This ensures that `io.helidon.example.jpa.ExampleResource` is a
+discoverable CDI bean.
 
 Then add the following annotated field declaration:
 
 [source,java]
 .`src/main/java/io/helidon/example/jpa/ExampleResource.java`
 ----
-@PersistenceContext
+@PersistenceContext <1>
 private EntityManager em;
 ----
+
+<1> The
+https://javaee.github.io/javaee-spec/javadocs/javax/persistence/PersistenceContext.html[`@PersistenceContext`
+annotation] indicates that you want an `EntityManager` injected here.
 
 == Use the Injected `EntityManager`
 
@@ -514,7 +531,7 @@ Execute the following from the root directory of your application:
 
 [source,bash]
 ----
-java -jar target/helidon*.jar
+java -jar target/helidon-jpa.jar
 ----
 
 == Test the Application
@@ -523,7 +540,7 @@ Execute the following:
 
 [source,bash]
 ----
-curl http://localhost:7001/archetypeInfoGoesHere/response/Marco
+curl http://localhost:8080/example/response/Marco
 ----
 
 Observe that `Polo` is returned.
