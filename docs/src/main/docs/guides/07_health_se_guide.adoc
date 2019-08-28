@@ -519,7 +519,7 @@ docker build -t helidon-quickstart-se .
 ----
 
 [source,yaml]
-.Create the Kubernetes YAML specification, named health.yaml, with the following content:
+.Create the Kubernetes YAML specification, named `health.yaml`, with the following content:
 ----
 kind: Service
 apiVersion: v1

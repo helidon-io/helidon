@@ -371,7 +371,7 @@ Likewise, you cannot use different paths, such as http://localhost:8080/health a
 The example below will change the root path.
 
 [source,yaml]
-.Create a file named application.yaml in the resources directory with the following contents:
+.Create a file named `application.yaml` in the `resources` directory with the following contents:
 ----
 health:
   web-context: "myhealth"  // <1>
@@ -421,7 +421,7 @@ curl http://localhost:8081/myhealth/ready
 The following example shows how to integrate the Helidon health API with an application that implements
 health endpoints for the Kubernetes liveness and readiness probes.
 
-*Delete the contents of application.yaml so that the default health endpoint path and port are used.*
+*Delete the contents of `application.yaml` so that the default health endpoint path and port are used.*
 
 [source,bash]
 .Rebuild and start the application, then verify the health endpoint:
@@ -436,7 +436,7 @@ docker build -t helidon-quickstart-mp .
 ----
 
 [source,yaml]
-.Create the Kubernetes YAML specification, named health.yaml, with the following content:
+.Create the Kubernetes YAML specification, named `health.yaml`, with the following content:
 ----
 kind: Service
 apiVersion: v1
