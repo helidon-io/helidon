@@ -32,6 +32,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - name: Build helidon
+        run: mvn install -DskipTests
       - name: Download GraalVM
         run: cd examples/quickstarts/helidon-quickstart-se && wget https://github.com/oracle/graal/releases/download/vm-19.2.0/graalvm-ce-darwin-amd64-19.2.0.tar.gz
       - name: Extract GraalVM
