@@ -337,7 +337,7 @@ Add the following file under `src/main/resources/META-INF`:
     <persistence-unit name="greeting" transaction-type="JTA"> <2>
         <description>A persistence unit for the greeting example.</description>
         <jta-data-source>greetingDataSource</jta-data-source> <3>
-        <class>com.example.entity.Greeting</class> <4>
+        <class>io.helidon.example.jpa.Greeting</class> <4>
         <properties> <5>
             <property name="eclipselink.deploy-on-startup" value="true"/>
             <property name="eclipselink.jdbc.native-sql" value="true"/>
