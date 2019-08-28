@@ -57,7 +57,7 @@ health-check statuses that are commonly used:
 * available disk space
 * available heap memory
 
-This example will demonstrate how to use the built-in health-checks.  These examples are all executed
+The following example will demonstrate how to use the built-in health-checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-mp).
 
 [source,bash]
@@ -414,7 +414,7 @@ curl http://localhost:8081/myhealth/ready
 
 === Using Liveness and Readiness health-checks with Kubernetes
 
-This example shows how to integrate the Helidon health API with an application that implements
+The following example shows how to integrate the Helidon health API with an application that implements
 health endpoints for the Kubernetes liveness and readiness probes.
 
 *Delete the contents of application.yaml so that the default health endpoint path and port are used.*
