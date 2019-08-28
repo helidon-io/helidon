@@ -66,4 +66,11 @@ Learn how to deploy your application to Oracle Cloud Infrastructure Container
  Engine for Kubernetes (OKE).
 --
 
+[CARD]
+.SE Metrics Guide
+[link=guides/09_metrics_se_guide.adoc]
+--
+Learn how to use Helidon SE built-in and application metrics.
+--
+
 ====
