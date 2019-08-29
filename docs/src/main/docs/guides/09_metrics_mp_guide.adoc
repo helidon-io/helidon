@@ -804,7 +804,7 @@ kubectl apply -f ./metrics.yaml
 ----
 
 [source,bash]
-.Get the service informmation:
+.Get the service information:
 ----
 kubectl get service/helidon-metrics
 ----
