@@ -115,9 +115,9 @@ curl http://localhost:8080/health
 }
 ----
 
-NOTE: In MicroProfile Health 2.0 outcome and state were replaced by status in the JSON response wire format.
-Helidon currently provides both fields for backwards compatibility, but use of outcome and state is deprecated
-and will be removed in a future release. You should rely on state instead.
+NOTE: In MicroProfile Health 2.0 `outcome` and `state` were replaced by `status` in the JSON response wire format.
+Helidon currently provides both fields for backwards compatibility, but use of `outcome` and `state` is deprecated
+and will be removed in a future release. You should rely on `status` instead.
 
 === Custom liveness health-checks
 
