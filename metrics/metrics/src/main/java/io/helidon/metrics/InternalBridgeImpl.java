@@ -18,7 +18,6 @@ package io.helidon.metrics;
 
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.config.Config;
-import org.eclipse.microprofile.metrics.Metric;
 
 /**
  * Implements the metrics bridge interface.
@@ -38,11 +37,6 @@ public class InternalBridgeImpl implements InternalBridge {
     @Override
     public RegistryFactory createRegistryFactory(Config config) {
         return io.helidon.metrics.RegistryFactory.create(config);
-    }
-
-    @Override
-    public String toOpenMetricsData(String name, Metric metric) {
-        return MetricsSupport.toPrometheusData(metric);
     }
 
 }

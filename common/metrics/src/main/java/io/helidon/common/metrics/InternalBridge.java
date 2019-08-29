@@ -16,20 +16,20 @@
  */
 package io.helidon.common.metrics;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.config.Config;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -38,7 +38,6 @@ import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
-
 
 /**
  *
@@ -52,8 +51,6 @@ public interface InternalBridge {
     RegistryFactory createRegistryFactory();
 
     RegistryFactory createRegistryFactory(Config config);
-
-    String toOpenMetricsData(String name, Metric metric);
 
     public interface RegistryFactory {
 

@@ -16,10 +16,10 @@
  */
 package io.helidon.metrics;
 
+import java.util.Collections;
+
 import io.helidon.common.metrics.InternalBridge;
 import io.helidon.config.Config;
-import java.util.Collections;
-import org.eclipse.microprofile.metrics.Metric;
 
 /**
  *
@@ -41,11 +41,6 @@ public class InternalBridgeImpl implements InternalBridge {
     @Override
     public RegistryFactory createRegistryFactory(Config config) {
         return io.helidon.metrics.RegistryFactory.create(config);
-    }
-
-    @Override
-    public String toOpenMetricsData(String name, Metric metric) {
-        return MetricsSupport.toPrometheusData(name, metric);
     }
 
     static MetricID newMetricID(org.eclipse.microprofile.metrics.MetricID mpMetricID) {
