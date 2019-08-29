@@ -114,39 +114,47 @@ curl http://localhost:8080/health
 .JSON response:
 ----
 {
-    "outcome": "UP",
-    "checks": [
-        {
-            "name": "deadlock",
-            "state": "UP"
-        },
-        {
-            "name": "diskSpace",
-            "state": "UP",
-            "data": {
-                "free": "211.00 GB",
-                "freeBytes": 226563444736,
-                "percentFree": "45.31%",
-                "total": "465.72 GB",
-                "totalBytes": 500068036608
-            }
-        },
-        {
-            "name": "heapMemory",
-            "state": "UP",
-            "data": {
-                "free": "215.15 MB",
-                "freeBytes": 225600496,
-                "max": "3.56 GB",
-                "maxBytes": 3817865216,
-                "percentFree": "99.17%",
-                "total": "245.50 MB",
-                "totalBytes": 257425408
-            }
-        }
-    ]
+  "outcome": "UP",
+  "status": "UP",
+  "checks": [
+    {
+      "name": "deadlock",
+      "state": "UP",
+      "status": "UP"
+    },
+    {
+      "name": "diskSpace",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "319.58 GB",
+        "freeBytes": 343144304640,
+        "percentFree": "68.63%",
+        "total": "465.63 GB",
+        "totalBytes": 499963174912
+      }
+    },
+    {
+      "name": "heapMemory",
+      "state": "UP",
+      "status": "UP",
+      "data": {
+        "free": "196.84 MB",
+        "freeBytes": 206404016,
+        "max": "3.56 GB",
+        "maxBytes": 3817865216,
+        "percentFree": "98.66%",
+        "total": "245.50 MB",
+        "totalBytes": 257425408
+      }
+    }
+  ]
 }
 ----
+
+NOTE: In MicroProfile Health 2.0 `outcome` and `state` were replaced by `status` in the JSON response wire format.
+Helidon currently provides both fields for backwards compatibility, but use of `outcome` and `state` is deprecated
+and will be removed in a future release. You should rely on `status` instead.
 
 === Custom liveness health-checks
 
