@@ -17,7 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = Metrics  MP Guide
-:description: Helidon metrics s
+:description: Helidon metrics
 :keywords: helidon, metrics, microprofile, guide
 
 This guide describes how to create a sample MicroProfile (MP) project
@@ -745,7 +745,7 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 === Integration with Kubernetes and Prometheus
 
-The following example shows how to integrate the Helidon MP applcation with Kubernetes.
+The following example shows how to integrate the Helidon MP application with Kubernetes.
 
 [source,bash]
 .Stop the application and build the docker image:
