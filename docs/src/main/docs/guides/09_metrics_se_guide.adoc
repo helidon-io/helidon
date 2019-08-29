@@ -620,8 +620,16 @@ is invoked, Helidon will call the `getValue` method of each registered `Gauge`. 
 how a `Gauge` is used to get the current temperature.
 
 [source,java]
-.Replace `Main.createRouting` method with the following code:
+.Add new imports to `Main.java` and replace the `Main.createRouting` method with the following code:
 ----
+
+import io.helidon.metrics.RegistryFactory;
+import java.util.Random;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+
+...
+
     private static Routing createRouting(Config config) {
 
       MetricsSupport metrics = MetricsSupport.create();
@@ -765,7 +773,7 @@ kubectl apply -f ./metrics.yaml
 ----
 
 [source,bash]
-.Get the service informmation:
+.Get the service information:
 ----
 kubectl get service/helidon-metrics
 ----
