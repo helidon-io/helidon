@@ -43,6 +43,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.AmbiguousResolutionException;
 import javax.enterprise.inject.Any;
 import javax.enterprise.inject.CreationException;
 import javax.enterprise.inject.InjectionException;
@@ -50,6 +51,7 @@ import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.literal.InjectLiteral;
 import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.Annotated;
 import javax.enterprise.inject.spi.AnnotatedField;
 import javax.enterprise.inject.spi.AnnotatedMethod;
@@ -58,6 +60,7 @@ import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionPoint;
 import javax.enterprise.inject.spi.WithAnnotations;
@@ -66,6 +69,7 @@ import javax.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedParameterConfigurator;
 import javax.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.persistence.Converter;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -306,6 +310,10 @@ public class JpaExtension implements Extension {
      */
     private final Set<Set<Annotation>> containerManagedEntityManagerFactoryQualifiers;
 
+    private boolean defaultPersistenceUnitInEffect;
+
+    private boolean addedDefaultPersistenceUnit;
+
 
     /*
      * Constructors.
@@ -324,7 +332,7 @@ public class JpaExtension implements Extension {
      */
     public JpaExtension() {
         super();
-        final String cn = this.getClass().getName();
+        final String cn = JpaExtension.class.getName();
         final String mn = "<init>";
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn);
@@ -412,13 +420,13 @@ public class JpaExtension implements Extension {
 
         final AnnotatedTypeConfigurator<T> atc = event.configureAnnotatedType();
         atc.filterFields(JpaExtension::isEligiblePersistenceContextField)
-            .forEach(JpaExtension::rewritePersistenceContextFieldAnnotations);
+            .forEach(this::rewritePersistenceContextFieldAnnotations);
         atc.filterFields(JpaExtension::isEligiblePersistenceUnitField)
-            .forEach(JpaExtension::rewritePersistenceUnitFieldAnnotations);
+            .forEach(this::rewritePersistenceUnitFieldAnnotations);
         atc.filterMethods(JpaExtension::isEligiblePersistenceContextSetterMethod)
-            .forEach(JpaExtension::rewritePersistenceContextSetterMethodAnnotations);
+            .forEach(this::rewritePersistenceContextSetterMethodAnnotations);
         atc.filterMethods(JpaExtension::isEligiblePersistenceUnitSetterMethod)
-            .forEach(JpaExtension::rewritePersistenceUnitSetterMethodAnnotations);
+            .forEach(this::rewritePersistenceUnitSetterMethodAnnotations);
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -463,6 +471,13 @@ public class JpaExtension implements Extension {
                     annotatedType.getAnnotations(PersistenceContext.class);
                 if (persistenceContexts != null && !persistenceContexts.isEmpty()) {
                     for (final PersistenceContext persistenceContext : persistenceContexts) {
+                        if (LOGGER.isLoggable(Level.INFO)) {
+                            final String name = persistenceContext.name().trim();
+                            if (!name.isEmpty()) {
+                                LOGGER.logp(Level.INFO, cn, mn,
+                                            "persistenceContextNameIgnored", new Object[] {annotatedType, name});
+                            }
+                        }
                         final PersistenceProperty[] persistenceProperties = persistenceContext.properties();
                         if (persistenceProperties != null && persistenceProperties.length > 0) {
                             final String persistenceUnitName = persistenceContext.unitName();
@@ -607,6 +622,7 @@ public class JpaExtension implements Extension {
                         String unitName = persistenceContext.unitName();
                         if (unitName == null || unitName.isEmpty()) {
                             unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                            this.defaultPersistenceUnitInEffect = true;
                         }
                         processed = true;
                         addUnlistedManagedClass(unitName, c);
@@ -619,6 +635,7 @@ public class JpaExtension implements Extension {
                         String unitName = persistenceUnit.unitName();
                         if (unitName == null || unitName.isEmpty()) {
                             unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                            this.defaultPersistenceUnitInEffect = true;
                         }
                         processed = true;
                         addUnlistedManagedClass(unitName, c);
@@ -627,6 +644,7 @@ public class JpaExtension implements Extension {
             }
             if (!processed) {
                 addUnlistedManagedClass(DEFAULT_PERSISTENCE_UNIT_NAME, c);
+                this.defaultPersistenceUnitInEffect = true;
             }
         }
 
@@ -658,6 +676,7 @@ public class JpaExtension implements Extension {
         if (managedClass != null) {
             if (name == null || name.isEmpty()) {
                 name = DEFAULT_PERSISTENCE_UNIT_NAME;
+                this.defaultPersistenceUnitInEffect = true;
             }
             Set<Class<?>> unlistedManagedClasses = this.unlistedManagedClassesByPersistenceUnitNames.get(name);
             if (unlistedManagedClasses == null) {
@@ -693,7 +712,10 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, event);
         }
 
-        this.persistenceUnitQualifiers.add(event.getInjectionPoint().getQualifiers());
+        final InjectionPoint injectionPoint = event.getInjectionPoint();
+        assert injectionPoint != null;
+
+        this.persistenceUnitQualifiers.add(injectionPoint.getQualifiers());
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -721,7 +743,10 @@ public class JpaExtension implements Extension {
             LOGGER.entering(cn, mn, event);
         }
 
-        final Set<Annotation> qualifiers = event.getInjectionPoint().getQualifiers();
+        final InjectionPoint injectionPoint = event.getInjectionPoint();
+        assert injectionPoint != null;
+
+        final Set<Annotation> qualifiers = injectionPoint.getQualifiers();
         assert qualifiers != null;
         boolean error = false;
         if (qualifiers.contains(JpaTransactionScoped.Literal.INSTANCE)) {
@@ -826,7 +851,7 @@ public class JpaExtension implements Extension {
             beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
         if (preexistingPersistenceUnitInfoBeans != null && !preexistingPersistenceUnitInfoBeans.isEmpty()) {
             processImplicits = false;
-            maybeAddPersistenceProviderBeans(event, beanManager, preexistingPersistenceUnitInfoBeans, providers);
+            this.maybeAddPersistenceProviderBeans(event, beanManager, preexistingPersistenceUnitInfoBeans, providers);
         }
 
         // Next, and most commonly, load all META-INF/persistence.xml
@@ -861,13 +886,52 @@ public class JpaExtension implements Extension {
 
         // Clear out no-longer-needed-or-used collections to save
         // memory.
-        this.persistenceContextQualifiers.clear();
         this.cdiTransactionScopedEntityManagerQualifiers.clear();
         this.containerManagedEntityManagerFactoryQualifiers.clear();
         this.implicitPersistenceUnits.clear();
         this.nonTransactionalEntityManagerQualifiers.clear();
+        this.persistenceContextQualifiers.clear();
         this.persistenceUnitQualifiers.clear();
         this.unlistedManagedClassesByPersistenceUnitNames.clear();
+
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.exiting(cn, mn);
+        }
+    }
+
+    private void validate(@Observes final AfterDeploymentValidation event, final BeanManager beanManager) {
+        final String cn = JpaExtension.class.getName();
+        final String mn = "validateJpaInjectionPoints";
+        if (LOGGER.isLoggable(Level.FINER)) {
+            LOGGER.entering(cn, mn, new Object[] {event, beanManager});
+        }
+
+        if (this.defaultPersistenceUnitInEffect && !this.addedDefaultPersistenceUnit) {
+            // The user had originally specified something like
+            // just @PersistenceContext (instead
+            // of @PersistenceContext(unitName = "something")), but
+            // there was more than one PersistenceUnitInfo in the
+            // world.
+            final Set<Bean<?>> persistenceUnitInfoBeans = beanManager.getBeans(PersistenceUnitInfo.class, Any.Literal.INSTANCE);
+            try {
+                beanManager.resolve(persistenceUnitInfoBeans);
+            } catch (final AmbiguousResolutionException expected) {
+                final Set<String> names = new HashSet<>();
+                for (final Bean<?> bean : persistenceUnitInfoBeans) {
+                    assert bean != null;
+                    final Set<Annotation> qualifiers = bean.getQualifiers();
+                    for (final Annotation qualifier : qualifiers) {
+                        if (qualifier instanceof Named) {
+                            names.add(((Named) qualifier).value());
+                            break;
+                        }
+                    }
+                }
+                final Throwable problem = new AmbiguousResolutionException(Messages.format("ambiguousPersistenceUnitInfo", names),
+                                                                           expected);
+                event.addDeploymentProblem(problem);
+            }
+        }
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1222,6 +1286,7 @@ public class JpaExtension implements Extension {
             String persistenceUnitName = persistenceUnitInfoBean.getPersistenceUnitName();
             if (persistenceUnitName == null || persistenceUnitName.isEmpty()) {
                 persistenceUnitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                this.defaultPersistenceUnitInEffect = true;
             }
             if (!persistenceUnitInfoBean.excludeUnlistedClasses()) {
                 final Collection<? extends Class<?>> unlistedManagedClasses =
@@ -1238,6 +1303,7 @@ public class JpaExtension implements Extension {
             //   @Named("test")
             //   private PersistenceUnitInfo persistenceUnitInfo;
             event.addBean()
+                .beanClass(PersistenceUnitInfoBean.class)
                 .types(Collections.singleton(PersistenceUnitInfo.class))
                 .scope(ApplicationScoped.class)
                 .addQualifiers(NamedLiteral.of(persistenceUnitName))
@@ -1252,8 +1318,11 @@ public class JpaExtension implements Extension {
         if (solePersistenceUnitInfoBean != null) {
             final String name = solePersistenceUnitInfoBean.getPersistenceUnitName();
             if (name != null && !name.isEmpty()) {
+                this.defaultPersistenceUnitInEffect = true;
+                this.addedDefaultPersistenceUnit = true;
                 final PersistenceUnitInfoBean instance = solePersistenceUnitInfoBean;
                 event.addBean()
+                    .beanClass(PersistenceUnitInfoBean.class)
                     .types(Collections.singleton(PersistenceUnitInfo.class))
                     .scope(ApplicationScoped.class)
                     .addQualifiers(NamedLiteral.of(DEFAULT_PERSISTENCE_UNIT_NAME))
@@ -1340,12 +1409,14 @@ public class JpaExtension implements Extension {
                         String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
                         if (persistenceUnitName == null || persistenceUnitName.isEmpty()) {
                             persistenceUnitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                            this.defaultPersistenceUnitInEffect = true;
                         }
                         // Provide support for, e.g.:
                         //   @Inject
                         //   @Named("test")
                         //   private PersistenceUnitInfo persistenceUnitInfo;
                         event.addBean()
+                            .beanClass(PersistenceUnitInfoBean.class)
                             .types(Collections.singleton(PersistenceUnitInfo.class))
                             .scope(ApplicationScoped.class)
                             .addQualifiers(NamedLiteral.of(persistenceUnitName))
@@ -1361,9 +1432,12 @@ public class JpaExtension implements Extension {
             }
             if (!userSuppliedPersistenceUnitInfoBeans && solePersistenceUnitInfo != null) {
                 final String name = solePersistenceUnitInfo.getPersistenceUnitName();
-                if (name != null && !name.isEmpty()) {
+                if (name != null && !name.isEmpty() && !name.equals(DEFAULT_PERSISTENCE_UNIT_NAME)) {
+                    this.defaultPersistenceUnitInEffect = true;
+                    this.addedDefaultPersistenceUnit = true;
                     final PersistenceUnitInfo instance = solePersistenceUnitInfo;
                     event.addBean()
+                        .beanClass(PersistenceUnitInfoBean.class)
                         .types(Collections.singleton(PersistenceUnitInfo.class))
                         .scope(ApplicationScoped.class)
                         .addQualifiers(NamedLiteral.of(DEFAULT_PERSISTENCE_UNIT_NAME))
@@ -1473,7 +1547,7 @@ public class JpaExtension implements Extension {
      *
      * @exception NullPointerException if {@code fc} is {@code null}
      */
-    private static <T> void rewritePersistenceContextFieldAnnotations(final AnnotatedFieldConfigurator<T> fc) {
+    private <T> void rewritePersistenceContextFieldAnnotations(final AnnotatedFieldConfigurator<T> fc) {
         final String cn = JpaExtension.class.getName();
         final String mn = "rewritePersistenceContextFieldAnnotations";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1485,24 +1559,31 @@ public class JpaExtension implements Extension {
         final PersistenceContext pc = fc.getAnnotated().getAnnotation(PersistenceContext.class);
         if (pc != null) {
             fc.remove(a -> a == pc);
+            fc.add(InjectLiteral.INSTANCE);
+            fc.add(ContainerManaged.Literal.INSTANCE);
+            if (PersistenceContextType.EXTENDED.equals(pc.type())) {
+                fc.add(Extended.Literal.INSTANCE);
+            } else {
+                fc.add(JpaTransactionScoped.Literal.INSTANCE);
+            }
+            if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
+                fc.add(Unsynchronized.Literal.INSTANCE);
+            } else {
+                fc.add(Synchronized.Literal.INSTANCE);
+            }
+            if (LOGGER.isLoggable(Level.INFO)) {
+                final String name = pc.name().trim();
+                if (!name.isEmpty()) {
+                    LOGGER.logp(Level.INFO, cn, mn, "persistenceContextNameIgnored", new Object[] {fc.getAnnotated(), name});
+                }
+            }
+            String unitName = pc.unitName().trim();
+            if (unitName.isEmpty()) {
+                unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                this.defaultPersistenceUnitInEffect = true;
+            }
+            fc.add(NamedLiteral.of(unitName));
         }
-        fc.add(InjectLiteral.INSTANCE);
-        fc.add(ContainerManaged.Literal.INSTANCE);
-        if (PersistenceContextType.EXTENDED.equals(pc.type())) {
-            fc.add(Extended.Literal.INSTANCE);
-        } else {
-            fc.add(JpaTransactionScoped.Literal.INSTANCE);
-        }
-        if (SynchronizationType.UNSYNCHRONIZED.equals(pc.synchronization())) {
-            fc.add(Unsynchronized.Literal.INSTANCE);
-        } else {
-            fc.add(Synchronized.Literal.INSTANCE);
-        }
-        String unitName = pc.unitName().trim();
-        if (unitName.isEmpty()) {
-            unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
-        }
-        fc.add(NamedLiteral.of(unitName));
 
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.exiting(cn, mn);
@@ -1525,7 +1606,7 @@ public class JpaExtension implements Extension {
      *
      * @exception NullPointerException if {@code fc} is {@code null}
      */
-    private static <T> void rewritePersistenceUnitFieldAnnotations(final AnnotatedFieldConfigurator<T> fc) {
+    private <T> void rewritePersistenceUnitFieldAnnotations(final AnnotatedFieldConfigurator<T> fc) {
         final String cn = JpaExtension.class.getName();
         final String mn = "rewritePersistenceUnitFieldAnnotations";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1543,6 +1624,7 @@ public class JpaExtension implements Extension {
         String unitName = pu.unitName().trim();
         if (unitName.isEmpty()) {
             unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+            this.defaultPersistenceUnitInEffect = true;
         }
         fc.add(NamedLiteral.of(unitName));
 
@@ -1657,7 +1739,7 @@ public class JpaExtension implements Extension {
         return returnValue;
     }
 
-    private static <T> void rewritePersistenceContextSetterMethodAnnotations(final AnnotatedMethodConfigurator<T> mc) {
+    private <T> void rewritePersistenceContextSetterMethodAnnotations(final AnnotatedMethodConfigurator<T> mc) {
         final String cn = JpaExtension.class.getName();
         final String mn = "rewritePersistenceContextSetterMethodAnnotations";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1671,6 +1753,12 @@ public class JpaExtension implements Extension {
 
             final PersistenceContext pc = annotated.getAnnotation(PersistenceContext.class);
             if (pc != null) {
+                if (LOGGER.isLoggable(Level.INFO)) {
+                    final String name = pc.name().trim();
+                    if (!name.isEmpty()) {
+                        LOGGER.logp(Level.INFO, cn, mn, "persistenceContextNameIgnored", new Object[] {annotated, name});
+                    }
+                }
                 boolean observerMethod = false;
                 final List<AnnotatedParameterConfigurator<T>> parameters = mc.params();
                 if (parameters != null && !parameters.isEmpty()) {
@@ -1698,6 +1786,7 @@ public class JpaExtension implements Extension {
                                 String unitName = pc.unitName().trim();
                                 if (unitName.isEmpty()) {
                                     unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                                    this.defaultPersistenceUnitInEffect = true;
                                 }
                                 apc.add(NamedLiteral.of(unitName));
                             }
@@ -1715,7 +1804,7 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private static <T> void rewritePersistenceUnitSetterMethodAnnotations(final AnnotatedMethodConfigurator<T> mc) {
+    private <T> void rewritePersistenceUnitSetterMethodAnnotations(final AnnotatedMethodConfigurator<T> mc) {
         final String cn = JpaExtension.class.getName();
         final String mn = "rewritePersistenceUnitSetterMethodAnnotations";
         if (LOGGER.isLoggable(Level.FINER)) {
@@ -1746,6 +1835,7 @@ public class JpaExtension implements Extension {
                                 String unitName = pu.unitName().trim();
                                 if (unitName.isEmpty()) {
                                     unitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                                    this.defaultPersistenceUnitInEffect = true;
                                 }
                                 apc.add(NamedLiteral.of(unitName));
                             }
@@ -1765,10 +1855,10 @@ public class JpaExtension implements Extension {
         }
     }
 
-    private static void maybeAddPersistenceProviderBeans(final AfterBeanDiscovery event,
-                                                         final BeanManager beanManager,
-                                                         final Set<Bean<?>> preexistingPersistenceUnitInfoBeans,
-                                                         final Collection<? extends PersistenceProvider> providers)
+    private void maybeAddPersistenceProviderBeans(final AfterBeanDiscovery event,
+                                                  final BeanManager beanManager,
+                                                  final Set<Bean<?>> preexistingPersistenceUnitInfoBeans,
+                                                  final Collection<? extends PersistenceProvider> providers)
         throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "maybeAddPersistenceProviderBeans";
@@ -1812,7 +1902,7 @@ public class JpaExtension implements Extension {
                     beanManager.createCreationalContext(preexistingPersistenceUnitInfoBean);
                 final PersistenceUnitInfo pui = preexistingPersistenceUnitInfoBean.create(cc);
                 try {
-                    maybeAddPersistenceProviderBean(event, pui, providers);
+                    this.maybeAddPersistenceProviderBean(event, pui, providers);
                 } finally {
                     preexistingPersistenceUnitInfoBean.destroy(pui, cc);
                     cc.release();
@@ -1891,9 +1981,9 @@ public class JpaExtension implements Extension {
      * @exception ReflectiveOperationException if an error occurs
      * during reflection
      */
-    private static void maybeAddPersistenceProviderBean(final AfterBeanDiscovery event,
-                                                        final PersistenceUnitInfo persistenceUnitInfo,
-                                                        final Collection<? extends PersistenceProvider> providers)
+    private void maybeAddPersistenceProviderBean(final AfterBeanDiscovery event,
+                                                 final PersistenceUnitInfo persistenceUnitInfo,
+                                                 final Collection<? extends PersistenceProvider> providers)
         throws ReflectiveOperationException {
         final String cn = JpaExtension.class.getName();
         final String mn = "maybeAddPersistenceProviderBean";
@@ -1921,6 +2011,7 @@ public class JpaExtension implements Extension {
                 String persistenceUnitName = persistenceUnitInfo.getPersistenceUnitName();
                 if (persistenceUnitName == null || persistenceUnitName.isEmpty()) {
                     persistenceUnitName = DEFAULT_PERSISTENCE_UNIT_NAME;
+                    this.defaultPersistenceUnitInEffect = true;
                 }
 
                 // Provide support for, e.g.:
