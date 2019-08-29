@@ -21,10 +21,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- *
+ * Implementation of the version-neutral {@link Metadata} interface.
  */
 class MetadataImpl implements InternalBridge.Metadata {
 
@@ -143,16 +144,14 @@ class MetadataImpl implements InternalBridge.Metadata {
         sb.append(", type=").append(type);
         sb.append(", unit='").append(unit).append('\'');
         sb.append(", reusable=").append(reusable);
-        if(description != null) {
+        if (description != null) {
             sb.append(", description='").append(description).append('\'');
-        }
-        else {
+        } else {
             sb.append(", description=null");
         }
-        if(displayName != null) {
+        if (displayName != null) {
             sb.append(", displayName='").append(displayName).append('\'');
-        }
-        else {
+        } else {
             sb.append(", displayName=null");
         }
         sb.append('}');

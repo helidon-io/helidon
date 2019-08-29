@@ -20,7 +20,8 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 
 /**
- *
+ * Uses the Java service loader mechanism to find an implementation of the
+ * internal bridge.
  */
 class Loader {
 
@@ -31,4 +32,7 @@ class Loader {
         throw new RuntimeException("Could not find implementation of bridge "
                 + InternalBridge.class.getName() + " to load");
     }
+
+    private Loader() {}
+
 }
